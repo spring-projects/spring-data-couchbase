@@ -33,10 +33,10 @@ It is distributed from the [Couchbase Maven Repository](http://files.couchbase.c
 ```
 Currently, the project depends on the following packages:
 
-	* couchbase.couchbase-client: 1.1.0
-	* org.springframework.spring-context: 3.1.3.RELEASE
-	* cglib.cglib: 2.2.2
-	* (When Testing) junit.junit: 4.11
+ * couchbase.couchbase-client: 1.1.0
+ * org.springframework.spring-context: 3.1.3.RELEASE
+ * cglib.cglib: 2.2.2
+ * (When Testing) junit.junit: 4.11
 
 You don't need to download them by hand since they are resolved through Maven automatically.
 
@@ -181,8 +181,8 @@ We load up our `beans.xml` and get the referenced `bookstore` object out of it. 
 
 Be aware of the following things:
 
-	* Objects are stored as serialized Java objects, not as JSON. You won't be able to read the values through the UI.
-	* If you use more than one argument, Spring will create a random key for it (see the [docs](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html)).
-	* There are lots of other options available, again read the documentation for it.
+ * Objects are stored as serialized Java objects, not as JSON. You won't be able to read the values through the UI.
+ * If you use more than one argument, Spring will create a random key for it (see the [docs](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html)).
+ * There are lots of other options available, again read the documentation for it.
 
 Currently, the customization context is very limited, but there is more functionality planned in the future. We'd love to hear your ideas and needs!
