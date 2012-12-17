@@ -5,13 +5,13 @@ This project aims to bridge the gap between Spring and the Couchbase Java SDK. C
 
 Installation
 ------------
-This project is distributed as a maven package and can be included as follows:
+Currently, you need to checkout the source code from here and build it on your on. In the future, this project will be distributed as a maven package and can be included as follows:
 
 ```xml
 <dependencies>
 <dependency>
   <groupId>couchbase</groupId>
-  <artifactId>couchbase-spring</artifactId>
+  <artifactId>spring-data-couchbase</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
