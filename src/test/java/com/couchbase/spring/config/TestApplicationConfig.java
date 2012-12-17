@@ -20,43 +20,24 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.cache;
+package com.couchbase.spring.config;
 
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.spring.config.TestApplicationConfig;
-import java.util.HashMap;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * Verifies the correct functionality of the CouchbaseCacheManager.
- */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TestApplicationConfig.class)
-public class CouchbaseCacheManagerTest {
+@Configuration
+public class TestApplicationConfig {
 
-  /**
-   * Contains a reference to the actual CouchbaseClient.
-   */
-  @Autowired
-  private CouchbaseClient client;
-
-
-  /**
-   * Tests the main functionality of the manager: loading the caches.
-   */
-  @Test
-  public void testCacheInit() {
-    HashMap<String, CouchbaseClient> instances =
-      new HashMap<String, CouchbaseClient>();
-    instances.put("test", client);
-
-    CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);
-    assertEquals(instances, manager.getClients());
+  @Bean
+  public CouchbaseClient couchbaseClient() throws IOException {
+    return new CouchbaseClient(
+      Arrays.asList(URI.create("http://127.0.0.1:8091/pools")),
+      "default",
+      ""
+    );
   }
-
 }

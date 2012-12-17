@@ -23,42 +23,32 @@
 package com.couchbase.spring.cache;
 
 import com.couchbase.client.CouchbaseClient;
-import java.net.URI;
-import java.util.ArrayList;
+import com.couchbase.spring.config.TestApplicationConfig;
 import static org.junit.Assert.*;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache.ValueWrapper;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = TestApplicationConfig.class)
 public class CouchbaseCacheTest {
 
   /**
    * Contains a reference to the actual CouchbaseClient.
    */
-  private static CouchbaseClient client;
+  @Autowired
+  private CouchbaseClient client;
 
   /**
    * Simple name of the cache bucket to create.
    */
   private String cacheName = "test";
-
-  /**
-   * Setup a CouchbaseClient before the tests run.
-   *
-   * @throws Exception
-   */
-  @BeforeClass
-  public static void setupCouchbase() throws Exception {
-    ArrayList<URI> baseList = new ArrayList<URI>();
-    baseList.add(URI.create("http://127.0.0.1:8091/pools"));
-    String bucketName = "default";
-    String pwd = "";
-
-    client = new CouchbaseClient(baseList, bucketName, pwd);
-  }
 
   /**
    * Tests the basic Cache construction functionality.
