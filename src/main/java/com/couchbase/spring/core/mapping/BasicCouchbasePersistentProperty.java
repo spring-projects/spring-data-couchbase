@@ -27,21 +27,54 @@ import java.lang.reflect.Field;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
+import org.springframework.util.StringUtils;
 
-
+/**
+ * Implements annotated property representations of a given Field instance.
+ *
+ * This object is used to gather information out of properties on objects
+ * that need to be persisted. For example, it supports overriding of the
+ * actual property name by providing custom annotations.
+ */
 public class BasicCouchbasePersistentProperty
   extends AnnotationBasedPersistentProperty<CouchbasePersistentProperty>
   implements CouchbasePersistentProperty {
 
+  /**
+   * Create a new instance of the BasicCouchbasePersistentProperty class.
+   *
+   * @param field the field of the original reflection.
+   * @param propertyDescriptor the PropertyDescriptor.
+   * @param owner the original owner of the property.
+   * @param simpleTypeHolder the type holder.
+   */
   public BasicCouchbasePersistentProperty(Field field,
     PropertyDescriptor propertyDescriptor, CouchbasePersistentEntity<?> owner,
     SimpleTypeHolder simpleTypeHolder) {
     super(field, propertyDescriptor, owner, simpleTypeHolder);
   }
 
+  /**
+   * Creates a new Association.
+   */
   @Override
   protected Association<CouchbasePersistentProperty> createAssociation() {
     return new Association<CouchbasePersistentProperty>(this, null);
+  }
+
+  /**
+   * Returns the field name of the property.
+   *
+   * The field name can be different from the actual property name by using a
+   * custom annotation.
+   */
+  @Override
+  public String getFieldName() {
+    com.couchbase.spring.core.mapping.Field annotation = getField().
+      getAnnotation(com.couchbase.spring.core.mapping.Field.class);
+
+    return annotation != null && StringUtils.hasText(annotation.value())
+      ? annotation.value() : field.getName();
   }
 
 }
