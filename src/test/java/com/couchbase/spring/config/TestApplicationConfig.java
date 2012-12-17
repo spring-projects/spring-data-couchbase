@@ -26,18 +26,24 @@ import com.couchbase.client.CouchbaseClient;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 @Configuration
 public class TestApplicationConfig {
 
+  @Autowired
+  private Environment env;
+
   @Bean
   public CouchbaseClient couchbaseClient() throws IOException {
-    return new CouchbaseClient(
-      Arrays.asList(URI.create("http://127.0.0.1:8091/pools")),
-      "default",
-      ""
-    );
+    String defaultHost = "http://127.0.0.1:8091/pools";
+    String host = env.getProperty("couchbase.host", defaultHost);
+
+    String bucket = env.getProperty("couchbase.bucket", "default");
+    String pass = env.getProperty("couchbase.password", "");
+    return new CouchbaseClient(Arrays.asList(URI.create(host)), bucket, pass);
   }
 }
