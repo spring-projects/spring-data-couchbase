@@ -79,6 +79,35 @@ CouchbaseClient client = context.getBean("CouchbaseClient", CouchbaseClient.clas
 
 Here, the `beans.xml` defines the bean we saw previously. Spring handles the construction of the object for us and we can then proceed to call the well-known methods on the object. You'll need this kind of approach when you want to use Couchbase for more parts then - lets say - Caching in your project. If you just want to use Caching, you don't even need to work with the CouchbaseClient directly at all.
 
+Also, if you prefer Java-Style configs you can define a class like this (this is the equivalent to the xml shown above):
+
+```java
+@Configuration
+class ApplicationConfig {
+
+ @Bean
+ public CouchbaseClient couchbaseClient() {
+   return new CouchbaseClient(Arrays.asList(URI.create("http://127.0.0.1:8091/pools")), "default", "");
+ }
+
+ @Bean
+ public CouchbaseCacheManager cacheManager() {
+
+   HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
+   instances.put("test", couchbaseClient());
+
+   return new CouchbaseCacheManager(instances);
+ }
+}
+```
+
+This also includes the config for the `CouchbaseCacheManager` that will be used in the next chapter. You can then go ahead and include it like this:
+
+```java
+ApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class);
+CouchbaseClient client = context.getBean("couchbaseClient", CouchbaseClient.class);
+```
+
 Caching with Couchbase in Spring
 --------------------------------
 [Caching in Spring](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html) mainly works bei annotating your cachable entities with the `@Cacheable` annotation. If you give it only a name like `@Cacheable("default")`, then it tries to use the `default` cache configuration. Before we can use it though, we need to define it.
