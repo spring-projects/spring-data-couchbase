@@ -27,8 +27,8 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
 /**
- * The CouchbaseCache class implements the common cache operations on top of
- * a CouchbaseClient instance.
+ * The CouchbaseCache class implements the Spring Cache interface
+ * on top of Couchbase Server and the Couchbase Java SDK.
  */
 public class CouchbaseCache implements Cache {
 

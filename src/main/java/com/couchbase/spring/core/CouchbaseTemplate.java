@@ -20,29 +20,32 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.core.convert;
+package com.couchbase.spring.core;
 
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.GenericConversionService;
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.spring.core.convert.CouchbaseConverter;
+import com.couchbase.spring.core.convert.MappingCouchbaseConverter;
 
-public abstract class AbstractCouchbaseConverter implements CouchbaseConverter,
-  InitializingBean {
+public class CouchbaseTemplate implements CouchbaseOperations {
 
-  protected final GenericConversionService conversionService;
+  private CouchbaseClient client;
+  private CouchbaseConverter couchbaseConverter;
 
-  public AbstractCouchbaseConverter(
-    GenericConversionService conversionService) {
-    this.conversionService = conversionService;
+  public CouchbaseTemplate(CouchbaseClient client) {
+    this(client, null);
   }
 
-  public ConversionService getConversionService() {
-    return conversionService;
+  public CouchbaseTemplate(CouchbaseClient client, CouchbaseConverter converter) {
+    this.client = client;
+    this.couchbaseConverter = converter == null ? getDefaultConverter(client) : converter;
   }
 
-  @Override
-  public void afterPropertiesSet() {
-
+  private CouchbaseConverter getDefaultConverter(CouchbaseClient client) {
+    MappingCouchbaseConverter converter = new MappingCouchbaseConverter(
+      new CouchbaseMappingContext());
+    converter.afterPropertiesSet();
+    return converter;
   }
+
 
 }

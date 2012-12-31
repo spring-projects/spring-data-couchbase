@@ -30,6 +30,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -39,27 +41,39 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       CouchbasePersistentProperty> mappingContext;
 
   @SuppressWarnings("deprecation")
-  public MappingCouchbaseConverter(CouchbaseFactory couchbaseFactory,
-    MappingContext<? extends CouchbasePersistentEntity<?>,
+  public MappingCouchbaseConverter(MappingContext<? extends CouchbasePersistentEntity<?>,
       CouchbasePersistentProperty> mappingContext) {
     super(ConversionServiceFactory.createDefaultConversionService());
 
     this.mappingContext = mappingContext;
   }
 
+  @Override
   public MappingContext<? extends CouchbasePersistentEntity<?>,
     CouchbasePersistentProperty> getMappingContext() {
     return mappingContext;
   }
 
+  @Override
   public <R> R read(Class<R> type, Object s) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  public void write(Object t, Object s) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  @Override
+  public void write(Object source, Object target) {
+    if(source == null) {
+      return;
+    }
+
+    TypeInformation<? extends Object> type = ClassTypeInformation.from(source.getClass());
+    writeInternal(source, target, type);
   }
 
+  protected void writeInternal(Object source, Object target, TypeInformation<?> type) {
+    System.out.println(type.getActualType());
+  }
+
+  @Override
   public void setApplicationContext(ApplicationContext applicationContext)
     throws BeansException {
     this.applicationContext = applicationContext;

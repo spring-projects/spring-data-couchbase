@@ -43,6 +43,7 @@ public class BasicCouchbasePersistentEntity<T>
     this.context = new StandardEvaluationContext();
   }
 
+  @Override
   public void setApplicationContext(ApplicationContext applicationContext)
     throws BeansException {
 		context.addPropertyAccessor(new BeanFactoryAccessor());

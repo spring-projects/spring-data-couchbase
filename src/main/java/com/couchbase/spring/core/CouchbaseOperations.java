@@ -20,29 +20,8 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.core.convert;
+package com.couchbase.spring.core;
 
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.GenericConversionService;
-
-public abstract class AbstractCouchbaseConverter implements CouchbaseConverter,
-  InitializingBean {
-
-  protected final GenericConversionService conversionService;
-
-  public AbstractCouchbaseConverter(
-    GenericConversionService conversionService) {
-    this.conversionService = conversionService;
-  }
-
-  public ConversionService getConversionService() {
-    return conversionService;
-  }
-
-  @Override
-  public void afterPropertiesSet() {
-
-  }
+public interface CouchbaseOperations {
 
 }
