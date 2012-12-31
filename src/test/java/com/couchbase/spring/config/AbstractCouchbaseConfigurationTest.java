@@ -23,27 +23,45 @@
 package com.couchbase.spring.config;
 
 import com.couchbase.client.CouchbaseClient;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
+import com.couchbase.spring.TestApplicationConfig;
+import com.couchbase.spring.core.mapping.Document;
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@Configuration
-public class TestApplicationConfig {
+/**
+ * Unit test for {@link AbstractCouchbaseConfiguration}
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(classes = TestApplicationConfig.class)
+public class AbstractCouchbaseConfigurationTest {
 
   @Autowired
-  private Environment env;
+  private CouchbaseClient client;
 
-  @Bean
-  public CouchbaseClient couchbaseClient() throws IOException {
-    String defaultHost = "http://127.0.0.1:8091/pools";
-    String host = env.getProperty("couchbase.host", defaultHost);
+  @Test
+  public void usesConfigClassPackageAsBaseMappingPackage() throws Exception {
+    AbstractCouchbaseConfiguration config = new SampleCouchbaseConfiguration();
 
-    String bucket = env.getProperty("couchbase.bucket", "default");
-    String pass = env.getProperty("couchbase.password", "");
-    return new CouchbaseClient(Arrays.asList(URI.create(host)), bucket, pass);
+    assertEquals(config.getMappingBasePackage(),
+      SampleCouchbaseConfiguration.class.getPackage().getName());
+    assertEquals(config.getInitialEntitySet().size(), 1);
+    assertTrue(config.getInitialEntitySet().contains(Entity.class));
+  }
+
+  class SampleCouchbaseConfiguration extends AbstractCouchbaseConfiguration {
+    @Bean
+    @Override
+    public CouchbaseClient couchbaseClient() throws Exception {
+      return client;
+    }
+  }
+
+  @Document
+  static class Entity {
   }
 }

@@ -20,12 +20,33 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.core;
+package com.couchbase.spring;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.spring.config.AbstractCouchbaseConfiguration;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
-public interface CouchbaseFactory {
+@Configuration
+public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
 
-  CouchbaseClient getDb();
+  @Autowired
+  private Environment env;
+
+  @Bean
+  @Override
+  public CouchbaseClient couchbaseClient() throws IOException {
+    String defaultHost = "http://127.0.0.1:8091/pools";
+    String host = env.getProperty("couchbase.host", defaultHost);
+
+    String bucket = env.getProperty("couchbase.bucket", "default");
+    String pass = env.getProperty("couchbase.password", "");
+    return new CouchbaseClient(Arrays.asList(URI.create(host)), bucket, pass);
+  }
 
 }

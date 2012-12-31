@@ -23,7 +23,7 @@
 package com.couchbase.spring.cache;
 
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.spring.config.TestApplicationConfig;
+import com.couchbase.spring.TestApplicationConfig;
 import java.util.HashMap;
 import static org.junit.Assert.*;
 import org.junit.Test;

@@ -22,16 +22,29 @@
 
 package com.couchbase.spring.core.convert;
 
-import com.couchbase.spring.core.CouchbaseFactory;
+import com.couchbase.spring.core.mapping.ConvertedCouchbaseDocument;
 import com.couchbase.spring.core.mapping.CouchbasePersistentEntity;
 import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonGenerator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.mapping.model.BeanWrapper;
+import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.core.convert.ConversionService;
+import org.springframework.data.mapping.PropertyHandler;
 
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -55,22 +68,79 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   }
 
   @Override
-  public <R> R read(Class<R> type, Object s) {
+  public <R> R read(Class<R> type, ConvertedCouchbaseDocument s) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
   @Override
-  public void write(Object source, Object target) {
+  public void write(Object source, ConvertedCouchbaseDocument target) {
     if(source == null) {
       return;
     }
 
     TypeInformation<? extends Object> type = ClassTypeInformation.from(source.getClass());
-    writeInternal(source, target, type);
+    try {
+      writeInternal(source, target, type);
+    } catch (IOException ex) {
+      throw new MappingException("Could not translate to JSON while converting "
+        + source.getClass().getName());
+    }
+
   }
 
-  protected void writeInternal(Object source, Object target, TypeInformation<?> type) {
-    System.out.println(type.getActualType());
+  protected void writeInternal(final Object source,
+    ConvertedCouchbaseDocument target, TypeInformation<?> type)
+    throws IOException {
+    CouchbasePersistentEntity<?> entity  = mappingContext.getPersistentEntity(
+      source.getClass());
+
+    if(entity == null) {
+      throw new MappingException("No mapping metadata found for entity of type "
+        + source.getClass().getName());
+    }
+
+    final CouchbasePersistentProperty idProperty = entity.getIdProperty();
+    if(idProperty == null) {
+      throw new MappingException("ID property required for entity of type "
+        + source.getClass().getName());
+    }
+
+    final BeanWrapper<CouchbasePersistentEntity<Object>, Object> wrapper =
+      BeanWrapper.create(source, conversionService);
+
+    String id = wrapper.getProperty(idProperty, String.class, false);
+    target.setId(id);
+
+    JsonFactory jsonFactory = new JsonFactory();
+    OutputStream jsonStream = new ByteArrayOutputStream();
+    final JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(
+      jsonStream, JsonEncoding.UTF8);
+
+    jsonGenerator.writeStartObject();
+    entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+      @Override
+      public void doWithPersistentProperty(CouchbasePersistentProperty prop) {
+        if(prop.equals(idProperty)) {
+          return;
+        }
+
+        Object propertyValue = wrapper.getProperty(prop, prop.getType(), false);
+        if(propertyValue != null) {
+          try {
+            jsonGenerator.writeFieldName(prop.getFieldName());
+            jsonGenerator.writeObject(propertyValue);
+          } catch (IOException ex) {
+            throw new MappingException("Could not translate to JSON while converting "
+              + source.getClass().getName());
+          }
+        }
+
+      }
+    });
+    jsonGenerator.writeEndObject();
+    jsonGenerator.close();
+
+    target.setValue(jsonStream.toString());
   }
 
   @Override

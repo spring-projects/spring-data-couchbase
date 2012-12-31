@@ -24,6 +24,7 @@ package com.couchbase.spring.core.convert;
 
 import org.springframework.data.convert.EntityWriter;
 
-public interface CouchbaseWriter<T> extends EntityWriter<T, Object> {
+public interface CouchbaseWriter<T, ConvertedCouchbaseDocument> extends
+  EntityWriter<T, ConvertedCouchbaseDocument> {
 
 }

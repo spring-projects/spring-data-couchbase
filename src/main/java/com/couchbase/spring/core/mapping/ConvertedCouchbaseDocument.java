@@ -20,19 +20,52 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.core;
+package com.couchbase.spring.core.mapping;
 
-public interface CouchbaseOperations {
+public class ConvertedCouchbaseDocument {
 
-  /**
-   * Insert the object into the connected bucket.
-   *
-   * <p>
-   * The object is converted to a JSON representation using an instance of
-   * {@link CouchbaseConverter}.
-   * </p>
-   *
-   * @param objectToSave the object to store in the bucket.
-   */
-  void insert(Object objectToSave);
+  private String id;
+
+  private String value;
+
+  private int expiry;
+
+  public ConvertedCouchbaseDocument() {
+    this("", "", 0);
+  }
+
+  public ConvertedCouchbaseDocument(String id, String value) {
+    this(id, value, 0);
+  }
+
+  public ConvertedCouchbaseDocument(String id, String value, int expiry) {
+    this.id = id;
+    this.value = value;
+    this.expiry = expiry;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public void setValue(String value) {
+    this.value = value;
+  }
+
+  public int getExpiry() {
+    return expiry;
+  }
+
+  public void setExpiry(int expiry) {
+    this.expiry = expiry;
+  }
+
 }

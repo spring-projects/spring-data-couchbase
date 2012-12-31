@@ -22,17 +22,45 @@
 
 package com.couchbase.spring.core;
 
-public interface CouchbaseOperations {
+import org.springframework.data.annotation.Id;
 
-  /**
-   * Insert the object into the connected bucket.
-   *
-   * <p>
-   * The object is converted to a JSON representation using an instance of
-   * {@link CouchbaseConverter}.
-   * </p>
-   *
-   * @param objectToSave the object to store in the bucket.
-   */
-  void insert(Object objectToSave);
+/**
+ * Test class for persisting and loading from {@link CouchbaseTemplate}.
+ */
+public class Beer {
+
+  @Id
+  private final String id;
+
+  private String name;
+
+  private boolean active = true;
+
+  public Beer(String id) {
+    this.id = id;
+  }
+
+  @Override
+  public String toString() {
+    return "Beer [id=" + id + ", name=" + name + ", active=" + active + "]";
+  }
+
+  public Beer setName(String name) {
+    this.name = name;
+    return this;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public Beer setActive(boolean active) {
+    this.active = active;
+    return this;
+  }
+
+  public boolean getActive() {
+    return active;
+  }
+
 }

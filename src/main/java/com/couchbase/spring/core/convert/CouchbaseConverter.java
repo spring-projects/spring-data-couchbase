@@ -22,6 +22,7 @@
 
 package com.couchbase.spring.core.convert;
 
+import com.couchbase.spring.core.mapping.ConvertedCouchbaseDocument;
 import com.couchbase.spring.core.mapping.CouchbasePersistentEntity;
 import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.convert.EntityConverter;
@@ -29,8 +30,7 @@ import org.springframework.data.convert.EntityReader;
 
 public interface CouchbaseConverter extends
   EntityConverter<CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty, Object, Object>,
-  CouchbaseWriter<Object>,
-  EntityReader<Object, Object> {
-
+    CouchbasePersistentProperty, Object, ConvertedCouchbaseDocument>,
+  CouchbaseWriter<Object, ConvertedCouchbaseDocument>,
+  EntityReader<Object, ConvertedCouchbaseDocument> {
 }
