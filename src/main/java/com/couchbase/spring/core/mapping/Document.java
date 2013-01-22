@@ -37,5 +37,10 @@ import org.springframework.data.annotation.Persistent;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface Document {
+	
+  /**
+   * An optional expiry time for the document.
+   */
+  int expiry() default 0;
 
 }

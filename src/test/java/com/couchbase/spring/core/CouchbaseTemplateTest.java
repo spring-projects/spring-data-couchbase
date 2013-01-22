@@ -24,11 +24,13 @@ package com.couchbase.spring.core;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.spring.TestApplicationConfig;
-import net.spy.memcached.internal.GetFuture;
+import com.couchbase.spring.core.mapping.Document;
+
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -50,10 +52,34 @@ public class CouchbaseTemplateTest {
     Beer beer = new Beer(id).setName(name).setActive(active);
 
     template.insert(beer);
-    Object result = (String) client.get(id);
+    String result = (String) client.get(id);
 
     String expected = "{\"active\":" + active + ",\"name\":\"" + name + "\"}";
     assertNotNull(result);
     assertEquals(expected, result);
+  }
+  
+  @Test
+  public void insertDocumentWithExpiry() throws Exception {
+  	String id = "simple-doc-with-expiry";
+  	DocumentWithExpiry doc = new DocumentWithExpiry(id);
+  	template.insert(doc);
+  	assertNotNull(client.get(id));
+  	Thread.sleep(3000);
+  	assertNull(client.get(id));
+  }
+  
+  /**
+   * A sample document that expires in 2 seconds.
+   */
+  @Document(expiry=2)
+  class DocumentWithExpiry {
+    @Id
+    private final String id;
+    
+    public DocumentWithExpiry(String id) {
+    	this.id = id;
+    }
+    
   }
 }

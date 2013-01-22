@@ -50,4 +50,14 @@ public class BasicCouchbasePersistentEntity<T>
 		context.setBeanResolver(new BeanFactoryResolver(applicationContext));
 		context.setRootObject(applicationContext);
   }
+  
+  public int getExpiry() {
+  	com.couchbase.spring.core.mapping.Document annotation = 
+  			getType().getAnnotation(com.couchbase.spring.core.mapping.Document.class);
+  	
+  	if(annotation == null) {
+  		return 0;
+  	}
+  	return annotation.expiry();
+  }
 }

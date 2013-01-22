@@ -52,7 +52,6 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public void insert(Object objectToSave) {
     ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
-
     client.set(converted.getId(), converted.getExpiry(), converted.getValue());
   }
 

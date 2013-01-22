@@ -28,11 +28,8 @@ import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -43,7 +40,6 @@ import org.springframework.data.mapping.model.BeanWrapper;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.data.mapping.PropertyHandler;
 
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
@@ -110,6 +106,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     String id = wrapper.getProperty(idProperty, String.class, false);
     target.setId(id);
+    target.setExpiry(entity.getExpiry());
 
     JsonFactory jsonFactory = new JsonFactory();
     OutputStream jsonStream = new ByteArrayOutputStream();

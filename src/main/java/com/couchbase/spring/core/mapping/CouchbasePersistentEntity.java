@@ -27,4 +27,10 @@ import org.springframework.data.mapping.PersistentEntity;
 public interface CouchbasePersistentEntity<T> extends
   PersistentEntity<T, CouchbasePersistentProperty> {
 
+	/**
+	 * Returns the expiry time for the document.
+	 *
+	 * @return
+	 */
+	int getExpiry();
 }
