@@ -22,26 +22,37 @@
 
 package com.couchbase.spring.core.mapping;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.springframework.data.mapping.model.MappingException;
+
 public class ConvertedCouchbaseDocument {
 
   private String id;
 
-  private String value;
+  private String rawValue;
 
   private int expiry;
+  
+  private Map<String, Object> decoded;
 
   public ConvertedCouchbaseDocument() {
     this("", "", 0);
   }
 
-  public ConvertedCouchbaseDocument(String id, String value) {
-    this(id, value, 0);
+  public ConvertedCouchbaseDocument(String id, String rawValue) {
+    this(id, rawValue, 0);
   }
 
-  public ConvertedCouchbaseDocument(String id, String value, int expiry) {
+  public ConvertedCouchbaseDocument(String id, String rawValue, int expiry) {
     this.id = id;
-    this.value = value;
+    this.rawValue = rawValue;
     this.expiry = expiry;
+    this.decoded = new HashMap<String, Object>();
+    parseJson();
   }
 
   public void setId(String id) {
@@ -52,12 +63,14 @@ public class ConvertedCouchbaseDocument {
     return id;
   }
 
-  public String getValue() {
-    return value;
+  public String getRawValue() {
+    return rawValue;
   }
 
-  public void setValue(String value) {
-    this.value = value;
+  public void setRawValue(String value) {
+    this.rawValue = value;
+    parseJson();
+    
   }
 
   public int getExpiry() {
@@ -66,6 +79,27 @@ public class ConvertedCouchbaseDocument {
 
   public void setExpiry(int expiry) {
     this.expiry = expiry;
+  }
+  
+  public boolean containsField(String fieldname) {
+  	return decoded.containsKey(fieldname);
+  }
+  
+  public Object get(String fieldname) {
+  	return decoded.get(fieldname);
+  }
+  
+  private void parseJson() {
+  	ObjectMapper mapper = new ObjectMapper();
+  	try {
+  		if(!getRawValue().isEmpty()) {
+  			Map<String, Object> converted = mapper.readValue(getRawValue(), 
+  				new TypeReference<Map<String, Object>>() { });
+  			this.decoded = converted;
+  		}
+  	} catch(Exception e) {
+  		throw new MappingException("Error while decoding JSON object.", e);
+  	}
   }
 
 }

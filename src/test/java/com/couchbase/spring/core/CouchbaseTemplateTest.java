@@ -107,7 +107,6 @@ public class CouchbaseTemplateTest {
   	assertEquals(id, found.getId());
   	assertEquals(name, found.getName());
   	assertEquals(active, found.getActive());
-  	
   }
   
   /**

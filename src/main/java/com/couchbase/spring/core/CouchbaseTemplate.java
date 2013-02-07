@@ -76,7 +76,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
     ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
-    client.add(converted.getId(), converted.getExpiry(), converted.getValue());
+    client.add(converted.getId(), converted.getExpiry(), converted.getRawValue());
   }
   
   public void insert(Collection<? extends Object> batchToSave) {
@@ -91,7 +91,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
     ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
-    client.set(converted.getId(), converted.getExpiry(), converted.getValue());
+    client.set(converted.getId(), converted.getExpiry(), converted.getRawValue());
   }
   
   public void save(Collection<? extends Object> batchToSave) {
@@ -106,7 +106,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
     ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
-    client.replace(converted.getId(), converted.getExpiry(), converted.getValue());
+    client.replace(converted.getId(), converted.getExpiry(), converted.getRawValue());
   }
   
   public void update(Collection<? extends Object> batchToSave) {

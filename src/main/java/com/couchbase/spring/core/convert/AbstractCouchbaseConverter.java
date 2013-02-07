@@ -25,11 +25,13 @@ package com.couchbase.spring.core.convert;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.data.convert.EntityInstantiators;
 
 public abstract class AbstractCouchbaseConverter implements CouchbaseConverter,
   InitializingBean {
 
   protected final GenericConversionService conversionService;
+  protected EntityInstantiators instantiators = new EntityInstantiators();
 
   public AbstractCouchbaseConverter(
     GenericConversionService conversionService) {

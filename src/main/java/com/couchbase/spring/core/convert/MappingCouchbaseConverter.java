@@ -25,26 +25,38 @@ package com.couchbase.spring.core.convert;
 import com.couchbase.spring.core.mapping.ConvertedCouchbaseDocument;
 import com.couchbase.spring.core.mapping.CouchbasePersistentEntity;
 import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.convert.support.ConversionServiceFactory;
+import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
+import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
 import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.mapping.model.ParameterValueProvider;
+import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
+import org.springframework.data.mapping.model.PropertyValueProvider;
+import org.springframework.data.mapping.model.SpELContext;
+import org.springframework.data.mapping.model.SpELExpressionEvaluator;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.data.mapping.PropertyHandler;
+import org.springframework.util.Assert;
 
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -52,6 +64,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   protected ApplicationContext applicationContext;
   protected final MappingContext<? extends CouchbasePersistentEntity<?>,
       CouchbasePersistentProperty> mappingContext;
+  protected boolean useFieldAccessOnly = true;
 
   @SuppressWarnings("deprecation")
   public MappingCouchbaseConverter(MappingContext<? extends CouchbasePersistentEntity<?>,
@@ -67,46 +80,58 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     return mappingContext;
   }
 
+  
+	private ParameterValueProvider<CouchbasePersistentProperty> getParameterProvider(
+			CouchbasePersistentEntity<?> entity, ConvertedCouchbaseDocument source, Object parent) {
+		
+		CouchbasePropertyValueProvider provider = new CouchbasePropertyValueProvider(source, parent);
+		PersistentEntityParameterValueProvider<CouchbasePersistentProperty> parameterProvider = 
+				new PersistentEntityParameterValueProvider<CouchbasePersistentProperty>(
+						entity, provider, parent);
+		
+		return parameterProvider;
+	}
+	
   @Override
   public <R> R read(Class<R> type, ConvertedCouchbaseDocument doc) {
-  	CouchbasePersistentEntity<?> entity  = mappingContext.getPersistentEntity(type);
+  	return read(type, doc, null);
+  }
+  
+  public <R> R read(Class<R> type, final ConvertedCouchbaseDocument doc, Object parent) {
+  	final CouchbasePersistentEntity<R> entity  = (CouchbasePersistentEntity<R>) 
+  			mappingContext.getPersistentEntity(type);
   	
-  	R decoded = null;
-  	try {
-  		decoded = type.getConstructor(String.class).newInstance(doc.getId());
-  	} catch(Exception e) {
-  		throw new MappingException("Could not instantiate object while converting "
-          + doc.getId()); 	
-  	}
+  	ParameterValueProvider<CouchbasePersistentProperty> provider = 
+  			getParameterProvider(entity, doc, parent);
+  	EntityInstantiator instantiator = instantiators.getInstantiatorFor(entity);
+  	R instance = instantiator.createInstance(entity, provider);
   	
-  	JsonFactory jsonFactory = new JsonFactory();
-  	try {
-  		JsonParser parser = jsonFactory.createJsonParser(doc.getValue());
-  		parser.nextToken();
-  		while(parser.nextToken() != JsonToken.END_OBJECT) {
-  			String fieldname = parser.getCurrentName();
-  			parser.nextToken();
-  			CouchbasePersistentProperty property = entity.getPersistentProperty(fieldname);
-  			if(property == null) {
-  				continue;
-  			}
-  			Field field = type.getDeclaredField(property.getOriginalName());
-  			field.setAccessible(true);
-  			
-  			if(property.getType().equals(boolean.class)) {
-  				field.set(decoded, parser.getValueAsBoolean());
-  			} else if(property.getType().equals(String.class)) {
-  				field.set(decoded, parser.getText());
-  			} else {
-  				throw new MappingException("Unknown type in JSON found: " + property.getType());
-  			}
-  		}
-  	} catch(Exception e) {
-      throw new MappingException("Could not read from JSON while converting "
-          + doc.getId(), e); 		
-  	}
-  	
-		return decoded;
+  	final BeanWrapper<CouchbasePersistentEntity<R>, R> wrapper = 
+  			BeanWrapper.create(instance, conversionService);
+		final R result = wrapper.getBean();
+		
+		// Set properties not already set in the constructor
+		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+			public void doWithPersistentProperty(CouchbasePersistentProperty prop) {
+
+				boolean isConstructorProperty = entity.isConstructorArgument(prop);
+				boolean hasValueForProperty = doc.containsField(prop.getFieldName());
+
+				if (!hasValueForProperty || isConstructorProperty) {
+					return;
+				}
+
+				Object obj = null;
+				if(prop.getFieldName() == "id") {
+					obj = doc.getId();
+				} else {
+					obj = doc.get(prop.getFieldName());
+				}
+				wrapper.setProperty(prop, obj, useFieldAccessOnly);
+			}
+		});
+		
+		return result;
   }
 
   @Override
@@ -178,7 +203,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     jsonGenerator.writeEndObject();
     jsonGenerator.close();
 
-    target.setValue(jsonStream.toString());
+    target.setRawValue(jsonStream.toString());
   }
 
   @Override
@@ -186,5 +211,34 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     throws BeansException {
     this.applicationContext = applicationContext;
   }
+  
+	private class CouchbasePropertyValueProvider implements PropertyValueProvider<CouchbasePersistentProperty> {
+
+		private final ConvertedCouchbaseDocument source;
+		private final Object parent;
+
+		public CouchbasePropertyValueProvider(ConvertedCouchbaseDocument source, Object parent) {
+			Assert.notNull(source);
+			this.source = source;
+			this.parent = parent;
+		}
+
+		public <T> T getPropertyValue(CouchbasePersistentProperty property) {
+			String fieldName = property.getFieldName();
+			T value = null;
+			
+			if(fieldName == "id") {
+				value = (T) source.getId();
+			} else {
+				value = (T) source.get(fieldName);
+			}
+			
+			if (value == null) {
+				return null;
+			}
+
+			return value;
+		}
+	}
 
 }
