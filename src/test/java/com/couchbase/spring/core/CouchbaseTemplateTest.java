@@ -25,6 +25,7 @@ package com.couchbase.spring.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.spring.TestApplicationConfig;
 import com.couchbase.spring.core.mapping.Document;
+import com.couchbase.spring.core.mapping.Field;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -45,28 +46,68 @@ public class CouchbaseTemplateTest {
   private CouchbaseTemplate template;
 
   @Test
-  public void insertsSimpleEntityCorrectly() throws Exception {
+  public void saveSimpleEntityCorrectly() throws Exception {
     String id = "beers:awesome-stout";
     String name = "The Awesome Stout";
     boolean active = false;
     Beer beer = new Beer(id).setName(name).setActive(active);
 
-    template.insert(beer);
+    template.save(beer);
     String result = (String) client.get(id);
 
-    String expected = "{\"active\":" + active + ",\"name\":\"" + name + "\"}";
+    String expected = "{\"is_active\":" + active + ",\"name\":\"" + name + "\"}";
     assertNotNull(result);
     assertEquals(expected, result);
   }
   
   @Test
-  public void insertDocumentWithExpiry() throws Exception {
+  public void saveDocumentWithExpiry() throws Exception {
   	String id = "simple-doc-with-expiry";
   	DocumentWithExpiry doc = new DocumentWithExpiry(id);
-  	template.insert(doc);
+  	template.save(doc);
   	assertNotNull(client.get(id));
   	Thread.sleep(3000);
   	assertNull(client.get(id));
+  }
+  
+  @Test
+  public void insertDoesNotOverride() {
+  	String id ="double-insert-test";
+  	String expected = "{\"name\":\"Mr. A\"}";
+
+  	SimplePerson doc = new SimplePerson(id, "Mr. A");
+  	template.insert(doc);
+  	String result = (String) client.get(id);
+  	assertEquals(expected, result);
+  	
+  	doc = new SimplePerson(id, "Mr. B");
+  	template.insert(doc);
+  	result = (String) client.get(id);
+  	assertEquals(expected, result);
+  }
+  
+  @Test
+  public void updateDoesNotInsert() {
+  	String id ="update-does-not-insert";
+  	SimplePerson doc = new SimplePerson(id, "Nice Guy");
+  	template.update(doc);
+  	assertNull(client.get(id));
+  }
+  
+  /**
+   * A sample document with just an id and property.
+   */
+  @Document
+  class SimplePerson {
+    @Id
+    private final String id;
+    @Field
+    private final String name;
+
+    public SimplePerson(String id, String name) {
+    	this.id = id;
+    	this.name = name;
+    } 	
   }
   
   /**
@@ -80,6 +121,5 @@ public class CouchbaseTemplateTest {
     public DocumentWithExpiry(String id) {
     	this.id = id;
     }
-    
   }
 }

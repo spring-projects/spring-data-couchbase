@@ -24,6 +24,8 @@ package com.couchbase.spring.core;
 
 import org.springframework.data.annotation.Id;
 
+import com.couchbase.spring.core.mapping.Field;
+
 /**
  * Test class for persisting and loading from {@link CouchbaseTemplate}.
  */
@@ -34,6 +36,7 @@ public class Beer {
 
   private String name;
 
+  @Field("is_active")
   private boolean active = true;
 
   public Beer(String id) {

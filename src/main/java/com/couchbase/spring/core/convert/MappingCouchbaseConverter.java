@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonParser;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -64,8 +65,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   }
 
   @Override
-  public <R> R read(Class<R> type, ConvertedCouchbaseDocument s) {
-    throw new UnsupportedOperationException("Not supported yet.");
+  public <R> R read(Class<R> type, ConvertedCouchbaseDocument doc) {
+  	JsonFactory jsonFactory = new JsonFactory();
+  	try {
+  		JsonParser parser = jsonFactory.createJsonParser(doc.getValue());
+  	} catch(Exception e) {
+      throw new MappingException("Could not read from JSON while converting "
+          + doc.getId()); 		
+  	}
   }
 
   @Override

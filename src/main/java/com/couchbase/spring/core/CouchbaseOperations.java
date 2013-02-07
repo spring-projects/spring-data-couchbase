@@ -22,10 +22,15 @@
 
 package com.couchbase.spring.core;
 
+import java.util.Collection;
+
 public interface CouchbaseOperations {
 
   /**
-   * Insert the object into the connected bucket.
+   * Save the given object.
+   *
+   * When the document already exists (specified by its unique id),
+   * then it will be overriden. Otherwise it will be created.
    *
    * <p>
    * The object is converted to a JSON representation using an instance of
@@ -34,5 +39,78 @@ public interface CouchbaseOperations {
    *
    * @param objectToSave the object to store in the bucket.
    */
+  void save(Object objectToSave);
+  
+  /**
+   * Save a list of objects.
+   *
+   * When one of the documents already exists (specified by its unique id),
+   * then it will be overriden. Otherwise it will be created.
+   *
+   * @param batchToSave the list of objects to store in the bucket.
+   */
+  void save(Collection<? extends Object> batchToSave);	
+	
+  /**
+   * Insert the given object.
+   *
+   * When the document already exists (specified by its unique id),
+   * then it will not be overriden. Use the {@link CouchbaseOperations#save}
+   * method for this.
+   *
+   * <p>
+   * The object is converted to a JSON representation using an instance of
+   * {@link CouchbaseConverter}.
+   * </p>
+   *
+   * @param objectToSave the object to add to the bucket.
+   */
   void insert(Object objectToSave);
+  
+  /**
+   * Insert a list of objects.
+   *
+   * When one of the documents already exists (specified by its unique id),
+   * then it will not be overriden. Use the {@link CouchbaseOperations#save}
+   * method for this.
+   *
+   * @param batchToSave the list of objects to add to the bucket.
+   */
+  void insert(Collection<? extends Object> batchToSave);
+
+  /**
+   * Update the given object.
+   *
+   * When the document does not exists (specified by its unique id),
+   * then it will not be created. Use the {@link CouchbaseOperations#save}
+   * method for this.
+   *
+   * <p>
+   * The object is converted to a JSON representation using an instance of
+   * {@link CouchbaseConverter}.
+   * </p>
+   *
+   * @param objectToSave the object to add to the bucket.
+   */
+  void update(Object objectToSave);
+  
+  /**
+   * Insert a list of objects.
+   *
+   * When one of the documents does not exists (specified by its unique id),
+   * then it will not be created. Use the {@link CouchbaseOperations#save}
+   * method for this.
+   *
+   * @param batchToSave the list of objects to add to the bucket.
+   */
+  void update(Collection<? extends Object> batchToSave);
+  
+  /**
+   * Find an object by its given Id and map it to the corresponding entity.
+   *
+   * @param id the unique ID of the document.
+   * @param entityClass the entity to map to.
+   * @return returns the found object or null otherwise.
+   */
+  public <T> T findById(String id, Class<T> entityClass);
 }
