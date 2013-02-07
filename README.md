@@ -33,8 +33,8 @@ It is distributed from the [Couchbase Maven Repository](http://files.couchbase.c
 ```
 Currently, the project depends on the following packages:
 
- * couchbase.couchbase-client: 1.1.0
- * org.springframework.spring-context: 3.1.3.RELEASE
+ * couchbase.couchbase-client: 1.1.2
+ * org.springframework.spring-context: 3.2.1.RELEASE
  * cglib.cglib: 2.2.2
  * (When Testing) junit.junit: 4.11
 
