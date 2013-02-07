@@ -76,5 +76,21 @@ public class BasicCouchbasePersistentProperty
     return annotation != null && StringUtils.hasText(annotation.value())
       ? annotation.value() : field.getName();
   }
+  
+  /**
+   * Return the name of the property.
+   * 
+   * This overrides the default implementation to make sure that when
+   * the property is retrieved from a JSON document it can be found
+   * even when a alias is used.
+   */
+  @Override
+  public String getName() {
+  	return getFieldName();
+  }
+  
+  public String getOriginalName() {
+  	return name;
+  }
 
 }

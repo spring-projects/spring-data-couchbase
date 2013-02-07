@@ -35,4 +35,6 @@ public interface CouchbasePersistentProperty extends
    * custom annotation.
    */
   String getFieldName();
+  
+  String getOriginalName();
 }

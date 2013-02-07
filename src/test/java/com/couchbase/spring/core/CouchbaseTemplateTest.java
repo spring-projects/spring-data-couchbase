@@ -94,6 +94,22 @@ public class CouchbaseTemplateTest {
   	assertNull(client.get(id));
   }
   
+  @Test
+  public void validfindById() {
+    String id = "beers:findme-stout";
+    String name = "The Findme Stout";
+    boolean active = true;
+    Beer beer = new Beer(id).setName(name).setActive(active);
+  	template.save(beer);
+  	
+  	Beer found = template.findById(id, Beer.class);
+  	assertNotNull(found);
+  	assertEquals(id, found.getId());
+  	assertEquals(name, found.getName());
+  	assertEquals(active, found.getActive());
+  	
+  }
+  
   /**
    * A sample document with just an id and property.
    */

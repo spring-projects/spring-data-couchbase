@@ -28,10 +28,13 @@ import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
+
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -66,13 +69,44 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
   @Override
   public <R> R read(Class<R> type, ConvertedCouchbaseDocument doc) {
+  	CouchbasePersistentEntity<?> entity  = mappingContext.getPersistentEntity(type);
+  	
+  	R decoded = null;
+  	try {
+  		decoded = type.getConstructor(String.class).newInstance(doc.getId());
+  	} catch(Exception e) {
+  		throw new MappingException("Could not instantiate object while converting "
+          + doc.getId()); 	
+  	}
+  	
   	JsonFactory jsonFactory = new JsonFactory();
   	try {
   		JsonParser parser = jsonFactory.createJsonParser(doc.getValue());
+  		parser.nextToken();
+  		while(parser.nextToken() != JsonToken.END_OBJECT) {
+  			String fieldname = parser.getCurrentName();
+  			parser.nextToken();
+  			CouchbasePersistentProperty property = entity.getPersistentProperty(fieldname);
+  			if(property == null) {
+  				continue;
+  			}
+  			Field field = type.getDeclaredField(property.getOriginalName());
+  			field.setAccessible(true);
+  			
+  			if(property.getType().equals(boolean.class)) {
+  				field.set(decoded, parser.getValueAsBoolean());
+  			} else if(property.getType().equals(String.class)) {
+  				field.set(decoded, parser.getText());
+  			} else {
+  				throw new MappingException("Unknown type in JSON found: " + property.getType());
+  			}
+  		}
   	} catch(Exception e) {
       throw new MappingException("Could not read from JSON while converting "
-          + doc.getId()); 		
+          + doc.getId(), e); 		
   	}
+  	
+		return decoded;
   }
 
   @Override

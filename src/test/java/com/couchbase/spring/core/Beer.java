@@ -65,5 +65,9 @@ public class Beer {
   public boolean getActive() {
     return active;
   }
+  
+  public String getId() {
+  	return id;
+  }
 
 }
