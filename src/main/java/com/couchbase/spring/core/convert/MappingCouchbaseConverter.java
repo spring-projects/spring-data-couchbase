@@ -29,16 +29,9 @@ import com.couchbase.spring.core.mapping.CouchbasePersistentProperty;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.util.Map;
-
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -46,13 +39,10 @@ import org.springframework.core.convert.support.ConversionServiceFactory;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
-import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.ParameterValueProvider;
 import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
 import org.springframework.data.mapping.model.PropertyValueProvider;
-import org.springframework.data.mapping.model.SpELContext;
-import org.springframework.data.mapping.model.SpELExpressionEvaluator;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.data.mapping.PropertyHandler;
@@ -122,7 +112,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 				}
 
 				Object obj = null;
-				if(prop.getFieldName() == "id") {
+				if(prop.isIdProperty()) {
 					obj = doc.getId();
 				} else {
 					obj = doc.get(prop.getFieldName());
@@ -224,13 +214,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 		}
 
 		public <T> T getPropertyValue(CouchbasePersistentProperty property) {
-			String fieldName = property.getFieldName();
 			T value = null;
 			
-			if(fieldName == "id") {
+			if(property.isIdProperty()) {
 				value = (T) source.getId();
 			} else {
-				value = (T) source.get(fieldName);
+				value = (T) source.get(property.getFieldName());
 			}
 			
 			if (value == null) {
