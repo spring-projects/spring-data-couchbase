@@ -45,6 +45,8 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   protected final MappingContext<? extends CouchbasePersistentEntity<?>,
       CouchbasePersistentProperty> mappingContext;
   private static final Collection<String> ITERABLE_CLASSES;
+  private final CouchbaseExceptionTranslator exceptionTranslator = 
+  		new CouchbaseExceptionTranslator();
   
 	static {
 		Set<String> iterableClasses = new HashSet<String>();
@@ -137,6 +139,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 				throw new IllegalArgumentException("Cannot use a collection here.");
 			}
 		}
+	}
+	
+	private RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
+		RuntimeException resolved = this.exceptionTranslator.translateExceptionIfPossible(ex);
+		return resolved == null ? ex : resolved;
 	}
 
   
