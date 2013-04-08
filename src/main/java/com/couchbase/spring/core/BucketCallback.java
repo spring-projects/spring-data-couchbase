@@ -1,6 +1,6 @@
 package com.couchbase.spring.core;
 
 
-public interface DbCallback<T> {
+public interface BucketCallback<T> {
   T doInBucket();
 }

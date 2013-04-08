@@ -32,6 +32,8 @@ import com.couchbase.client.ObservedModifiedException;
 import com.couchbase.client.ObservedTimeoutException;
 import com.couchbase.client.vbucket.ConnectionException;
 
+import java.io.IOException;
+
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
  * 
@@ -51,12 +53,12 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 	@Override
 	public final DataAccessException translateExceptionIfPossible(RuntimeException ex) {
 		if (ex instanceof ConnectionException) {
-			return new DataAccessResourceFailureException(ex.getMessage(), ex);
+		  return new DataAccessResourceFailureException(ex.getMessage(), ex);
 		}
 		
-		if (ex instanceof ObservedException ||
-			 ex instanceof ObservedTimeoutException ||
-			 ex instanceof ObservedModifiedException) {
+		if (ex instanceof ObservedException
+      || ex instanceof ObservedTimeoutException
+      || ex instanceof ObservedModifiedException) {
 			return new DataIntegrityViolationException(ex.getMessage(), ex);
 		}
 		

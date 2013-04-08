@@ -129,7 +129,7 @@ public interface CouchbaseOperations {
   void remove(Collection<? extends Object> batchToRemove);
 
   /**
-   * Executes a DbCallback translating any exceptions as necessary.
+   * Executes a BucketCallback translating any exceptions as necessary.
    *
    * Allows for returning a result object, that is a domain object or a
    * collection of domain objects.
@@ -138,5 +138,5 @@ public interface CouchbaseOperations {
    * @param <T> the return type.
    * @return
    */
-  <T> T execute(DbCallback<T> action);
+  <T> T execute(BucketCallback<T> action);
 }
