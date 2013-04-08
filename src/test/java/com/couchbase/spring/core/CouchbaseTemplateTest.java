@@ -95,7 +95,7 @@ public class CouchbaseTemplateTest {
   }
   
   @Test
-  public void validfindById() {
+  public void validFindById() {
     String id = "beers:findme-stout";
     String name = "The Findme Stout";
     boolean active = true;
