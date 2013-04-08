@@ -143,6 +143,14 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     }
   }
 
+  public <T> T execute(final DbCallback<T> action) {
+    try {
+      return action.doInBucket();
+    } catch (RuntimeException e) {
+      throw potentiallyConvertRuntimeException(e);
+    }
+  }
+
   /**
    * Make sure the given object is not a iterable.
    *

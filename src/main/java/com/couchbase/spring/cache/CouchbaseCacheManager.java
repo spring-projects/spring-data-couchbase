@@ -45,9 +45,11 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
   private final HashMap<String, CouchbaseClient> clients;
 
   /**
-   * Construct a new CouchabseCacheManager.
+   * Construct a new CouchbaseCacheManager.
+   *
+   * @param clients one ore more CouchbaseClients to reference.
    */
-  public CouchbaseCacheManager(HashMap<String, CouchbaseClient> clients) {
+  public CouchbaseCacheManager(final HashMap<String, CouchbaseClient> clients) {
     this.clients = clients;
   }
 
@@ -56,7 +58,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    *
    * @return the actual CouchbaseClient instances.
    */
-  public HashMap<String, CouchbaseClient> getClients() {
+  public final HashMap<String, CouchbaseClient> getClients() {
     return this.clients;
   }
 
@@ -66,10 +68,10 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    * @return a collection of loaded caches.
    */
   @Override
-  protected Collection<? extends Cache> loadCaches() {
+  protected final Collection<? extends Cache> loadCaches() {
     Collection<Cache> caches = new LinkedHashSet<Cache>();
 
-    for(Map.Entry<String, CouchbaseClient> cache : this.clients.entrySet()) {
+    for (Map.Entry<String, CouchbaseClient> cache : this.clients.entrySet()) {
       caches.add(new CouchbaseCache(cache.getKey(), cache.getValue()));
     }
 

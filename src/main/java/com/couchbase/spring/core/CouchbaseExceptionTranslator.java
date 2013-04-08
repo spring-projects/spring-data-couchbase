@@ -42,13 +42,19 @@ import com.couchbase.client.vbucket.ConnectionException;
  */
 public class CouchbaseExceptionTranslator implements PersistenceExceptionTranslator {
 
+  /**
+   * Translate Couchbase specific exceptions to spring exceptions if possible.
+   *
+   * @param ex the exception to translate.
+   * @return the translated exception or null.
+   */
 	@Override
-	public DataAccessException translateExceptionIfPossible(RuntimeException ex) {
-		if(ex instanceof ConnectionException) {
+	public final DataAccessException translateExceptionIfPossible(RuntimeException ex) {
+		if (ex instanceof ConnectionException) {
 			return new DataAccessResourceFailureException(ex.getMessage(), ex);
 		}
 		
-		if(ex instanceof ObservedException ||
+		if (ex instanceof ObservedException ||
 			 ex instanceof ObservedTimeoutException ||
 			 ex instanceof ObservedModifiedException) {
 			return new DataIntegrityViolationException(ex.getMessage(), ex);

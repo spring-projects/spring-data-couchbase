@@ -23,6 +23,7 @@
 package com.couchbase.spring.cache;
 
 import com.couchbase.client.CouchbaseClient;
+import net.spy.memcached.internal.OperationFuture;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
@@ -45,9 +46,10 @@ public class CouchbaseCache implements Cache {
   /**
    * Construct the cache and pass in the CouchbaseClient instance.
    *
+   * @param name the name of the cache reference.
    * @param client the CouchbaseClient instance.
    */
-  public CouchbaseCache(String name, CouchbaseClient client) {
+  public CouchbaseCache(final String name, final CouchbaseClient client) {
     this.name = name;
     this.client = client;
   }
@@ -57,7 +59,7 @@ public class CouchbaseCache implements Cache {
    *
    * @return the name of the cache.
    */
-  public String getName() {
+  public final String getName() {
     return name;
   }
 
@@ -66,7 +68,7 @@ public class CouchbaseCache implements Cache {
    *
    * @return the actual CouchbaseClient instance.
    */
-  public CouchbaseClient getNativeCache() {
+  public final CouchbaseClient getNativeCache() {
     return this.client;
   }
 
@@ -76,7 +78,7 @@ public class CouchbaseCache implements Cache {
    * @param key the key to lookup against.
    * @return the fetched value from Couchbase.
    */
-  public ValueWrapper get(Object key) {
+  public final ValueWrapper get(final Object key) {
     String documentId = key.toString();
     Object result = this.client.get(documentId);
     return (result != null ? new SimpleValueWrapper(result) : null);
@@ -88,7 +90,7 @@ public class CouchbaseCache implements Cache {
    * @param key the Key of the storable object.
    * @param value the Object to store.
    */
-  public void put(Object key, Object value) {
+  public final void put(final Object key, final Object value) {
     String documentId = key.toString();
     this.client.set(documentId, 0, value);
   }
@@ -98,7 +100,7 @@ public class CouchbaseCache implements Cache {
    *
    * @param key the Key of the object to delete.
    */
-  public void evict(Object key) {
+  public final void evict(final Object key) {
     String documentId = key.toString();
     this.client.delete(documentId);
   }
@@ -109,7 +111,7 @@ public class CouchbaseCache implements Cache {
    * Note that this action is very destructive, so only use it with care.
    * Also note that "flush" may not be enabled on the bucket.
    */
-  public void clear() {
+  public final void clear() {
     this.client.flush();
   }
 
