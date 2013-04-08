@@ -20,43 +20,33 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.cache;
+package com.couchbase.spring;
 
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.spring.TestApplicationConfig;
-import java.util.HashMap;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.couchbase.spring.config.AbstractCouchbaseConfiguration;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
-/**
- * Verifies the correct functionality of the CouchbaseCacheManager.
- */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TestApplicationConfig.class)
-public class CouchbaseCacheManagerTest {
+@Configuration
+public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
 
-  /**
-   * Contains a reference to the actual CouchbaseClient.
-   */
   @Autowired
-  private CouchbaseClient client;
+  private Environment env;
 
+  @Bean
+  @Override
+  public CouchbaseClient couchbaseClient() throws IOException {
+    String defaultHost = "http://127.0.0.1:8091/pools";
+    String host = env.getProperty("couchbase.host", defaultHost);
 
-  /**
-   * Tests the main functionality of the manager: loading the caches.
-   */
-  @Test
-  public void testCacheInit() {
-    HashMap<String, CouchbaseClient> instances =
-      new HashMap<String, CouchbaseClient>();
-    instances.put("test", client);
-
-    CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);
-    assertEquals(instances, manager.getClients());
+    String bucket = env.getProperty("couchbase.bucket", "default");
+    String pass = env.getProperty("couchbase.password", "");
+    return new CouchbaseClient(Arrays.asList(URI.create(host)), bucket, pass);
   }
 
 }

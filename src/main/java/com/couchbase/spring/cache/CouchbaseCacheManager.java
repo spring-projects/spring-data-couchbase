@@ -31,8 +31,11 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.AbstractCacheManager;
 
 /**
- * The CouchbaseCacheManager handles CouchbaseClient connections and
- * orchestrates them as needed.
+ * The CouchbaseCacheManager orchestrates CouchbaseCache instances.
+ * 
+ * Since more than one current CouchbaseClient connection can be used
+ * for caching, the CouchbaseCacheManager orchestrates and handles
+ * them for the Spring Cache abstraction layer.
  */
 public class CouchbaseCacheManager extends AbstractCacheManager {
 

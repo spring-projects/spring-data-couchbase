@@ -20,84 +20,48 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.cache;
+package com.couchbase.spring.config;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.spring.TestApplicationConfig;
+import com.couchbase.spring.core.mapping.Document;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache.ValueWrapper;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * Tests the CouchbaseCache class and verifies its functionality.
+ * Unit test for {@link AbstractCouchbaseConfiguration}
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-public class CouchbaseCacheTest {
+public class AbstractCouchbaseConfigurationTest {
 
-  /**
-   * Contains a reference to the actual CouchbaseClient.
-   */
   @Autowired
   private CouchbaseClient client;
 
-  /**
-   * Simple name of the cache bucket to create.
-   */
-  private String cacheName = "test";
-
-  /**
-   * Tests the basic Cache construction functionality.
-   */
   @Test
-  public void testConstruction() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
+  public void usesConfigClassPackageAsBaseMappingPackage() throws Exception {
+    AbstractCouchbaseConfiguration config = new SampleCouchbaseConfiguration();
 
-    assertEquals(cacheName, cache.getName());
-    assertEquals(client, cache.getNativeCache());
+    assertEquals(config.getMappingBasePackage(),
+      SampleCouchbaseConfiguration.class.getPackage().getName());
+    assertEquals(config.getInitialEntitySet().size(), 1);
+    assertTrue(config.getInitialEntitySet().contains(Entity.class));
   }
 
-  /**
-   * Verifies set() and get() of cache objects.
-   */
-  @Test
-  public void testGetSet() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
-
-    String key = "couchbase-cache-test";
-    String value = "Hello World!";
-    cache.put(key, value);
-
-    String stored = (String) client.get(key);
-    assertNotNull(stored);
-    assertEquals(value, stored);
-
-    ValueWrapper loaded = cache.get(key);
-    assertEquals(value, loaded.get());
+  class SampleCouchbaseConfiguration extends AbstractCouchbaseConfiguration {
+    @Bean
+    @Override
+    public CouchbaseClient couchbaseClient() throws Exception {
+      return client;
+    }
   }
 
-  /**
-   * Verifies the deletion of cache objects.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testEvict() throws Exception {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
-
-    String key = "couchbase-cache-test";
-    String value = "Hello World!";
-
-    Boolean success = client.set(key, 0, value).get();
-    assertTrue(success);
-
-    cache.evict(key);
-    Object result = client.get(key);
-    assertNull(result);
+  @Document
+  static class Entity {
   }
-
 }

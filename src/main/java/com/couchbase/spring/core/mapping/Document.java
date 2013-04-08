@@ -20,43 +20,27 @@
  * IN THE SOFTWARE.
  */
 
-package com.couchbase.spring.cache;
+package com.couchbase.spring.core.mapping;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.spring.TestApplicationConfig;
-import java.util.HashMap;
-import static org.junit.Assert.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.springframework.data.annotation.Persistent;
 
 /**
- * Verifies the correct functionality of the CouchbaseCacheManager.
+ * Identifies a domain object to be persisted to Couchbase.
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TestApplicationConfig.class)
-public class CouchbaseCacheManagerTest {
-
+@Persistent
+@Inherited
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE })
+public @interface Document {
+	
   /**
-   * Contains a reference to the actual CouchbaseClient.
+   * An optional expiry time for the document.
    */
-  @Autowired
-  private CouchbaseClient client;
-
-
-  /**
-   * Tests the main functionality of the manager: loading the caches.
-   */
-  @Test
-  public void testCacheInit() {
-    HashMap<String, CouchbaseClient> instances =
-      new HashMap<String, CouchbaseClient>();
-    instances.put("test", client);
-
-    CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);
-    assertEquals(instances, manager.getClients());
-  }
+  int expiry() default 0;
 
 }
