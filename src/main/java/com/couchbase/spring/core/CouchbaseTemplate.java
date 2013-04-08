@@ -97,10 +97,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
   
   public void save(Collection<? extends Object> batchToSave) {
-  	Iterator<? extends Object> iter = batchToSave.iterator();
-  	while(iter.hasNext()) {
-  		save(iter.next());
-  	}
+    Iterator<? extends Object> iter = batchToSave.iterator();
+    while(iter.hasNext()) {
+      save(iter.next());
+    }
   }
 
   public void update(Object objectToSave) {
@@ -113,14 +113,14 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   
   public void update(Collection<? extends Object> batchToSave) {
   	Iterator<? extends Object> iter = batchToSave.iterator();
-  	while(iter.hasNext()) {
+  	while (iter.hasNext()) {
   		save(iter.next());
   	}
   }
   
   public <T> T findById(String id, Class<T> entityClass) {
   	String result = (String) client.get(id);
-  	if(result == null) {
+  	if (result == null) {
   		return null;
   	}
   	
@@ -128,12 +128,27 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   	return couchbaseConverter.read(entityClass, converted);
   }
 
+  public void remove(Object objectToRemove) {
+    ensureNotIterable(objectToRemove);
+
+    ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
+    couchbaseConverter.write(objectToRemove, converted);
+    client.delete(converted.getId());
+  }
+
+  public void remove(Collection<? extends Object> batchToRemove) {
+    Iterator<? extends Object> iter = batchToRemove.iterator();
+    while (iter.hasNext()) {
+      remove(iter.next());
+    }
+  }
+
   /**
    * Make sure the given object is not a iterable.
    *
    * @param o the object to verify.
    */
-	protected void ensureNotIterable(Object o) {
+	protected final void ensureNotIterable(Object o) {
 		if (null != o) {
 			if (o.getClass().isArray() || ITERABLE_CLASSES.contains(o.getClass().getName())) {
 				throw new IllegalArgumentException("Cannot use a collection here.");

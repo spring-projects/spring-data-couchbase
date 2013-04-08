@@ -108,6 +108,19 @@ public class CouchbaseTemplateTest {
   	assertEquals(name, found.getName());
   	assertEquals(active, found.getActive());
   }
+
+  @Test
+  public void removeDocument() {
+    String id = "beers:findme-stout";
+    Object result = client.get(id);
+    assertNotNull(result);
+
+    Beer beer = new Beer(id);
+    template.remove(beer);
+
+    result = client.get(id);
+    assertNull(result);
+  }
   
   /**
    * A sample document with just an id and property.

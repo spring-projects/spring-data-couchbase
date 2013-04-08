@@ -112,5 +112,19 @@ public interface CouchbaseOperations {
    * @param entityClass the entity to map to.
    * @return returns the found object or null otherwise.
    */
-  public <T> T findById(String id, Class<T> entityClass);
+  <T> T findById(String id, Class<T> entityClass);
+
+  /**
+   * Remove the given object from the bucket by id.
+   *
+   * @param object the Object to remove.
+   */
+  void remove(Object object);
+
+  /**
+   * Remove a list of objects from the bucket by id.
+   *
+   * @param batchToRemove the list of Objects to remove.
+   */
+  void remove(Collection<? extends Object> batchToRemove);
 }
