@@ -35,9 +35,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
@@ -144,6 +146,17 @@ public class CouchbaseTemplateTest {
     assertEquals(names, response.getFirstnames());
     assertEquals(votes, response.getVotes());
     assertEquals(id, response.getId());
+  }
+
+  @Test
+  public void funStuff() {
+    Map<SocketAddress,Map<String,String>> stats = client.getStats();
+    for(Map.Entry<SocketAddress,Map<String,String>> entry : stats.entrySet()) {
+
+      for(Map.Entry<String, String> inner : entry.getValue().entrySet()) {
+        System.out.println(inner);
+      }
+    }
   }
   
   /**
