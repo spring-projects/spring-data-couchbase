@@ -147,17 +147,6 @@ public class CouchbaseTemplateTest {
     assertEquals(votes, response.getVotes());
     assertEquals(id, response.getId());
   }
-
-  @Test
-  public void funStuff() {
-    Map<SocketAddress,Map<String,String>> stats = client.getStats();
-    for(Map.Entry<SocketAddress,Map<String,String>> entry : stats.entrySet()) {
-
-      for(Map.Entry<String, String> inner : entry.getValue().entrySet()) {
-        System.out.println(inner);
-      }
-    }
-  }
   
   /**
    * A sample document with just an id and property.
