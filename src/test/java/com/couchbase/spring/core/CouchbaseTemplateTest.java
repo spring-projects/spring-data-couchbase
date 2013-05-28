@@ -35,6 +35,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
 public class CouchbaseTemplateTest {
@@ -121,12 +125,32 @@ public class CouchbaseTemplateTest {
     result = client.get(id);
     assertNull(result);
   }
+
+  @Test
+  public void storeLists() {
+    String id ="persons:lots-of-names";
+    List<String> names = new ArrayList<String>();
+    names.add("Michael");
+    names.add("Thomas");
+    List<Integer> votes = new LinkedList<Integer>();
+    ComplexPerson complex = new ComplexPerson(id, names, votes);
+
+    template.save(complex);
+
+    String expected = "{\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"]}";
+    assertEquals(expected, client.get(id));
+
+    ComplexPerson response = template.findById(id, ComplexPerson.class);
+    assertEquals(names, response.getFirstnames());
+    assertEquals(votes, response.getVotes());
+    assertEquals(id, response.getId());
+  }
   
   /**
    * A sample document with just an id and property.
    */
   @Document
-  class SimplePerson {
+  static class SimplePerson {
     @Id
     private final String id;
     @Field
@@ -142,12 +166,41 @@ public class CouchbaseTemplateTest {
    * A sample document that expires in 2 seconds.
    */
   @Document(expiry=2)
-  class DocumentWithExpiry {
+  static class DocumentWithExpiry {
     @Id
     private final String id;
     
     public DocumentWithExpiry(String id) {
     	this.id = id;
+    }
+  }
+
+  @Document
+  static class ComplexPerson {
+    @Id
+    private final String id;
+    @Field
+    private final List<String> firstnames;
+    @Field
+    private final List<Integer> votes;
+
+    public ComplexPerson(String id, List<String> firstnames,
+      List<Integer> votes) {
+      this.id = id;
+      this.firstnames = firstnames;
+      this.votes = votes;
+    }
+
+    List<String> getFirstnames() {
+      return firstnames;
+    }
+
+    List<Integer> getVotes() {
+      return votes;
+    }
+
+    String getId() {
+      return id;
     }
   }
 }

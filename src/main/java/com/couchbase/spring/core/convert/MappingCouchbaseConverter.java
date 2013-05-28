@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -168,6 +169,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     OutputStream jsonStream = new ByteArrayOutputStream();
     final JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(
       jsonStream, JsonEncoding.UTF8);
+    jsonGenerator.setCodec(new ObjectMapper());
 
     jsonGenerator.writeStartObject();
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
