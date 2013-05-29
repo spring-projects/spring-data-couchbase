@@ -127,6 +127,9 @@ public interface CouchbaseOperations {
   /**
    * Remove the given object from the bucket by id.
    *
+   * If the object is a String, it will be treated as the document key
+   * directly.
+   *
    * @param object the Object to remove.
    */
   void remove(Object object);

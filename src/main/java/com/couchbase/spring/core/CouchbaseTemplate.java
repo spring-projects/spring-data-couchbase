@@ -163,6 +163,16 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public void remove(final Object objectToRemove) {
     ensureNotIterable(objectToRemove);
 
+    if (objectToRemove instanceof String) {
+      execute(new BucketCallback<OperationFuture<Boolean>>() {
+        @Override
+        public OperationFuture<Boolean> doInBucket() {
+          return client.delete((String) objectToRemove);
+        }
+      });
+      return;
+    }
+
     final ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
     couchbaseConverter.write(objectToRemove, converted);
 
