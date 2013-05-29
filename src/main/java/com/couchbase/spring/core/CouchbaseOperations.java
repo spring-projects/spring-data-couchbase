@@ -22,6 +22,8 @@
 
 package com.couchbase.spring.core;
 
+import com.couchbase.spring.core.convert.CouchbaseConverter;
+
 import java.util.Collection;
 
 public interface CouchbaseOperations {
@@ -115,6 +117,14 @@ public interface CouchbaseOperations {
   <T> T findById(String id, Class<T> entityClass);
 
   /**
+   * Checks if the given document exists.
+   *
+   * @param id the unique ID of the document.
+   * @return whether the document could be found or not.
+   */
+  boolean exists(String id);
+
+  /**
    * Remove the given object from the bucket by id.
    *
    * @param object the Object to remove.
@@ -139,4 +149,11 @@ public interface CouchbaseOperations {
    * @return
    */
   <T> T execute(BucketCallback<T> action);
+
+  /**
+   * Returns the underlying {@link CouchbaseConverter}
+   * @return
+   */
+  CouchbaseConverter getConverter();
+
 }

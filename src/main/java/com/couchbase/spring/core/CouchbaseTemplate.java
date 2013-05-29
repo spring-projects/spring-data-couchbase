@@ -189,6 +189,17 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     }
   }
 
+  @Override
+  public boolean exists(final String id) {
+    String result = execute(new BucketCallback<String>() {
+      @Override
+      public String doInBucket() {
+        return (String) client.get(id);
+      }
+    });
+    return result == null ? false : true;
+  }
+
   /**
    * Make sure the given object is not a iterable.
    *
@@ -207,5 +218,8 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 		return resolved == null ? ex : resolved;
 	}
 
-  
+  @Override
+  public CouchbaseConverter getConverter() {
+    return couchbaseConverter;
+  }
 }
