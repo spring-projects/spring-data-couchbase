@@ -36,10 +36,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
@@ -129,23 +126,31 @@ public class CouchbaseTemplateTest {
   }
 
   @Test
-  public void storeLists() {
+  public void storeListsAndMaps() {
     String id ="persons:lots-of-names";
     List<String> names = new ArrayList<String>();
     names.add("Michael");
     names.add("Thomas");
     List<Integer> votes = new LinkedList<Integer>();
-    ComplexPerson complex = new ComplexPerson(id, names, votes);
+    Map<String, Boolean> info1 = new HashMap<String, Boolean>();
+    info1.put("foo", true);
+    info1.put("bar", false);
+    Map<String, Integer> info2 = new HashMap<String, Integer>();
+
+    ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
     template.save(complex);
 
-    String expected = "{\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"]}";
+    String expected = "{\"info1\":{\"foo\":true,\"bar\":false},\"votes\":[],"
+      + "\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":{}}";
     assertEquals(expected, client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);
     assertEquals(names, response.getFirstnames());
     assertEquals(votes, response.getVotes());
     assertEquals(id, response.getId());
+    assertEquals(info1, response.getInfo1());
+    assertEquals(info2, response.getInfo2());
   }
   
   /**
@@ -186,11 +191,19 @@ public class CouchbaseTemplateTest {
     @Field
     private final List<Integer> votes;
 
+    @Field
+    private final Map<String, Boolean> info1;
+    @Field
+    private final Map<String, Integer> info2;
+
     public ComplexPerson(String id, List<String> firstnames,
-      List<Integer> votes) {
+      List<Integer> votes, Map<String, Boolean> info1,
+      Map<String, Integer> info2) {
       this.id = id;
       this.firstnames = firstnames;
       this.votes = votes;
+      this.info1 = info1;
+      this.info2 = info2;
     }
 
     List<String> getFirstnames() {
@@ -199,6 +212,14 @@ public class CouchbaseTemplateTest {
 
     List<Integer> getVotes() {
       return votes;
+    }
+
+    Map<String, Boolean> getInfo1() {
+      return info1;
+    }
+
+    Map<String, Integer> getInfo2() {
+      return info2;
     }
 
     String getId() {
