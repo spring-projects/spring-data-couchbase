@@ -62,6 +62,14 @@ public @interface EnableCouchbaseRepositories {
    */
   String repositoryImplementationPostfix() default "";
 
+  /**
+   * Configures the location of where to find the Spring Data named queries properties file. Will default to
+   * {@code META-INFO/couchbase-named-queries.properties}.
+   *
+   * @return
+   */
+  String namedQueriesLocation() default "";
+
 
   /**
    * Returns the {@link FactoryBean} class to be used for each repository instance. Defaults to
