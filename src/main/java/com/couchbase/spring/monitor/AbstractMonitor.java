@@ -1,8 +1,13 @@
 package com.couchbase.spring.monitor;
 
 import com.couchbase.client.CouchbaseClient;
+import org.springframework.web.client.RestTemplate;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,12 +17,24 @@ public abstract class AbstractMonitor {
 
   private CouchbaseClient client;
 
+  private RestTemplate template = new RestTemplate();
+
   protected AbstractMonitor(final CouchbaseClient client) {
     this.client = client;
   }
 
   public CouchbaseClient getClient() {
     return client;
+  }
+
+  protected RestTemplate getTemplate() {
+    return template;
+  }
+
+  protected String randomAvailableHostname() {
+    List<SocketAddress> available = (ArrayList) client.getAvailableServers();
+    Collections.shuffle(available);
+    return ((InetSocketAddress) available.get(0)).getHostName();
   }
 
   /**
