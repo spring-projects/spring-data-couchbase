@@ -58,7 +58,6 @@ public class CouchbaseMappingContext
 	public void setApplicationContext(ApplicationContext applicationContext)
     throws BeansException {
 		this.context = applicationContext;
-		super.setApplicationContext(applicationContext);
 	}
 
 }
