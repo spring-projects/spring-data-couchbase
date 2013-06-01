@@ -146,7 +146,7 @@ Look at the folling bean configuration, which we'll break down afterwards:
       <constructor-arg name="pwd" value="" />
     </bean>
 
-   <bean id="cacheManager" class="com.couchbase.spring.cache.CouchbaseCacheManager">
+   <bean id="cacheManager" class="org.springframework.data.couchbase.cache.CouchbaseCacheManager">
     <constructor-arg>
         <util:map>
             <entry key="default" value-ref="couchbaseClient" />
@@ -163,7 +163,7 @@ You should be able to identify the `couchbaseClient` bean, which we'll defined p
 That's all it takes to have Couchbase cache your objects. Now we can go through a quick example to show how it works. Assume the following class inside the `com.couchbase.example` package:
 
 ```java
-package com.couchbase.spring;
+package org.springframework.data.couchbase;
 
 import org.springframework.cache.annotation.Cacheable;
 
