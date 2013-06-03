@@ -19,10 +19,9 @@
 
 	<properties>
 		<couchbase>1.1.6</couchbase>
-		<jackson>1.9.12</jackson>
+		<jackson>2.2.2</jackson>
 		<springdata.commons>1.6.0.BUILD-SNAPSHOT</springdata.commons>
 	</properties>
-
 
 	<dependencies>
 	
@@ -76,8 +75,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-asl</artifactId>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
 			<version>${jackson}</version>
 		</dependency>
 
@@ -92,6 +91,10 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+        <repository>
+            <id>spring-lib-snapshot</id>
+            <url>http://repo.springsource.org/libs-snapshot-local</url>
+        </repository>
 	</repositories>
 
 </project>
