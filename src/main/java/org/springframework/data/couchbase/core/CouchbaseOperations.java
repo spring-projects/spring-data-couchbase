@@ -18,7 +18,10 @@ package org.springframework.data.couchbase.core;
 
 
 import java.util.Collection;
+import java.util.List;
 
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.ViewResponse;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 /**
@@ -113,6 +116,42 @@ public interface CouchbaseOperations {
    * @return returns the found object or null otherwise.
    */
   <T> T findById(String id, Class<T> entityClass);
+
+  /**
+   * Query a View for a list of documents of type T.
+   *
+   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely,
+   * because it will be set to true all the time. It is valid to pass in a
+   * empty constructed {@link Query} object.</p>
+   *
+   * <p>This method does not work with reduced views, because they by design
+   * do not contain references to original objects. Use the provided
+   * {@link #queryView} method for more flexibility and direct access.</p>
+   *
+   * @param design the name of the design document.
+   * @param view the name of the view.
+   * @param query the Query object to customize the view query.
+   * @param entityClass the entity to map to.
+   * @return the converted collection
+   */
+  <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass);
+
+
+  /**
+   * Query a View with direct access to the {@link ViewResponse}.
+   *
+   * <p>This method is available to ease the working with views by still wrapping
+   * exceptions into the Spring infrastructure.</p>
+   *
+   * <p>It is especially needed if you want to run reduced view queries, because
+   * they can't be mapped onto entities directly.</p>
+   *
+   * @param design the name of the design document.
+   * @param view the name of the view.
+   * @param query the Query object to customize the view query.
+   * @return
+   */
+  ViewResponse queryView(String design, String view, Query query);
 
   /**
    * Checks if the given document exists.

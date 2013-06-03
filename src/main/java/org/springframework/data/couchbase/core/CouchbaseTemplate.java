@@ -16,13 +16,12 @@
 
 package org.springframework.data.couchbase.core;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.View;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
 import net.spy.memcached.internal.OperationFuture;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -156,6 +155,42 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   	
   	ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument(id, result);
   	return couchbaseConverter.read(entityClass, converted);
+  }
+
+
+  @Override
+  public <T> List<T> findByView(final String designName, final String viewName,
+    final Query query, final Class<T> entityClass) {
+
+    if (!query.willIncludeDocs()) {
+      query.setIncludeDocs(true);
+    }
+    if (query.willReduce()) {
+      query.setReduce(false);
+    }
+
+    ViewResponse response = queryView(designName, viewName, query);
+
+    List<T> result = new ArrayList<T>(response.size());
+    for (ViewRow row : response) {
+      ConvertedCouchbaseDocument converted =
+        new ConvertedCouchbaseDocument(row.getId(), (String) row.getDocument());
+      result.add(couchbaseConverter.read(entityClass, converted));
+    }
+
+    return result;
+  }
+
+  @Override
+  public ViewResponse queryView(final String designName, final String viewName,
+    final Query query) {
+    return execute(new BucketCallback<ViewResponse>() {
+      @Override
+      public ViewResponse doInBucket() {
+        View view = client.getView(designName, viewName);
+        return client.query(view, query);
+      }
+    });
   }
 
   public void remove(final Object objectToRemove) {

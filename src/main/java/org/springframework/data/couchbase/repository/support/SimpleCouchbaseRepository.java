@@ -16,9 +16,16 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import com.couchbase.client.protocol.views.ComplexKey;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.ViewResponse;
+import com.couchbase.client.protocol.views.ViewRow;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
@@ -98,22 +105,55 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public Iterable<T> findAll() {
-    throw new UnsupportedOperationException("findAll is not supported in the current version!");
+    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String view = "all";
+
+    return couchbaseOperations.findByView(design, view, new Query().setReduce(false),
+      entityInformation.getJavaType());
   }
 
   @Override
-  public Iterable<T> findAll(Iterable<ID> ids) {
-    throw new UnsupportedOperationException("findAll is not supported in the current version!");
+  public Iterable<T> findAll(final Iterable<ID> ids) {
+    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String view = "all";
+
+    Query query = new Query();
+    query.setReduce(false);
+    query.setKeys(ComplexKey.of(ids));
+
+    return couchbaseOperations.findByView(design, view, query, entityInformation.getJavaType());
   }
 
   @Override
   public long count() {
-    throw new UnsupportedOperationException("count is not supported in the current version!");
+    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String view = "all";
+
+    Query query = new Query();
+    query.setReduce(true);
+
+    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+
+    long count = 0;
+    for (ViewRow row : response) {
+      count +=  Long.parseLong(row.getValue());
+    }
+
+    return count;
   }
 
   @Override
   public void deleteAll() {
-    throw new UnsupportedOperationException("deleteAll is not supported in the current version!");
+    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String view = "all";
+
+    Query query = new Query();
+    query.setReduce(false);
+
+    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+    for (ViewRow row : response) {
+      couchbaseOperations.remove(row.getId());
+    }
   }
 
   protected CouchbaseOperations getCouchbaseOperations() {
