@@ -139,8 +139,8 @@ public class CouchbaseTemplateTest {
 
     template.save(complex);
 
-    String expected = "{\"info1\":{\"foo\":true,\"bar\":false},\"votes\":[],"
-      + "\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":{}}";
+    String expected = "{\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":{}," +
+      "\"info1\":{\"foo\":true,\"bar\":false},\"votes\":[]}";
     assertEquals(expected, client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);

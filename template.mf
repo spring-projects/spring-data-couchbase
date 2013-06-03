@@ -9,7 +9,7 @@ Export-Template:
 Import-Template:
  com.couchbase.client.*;version="${couchbase:[=.=.=,+1.0.0)}",
  net.spy.memcached.*;version="[2.8.0,3.0.0)",
- org.codehaus.jackson.*;version="${jackson:[=.=.=,+1.0.0)}",
+ com.fasterxml.jackson.*;version="${jackson:[=.=.=,+1.0.0)}",
  org.springframework.*;version="${spring30:[=.=.=.=,+1.1.0)}",
  org.springframework.data.*;version="${springdata.commons:[=.=.=.=,+1.0.0)}",
  org.w3c.*;version="0.0.0"
