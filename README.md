@@ -1,50 +1,49 @@
-Couchbase Java Spring Integration
-=================================
+# Spring Data Couchbase
 
-This project aims to bridge the gap between Spring and the Couchbase Java SDK. Currently, only Caching is supported but more features (like support for Spring Data) will be added in the near future. This project has been extracted from the Client SDK to provide a more flexible release cycle and to prevent the core SDK to be messed up with too much dependencies.
+This project adds common Spring Data functionality (like configuration, templates and repositories) on top of the high-performance, scalable and flexible architecture of Couchbase. It makes it especially easy to work with POJO entities, query views and work with them in a natural manner. Developers coming from a relational database will find it easier to get started with Couchbase, while still gaining lots of performance and scalability improvements. JSON is used as the underlying storage inside Couchbase Server, so Views can be used to further enhance query mechanisms.
 
-Installation
-------------
-Currently, you need to checkout the source code from here and build it on your on. In the future, this project will be distributed as a maven package and can be included as follows:
+Full documentation is still in the making, so this README outlines the basic steps you need to do in order to get it up and running. It also provides a very rough overview of its capabilities. Note that this library is still in the making and does not provide all features yet.
+
+## Features
+### Implemented
+
+ - Templates
+ - JavaConfig
+ - CRUD Repository (aside *All and count methods, see planned)
+ - Basic Auditing (JMX) 
+ - Additional: transparent @Cacheable support
+
+### Planned (before 1.0)
+
+ - Mapping of arbitrary Objects (Value Objects)
+ - View support in template
+ - XML Config (namespace for template + repositories)
+ - find*-based methods on repositories through Views
+ - @View annotation for customization
+ 
+### Planned (after 1.0)
+ 
+ - Relationship Support
+ - Dynamic View Generation
+
+## Installation
+The preferred way is to install the package through maven:
 
 ```xml
-<dependencies>
 <dependency>
-  <groupId>couchbase</groupId>
+  <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0.M1</version>
 </dependency>
 ```
+Note that the first milestone is not yet released, but will be available through maven central once its done. This will pull in all dependencies needed, including the Couchbase Java SDK and the Spring dependencies.
 
-It is distributed from the [Couchbase Maven Repository](http://files.couchbase.com/maven2/):
 
-```xml
-<repositories>
-  <repository>
-    <id>couchbase</id>
-    <name>Couchbase Maven Repository</name>
-    <layout>default</layout>
-    <url>http://files.couchbase.com/maven2/</url>
-    <snapshots>
-      <enabled>false</enabled>
-    </snapshots>
-  </repository>
-</repositories>
-```
-Currently, the project depends on the following packages:
+## Configuration
+Since we are in the Spring ecosystem, you can either configure it through XML or plain Java (often referred to as JavaConfig).
 
- * couchbase.couchbase-client: 1.1.2
- * org.springframework.spring-context: 3.2.1.RELEASE
- * cglib.cglib: 2.2.2
- * (When Testing) junit.junit: 4.11
-
-You don't need to download them by hand since they are resolved through Maven automatically.
-
-Dependency Injection Basics (Spring IoC)
-----------------------------------------
-Technically, you can use the Spring Beans without the `couchbase-spring` project, but it is crucial to understand how it works because you'll need it for more advanced topics like caching.
-
-Normally, you would instantiate the `CouchbaseClient` by its constructor in your Java code. When working with beans, you need to define a bean that handles the construction for you like this:
+### XML-based configuration
+This will be added once the XML namespace is implemented. You can use plain beans in the meantime like this:
 
 ```xml
 <bean id="couchbaseClient" class="com.couchbase.client.CouchbaseClient">
@@ -60,158 +59,203 @@ Normally, you would instantiate the `CouchbaseClient` by its constructor in your
 </bean>
 ```
 
-This is equivalent to the following Java code:
+### JavaConfig
 
-```java
-ArrayList<URI> baseList = new ArrayList<URI>();
-baseList.add(URI.create("http://127.0.0.1:8091/pools"));
-String bucketName = "default";
-String pwd = "";
-CouchbaseClient client = new CouchbaseClient(baseList, bucketName, pwd);
+If you like to configure your Spring environment through POJOs, JavaConfig is the way to go. While you could define your beans for templates and such directly, we provide a `AbstractCouchbaseConfig` to make it even easier for you. 
+
+Note that if you want to make use of JavaConfig, you need to put the `cglib` into your classpath:
+
+```xml
+<dependency>
+   <groupId>cglib</groupId>
+   <artifactId>cglib</artifactId>
+   <version>2.2</version>
+</dependency>
 ```
 
-If you want to access the bean from your Java code, you can do it like this (you need to make sure that the `beans.xml` file is reachable from your `CLASSPATH`):
-
-```java
-ApplicationContext context = new ClassPathXmlApplicationContext("beans.xml");
-CouchbaseClient client = context.getBean("CouchbaseClient", CouchbaseClient.class);
-```
-
-Here, the `beans.xml` defines the bean we saw previously. Spring handles the construction of the object for us and we can then proceed to call the well-known methods on the object. You'll need this kind of approach when you want to use Couchbase for more parts then - lets say - Caching in your project. If you just want to use Caching, you don't even need to work with the CouchbaseClient directly at all.
-
-Also, if you prefer Java-Style configs you can define a class like this (this is the equivalent to the xml shown above):
+You only need to provide a bean that refers to the `CouchbaseClient` instance like this:
 
 ```java
 @Configuration
-class ApplicationConfig {
+public class ApplicationConfig extends AbstractCouchbaseConfiguration {
 
- @Bean
- public CouchbaseClient couchbaseClient() {
-   return new CouchbaseClient(Arrays.asList(URI.create("http://127.0.0.1:8091/pools")), "default", "");
- }
+  @Bean
+  public CouchbaseClient couchbaseClient() throws Exception {
+    return new CouchbaseClient(
+      Arrays.asList(new URI("http://localhost:8091/pools")),
+      "default",
+      ""
+    );
+  }
 
- @Bean
- public CouchbaseCacheManager cacheManager() {
-
-   HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
-   instances.put("test", couchbaseClient());
-
-   return new CouchbaseCacheManager(instances);
- }
 }
 ```
 
-This also includes the config for the `CouchbaseCacheManager` that will be used in the next chapter. You can then go ahead and include it like this:
+Likely, you want to have Repository support (and not only use the template directly). To enable repositories, add the `@EnableCouchbaseRepositories` annotation and give it the namespace where it should search for your repositories:
+
+```java
+@Configuration
+@EnableCouchbaseRepositories("com.example.business.repositories")
+public class ApplicationConfig extends AbstractCouchbaseConfiguration {
+...
+}
+```
+This will make the repositories automatically available in your `@Autowired` annotations or directly through the context.
+
+If you want to make use of the Caching support provided through the @Cacheable annotations, then you want to configure the CacheManager and add the `@EnableCaching` annotation:
+
+```java
+@Configuration
+@EnableCaching
+public class ApplicationConfig extends AbstractCouchbaseConfiguration {
+
+  @Bean
+  public CouchbaseClient couchbaseClient() throws Exception {
+    return new CouchbaseClient(
+      Arrays.asList(new URI("http://localhost:8091/pools")),
+      "default",
+      ""
+    );
+  }
+
+  @Bean
+  public CouchbaseCacheManager cacheManager() throws Exception {
+    HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
+    instances.put("persistent", couchbaseClient());
+    return new CouchbaseCacheManager(instances);
+  }
+
+}
+```
+
+## Usage
+Note that the usage guide in this README is intentionally kept very sparse. You'll find much more information in the documentation once its provided.
+
+### Repositories
+The topmost layer of indirection is the Repository abstraction. It provides convenient CRUD access on top of your Entities. If you need more direct access to Couchbase, look at the next chapter.
+
+For a generic introduction into Spring Data Repositories, look [here](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/repositories.html).
+
+Create a Entity and a Repository that uses it as its generic type. This will setup everything for you (don't forget to add the proper `@EnableCouchbaseRepositories` with the correct namespace).
+
+A sample Entity (getter and setter omitted):
+
+```java
+package com.example.business.entities;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Field;
+
+
+public class BlogPost {
+
+  @Id
+  private String id;
+
+  private String title;
+  private String content;
+  private String author;
+
+  @Field("pub")
+  private boolean published;
+
+  public BlogPost(String title, String content, String author, boolean published) {
+    id = "post:" + title.toLowerCase().replace(" ", "-");
+    this.title = title;
+    this.content = content;
+    this.author = author;
+    this.published = published;
+  }
+
+}
+
+```
+
+Now, we can create a Repository on top of it:
+
+```java
+package com.example.business.repositories;
+
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import com.example.business.entities.BlogPost;
+
+public interface BlogPostRepository extends CouchbaseRepository<BlogPost, String> {
+}
+```
+
+Jup - thats it! Just by doing this, you'll get full CRUD support on top of your entity. You can now either `@Autowire` the repository in a service class or access it directly from the context.
+
+```java
+public class BlogPostService {
+  @Autowired
+  public BlogPostRepository repository;
+}
+```
 
 ```java
 ApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class);
-CouchbaseClient client = context.getBean("couchbaseClient", CouchbaseClient.class);
+BlogPostRepository repository = context.getBean(BlogPostRepository.class);
+
+// Find a BlogPost by its id
+BlogPost post = bean.findOne("blogpost:my-id");
 ```
 
-Caching with Couchbase in Spring
---------------------------------
-[Caching in Spring](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html) mainly works bei annotating your cachable entities with the `@Cacheable` annotation. If you give it only a name like `@Cacheable("default")`, then it tries to use the `default` cache configuration. Before we can use it though, we need to define it.
+Note that once we finish find* support through views, more information will be provided here.
 
-Look at the folling bean configuration, which we'll break down afterwards:
+### Template
+You can also use the template directly, which gets you one step "closer to the metal". It will still do some Object mapping for you, but you need to be more specific on what you want to get done.
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:cache="http://www.springframework.org/schema/cache"
-        xmlns:context="http://www.springframework.org/schema/context"
-        xmlns:util="http://www.springframework.org/schema/util"
-        xmlns:p="http://www.springframework.org/schema/p"
-        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                            http://www.springframework.org/schema/beans/spring-beans.xsd
-                            http://www.springframework.org/schema/cache
-                            http://www.springframework.org/schema/cache/spring-cache.xsd
-                            http://www.springframework.org/schema/context
-                            http://www.springframework.org/schema/context/spring-context-3.0.xsd
-                            http://www.springframework.org/schema/util
-                            http://www.springframework.org/schema/util/spring-util.xsd">
-
-    <cache:annotation-driven />
-    <context:annotation-config/>
-
-    <bean id="couchbaseClient" class="com.couchbase.client.CouchbaseClient">
-      <constructor-arg name="baseList">
-          <list>
-              <bean id="firstURI" class="java.net.URI">
-                  <constructor-arg value="http://127.0.0.1:8091/pools" />
-              </bean>
-          </list>
-      </constructor-arg>
-      <constructor-arg name="bucketName" value="default" />
-      <constructor-arg name="pwd" value="" />
-    </bean>
-
-   <bean id="cacheManager" class="org.springframework.data.couchbase.cache.CouchbaseCacheManager">
-    <constructor-arg>
-        <util:map>
-            <entry key="default" value-ref="couchbaseClient" />
-        </util:map>
-    </constructor-arg>
-   </bean>
-
-</beans>
-```
-
-You should be able to identify the `couchbaseClient` bean, which we'll defined prevously. Here the important part is the `cacheManager` bean that spring will pick up automatically when the `<cache:annotation-driven />` directive is found. The only configuration that you have to do is to tell the 
-`CouchbaseCacheManager` (who orchestrates the caches for you), which `CouchbaseClient` instances you want to map to which `name` (the `key`). In the example above, every time you use the `@Cacheable("default")` annotation, the `couchbaseClient` connection defined above is used to store and read the cache values. Since this is essentially a `HashMap`, you can add as many instances as you want, but keep in mind that you should mainly stick to one instance (bucket). Therefore, the configuration shown above should suffice most use cases (of course, please adapt the `CouchbaseClient` constructor params according to your environment).
-
-That's all it takes to have Couchbase cache your objects. Now we can go through a quick example to show how it works. Assume the following class inside the `com.couchbase.example` package:
+You can again autowire it or access it directly from your beans:
 
 ```java
-package org.springframework.data.couchbase;
-
-import org.springframework.cache.annotation.Cacheable;
-
-public class Bookstore {
-
-   @Cacheable("default")
-   public String helloWorld(String name) {
-     return "Hello " + name + "!";
-   }
-}
+CouchbaseOperations ops = context.getBean("couchbaseTemplate", CouchbaseOperations.class);
 ```
 
-To make Spring pick up this class, add the following bean to your config:
-
-```xml
-<bean class="com.couchbase.example.Bookstore" id="bookstore" />
-```
-
-Consider the following simple application that makes use of the `Bookstore`:
+The template provides lots of CRUD methods, as well as more direct access to Views. Exceptions are translated and connection management is handled for you in a more straightforward way.
 
 ```java
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+BlogPost post1 = new BlogPost("My Title", "Long Content", "Michael", true);
+ops.insert(post1);
+```
 
-public class App {
+### Caching
+While not directly related to Spring Data, the `@Cacheable` annotations in spring provide a very easy and transparent caching mechanism. Note that since you can cache everything, those objects get stored as serialized Java objects into Couchbase and are therefore not directly accessible by Views or the Template class. They provide a very nice mechanism to cache any kind of expensive operations (relational db calls, view rendering results, html,…).
 
-    @Autowired
-    static Bookstore bookstore;
+First, configure it as seen in the Configuration section. Then, you can put the `@Cacheable` annotation around any method and it will transparently cache the results for you:
 
-    public static void main( String[] args ) {
-      ApplicationContext context = new ClassPathXmlApplicationContext("beans.xml");
-      bookstore = context.getBean("bookstore", Bookstore.class);
+```java
+public class ComplexComputations {
 
-      System.out.println(bookstore.helloWorld("World"));
-      System.out.println(bookstore.helloWorld("World"));
-      System.out.println(bookstore.helloWorld("Michael"));
-
+  @Cacheable(value="persistent", key="'longrunsim-'+#time")
+  public String simulateLongRun(long time) {
+    try {
+      Thread.sleep(time);
+    } catch(Exception ex) {
+      System.out.println("This shouldnt happen...");
     }
+    return "{\"Sleeping\": \""+time+"\"}";
+  }
+
 }
 ```
 
-We load up our `beans.xml` and get the referenced `bookstore` object out of it. Since the object is now under control of spring, it will pick up our annotation and when we call the `helloWorld()` method for the first time, the resulting object is serialized and stored in Couchbase. On the second try with the same argument, the method itself is not called anymore but loaded directly out of Couchbase! On the third call, since the argument is different, the new value is stored again in Couchbase (you can check the stored values inside the bucket through the Couchbase Server Admin UI).
+Then access it:
 
-Be aware of the following things:
+```java
+String result = complex.simulateLongRun(2000);
+```
 
- * Objects are stored as serialized Java objects, not as JSON. You won't be able to read the values through the UI.
- * If you use more than one argument, Spring will create a random key for it (see the [docs](http://static.springsource.org/spring/docs/3.1.x/spring-framework-reference/html/cache.html)).
- * There are lots of other options available, again read the documentation for it.
+If you look at the Couchbase UI, you will see get and set requests going on that transparently store and retreive the information. You can find all details about this caching mechanism [here](http://static.springsource.org/spring/docs/3.2.2.RELEASE/spring-framework-reference/html/cache.html).
 
-Currently, the customization context is very limited, but there is more functionality planned in the future. We'd love to hear your ideas and needs!
+## Contributing & Troubleshooting
+Here are some ways for you to get involved in the community:
+
+* Get involved with the Spring community on the Spring Community Forums.  Please help out on the [forum](http://forum.springsource.org/forumdisplay.php?f=80) by responding to questions and joining the debate.
+* Create [JIRA](https://jira.springframework.org/browse/DATACOUCH) tickets for bugs and new features and comment and vote on the ones that you are interested in.  
+* Github is for social coding: if you want to write code, we encourage contributions through pull requests from [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please reference a JIRA ticket as well covering the specific issue you are addressing.
+* Watch for upcoming articles on Spring by [subscribing](http://www.springsource.org/node/feed) to springframework.org
+* Write blog posts and articles about it! Send them over to us so we can link them properly.
+
+Before we accept a non-trivial patch or pull request we will need you to sign the [contributor's agreement](https://support.springsource.com/spring_committer_signup).  Signing the contributor's agreement does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and you will get an author credit if we do.  Active contributors might be asked to join the core team, and given the ability to merge pull requests.
+
+
