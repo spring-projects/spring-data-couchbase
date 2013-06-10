@@ -18,7 +18,7 @@
 	</parent>
 
 	<properties>
-		<couchbase>1.1.6</couchbase>
+		<couchbase>1.1.7</couchbase>
 		<jackson>2.2.2</jackson>
 		<springdata.commons>1.6.0.BUILD-SNAPSHOT</springdata.commons>
 	</properties>
