@@ -56,11 +56,12 @@ public class CouchbaseTemplateTest {
     template.save(beer);
     String result = (String) client.get(id);
 
-    String expected = "{\"is_active\":" + active + ",\"name\":\"" + name + "\"}";
+    String expected = "{\"_class\":\"org.springframework.data.couchbase.core.Beer\""
+      + ",\"is_active\":false,\"name\":\"The Awesome Stout\"}";
     assertNotNull(result);
     assertEquals(expected, result);
   }
-  
+
   @Test
   public void saveDocumentWithExpiry() throws Exception {
   	String id = "simple-doc-with-expiry";
@@ -70,23 +71,25 @@ public class CouchbaseTemplateTest {
   	Thread.sleep(3000);
   	assertNull(client.get(id));
   }
-  
+
   @Test
   public void insertDoesNotOverride() {
-  	String id ="double-insert-test";
-  	String expected = "{\"name\":\"Mr. A\"}";
+    String id ="double-insert-test";
+    String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
+      + "CouchbaseTemplateTest$SimplePerson\",\"name\":\"Mr. A\"}";
 
-  	SimplePerson doc = new SimplePerson(id, "Mr. A");
-  	template.insert(doc);
-  	String result = (String) client.get(id);
-  	assertEquals(expected, result);
-  	
-  	doc = new SimplePerson(id, "Mr. B");
-  	template.insert(doc);
-  	result = (String) client.get(id);
-  	assertEquals(expected, result);
+    SimplePerson doc = new SimplePerson(id, "Mr. A");
+    template.insert(doc);
+    String result = (String) client.get(id);
+    assertEquals(expected, result);
+
+    doc = new SimplePerson(id, "Mr. B");
+    template.insert(doc);
+    result = (String) client.get(id);
+    assertEquals(expected, result);
   }
-  
+
+
   @Test
   public void updateDoesNotInsert() {
   	String id ="update-does-not-insert";
@@ -94,25 +97,11 @@ public class CouchbaseTemplateTest {
   	template.update(doc);
   	assertNull(client.get(id));
   }
-  
-  @Test
-  public void validFindById() {
-    String id = "beers:findme-stout";
-    String name = "The Findme Stout";
-    boolean active = true;
-    Beer beer = new Beer(id).setName(name).setActive(active);
-  	template.save(beer);
-  	
-  	Beer found = template.findById(id, Beer.class);
-  	assertNotNull(found);
-  	assertEquals(id, found.getId());
-  	assertEquals(name, found.getName());
-  	assertEquals(active, found.getActive());
-  }
+
 
   @Test
   public void removeDocument() {
-    String id = "beers:findme-stout";
+    String id = "beers:awesome-stout";
     Object result = client.get(id);
     assertNotNull(result);
 
@@ -122,6 +111,7 @@ public class CouchbaseTemplateTest {
     result = client.get(id);
     assertNull(result);
   }
+
 
   @Test
   public void storeListsAndMaps() {
@@ -139,8 +129,10 @@ public class CouchbaseTemplateTest {
 
     template.save(complex);
 
-    String expected = "{\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":{}," +
-      "\"info1\":{\"foo\":true,\"bar\":false},\"votes\":[]}";
+    String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
+      + "CouchbaseTemplateTest$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
+      + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":"
+      + "{}}";
     assertEquals(expected, client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);
@@ -149,6 +141,23 @@ public class CouchbaseTemplateTest {
     assertEquals(id, response.getId());
     assertEquals(info1, response.getInfo1());
     assertEquals(info2, response.getInfo2());
+  }
+
+
+  @Test
+  public void validFindById() {
+    String id = "beers:findme-stout";
+    String name = "The Findme Stout";
+    boolean active = true;
+    Beer beer = new Beer(id).setName(name).setActive(active);
+    template.save(beer);
+
+    Beer found = template.findById(id, Beer.class);
+
+    assertNotNull(found);
+    assertEquals(id, found.getId());
+    assertEquals(name, found.getName());
+    assertEquals(active, found.getActive());
   }
   
   /**

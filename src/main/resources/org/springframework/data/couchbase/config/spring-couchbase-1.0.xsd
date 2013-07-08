@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns="http://www.springframework.org/schema/data/couchbase"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xmlns:beans="http://www.springframework.org/schema/beans"
+            xmlns:tool="http://www.springframework.org/schema/tool"
+            xmlns:context="http://www.springframework.org/schema/context"
+            xmlns:repository="http://www.springframework.org/schema/data/repository"
+            targetNamespace="http://www.springframework.org/schema/data/couchbase"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans" />
+    <xsd:import namespace="http://www.springframework.org/schema/tool" />
+    <xsd:import namespace="http://www.springframework.org/schema/context" />
+    <xsd:import namespace="http://www.springframework.org/schema/data/repository"
+                schemaLocation="http://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd" />
+
+    <xsd:element name="couchbase" type="couchbaseType">
+        <xsd:annotation>
+            <xsd:documentation source="org.springframework.data.couchbase.core.CouchbaseFactoryBean"><![CDATA[
+Defines a CouchbaseClient instance used for accessing a Couchbase Cluster.
+			]]></xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.couchbase.client.CouchbaseClient"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+    </xsd:element>
+
+    <!-- nodes -->
+
+    <xsd:complexType name="couchbaseType">
+        <xsd:attribute name="bucket" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+The name of the bucket to connect to. Default is "default".
+                ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="password" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+The password of the bucket to connect to. Default is "" (empty).
+                ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+
+</xsd:schema>

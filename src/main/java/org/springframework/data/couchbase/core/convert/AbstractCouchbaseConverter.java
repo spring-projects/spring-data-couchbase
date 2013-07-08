@@ -29,6 +29,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter,
 
   protected final GenericConversionService conversionService;
   protected EntityInstantiators instantiators = new EntityInstantiators();
+  protected CustomConversions conversions = new CustomConversions();
 
   public AbstractCouchbaseConverter(
     GenericConversionService conversionService) {

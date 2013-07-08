@@ -26,9 +26,12 @@ import net.spy.memcached.internal.OperationFuture;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.ConvertedCouchbaseDocument;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.context.MappingContext;
 
 import com.couchbase.client.CouchbaseClient;
@@ -45,6 +48,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   private static final Collection<String> ITERABLE_CLASSES;
   private final CouchbaseExceptionTranslator exceptionTranslator = 
   		new CouchbaseExceptionTranslator();
+  private final TranslationService<Object> translationService;
   
 	static {
 		Set<String> iterableClasses = new HashSet<String>();
@@ -61,8 +65,9 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public CouchbaseTemplate(final CouchbaseClient client,
     final CouchbaseConverter converter) {
     this.client = client;
-    this.couchbaseConverter = converter == null ? getDefaultConverter(client) : converter;
-    this.mappingContext = this.couchbaseConverter.getMappingContext();
+    couchbaseConverter = converter == null ? getDefaultConverter(client) : converter;
+    mappingContext = couchbaseConverter.getMappingContext();
+    translationService = new JacksonTranslationService();
   }
 
   private CouchbaseConverter getDefaultConverter(final CouchbaseClient client) {
@@ -72,24 +77,32 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     return converter;
   }
 
+  private Object translateEncode(final CouchbaseStorable source) {
+    return translationService.encode(source);
+  }
+
+  private CouchbaseStorable translateDecode(final String source, final CouchbaseStorable target) {
+    return translationService.decode(source, target);
+  }
+
   public final void insert(final Object objectToSave) {
   	ensureNotIterable(objectToSave);
 
-    final ConvertedCouchbaseDocument converted =
-      new ConvertedCouchbaseDocument();
+    final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
+
     execute(new BucketCallback<OperationFuture<Boolean>>() {
       @Override
       public OperationFuture<Boolean> doInBucket() {
         return client.add(
-          converted.getId(), converted.getExpiry(), converted.getRawValue());
+          converted.getId(), converted.getExpiration(), translateEncode(converted));
       }
     });
   }
   
   public final void insert(final Collection<? extends Object> batchToSave) {
   	Iterator<? extends Object> iter = batchToSave.iterator();
-  	while(iter.hasNext()) {
+  	while (iter.hasNext()) {
   		insert(iter.next());
   	}
   }
@@ -97,15 +110,14 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public void save(final Object objectToSave) {
   	ensureNotIterable(objectToSave);
 
-    final ConvertedCouchbaseDocument converted =
-      new ConvertedCouchbaseDocument();
+    final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
     execute(new BucketCallback<OperationFuture<Boolean>>() {
       @Override
       public OperationFuture<Boolean> doInBucket() {
         return client.set(
-          converted.getId(), converted.getExpiry(), converted.getRawValue());
+          converted.getId(), converted.getExpiration(), translateEncode(converted));
       }
     });
   }
@@ -120,15 +132,14 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public void update(final Object objectToSave) {
   	ensureNotIterable(objectToSave);
 
-    final ConvertedCouchbaseDocument converted =
-      new ConvertedCouchbaseDocument();
+    final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
     execute(new BucketCallback<OperationFuture<Boolean>>() {
       @Override
       public OperationFuture<Boolean> doInBucket() {
         return client.replace(
-          converted.getId(), converted.getExpiry(), converted.getRawValue());
+          converted.getId(), converted.getExpiration(), translateEncode(converted));
       }
     });
 
@@ -152,9 +163,9 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   	if (result == null) {
   		return null;
   	}
-  	
-  	ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument(id, result);
-  	return couchbaseConverter.read(entityClass, converted);
+
+    CouchbaseDocument converted = new CouchbaseDocument(id);
+  	return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
   }
 
 
@@ -173,9 +184,9 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
     List<T> result = new ArrayList<T>(response.size());
     for (ViewRow row : response) {
-      ConvertedCouchbaseDocument converted =
-        new ConvertedCouchbaseDocument(row.getId(), (String) row.getDocument());
-      result.add(couchbaseConverter.read(entityClass, converted));
+      CouchbaseDocument converted = new CouchbaseDocument(row.getId());
+      result.add(couchbaseConverter.read(entityClass,
+        (CouchbaseDocument) translateDecode((String) row.getDocument(), converted)));
     }
 
     return result;
@@ -206,7 +217,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       return;
     }
 
-    final ConvertedCouchbaseDocument converted = new ConvertedCouchbaseDocument();
+    final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToRemove, converted);
 
     execute(new BucketCallback<OperationFuture<Boolean>>() {
@@ -257,7 +268,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 	}
 
 	private RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
-		RuntimeException resolved = this.exceptionTranslator.translateExceptionIfPossible(ex);
+		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
 		return resolved == null ? ex : resolved;
 	}
 

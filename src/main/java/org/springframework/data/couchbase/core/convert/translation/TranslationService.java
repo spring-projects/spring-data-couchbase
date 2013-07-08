@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.convert;
+package org.springframework.data.couchbase.core.convert.translation;
 
-import org.springframework.data.convert.EntityConverter;
-import org.springframework.data.convert.EntityReader;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 
 /**
  * @author Michael Nitschinger
  */
-public interface CouchbaseConverter extends
-  EntityConverter<CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty, Object, CouchbaseDocument>,
-  CouchbaseWriter<Object, CouchbaseDocument>,
-  EntityReader<Object, CouchbaseDocument> {
+public interface TranslationService<T> {
+
+  /**
+   * Encodes a {@link CouchbaseDocument} into the target format.
+   *
+   * @param source the source document to encode.
+   * @return the encoded document representation.
+   */
+  T encode(CouchbaseStorable source);
+
+  /**
+   * Decodes the target format into a {@link CouchbaseDocument}
+   *
+   * @param source the source formatted document.
+   * @param target the target of the populated data.
+   * @return a properly populated document to work with.
+   */
+  CouchbaseStorable decode(T source, CouchbaseStorable target);
 }

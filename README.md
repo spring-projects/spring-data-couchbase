@@ -9,14 +9,14 @@ Full documentation is still in the making, so this README outlines the basic ste
 
  - Templates
  - JavaConfig
+ - Mapping of arbitrary Objects (Value Objects)
+ - View support in template
  - CRUD Repository (aside *All and count methods, see planned)
  - Basic Auditing (JMX) 
  - Additional: transparent @Cacheable support
 
 ### Planned (before 1.0)
 
- - Mapping of arbitrary Objects (Value Objects)
- - View support in template
  - XML Config (namespace for template + repositories)
  - find*-based methods on repositories through Views
  - @View annotation for customization
