@@ -16,9 +16,12 @@
 
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.protocol.views.InvalidViewException;
+import com.couchbase.client.protocol.views.ViewException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import com.couchbase.client.ObservedException;
@@ -26,7 +29,8 @@ import com.couchbase.client.ObservedModifiedException;
 import com.couchbase.client.ObservedTimeoutException;
 import com.couchbase.client.vbucket.ConnectionException;
 
-import java.io.IOException;
+import java.util.concurrent.CancellationException;
+
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
@@ -35,6 +39,8 @@ import java.io.IOException;
  * {@code org.springframework.dao} hierarchy. Return {@literal null} if no translation 
  * is appropriate: any other exception may have resulted from user code, and should not 
  * be translated.
+ *
+ * @author Michael Nitschinger
  */
 public class CouchbaseExceptionTranslator implements PersistenceExceptionTranslator {
 
@@ -45,7 +51,8 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
    * @return the translated exception or null.
    */
 	@Override
-	public final DataAccessException translateExceptionIfPossible(RuntimeException ex) {
+	public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
+
 		if (ex instanceof ConnectionException) {
 		  return new DataAccessResourceFailureException(ex.getMessage(), ex);
 		}
@@ -55,6 +62,14 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
       || ex instanceof ObservedModifiedException) {
 			return new DataIntegrityViolationException(ex.getMessage(), ex);
 		}
+
+    if (ex instanceof CancellationException) {
+      throw new OperationCancellationException(ex.getMessage(), ex);
+    }
+
+    if (ex instanceof InvalidViewException) {
+      throw new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
+    }
 		
 		return null;
 	}

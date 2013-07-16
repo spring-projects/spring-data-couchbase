@@ -16,12 +16,31 @@
 
 package org.springframework.data.couchbase.core;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import org.springframework.dao.TransientDataAccessException;
 
 /**
+ * Data Access Exception that identifies Operations cancelled while being
+ * processed.
+ *
  * @author Michael Nitschinger
  */
-public interface BucketCallback<T> {
-  T doInBucket() throws TimeoutException, ExecutionException, InterruptedException;
+public class OperationCancellationException extends TransientDataAccessException {
+
+  /**
+   * Constructor for OperationCancellationException.
+   * @param msg the detail message
+   */
+  public OperationCancellationException(final String msg) {
+    super(msg);
+  }
+
+  /**
+   * Constructor for OperationCancellationException.
+   * @param msg the detail message
+   * @param cause the root cause from the data access API in use
+   */
+  public OperationCancellationException(final String msg, final Throwable cause) {
+    super(msg, cause);
+  }
+
 }

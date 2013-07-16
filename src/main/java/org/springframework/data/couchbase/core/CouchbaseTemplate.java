@@ -17,6 +17,8 @@
 package org.springframework.data.couchbase.core;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
@@ -24,6 +26,7 @@ import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import net.spy.memcached.internal.OperationFuture;
 
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
@@ -91,11 +94,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
-    execute(new BucketCallback<OperationFuture<Boolean>>() {
+    execute(new BucketCallback<Boolean>() {
       @Override
-      public OperationFuture<Boolean> doInBucket() {
-        return client.add(
-          converted.getId(), converted.getExpiration(), translateEncode(converted));
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.add(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
       }
     });
   }
@@ -113,11 +115,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
-    execute(new BucketCallback<OperationFuture<Boolean>>() {
+    execute(new BucketCallback<Boolean>() {
       @Override
-      public OperationFuture<Boolean> doInBucket() {
-        return client.set(
-          converted.getId(), converted.getExpiration(), translateEncode(converted));
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.set(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
       }
     });
   }
@@ -135,11 +136,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
-    execute(new BucketCallback<OperationFuture<Boolean>>() {
+    execute(new BucketCallback<Boolean>() {
       @Override
-      public OperationFuture<Boolean> doInBucket() {
-        return client.replace(
-          converted.getId(), converted.getExpiration(), translateEncode(converted));
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.replace(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
       }
     });
 
@@ -208,10 +208,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     ensureNotIterable(objectToRemove);
 
     if (objectToRemove instanceof String) {
-      execute(new BucketCallback<OperationFuture<Boolean>>() {
+      execute(new BucketCallback<Boolean>() {
         @Override
-        public OperationFuture<Boolean> doInBucket() {
-          return client.delete((String) objectToRemove);
+        public Boolean doInBucket() throws InterruptedException, ExecutionException {
+          return client.delete((String) objectToRemove).get();
         }
       });
       return;
@@ -235,11 +235,18 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     }
   }
 
+  @Override
   public <T> T execute(final BucketCallback<T> action) {
     try {
       return action.doInBucket();
     } catch (RuntimeException e) {
       throw potentiallyConvertRuntimeException(e);
+    } catch (TimeoutException e) {
+      throw new QueryTimeoutException(e.getMessage(), e);
+    } catch (InterruptedException e) {
+      throw new OperationInterruptedException(e.getMessage(), e);
+    } catch (ExecutionException e) {
+      throw new OperationInterruptedException(e.getMessage(), e);
     }
   }
 
