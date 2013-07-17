@@ -17,32 +17,65 @@
 package org.springframework.data.couchbase.config;
 
 import com.couchbase.client.CouchbaseClient;
-import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.xml.BeanDefinitionParser;
+import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.data.config.BeanComponentDefinitionBuilder;
-import org.springframework.data.config.ParsingUtils;
+import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+
+
 /**
- * Parser for "<couchbase>" definitions.
+ * Parser for "<couchbase:couchbase />" definitions.
  *
  * @author Michael Nitschinger
  */
-public class CouchbaseParser implements BeanDefinitionParser {
+public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
 
   @Override
-  public BeanDefinition parse(final Element element, final ParserContext parserContext) {
-    Object source = parserContext.extractSource(element);
-    String id = element.getAttribute("id");
-
-    BeanComponentDefinitionBuilder helper = new BeanComponentDefinitionBuilder(element, parserContext);
-
-    BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(CouchbaseClient.class);
-    builder.s
-    ParsingUtils.setPropertyValue(builder, element, "port", "port");
-    ParsingUtils.setPropertyValue(builder, element, "host", "host");
-
+  protected Class getBeanClass(final Element element) {
+    return CouchbaseClient.class;
   }
+
+  @Override
+  protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
+    String host = element.getAttribute("host");
+    bean.addConstructorArgValue(
+      convertHosts(StringUtils.hasText(host) ? host : CouchbaseFactoryBean.DEFAULT_NODE));
+    String bucket = element.getAttribute("bucket");
+    bean.addConstructorArgValue(
+      StringUtils.hasText(bucket) ? bucket : CouchbaseFactoryBean.DEFAULT_BUCKET);
+    String password = element.getAttribute("password");
+    bean.addConstructorArgValue(
+      StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
+  }
+
+  protected String resolveId(final Element element, final AbstractBeanDefinition definition,
+    final ParserContext parserContext) {
+    String id = super.resolveId(element, definition, parserContext);
+    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE;
+  }
+
+  private List<URI> convertHosts(final String hosts) {
+    String[] split = hosts.split(",");
+    List<URI> nodes = new ArrayList<URI>();
+
+    try {
+      for (int i = 0; i < split.length; i++) {
+        nodes.add(new URI("http://" + split[i] + ":8091/pools"));
+      }
+    } catch (URISyntaxException ex) {
+      throw new BeanCreationException("Could not convert host list." + ex);
+    }
+
+    return nodes;
+  }
+
 }

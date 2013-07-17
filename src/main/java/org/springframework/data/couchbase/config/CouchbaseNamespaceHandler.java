@@ -30,10 +30,9 @@ public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
 
   public void init() {
     RepositoryConfigurationExtension extension = new CouchbaseRepositoryConfigurationExtension();
-    RepositoryBeanDefinitionParser repositoryBeanDefinitionParser = new RepositoryBeanDefinitionParser(extension);
 
-    registerBeanDefinitionParser("repositories", repositoryBeanDefinitionParser);
-    registerBeanDefinitionParser("mongo", new CouchbaseParser());
+    registerBeanDefinitionParser("repositories", new RepositoryBeanDefinitionParser(extension));
+    registerBeanDefinitionParser("couchbase", new CouchbaseParser());
     registerBeanDefinitionParser("jmx", new CouchbaseJmxParser());
     registerBeanDefinitionParser("template", new CouchbaseTemplateParser());
   }

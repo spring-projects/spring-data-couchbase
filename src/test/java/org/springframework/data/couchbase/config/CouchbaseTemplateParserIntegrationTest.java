@@ -16,22 +16,20 @@
 
 package org.springframework.data.couchbase.config;
 
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author Michael Nitschinger
  */
-public class CouchbaseParserIntegrationTest {
+public class CouchbaseTemplateParserIntegrationTest {
 
   DefaultListableBeanFactory factory;
   BeanDefinitionReader reader;
@@ -43,17 +41,13 @@ public class CouchbaseParserIntegrationTest {
   }
 
   @Test
-  public void readsCouchbaseAttributesCorrectly() {
-    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-bean.xml"));
+  public void readsCouchbaseTemplateAttributesCorrectly() {
+    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-template-bean.xml"));
 
-    BeanDefinition definition = factory.getBeanDefinition("couchbase");
-    assertEquals(3, definition.getConstructorArgumentValues().getArgumentCount());
+    BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
+    assertEquals(1, definition.getConstructorArgumentValues().getArgumentCount());
 
-    definition = factory.getBeanDefinition("couchbase2");
-    assertEquals(3, definition.getConstructorArgumentValues().getArgumentCount());
-
-    factory.getBean("couchbase");
-    factory.getBean("couchbase2");
+    factory.getBean("couchbaseTemplate");
   }
 
 }

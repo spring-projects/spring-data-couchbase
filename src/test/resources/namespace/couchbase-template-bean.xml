@@ -7,6 +7,6 @@
 
     <couchbase:couchbase/>
 
-    <couchbase:couchbase id="couchbase2" host="localhost" bucket="default" password="" />
+    <couchbase:template/>
 
 </beans>

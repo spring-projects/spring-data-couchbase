@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * @author Michael Nitschinger
  */
 public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, InitializingBean,
-  DisposableBean, PersistenceExceptionTranslator{
+  DisposableBean, PersistenceExceptionTranslator {
 
   public static final String DEFAULT_NODE = "127.0.0.1";
   public static final String DEFAULT_BUCKET = "default";
