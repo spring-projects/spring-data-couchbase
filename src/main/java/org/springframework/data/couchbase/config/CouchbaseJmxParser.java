@@ -28,12 +28,22 @@ import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 /**
- * Enables Parsing of "<couchbase:jmx />" configurations.
+ * Enables Parsing of the "<couchbase:jmx />" configuration bean.
+ *
+ * In order to enable JMX, different JmxComponents need to be registered. The dependency to the original
+ * {@link com.couchbase.client.CouchbaseClient} object is solved by through the "couchbase-ref" attribute.
  *
  * @author Michael Nitschinger
  */
 public class CouchbaseJmxParser implements BeanDefinitionParser {
 
+  /**
+   * Parse the element and dispatch the registration of the JMX components.
+   *
+   * @param element the XML element which contains the attributes.
+   * @param parserContext encapsulates the parsing state and configuration.
+   * @return null, because no bean instance needs to be returned.
+   */
   public BeanDefinition parse(final Element element, final ParserContext parserContext) {
     String name = element.getAttribute("couchbase-ref");
     if (!StringUtils.hasText(name)) {
@@ -43,7 +53,14 @@ public class CouchbaseJmxParser implements BeanDefinitionParser {
     return null;
   }
 
-  protected void registerJmxComponents(String refName, Element element, ParserContext parserContext) {
+  /**
+   * Register the JMX components in the context.
+   *
+   * @param refName the reference name to the couchbase client.
+   * @param element the XML element which contains the attributes.
+   * @param parserContext encapsulates the parsing state and configuration.
+   */
+  protected void registerJmxComponents(final String refName, final Element element, final ParserContext parserContext) {
     Object eleSource = parserContext.extractSource(element);
     CompositeComponentDefinition compositeDef = new CompositeComponentDefinition(element.getTagName(), eleSource);
 
@@ -53,8 +70,17 @@ public class CouchbaseJmxParser implements BeanDefinitionParser {
     parserContext.registerComponent(compositeDef);
   }
 
-  protected void createBeanDefEntry(Class<?> clazz, CompositeComponentDefinition compositeDef,
-    String refName, Object eleSource, ParserContext parserContext) {
+  /**
+   * Creates Bean Definitions for JMX components and adds them as a nested component.
+   *
+   * @param clazz the class type to register.
+   * @param compositeDef component that can hold nested components.
+   * @param refName the reference name to the couchbase client.
+   * @param eleSource source element to reference.
+   * @param parserContext encapsulates the parsing state and configuration.
+   */
+  protected void createBeanDefEntry(final Class<?> clazz, final CompositeComponentDefinition compositeDef,
+    final String refName, final Object eleSource, final ParserContext parserContext) {
     BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(clazz);
     builder.getRawBeanDefinition().setSource(eleSource);
     builder.addConstructorArgReference(refName);

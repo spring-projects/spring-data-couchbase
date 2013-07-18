@@ -22,27 +22,50 @@ import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.EntityInstantiators;
 
 /**
+ * An abstract {@link CouchbaseConverter} that provides the basics for the {@link MappingCouchbaseConverter}.
+ *
  * @author Michael Nitschinger
  */
-public abstract class AbstractCouchbaseConverter implements CouchbaseConverter,
-  InitializingBean {
+public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, InitializingBean {
 
+  /**
+   * Contains the conversion service.
+   */
   protected final GenericConversionService conversionService;
+
+  /**
+   * Contains the entity instantiators.
+   */
   protected EntityInstantiators instantiators = new EntityInstantiators();
+
+  /**
+   * Holds the custom conversions.
+   */
   protected CustomConversions conversions = new CustomConversions();
 
-  public AbstractCouchbaseConverter(
-    GenericConversionService conversionService) {
+  /**
+   * Create a new converter and hand it over the {@link ConversionService}
+   *
+   * @param conversionService the conversion service to use.
+   */
+  public AbstractCouchbaseConverter(final GenericConversionService conversionService) {
     this.conversionService = conversionService;
   }
 
+  /**
+   * Return the conversion service.
+   *
+   * @return the conversion service.
+   */
   public ConversionService getConversionService() {
     return conversionService;
   }
 
+  /**
+   * Do nothing after the properties set on the bean.
+   */
   @Override
   public void afterPropertiesSet() {
-
   }
 
 }

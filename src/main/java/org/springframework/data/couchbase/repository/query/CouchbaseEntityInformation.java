@@ -21,6 +21,8 @@ import org.springframework.data.repository.core.EntityInformation;
 import java.io.Serializable;
 
 /**
+ * Marker interface for the Couchbase Entity Information.
+ *
  * @author Michael Nitschinger
  */
 public interface CouchbaseEntityInformation<T, ID extends Serializable> extends EntityInformation<T, ID> {

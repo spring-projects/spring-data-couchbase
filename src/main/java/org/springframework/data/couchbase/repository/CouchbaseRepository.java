@@ -21,8 +21,7 @@ import org.springframework.data.repository.CrudRepository;
 import java.io.Serializable;
 
 /**
- * Couchbase specific {@link org.springframework.data.repository.Repository}
- * interface.
+ * Couchbase specific {@link org.springframework.data.repository.Repository} interface.
  *
  * @author Michael Nitschinger
  */

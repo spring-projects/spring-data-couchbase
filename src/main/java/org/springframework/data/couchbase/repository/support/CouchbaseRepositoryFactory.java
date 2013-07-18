@@ -29,43 +29,75 @@ import org.springframework.util.Assert;
 import java.io.Serializable;
 
 /**
- * Factory to create {@link CouchbaseRepository} instances.
+ * Factory to create {@link SimpleCouchbaseRepository} instances.
  *
  * @author Michael Nitschinger
  */
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
+  /**
+   * Holds the reference to the template.
+   */
   private final CouchbaseOperations couchbaseOperations;
-  private final MappingContext<? extends CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty> mappingContext;
 
+  /**
+   * Holds the mapping context.
+   */
+  private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
+
+  /**
+   * Create a new factory.
+   *
+   * @param couchbaseOperations the template for the underlying actions.
+   */
   public CouchbaseRepositoryFactory(final CouchbaseOperations couchbaseOperations) {
     Assert.notNull(couchbaseOperations);
+
     this.couchbaseOperations = couchbaseOperations;
     mappingContext = couchbaseOperations.getConverter().getMappingContext();
   }
 
+  /**
+   * Returns entity information based on the domain class.
+   *
+   * @param domainClass the class for the entity.
+   * @param <T> the value type
+   * @param <ID> the id type.
+   * @return entity information for that domain class.
+   */
   @Override
   public <T, ID extends Serializable> CouchbaseEntityInformation<T, ID>
-    getEntityInformation(Class<T> domainClass) {
+    getEntityInformation(final Class<T> domainClass) {
     CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(domainClass);
 
-    if(entity == null) {
+    if (entity == null) {
       throw new MappingException(String.format("Could not lookup mapping metadata for domain class %s!",
         domainClass.getName()));
     }
     return new MappingCouchbaseEntityInformation<T, ID>((CouchbasePersistentEntity<T>) entity);
   }
 
+  /**
+   * Returns a new Repository based on the metadata.
+   *
+   * @param metadata the repository metadata.
+   * @return a new created repository.
+   */
   @Override
-  protected Object getTargetRepository(RepositoryMetadata metadata) {
+  protected Object getTargetRepository(final RepositoryMetadata metadata) {
     CouchbaseEntityInformation<?, Serializable> entityInformation =
       getEntityInformation(metadata.getDomainType());
     return new SimpleCouchbaseRepository(entityInformation, couchbaseOperations);
   }
 
+  /**
+   * The base class for this repository.
+   *
+   * @param repositoryMetadata metadata for the repository.
+   * @return the base class.
+   */
   @Override
-  protected Class<?> getRepositoryBaseClass(RepositoryMetadata repositoryMetadata) {
+  protected Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
     return SimpleCouchbaseRepository.class;
   }
 }

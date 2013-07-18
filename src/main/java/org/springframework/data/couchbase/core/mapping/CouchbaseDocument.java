@@ -24,19 +24,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A {@link CouchbaseDocument} is an abstract representation of a document stored
- * inside Couchbase Server.
+ * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
  *
- * <p>It acts like a {@link HashMap}, but only allows those types to be written
- * that are supported by the underlying storage format, which is currently
- * JSON. Note that JSON conversion is not happening here, but performed
- * at a different stage based on the payload stored in the
- * {@link CouchbaseDocument}.</p>
+ * <p>It acts like a {@link HashMap}, but only allows those types to be written that are supported by the underlying
+ * storage format, which is currently JSON. Note that JSON conversion is not happening here, but performed at a
+ * different stage based on the payload stored in the {@link CouchbaseDocument}.</p>
  *
- * <p>In addition to the actual content, meta data is also stored. This
- * especially refers to the document ID and its expiration time. Note that
- * this information is not mandatory, since documents can be nested and
- * therefore only the topmost document most likely has an ID.</p>
+ * <p>In addition to the actual content, meta data is also stored. This especially refers to the document ID and its
+ * expiration time. Note that this information is not mandatory, since documents can be nested and therefore only the
+ * topmost document most likely has an ID.</p>
  *
  * @author Michael Nitschinger
  */
@@ -199,6 +195,13 @@ public class CouchbaseDocument implements CouchbaseStorable {
     return totalSize;
   }
 
+  /**
+   * Returns the underlying payload.
+   *
+   * <p>Note that unlike {@link #export()}, the nested objects are not converted, so the "raw" map is returned.</p>
+   *
+   * @return the underlying payload.
+   */
   public HashMap<String, Object> getPayload() {
     return payload;
   }
@@ -267,6 +270,11 @@ public class CouchbaseDocument implements CouchbaseStorable {
       + clazz.getCanonicalName() + " can not be stored and must be converted.");
   }
 
+  /**
+   * A string representation of expiration, id and payload.
+   *
+   * @return the string representation of the object.
+   */
   @Override
   public String toString() {
     return "CouchbaseDocument{" +

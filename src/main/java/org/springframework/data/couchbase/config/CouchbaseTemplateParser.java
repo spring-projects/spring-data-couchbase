@@ -25,21 +25,46 @@ import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 /**
+ * Parser for "<couchbase:template />" bean definitions.
+ *
+ * The outcome of this bean definition parser will be a constructed {@link CouchbaseTemplate}.
+ *
  * @author Michael Nitschinger
  */
 public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser {
 
+  /**
+   * Resolve the bean ID and assign a default if not set.
+   *
+   * @param element the XML element which contains the attributes.
+   * @param definition the bean definition to work with.
+   * @param parserContext encapsulates the parsing state and configuration.
+   * @return the ID to work with.
+   */
+  @Override
   protected String resolveId(final Element element, final AbstractBeanDefinition definition,
     final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
     return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_TEMPLATE;
   }
 
+  /**
+   * Defines the bean class that will be constructed.
+   *
+   * @param element the XML element which contains the attributes.
+   * @return the class type to instantiate.
+   */
   @Override
   protected Class getBeanClass(final Element element) {
     return CouchbaseTemplate.class;
   }
 
+  /**
+   * Parse the bean definition and build up the bean.
+   *
+   * @param element the XML element which contains the attributes.
+   * @param bean the builder which builds the bean.
+   */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
     String converterRef = element.getAttribute("converter-ref");

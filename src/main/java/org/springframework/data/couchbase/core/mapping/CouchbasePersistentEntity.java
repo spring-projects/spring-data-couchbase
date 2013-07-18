@@ -19,15 +19,18 @@ package org.springframework.data.couchbase.core.mapping;
 import org.springframework.data.mapping.PersistentEntity;
 
 /**
+ * Represents an entity that can be persisted which contains 0 or more properties.
+ *
  * @author Michael Nitschinger
  */
 public interface CouchbasePersistentEntity<T> extends
   PersistentEntity<T, CouchbasePersistentProperty> {
 
-	/**
-	 * Returns the expiry time for the document.
-	 *
-	 * @return
-	 */
+  /**
+   * Returns the expiry time for the document.
+   *
+   * @return the expiration time.
+   */
 	int getExpiry();
+
 }

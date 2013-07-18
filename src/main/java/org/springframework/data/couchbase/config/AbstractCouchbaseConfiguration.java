@@ -25,7 +25,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
-import org.springframework.data.couchbase.core.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -42,12 +42,16 @@ public abstract class AbstractCouchbaseConfiguration {
 
   /**
    * Return the {@link CouchbaseClient} instance to connect to.
+   *
+   * @throws Exception on Bean construction failure.
    */
   @Bean
   public abstract CouchbaseClient couchbaseClient() throws Exception;
 
   /**
    * Creates a {@link CouchbaseTemplate}.
+   *
+   * @throws Exception on Bean construction failure.
    */
   @Bean
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
@@ -55,8 +59,9 @@ public abstract class AbstractCouchbaseConfiguration {
   }
 
   /**
-   * Creates a {@link MappingCouchbaseConverter} using the configured {@link
-   * #couchbaseMappingContext}.
+   * Creates a {@link MappingCouchbaseConverter} using the configured {@link #couchbaseMappingContext}.
+   *
+   * @throws Exception on Bean construction failure.
    */
   @Bean
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
@@ -64,8 +69,9 @@ public abstract class AbstractCouchbaseConfiguration {
   }
 
   /**
-   * Creates a {@link CouchbaseMappingContext} equipped with entity classes
-   * scanned from the mapping base package.
+   * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
+   *
+   * @throws Exception on Bean construction failure.
    */
   @Bean
   public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
@@ -76,12 +82,14 @@ public abstract class AbstractCouchbaseConfiguration {
 
   /**
    * Scans the mapping base package for classes annotated with {@link Document}.
+   *
+   * @throws ClassNotFoundException if intial entity sets could not be loaded.
    */
   protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
     String basePackage = getMappingBasePackage();
     Set<Class<?>> initialEntitySet = new HashSet<Class<?>>();
 
-    if(StringUtils.hasText(basePackage)) {
+    if (StringUtils.hasText(basePackage)) {
 			ClassPathScanningCandidateComponentProvider componentProvider =
         new ClassPathScanningCandidateComponentProvider(false);
 			componentProvider.addIncludeFilter(
@@ -100,15 +108,14 @@ public abstract class AbstractCouchbaseConfiguration {
   }
 
   /**
-   * Return the base package to scan for mapped {@link Document}s. Will return
-   * the package name of the configuration class (the concrete class, not this
-   * one here) by default. So if you have a {@code com.acme.AppConfig} extending
-   * {@link AbstractCouchbaseConfiguration} the base package will be considered
-   * {@code com.acme} unless the method is overridden to implement alternate
-   * behavior.
+   * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
+   * class (the concrete class, not this one here) by default.
    *
-   * @return the base package to scan for mapped {@link Document} classes or
-   *         {@literal null} to not enable scanning for entities.
+   * <p>So if you have a {@code com.acme.AppConfig} extending {@link AbstractCouchbaseConfiguration} the base package
+   * will be considered {@code com.acme} unless the method is overridden to implement alternate behavior.</p>
+   *
+   * @return the base package to scan for mapped {@link Document} classes or {@literal null} to not enable scanning for
+   *         entities.
    */
   protected String getMappingBasePackage() {
     return getClass().getPackage().getName();

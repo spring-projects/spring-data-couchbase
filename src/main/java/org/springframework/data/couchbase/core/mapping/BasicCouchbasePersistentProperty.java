@@ -26,9 +26,8 @@ import org.springframework.util.StringUtils;
 /**
  * Implements annotated property representations of a given Field instance.
  *
- * This object is used to gather information out of properties on objects
- * that need to be persisted. For example, it supports overriding of the
- * actual property name by providing custom annotations.
+ * <p>This object is used to gather information out of properties on objects that need to be persisted. For example, it
+ * supports overriding of the actual property name by providing custom annotations.</p>
  *
  * @author Michael Nitschinger
  */
@@ -44,9 +43,8 @@ public class BasicCouchbasePersistentProperty
    * @param owner the original owner of the property.
    * @param simpleTypeHolder the type holder.
    */
-  public BasicCouchbasePersistentProperty(Field field,
-    PropertyDescriptor propertyDescriptor, CouchbasePersistentEntity<?> owner,
-    SimpleTypeHolder simpleTypeHolder) {
+  public BasicCouchbasePersistentProperty(final Field field, final PropertyDescriptor propertyDescriptor,
+    final CouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
     super(field, propertyDescriptor, owner, simpleTypeHolder);
   }
 

@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-
 import java.util.*;
 
 import org.springframework.beans.BeansException;
@@ -39,6 +38,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 /**
+ * The Couchbase special {@link MappingCouchbaseConverter}.
+ *
+ * This converter is responsible for mapping (read and writing) value from and to target formats.
+ *
  * @author Michael Nitschinger
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter

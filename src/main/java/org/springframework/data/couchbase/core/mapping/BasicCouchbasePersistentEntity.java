@@ -26,36 +26,49 @@ import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 /**
+ * The representation of a persistent entity.
+ *
  * @author Michael Nitschinger
  */
-public class BasicCouchbasePersistentEntity<T>
-  extends BasicPersistentEntity<T, CouchbasePersistentProperty>
+public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
   implements CouchbasePersistentEntity<T>, ApplicationContextAware {
 
+  /**
+   * Contains the evaluation context.
+   */
   private final StandardEvaluationContext context;
 
-  public BasicCouchbasePersistentEntity(TypeInformation<T> typeInformation) {
+  /**
+   * Create a new entity.
+   * @param typeInformation the type information of the entity.
+   */
+  public BasicCouchbasePersistentEntity(final TypeInformation<T> typeInformation) {
     super(typeInformation);
-
-    this.context = new StandardEvaluationContext();
+    context = new StandardEvaluationContext();
   }
 
+  /**
+   * Sets the application context.
+   *
+   * @param applicationContext the application context.
+   * @throws BeansException if setting the application context did go wrong.
+   */
   @Override
-  public void setApplicationContext(ApplicationContext applicationContext)
-    throws BeansException {
+  public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		context.addPropertyAccessor(new BeanFactoryAccessor());
 		context.setBeanResolver(new BeanFactoryResolver(applicationContext));
 		context.setRootObject(applicationContext);
   }
-  
+
+  /**
+   * Returns the expiration time of the entity.
+   *
+   * @return the expiration time.
+   */
   public int getExpiry() {
   	org.springframework.data.couchbase.core.mapping.Document annotation = 
   			getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
-  	
-  	if(annotation == null) {
-  		return 0;
-  	}
-  	return annotation.expiry();
+    return annotation == null ? 0 : annotation.expiry();
   }
   
 }

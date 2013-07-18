@@ -42,13 +42,13 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
   }
 
   @Override
-  public void postProcess(BeanDefinitionBuilder builder, XmlRepositoryConfigurationSource config) {
+  public void postProcess(final BeanDefinitionBuilder builder, final XmlRepositoryConfigurationSource config) {
     Element element = config.getElement();
     ParsingUtils.setPropertyReference(builder, element, COUCHBASE_TEMPLATE_REF, "couchbaseOperations");
   }
 
   @Override
-  public void postProcess(BeanDefinitionBuilder builder, AnnotationRepositoryConfigurationSource config) {
+  public void postProcess(final BeanDefinitionBuilder builder, final AnnotationRepositoryConfigurationSource config) {
     AnnotationAttributes attributes = config.getAttributes();
     builder.addPropertyReference("couchbaseOperations", attributes.getString("couchbaseTemplateRef"));
   }

@@ -20,6 +20,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 
 /**
+ * Defines a translation service to encode/decode responses into the {@link CouchbaseStorable} format.
+ *
  * @author Michael Nitschinger
  */
 public interface TranslationService<T> {

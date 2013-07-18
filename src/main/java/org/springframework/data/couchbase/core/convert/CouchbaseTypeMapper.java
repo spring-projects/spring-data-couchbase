@@ -20,6 +20,8 @@ import org.springframework.data.convert.TypeMapper;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**
+ * Marker interface for the TypeMapper.
+ *
  * @author Michael Nitschinger
  */
 public interface CouchbaseTypeMapper extends TypeMapper<CouchbaseDocument> {

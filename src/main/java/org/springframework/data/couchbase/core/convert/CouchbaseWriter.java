@@ -19,9 +19,10 @@ package org.springframework.data.couchbase.core.convert;
 import org.springframework.data.convert.EntityWriter;
 
 /**
+ * Marker interface for the Couchbase {@link EntityWriter}.
+ *
  * @author Michael Nitschinger
  */
 public interface CouchbaseWriter<T, ConvertedCouchbaseDocument> extends
   EntityWriter<T, ConvertedCouchbaseDocument> {
-
 }

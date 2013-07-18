@@ -23,11 +23,13 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 
 /**
+ * Marker interface for the converter, identifying the types to and from that can be converted.
+ *
  * @author Michael Nitschinger
  */
-public interface CouchbaseConverter extends
-  EntityConverter<CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty, Object, CouchbaseDocument>,
+public interface CouchbaseConverter
+  extends EntityConverter<CouchbasePersistentEntity<?>,
+  CouchbasePersistentProperty, Object, CouchbaseDocument>,
   CouchbaseWriter<Object, CouchbaseDocument>,
   EntityReader<Object, CouchbaseDocument> {
 }

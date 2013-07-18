@@ -34,76 +34,183 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Convenient Factory for configuring Couchbase.
+ * Convenient Factory for configuring a {@link CouchbaseClient}.
+ *
+ * To set the properties correctly on the {@link CouchbaseClient} a {@link CouchbaseConnectionFactoryBuilder} is used.
+ * After all properties are set, the client is constructed and used.
  *
  * @author Michael Nitschinger
  */
 public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, InitializingBean,
   DisposableBean, PersistenceExceptionTranslator {
 
+  /**
+   * Defines the default hostname to be used if no other list is supplied.
+   */
   public static final String DEFAULT_NODE = "127.0.0.1";
+
+  /**
+   * Defines the default bucket name to be used if no other bucket name is supplied.
+   */
   public static final String DEFAULT_BUCKET = "default";
+
+  /**
+   * Defines the password of the default bucket.
+   */
   public static final String DEFAULT_PASSWORD = "";
 
+  /**
+   * Holds the enclosed {@link CouchbaseClient}.
+   */
   private CouchbaseClient couchbaseClient;
-  private PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
-  private String bucket;
-  private String password;
-  private List<URI> nodes;
-  private CouchbaseConnectionFactoryBuilder builder = new CouchbaseConnectionFactoryBuilder();
 
+  /**
+   * The exception translator is used to properly map exceptions to spring-type exceptions.
+   */
+  private PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
+
+  /**
+   * Contains the actual bucket name.
+   */
+  private String bucket;
+
+  /**
+   * Contains the actual bucket password.
+   */
+  private String password;
+
+  /**
+   * Contains the list of nodes to connect to.
+   */
+  private List<URI> nodes;
+
+  /**
+   * The builder which allows to customize client settings.
+   */
+  private final CouchbaseConnectionFactoryBuilder builder = new CouchbaseConnectionFactoryBuilder();
+
+  /**
+   * Set the observe poll interval in miliseconds.
+   *
+   * @param interval the observe poll interval.
+   */
   public void setObservePollInterval(final int interval) {
     builder.setObsPollInterval(interval);
   }
 
+  /**
+   * Set the maximum number of polls.
+   *
+   * @param max the maximum number of polls.
+   */
   public void setObservePollMax(final int max) {
     builder.setObsPollMax(max);
   }
 
+  /**
+   * Set the reconnect threshold time in seconds.
+   *
+   * @param time the reconnect threshold time.
+   */
   public void setReconnectThresholdTime(final int time) {
     builder.setReconnectThresholdTime(time, TimeUnit.SECONDS);
   }
 
+  /**
+   * Set the view timeout in miliseconds.
+   *
+   * @param timeout the view timeout.
+   */
   public void setViewTimeout(final int timeout) {
     builder.setViewTimeout(timeout);
   }
 
+  /**
+   * Set the failure mode if memcached buckets are used.
+   *
+   * See the proper values of {@link FailureMode} to use.
+   *
+   * @param mode the failure mode.
+   */
   public void setFailureMode(final String mode) {
     builder.setFailureMode(FailureMode.valueOf(mode));
   }
 
+  /**
+   * Set the operation timeout in miliseconds.
+   *
+   * @param timeout the operation timeout.
+   */
   public void setOpTimeout(final int timeout) {
     builder.setOpTimeout(timeout);
   }
 
+  /**
+   * Set the operation queue maximum block time in miliseconds.
+   *
+   * @param time the operation queue maximum block time.
+   */
   public void setOpQueueMaxBlockTime(final int time) {
     builder.setOpQueueMaxBlockTime(time);
   }
 
+  /**
+   * Shutdown the client when the bean is destroyed.
+   *
+   * @throws Exception if shutdown failed.
+   */
   @Override
   public void destroy() throws Exception {
     couchbaseClient.shutdown();
   }
 
+  /**
+   * Return the underlying {@link CouchbaseClient}.
+   *
+   * @return the client object.
+   * @throws Exception if returning the client failed.
+   */
   @Override
   public CouchbaseClient getObject() throws Exception {
     return couchbaseClient;
   }
 
+  /**
+   * Returns the object type of the client.
+   *
+   * @return the {@link CouchbaseClient} class.
+   */
   @Override
   public Class<?> getObjectType() {
     return CouchbaseClient.class;
   }
 
+  /**
+   * The client should be returned as a singleton.
+   *
+   * @return returns true.
+   */
   @Override
   public boolean isSingleton() {
     return true;
   }
 
+  /**
+   * Set the nodes as an array of URIs.
+   *
+   * @param nodes the nodes to connect to.
+   */
   public void setNodes(final URI[] nodes) {
     this.nodes = filterNonNullElementsAsList(nodes);
   }
 
+  /**
+   * Convert the array of elements to a list and filter empty or null elements.
+   *
+   * @param elements the elements to convert.
+   * @param <T> the type of the elements.
+   * @return the converted list.
+   */
   private <T> List<T> filterNonNullElementsAsList(T[] elements) {
     if (elements == null) {
       return Collections.emptyList();
@@ -119,6 +226,11 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
     return Collections.unmodifiableList(candidateElements);
   }
 
+  /**
+   * Instantiate the {@link CouchbaseClient}.
+   *
+   * @throws Exception if something goes wrong during instantiation.
+   */
   @Override
   public void afterPropertiesSet() throws Exception {
     nodes = nodes != null ? nodes : Arrays.asList(new URI("http://" + DEFAULT_NODE + ":8091/pools"));
@@ -129,8 +241,15 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
     couchbaseClient = new CouchbaseClient(factory);
   }
 
+  /**
+   * Translate exception if possible.
+   *
+   * @param ex the exception to translate.
+   * @return the translate exception.
+   */
   @Override
   public DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
     return exceptionTranslator.translateExceptionIfPossible(ex);
   }
+
 }

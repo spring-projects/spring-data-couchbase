@@ -25,27 +25,51 @@ import org.springframework.util.Assert;
 import java.io.Serializable;
 
 /**
+ * The factory bean to create repositories.
+ *
  * @author Michael Nitschinger
  */
 public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable> extends
   RepositoryFactoryBeanSupport<T, S, ID> {
 
+  /**
+   * Contains the reference to the template.
+   */
   private CouchbaseOperations operations;
 
-  public void setCouchbaseOperations(CouchbaseOperations operations) {
+  /**
+   * Set the template reference.
+   *
+   * @param operations the reference to the operations template.
+   */
+  public void setCouchbaseOperations(final CouchbaseOperations operations) {
     this.operations = operations;
     setMappingContext(operations.getConverter().getMappingContext());
   }
 
+  /**
+   * Returns a factory instance.
+   *
+   * @return the factory instance.
+   */
   @Override
   protected RepositoryFactorySupport createRepositoryFactory() {
     return getFactoryInstance(operations);
   }
 
-  private RepositoryFactorySupport getFactoryInstance(CouchbaseOperations operations) {
+  /**
+   * Get the factory instance for the operations.
+   *
+   * @param operations the reference to the template.
+   * @return the factory instance.
+   */
+  private RepositoryFactorySupport getFactoryInstance(final CouchbaseOperations operations) {
     return new CouchbaseRepositoryFactory(operations);
   }
 
+  /**
+   * Make sure that the template is set and not null.
+   */
   @Override
   public void afterPropertiesSet() {
     super.afterPropertiesSet();

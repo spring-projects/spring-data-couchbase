@@ -17,12 +17,18 @@
 package org.springframework.data.couchbase.config;
 
 /**
+ * Contains default bean names that will be used when no "id" is supplied to the beans.
+ *
  * @author Michael Nitschinger
  */
 public class BeanNames {
-  static final String MAPPING_CONTEXT = "mappingContext";
+  /**
+   * Refers to the "<couchbase:couchbase />" bean.
+   */
   static final String COUCHBASE = "couchbase";
-  static final String DB_FACTORY = "couchbaseDbFactory";
-  static final String DEFAULT_CONVERTER_BEAN_NAME = "mappingConverter";
+
+  /**
+   * Refers to the "<couchbase:template />" bean.
+   */
   static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
 }

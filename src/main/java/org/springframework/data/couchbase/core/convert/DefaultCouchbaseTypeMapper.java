@@ -21,12 +21,22 @@ import org.springframework.data.convert.TypeAliasAccessor;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**
+ * The Couchbase Type Mapper.
+ *
  * @author Michael Nitschinger
  */
 public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocument> implements CouchbaseTypeMapper {
 
+  /**
+   * The type key to use if a complex type was identified.
+   */
   public static final String DEFAULT_TYPE_KEY = "_class";
 
+  /**
+   * Create a new type mapper with the type key.
+   *
+   * @param typeKey the typeKey to use.
+   */
   public DefaultCouchbaseTypeMapper(final String typeKey) {
     super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
   }

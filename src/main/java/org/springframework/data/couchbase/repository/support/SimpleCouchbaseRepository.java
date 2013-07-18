@@ -39,11 +39,25 @@ import java.util.List;
  */
 public class SimpleCouchbaseRepository<T, ID extends Serializable> implements CouchbaseRepository<T, ID> {
 
+  /**
+   * Holds the reference to the {@link org.springframework.data.couchbase.core.CouchbaseTemplate}.
+   */
   private final CouchbaseOperations couchbaseOperations;
+
+  /**
+   * Contains information about the entity being used in this repository.
+   */
   private final CouchbaseEntityInformation<T, String> entityInformation;
 
 
-  public SimpleCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, CouchbaseOperations couchbaseOperations) {
+  /**
+   * Create a new Repository.
+   *
+   * @param metadata the Metadata for the entity.
+   * @param couchbaseOperations the reference to the template used.
+   */
+  public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
+    final CouchbaseOperations couchbaseOperations) {
     Assert.notNull(couchbaseOperations);
     Assert.notNull(metadata);
 
@@ -156,10 +170,20 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     }
   }
 
+  /**
+   * Returns the underlying operation template.
+   *
+   * @return the underlying template.
+   */
   protected CouchbaseOperations getCouchbaseOperations() {
     return couchbaseOperations;
   }
 
+  /**
+   * Returns the information for the underlying template.
+   *
+   * @return the underlying entity information.
+   */
   protected CouchbaseEntityInformation<T, String> getEntityInformation() {
     return entityInformation;
   }

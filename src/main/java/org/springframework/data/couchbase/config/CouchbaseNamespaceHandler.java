@@ -24,11 +24,17 @@ import org.springframework.data.repository.config.RepositoryConfigurationExtensi
 /**
  * {@link org.springframework.beans.factory.xml.NamespaceHandler} for Couchbase configuration.
  *
+ * This handler acts as a container for one or more bean parsers and registers them. During parsing, the elements
+ * get analyzed and the appropriate registered parser is called.
+ *
  * @author Michael Nitschinger
  */
 public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
 
-  public void init() {
+  /**
+   * Register bean definition parsers in the namespace handler.
+   */
+  public final void init() {
     RepositoryConfigurationExtension extension = new CouchbaseRepositoryConfigurationExtension();
 
     registerBeanDefinitionParser("repositories", new RepositoryBeanDefinitionParser(extension));

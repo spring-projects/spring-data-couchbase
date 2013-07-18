@@ -25,11 +25,10 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.support.AbstractCacheManager;
 
 /**
- * The CouchbaseCacheManager orchestrates CouchbaseCache instances.
+ * The {@link CouchbaseCacheManager} orchestrates {@link CouchbaseCache} instances.
  * 
- * Since more than one current CouchbaseClient connection can be used
- * for caching, the CouchbaseCacheManager orchestrates and handles
- * them for the Spring Cache abstraction layer.
+ * Since more than one current {@link CouchbaseClient} connection can be used for caching, the
+ * {@link CouchbaseCacheManager} orchestrates and handles them for the Spring Cache abstraction layer.
  *
  * @author Michael Nitschinger
  */
@@ -55,7 +54,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    * @return the actual CouchbaseClient instances.
    */
   public final HashMap<String, CouchbaseClient> getClients() {
-    return this.clients;
+    return clients;
   }
 
   /**
@@ -67,7 +66,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
   protected final Collection<? extends Cache> loadCaches() {
     Collection<Cache> caches = new LinkedHashSet<Cache>();
 
-    for (Map.Entry<String, CouchbaseClient> cache : this.clients.entrySet()) {
+    for (Map.Entry<String, CouchbaseClient> cache : clients.entrySet()) {
       caches.add(new CouchbaseCache(cache.getKey(), cache.getValue()));
     }
 

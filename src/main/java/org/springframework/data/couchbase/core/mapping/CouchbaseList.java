@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.data.couchbase.core.mapping;
 
 import org.springframework.data.mapping.model.SimpleTypeHolder;
@@ -5,12 +21,10 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 import java.util.*;
 
 /**
- * A {@link CouchbaseList} is an abstract list that represents an array stored
- * in a (most of the times JSON) document.
+ * A {@link CouchbaseList} is an abstract list that represents an array stored in a (most of the times JSON) document.
  *
- * This {@link CouchbaseList} is part of the potentially nested structure inside
- * one or more {@link CouchbaseDocument}s. It can also contain them recursively,
- * depending on how the document is modeled.
+ * <p>This {@link CouchbaseList} is part of the potentially nested structure inside one or more
+ * {@link CouchbaseDocument}s. It can also contain them recursively, depending on how the document is modeled.</p>
  */
 public class CouchbaseList implements CouchbaseStorable {
 
@@ -24,11 +38,19 @@ public class CouchbaseList implements CouchbaseStorable {
    */
   private SimpleTypeHolder simpleTypeHolder;
 
+  /**
+   * Create a new (empty) list.
+   */
   public CouchbaseList() {
     this(new ArrayList<Object>());
   }
 
-  public CouchbaseList(List<Object> initialPayload) {
+  /**
+   * Create a new list with a given payload on construction.
+   *
+   * @param initialPayload the initial data to store.
+   */
+  public CouchbaseList(final List<Object> initialPayload) {
     payload = initialPayload;
 
     Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
@@ -37,14 +59,26 @@ public class CouchbaseList implements CouchbaseStorable {
     simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
   }
 
-  public final CouchbaseList put(Object value) {
+  /**
+   * Add content to the underlying list.
+   *
+   * @param value the value to be added.
+   * @return the {@link CouchbaseList} object for chaining purposes.
+   */
+  public final CouchbaseList put(final Object value) {
     verifyValueType(value.getClass());
 
     payload.add(value);
     return this;
   }
 
-  public final Object get(int index) {
+  /**
+   * Return the stored element at the given index.
+   *
+   * @param index the index where the document is located.
+   * @return the found object (or null if nothing found).
+   */
+  public final Object get(final int index) {
     return payload.get(index);
   }
 
@@ -117,6 +151,11 @@ public class CouchbaseList implements CouchbaseStorable {
     return payload.contains(value);
   }
 
+  /**
+   * Checks if the underlying payload is empty or not.
+   *
+   * @return whether the underlying payload is empty or not.
+   */
   public final boolean isEmpty() {
     return payload.isEmpty();
   }
@@ -139,6 +178,11 @@ public class CouchbaseList implements CouchbaseStorable {
       + clazz.getCanonicalName() + "can not be stored and must be converted.");
   }
 
+  /**
+   * A string reprensation of the payload.
+   *
+   * @return the underlying payload as a string representation for easier debugging.
+   */
   @Override
   public String toString() {
     return "CouchbaseList{" +

@@ -27,26 +27,42 @@ import java.util.Set;
 /**
  * Value object to capture custom conversion.
  *
- * Types that can be mapped directly onto JSON are considered simple ones,
- * because they neither need deeper inspection nor nested conversion.
+ * <p>Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper
+ * inspection nor nested conversion.</p>
  *
  * @author Michael Nitschinger
  */
 public class CustomConversions {
 
+  /**
+   * Contains the simple type holder.
+   */
   private final SimpleTypeHolder simpleTypeHolder;
 
+  /**
+   * Create a new instance with no converters.
+   */
   CustomConversions() {
     this(new ArrayList<Object>());
   }
 
+  /**
+   * Create a new instance with a given list of conversers.
+   * @param converters the list of custom converters.
+   */
   public CustomConversions(final List<?> converters) {
     Assert.notNull(converters);
 
     simpleTypeHolder = new SimpleTypeHolder();
   }
 
-  public boolean isSimpleType(Class<?> type) {
+  /**
+   * Check that the given type is of "simple type".
+   *
+   * @param type the type to check.
+   * @return if its simple type or not.
+   */
+  public boolean isSimpleType(final Class<?> type) {
     return simpleTypeHolder.isSimpleType(type);
   }
 

@@ -19,8 +19,7 @@ package org.springframework.data.couchbase.core;
 import org.springframework.dao.TransientDataAccessException;
 
 /**
- * Data Access Exception that identifies Operations cancelled while being
- * processed.
+ * Data Access Exception that identifies Operations cancelled while being processed.
  *
  * @author Michael Nitschinger
  */

@@ -25,24 +25,40 @@ import org.springframework.data.repository.core.support.AbstractEntityInformatio
 import java.io.Serializable;
 
 /**
+ * Entity Information container.
+ *
  * @author Michael Nitschinger
  */
 public class MappingCouchbaseEntityInformation<T, ID  extends Serializable>
   extends AbstractEntityInformation<T, ID>
   implements CouchbaseEntityInformation<T, ID> {
 
+  /**
+   * Contains the entity metadata.
+   */
   private final CouchbasePersistentEntity<T> entityMetadata;
 
-  public MappingCouchbaseEntityInformation(CouchbasePersistentEntity<T> entity) {
+  /**
+   * Create a new Infomration container.
+   *
+   * @param entity the entity of the container.
+   */
+  public MappingCouchbaseEntityInformation(final CouchbasePersistentEntity<T> entity) {
     super(entity.getType());
     entityMetadata = entity;
   }
 
+  /**
+   * Returns the ID of the entity.
+   *
+   * @param entity the entity from where to extract the ID from.
+   * @return the id of the entity.
+   */
   @Override
   public ID getId(T entity) {
     CouchbasePersistentProperty idProperty = entityMetadata.getIdProperty();
 
-    if(idProperty == null) {
+    if (idProperty == null) {
       return null;
     }
 
@@ -53,6 +69,11 @@ public class MappingCouchbaseEntityInformation<T, ID  extends Serializable>
     }
   }
 
+  /**
+   * Returns the ID type.
+   *
+   * @return the ID type.
+   */
   @Override
   public Class<ID> getIdType() {
     return (Class<ID>) entityMetadata.getIdProperty().getType();

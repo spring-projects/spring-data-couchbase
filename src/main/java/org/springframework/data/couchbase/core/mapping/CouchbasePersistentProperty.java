@@ -19,16 +19,16 @@ package org.springframework.data.couchbase.core.mapping;
 import org.springframework.data.mapping.PersistentProperty;
 
 /**
+ * Represents a property part of an entity that needs to be persisted.
+ *
  * @author Michael Nitschinger
  */
-public interface CouchbasePersistentProperty extends
-  PersistentProperty<CouchbasePersistentProperty> {
+public interface CouchbasePersistentProperty extends PersistentProperty<CouchbasePersistentProperty> {
 
   /**
    * Returns the field name of the property.
    *
-   * The field name can be different from the actual property name by using a
-   * custom annotation.
+   * The field name can be different from the actual property name by using a custom annotation.
    */
   String getFieldName();
 

@@ -27,19 +27,31 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A Jackson JSON Translator.
+ * A Jackson JSON Translator that implements the {@link TranslationService} contract.
  *
  * @author Michael Nitschinger
  */
 public class JacksonTranslationService implements TranslationService {
 
+  /**
+   * Type holder to help easily identify simple types.
+   */
   private SimpleTypeHolder simpleTypeHolder = new SimpleTypeHolder();
+
+  /**
+   * JSON factory for Jackson.
+   */
   private JsonFactory factory = new JsonFactory();
 
+  /**
+   * Encode a {@link CouchbaseStorable} to a JSON string.
+   *
+   * @param source the source document to encode.
+   * @return the encoded JSON String.
+   */
   @Override
   public final Object encode(final CouchbaseStorable source) {
     OutputStream stream = new ByteArrayOutputStream();
@@ -86,6 +98,13 @@ public class JacksonTranslationService implements TranslationService {
     generator.writeEndObject();
   }
 
+  /**
+   * Decode a JSON string into the {@link CouchbaseStorable} structure.
+   *
+   * @param source the source formatted document.
+   * @param target the target of the populated data.
+   * @return the decoded structure.
+   */
   @Override
   public final CouchbaseStorable decode(final Object source, final CouchbaseStorable target) {
     try {
@@ -108,6 +127,14 @@ public class JacksonTranslationService implements TranslationService {
     return target;
   }
 
+  /**
+   * Helper method to decode an object recursively.
+   *
+   * @param parser the JSON parser with the content.
+   * @param target the target where the content should be stored.
+   * @returns the decoded object.
+   * @throws IOException
+   */
   private CouchbaseDocument decodeObject(final JsonParser parser, final CouchbaseDocument target) throws IOException {
     JsonToken currentToken = parser.nextToken();
 
@@ -129,6 +156,14 @@ public class JacksonTranslationService implements TranslationService {
     return target;
   }
 
+  /**
+   * Helper method to decode an array recusrively.
+   *
+   * @param parser the JSON parser with the content.
+   * @param target the target where the content should be stored.
+   * @returns the decoded list.
+   * @throws IOException
+   */
   private CouchbaseList decodeArray(final JsonParser parser, final CouchbaseList target) throws IOException {
     JsonToken currentToken = parser.nextToken();
 
@@ -147,6 +182,14 @@ public class JacksonTranslationService implements TranslationService {
     return target;
   }
 
+  /**
+   * Helper method to decode and assign a primitive.
+   *
+   * @param token the type of token.
+   * @param parser the parser with the content.
+   * @return the decoded primitve.
+   * @throws IOException
+   */
   private Object decodePrimitive(final JsonToken token, final JsonParser parser) throws IOException {
     switch (token) {
       case VALUE_TRUE:
