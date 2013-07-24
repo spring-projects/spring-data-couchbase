@@ -1,100 +1,107 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	
-	<modelVersion>4.0.0</modelVersion>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-	<groupId>org.springframework.data</groupId>
-	<artifactId>spring-data-couchbase</artifactId>
-	<version>1.0.0.BUILD-SNAPSHOT</version>
+  <modelVersion>4.0.0</modelVersion>
 
-	<name>Spring Data Couchbase</name>
-	<description>Spring Data integration for Couchbase</description>
-	<url>https://github.com/SpringSource/spring-data-couchbase</url>
-	
-	<parent>
-		<groupId>org.springframework.data.build</groupId>
-		<artifactId>spring-data-parent</artifactId>
-		<version>1.1.0.RELEASE</version>
-	</parent>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>1.0.0.BUILD-SNAPSHOT</version>
 
-	<properties>
-		<couchbase>1.1.8</couchbase>
-		<jackson>2.2.2</jackson>
-		<springdata.commons>1.6.0.BUILD-SNAPSHOT</springdata.commons>
-	</properties>
+  <name>Spring Data Couchbase</name>
+  <description>Spring Data integration for Couchbase</description>
+  <url>https://github.com/SpringSource/spring-data-couchbase</url>
 
-	<dependencies>
-	
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>${spring}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-web</artifactId>
-			<version>${spring}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-tx</artifactId>
-			<version>${spring}</version>
-		</dependency>
+  <parent>
+    <groupId>org.springframework.data.build</groupId>
+    <artifactId>spring-data-parent</artifactId>
+    <version>1.1.0.RELEASE</version>
+  </parent>
 
-		<dependency>
-			<groupId>${groupId}</groupId>
-			<artifactId>spring-data-commons</artifactId>
-			<version>${springdata.commons}</version>
-		</dependency>
+  <properties>
+    <couchbase>1.1.8</couchbase>
+    <jackson>2.2.2</jackson>
+    <springdata.commons>1.6.0.BUILD-SNAPSHOT</springdata.commons>
+  </properties>
 
-		<dependency>
-			<groupId>couchbase</groupId>
-			<artifactId>couchbase-client</artifactId>
-			<version>${couchbase}</version>
-		</dependency>
+  <dependencies>
 
-		<dependency>
-			<groupId>cglib</groupId>
-			<artifactId>cglib</artifactId>
-			<version>2.2.2</version>
-			<scope>test</scope>
-		</dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>${spring}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>${spring}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+      <version>${spring}</version>
+    </dependency>
 
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit}</version>
-			<scope>test</scope>
-		</dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spring-data-commons</artifactId>
+      <version>${springdata.commons}</version>
+    </dependency>
 
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-test</artifactId>
-			<version>${spring}</version>
-			<scope>test</scope>
-		</dependency>
+    <dependency>
+      <groupId>couchbase</groupId>
+      <artifactId>couchbase-client</artifactId>
+      <version>${couchbase}</version>
+    </dependency>
 
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>${jackson}</version>
-		</dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib</artifactId>
+      <version>2.2.2</version>
+      <scope>test</scope>
+    </dependency>
 
-	</dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit}</version>
+      <scope>test</scope>
+    </dependency>
 
-	<repositories>
-		<repository>
-			<id>couchbase</id>
-			<name>Couchbase Maven Repository</name>
-			<url>http://files.couchbase.com/maven2/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-        <repository>
-            <id>spring-lib-snapshot</id>
-            <url>http://repo.springsource.org/libs-snapshot-local</url>
-        </repository>
-	</repositories>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${spring}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson}</version>
+    </dependency>
+
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>couchbase</id>
+      <name>Couchbase Maven Repository</name>
+      <url>http://files.couchbase.com/maven2/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>spring-lib-snapshot</id>
+      <url>http://repo.springsource.org/libs-snapshot-local</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>spring-release-bundles</id>
+      <url>http://repository.springsource.com/maven/bundles/release/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
 </project>
