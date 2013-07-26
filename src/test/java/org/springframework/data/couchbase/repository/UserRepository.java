@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
-
 /**
  * @author Michael Nitschinger
  */

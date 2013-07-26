@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.Field;
 
 

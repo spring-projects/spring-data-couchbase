@@ -16,18 +16,16 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.lang.reflect.Field;
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.BasicCouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.BasicCouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Field;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Verifies the correct behavior of properties on persistable objects.

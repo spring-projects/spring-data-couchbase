@@ -16,12 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import org.springframework.data.annotation.Persistent;
+
+import java.lang.annotation.*;
 
 /**
  * Identifies a domain object to be persisted to Couchbase.

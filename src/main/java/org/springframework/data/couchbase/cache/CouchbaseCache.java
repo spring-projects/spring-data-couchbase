@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.cache;
 
 import com.couchbase.client.CouchbaseClient;
-import net.spy.memcached.internal.OperationFuture;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 

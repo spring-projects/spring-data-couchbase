@@ -16,30 +16,51 @@
 
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.CouchbaseClient;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.net.URI;
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
+@TestExecutionListeners(BucketCreationListener.class)
 public class SimpleCouchbaseRepositoryTest {
 
-  @Autowired
+  private CouchbaseClient client;
+
   private CouchbaseTemplate template;
+
+  @Autowired
+  private String couchbaseHost;
+
+  @Autowired
+  private String couchbaseBucket;
+
+  @Autowired
+  private String couchbasePassword;
+
+  @Before
+  public void setup() throws Exception {
+    client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
+    template = new CouchbaseTemplate(client);
+  }
 
   @Test
   public void simpleCrud() {

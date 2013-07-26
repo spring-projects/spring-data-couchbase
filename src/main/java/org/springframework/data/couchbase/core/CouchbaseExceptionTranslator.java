@@ -16,18 +16,16 @@
 
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.ObservedException;
+import com.couchbase.client.ObservedModifiedException;
+import com.couchbase.client.ObservedTimeoutException;
 import com.couchbase.client.protocol.views.InvalidViewException;
-import com.couchbase.client.protocol.views.ViewException;
+import com.couchbase.client.vbucket.ConnectionException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
-
-import com.couchbase.client.ObservedException;
-import com.couchbase.client.ObservedModifiedException;
-import com.couchbase.client.ObservedTimeoutException;
-import com.couchbase.client.vbucket.ConnectionException;
 
 import java.util.concurrent.CancellationException;
 

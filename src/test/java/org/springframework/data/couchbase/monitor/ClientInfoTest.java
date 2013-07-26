@@ -22,9 +22,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.TestApplicationConfig;
-import org.springframework.data.couchbase.monitor.ClientInfo;
+import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.net.URI;
+import java.util.Arrays;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
@@ -34,15 +38,28 @@ import static org.junit.Assert.assertFalse;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
+@TestExecutionListeners(BucketCreationListener.class)
 public class ClientInfoTest {
 
-  @Autowired
+  /**
+   * Contains a reference to the actual CouchbaseClient.
+   */
   private CouchbaseClient client;
 
   private ClientInfo ci;
 
+  @Autowired
+  private String couchbaseHost;
+
+  @Autowired
+  private String couchbaseBucket;
+
+  @Autowired
+  private String couchbasePassword;
+
   @Before
-  public void setup() {
+  public void setup() throws Exception {
+    client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
     ci = new ClientInfo(client);
   }
 

@@ -17,34 +17,51 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.CouchbaseClient;
-
-import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.TestApplicationConfig;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
+import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.net.SocketAddress;
+import java.net.URI;
 import java.util.*;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
+@TestExecutionListeners(BucketCreationListener.class)
 public class CouchbaseTemplateTest {
 
-  @Autowired
   private CouchbaseClient client;
 
-  @Autowired
   private CouchbaseTemplate template;
+
+  @Autowired
+  private String couchbaseHost;
+
+  @Autowired
+  private String couchbaseBucket;
+
+  @Autowired
+  private String couchbasePassword;
+
+  @Before
+  public void setup() throws Exception {
+    client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
+    template = new CouchbaseTemplate(client);
+  }
+
 
   @Test
   public void saveSimpleEntityCorrectly() throws Exception {
@@ -101,13 +118,14 @@ public class CouchbaseTemplateTest {
 
   @Test
   public void removeDocument() {
-    String id = "beers:awesome-stout";
+    String id = "beers:to-delete-stout";
+    Beer beer = new Beer(id);
+
+    template.save(beer);
     Object result = client.get(id);
     assertNotNull(result);
 
-    Beer beer = new Beer(id);
     template.remove(beer);
-
     result = client.get(id);
     assertNull(result);
   }

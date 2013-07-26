@@ -16,34 +16,61 @@
 
 package org.springframework.data.couchbase;
 
-import com.couchbase.client.CouchbaseClient;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Arrays;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.util.BucketManager;
 
 /**
  * @author Michael Nitschinger
  */
 @Configuration
-public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
+public class TestApplicationConfig  {
 
   @Autowired
   private Environment env;
 
   @Bean
-  @Override
-  public CouchbaseClient couchbaseClient() throws IOException {
-    String defaultHost = "http://127.0.0.1:8091/pools";
-    String host = env.getProperty("couchbase.host", defaultHost);
+  public String couchbaseHost() {
+    return env.getProperty("couchbase.host", "http://127.0.0.1:8091/pools");
+  }
 
-    String bucket = env.getProperty("couchbase.bucket", "default");
-    String pass = env.getProperty("couchbase.password", "");
-    return new CouchbaseClient(Arrays.asList(URI.create(host)), bucket, pass);
+  @Bean
+  public String couchbaseBucket() {
+    return env.getProperty("couchbase.bucket", "default");
+  }
+
+  @Bean
+  public String couchbasePassword() {
+    return env.getProperty("couchbase.password", "");
+  }
+
+  @Bean
+  public String couchbaseAdmin() {
+    return env.getProperty("couchbase.admin", "Administrator");
+  }
+
+  @Bean
+  public String couchbaseAdminPassword() {
+    return env.getProperty("couchbase.adminPassword", "password");
+  }
+
+  @Bean
+  public BucketManager bucketManager() {
+    return new BucketManager(couchbaseHost(), couchbaseAdmin(), couchbaseAdminPassword());
+  }
+
+  @Bean
+  public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
+    return new MappingCouchbaseConverter(couchbaseMappingContext());
+  }
+
+  @Bean
+  public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
+    return new CouchbaseMappingContext();
   }
 
 }

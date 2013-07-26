@@ -17,12 +17,12 @@
 package org.springframework.data.couchbase.core;
 
 
-import java.util.Collection;
-import java.util.List;
-
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
