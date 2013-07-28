@@ -17,6 +17,8 @@
 package org.springframework.data.couchbase.repository;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.Stale;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +42,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners(BucketCreationListener.class)
+@TestExecutionListeners({BucketCreationListener.class, CouchbaseRepositoryViewListener.class})
 public class SimpleCouchbaseRepositoryTest {
 
   private CouchbaseClient client;
@@ -56,17 +58,19 @@ public class SimpleCouchbaseRepositoryTest {
   @Autowired
   private String couchbasePassword;
 
+  private UserRepository repository;
+
   @Before
   public void setup() throws Exception {
     client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
     template = new CouchbaseTemplate(client);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
+    repository = factory.getRepository(UserRepository.class);
   }
 
   @Test
   public void simpleCrud() {
     String key = "my_unique_user_key";
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
-    UserRepository repository = factory.getRepository(UserRepository.class);
     User instance = new User(key, "foobar");
     repository.save(instance);
 
@@ -79,6 +83,29 @@ public class SimpleCouchbaseRepositoryTest {
 
     assertNull(repository.findOne(key));
     assertFalse(repository.exists(key));
+  }
+
+  @Test
+  public void shouldFindAll() {
+    // do a non-stale query to populate data for testing.
+    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
+
+    Iterable<User> allUsers = repository.findAll();
+    int size = 0;
+    for (User u : allUsers) {
+      size++;
+      assertNotNull(u.getKey());
+      assertNotNull(u.getUsername());
+    }
+    assertEquals(100, size);
+  }
+
+  @Test
+  public void shouldCount() {
+    // do a non-stale query to populate data for testing.
+    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
+
+    assertEquals(100, repository.count());
   }
 
 }

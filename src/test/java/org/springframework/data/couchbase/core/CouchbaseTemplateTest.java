@@ -17,6 +17,8 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.Stale;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +42,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners(BucketCreationListener.class)
+@TestExecutionListeners({BucketCreationListener.class, CouchbaseTemplateViewListener.class})
 public class CouchbaseTemplateTest {
 
   private CouchbaseClient client;
@@ -176,6 +178,21 @@ public class CouchbaseTemplateTest {
     assertEquals(id, found.getId());
     assertEquals(name, found.getName());
     assertEquals(active, found.getActive());
+  }
+
+  @Test
+  public void shouldLoadAndMapViewDocs() {
+    Query query = new Query();
+    query.setStale(Stale.FALSE);
+
+    final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
+    assertEquals(101, beers.size());
+
+    for(Beer beer : beers) {
+      assertNotNull(beer.getId());
+      assertNotNull(beer.getName());
+      assertNotNull(beer.getActive());
+    }
   }
   
   /**
