@@ -26,14 +26,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
-import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.net.URI;
-import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -42,28 +38,21 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners({BucketCreationListener.class, CouchbaseRepositoryViewListener.class})
+@TestExecutionListeners(CouchbaseRepositoryViewListener.class)
 public class SimpleCouchbaseRepositoryTests {
 
+
+  @Autowired
   private CouchbaseClient client;
 
+
+  @Autowired
   private CouchbaseTemplate template;
-
-  @Autowired
-  private String couchbaseHost;
-
-  @Autowired
-  private String couchbaseBucket;
-
-  @Autowired
-  private String couchbasePassword;
 
   private UserRepository repository;
 
   @Before
   public void setup() throws Exception {
-    client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
-    template = new CouchbaseTemplate(client);
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
     repository = factory.getRepository(UserRepository.class);
   }

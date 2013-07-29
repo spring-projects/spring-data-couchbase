@@ -17,19 +17,13 @@
 package org.springframework.data.couchbase.cache;
 
 import com.couchbase.client.CouchbaseClient;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache.ValueWrapper;
 import org.springframework.data.couchbase.TestApplicationConfig;
-import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.net.URI;
-import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -40,32 +34,18 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners(BucketCreationListener.class)
 public class CouchbaseCacheTests {
 
   /**
    * Contains a reference to the actual CouchbaseClient.
    */
+  @Autowired
   private CouchbaseClient client;
 
   /**
    * Simple name of the cache bucket to create.
    */
   private String cacheName = "test";
-
-  @Autowired
-  private String couchbaseHost;
-
-  @Autowired
-  private String couchbaseBucket;
-
-  @Autowired
-  private String couchbasePassword;
-
-  @Before
-  public void setup() throws Exception {
-    client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
-  }
 
   /**
    * Tests the basic Cache construction functionality.

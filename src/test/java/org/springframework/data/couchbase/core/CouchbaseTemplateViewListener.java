@@ -19,31 +19,19 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.ViewDesign;
-import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.TestContext;
-import org.springframework.test.context.support.AbstractTestExecutionListener;
-
-import java.net.URI;
-import java.util.Arrays;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 /**
  * @author Michael Nitschinger
  */
-public class CouchbaseTemplateViewListener extends AbstractTestExecutionListener {
+public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecutionListener {
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    CouchbaseClient client = bootstrapClient(testContext.getApplicationContext());
+    CouchbaseClient client = (CouchbaseClient) testContext.getApplicationContext().getBean("couchbaseClient");
     populateTestData(client);
     createAndWaitForDesignDocs(client);
-  }
-
-  private CouchbaseClient bootstrapClient(ApplicationContext context) throws Exception {
-    String host = (String) context.getBean("couchbaseHost");
-    String bucket = (String) context.getBean("couchbaseBucket");
-    String password = (String) context.getBean("couchbasePassword");
-
-    return new CouchbaseClient(Arrays.asList(new URI(host)), bucket, password);
   }
 
   private void populateTestData(CouchbaseClient client) {
