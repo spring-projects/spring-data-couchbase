@@ -20,6 +20,7 @@ import com.couchbase.client.CouchbaseClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 
@@ -35,14 +36,44 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
   @Autowired
   private Environment env;
 
+  @Bean
+  public String couchbaseHost() {
+    return env.getProperty("couchbase.host", "http://127.0.0.1:8091/pools");
+  }
+
+  @Bean
+  public String couchbaseBucket() {
+    return env.getProperty("couchbase.bucket", "default");
+  }
+
+  @Bean
+  public String couchbasePassword() {
+    return env.getProperty("couchbase.password", "");
+  }
+
+  @Bean
+  public String couchbaseAdminUser() {
+    return env.getProperty("couchbase.adminUser", "Administrator");
+  }
+
+  @Bean
+  public String couchbaseAdminPassword() {
+    return env.getProperty("couchbase.adminUser", "password");
+  }
+
+  @Bean
+  public BucketCreator bucketCreator() throws Exception {
+    return new BucketCreator(couchbaseHost(), couchbaseAdminUser(), couchbaseAdminPassword());
+  }
+
   @Override
   @Bean
+  @DependsOn("bucketCreator")
   public CouchbaseClient couchbaseClient() throws Exception {
-    String host = env.getProperty("couchbase.host", "http://127.0.0.1:8091/pools");
-    String bucket = env.getProperty("couchbase.bucket", "default");
-    String password = env.getProperty("couchbase.password", "");
-
-    return new CouchbaseClient(Arrays.asList(new URI(host)), bucket, password);
+    return new CouchbaseClient(
+      Arrays.asList(new URI(couchbaseHost())), couchbaseBucket(), couchbasePassword());
   }
+
+
 
 }
