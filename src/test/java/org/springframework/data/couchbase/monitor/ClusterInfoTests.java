@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.cache;
+package org.springframework.data.couchbase.monitor;
 
 import com.couchbase.client.CouchbaseClient;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache.ValueWrapper;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.util.BucketCreationListener;
 import org.springframework.test.context.ContextConfiguration;
@@ -31,27 +30,22 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.net.URI;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static junit.framework.Assert.assertTrue;
 
 /**
- * Tests the CouchbaseCache class and verifies its functionality.
- *
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
 @TestExecutionListeners(BucketCreationListener.class)
-public class CouchbaseCacheTest {
+public class ClusterInfoTests {
 
   /**
    * Contains a reference to the actual CouchbaseClient.
    */
   private CouchbaseClient client;
 
-  /**
-   * Simple name of the cache bucket to create.
-   */
-  private String cacheName = "test";
+  private ClusterInfo ci;
 
   @Autowired
   private String couchbaseHost;
@@ -65,56 +59,17 @@ public class CouchbaseCacheTest {
   @Before
   public void setup() throws Exception {
     client = new CouchbaseClient(Arrays.asList(new URI(couchbaseHost)), couchbaseBucket, couchbasePassword);
+    ci = new ClusterInfo(client);
   }
 
-  /**
-   * Tests the basic Cache construction functionality.
-   */
   @Test
-  public void testConstruction() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
-
-    assertEquals(cacheName, cache.getName());
-    assertEquals(client, cache.getNativeCache());
+  public void totalRAMAssigned() {
+    assertTrue(ci.getTotalRAMAssigned() > 0);
   }
 
-  /**
-   * Verifies set() and get() of cache objects.
-   */
   @Test
-  public void testGetSet() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
-
-    String key = "couchbase-cache-test";
-    String value = "Hello World!";
-    cache.put(key, value);
-
-    String stored = (String) client.get(key);
-    assertNotNull(stored);
-    assertEquals(value, stored);
-
-    ValueWrapper loaded = cache.get(key);
-    assertEquals(value, loaded.get());
-  }
-
-  /**
-   * Verifies the deletion of cache objects.
-   *
-   * @throws Exception
-   */
-  @Test
-  public void testEvict() throws Exception {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
-
-    String key = "couchbase-cache-test";
-    String value = "Hello World!";
-
-    Boolean success = client.set(key, 0, value).get();
-    assertTrue(success);
-
-    cache.evict(key);
-    Object result = client.get(key);
-    assertNull(result);
+  public void totalRAMUsed() {
+    assertTrue(ci.getTotalRAMUsed() > 0);
   }
 
 }

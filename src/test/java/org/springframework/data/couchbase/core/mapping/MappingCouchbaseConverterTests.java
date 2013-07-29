@@ -35,7 +35,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-public class MappingCouchbaseConverterTest {
+public class MappingCouchbaseConverterTests {
 
   @Autowired
   private MappingCouchbaseConverter converter;

@@ -36,8 +36,8 @@ import java.util.Map.Entry;
  */
 public class BucketManager extends SpyObject {
 
-  private static final long TIMEOUT = 120000;
-  private static final long SLEEP_TIME = 2000;
+  private static final long TIMEOUT = 2000;
+  private static final long SLEEP_TIME = 1000;
 
   private final ClusterManager manager;
 

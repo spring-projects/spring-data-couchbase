@@ -43,7 +43,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
 @TestExecutionListeners({BucketCreationListener.class, CouchbaseRepositoryViewListener.class})
-public class SimpleCouchbaseRepositoryTest {
+public class SimpleCouchbaseRepositoryTests {
 
   private CouchbaseClient client;
 

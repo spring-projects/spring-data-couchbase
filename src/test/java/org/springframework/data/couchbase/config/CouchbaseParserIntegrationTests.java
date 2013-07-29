@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Michael Nitschinger
  */
-public class CouchbaseParserIntegrationTest {
+public class CouchbaseParserIntegrationTests {
 
   DefaultListableBeanFactory factory;
   BeanDefinitionReader reader;

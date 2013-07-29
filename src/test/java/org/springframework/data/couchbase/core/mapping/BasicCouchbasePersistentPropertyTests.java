@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author Michael Nitschinger
  */
-public class BasicCouchbasePersistentPropertyTest {
+public class BasicCouchbasePersistentPropertyTests {
 
   /**
    * Holds the entity to test against (contains the properties).

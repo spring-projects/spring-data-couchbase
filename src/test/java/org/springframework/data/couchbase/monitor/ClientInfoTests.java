@@ -39,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
 @TestExecutionListeners(BucketCreationListener.class)
-public class ClientInfoTest {
+public class ClientInfoTests {
 
   /**
    * Contains a reference to the actual CouchbaseClient.
