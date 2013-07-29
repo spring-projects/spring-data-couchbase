@@ -95,7 +95,7 @@ public class CouchbaseTemplateTests {
   public void insertDoesNotOverride() {
     String id ="double-insert-test";
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-      + "CouchbaseTemplateTest$SimplePerson\",\"name\":\"Mr. A\"}";
+      + "CouchbaseTemplateTests$SimplePerson\",\"name\":\"Mr. A\"}";
 
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
@@ -150,7 +150,7 @@ public class CouchbaseTemplateTests {
     template.save(complex);
 
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-      + "CouchbaseTemplateTest$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
+      + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
       + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":"
       + "{}}";
     assertEquals(expected, client.get(id));
