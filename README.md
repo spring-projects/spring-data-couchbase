@@ -14,10 +14,10 @@ Full documentation is still in the making, so this README outlines the basic ste
  - CRUD Repository (aside *All and count methods, see planned)
  - Basic Auditing (JMX) 
  - Additional: transparent @Cacheable support
+ - XML Config (namespace for template + repositories)
 
 ### Planned (before 1.0)
 
- - XML Config (namespace for template + repositories)
  - find*-based methods on repositories through Views
  - @View annotation for customization
  
