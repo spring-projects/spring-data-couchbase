@@ -25,6 +25,8 @@ Full documentation is still in the making, so this README outlines the basic ste
  
  - Relationship Support
  - Dynamic View Generation
+ - Better @Cacheable configuration support
+ - Support upcoming features of Couchbase Server
 
 ## Installation
 The preferred way is to install the package through maven:
@@ -38,6 +40,7 @@ The preferred way is to install the package through maven:
 ```
 Note that the first milestone is not yet released, but will be available through maven central once its done. This will pull in all dependencies needed, including the Couchbase Java SDK and the Spring dependencies.
 
+If you want to get a pre-release, please use the springsource snapshot and milestone repositories.
 
 ## Configuration
 Since we are in the Spring ecosystem, you can either configure it through XML or plain Java (often referred to as JavaConfig).
