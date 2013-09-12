@@ -14,13 +14,13 @@
   <parent>
     <groupId>org.springframework.data.build</groupId>
     <artifactId>spring-data-parent</artifactId>
-    <version>1.1.0.RELEASE</version>
+    <version>1.2.0.RELEASE</version>
   </parent>
 
   <properties>
     <couchbase>1.1.9</couchbase>
     <jackson>2.2.2</jackson>
-    <springdata.commons>1.6.0.BUILD-SNAPSHOT</springdata.commons>
+    <springdata.commons>1.6.1.RELEASE</springdata.commons>
   </properties>
 
   <dependencies>
@@ -99,8 +99,8 @@
       </snapshots>
     </repository>
     <repository>
-      <id>spring-lib-snapshot</id>
-      <url>http://repo.springsource.org/libs-snapshot-local</url>
+      <id>spring-lib-release</id>
+      <url>http://repo.springsource.org/libs-release-local</url>
     </repository>
   </repositories>
 

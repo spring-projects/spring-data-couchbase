@@ -1,9 +1,9 @@
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.springframework.data.couchbase
 Bundle-Name: ${project.name}
-Bundle-Vendor: SpringSource
+Bundle-Vendor: Pivotal
 Bundle-Version: ${project.version}
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: J2SE-1.6
 Export-Template: 
  org.springframework.data.couchbase.*;version="${project.version}"
 Import-Template:

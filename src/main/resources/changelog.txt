@@ -1,0 +1,29 @@
+
+Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
+-------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-11] - Upgrade Jackson to 2.2 Release
+    * [DATACOUCH-22] - Spring Data Couchbase build fails when not having bundlor maven plugin
+
+** Improvement
+    * [DATACOUCH-5] - Add AbstractCouchbaseConfiguration for JavaConfig
+    * [DATACOUCH-6] - Add simple support for XML configurations
+    * [DATACOUCH-7] - Implement find* methods on SimpleCouchbaseRepository
+    * [DATACOUCH-12] - Support arbitrary Objects on encode/decode
+    * [DATACOUCH-13] - Upgrade Couchbase-Client to 1.1.7
+    * [DATACOUCH-15] - Upgrade Couchbase Java Client to 1.1.8
+    * [DATACOUCH-17] - Make sure default template ops are sync & exceptions are mapped
+    * [DATACOUCH-19] - Deploy Snapshots & Integrate CI
+    * [DATACOUCH-21] - Improve API Documentation & Formatting before M1
+    * [DATACOUCH-23] - Make Testsuite clean the bucket on every run.
+    * [DATACOUCH-24] - Add testing for view-based operations on template and repository.
+    * [DATACOUCH-26] - Upgrade Couchbase Java Client to 1.1.9
+
+** Task
+    * [DATACOUCH-1] - Use Spring Data Build parent
+    * [DATACOUCH-2] - Release 1.0 M1
+    * [DATACOUCH-3] - Rename packages to org.springframework.data.couchbase
+    * [DATACOUCH-4] - Add Apache 2 license headers
+    * [DATACOUCH-8] - Overhaul README with uptodate information
+    * [DATACOUCH-9] - Add View query support to the Template
+    * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
