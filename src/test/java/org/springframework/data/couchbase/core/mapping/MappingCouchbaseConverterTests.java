@@ -69,7 +69,6 @@ public class MappingCouchbaseConverterTests {
       new CouchbaseDocument());
   }
 
-
   @Test
   public void writesString() {
     CouchbaseDocument converted = new CouchbaseDocument();
@@ -94,7 +93,6 @@ public class MappingCouchbaseConverterTests {
     assertEquals("foobar", converted.attr0);
   }
 
-
   @Test
   public void writesNumber() {
     CouchbaseDocument converted = new CouchbaseDocument();
@@ -118,7 +116,6 @@ public class MappingCouchbaseConverterTests {
     NumberEntity converted = converter.read(NumberEntity.class, source);
     assertEquals(42, converted.attr0);
   }
-
 
   @Test
   public void writesBoolean() {
@@ -176,6 +173,18 @@ public class MappingCouchbaseConverterTests {
     assertTrue(converted.attr3);
   }
 
+  @Test
+  public void readsID() {
+    // given:
+    CouchbaseDocument document = new CouchbaseDocument("001");
+
+    // when:
+    BasicCouchbasePersistentPropertyTests.Beer beer = converter.read(BasicCouchbasePersistentPropertyTests.Beer.class,
+        document);
+
+    // then:
+    assertEquals("001", beer.getId());
+  }
 
   @Test
   public void writesUninitializedValues() {
@@ -335,7 +344,6 @@ public class MappingCouchbaseConverterTests {
     assertEquals(attr1, readConverted.attr1);
     assertEquals(attr2, readConverted.attr2);
   }
-
 
   @Test
   public void writesAndReadsValueClass() {
