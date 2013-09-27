@@ -208,7 +208,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return;
     }
 
-    TypeInformation<? extends Object> type = ClassTypeInformation.from(source.getClass());
+    TypeInformation<?> type = ClassTypeInformation.from(source.getClass());
     typeMapper.writeType(type, target);
     writeInternal(source, target, type);
 
