@@ -1,0 +1,108 @@
+/**
+ * SpringData Couchbase.
+ */
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+configure(rootProject) {
+    group = 'org.springframework.data'
+    version = springDataCouchbaseVersion
+    description = 'Spring-Data-Couchbase'
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.hasTask(release)) {
+        version += '-RELEASE'
+    } else {
+        version += '-SNAPSHOT'
+    }
+}
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+[compileJava, compileTestJava]*.options*.compilerArgs = ['-Xlint']
+
+repositories {
+    ivy {
+        url "${project.gradle.gradleUserHomeDir}/local-artifacts"
+    }
+    maven {
+        url "http://files.couchbase.com/maven2"
+    }
+    maven {
+        url "http://repo.springsource.org/libs-release-local"
+    }
+    mavenCentral()
+}
+
+configurations.all {
+    resolutionStrategy {
+        force([
+            "junit:junit:${junitVersion}",
+        ])
+    }
+}
+
+dependencies {
+    compile([
+            "cglib:cglib:${cglibVersion}",
+            "ch.qos.logback:logback-classic:${logbackVersion}",
+            "ch.qos.logback:logback-core:${logbackVersion}",
+            "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}",
+            "couchbase:couchbase-client:${couchbaseVersion}",
+            "org.slf4j:jcl-over-slf4j:${slf4jVersion}",
+            "org.slf4j:log4j-over-slf4j:${slf4jVersion}",
+            "org.slf4j:slf4j-api:${slf4jVersion}",
+            "org.springframework.data:spring-data-commons:${springDataCommonsVersion}",
+            "org.springframework:spring-context:${springVersion}",
+            "org.springframework:spring-tx:${springVersion}",
+            "org.springframework:spring-web:${springVersion}",
+    ])
+    testCompile([
+            "junit:junit:${junitVersion}",
+            "org.springframework:spring-test:${springVersion}",
+            "org.apache.httpcomponents:httpclient:${httpClientVersion}",
+    ])
+}
+
+test {
+    maxParallelForks = 5
+    ignoreFailures = false
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+uploadArchives {
+    repositories {
+        if(project.hasProperty('localInstall')) {
+            ivy {
+                url "${project.gradle.gradleUserHomeDir}/local-artifacts"
+            }
+        }
+    }
+}
+
+task release(description: "Creates a Spring-Data Couchbase ${version} RELEASE distribution.", dependsOn: assemble) << {
+    println "Release ${version} created. Have lots of fun!"
+}
+
+task snapshot(description: "Creates a Spring-Data Couchbase ${version} SNAPSHOT distribution.", dependsOn: assemble) << {
+    println "Snapshot ${version} created. Have lots of fun!"
+}
