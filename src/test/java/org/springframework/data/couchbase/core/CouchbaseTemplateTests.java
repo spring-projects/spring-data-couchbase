@@ -68,12 +68,12 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void saveDocumentWithExpiry() throws Exception {
-  	String id = "simple-doc-with-expiry";
-  	DocumentWithExpiry doc = new DocumentWithExpiry(id);
-  	template.save(doc);
-  	assertNotNull(client.get(id));
-  	Thread.sleep(3000);
-  	assertNull(client.get(id));
+    String id = "simple-doc-with-expiry";
+    DocumentWithExpiry doc = new DocumentWithExpiry(id);
+    template.save(doc);
+    assertNotNull(client.get(id));
+    Thread.sleep(3000);
+    assertNull(client.get(id));
   }
 
   @Test
@@ -96,10 +96,10 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void updateDoesNotInsert() {
-  	String id ="update-does-not-insert";
-  	SimplePerson doc = new SimplePerson(id, "Nice Guy");
-  	template.update(doc);
-  	assertNull(client.get(id));
+    String id ="update-does-not-insert";
+    SimplePerson doc = new SimplePerson(id, "Nice Guy");
+    template.update(doc);
+    assertNull(client.get(id));
   }
 
 
@@ -168,6 +168,7 @@ public class CouchbaseTemplateTests {
   @Test
   public void shouldLoadAndMapViewDocs() {
     Query query = new Query();
+    query.setIncludeDocs(true);
     query.setStale(Stale.FALSE);
 
     final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
@@ -179,7 +180,7 @@ public class CouchbaseTemplateTests {
       assertNotNull(beer.getActive());
     }
   }
-  
+
   /**
    * A sample document with just an id and property.
    */
@@ -191,11 +192,11 @@ public class CouchbaseTemplateTests {
     private final String name;
 
     public SimplePerson(String id, String name) {
-    	this.id = id;
-    	this.name = name;
-    } 	
+        this.id = id;
+        this.name = name;
+    }
   }
-  
+
   /**
    * A sample document that expires in 2 seconds.
    */
@@ -203,9 +204,9 @@ public class CouchbaseTemplateTests {
   static class DocumentWithExpiry {
     @Id
     private final String id;
-    
+
     public DocumentWithExpiry(String id) {
-    	this.id = id;
+        this.id = id;
     }
   }
 

@@ -119,7 +119,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
     String view = "all";
 
-    return couchbaseOperations.findByView(design, view, new Query().setReduce(false),
+    return couchbaseOperations.findByView(design, view, new Query().setReduce(false).setIncludeDocs(true),
       entityInformation.getJavaType());
   }
 

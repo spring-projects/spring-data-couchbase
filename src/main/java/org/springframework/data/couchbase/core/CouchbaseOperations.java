@@ -40,7 +40,7 @@ public interface CouchbaseOperations {
    * @param objectToSave the object to store in the bucket.
    */
   void save(Object objectToSave);
-  
+
   /**
    * Save a list of objects.
    *
@@ -49,8 +49,8 @@ public interface CouchbaseOperations {
    *
    * @param batchToSave the list of objects to store in the bucket.
    */
-  void save(Collection<? extends Object> batchToSave);	
-	
+  void save(Collection<? extends Object> batchToSave);
+
   /**
    * Insert the given object.
    *
@@ -60,7 +60,7 @@ public interface CouchbaseOperations {
    * @param objectToSave the object to add to the bucket.
    */
   void insert(Object objectToSave);
-  
+
   /**
    * Insert a list of objects.
    *
@@ -80,7 +80,7 @@ public interface CouchbaseOperations {
    * @param objectToSave the object to add to the bucket.
    */
   void update(Object objectToSave);
-  
+
   /**
    * Insert a list of objects.
    *
@@ -90,7 +90,7 @@ public interface CouchbaseOperations {
    * @param batchToSave the list of objects to add to the bucket.
    */
   void update(Collection<? extends Object> batchToSave);
-  
+
   /**
    * Find an object by its given Id and map it to the corresponding entity.
    *
@@ -103,8 +103,9 @@ public interface CouchbaseOperations {
   /**
    * Query a View for a list of documents of type T.
    *
-   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
-   * time. It is valid to pass in a empty constructed {@link Query} object.</p>
+   * <p>{@link Query#setIncludeDocs(boolean)} defaults to false. If you require the query to include the entire
+   * document, you will need to set it to true before calling this method. It is valid to pass in a empty 
+   * constructed {@link Query} object.</p>
    *
    * <p>This method does not work with reduced views, because they by design do not contain references to original
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
