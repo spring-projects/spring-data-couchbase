@@ -44,17 +44,17 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   protected final MappingContext<? extends CouchbasePersistentEntity<?>,
       CouchbasePersistentProperty> mappingContext;
   private static final Collection<String> ITERABLE_CLASSES;
-  private final CouchbaseExceptionTranslator exceptionTranslator = 
-  		new CouchbaseExceptionTranslator();
+  private final CouchbaseExceptionTranslator exceptionTranslator =
+        new CouchbaseExceptionTranslator();
   private final TranslationService<Object> translationService;
-  
-	static {
-		Set<String> iterableClasses = new HashSet<String>();
-		iterableClasses.add(List.class.getName());
-		iterableClasses.add(Collection.class.getName());
-		iterableClasses.add(Iterator.class.getName());
-		ITERABLE_CLASSES = Collections.unmodifiableCollection(iterableClasses);
-	}
+
+    static {
+        Set<String> iterableClasses = new HashSet<String>();
+        iterableClasses.add(List.class.getName());
+        iterableClasses.add(Collection.class.getName());
+        iterableClasses.add(Iterator.class.getName());
+        ITERABLE_CLASSES = Collections.unmodifiableCollection(iterableClasses);
+    }
 
   public CouchbaseTemplate(final CouchbaseClient client) {
     this(client, null);
@@ -84,7 +84,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   public final void insert(final Object objectToSave) {
-  	ensureNotIterable(objectToSave);
+    ensureNotIterable(objectToSave);
 
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
@@ -96,16 +96,16 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       }
     });
   }
-  
+
   public final void insert(final Collection<? extends Object> batchToSave) {
-  	Iterator<? extends Object> iter = batchToSave.iterator();
-  	while (iter.hasNext()) {
-  		insert(iter.next());
-  	}
+    Iterator<? extends Object> iter = batchToSave.iterator();
+    while (iter.hasNext()) {
+        insert(iter.next());
+    }
   }
 
   public void save(final Object objectToSave) {
-  	ensureNotIterable(objectToSave);
+    ensureNotIterable(objectToSave);
 
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
@@ -117,7 +117,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       }
     });
   }
-  
+
   public void save(final Collection<? extends Object> batchToSave) {
     Iterator<? extends Object> iter = batchToSave.iterator();
     while (iter.hasNext()) {
@@ -126,7 +126,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   public void update(final Object objectToSave) {
-  	ensureNotIterable(objectToSave);
+    ensureNotIterable(objectToSave);
 
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
@@ -139,14 +139,14 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     });
 
   }
-  
+
   public void update(final Collection<? extends Object> batchToSave) {
-  	Iterator<? extends Object> iter = batchToSave.iterator();
-  	while (iter.hasNext()) {
-  		save(iter.next());
-  	}
+    Iterator<? extends Object> iter = batchToSave.iterator();
+    while (iter.hasNext()) {
+        save(iter.next());
+    }
   }
-  
+
   public final <T> T findById(final String id, final Class<T> entityClass) {
     String result = execute(new BucketCallback<String>() {
       @Override
@@ -155,12 +155,12 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       }
     });
 
-  	if (result == null) {
-  		return null;
-  	}
+    if (result == null) {
+        return null;
+    }
 
     CouchbaseDocument converted = new CouchbaseDocument(id);
-  	return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
+    return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
   }
 
 
@@ -168,9 +168,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public <T> List<T> findByView(final String designName, final String viewName,
     final Query query, final Class<T> entityClass) {
 
-    if (!query.willIncludeDocs()) {
-      query.setIncludeDocs(true);
+    if(query.willIncludeDocs()) {
+        query.setIncludeDocs(true);
     }
+
     if (query.willReduce()) {
       query.setReduce(false);
     }
@@ -261,18 +262,18 @@ public class CouchbaseTemplate implements CouchbaseOperations {
    *
    * @param o the object to verify.
    */
-	protected final void ensureNotIterable(Object o) {
-		if (null != o) {
-			if (o.getClass().isArray() || ITERABLE_CLASSES.contains(o.getClass().getName())) {
-				throw new IllegalArgumentException("Cannot use a collection here.");
-			}
-		}
-	}
+    protected final void ensureNotIterable(Object o) {
+        if (null != o) {
+            if (o.getClass().isArray() || ITERABLE_CLASSES.contains(o.getClass().getName())) {
+                throw new IllegalArgumentException("Cannot use a collection here.");
+            }
+        }
+    }
 
-	private RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
-		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
-		return resolved == null ? ex : resolved;
-	}
+    private RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
+        RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
+        return resolved == null ? ex : resolved;
+    }
 
   @Override
   public CouchbaseConverter getConverter() {

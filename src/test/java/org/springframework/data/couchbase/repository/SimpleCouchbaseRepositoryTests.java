@@ -77,7 +77,7 @@ public class SimpleCouchbaseRepositoryTests {
   @Test
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
-    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
+    client.query(client.getView("user", "all"), new Query().setIncludeDocs(true).setStale(Stale.FALSE));
 
     Iterable<User> allUsers = repository.findAll();
     int size = 0;
