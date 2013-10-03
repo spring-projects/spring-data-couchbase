@@ -168,9 +168,6 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public <T> List<T> findByView(final String designName, final String viewName,
     final Query query, final Class<T> entityClass) {
 
-    if (!query.willIncludeDocs()) {
-      query.setIncludeDocs(true);
-    }
     if (query.willReduce()) {
       query.setReduce(false);
     }
