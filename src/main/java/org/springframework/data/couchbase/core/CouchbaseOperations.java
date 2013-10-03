@@ -103,8 +103,9 @@ public interface CouchbaseOperations {
   /**
    * Query a View for a list of documents of type T.
    *
-   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
-   * time. It is valid to pass in a empty constructed {@link Query} object.</p>
+   * {@link Query#setIncludeDocs(boolean)} defaults to false. If you require the query to include the entire
+   * document, you will need to set it to true before calling this method. It is valid to pass in a empty
+   * constructed {@link Query} object.
    *
    * <p>This method does not work with reduced views, because they by design do not contain references to original
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
@@ -130,7 +131,7 @@ public interface CouchbaseOperations {
    * @param design the name of the design document.
    * @param view the name of the view.
    * @param query the Query object to customize the view query.
-   * @return
+   * @return the view response.
    */
   ViewResponse queryView(String design, String view, Query query);
 

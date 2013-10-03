@@ -168,6 +168,7 @@ public class CouchbaseTemplateTests {
   @Test
   public void shouldLoadAndMapViewDocs() {
     Query query = new Query();
+    query.setIncludeDocs(true);
     query.setStale(Stale.FALSE);
 
     final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
