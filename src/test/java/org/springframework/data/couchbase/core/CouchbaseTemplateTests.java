@@ -19,8 +19,6 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.Stale;
-import net.spy.memcached.internal.OperationFuture;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +30,18 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Michael Nitschinger
@@ -191,6 +198,14 @@ public class CouchbaseTemplateTests {
       assertTrue(true);
     }
   }
+
+  @Test
+  public void shouldDeserialiseLongs() {
+    SimpleWithLong simpleWithLong = new SimpleWithLong("simpleWithLong:simple", new Date().getTime());
+    template.save(simpleWithLong);
+    simpleWithLong = template.findById("simpleWithLong:simple", SimpleWithLong.class);
+    assertNotNull(simpleWithLong);
+  }
   
   /**
    * A sample document with just an id and property.
@@ -263,6 +278,32 @@ public class CouchbaseTemplateTests {
 
     String getId() {
       return id;
+    }
+  }
+
+  @Document
+  static class SimpleWithLong {
+
+    @Id
+    private String id;
+
+    private long value;
+
+    SimpleWithLong(final String id, final long value) {
+      this.id = id;
+      this.value = value;
+    }
+
+    String getId() {
+      return id;
+    }
+
+    long getValue() {
+      return value;
+    }
+
+    void setValue(final long value) {
+      this.value = value;
     }
   }
 }

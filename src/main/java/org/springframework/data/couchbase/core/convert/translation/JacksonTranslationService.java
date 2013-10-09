@@ -50,6 +50,7 @@ public class JacksonTranslationService implements TranslationService {
    * Encode a {@link CouchbaseStorable} to a JSON string.
    *
    * @param source the source document to encode.
+   *
    * @return the encoded JSON String.
    */
   @Override
@@ -72,6 +73,7 @@ public class JacksonTranslationService implements TranslationService {
    *
    * @param source the source document
    * @param generator the JSON generator.
+   *
    * @throws IOException
    */
   private void encodeRecursive(final CouchbaseStorable source, final JsonGenerator generator) throws IOException {
@@ -103,6 +105,7 @@ public class JacksonTranslationService implements TranslationService {
    *
    * @param source the source formatted document.
    * @param target the target of the populated data.
+   *
    * @return the decoded structure.
    */
   @Override
@@ -132,8 +135,9 @@ public class JacksonTranslationService implements TranslationService {
    *
    * @param parser the JSON parser with the content.
    * @param target the target where the content should be stored.
-   * @returns the decoded object.
+   *
    * @throws IOException
+   * @returns the decoded object.
    */
   private CouchbaseDocument decodeObject(final JsonParser parser, final CouchbaseDocument target) throws IOException {
     JsonToken currentToken = parser.nextToken();
@@ -161,8 +165,9 @@ public class JacksonTranslationService implements TranslationService {
    *
    * @param parser the JSON parser with the content.
    * @param target the target where the content should be stored.
-   * @returns the decoded list.
+   *
    * @throws IOException
+   * @returns the decoded list.
    */
   private CouchbaseList decodeArray(final JsonParser parser, final CouchbaseList target) throws IOException {
     JsonToken currentToken = parser.nextToken();
@@ -187,7 +192,9 @@ public class JacksonTranslationService implements TranslationService {
    *
    * @param token the type of token.
    * @param parser the parser with the content.
+   *
    * @return the decoded primitve.
+   *
    * @throws IOException
    */
   private Object decodePrimitive(final JsonToken token, final JsonParser parser) throws IOException {
@@ -198,7 +205,11 @@ public class JacksonTranslationService implements TranslationService {
       case VALUE_STRING:
         return parser.getValueAsString();
       case VALUE_NUMBER_INT:
-        return parser.getValueAsInt();
+        try {
+          return parser.getValueAsInt();
+        } catch (final JsonParseException e) {
+          return parser.getValueAsLong();
+        }
       case VALUE_NUMBER_FLOAT:
         return parser.getValueAsDouble();
       default:
