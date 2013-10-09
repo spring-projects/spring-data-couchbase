@@ -175,14 +175,11 @@ public class MappingCouchbaseConverterTests {
 
   @Test
   public void readsID() {
-    // given:
     CouchbaseDocument document = new CouchbaseDocument("001");
 
-    // when:
     BasicCouchbasePersistentPropertyTests.Beer beer = converter.read(BasicCouchbasePersistentPropertyTests.Beer.class,
         document);
 
-    // then:
     assertEquals("001", beer.getId());
   }
 
