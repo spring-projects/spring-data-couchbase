@@ -179,6 +179,18 @@ public class CouchbaseTemplateTests {
       assertNotNull(beer.getActive());
     }
   }
+
+  @Test
+  public void shouldNotSaveNull() {
+    final Map<String, String> things = new HashMap<String, String>();
+    things.put("key", null);
+    try {
+      template.save(things);
+      fail("We should not be able to store a NULL!");
+    } catch(final IllegalArgumentException e) {
+      assertTrue(true);
+    }
+  }
   
   /**
    * A sample document with just an id and property.

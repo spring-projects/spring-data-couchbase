@@ -104,7 +104,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
    * @return the {@link CouchbaseDocument} for chaining.
    */
   public final CouchbaseDocument put(final String key, final Object value) {
-    verifyValueType(value.getClass());
+    verifyValueType(value);
 
     payload.put(key, value);
     return this;
@@ -259,15 +259,19 @@ public class CouchbaseDocument implements CouchbaseStorable {
    * <p>If this is not the case, a {@link IllegalArgumentException} is
    * thrown.</p>
    *
-   * @param clazz the class type to check and verify.
+   * Objects that are NULL cannot be stored.
+   *
+   * @param value the object to verify its type.
    */
-  private void verifyValueType(final Class<?> clazz) {
-    if (simpleTypeHolder.isSimpleType(clazz)) {
-      return;
+  private void verifyValueType(final Object value) {
+    if(value == null) {
+      throw new IllegalArgumentException("Attribute of type null cannot be stored.");
     }
-
-    throw new IllegalArgumentException("Attribute of type "
-      + clazz.getCanonicalName() + " can not be stored and must be converted.");
+    final Class<?> clazz = value.getClass();
+    if (simpleTypeHolder.isSimpleType(clazz)) {
+        return;
+    }
+    throw new IllegalArgumentException("Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
   }
 
   /**

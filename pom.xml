@@ -18,8 +18,8 @@
   </parent>
 
   <properties>
-    <couchbase>1.1.9</couchbase>
-    <jackson>2.2.2</jackson>
+    <couchbase>1.2.0</couchbase>
+    <jackson>2.2.3</jackson>
     <springdata.commons>1.6.1.RELEASE</springdata.commons>
   </properties>
 
@@ -48,7 +48,7 @@
     </dependency>
 
     <dependency>
-      <groupId>couchbase</groupId>
+      <groupId>com.couchbase.client</groupId>
       <artifactId>couchbase-client</artifactId>
       <version>${couchbase}</version>
     </dependency>
@@ -90,14 +90,6 @@
   </dependencies>
 
   <repositories>
-    <repository>
-      <id>couchbase</id>
-      <name>Couchbase Maven Repository</name>
-      <url>http://files.couchbase.com/maven2/</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
     <repository>
       <id>spring-lib-release</id>
       <url>http://repo.springsource.org/libs-release-local</url>
