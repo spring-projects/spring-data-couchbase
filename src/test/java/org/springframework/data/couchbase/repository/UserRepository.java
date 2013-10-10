@@ -19,6 +19,6 @@ package org.springframework.data.couchbase.repository;
 /**
  * @author Michael Nitschinger
  */
-public interface UserRepository extends CouchbaseRepository<User, String>{
+public interface UserRepository extends CouchbaseRepository<User, String> {
 
 }

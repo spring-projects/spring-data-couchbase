@@ -21,6 +21,7 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.util.Assert;
@@ -46,6 +47,10 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    */
   private final CouchbaseEntityInformation<T, String> entityInformation;
 
+  /**
+   * Custom ViewMetadataProvider.
+   */
+  private ViewMetadataProvider viewMetadataProvider;
 
   /**
    * Create a new Repository.
@@ -53,13 +58,21 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    * @param metadata the Metadata for the entity.
    * @param couchbaseOperations the reference to the template used.
    */
-  public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-    final CouchbaseOperations couchbaseOperations) {
+  public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata, final CouchbaseOperations couchbaseOperations) {
     Assert.notNull(couchbaseOperations);
     Assert.notNull(metadata);
 
     entityInformation = metadata;
     this.couchbaseOperations = couchbaseOperations;
+  }
+
+  /**
+   * Configures a custom {@link ViewMetadataProvider} to be used to detect {@link View}s to be applied to queries.
+   *
+   * @param viewMetadataProvider that is used to lookup any annotated View on a query method.
+   */
+  public void setViewMetadataProvider(final ViewMetadataProvider viewMetadataProvider) {
+    this.viewMetadataProvider = viewMetadataProvider;
   }
 
   @Override
@@ -75,7 +88,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
 
     List<S> result = new ArrayList<S>();
-    for(S entity : entities) {
+    for (S entity : entities) {
       save(entity);
       result.add(entity);
     }
@@ -109,45 +122,38 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public void delete(Iterable<? extends T> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    for (T entity: entities) {
+    for (T entity : entities) {
       couchbaseOperations.remove(entity);
     }
   }
 
   @Override
   public Iterable<T> findAll() {
-    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
-
-    return couchbaseOperations.findByView(design, view, new Query().setReduce(false),
-      entityInformation.getJavaType());
+    final ResolvedView resolvedView = determineView();
+    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), new Query().setReduce(false), entityInformation.getJavaType());
   }
 
   @Override
   public Iterable<T> findAll(final Iterable<ID> ids) {
-    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
-
     Query query = new Query();
     query.setReduce(false);
     query.setKeys(ComplexKey.of(ids));
 
-    return couchbaseOperations.findByView(design, view, query, entityInformation.getJavaType());
+    final ResolvedView resolvedView = determineView();
+    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query, entityInformation.getJavaType());
   }
 
   @Override
   public long count() {
-    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
-
     Query query = new Query();
     query.setReduce(true);
 
-    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+    final ResolvedView resolvedView = determineView();
+    ViewResponse response = couchbaseOperations.queryView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query);
 
     long count = 0;
     for (ViewRow row : response) {
-      count +=  Long.parseLong(row.getValue());
+      count += Long.parseLong(row.getValue());
     }
 
     return count;
@@ -155,13 +161,11 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public void deleteAll() {
-    String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
-
     Query query = new Query();
     query.setReduce(false);
 
-    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+    final ResolvedView resolvedView = determineView();
+    ViewResponse response = couchbaseOperations.queryView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query);
     for (ViewRow row : response) {
       couchbaseOperations.remove(row.getId());
     }
@@ -183,6 +187,50 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    */
   protected CouchbaseEntityInformation<T, String> getEntityInformation() {
     return entityInformation;
+  }
+
+  /**
+   * Resolve a View based upon:
+   * <p/>
+   * 1. Any @View annotation that is present
+   * 2. If none are found, default designDocument to be the entity name (lowercase) and viewName to be "all".
+   *
+   * @return ResolvedView containing the designDocument and viewName.
+   */
+  private ResolvedView determineView() {
+    String designDocument = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String viewName = "all";
+
+    final View view = viewMetadataProvider.getView();
+
+    if (view != null) {
+      designDocument = view.designDocument();
+      viewName = view.viewName();
+    }
+
+    return new ResolvedView(designDocument, viewName);
+  }
+
+  /**
+   * Simple holder to allow an easier exchange of information.
+   */
+  private final class ResolvedView {
+
+    private final String designDocument;
+    private final String viewName;
+
+    public ResolvedView(final String designDocument, final String viewName) {
+      this.designDocument = designDocument;
+      this.viewName = viewName;
+    }
+
+    private String getDesignDocument() {
+      return designDocument;
+    }
+
+    private String getViewName() {
+      return viewName;
+    }
   }
 
 }
