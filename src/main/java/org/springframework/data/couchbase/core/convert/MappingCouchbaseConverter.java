@@ -82,7 +82,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   protected <R> R read(TypeInformation<R> type, CouchbaseDocument doc) {
     return read(type, doc, null);
   }
-  
+
   protected <R> R read(TypeInformation<R> type, final CouchbaseDocument source, Object parent) {
 
     if (source == null) {
@@ -118,12 +118,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-        if (!source.containsKey(prop.getFieldName()) || entity.isConstructorArgument(prop)) {
+        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop)) {
           return;
         }
 
         Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, evaluator, result);
         wrapper.setProperty(prop, obj, useFieldAccessOnly);
+      }
+
+      private boolean doesPropertyExistInSource(CouchbasePersistentProperty property) {
+        return property.isIdProperty() || source.containsKey(property.getFieldName());
       }
     });
 
@@ -200,7 +204,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     return target.isAssignableFrom(value.getClass()) ? value : conversionService.convert(value, target);
   }
-
 
   @Override
   public void write(final Object source, final CouchbaseDocument target) {
