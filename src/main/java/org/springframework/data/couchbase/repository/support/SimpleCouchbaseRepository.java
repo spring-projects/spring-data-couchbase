@@ -21,11 +21,15 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +50,15 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    */
   private final CouchbaseEntityInformation<T, String> entityInformation;
 
+  /**
+   * Contains information about this repository.
+   */
+  private final RepositoryInformation repositoryInformation;
+
+  /**
+   * Convenience to hold all declared methods on the interface since we don't want to iterate every time!
+   */
+  private final Method[] allDeclaredMethods;
 
   /**
    * Create a new Repository.
@@ -54,13 +67,18 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    * @param couchbaseOperations the reference to the template used.
    */
   public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-    final CouchbaseOperations couchbaseOperations) {
+                                   final CouchbaseOperations couchbaseOperations,
+                                   final RepositoryInformation repositoryInformation) {
     Assert.notNull(couchbaseOperations);
     Assert.notNull(metadata);
+    Assert.notNull(repositoryInformation);
 
     entityInformation = metadata;
     this.couchbaseOperations = couchbaseOperations;
+    this.repositoryInformation = repositoryInformation;
+    allDeclaredMethods = ReflectionUtils.getAllDeclaredMethods(repositoryInformation.getRepositoryInterface());
   }
+
 
   @Override
   public <S extends T> S save(S entity) {
@@ -75,7 +93,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
 
     List<S> result = new ArrayList<S>();
-    for(S entity : entities) {
+    for (S entity : entities) {
       save(entity);
       result.add(entity);
     }
@@ -109,7 +127,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public void delete(Iterable<? extends T> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    for (T entity: entities) {
+    for (T entity : entities) {
       couchbaseOperations.remove(entity);
     }
   }
@@ -117,37 +135,60 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public Iterable<T> findAll() {
     String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
+    String viewName = "all";
 
-    return couchbaseOperations.findByView(design, view, new Query().setReduce(false),
-      entityInformation.getJavaType());
+    final Method findAllMethod = repositoryInformation.getCrudMethods().getFindAllMethod();
+    final View view = findAllMethod.getAnnotation(View.class);
+    if (view != null) {
+      design = view.design();
+      viewName = view.view();
+    }
+
+    return couchbaseOperations.findByView(design, viewName, new Query().setReduce(false), entityInformation.getJavaType());
   }
 
   @Override
   public Iterable<T> findAll(final Iterable<ID> ids) {
     String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
+    String viewName = "all";
+
+    final Method findAllMethod = repositoryInformation.getCrudMethods().getFindAllMethod();
+    final View view = findAllMethod.getAnnotation(View.class);
+    if (view != null) {
+      design = view.design();
+      viewName = view.view();
+    }
 
     Query query = new Query();
     query.setReduce(false);
     query.setKeys(ComplexKey.of(ids));
 
-    return couchbaseOperations.findByView(design, view, query, entityInformation.getJavaType());
+    return couchbaseOperations.findByView(design, viewName, query, entityInformation.getJavaType());
   }
 
   @Override
   public long count() {
     String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
+    String viewName = "all";
+
+    for (final Method method : allDeclaredMethods) {
+      if (method.getName().equals("count")) {
+        final View view = method.getAnnotation(View.class);
+        if (view != null) {
+          design = view.design();
+          viewName = view.view();
+        }
+      }
+    }
 
     Query query = new Query();
     query.setReduce(true);
 
-    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+    ViewResponse response = couchbaseOperations.queryView(design, viewName, query);
 
     long count = 0;
     for (ViewRow row : response) {
-      count +=  Long.parseLong(row.getValue());
+      count += Long.parseLong(row.getValue());
     }
 
     return count;
@@ -156,12 +197,19 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public void deleteAll() {
     String design = entityInformation.getJavaType().getSimpleName().toLowerCase();
-    String view = "all";
+    String viewName = "all";
+
+    final Method deleteMethod = repositoryInformation.getCrudMethods().getDeleteMethod();
+    final View view = deleteMethod.getAnnotation(View.class);
+    if (view != null) {
+      design = view.design();
+      viewName = view.view();
+    }
 
     Query query = new Query();
     query.setReduce(false);
 
-    ViewResponse response = couchbaseOperations.queryView(design, view, query);
+    ViewResponse response = couchbaseOperations.queryView(design, viewName, query);
     for (ViewRow row : response) {
       couchbaseOperations.remove(row.getId());
     }

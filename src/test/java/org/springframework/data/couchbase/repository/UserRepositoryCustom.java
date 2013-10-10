@@ -16,9 +16,16 @@
 
 package org.springframework.data.couchbase.repository;
 
-/**
- * @author Michael Nitschinger
- */
-public interface UserRepository extends CouchbaseRepository<User, String> {
+import org.springframework.data.couchbase.core.view.View;
+
+public interface UserRepositoryCustom extends CouchbaseRepository<User, String> {
+
+  @Override
+  @View(design = "user", view = "customFindAllView")
+  Iterable<User> findAll();
+
+  @Override
+  @View(design = "user", view = "customCountView")
+  long count();
 
 }

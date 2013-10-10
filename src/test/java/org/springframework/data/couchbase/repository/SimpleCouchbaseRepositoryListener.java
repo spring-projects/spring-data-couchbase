@@ -23,7 +23,10 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
-public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExecutionListener {
+/**
+ * @author Michael Nitschinger
+ */
+public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestExecutionListener {
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
@@ -32,18 +35,19 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
     createAndWaitForDesignDocs(client);
   }
 
-  private void populateTestData(final CouchbaseClient client) {
+  private void populateTestData(CouchbaseClient client) {
     CouchbaseTemplate template = new CouchbaseTemplate(client);
+
     for (int i = 0; i < 100; i++) {
-      template.save(new User("testuser-" + i, "uname-" + i));
+      User u = new User("testuser-" + i, "uname-" + i);
+      template.save(u);
     }
   }
 
-  private void createAndWaitForDesignDocs(final CouchbaseClient client) {
-    final DesignDocument designDoc = new DesignDocument("user");
-    final String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
-    designDoc.setView(new ViewDesign("customFindAllView", mapFunction, "_count"));
-    designDoc.setView(new ViewDesign("customCountView", mapFunction, "_count"));
+  private void createAndWaitForDesignDocs(CouchbaseClient client) {
+    DesignDocument designDoc = new DesignDocument("user");
+    String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
+    designDoc.setView(new ViewDesign("all", mapFunction, "_count"));
     client.createDesignDoc(designDoc);
   }
 
