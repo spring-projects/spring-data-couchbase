@@ -50,7 +50,7 @@ public abstract class AbstractMonitor {
   }
 
   protected String randomAvailableHostname() {
-    List<SocketAddress> available = (ArrayList) client.getAvailableServers();
+    List<SocketAddress> available = (ArrayList<SocketAddress>) client.getAvailableServers();
     Collections.shuffle(available);
     return ((InetSocketAddress) available.get(0)).getHostName();
   }
@@ -60,15 +60,12 @@ public abstract class AbstractMonitor {
    *
    * @return stats for each node
    */
-  protected Map<SocketAddress,Map<String,String>> getStats() {
+  protected Map<SocketAddress, Map<String, String>> getStats() {
     return client.getStats();
   }
 
   /**
    * Returns stats for an individual node.
-   *
-   * @param node
-   * @return
    */
   protected Map<String, String> getStats(SocketAddress node) {
     return getStats().get(node);
