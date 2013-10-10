@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.repository;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.Stale;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,20 +25,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static com.couchbase.client.protocol.views.Stale.FALSE;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * @author Michael Nitschinger
+ * @author David Harrigan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners(SimpleCouchbaseRepositoryListener.class)
-public class SimpleCouchbaseRepositoryTests {
+@TestExecutionListeners(CouchbaseRepositoryViewListener.class)
+public class CouchbaseRepositoryViewTests {
 
   @Autowired
   private CouchbaseClient client;
@@ -47,55 +47,29 @@ public class SimpleCouchbaseRepositoryTests {
   @Autowired
   private CouchbaseTemplate template;
 
-  private UserRepository repository;
+  private CustomUserRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
-    repository = factory.getRepository(UserRepository.class);
+    repository = new CouchbaseRepositoryFactory(template).getRepository(CustomUserRepository.class);
   }
 
   @Test
-  public void simpleCrud() {
-    String key = "my_unique_user_key";
-    User instance = new User(key, "foobar");
-    repository.save(instance);
-
-    User found = repository.findOne(key);
-    assertEquals(instance.getKey(), found.getKey());
-    assertEquals(instance.getUsername(), found.getUsername());
-
-    assertTrue(repository.exists(key));
-    repository.delete(found);
-
-    assertNull(repository.findOne(key));
-    assertFalse(repository.exists(key));
-  }
-
-  @Test
-  /**
-   * This test uses/assumes a default viewName called "all" that is configured on Couchbase.
-   */
-  public void shouldFindAll() {
-    // do a non-stale query to populate data for testing.
-    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
-
+  public void shouldFindAllWithCustomView() {
+    client.query(client.getView("user", "customFindAllView"), new Query().setStale(FALSE));
     Iterable<User> allUsers = repository.findAll();
-    int size = 0;
-    for (User u : allUsers) {
-      size++;
-      assertNotNull(u.getKey());
-      assertNotNull(u.getUsername());
+    int i = 0;
+    for (final User allUser : allUsers) {
+      i++;
     }
-    assertEquals(100, size);
+    assertThat(i, is(100));
   }
 
   @Test
-  public void shouldCount() {
-    // do a non-stale query to populate data for testing.
-    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
-
-    assertEquals(100, repository.count());
+  public void shouldCountWithCustomView() {
+    client.query(client.getView("userCustom", "customCountView"), new Query().setStale(FALSE));
+    final long value = repository.count();
+    assertThat(value, is(100L));
   }
 
 }

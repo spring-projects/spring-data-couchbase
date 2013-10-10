@@ -13,18 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.data.couchbase.repository.support;
 
-package org.springframework.data.couchbase.repository;
-
-import org.springframework.data.repository.CrudRepository;
-
-import java.io.Serializable;
+import org.springframework.data.couchbase.core.view.View;
 
 /**
- * Couchbase specific {@link org.springframework.data.repository.Repository} interface.
+ * Interface to abstract {@link ViewMetadataProvider} that provides {@link View}s to be used for query execution.
  *
- * @author Michael Nitschinger
+ * @author David Harrigan.
  */
-public interface CouchbaseRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
+public interface ViewMetadataProvider {
+
+  /**
+   * Returns the {@link View} to be used.
+   *
+   * @return the View, or null if the method hasn't been annotated with @View.
+   */
+  View getView();
 
 }

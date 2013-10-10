@@ -110,8 +110,8 @@ public interface CouchbaseOperations {
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
    *
    * @param design the name of the design document.
-   * @param view the name of the view.
-   * @param query the Query object to customize the view query.
+   * @param view the name of the viewName.
+   * @param query the Query object to customize the viewName query.
    * @param entityClass the entity to map to.
    * @return the converted collection
    */
@@ -124,12 +124,12 @@ public interface CouchbaseOperations {
    * <p>This method is available to ease the working with views by still wrapping exceptions into the Spring
    * infrastructure.</p>
    *
-   * <p>It is especially needed if you want to run reduced view queries, because they can't be mapped onto entities
+   * <p>It is especially needed if you want to run reduced viewName queries, because they can't be mapped onto entities
    * directly.</p>
    *
-   * @param design the name of the design document.
-   * @param view the name of the view.
-   * @param query the Query object to customize the view query.
+   * @param design the name of the designDocument document.
+   * @param view the name of the viewName.
+   * @param query the Query object to customize the viewName query.
    * @return
    */
   ViewResponse queryView(String design, String view, Query query);

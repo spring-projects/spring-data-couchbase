@@ -16,15 +16,19 @@
 
 package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.io.Serializable;
+import org.springframework.data.couchbase.core.view.View;
 
 /**
- * Couchbase specific {@link org.springframework.data.repository.Repository} interface.
- *
- * @author Michael Nitschinger
+ * @author David Harrigan
  */
-public interface CouchbaseRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
+public interface CustomUserRepository extends CouchbaseRepository<User, String> {
+
+  @Override
+  @View(designDocument = "user", viewName = "customFindAllView")
+  Iterable<User> findAll();
+
+  @Override
+  @View(designDocument = "userCustom", viewName = "customCountView")
+  long count();
 
 }

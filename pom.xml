@@ -87,6 +87,13 @@
       <version>${jackson}</version>
     </dependency>
 
+    <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-all</artifactId>
+        <version>${hamcrest}</version>
+        <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <repositories>
