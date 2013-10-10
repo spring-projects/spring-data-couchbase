@@ -440,7 +440,7 @@ public class MappingCouchbaseConverterTests {
     private Map<String, Boolean> attr1;
     private Map<Integer, String> attr2;
     private Map<String, Map<String, String>> attr3;
-    public MapEntity(Map attr0, Map attr1, Map attr2, Map attr3) {
+    public MapEntity(Map<String, String> attr0, Map<String, Boolean> attr1, Map<Integer, String> attr2, Map<String, Map<String, String>> attr3) {
       this.attr0 = attr0;
       this.attr1 = attr1;
       this.attr2 = attr2;

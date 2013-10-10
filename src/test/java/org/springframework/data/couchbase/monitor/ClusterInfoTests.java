@@ -25,7 +25,8 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static junit.framework.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 /**
  * @author Michael Nitschinger
@@ -49,12 +50,12 @@ public class ClusterInfoTests {
 
   @Test
   public void totalRAMAssigned() {
-    assertTrue(ci.getTotalRAMAssigned() > 0);
+    assertThat(ci.getTotalRAMAssigned(), greaterThan(0L));
   }
 
   @Test
   public void totalRAMUsed() {
-    assertTrue(ci.getTotalRAMUsed() > 0);
+    assertThat(ci.getTotalRAMUsed(), greaterThan(0L));
   }
 
 }

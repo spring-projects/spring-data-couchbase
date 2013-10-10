@@ -25,7 +25,10 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static junit.framework.Assert.assertNotNull;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -51,8 +54,7 @@ public class ClientInfoTests {
   @Test
   public void hostNames() {
     String hostnames = ci.getHostNames();
-    assertNotNull(hostnames);
-    assertFalse(hostnames.isEmpty());
+    assertThat(hostnames, not(isEmptyString()));
   }
 
 }
