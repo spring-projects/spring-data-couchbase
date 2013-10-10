@@ -38,13 +38,11 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
-@TestExecutionListeners(CouchbaseRepositoryViewListener.class)
+@TestExecutionListeners(SimpleCouchbaseRepositoryListener.class)
 public class SimpleCouchbaseRepositoryTests {
-
 
   @Autowired
   private CouchbaseClient client;
-
 
   @Autowired
   private CouchbaseTemplate template;
@@ -75,6 +73,9 @@ public class SimpleCouchbaseRepositoryTests {
   }
 
   @Test
+  /**
+   * This test uses/assumes a default view called "all" that is configured on Couchbase.
+   */
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
     client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
