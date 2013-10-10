@@ -201,10 +201,12 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldDeserialiseLongs() {
-    SimpleWithLong simpleWithLong = new SimpleWithLong("simpleWithLong:simple", new Date().getTime());
+    final long time = new Date().getTime();
+    SimpleWithLong simpleWithLong = new SimpleWithLong("simpleWithLong:simple", time);
     template.save(simpleWithLong);
     simpleWithLong = template.findById("simpleWithLong:simple", SimpleWithLong.class);
     assertNotNull(simpleWithLong);
+    assertEquals(time, simpleWithLong.getValue());
   }
   
   /**
