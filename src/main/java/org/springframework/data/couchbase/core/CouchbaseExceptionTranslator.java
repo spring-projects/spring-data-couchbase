@@ -32,7 +32,7 @@ import java.util.concurrent.CancellationException;
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
- * 
+ * <p/>
  * Convert the given runtime exception to an appropriate exception from the {@code org.springframework.dao} hierarchy.
  * Return {@literal null} if no translation is appropriate: any other exception may have resulted from user code, and
  * should not be translated.
@@ -45,20 +45,21 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
    * Translate Couchbase specific exceptions to spring exceptions if possible.
    *
    * @param ex the exception to translate.
+   *
    * @return the translated exception or null.
    */
-	@Override
-	public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
+  @Override
+  public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
 
-		if (ex instanceof ConnectionException) {
-		  return new DataAccessResourceFailureException(ex.getMessage(), ex);
-		}
-		
-		if (ex instanceof ObservedException
-      || ex instanceof ObservedTimeoutException
-      || ex instanceof ObservedModifiedException) {
-			return new DataIntegrityViolationException(ex.getMessage(), ex);
-		}
+    if (ex instanceof ConnectionException) {
+      return new DataAccessResourceFailureException(ex.getMessage(), ex);
+    }
+
+    if (ex instanceof ObservedException
+            || ex instanceof ObservedTimeoutException
+            || ex instanceof ObservedModifiedException) {
+      return new DataIntegrityViolationException(ex.getMessage(), ex);
+    }
 
     if (ex instanceof CancellationException) {
       throw new OperationCancellationException(ex.getMessage(), ex);
@@ -67,8 +68,9 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
     if (ex instanceof InvalidViewException) {
       throw new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
     }
-		
-		return null;
-	}
+
+    // Unable to translate exception, therefore just throw the original!
+    throw ex;
+  }
 
 }
