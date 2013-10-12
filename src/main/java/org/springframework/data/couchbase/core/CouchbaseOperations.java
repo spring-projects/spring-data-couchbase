@@ -33,79 +33,80 @@ public interface CouchbaseOperations {
 
   /**
    * Save the given object.
-   *
+   * <p/>
    * <p>When the document already exists (specified by its unique id), then it will be overriden. Otherwise it will be
    * created.</p>
    *
    * @param objectToSave the object to store in the bucket.
    */
   void save(Object objectToSave);
-  
+
   /**
    * Save a list of objects.
-   *
+   * <p/>
    * <p>When one of the documents already exists (specified by its unique id), then it will be overriden. Otherwise it
    * will be created.</p>
    *
    * @param batchToSave the list of objects to store in the bucket.
    */
-  void save(Collection<? extends Object> batchToSave);	
-	
+  void save(Collection<?> batchToSave);
+
   /**
    * Insert the given object.
-   *
+   * <p/>
    * <p>When the document already exists (specified by its unique id), then it will not be overriden. Use the
    * {@link CouchbaseOperations#save} method for this task.</p>
    *
    * @param objectToSave the object to add to the bucket.
    */
   void insert(Object objectToSave);
-  
+
   /**
    * Insert a list of objects.
-   *
+   * <p/>
    * <p>When one of the documents already exists (specified by its unique id), then it will not be overriden. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
    * @param batchToSave the list of objects to add to the bucket.
    */
-  void insert(Collection<? extends Object> batchToSave);
+  void insert(Collection<?> batchToSave);
 
   /**
    * Update the given object.
-   *
+   * <p/>
    * <p>When the document does not exist (specified by its unique id) it will not be created. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
    * @param objectToSave the object to add to the bucket.
    */
   void update(Object objectToSave);
-  
+
   /**
    * Insert a list of objects.
-   *
+   * <p/>
    * <p>If one of the documents does not exist (specified by its unique id), then it will not be created. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
    * @param batchToSave the list of objects to add to the bucket.
    */
-  void update(Collection<? extends Object> batchToSave);
-  
+  void update(Collection<?> batchToSave);
+
   /**
    * Find an object by its given Id and map it to the corresponding entity.
    *
    * @param id the unique ID of the document.
    * @param entityClass the entity to map to.
+   *
    * @return returns the found object or null otherwise.
    */
   <T> T findById(String id, Class<T> entityClass);
 
   /**
    * Query a View for a list of documents of type T.
-   *
+   * <p/>
    * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
    * time. It is valid to pass in a empty constructed {@link Query} object.</p>
-   *
+   * <p/>
    * <p>This method does not work with reduced views, because they by design do not contain references to original
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
    *
@@ -113,6 +114,7 @@ public interface CouchbaseOperations {
    * @param view the name of the view.
    * @param query the Query object to customize the view query.
    * @param entityClass the entity to map to.
+   *
    * @return the converted collection
    */
   <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass);
@@ -120,17 +122,18 @@ public interface CouchbaseOperations {
 
   /**
    * Query a View with direct access to the {@link ViewResponse}.
-   *
+   * <p/>
    * <p>This method is available to ease the working with views by still wrapping exceptions into the Spring
    * infrastructure.</p>
-   *
-   * <p>It is especially needed if you want to run reduced view queries, because they can't be mapped onto entities
+   * <p/>
+   * <p>It is especially needed if you want to run reduced viewName queries, because they can't be mapped onto entities
    * directly.</p>
    *
-   * @param design the name of the design document.
-   * @param view the name of the view.
-   * @param query the Query object to customize the view query.
-   * @return
+   * @param design the name of the designDocument document.
+   * @param view the name of the viewName.
+   * @param query the Query object to customize the viewName query.
+   *
+   * @return ViewResponse containing the results of the query.
    */
   ViewResponse queryView(String design, String view, Query query);
 
@@ -138,13 +141,14 @@ public interface CouchbaseOperations {
    * Checks if the given document exists.
    *
    * @param id the unique ID of the document.
+   *
    * @return whether the document could be found or not.
    */
   boolean exists(String id);
 
   /**
    * Remove the given object from the bucket by id.
-   *
+   * <p/>
    * If the object is a String, it will be treated as the document key
    * directly.
    *
@@ -157,22 +161,24 @@ public interface CouchbaseOperations {
    *
    * @param batchToRemove the list of Objects to remove.
    */
-  void remove(Collection<? extends Object> batchToRemove);
+  void remove(Collection<?> batchToRemove);
 
   /**
    * Executes a BucketCallback translating any exceptions as necessary.
-   *
+   * <p/>
    * Allows for returning a result object, that is a domain object or a collection of domain objects.
    *
    * @param action the action to execute in the callback.
    * @param <T> the return type.
-   * @return
+   *
+   * @return the return type.
    */
   <T> T execute(BucketCallback<T> action);
 
   /**
    * Returns the underlying {@link CouchbaseConverter}.
-   * @return
+   *
+   * @return CouchbaseConverter.
    */
   CouchbaseConverter getConverter();
 
