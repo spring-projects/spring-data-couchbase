@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.Stale;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,26 +69,26 @@ public class CouchbaseTemplateTests {
     String result = (String) client.get(id);
 
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core.Beer\""
-      + ",\"is_active\":false,\"name\":\"The Awesome Stout\"}";
+            + ",\"is_active\":false,\"name\":\"The Awesome Stout\"}";
     assertNotNull(result);
     assertEquals(expected, result);
   }
 
   @Test
   public void saveDocumentWithExpiry() throws Exception {
-  	String id = "simple-doc-with-expiry";
-  	DocumentWithExpiry doc = new DocumentWithExpiry(id);
-  	template.save(doc);
-  	assertNotNull(client.get(id));
-  	Thread.sleep(3000);
-  	assertNull(client.get(id));
+    String id = "simple-doc-with-expiry";
+    DocumentWithExpiry doc = new DocumentWithExpiry(id);
+    template.save(doc);
+    assertNotNull(client.get(id));
+    Thread.sleep(3000);
+    assertNull(client.get(id));
   }
 
   @Test
   public void insertDoesNotOverride() {
-    String id ="double-insert-test";
+    String id = "double-insert-test";
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-      + "CouchbaseTemplateTests$SimplePerson\",\"name\":\"Mr. A\"}";
+            + "CouchbaseTemplateTests$SimplePerson\",\"name\":\"Mr. A\"}";
 
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
@@ -103,10 +104,10 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void updateDoesNotInsert() {
-  	String id ="update-does-not-insert";
-  	SimplePerson doc = new SimplePerson(id, "Nice Guy");
-  	template.update(doc);
-  	assertNull(client.get(id));
+    String id = "update-does-not-insert";
+    SimplePerson doc = new SimplePerson(id, "Nice Guy");
+    template.update(doc);
+    assertNull(client.get(id));
   }
 
 
@@ -127,7 +128,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void storeListsAndMaps() {
-    String id ="persons:lots-of-names";
+    String id = "persons:lots-of-names";
     List<String> names = new ArrayList<String>();
     names.add("Michael");
     names.add("Thomas");
@@ -142,9 +143,9 @@ public class CouchbaseTemplateTests {
     template.save(complex);
 
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-      + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
-      + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":"
-      + "{}}";
+            + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
+            + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":"
+            + "{}}";
     assertEquals(expected, client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);
@@ -180,7 +181,7 @@ public class CouchbaseTemplateTests {
     final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
     assertTrue(beers.size() > 0);
 
-    for(Beer beer : beers) {
+    for (Beer beer : beers) {
       assertNotNull(beer.getId());
       assertNotNull(beer.getName());
       assertNotNull(beer.getActive());
@@ -194,7 +195,7 @@ public class CouchbaseTemplateTests {
     try {
       template.save(things);
       fail("We should not be able to store a NULL!");
-    } catch(final IllegalArgumentException e) {
+    } catch (final IllegalArgumentException e) {
       assertTrue(true);
     }
   }
@@ -208,38 +209,50 @@ public class CouchbaseTemplateTests {
     assertNotNull(simpleWithLong);
     assertEquals(time, simpleWithLong.getValue());
   }
-  
+
+  @Test
+  public void shouldDeserialiseEnums() {
+    SimpleWithEnum simpleWithEnum = new SimpleWithEnum("simpleWithEnum:enum", SimpleWithEnum.Type.BIG);
+    template.save(simpleWithEnum);
+    simpleWithEnum = template.findById("simpleWithEnum:enum", SimpleWithEnum.class);
+    assertNotNull(simpleWithEnum);
+    assertEquals(simpleWithEnum.getType(), SimpleWithEnum.Type.BIG);
+  }
+
   /**
    * A sample document with just an id and property.
    */
   @Document
   static class SimplePerson {
+
     @Id
     private final String id;
     @Field
     private final String name;
 
     public SimplePerson(String id, String name) {
-    	this.id = id;
-    	this.name = name;
-    } 	
+      this.id = id;
+      this.name = name;
+    }
   }
-  
+
   /**
    * A sample document that expires in 2 seconds.
    */
-  @Document(expiry=2)
+  @Document(expiry = 2)
   static class DocumentWithExpiry {
+
     @Id
     private final String id;
-    
+
     public DocumentWithExpiry(String id) {
-    	this.id = id;
+      this.id = id;
     }
   }
 
   @Document
   static class ComplexPerson {
+
     @Id
     private final String id;
     @Field
@@ -253,8 +266,8 @@ public class CouchbaseTemplateTests {
     private final Map<String, Integer> info2;
 
     public ComplexPerson(String id, List<String> firstnames,
-      List<Integer> votes, Map<String, Boolean> info1,
-      Map<String, Integer> info2) {
+                         List<Integer> votes, Map<String, Boolean> info1,
+                         Map<String, Integer> info2) {
       this.id = id;
       this.firstnames = firstnames;
       this.votes = votes;
@@ -308,4 +321,38 @@ public class CouchbaseTemplateTests {
       this.value = value;
     }
   }
+
+  static class SimpleWithEnum {
+
+    @Id
+    private String id;
+
+    private enum Type {
+      BIG
+    }
+
+    private Type type;
+
+    SimpleWithEnum(final String id, final Type type) {
+      this.id = id;
+      this.type = type;
+    }
+
+    String getId() {
+      return id;
+    }
+
+    void setId(final String id) {
+      this.id = id;
+    }
+
+    Type getType() {
+      return type;
+    }
+
+    void setType(final Type type) {
+      this.type = type;
+    }
+  }
+
 }

@@ -88,7 +88,7 @@ public class JacksonTranslationService implements TranslationService {
         continue;
       }
 
-      if (simpleTypeHolder.isSimpleType(value.getClass())) {
+      if (simpleTypeHolder.isSimpleType(value.getClass()) && !Enum.class.isAssignableFrom(value.getClass())) {
         generator.writeObject(value);
       } else {
         ObjectMapper mapper = new ObjectMapper();
