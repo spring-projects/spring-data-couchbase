@@ -37,27 +37,27 @@ public class ClusterInfo extends AbstractMonitor {
 
   @ManagedMetric(description = "Total RAM assigned")
   public long getTotalRAMAssigned() {
-    return (Long) parseStorageTotals().get("ram").get("total");
+    return convertPotentialLong(parseStorageTotals().get("ram").get("total"));
   }
 
   @ManagedMetric(description = "Total RAM used")
   public long getTotalRAMUsed() {
-    return (Long) parseStorageTotals().get("ram").get("used");
+    return convertPotentialLong(parseStorageTotals().get("ram").get("used"));
   }
 
   @ManagedMetric(description = "Total Disk Space assigned")
   public long getTotalDiskAssigned() {
-    return (Long) parseStorageTotals().get("hdd").get("total");
+    return convertPotentialLong(parseStorageTotals().get("hdd").get("total"));
   }
 
   @ManagedMetric(description = "Total Disk Space used")
   public long getTotalDiskUsed() {
-    return (Long) parseStorageTotals().get("hdd").get("used");
+    return convertPotentialLong(parseStorageTotals().get("hdd").get("used"));
   }
 
   @ManagedMetric(description = "Total Disk Space free")
   public long getTotalDiskFree() {
-    return (Long) parseStorageTotals().get("hdd").get("free");
+    return convertPotentialLong(parseStorageTotals().get("hdd").get("free"));
   }
 
   @ManagedAttribute(description = "Cluster is Balanced")
@@ -73,6 +73,24 @@ public class ClusterInfo extends AbstractMonitor {
   @ManagedAttribute(description = "Maximum Available Buckets")
   public int getMaxBuckets() {
     return (Integer) fetchPoolInfo().get("maxBucketCount");
+  }
+
+  /**
+   * Depending on the value size, either int or long can be passed in and get
+   * converted to long.
+   *
+   * @param value the value to convert.
+   *
+   * @return the converted value.
+   */
+  private long convertPotentialLong(Object value) {
+    if (value instanceof Integer) {
+      return new Long((Integer) value);
+    } else if (value instanceof Long) {
+      return (Long) value;
+    } else  {
+      throw new IllegalStateException("Cannot convert value to long: " + value);
+    }
   }
 
   private HashMap<String, Object> fetchPoolInfo() {

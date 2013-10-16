@@ -49,8 +49,8 @@ public class ClusterInfoTests {
   }
 
   @Test
-  public void totalRAMAssigned() {
-    assertThat(ci.getTotalRAMAssigned(), greaterThan(0L));
+  public void totalDiskAssigned() {
+    assertThat(ci.getTotalDiskAssigned(), greaterThan(0L));
   }
 
   @Test
