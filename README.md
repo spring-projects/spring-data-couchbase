@@ -5,7 +5,7 @@ This project adds common Spring Data functionality (like configuration, template
 Full documentation is still in the making, so this README outlines the basic steps you need to do in order to get it up and running. It also provides a very rough overview of its capabilities. Note that this library is still in the making and does not provide all features yet.
 
 ## Features
-### Implemented
+### Implemented 1.0
 
  - Templates
  - JavaConfig
@@ -15,18 +15,17 @@ Full documentation is still in the making, so this README outlines the basic ste
  - Basic Auditing (JMX) 
  - Additional: transparent @Cacheable support
  - XML Config (namespace for template + repositories)
+ - @View annotation for customization
 
-### Planned (before 1.0)
+### Planned 1.0
 
  - find*-based methods on repositories through Views
- - @View annotation for customization
  
-### Planned (after 1.0)
+### Planned 1.1
  
  - Relationship Support
  - Dynamic View Generation
- - Better @Cacheable configuration support
- - Support upcoming features of Couchbase Server
+ - N1QL Integration
 
 ## Installation
 The preferred way is to install the package through maven:
@@ -35,10 +34,9 @@ The preferred way is to install the package through maven:
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.M1</version>
+  <version>1.0.0.M2</version>
 </dependency>
 ```
-Note that the first milestone is not yet released, but will be available through maven central once its done. This will pull in all dependencies needed, including the Couchbase Java SDK and the Spring dependencies.
 
 If you want to get a pre-release, please use the springsource snapshot and milestone repositories.
 
