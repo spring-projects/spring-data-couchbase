@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <xsd:schema xmlns="http://www.springframework.org/schema/data/couchbase"
             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xmlns:beans="http://www.springframework.org/schema/beans"
             xmlns:tool="http://www.springframework.org/schema/tool"
-            xmlns:context="http://www.springframework.org/schema/context"
             xmlns:repository="http://www.springframework.org/schema/data/repository"
             targetNamespace="http://www.springframework.org/schema/data/couchbase"
             elementFormDefault="qualified" attributeFormDefault="unqualified">
 
-    <xsd:import namespace="http://www.springframework.org/schema/beans" />
-    <xsd:import namespace="http://www.springframework.org/schema/tool" />
-    <xsd:import namespace="http://www.springframework.org/schema/context" />
-    <xsd:import namespace="http://www.springframework.org/schema/data/repository"
-                schemaLocation="http://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd" />
+    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"/>
+    <xsd:import namespace="http://www.springframework.org/schema/context"/>
+    <xsd:import namespace="http://www.springframework.org/schema/data/repository" schemaLocation="http://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd"/>
 
     <xsd:element name="couchbase" type="couchbaseType">
         <xsd:annotation>
@@ -44,7 +40,19 @@ Defines a CouchbaseClient instance used for accessing a Couchbase Cluster.
             <xsd:attribute name="id" type="xsd:string" use="optional">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[
-The name of the couchbase definition (by default "couchbaseFactory").]]></xsd:documentation>
+The id of the couchbase definition (by default "couchbaseFactory").]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="client-ref" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The reference to a CouchbaseClient object.
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="com.couchbase.client.CouchbaseClient"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="converter-ref" type="converterRef" use="optional">
@@ -60,16 +68,37 @@ The reference to a CouchbaseConverter instance.
                     </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
-            <xsd:attribute name="db-ref" type="xsd:string"
-                           use="optional">
+            <xsd:attribute name="translation-service-ref" type="xsd:string" use="optional">
                 <xsd:annotation>
-                    <xsd:documentation>
-                        The reference to a CouchbaseClient object.
+                    <xsd:documentation><![CDATA[
+                        The reference to the Translation Service (by default "translationService").]]>
                     </xsd:documentation>
                     <xsd:appinfo>
                         <tool:annotation kind="ref">
-                            <tool:assignable-to
-                                    type="com.couchbase.client.CouchbaseClient" />
+                            <tool:assignable-to type="org.springframework.data.couchbase.core.convert.translation.TranslationService"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="translation-service">
+        <xsd:complexType>
+            <xsd:attribute name="id" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+The id of the translation-service definition (by default "translationService").]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="objectMapper" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                        The reference to a configured Jackson ObjectMapper.]]>
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="com.fasterxml.jackson.databind.ObjectMapper"/>
                         </tool:annotation>
                     </xsd:appinfo>
                 </xsd:annotation>

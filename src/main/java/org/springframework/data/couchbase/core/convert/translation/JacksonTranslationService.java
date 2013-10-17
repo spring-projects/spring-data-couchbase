@@ -16,8 +16,14 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
@@ -34,7 +40,12 @@ import java.util.Map;
  *
  * @author Michael Nitschinger
  */
-public class JacksonTranslationService implements TranslationService {
+public class JacksonTranslationService implements TranslationService, InitializingBean {
+
+  /**
+   * Jackson Object Mapper;
+   */
+  private ObjectMapper objectMapper;
 
   /**
    * Type holder to help easily identify simple types.
@@ -91,8 +102,7 @@ public class JacksonTranslationService implements TranslationService {
       if (simpleTypeHolder.isSimpleType(value.getClass()) && !Enum.class.isAssignableFrom(value.getClass())) {
         generator.writeObject(value);
       } else {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(generator, value);
+        objectMapper.writeValue(generator, value);
       }
 
     }
@@ -217,5 +227,15 @@ public class JacksonTranslationService implements TranslationService {
     }
   }
 
+  public void setObjectMapper(final ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
+
+  @Override
+  public void afterPropertiesSet() {
+    if (objectMapper == null) {
+      objectMapper = new ObjectMapper();
+    }
+  }
 
 }

@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * Parser for "<couchbase:couchbase />" bean definitions.
- *
+ * <p/>
  * The outcome of this bean definition parser will be a constructed {@link CouchbaseClient}.
  *
  * @author Michael Nitschinger
@@ -44,6 +44,7 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
    * Defines the bean class that will be constructed.
    *
    * @param element the XML element which contains the attributes.
+   *
    * @return the class type to instantiate.
    */
   @Override
@@ -60,14 +61,11 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
     String host = element.getAttribute("host");
-    bean.addConstructorArgValue(
-      convertHosts(StringUtils.hasText(host) ? host : CouchbaseFactoryBean.DEFAULT_NODE));
+    bean.addConstructorArgValue(convertHosts(StringUtils.hasText(host) ? host : CouchbaseFactoryBean.DEFAULT_NODE));
     String bucket = element.getAttribute("bucket");
-    bean.addConstructorArgValue(
-      StringUtils.hasText(bucket) ? bucket : CouchbaseFactoryBean.DEFAULT_BUCKET);
+    bean.addConstructorArgValue(StringUtils.hasText(bucket) ? bucket : CouchbaseFactoryBean.DEFAULT_BUCKET);
     String password = element.getAttribute("password");
-    bean.addConstructorArgValue(
-      StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
+    bean.addConstructorArgValue(StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
   }
 
   /**
@@ -76,36 +74,35 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
    * @param element the XML element which contains the attributes.
    * @param definition the bean definition to work with.
    * @param parserContext encapsulates the parsing state and configuration.
+   *
    * @return the ID to work with.
    */
   @Override
-  protected String resolveId(final Element element, final AbstractBeanDefinition definition,
-    final ParserContext parserContext) {
+  protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
     return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE;
   }
 
   /**
    * Convert a list of hosts into a URI format that can be used by the {@link CouchbaseClient}.
-   *
+   * <p/>
    * To make it simple to use, the list of hosts can be passed in as a comma separated list. This list gets parsed
    * and converted into a URI format that is suitable for the underlying {@link CouchbaseClient} object.
    *
    * @param hosts the host list to convert.
+   *
    * @return the converted list with URIs.
    */
   private List<URI> convertHosts(final String hosts) {
-    String[] split = hosts.split(",");
-    List<URI> nodes = new ArrayList<URI>();
-
+    final String[] split = hosts.split(",");
+    final List<URI> nodes = new ArrayList<URI>();
     try {
-      for (int i = 0; i < split.length; i++) {
-        nodes.add(new URI("http://" + split[i] + ":8091/pools"));
+      for (final String aSplit : split) {
+        nodes.add(new URI("http://" + aSplit + ":8091/pools"));
       }
     } catch (URISyntaxException ex) {
       throw new BeanCreationException("Could not convert host list." + ex);
     }
-
     return nodes;
   }
 

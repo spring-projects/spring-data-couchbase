@@ -50,4 +50,14 @@ public class CouchbaseTemplateParserIntegrationTests {
     factory.getBean("couchbaseTemplate");
   }
 
+  @Test
+  public void readsCouchbaseTemplateWithTranslationServiceAttributesCorrectly() {
+    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-template-with-translation-service-bean.xml"));
+
+    BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
+    assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
+
+    factory.getBean("couchbaseTemplate");
+  }
+
 }

@@ -25,6 +25,8 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.ClassUtils;
@@ -56,7 +58,7 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   @Bean
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter());
+    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
   }
 
   /**
@@ -67,6 +69,18 @@ public abstract class AbstractCouchbaseConfiguration {
   @Bean
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
     return new MappingCouchbaseConverter(couchbaseMappingContext());
+  }
+
+  /**
+   * Creates a {@link TranslationService}.
+   *
+   * @return TranslationService, defaulting to JacksonTranslationService.
+   */
+  @Bean
+  public TranslationService translationService() {
+    final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+    jacksonTranslationService.afterPropertiesSet();
+    return jacksonTranslationService;
   }
 
   /**
@@ -91,18 +105,12 @@ public abstract class AbstractCouchbaseConfiguration {
     Set<Class<?>> initialEntitySet = new HashSet<Class<?>>();
 
     if (StringUtils.hasText(basePackage)) {
-			ClassPathScanningCandidateComponentProvider componentProvider =
-        new ClassPathScanningCandidateComponentProvider(false);
-			componentProvider.addIncludeFilter(
-        new AnnotationTypeFilter(Document.class));
-			componentProvider.addIncludeFilter(
-        new AnnotationTypeFilter(Persistent.class));
-
-			for (BeanDefinition candidate :
-        componentProvider.findCandidateComponents(basePackage)) {
-				initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(),
-          AbstractCouchbaseConfiguration.class.getClassLoader()));
-			}
+      ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(false);
+      componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
+      componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
+      for (BeanDefinition candidate : componentProvider.findCandidateComponents(basePackage)) {
+        initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(), AbstractCouchbaseConfiguration.class.getClassLoader()));
+      }
     }
 
     return initialEntitySet;
@@ -111,7 +119,7 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
    * class (the concrete class, not this one here) by default.
-   *
+   * <p/>
    * <p>So if you have a {@code com.acme.AppConfig} extending {@link AbstractCouchbaseConfiguration} the base package
    * will be considered {@code com.acme} unless the method is overridden to implement alternate behavior.</p>
    *
