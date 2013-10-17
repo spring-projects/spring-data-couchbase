@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.Stale;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +37,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -219,6 +220,16 @@ public class CouchbaseTemplateTests {
     assertEquals(simpleWithEnum.getType(), SimpleWithEnum.Type.BIG);
   }
 
+  @Test
+  public void shouldDeserialiseClass() {
+    SimpleWithClass simpleWithClass = new SimpleWithClass("simpleWithClass:class", Integer.class);
+    simpleWithClass.setValue("The dish ran away with the spoon.");
+    template.save(simpleWithClass);
+    simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class);
+    assertNotNull(simpleWithClass);
+    assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
+  }
+
   /**
    * A sample document with just an id and property.
    */
@@ -352,6 +363,43 @@ public class CouchbaseTemplateTests {
 
     void setType(final Type type) {
       this.type = type;
+    }
+  }
+
+  static class SimpleWithClass {
+
+    @Id
+    private String id;
+
+    private Class<Integer> integerClass;
+
+    private String value;
+
+    SimpleWithClass(final String id, final Class<Integer> integerClass) {
+      this.id = id;
+      this.integerClass = integerClass;
+    }
+
+    String getId() {
+      return id;
+    }
+
+    void setId(final String id) {
+      this.id = id;
+    }
+
+    Class<Integer> getIntegerClass() {
+      return integerClass;
+    }
+
+    void setIntegerClass(final Class<Integer> integerClass) {
+      this.integerClass = integerClass;
+    }
+
+    String getValue() { return value; }
+
+    void setValue(final String value) {
+      this.value = value;
     }
   }
 
