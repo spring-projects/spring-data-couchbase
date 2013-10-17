@@ -87,16 +87,21 @@ public class JacksonTranslationService implements TranslationService {
         continue;
       }
 
-      if (simpleTypeHolder.isSimpleType(value.getClass()) && !Enum.class.isAssignableFrom(value.getClass())) {
+      final Class<?> clazz = value.getClass();
+
+      if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
         generator.writeObject(value);
       } else {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(generator, value);
+        new ObjectMapper().writeValue(generator, value);
       }
 
     }
 
     generator.writeEndObject();
+  }
+
+  private boolean isEnumOrClass(final Class<?> clazz) {
+    return Enum.class.isAssignableFrom(clazz) || Class.class.isAssignableFrom(clazz);
   }
 
   /**

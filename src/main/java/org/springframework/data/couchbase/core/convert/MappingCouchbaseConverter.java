@@ -42,24 +42,24 @@ import java.util.*;
 
 /**
  * The Couchbase special {@link MappingCouchbaseConverter}.
- *
+ * <p/>
  * This converter is responsible for mapping (read and writing) value from and to target formats.
  *
  * @author Michael Nitschinger
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
-  implements ApplicationContextAware {
+        implements ApplicationContextAware {
 
   protected ApplicationContext applicationContext;
   protected final MappingContext<? extends CouchbasePersistentEntity<?>,
-      CouchbasePersistentProperty> mappingContext;
+          CouchbasePersistentProperty> mappingContext;
   protected boolean useFieldAccessOnly = true;
   protected CouchbaseTypeMapper typeMapper;
   private SpELContext spELContext;
 
   @SuppressWarnings("deprecation")
   public MappingCouchbaseConverter(MappingContext<? extends CouchbasePersistentEntity<?>,
-      CouchbasePersistentProperty> mappingContext) {
+          CouchbasePersistentProperty> mappingContext) {
     super(ConversionServiceFactory.createDefaultConversionService());
 
     this.mappingContext = mappingContext;
@@ -70,13 +70,13 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
   @Override
   public MappingContext<? extends CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty> getMappingContext() {
+          CouchbasePersistentProperty> getMappingContext() {
     return mappingContext;
   }
 
   @Override
   public <R> R read(Class<R> clazz, CouchbaseDocument doc) {
-  	return read(ClassTypeInformation.from(clazz), doc, null);
+    return read(ClassTypeInformation.from(clazz), doc, null);
   }
 
   protected <R> R read(TypeInformation<R> type, CouchbaseDocument doc) {
@@ -97,7 +97,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }
 
     CouchbasePersistentEntity<R> persistentEntity = (CouchbasePersistentEntity<R>)
-      mappingContext.getPersistentEntity(typeToUse);
+            mappingContext.getPersistentEntity(typeToUse);
 
     if (persistentEntity == null) {
       throw new MappingException("No mapping metadata found for " + rawType.getName());
@@ -106,7 +106,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     return read(persistentEntity, source, parent);
   }
 
-  protected <R extends Object> R read(final CouchbasePersistentEntity<R> entity, final CouchbaseDocument source, final Object parent) {
+  protected <R> R read(final CouchbasePersistentEntity<R> entity, final CouchbaseDocument source, final Object parent) {
     final DefaultSpELExpressionEvaluator evaluator = new DefaultSpELExpressionEvaluator(source, spELContext);
 
     ParameterValueProvider<CouchbasePersistentProperty> provider = getParameterProvider(entity, source, evaluator, parent);
@@ -151,13 +151,13 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   }
 
   private ParameterValueProvider<CouchbasePersistentProperty> getParameterProvider(CouchbasePersistentEntity<?> entity,
-    CouchbaseDocument source, DefaultSpELExpressionEvaluator evaluator, Object parent) {
+                                                                                   CouchbaseDocument source, DefaultSpELExpressionEvaluator evaluator, Object parent) {
 
     CouchbasePropertyValueProvider provider = new CouchbasePropertyValueProvider(source, evaluator, parent);
     PersistentEntityParameterValueProvider<CouchbasePersistentProperty> parameterProvider = new PersistentEntityParameterValueProvider<CouchbasePersistentProperty>(
-      entity, provider, parent);
+            entity, provider, parent);
     return new ConverterAwareSpELExpressionParameterValueProvider(evaluator, conversionService, parameterProvider,
-      parent);
+            parent);
   }
 
   protected Map<Object, Object> readMap(TypeInformation<?> type, CouchbaseDocument doc, Object parent) {
@@ -202,6 +202,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return Enum.valueOf((Class<Enum>) target, value.toString());
     }
 
+    if (Class.class.isAssignableFrom(target)) {
+      try {
+        return Class.forName(value.toString());
+      } catch (ClassNotFoundException e) {
+        throw new MappingException("Unable to create class from " + value.toString());
+      }
+    }
+
     return target.isAssignableFrom(value.getClass()) ? value : conversionService.convert(value, target);
   }
 
@@ -211,7 +219,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return;
     }
 
-    TypeInformation<? extends Object> type = ClassTypeInformation.from(source.getClass());
+    TypeInformation<?> type = ClassTypeInformation.from(source.getClass());
     typeMapper.writeType(type, target);
     writeInternal(source, target, type);
 
@@ -312,7 +320,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     addCustomTypeKeyIfNecessary(type, source, propertyDoc);
 
     CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass()) ? mappingContext
-      .getPersistentEntity(source.getClass()) : mappingContext.getPersistentEntity(type);
+            .getPersistentEntity(source.getClass()) : mappingContext.getPersistentEntity(type);
     writeInternal(source, propertyDoc, entity);
     target.put(name, propertyDoc);
   }
@@ -324,7 +332,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     return writeMapInternal(map, new CouchbaseDocument(), prop.getTypeInformation());
   }
 
-  private CouchbaseDocument writeMapInternal(Map<Object,Object> source, CouchbaseDocument target, TypeInformation<?> type) {
+  private CouchbaseDocument writeMapInternal(Map<Object, Object> source, CouchbaseDocument target, TypeInformation<?> type) {
     for (Map.Entry<Object, Object> entry : source.entrySet()) {
       Object key = entry.getKey();
       Object val = entry.getValue();
@@ -385,7 +393,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     collectionType = Collection.class.isAssignableFrom(collectionType) ? collectionType : List.class;
     Collection<Object> items = targetType.getType().isArray() ? new ArrayList<Object>() : CollectionFactory
-      .createCollection(collectionType, source.size(false));
+            .createCollection(collectionType, source.size(false));
     TypeInformation<?> componentType = targetType.getComponentType();
     Class<?> rawComponentType = componentType == null ? null : componentType.getType();
 
@@ -435,7 +443,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
   @Override
   public void setApplicationContext(ApplicationContext applicationContext)
-    throws BeansException {
+          throws BeansException {
     this.applicationContext = applicationContext;
   }
 
@@ -489,11 +497,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   }
 
   private class ConverterAwareSpELExpressionParameterValueProvider extends
-    SpELExpressionParameterValueProvider<CouchbasePersistentProperty> {
+          SpELExpressionParameterValueProvider<CouchbasePersistentProperty> {
+
     private final Object parent;
 
     public ConverterAwareSpELExpressionParameterValueProvider(SpELExpressionEvaluator evaluator,
-       ConversionService conversionService, ParameterValueProvider<CouchbasePersistentProperty> delegate, Object parent) {
+                                                              ConversionService conversionService, ParameterValueProvider<CouchbasePersistentProperty> delegate, Object parent) {
 
       super(evaluator, conversionService, delegate);
       this.parent = parent;
