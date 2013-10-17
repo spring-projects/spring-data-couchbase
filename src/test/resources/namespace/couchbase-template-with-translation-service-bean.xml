@@ -7,10 +7,8 @@
 
     <couchbase:couchbase/>
 
-    <couchbase:couchbase id="couchbase2" host="localhost" bucket="default" password=""/>
+    <couchbase:template translation-service-ref="myCustomTranslationService"/>
 
-    <couchbase:translation-service objectMapper="myCustomObjectMapper"/>
-
-    <bean id="myCustomObjectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
+    <bean id="myCustomTranslationService" class="org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService"/>
 
 </beans>

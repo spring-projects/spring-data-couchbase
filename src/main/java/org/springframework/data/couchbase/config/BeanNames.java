@@ -22,6 +22,7 @@ package org.springframework.data.couchbase.config;
  * @author Michael Nitschinger
  */
 public class BeanNames {
+
   /**
    * Refers to the "<couchbase:couchbase />" bean.
    */
@@ -31,4 +32,10 @@ public class BeanNames {
    * Refers to the "<couchbase:template />" bean.
    */
   static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
+
+  /**
+   * Refers to the "<couchbase:translation-service />" bean
+   */
+  static final String TRANSLATION_SERVICE = "translationService";
+
 }

@@ -20,6 +20,7 @@ import com.couchbase.client.CouchbaseClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -47,14 +48,13 @@ public class AbstractCouchbaseConfigurationTests {
   @Test
   public void usesConfigClassPackageAsBaseMappingPackage() throws Exception {
     AbstractCouchbaseConfiguration config = new SampleCouchbaseConfiguration();
-
-    assertEquals(config.getMappingBasePackage(),
-      SampleCouchbaseConfiguration.class.getPackage().getName());
+    assertEquals(config.getMappingBasePackage(), SampleCouchbaseConfiguration.class.getPackage().getName());
     assertEquals(config.getInitialEntitySet().size(), 1);
     assertTrue(config.getInitialEntitySet().contains(Entity.class));
   }
 
   class SampleCouchbaseConfiguration extends AbstractCouchbaseConfiguration {
+
     @Bean
     @Override
     public CouchbaseClient couchbaseClient() throws Exception {
@@ -64,5 +64,6 @@ public class AbstractCouchbaseConfigurationTests {
 
   @Document
   static class Entity {
+
   }
 }

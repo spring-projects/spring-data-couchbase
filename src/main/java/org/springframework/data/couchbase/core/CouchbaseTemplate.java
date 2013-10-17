@@ -26,6 +26,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -53,7 +54,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
   private static final Collection<String> ITERABLE_CLASSES;
   private final CouchbaseExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
-  private final JacksonTranslationService translationService;
+  private final TranslationService<String> translationService;
 
   static {
     final Set<String> iterableClasses = new HashSet<String>();
@@ -64,20 +65,33 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   public CouchbaseTemplate(final CouchbaseClient client) {
-    this(client, null);
+    this(client, null, null);
   }
 
-  public CouchbaseTemplate(final CouchbaseClient client, final CouchbaseConverter converter) {
+  public CouchbaseTemplate(final CouchbaseClient client, final CouchbaseConverter couchbaseConverter, final TranslationService translationService) {
     this.client = client;
-    couchbaseConverter = converter == null ? getDefaultConverter() : converter;
-    mappingContext = couchbaseConverter.getMappingContext();
-    translationService = new JacksonTranslationService();
+    this.couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
+    this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
+    mappingContext = this.couchbaseConverter.getMappingContext();
+  }
+
+  public CouchbaseTemplate(final CouchbaseClient client, final TranslationService translationService) {
+    this.client = client;
+    this.couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
+    this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
+    mappingContext = this.couchbaseConverter.getMappingContext();
   }
 
   private CouchbaseConverter getDefaultConverter() {
     final MappingCouchbaseConverter converter = new MappingCouchbaseConverter(new CouchbaseMappingContext());
     converter.afterPropertiesSet();
     return converter;
+  }
+
+  private TranslationService getDefaultTranslationService() {
+    final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+    jacksonTranslationService.afterPropertiesSet();
+    return jacksonTranslationService;
   }
 
   private Object translateEncode(final CouchbaseStorable source) {
