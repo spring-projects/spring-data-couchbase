@@ -24,9 +24,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Map;
 
 /**
@@ -55,17 +53,18 @@ public class JacksonTranslationService implements TranslationService {
    */
   @Override
   public final Object encode(final CouchbaseStorable source) {
-    OutputStream stream = new ByteArrayOutputStream();
+    Writer writer = new StringWriter();
 
     try {
-      JsonGenerator generator = factory.createGenerator(stream, JsonEncoding.UTF8);
+      JsonGenerator generator = factory.createGenerator(writer);
       encodeRecursive(source, generator);
       generator.close();
+      writer.close();
     } catch (IOException ex) {
       throw new RuntimeException("Could not encode JSON", ex);
     }
 
-    return stream.toString();
+    return writer.toString();
   }
 
   /**
