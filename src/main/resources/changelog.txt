@@ -1,3 +1,28 @@
+Release Notes - Spring Data Couchbase - Version 1.0 M2 - 2013-11-14
+-------------------------------------------------------------------
+
+** Bug
+    * [DATACOUCH-25] - Cache TTL (Time To Live) property required.
+    * [DATACOUCH-27] - MappingCouchbaseConverter skips ID field in read operation
+    * [DATACOUCH-34] - Can't deserialize long/Long/Date fields
+    * [DATACOUCH-35] - Can't deserialize Class fields
+    * [DATACOUCH-36] - Can't store a map with null value
+    * [DATACOUCH-37] - Refactor Deprecated JUnit Asserts
+    * [DATACOUCH-38] - Can't deserialize enum
+    * [DATACOUCH-39] - Fix bundlor compile issues
+    * [DATACOUCH-42] - spring-data threads should be daemon threads
+    * [DATACOUCH-43] - Bad handling of non ASCII Strings
+
+** Improvement
+    * [DATACOUCH-16] - Allow View customization through @View annotations
+    * [DATACOUCH-31] - Ignore IntelliJ IDE files
+    * [DATACOUCH-32] - Upgrade Couchbase SDK to 1.2.0
+    * [DATACOUCH-40] - Make ClusterInfo more reliable (long/int)
+    * [DATACOUCH-41] - Update Couchbase SDK to 1.2.1
+
+** Task
+    * [DATACOUCH-45] - Upgrade Couchbase Client to 1.2.2
+    * [DATACOUCH-46] - Release 1.0 M2
 
 Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
 -------------------------------------------------------------------
