@@ -1,6 +1,5 @@
 Release Notes - Spring Data Couchbase - Version 1.0 M2 - 2013-11-14
 -------------------------------------------------------------------
-
 ** Bug
     * [DATACOUCH-25] - Cache TTL (Time To Live) property required.
     * [DATACOUCH-27] - MappingCouchbaseConverter skips ID field in read operation

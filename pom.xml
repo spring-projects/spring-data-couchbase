@@ -20,7 +20,7 @@
   <properties>
     <couchbase>1.2.2</couchbase>
     <jackson>2.2.3</jackson>
-    <springdata.commons>1.6.1.RELEASE</springdata.commons>
+    <springdata.commons>1.6.2.RELEASE</springdata.commons>
   </properties>
 
   <dependencies>
@@ -109,5 +109,18 @@
       <url>http://repository.springsource.com/maven/bundles/release/</url>
     </pluginRepository>
   </pluginRepositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>wagon-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
