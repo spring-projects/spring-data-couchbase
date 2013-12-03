@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
- *
+ * 
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -79,7 +79,7 @@ public class CouchbaseCacheTests {
 
   /**
    * Verifies the deletion of cache objects.
-   *
+   * 
    * @throws Exception
    */
   @Test
@@ -95,6 +95,23 @@ public class CouchbaseCacheTests {
     cache.evict(key);
     Object result = client.get(key);
     assertNull(result);
+  }
+
+  /**
+   * Putting into cache on the same key not null value, and then null value,
+   * results in null object
+   */
+  @Test
+  public void testSettingNullAndGetting() {
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
+
+    String key = "couchbase-cache-test";
+    String value = "Hello World!";
+
+    cache.put(key, value);
+    cache.put(key, null);
+
+    assertNull(cache.get(key));
   }
 
 }
