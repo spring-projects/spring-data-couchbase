@@ -97,4 +97,21 @@ public class CouchbaseCacheTests {
     assertNull(result);
   }
 
+  /**
+   * Putting into cache on the same key not null value, and then null value,
+   * results in null object
+   */
+  @Test
+  public void testSettingNullAndGetting() {
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
+
+    String key = "couchbase-cache-test";
+    String value = "Hello World!";
+
+    cache.put(key, value);
+    cache.put(key, null);
+
+    assertNull(cache.get(key));
+  }
+
 }
