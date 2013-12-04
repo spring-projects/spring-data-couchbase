@@ -84,10 +84,8 @@ public class CouchbaseCache implements Cache {
   /**
    * Store a object in Couchbase.
    * 
-   * @param key
-   *          the Key of the storable object.
-   * @param value
-   *          the Object to store.
+   * @param key the Key of the storable object.
+   * @param value the Object to store.
    */
   public final void put(final Object key, final Object value) {
     if (value != null) {
