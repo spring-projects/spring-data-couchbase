@@ -145,7 +145,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
   public void update(final Collection<?> batchToSave) {
     for (final Object aBatchToSave : batchToSave) {
-      save(aBatchToSave);
+      update(aBatchToSave);
     }
   }
 
