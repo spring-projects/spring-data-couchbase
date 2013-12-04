@@ -83,7 +83,7 @@ public class CouchbaseCache implements Cache {
 
   /**
    * Store a object in Couchbase.
-   * 
+   *
    * @param key the Key of the storable object.
    * @param value the Object to store.
    */
