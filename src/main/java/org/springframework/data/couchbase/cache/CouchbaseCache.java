@@ -83,13 +83,19 @@ public class CouchbaseCache implements Cache {
 
   /**
    * Store a object in Couchbase.
-   *
-   * @param key the Key of the storable object.
-   * @param value the Object to store.
+   * 
+   * @param key
+   *          the Key of the storable object.
+   * @param value
+   *          the Object to store.
    */
   public final void put(final Object key, final Object value) {
-    String documentId = key.toString();
-    client.set(documentId, 0, value);
+    if (value != null) {
+      String documentId = key.toString();
+      client.set(documentId, 0, value);
+    } else {
+      evict(key);
+    }
   }
 
   /**

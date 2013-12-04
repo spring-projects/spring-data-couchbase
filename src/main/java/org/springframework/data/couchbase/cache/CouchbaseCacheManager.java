@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.cache;
 
 import com.couchbase.client.CouchbaseClient;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.AbstractCacheManager;
 
@@ -33,7 +34,7 @@ import java.util.Map;
  *
  * @author Michael Nitschinger
  */
-public class CouchbaseCacheManager extends AbstractCacheManager {
+public class CouchbaseCacheManager extends AbstractCacheManager implements DisposableBean {
 
   /**
    * Holds the reference to all stored CouchbaseClient cache connections.
@@ -74,4 +75,11 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
     return caches;
   }
 
+
+  @Override
+  public void destroy() throws Exception {
+    for (CouchbaseClient client : clients.values()) {
+      client.shutdown();
+    }
+  }  
 }
