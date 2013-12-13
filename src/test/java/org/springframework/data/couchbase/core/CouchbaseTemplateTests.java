@@ -43,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author Michael Nitschinger
@@ -133,10 +132,12 @@ public class CouchbaseTemplateTests {
     List<String> names = new ArrayList<String>();
     names.add("Michael");
     names.add("Thomas");
+    names.add(null);
     List<Integer> votes = new LinkedList<Integer>();
     Map<String, Boolean> info1 = new HashMap<String, Boolean>();
     info1.put("foo", true);
     info1.put("bar", false);
+    info1.put("nullValue", null);
     Map<String, Integer> info2 = new HashMap<String, Integer>();
 
     ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
@@ -144,8 +145,8 @@ public class CouchbaseTemplateTests {
     template.save(complex);
 
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-            + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"foo\":true,\"bar\""
-            + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\"],\"info2\":"
+            + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"nullValue\":null,\"foo\":true,\"bar\""
+            + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\",null],\"info2\":"
             + "{}}";
     assertEquals(expected, client.get(id));
 
@@ -186,18 +187,6 @@ public class CouchbaseTemplateTests {
       assertNotNull(beer.getId());
       assertNotNull(beer.getName());
       assertNotNull(beer.getActive());
-    }
-  }
-
-  @Test
-  public void shouldNotSaveNull() {
-    final Map<String, String> things = new HashMap<String, String>();
-    things.put("key", null);
-    try {
-      template.save(things);
-      fail("We should not be able to store a NULL!");
-    } catch (final IllegalArgumentException e) {
-      assertTrue(true);
     }
   }
 

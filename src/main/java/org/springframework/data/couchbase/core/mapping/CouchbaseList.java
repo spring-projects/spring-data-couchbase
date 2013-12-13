@@ -69,7 +69,7 @@ public class CouchbaseList implements CouchbaseStorable {
    * @return the {@link CouchbaseList} object for chaining purposes.
    */
   public final CouchbaseList put(final Object value) {
-    verifyValueType(value.getClass());
+    verifyValueType(value);
 
     payload.add(value);
     return this;
@@ -170,9 +170,14 @@ public class CouchbaseList implements CouchbaseStorable {
    * <p>If this is not the case, a {@link IllegalArgumentException} is
    * thrown.</p>
    *
-   * @param clazz the class type to check and verify.
+   * @param value the object to verify its type.
    */
-  private void verifyValueType(final Class<?> clazz) {
+  private void verifyValueType(final Object value) {
+    if(value == null) {
+      return;
+    }
+
+    final Class<?> clazz = value.getClass();
     if (simpleTypeHolder.isSimpleType(clazz)) {
       return;
     }

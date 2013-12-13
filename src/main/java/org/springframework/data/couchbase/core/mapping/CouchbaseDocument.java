@@ -259,13 +259,11 @@ public class CouchbaseDocument implements CouchbaseStorable {
    * <p>If this is not the case, a {@link IllegalArgumentException} is
    * thrown.</p>
    *
-   * Objects that are NULL cannot be stored.
-   *
    * @param value the object to verify its type.
    */
   private void verifyValueType(final Object value) {
     if(value == null) {
-      throw new IllegalArgumentException("Attribute of type null cannot be stored.");
+      return;
     }
     final Class<?> clazz = value.getClass();
     if (simpleTypeHolder.isSimpleType(clazz)) {
