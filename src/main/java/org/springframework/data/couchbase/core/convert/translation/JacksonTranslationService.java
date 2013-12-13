@@ -227,6 +227,8 @@ public class JacksonTranslationService implements TranslationService, Initializi
         }
       case VALUE_NUMBER_FLOAT:
         return parser.getValueAsDouble();
+      case VALUE_NULL:
+        return null;
       default:
         throw new MappingException("Could not decode primitve value " + token);
     }
