@@ -230,7 +230,20 @@ public class CouchbaseTemplateTests {
     assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
   }
 
-  /**
+  @Test
+  public void expiryWhenUpdateExpiryForReadDocument() throws InterruptedException {
+    String id = "simple-doc-with-update-expiry-for-read";
+    DocumentWithUpdateExpiryForRead doc = new DocumentWithUpdateExpiryForRead(id);
+    template.save(doc);
+    Thread.sleep(1500);
+    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
+    Thread.sleep(1500);
+    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
+    Thread.sleep(3000);
+    assertNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
+  }
+
+    /**
    * A sample document with just an id and property.
    */
   @Document
@@ -260,6 +273,19 @@ public class CouchbaseTemplateTests {
       this.id = id;
     }
   }
+
+  /**
+   * A sample document that expires in 2 seconds and updateExpiryForRead set.
+   */
+  @Document(expiry = 2, updateExpiryForRead = true)
+  static class DocumentWithUpdateExpiryForRead {
+    @Id
+    private final String id;
+
+    public DocumentWithUpdateExpiryForRead(String id) {
+      this.id = id;
+    }
+  }   
 
   @Document
   static class ComplexPerson {
