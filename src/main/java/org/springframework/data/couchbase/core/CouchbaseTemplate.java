@@ -160,9 +160,18 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     if (result == null) {
       return null;
     }
+    updateExpiryForKey(id, entityClass);
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
     return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
+  }
+
+  private <T> void updateExpiryForKey(String id, Class<T> entityClass) {
+    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
+    final int expiry = entity.getExpiry();
+    if (entity.isUpdateExpiryForRead() && expiry != 0) {
+      client.touch(id, expiry);
+    }
   }
 
 
@@ -180,7 +189,9 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
     final List<T> result = new ArrayList<T>(response.size());
     for (final ViewRow row : response) {
-      final CouchbaseDocument converted = new CouchbaseDocument(row.getId());
+      String id = row.getId();
+      final CouchbaseDocument converted = new CouchbaseDocument(id);
+      updateExpiryForKey(id, entityClass);
       result.add(couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode((String) row.getDocument(), converted)));
     }
 
