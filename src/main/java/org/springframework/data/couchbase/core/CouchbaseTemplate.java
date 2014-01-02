@@ -21,7 +21,10 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
+import net.spy.memcached.internal.OperationCompletionListener;
 import net.spy.memcached.internal.OperationFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
@@ -47,6 +50,8 @@ import java.util.concurrent.TimeoutException;
  * @author Michael Nitschinger
  */
 public class CouchbaseTemplate implements CouchbaseOperations {
+
+  private final Logger logger = LoggerFactory.getLogger(CouchbaseTemplate.class);
 
   private CouchbaseClient client;
   private CouchbaseConverter couchbaseConverter;
@@ -160,17 +165,25 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     if (result == null) {
       return null;
     }
-    updateExpiryForKey(id, entityClass);
+    asyncTouchIfRequiredForEntity(id, entityClass);
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
     return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
   }
 
-  private <T> void updateExpiryForKey(String id, Class<T> entityClass) {
+  private void asyncTouchIfRequiredForEntity(final String id, Class<?> entityClass) {
     CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
     final int expiry = entity.getExpiry();
     if (entity.isUpdateExpiryForRead() && expiry != 0) {
-      client.touch(id, expiry);
+      OperationFuture<Boolean> touch = client.touch(id, expiry);
+      touch.addListener(new OperationCompletionListener() {
+        @Override
+        public void onComplete(OperationFuture<?> operationFuture) throws Exception {
+          if (!operationFuture.getStatus().isSuccess()) {
+            logger.error(String.format("Touch for id: %s failed", id));
+          }
+        }
+      });
     }
   }
 
@@ -191,7 +204,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     for (final ViewRow row : response) {
       String id = row.getId();
       final CouchbaseDocument converted = new CouchbaseDocument(id);
-      updateExpiryForKey(id, entityClass);
+      asyncTouchIfRequiredForEntity(id, entityClass);
       result.add(couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode((String) row.getDocument(), converted)));
     }
 
