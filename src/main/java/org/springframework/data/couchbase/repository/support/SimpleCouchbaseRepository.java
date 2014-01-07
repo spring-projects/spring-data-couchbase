@@ -98,7 +98,11 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public T findOne(ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    return couchbaseOperations.findById(id.toString(), entityInformation.getJavaType());
+    if (entityInformation.isUpdateExpiryForRead()) {
+      return couchbaseOperations.findById(id.toString(), entityInformation.getJavaType(), entityInformation.getExpiry());
+    } else {
+      return couchbaseOperations.findById(id.toString(), entityInformation.getJavaType());
+    }
   }
 
   @Override
@@ -130,7 +134,11 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public Iterable<T> findAll() {
     final ResolvedView resolvedView = determineView();
-    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), new Query().setReduce(false), entityInformation.getJavaType());
+      if (entityInformation.isUpdateExpiryForRead()) {
+          return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), new Query().setReduce(false), entityInformation.getJavaType(), entityInformation.getExpiry());
+      } else {
+          return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), new Query().setReduce(false), entityInformation.getJavaType());
+      }
   }
 
   @Override
@@ -140,7 +148,11 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     query.setKeys(ComplexKey.of(ids));
 
     final ResolvedView resolvedView = determineView();
-    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query, entityInformation.getJavaType());
+    if (entityInformation.isUpdateExpiryForRead()) {
+      return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query, entityInformation.getJavaType(), entityInformation.getExpiry());
+    } else {
+      return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query, entityInformation.getJavaType());
+    }
   }
 
   @Override

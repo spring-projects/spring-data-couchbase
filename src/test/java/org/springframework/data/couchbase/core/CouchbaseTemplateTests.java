@@ -236,9 +236,9 @@ public class CouchbaseTemplateTests {
     DocumentWithUpdateExpiryForRead doc = new DocumentWithUpdateExpiryForRead(id);
     template.save(doc);
     Thread.sleep(1500);
-    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
+    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class, 2));
     Thread.sleep(1500);
-    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
+    assertNotNull(template.findById(id, DocumentWithUpdateExpiryForRead.class, 2));
     Thread.sleep(3000);
     assertNull(template.findById(id, DocumentWithUpdateExpiryForRead.class));
   }

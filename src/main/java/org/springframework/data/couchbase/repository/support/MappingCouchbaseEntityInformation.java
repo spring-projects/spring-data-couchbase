@@ -78,4 +78,25 @@ public class MappingCouchbaseEntityInformation<T, ID  extends Serializable>
   public Class<ID> getIdType() {
     return (Class<ID>) entityMetadata.getIdProperty().getType();
   }
+
+
+  /**
+   * Returns the expiry time for the entity document.
+   * 
+   * @return the expiration time.
+   */
+  @Override
+  public int getExpiry() {
+    return entityMetadata.getExpiry();
+  }
+
+  /**
+   * Flag for using getAndTouch operations for reads
+   * 
+   * @return
+   */
+  @Override
+  public boolean isUpdateExpiryForRead() {
+    return entityMetadata.isUpdateExpiryForRead();
+  }
 }
