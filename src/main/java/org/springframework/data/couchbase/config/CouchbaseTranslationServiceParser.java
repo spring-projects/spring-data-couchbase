@@ -53,9 +53,12 @@ public class CouchbaseTranslationServiceParser extends AbstractSingleBeanDefinit
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
     final String objectMapper = element.getAttribute("objectMapper");
-    bean.addPropertyValue("objectMapper", StringUtils.hasText(objectMapper) ? objectMapper : new ObjectMapper());
+    if (StringUtils.hasText(objectMapper)) {
+      bean.addPropertyReference("objectMapper", objectMapper);
+    } else {
+      bean.addPropertyValue("objectMapper", new ObjectMapper());
+    }
   }
-
   /**
    * Resolve the bean ID and assign a default if not set.
    *
