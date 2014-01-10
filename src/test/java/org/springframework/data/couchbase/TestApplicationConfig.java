@@ -66,14 +66,12 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
     return new BucketCreator(couchbaseHost(), couchbaseAdminUser(), couchbaseAdminPassword());
   }
 
-  @Override
   @Bean
+  @Override
   @DependsOn("bucketCreator")
   public CouchbaseClient couchbaseClient() throws Exception {
-    return new CouchbaseClient(
-      Arrays.asList(new URI(couchbaseHost())), couchbaseBucket(), couchbasePassword());
+    return new CouchbaseClient(Arrays.asList(new URI(couchbaseHost())), couchbaseBucket(), couchbasePassword());
   }
-
 
 
 }

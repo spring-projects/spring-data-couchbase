@@ -16,37 +16,21 @@
 
 package org.springframework.data.couchbase.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 /**
- * Parser for "<couchbase:template />" bean definitions.
- * <p/>
- * The outcome of this bean definition parser will be a constructed {@link CouchbaseTemplate}.
+ * Enables Parsing of the "<couchbase:translation-service />" configuration bean.
  *
- * @author Michael Nitschinger
+ * @author David Harrigan
  */
-public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser {
-
-  /**
-   * Resolve the bean ID and assign a default if not set.
-   *
-   * @param element the XML element which contains the attributes.
-   * @param definition the bean definition to work with.
-   * @param parserContext encapsulates the parsing state and configuration.
-   *
-   * @return the ID to work with.
-   */
-  @Override
-  protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
-    String id = super.resolveId(element, definition, parserContext);
-    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_TEMPLATE;
-  }
+public class CouchbaseTranslationServiceParser extends AbstractSingleBeanDefinitionParser {
 
   /**
    * Defines the bean class that will be constructed.
@@ -57,7 +41,7 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected Class getBeanClass(final Element element) {
-    return CouchbaseTemplate.class;
+    return JacksonTranslationService.class;
   }
 
   /**
@@ -68,19 +52,23 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    String clientRef = element.getAttribute("client-ref");
-    String converterRef = element.getAttribute("converter-ref");
-    String translationServiceRef = element.getAttribute("translation-service-ref");
+    final String objectMapper = element.getAttribute("objectMapper");
+    bean.addPropertyValue("objectMapper", StringUtils.hasText(objectMapper) ? objectMapper : new ObjectMapper());
+  }
 
-    bean.addConstructorArgReference(StringUtils.hasText(clientRef) ? clientRef : BeanNames.COUCHBASE);
-
-    if (StringUtils.hasText(converterRef)) {
-      bean.addConstructorArgReference(converterRef);
-    }
-
-    if (StringUtils.hasText(translationServiceRef)) {
-      bean.addConstructorArgReference(translationServiceRef);
-    }
+  /**
+   * Resolve the bean ID and assign a default if not set.
+   *
+   * @param element the XML element which contains the attributes.
+   * @param definition the bean definition to work with.
+   * @param parserContext encapsulates the parsing state and configuration.
+   *
+   * @return the ID to work with (e.g., "translationService")
+   */
+  @Override
+  protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
+    String id = super.resolveId(element, definition, parserContext);
+    return StringUtils.hasText(id) ? id : BeanNames.TRANSLATION_SERVICE;
   }
 
 }

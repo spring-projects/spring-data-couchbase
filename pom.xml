@@ -18,9 +18,9 @@
   </parent>
 
   <properties>
-    <couchbase>1.2.3</couchbase>
-    <jackson>2.2.3</jackson>
-    <springdata.commons>1.6.2.RELEASE</springdata.commons>
+    <couchbase>1.3.0</couchbase>
+    <jackson>2.3.1</jackson>
+    <springdata.commons>1.6.3.RELEASE</springdata.commons>
   </properties>
 
   <dependencies>

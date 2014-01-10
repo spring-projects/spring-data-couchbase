@@ -16,8 +16,14 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
@@ -32,7 +38,12 @@ import java.util.Map;
  *
  * @author Michael Nitschinger
  */
-public class JacksonTranslationService implements TranslationService {
+public class JacksonTranslationService implements TranslationService, InitializingBean {
+
+  /**
+   * Jackson Object Mapper;
+   */
+  private ObjectMapper objectMapper;
 
   /**
    * Type holder to help easily identify simple types.
@@ -92,7 +103,7 @@ public class JacksonTranslationService implements TranslationService {
       if (simpleTypeHolder.isSimpleType(clazz) && !isEnumOrClass(clazz)) {
         generator.writeObject(value);
       } else {
-        new ObjectMapper().writeValue(generator, value);
+        objectMapper.writeValue(generator, value);
       }
 
     }
@@ -216,10 +227,22 @@ public class JacksonTranslationService implements TranslationService {
         }
       case VALUE_NUMBER_FLOAT:
         return parser.getValueAsDouble();
+      case VALUE_NULL:
+        return null;
       default:
         throw new MappingException("Could not decode primitve value " + token);
     }
   }
 
+  public void setObjectMapper(final ObjectMapper objectMapper) {
+    this.objectMapper = objectMapper;
+  }
+
+  @Override
+  public void afterPropertiesSet() {
+    if (objectMapper == null) {
+      objectMapper = new ObjectMapper();
+    }
+  }
 
 }

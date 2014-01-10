@@ -11,7 +11,11 @@
 
     <couchbase:couchbase/>
 
-    <couchbase:couchbase id="couchbase2" host="localhost" bucket="default" password="" />
+    <couchbase:couchbase id="couchbase2" host="localhost" bucket="default" password=""/>
+
+    <couchbase:translation-service objectMapper="myCustomObjectMapper"/>
+
+    <bean id="myCustomObjectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"/>
 
     <couchbase:couchbase id="couchbase3" host="${couchbase.host}" bucket="${couchbase.bucket}" password="${couchbase.password}" />
 </beans>
