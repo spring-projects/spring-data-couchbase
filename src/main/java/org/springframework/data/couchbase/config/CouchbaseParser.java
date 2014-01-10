@@ -17,19 +17,14 @@
 package org.springframework.data.couchbase.config;
 
 import com.couchbase.client.CouchbaseClient;
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
-
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Parser for "<couchbase:couchbase />" bean definitions.
@@ -49,7 +44,7 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
    */
   @Override
   protected Class getBeanClass(final Element element) {
-    return CouchbaseClient.class;
+    return CouchbaseFactoryBean.class;
   }
 
   /**
@@ -60,12 +55,9 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
    */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    String host = element.getAttribute("host");
-    bean.addConstructorArgValue(convertHosts(StringUtils.hasText(host) ? host : CouchbaseFactoryBean.DEFAULT_NODE));
-    String bucket = element.getAttribute("bucket");
-    bean.addConstructorArgValue(StringUtils.hasText(bucket) ? bucket : CouchbaseFactoryBean.DEFAULT_BUCKET);
-    String password = element.getAttribute("password");
-    bean.addConstructorArgValue(StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
+    ParsingUtils.setPropertyValue(bean, element, "host", "host");
+    ParsingUtils.setPropertyValue(bean, element, "bucket", "bucket");
+    ParsingUtils.setPropertyValue(bean, element, "password", "password");
   }
 
   /**
@@ -81,29 +73,6 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
   protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
     return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE;
-  }
-
-  /**
-   * Convert a list of hosts into a URI format that can be used by the {@link CouchbaseClient}.
-   * <p/>
-   * To make it simple to use, the list of hosts can be passed in as a comma separated list. This list gets parsed
-   * and converted into a URI format that is suitable for the underlying {@link CouchbaseClient} object.
-   *
-   * @param hosts the host list to convert.
-   *
-   * @return the converted list with URIs.
-   */
-  private List<URI> convertHosts(final String hosts) {
-    final String[] split = hosts.split(",");
-    final List<URI> nodes = new ArrayList<URI>();
-    try {
-      for (final String aSplit : split) {
-        nodes.add(new URI("http://" + aSplit + ":8091/pools"));
-      }
-    } catch (URISyntaxException ex) {
-      throw new BeanCreationException("Could not convert host list." + ex);
-    }
-    return nodes;
   }
 
 }
