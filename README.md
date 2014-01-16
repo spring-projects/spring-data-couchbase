@@ -38,6 +38,14 @@ The preferred way is to install the package through maven:
 </dependency>
 ```
 
+To use stable resease of spring data, please add this reposotory to your `pom.xml` file
+```xml
+<repository>
+  <id>springframework-release</id>
+  <url>http://maven.springframework.org/release</url>
+</repository>
+```
+
 If you want to get a pre-release, please use the springsource snapshot and milestone repositories.
 
 ## Configuration
