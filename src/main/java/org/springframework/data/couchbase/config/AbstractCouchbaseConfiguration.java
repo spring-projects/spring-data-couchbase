@@ -48,7 +48,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean
+  @Bean(destroyMethod = "shutdown")
   public abstract CouchbaseClient couchbaseClient() throws Exception;
 
   /**
