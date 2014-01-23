@@ -21,6 +21,8 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
 import net.spy.memcached.internal.OperationFuture;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -49,7 +51,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class CouchbaseTemplate implements CouchbaseOperations {
 
-  private CouchbaseClient client;
+  private final CouchbaseClient client;
   private CouchbaseConverter couchbaseConverter;
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
   private static final Collection<String> ITERABLE_CLASSES;
@@ -77,18 +79,18 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
   public CouchbaseTemplate(final CouchbaseClient client, final TranslationService translationService) {
     this.client = client;
-    this.couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
+    couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
     this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
-    mappingContext = this.couchbaseConverter.getMappingContext();
+    mappingContext = couchbaseConverter.getMappingContext();
   }
 
-  private CouchbaseConverter getDefaultConverter() {
+  private static CouchbaseConverter getDefaultConverter() {
     final MappingCouchbaseConverter converter = new MappingCouchbaseConverter(new CouchbaseMappingContext());
     converter.afterPropertiesSet();
     return converter;
   }
 
-  private TranslationService getDefaultTranslationService() {
+  private static TranslationService getDefaultTranslationService() {
     final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
     jacksonTranslationService.afterPropertiesSet();
     return jacksonTranslationService;
@@ -102,67 +104,43 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     return translationService.decode(source, target);
   }
 
-  public final void insert(final Object objectToSave) {
-    ensureNotIterable(objectToSave);
-
-    final CouchbaseDocument converted = new CouchbaseDocument();
-    couchbaseConverter.write(objectToSave, converted);
-
-    execute(new BucketCallback<Boolean>() {
-      @Override
-      public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        return client.add(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
-      }
-    });
+  @Override
+  public final void insert(final Object objectToInsert) {
+    insert(objectToInsert, PersistTo.ZERO, ReplicateTo.ZERO);
   }
 
-  public final void insert(final Collection<?> batchToSave) {
-    for (final Object aBatchToSave : batchToSave) {
-      insert(aBatchToSave);
+  @Override
+  public final void insert(final Collection<?> batchToInsert) {
+    for (final Object toInsert : batchToInsert) {
+      insert(toInsert);
     }
   }
 
+  @Override
   public void save(final Object objectToSave) {
-    ensureNotIterable(objectToSave);
-
-    final CouchbaseDocument converted = new CouchbaseDocument();
-    couchbaseConverter.write(objectToSave, converted);
-
-    execute(new BucketCallback<Boolean>() {
-      @Override
-      public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        return client.set(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
-      }
-    });
+    save(objectToSave, PersistTo.ZERO, ReplicateTo.ZERO);
   }
 
+  @Override
   public void save(final Collection<?> batchToSave) {
-    for (final Object aBatchToSave : batchToSave) {
-      save(aBatchToSave);
+    for (final Object toSave : batchToSave) {
+      save(toSave);
     }
   }
 
-  public void update(final Object objectToSave) {
-    ensureNotIterable(objectToSave);
-
-    final CouchbaseDocument converted = new CouchbaseDocument();
-    couchbaseConverter.write(objectToSave, converted);
-
-    execute(new BucketCallback<Boolean>() {
-      @Override
-      public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        return client.replace(converted.getId(), converted.getExpiration(), translateEncode(converted)).get();
-      }
-    });
-
+  @Override
+  public void update(final Object objectToUpdate) {
+    update(objectToUpdate, PersistTo.ZERO, ReplicateTo.ZERO);
   }
 
-  public void update(final Collection<?> batchToSave) {
-    for (final Object aBatchToSave : batchToSave) {
-      update(aBatchToSave);
+  @Override
+  public void update(final Collection<?> batchToUpdate) {
+    for (final Object toUpdate : batchToUpdate) {
+      update(toUpdate);
     }
   }
 
+  @Override
   public final <T> T findById(final String id, final Class<T> entityClass) {
     String result = execute(new BucketCallback<String>() {
       @Override
@@ -212,33 +190,15 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     });
   }
 
+  @Override
   public void remove(final Object objectToRemove) {
-    ensureNotIterable(objectToRemove);
-
-    if (objectToRemove instanceof String) {
-      execute(new BucketCallback<Boolean>() {
-        @Override
-        public Boolean doInBucket() throws InterruptedException, ExecutionException {
-          return client.delete((String) objectToRemove).get();
-        }
-      });
-      return;
-    }
-
-    final CouchbaseDocument converted = new CouchbaseDocument();
-    couchbaseConverter.write(objectToRemove, converted);
-
-    execute(new BucketCallback<OperationFuture<Boolean>>() {
-      @Override
-      public OperationFuture<Boolean> doInBucket() {
-        return client.delete(converted.getId());
-      }
-    });
+    remove(objectToRemove, PersistTo.ZERO, ReplicateTo.ZERO);
   }
 
+  @Override
   public void remove(final Collection<?> batchToRemove) {
-    for (final Object aBatchToRemove : batchToRemove) {
-      remove(aBatchToRemove);
+    for (final Object toRemove : batchToRemove) {
+      remove(toRemove);
     }
   }
 
@@ -273,7 +233,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
    *
    * @param o the object to verify.
    */
-  protected final void ensureNotIterable(Object o) {
+  protected static void ensureNotIterable(Object o) {
     if (null != o) {
       if (o.getClass().isArray() || ITERABLE_CLASSES.contains(o.getClass().getName())) {
         throw new IllegalArgumentException("Cannot use a collection here.");
@@ -284,5 +244,106 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   @Override
   public CouchbaseConverter getConverter() {
     return couchbaseConverter;
+  }
+
+  @Override
+  public void save(Object objectToSave, final PersistTo persistTo, final ReplicateTo replicateTo) {
+    ensureNotIterable(objectToSave);
+
+    final CouchbaseDocument converted = new CouchbaseDocument();
+    couchbaseConverter.write(objectToSave, converted);
+
+    execute(new BucketCallback<Boolean>() {
+      @Override
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.set(converted.getId(), converted.getExpiration(), translateEncode(converted), persistTo,
+          replicateTo).get();
+      }
+    });
+  }
+
+  @Override
+  public void save(Collection<?> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+    for (Object toSave : batchToSave) {
+      save(toSave, persistTo, replicateTo);
+    }
+  }
+
+  @Override
+  public void insert(Object objectToInsert, final PersistTo persistTo, final ReplicateTo replicateTo) {
+    ensureNotIterable(objectToInsert);
+
+    final CouchbaseDocument converted = new CouchbaseDocument();
+    couchbaseConverter.write(objectToInsert, converted);
+
+    execute(new BucketCallback<Boolean>() {
+      @Override
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.add(converted.getId(), converted.getExpiration(), translateEncode(converted), persistTo,
+          replicateTo).get();
+      }
+    });
+  }
+
+  @Override
+  public void insert(Collection<?> batchToInsert, PersistTo persistTo, ReplicateTo replicateTo) {
+    for (Object toInsert : batchToInsert) {
+      insert(toInsert, persistTo,replicateTo);
+    }
+  }
+
+  @Override
+  public void update(Object objectToUpdate, final PersistTo persistTo, final ReplicateTo replicateTo) {
+    ensureNotIterable(objectToUpdate);
+
+    final CouchbaseDocument converted = new CouchbaseDocument();
+    couchbaseConverter.write(objectToUpdate, converted);
+
+    execute(new BucketCallback<Boolean>() {
+      @Override
+      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        return client.replace(converted.getId(), converted.getExpiration(), translateEncode(converted), persistTo,
+          replicateTo).get();
+      }
+    });
+  }
+
+  @Override
+  public void update(Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo) {
+    for (Object toUpdate : batchToUpdate) {
+      update(toUpdate, persistTo, replicateTo);
+    }
+  }
+
+  @Override
+  public void remove(final Object objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
+    ensureNotIterable(objectToRemove);
+
+    if (objectToRemove instanceof String) {
+      execute(new BucketCallback<Boolean>() {
+        @Override
+        public Boolean doInBucket() throws InterruptedException, ExecutionException {
+          return client.delete((String) objectToRemove, persistTo, replicateTo).get();
+        }
+      });
+      return;
+    }
+
+    final CouchbaseDocument converted = new CouchbaseDocument();
+    couchbaseConverter.write(objectToRemove, converted);
+
+    execute(new BucketCallback<OperationFuture<Boolean>>() {
+      @Override
+      public OperationFuture<Boolean> doInBucket() {
+        return client.delete(converted.getId());
+      }
+    });
+  }
+
+  @Override
+  public void remove(Collection<?> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
+    for (Object toRemove : batchToRemove) {
+      remove(toRemove, persistTo, replicateTo);
+    }
   }
 }
