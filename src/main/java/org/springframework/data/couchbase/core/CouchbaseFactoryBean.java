@@ -60,6 +60,11 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
   public static final String DEFAULT_PASSWORD = "";
 
   /**
+   * The name of the default shutdown method to call when the context is destroyed.
+   */
+  public static final String DEFAULT_DESTROY_METHOD = "shutdown";
+
+  /**
    * Holds the enclosed {@link CouchbaseClient}.
    */
   private CouchbaseClient couchbaseClient;

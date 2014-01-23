@@ -66,6 +66,8 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
     bean.addConstructorArgValue(StringUtils.hasText(bucket) ? bucket : CouchbaseFactoryBean.DEFAULT_BUCKET);
     String password = element.getAttribute("password");
     bean.addConstructorArgValue(StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
+
+    bean.setDestroyMethodName(CouchbaseFactoryBean.DEFAULT_DESTROY_METHOD);
   }
 
   /**
@@ -78,7 +80,8 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
    * @return the ID to work with.
    */
   @Override
-  protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
+  protected String resolveId(final Element element, final AbstractBeanDefinition definition,
+    final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
     return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE;
   }
