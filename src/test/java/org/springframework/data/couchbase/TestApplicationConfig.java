@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Michael Nitschinger
@@ -37,21 +38,6 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
   private Environment env;
 
   @Bean
-  public String couchbaseHost() {
-    return env.getProperty("couchbase.host", "http://127.0.0.1:8091/pools");
-  }
-
-  @Bean
-  public String couchbaseBucket() {
-    return env.getProperty("couchbase.bucket", "default");
-  }
-
-  @Bean
-  public String couchbasePassword() {
-    return env.getProperty("couchbase.password", "");
-  }
-
-  @Bean
   public String couchbaseAdminUser() {
     return env.getProperty("couchbase.adminUser", "Administrator");
   }
@@ -61,16 +47,31 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
     return env.getProperty("couchbase.adminUser", "password");
   }
 
+  @Override
+  protected List<String> bootstrapHosts() {
+    return Arrays.asList(env.getProperty("couchbase.host", "127.0.0.1"));
+  }
+
+  @Override
+  protected String getBucketName() {
+    return env.getProperty("couchbase.bucket", "default");
+  }
+
+  @Override
+  protected String getBucketPassword() {
+    return env.getProperty("couchbase.password", "");
+  }
+
   @Bean
   public BucketCreator bucketCreator() throws Exception {
-    return new BucketCreator(couchbaseHost(), couchbaseAdminUser(), couchbaseAdminPassword());
+    return new BucketCreator(bootstrapHosts().get(0), couchbaseAdminUser(), couchbaseAdminPassword());
   }
 
   @Bean
   @Override
   @DependsOn("bucketCreator")
   public CouchbaseClient couchbaseClient() throws Exception {
-    return new CouchbaseClient(Arrays.asList(new URI(couchbaseHost())), couchbaseBucket(), couchbasePassword());
+    return super.couchbaseClient();
   }
 
 

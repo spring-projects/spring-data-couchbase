@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Parser for "<couchbase:couchbase />" bean definitions.
@@ -68,6 +69,14 @@ public class CouchbaseParser extends AbstractSingleBeanDefinitionParser {
     bean.addConstructorArgValue(StringUtils.hasText(password) ? password : CouchbaseFactoryBean.DEFAULT_PASSWORD);
 
     bean.setDestroyMethodName(CouchbaseFactoryBean.DEFAULT_DESTROY_METHOD);
+
+    setLogger();
+  }
+
+  private void setLogger() {
+    Properties systemProperties = System.getProperties();
+    systemProperties.put("net.spy.log.LoggerImpl", CouchbaseFactoryBean.DEFAULT_LOGGER_PROPERTY);
+    System.setProperties(systemProperties);
   }
 
   /**

@@ -27,6 +27,8 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -54,6 +56,21 @@ public class AbstractCouchbaseConfigurationTests {
   }
 
   class SampleCouchbaseConfiguration extends AbstractCouchbaseConfiguration {
+
+    @Override
+    protected List<String> bootstrapHosts() {
+      return null;
+    }
+
+    @Override
+    protected String getBucketName() {
+      return null;
+    }
+
+    @Override
+    protected String getBucketPassword() {
+      return null;
+    }
 
     @Bean
     @Override

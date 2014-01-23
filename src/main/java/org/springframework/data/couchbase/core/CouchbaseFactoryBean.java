@@ -65,6 +65,11 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
   public static final String DEFAULT_DESTROY_METHOD = "shutdown";
 
   /**
+   * Use SLF4J as the default logger if not instructed otherwise.
+   */
+  public static final String DEFAULT_LOGGER_PROPERTY = "net.spy.memcached.compat.log.SLF4JLogger";
+
+  /**
    * Holds the enclosed {@link CouchbaseClient}.
    */
   private CouchbaseClient couchbaseClient;

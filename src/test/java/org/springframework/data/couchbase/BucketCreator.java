@@ -42,7 +42,7 @@ public class BucketCreator implements InitializingBean {
 
     RestTemplate template = new RestTemplate(rf);
 
-    String fullUri = hostUri + "/default/buckets/default";
+    String fullUri = "http://" + hostUri + ":8091/pools/default/buckets/default";
 
     ResponseEntity<String> entity = null;
     try {

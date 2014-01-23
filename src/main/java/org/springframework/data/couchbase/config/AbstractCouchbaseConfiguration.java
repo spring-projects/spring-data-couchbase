@@ -23,6 +23,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
+import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
@@ -32,8 +33,9 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -44,12 +46,61 @@ import java.util.Set;
 public abstract class AbstractCouchbaseConfiguration {
 
   /**
+   * The list of hostnames (or IP addresses to bootstrap from).
+   *
+   * @return the list of bootstrap hosts.
+   */
+  protected abstract List<String> bootstrapHosts();
+
+  /**
+   * The name of the bucket to connect to.
+   *
+   * @return the name of the bucket.
+   */
+  protected abstract String getBucketName();
+
+  /**
+   * The password of the bucket (can be an empty string).
+   *
+   * @return the password of the bucket.
+   */
+  protected abstract String getBucketPassword();
+
+  /**
    * Return the {@link CouchbaseClient} instance to connect to.
    *
    * @throws Exception on Bean construction failure.
    */
   @Bean(destroyMethod = "shutdown")
-  public abstract CouchbaseClient couchbaseClient() throws Exception;
+  public CouchbaseClient couchbaseClient() throws Exception {
+    setLoggerProperty(couchbaseLogger());
+
+    return new CouchbaseClient(
+      bootstrapUris(bootstrapHosts()),
+      getBucketName(),
+      getBucketPassword()
+    );
+  }
+
+  /**
+   * Specifies the logger to use (defaults to SLF4J).
+   *
+   * @return the logger property string.
+   */
+  protected String couchbaseLogger() {
+    return CouchbaseFactoryBean.DEFAULT_LOGGER_PROPERTY;
+  }
+
+  /**
+   * Prepare the logging property before initializing couchbase.
+   *
+   * @param logger
+   */
+  private void setLoggerProperty(String logger) {
+    Properties systemProperties = System.getProperties();
+    systemProperties.put("net.spy.log.LoggerImpl", logger);
+    System.setProperties(systemProperties);
+  }
 
   /**
    * Creates a {@link CouchbaseTemplate}.
@@ -128,6 +179,21 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   protected String getMappingBasePackage() {
     return getClass().getPackage().getName();
+  }
+
+
+  /**
+   * Converts the given list of hostnames into parsable URIs.
+   *
+   * @param hosts the list of hosts to convert.
+   * @return the converted URIs.
+   */
+  private List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
+    List<URI> uris = new ArrayList<URI>();
+    for (String host : hosts) {
+      uris.add(new URI("http://" + host + ":8091/pools"));
+    }
+    return uris;
   }
 
 }
