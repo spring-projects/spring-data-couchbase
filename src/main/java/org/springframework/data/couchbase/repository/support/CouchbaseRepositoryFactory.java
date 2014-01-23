@@ -19,14 +19,21 @@ package org.springframework.data.couchbase.repository.support;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.data.repository.query.QueryLookupStrategy;
+import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.Assert;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * Factory to create {@link SimpleCouchbaseRepository} instances.
@@ -110,6 +117,22 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   @Override
   protected Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
     return SimpleCouchbaseRepository.class;
+  }
+
+  @Override
+  protected QueryLookupStrategy getQueryLookupStrategy(QueryLookupStrategy.Key key) {
+    return new CouchbaseQueryLookupStrategy();
+  }
+
+  /**
+   * Currently, only views are supported. N1QL support to be added.
+   */
+  private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
+    @Override
+    public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
+      CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
+      return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
+    }
   }
 
 }
