@@ -60,4 +60,15 @@ public class CouchbaseTemplateParserIntegrationTests {
     factory.getBean("couchbaseTemplate");
   }
 
+  /**
+   * Test case for DATACOUCH-47.
+   */
+  @Test
+  public void allowsMultipleBuckets() {
+    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-multi-bucket-bean.xml"));
+
+    factory.getBean("cb-template-first");
+    factory.getBean("cb-template-second");
+  }
+
 }
