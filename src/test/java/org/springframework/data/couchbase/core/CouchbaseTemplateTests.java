@@ -19,10 +19,13 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.Stale;
+import net.spy.memcached.CASValue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
@@ -39,10 +42,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Michael Nitschinger
@@ -85,8 +85,10 @@ public class CouchbaseTemplateTests {
   }
 
   @Test
-  public void insertDoesNotOverride() {
+  public void insertDoesNotOverride() throws Exception {
     String id = "double-insert-test";
+    client.delete(id).get();
+
     String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
             + "CouchbaseTemplateTests$SimplePerson\",\"name\":\"Mr. A\"}";
 
@@ -217,6 +219,108 @@ public class CouchbaseTemplateTests {
     simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class);
     assertNotNull(simpleWithClass);
     assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
+  }
+
+  @Test
+  public void shouldHandleCASVersionOnInsert() throws Exception {
+    client.delete("versionedClass:1").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
+    assertEquals(0, versionedClass.getVersion());
+    template.insert(versionedClass);
+    CASValue<Object> rawStored = client.gets("versionedClass:1");
+    assertEquals(rawStored.getCas(), versionedClass.getVersion());
+  }
+
+  @Test
+  public void versionShouldNotUpdateOnSecondInsert() throws Exception {
+    client.delete("versionedClass:2").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:2", "foobar");
+    template.insert(versionedClass);
+    long version1 = versionedClass.getVersion();
+    template.insert(versionedClass);
+    long version2 = versionedClass.getVersion();
+
+    assertTrue(version1 > 0);
+    assertTrue(version2 > 0);
+    assertEquals(version1, version2);
+  }
+
+  @Test
+  public void shouldSaveDocumentOnMatchingVersion() throws Exception {
+    client.delete("versionedClass:3").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:3", "foobar");
+    template.insert(versionedClass);
+    long version1 = versionedClass.getVersion();
+
+    versionedClass.setField("foobar2");
+    template.save(versionedClass);
+    long version2 = versionedClass.getVersion();
+
+    assertTrue(version1 > 0);
+    assertTrue(version2 > 0);
+    assertNotEquals(version1, version2);
+
+    assertEquals("foobar2", template.findById("versionedClass:3", VersionedClass.class).getField());
+  }
+
+  @Test(expected = OptimisticLockingFailureException.class)
+  public void shouldNotSaveDocumentOnNotMatchingVersion() throws Exception {
+    client.delete("versionedClass:4").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
+    template.insert(versionedClass);
+
+    assertTrue(client.set("versionedClass:4", "different").get());
+
+    versionedClass.setField("foobar2");
+    template.save(versionedClass);
+  }
+
+  @Test
+  public void shouldUpdateDocumentOnMatchingVersion() throws Exception {
+    client.delete("versionedClass:5").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:5", "foobar");
+    template.insert(versionedClass);
+    long version1 = versionedClass.getVersion();
+
+    versionedClass.setField("foobar2");
+    template.update(versionedClass);
+    long version2 = versionedClass.getVersion();
+
+    assertTrue(version1 > 0);
+    assertTrue(version2 > 0);
+    assertNotEquals(version1, version2);
+
+    assertEquals("foobar2", template.findById("versionedClass:5", VersionedClass.class).getField());
+  }
+
+  @Test(expected = OptimisticLockingFailureException.class)
+  public void shouldNotUpdateDocumentOnNotMatchingVersion() throws Exception {
+    client.delete("versionedClass:6").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
+    template.insert(versionedClass);
+
+    assertTrue(client.set("versionedClass:6", "different").get());
+
+    versionedClass.setField("foobar2");
+    template.update(versionedClass);
+  }
+
+  @Test
+  public void shouldLoadVersionPropertyOnFind() throws Exception {
+    client.delete("versionedClass:7").get();
+
+    VersionedClass versionedClass = new VersionedClass("versionedClass:7", "foobar");
+    template.insert(versionedClass);
+    assertTrue(versionedClass.getVersion() > 0);
+
+    VersionedClass foundClass = template.findById("versionedClass:7", VersionedClass.class);
+    assertEquals(versionedClass.getVersion(), foundClass.getVersion());
   }
 
   /**
@@ -389,6 +493,38 @@ public class CouchbaseTemplateTests {
 
     void setValue(final String value) {
       this.value = value;
+    }
+  }
+
+  static class VersionedClass {
+
+    @Id
+    private String id;
+
+    @Version
+    private long version;
+
+    private String field;
+
+    VersionedClass(String id, String field) {
+      this.id = id;
+      this.field = field;
+    }
+
+    public String getId() {
+      return id;
+    }
+
+    public long getVersion() {
+      return version;
+    }
+
+    public String getField() {
+      return field;
+    }
+
+    public void setField(String field) {
+      this.field = field;
     }
   }
 

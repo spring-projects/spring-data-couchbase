@@ -23,6 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.WriteResultChecking;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -74,5 +76,10 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
     return super.couchbaseClient();
   }
 
-
+  @Override
+  public CouchbaseTemplate couchbaseTemplate() throws Exception {
+    CouchbaseTemplate template = super.couchbaseTemplate();
+    template.setWriteResultChecking(WriteResultChecking.LOG);
+    return template;
+  }
 }

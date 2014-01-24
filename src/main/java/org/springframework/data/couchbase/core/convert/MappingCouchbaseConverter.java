@@ -258,6 +258,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     final BeanWrapper<CouchbasePersistentEntity<Object>, Object> wrapper = BeanWrapper.create(source, conversionService);
     final CouchbasePersistentProperty idProperty = entity.getIdProperty();
+    final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
+
     if (idProperty != null && target.getId() == null) {
       String id = wrapper.getProperty(idProperty, String.class, useFieldAccessOnly);
       target.setId(id);
@@ -267,6 +269,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty)) {
+          return;
+        }
+        if (versionProperty != null && prop.equals(versionProperty)) {
           return;
         }
 
