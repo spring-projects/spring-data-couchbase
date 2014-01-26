@@ -36,6 +36,6 @@ public @interface Document {
    */
   int expiry() default 0;
 
-  boolean updateExpiryForRead() default false;
+  boolean touchOnRead() default false;
 
 }

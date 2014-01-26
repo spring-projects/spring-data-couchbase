@@ -21,7 +21,6 @@ import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.View;
 import com.couchbase.client.protocol.views.ViewResponse;
 import com.couchbase.client.protocol.views.ViewRow;
-import net.spy.memcached.internal.OperationCompletionListener;
 import net.spy.memcached.internal.OperationFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,20 +28,10 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
+import org.springframework.data.couchbase.core.mapping.*;
 import org.springframework.data.mapping.context.MappingContext;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -155,38 +144,25 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   public final <T> T findById(final String id, final Class<T> entityClass) {
+    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
     String result = execute(new BucketCallback<String>() {
       @Override
       public String doInBucket() {
-        return (String) client.get(id);
+          if (entity.isTouchOnRead()) {
+            return (String) client.getAndTouch(id, entity.getExpiry()).getValue();
+          } else {
+            return (String) client.get(id);
+          }
       }
     });
 
     if (result == null) {
       return null;
     }
-    asyncTouchIfRequiredForEntity(id, entityClass);
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
     return couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result, converted));
   }
-
-  private void asyncTouchIfRequiredForEntity(final String id, Class<?> entityClass) {
-    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
-    final int expiry = entity.getExpiry();
-    if (entity.isUpdateExpiryForRead() && expiry != 0) {
-      OperationFuture<Boolean> touch = client.touch(id, expiry);
-      touch.addListener(new OperationCompletionListener() {
-        @Override
-        public void onComplete(OperationFuture<?> operationFuture) throws Exception {
-          if (!operationFuture.getStatus().isSuccess()) {
-            logger.error(String.format("Touch for id: %s failed", id));
-          }
-        }
-      });
-    }
-  }
-
 
   @Override
   public <T> List<T> findByView(final String designName, final String viewName, final Query query, final Class<T> entityClass) {
@@ -201,10 +177,21 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final ViewResponse response = queryView(designName, viewName, query);
 
     final List<T> result = new ArrayList<T>(response.size());
+    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
+    boolean touchOnRead = entity.isTouchOnRead();
     for (final ViewRow row : response) {
-      String id = row.getId();
+      final String id = row.getId();
       final CouchbaseDocument converted = new CouchbaseDocument(id);
-      asyncTouchIfRequiredForEntity(id, entityClass);
+      if (touchOnRead) {
+          if (!execute(new BucketCallback<Boolean>() {
+              @Override
+              public Boolean doInBucket() throws InterruptedException, ExecutionException {
+                  return client.touch(id, entity.getExpiry()).get();
+              }
+          })) {
+              logger.error("Touch on Read quering view:"  + viewName+ " failed for id:" + id);
+          }
+      }
       result.add(couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode((String) row.getDocument(), converted)));
     }
 

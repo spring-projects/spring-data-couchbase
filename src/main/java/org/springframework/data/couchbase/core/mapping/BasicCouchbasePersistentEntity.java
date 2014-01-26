@@ -71,11 +71,16 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     return annotation == null ? 0 : annotation.expiry();
   }
 
+  /**
+   * Returns whether entity is configured to be touchedOnRead, stamping expiration, if
+   * expiration is not greater then zero then touchOnRead has no sense and also return false
+   * @return
+   */
   @Override
-  public boolean isUpdateExpiryForRead() {
+  public boolean isTouchOnRead() {
     org.springframework.data.couchbase.core.mapping.Document annotation = getType().getAnnotation(
         org.springframework.data.couchbase.core.mapping.Document.class);
-    return annotation == null ? false : annotation.updateExpiryForRead();
+    return annotation == null ? false : getExpiry() > 0 && annotation.touchOnRead();
   }
   
 }

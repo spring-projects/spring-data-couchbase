@@ -21,13 +21,13 @@ public class BasicCouchbasePersistentEntityTest {
 
   @Test
   public void doesNotUseIsUpdateExpiryForRead() throws Exception {
-    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocument.class).isUpdateExpiryForRead());
-    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class).isUpdateExpiryForRead());
+    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocument.class).isTouchOnRead());
+    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class).isTouchOnRead());
   }
 
   @Test
-  public void usesIsUpdateExpiryForRead() throws Exception {
-    assertTrue(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiryUpdatedOnRead.class).isUpdateExpiryForRead());
+  public void usesTouchOnRead() throws Exception {
+    assertTrue(getBasicCouchbasePersistentEntity(SimpleDocumentWithTouchOnRead.class).isTouchOnRead());
   }
 
   private BasicCouchbasePersistentEntity getBasicCouchbasePersistentEntity(Class<?> clazz) {
@@ -41,7 +41,7 @@ public class BasicCouchbasePersistentEntityTest {
   public static class SimpleDocumentWithExpiry {
   }
 
-  @Document(expiry = 10, updateExpiryForRead = true)
-  public static class SimpleDocumentWithExpiryUpdatedOnRead {
+  @Document(expiry = 10, touchOnRead = true)
+  public static class SimpleDocumentWithTouchOnRead {
   }
 }
