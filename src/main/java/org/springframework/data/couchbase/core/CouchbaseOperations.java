@@ -102,17 +102,6 @@ public interface CouchbaseOperations {
   <T> T findById(String id, Class<T> entityClass);
 
   /**
-   * Find an object by its given Id and map it to the corresponding entity and touch object expire flag in database with given param value
-   *
-   * @param id the unique ID of the document.    * @param entityClass the entity to map to.
-   * @param expire time in seconds that will stamp object to live in database
-   *
-   * @return returns the found object or null otherwise.
-   */
-    <T> T findById(String id, Class<T> entityClass, int expire);
-
-
-    /**
    * Query a View for a list of documents of type T.
    * <p/>
    * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
@@ -130,25 +119,6 @@ public interface CouchbaseOperations {
    */
   <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass);
 
-
-  /**
-   * Query a View for a list of documents of type T and touch all objects with expire flag in database with given param value.
-   * <p/>
-   * <p>There is no need to {@link Query#setIncludeDocs(boolean)} explicitely, because it will be set to true all the
-   * time. It is valid to pass in a empty constructed {@link Query} object.</p>
-   * <p/>
-   * <p>This method does not work with reduced views, because they by design do not contain references to original
-   * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
-   *
-   * @param design the name of the design document.
-   * @param view the name of the viewName.
-   * @param query the Query object to customize the viewName query.
-   * @param entityClass the entity to map to.
-   * @param expire time in seconds that will stamp object to live in database
-   *
-   * @return the converted collection
-   */
-  <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass, int expire);
 
   /**
    * Query a View with direct access to the {@link ViewResponse}.

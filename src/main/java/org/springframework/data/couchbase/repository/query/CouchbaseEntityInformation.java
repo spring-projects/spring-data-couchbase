@@ -26,16 +26,4 @@ import java.io.Serializable;
  * @author Michael Nitschinger
  */
 public interface CouchbaseEntityInformation<T, ID extends Serializable> extends EntityInformation<T, ID> {
-    /**
-     * Returns the expiry time for the document.
-     *
-     * @return the expiration time.
-     */
-    int getExpiry();
-
-    /**
-     * Flag for using getAndTouch operations for reads
-     * @return
-     */
-    boolean isUpdateExpiryForRead();
 }
