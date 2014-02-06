@@ -99,14 +99,14 @@
   <repositories>
     <repository>
       <id>spring-lib-release</id>
-      <url>http://repo.springsource.org/libs-release-local</url>
+      <url>http://repo.spring.io/libs-release</url>
     </repository>
   </repositories>
 
   <pluginRepositories>
     <pluginRepository>
       <id>spring-release-bundles</id>
-      <url>http://repository.springsource.com/maven/bundles/release/</url>
+      <url>http://repo.spring.io/maven/bundles/release</url>
     </pluginRepository>
   </pluginRepositories>
 
