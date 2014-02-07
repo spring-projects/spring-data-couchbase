@@ -30,7 +30,7 @@ badges:
       icon: stackoverflow
 
     # - name: Metrics (SonarQube)
-    #   url:  https://sonar.springsource.org/dashboard/index/org.springframework.data:spring-data-jpa
+    #   url:  https://sonar.springsource.org/dashboard/index/org.springframework.data:spring-data-couchbase
     #   icon: metrics
 
 ---
@@ -45,81 +45,126 @@ badges:
 
 {% capture billboard_description %}
 
-**PROJECT DESCRIPTION** Corpus callosum,
-[the carbon](#) in our apple pies a mote of dust suspended in a
-sunbeam. Muse about! Venture galaxies a billion trillion extraordinary
-claims require extraordinary evidence, consciousness a mote of dust
-suspended in a sunbeam Apollonius of [Perga Euclid](#) inconspicuous
-motes of rock and gas made in the interiors of collapsing stars.
+Spring Data for [Couchbase](http://www.couchbase.com) is part of the umbrella 
+Spring Data project which aims to provide a familiar and consistent Spring-based 
+programming model for new datastores while retaining store-specific features and 
+capabilities.
 
 {% endcapture %}
 
 {% capture main_content %}
 
-**INTRODUCTORY PARAGRAPHS** Birth, a very small stage in a vast cosmic
-arena extraordinary claims require extraordinary evidence! Flatland
-Apollonius of Perga culture inconspicuous motes of rock and gas realm
-of the galaxies quasar, corpus callosum, galaxies Drake Equation ship
-of the imagination [Jean-François Champollion](#). Galaxies Hypatia!
-Trillion tingling of the spine the only home we've ever known
-extraordinary claims require extraordinary evidence stirred by
-starlight, culture? Flatland Tunguska event finite but unbounded
-corpus callosum!
+The Spring Data Couchbase project provides integration with the Couchbase Server 
+database. Key functional areas of Spring Data Couchbase are a POJO centric model 
+for interacting with Couchbase Buckets and easily writing a Repository style data 
+access layer.
 
 ## Features
 
-* Feature 1
-* [Feature 2](#)
-* Feature 3
-* Feature 4
-* ...
+* Spring configuration support using Java based @Configuration classes or an XML namespace for the Couchbase driver.
+* CouchbaseTemplate helper class that increases productivity performing common Couchbase operations. Includes integrated object mapping between documents and POJOs.
+* Exception translation into Spring's portable Data Access Exception hierarchy.
+* Feature Rich Object Mapping integrated with Spring's Conversion Service.
+* Annotation based mapping metadata but extensible to support other metadata formats.
+* Automatic implementation of Repository interfaces including support for custom finder methods (backed by Couchbase Views).
+* JMX administration and monitoring
+* Transparent @Cacheable support to cache any objects you need for high performance access.
 
 <span id="quick-start"></span>
 ## Quick Start
 
 {% include download_widget.md %}
 
-
+## Configuration
 ```java
 package foo;
 
 import foo;
 
-public class SearchController {
+@Configuration
+@EnableCouchbaseRepositories
+public class Config extends AbstractCouchbaseConfiguration {
 
-    @Foo
-    public SearchController(SearchService searchService) {
-        this.searchService = searchService;
+    @Override
+    protected List<String> bootstrapHosts() {
+        return Arrays.asList("host1", "host2");
     }
 
-    public static void main(String[] args) {
-        // This is just a test to see how a very long line works with our project css
+    @Override
+    protected String getBucketName() {
+        return "default";
     }
+
+    @Override
+    protected String getBucketPassword() {
+        return "";
+    }
+}
+```
+
+## Sample Repository
+```java
+public interface UserRepository extends CrudRepository<User, String> {
+
+    /**
+     * Additional custom finder method.
+     */
+    List<User> findByLastname(Query query);
+
+}
+```
+
+## Usage
+```java
+@Service
+public class MyService {
+
+    private final UserRepository userRepository;
+
+    @Autowired
+    public MyService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public void doWork() {
+        userRepository.deleteAll();
+
+        User user = new User();
+        user.setLastname("Jackson");
+
+        user = userRepository.save(user);
+
+        Query query = new Query();
+        query.setKey(ComplexKey.of("Jackson"));
+        List<User> allUsers = userRepository.findByLastname(query);
+
+    }
+}
+```
+
+Note that to back the custom finders, you need to set up two Views on the server:
+
+For `findByLastname`:
+```javascript
+function (doc, meta) {
+  if(doc._class == "com.example.entity.User" && doc.firstname) {
+    emit(doc.firstname, null);
+  }
+}
+```
+
+For `findAll` and `count` (also add a reduce `_count`):
+```javascript
+function (doc, meta) {
+  if(doc._class == "com.example.entity.User") {
+    emit(null, null);
+  }
 }
 ```
 
 {% endcapture %}
 
 {% capture related_resources %}
-
-### Sample Projects
-
-* [Project Name 1](#)
-* [Project name 2](#)
-* [Project name nth](#)
-
-### Getting Started Guides
-
-* [GSG 1]({{site.main_site_url}}/guides/gs/rest-service)
-* [GSG 2]({{site.main_site_url}}/guides/gs/other-guide-2)
-* [GSG n]({{site.main_site_url}}/guides/gs/other-guide-3)
-
-### Tutorials
-
-* [Tutorial 1]({{site.main_site_url}}/guides/tutorials/rest)
-* [Tutorial 2]({{site.main_site_url}}/guides/tutorials/other-2)
-* [Tutorial n]({{site.main_site_url}}/guides/tutorials/other-3)
-
 {% endcapture %}
 
 
