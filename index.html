@@ -146,7 +146,7 @@ Note that to back the custom finders, you need to set up two Views on the server
 
 For `findByLastname`:
 
-```
+```javascript
 function (doc, meta) {
   if(doc._class == "com.example.entity.User" && doc.firstname) {
     emit(doc.firstname, null);
@@ -156,7 +156,7 @@ function (doc, meta) {
 
 For `findAll` and `count` (also add a reduce `_count`):
 
-```
+```javascript
 function (doc, meta) {
   if(doc._class == "com.example.entity.User") {
     emit(null, null);
@@ -164,6 +164,9 @@ function (doc, meta) {
 }
 ```
 
+{% endcapture %}
+
+{% capture related_resources %}
 {% endcapture %}
 
 {% include project_page.html %}
