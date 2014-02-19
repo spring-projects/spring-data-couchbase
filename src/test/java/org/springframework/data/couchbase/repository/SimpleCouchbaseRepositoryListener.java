@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.repository;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.ViewDesign;
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -40,13 +42,15 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
 
     for (int i = 0; i < 100; i++) {
       User u = new User("testuser-" + i, "uname-" + i);
-      template.save(u);
+      template.save(u, PersistTo.MASTER, ReplicateTo.ZERO);
     }
+
   }
 
   private void createAndWaitForDesignDocs(CouchbaseClient client) {
     DesignDocument designDoc = new DesignDocument("user");
-    String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
+    String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository." +
+      "User\") { emit(null, null); } }";
     designDoc.setView(new ViewDesign("all", mapFunction, "_count"));
     client.createDesignDoc(designDoc);
   }

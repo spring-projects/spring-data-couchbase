@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013, 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,27 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.config;
+package org.springframework.data.couchbase.core;
 
 /**
- * Contains default bean names that will be used when no "id" is supplied to the beans.
+ * How failing write results should be handled.
  *
  * @author Michael Nitschinger
  */
-public class BeanNames {
+public enum WriteResultChecking {
 
   /**
-   * Refers to the "<couchbase:couchbase />" bean.
+   * Ignore failing write results.
    */
-  static final String COUCHBASE = "couchbase";
+  NONE,
 
   /**
-   * Refers to the "<couchbase:template />" bean.
+   * Log failing write results.
    */
-  static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
+  LOG,
 
   /**
-   * Refers to the "<couchbase:translation-service />" bean
+   * Throw Exceptions on failing write results.
    */
-  static final String TRANSLATION_SERVICE = "translationService";
-
+  EXCEPTION
 }

@@ -1,262 +1,202 @@
 # Spring Data Couchbase
 
-This project adds common Spring Data functionality (like configuration, templates and repositories) on top of the high-performance, scalable and flexible architecture of Couchbase. It makes it especially easy to work with POJO entities, query views and work with them in a natural manner. Developers coming from a relational database will find it easier to get started with Couchbase, while still gaining lots of performance and scalability improvements. JSON is used as the underlying storage inside Couchbase Server, so Views can be used to further enhance query mechanisms.
+The primary goal of the [Spring Data](http://www.springsource.org/spring-data) project is to make it easier to build
+Spring-powered applications that use new data access technologies such as non-relational databases, map-reduce
+frameworks, and cloud based data services.
 
-Full documentation is still in the making, so this README outlines the basic steps you need to do in order to get it up and running. It also provides a very rough overview of its capabilities. Note that this library is still in the making and does not provide all features yet.
+The Spring Data Couchbase project aims to provide a familiar and consistent Spring-based programming model for Couchbase
+Server as a document database and cache while retaining store-specific features and capabilities. Key functional areas
+of Spring Data Couchbase are a POJO centric model for interacting with a Couchbase Server Bucket and easily writing a
+repository style data access layer.
 
-## Features
-### Implemented 1.0
+## Getting Help
 
- - Templates
- - JavaConfig
- - Mapping of arbitrary Objects (Value Objects)
- - View support in template
- - CRUD Repository (aside *All and count methods, see planned)
- - Basic Auditing (JMX) 
- - Additional: transparent @Cacheable support
- - XML Config (namespace for template + repositories)
- - @View annotation for customization
+For a comprehensive treatment of all the Spring Data Couchbase features, please refer to:
 
-### Planned 1.0
+* the [User Guide](http://static.springsource.org/spring-data/data-couchbase/docs/current/reference/html/)
+* the [JavaDocs](http://static.springsource.org/spring-data/data-couchbase/docs/current/api/) have extensive comments
+  in them as well.
+* for more detailed questions, use the [forum](http://forum.springsource.org/forumdisplay.php?f=80).
 
- - find*-based methods on repositories through Views
- 
-### Planned 1.1
- 
- - Relationship Support
- - Dynamic View Generation
- - N1QL Integration
+If you are new to Spring as well as to Spring Data, look for information about
+[Spring projects](http://www.springsource.org/projects).
 
-## Installation
-The preferred way is to install the package through maven:
+
+## Quick Start
+
+### Maven configuration
+
+Add the Maven dependency:
 
 ```xml
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.M2</version>
+  <version>1.0.0.RC1</version>
 </dependency>
+
+<repository>
+  <id>spring-libs-milestone</id>
+  <name>Spring Milestone Repository</name>
+  <url>http://repo.springsource.org/libs-milestone</url>
+</repository>
 ```
 
-If you want to get a pre-release, please use the springsource snapshot and milestone repositories.
-
-## Configuration
-Since we are in the Spring ecosystem, you can either configure it through XML or plain Java (often referred to as JavaConfig).
-
-### XML-based configuration
-This will be added once the XML namespace is implemented. You can use plain beans in the meantime like this:
-
-```xml
-<bean id="couchbaseClient" class="com.couchbase.client.CouchbaseClient">
-  <constructor-arg name="baseList">
-      <list>
-          <bean id="firstURI" class="java.net.URI">
-              <constructor-arg value="http://127.0.0.1:8091/pools" />
-          </bean>
-      </list>
-  </constructor-arg>
-  <constructor-arg name="bucketName" value="default" />
-  <constructor-arg name="pwd" value="" />
-</bean>
-```
-
-### JavaConfig
-
-If you like to configure your Spring environment through POJOs, JavaConfig is the way to go. While you could define your beans for templates and such directly, we provide a `AbstractCouchbaseConfig` to make it even easier for you. 
-
-Note that if you want to make use of JavaConfig, you need to put the `cglib` into your classpath:
+If you'd rather like the latest snapshots of the upcoming major version, use our Maven snapshot repository and declare
+the appropriate dependency version.
 
 ```xml
 <dependency>
-   <groupId>cglib</groupId>
-   <artifactId>cglib</artifactId>
-   <version>2.2</version>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>1.0.0.BUILD-SNAPSHOT</version>
 </dependency>
+
+<repository>
+  <id>spring-libs-snapshot</id>
+  <name>Spring Snapshot Repository</name>
+  <url>http://repo.springsource.org/libs-snapshot</url>
+</repository>
 ```
 
-You only need to provide a bean that refers to the `CouchbaseClient` instance like this:
+### CouchbaseTemplate
+
+CouchbaseTemplate is the central support class for Couchbase database operations. It provides:
+
+* Basic POJO mapping support to and from JSON (by default through Jackson)
+* Convenience methods to interact with the store (insert object, update objects) and Couchbase specific ones
+* Exception translation into Spring's [technology agnostic DAO exception hierarchy](http://docs.spring.io/spring/docs/current/spring-framework-reference/html/dao.html#dao-exceptions).
+
+### Spring Data Repositories
+
+To simplify the creation of data repositories Spring Data COUCHBASE provides a generic repository programming model. It
+will automatically create a repository proxy for you that adds implementations of finder methods you specify on an
+interface.
+
+To create a repository on top of a `User` entity, all you need to write is:
+
+```java
+public interface UserRepository extends CrudRepository<User, String> {
+
+    /**
+     * Additional custom finder method.
+     */
+	List<User> findByLastname(Query query);
+
+}
+```
+
+Once you get a reference to that repository bean, you'll find a lot of methods that make it very easy o work with this
+entity. In addition to the ones provided through the `CrudRepository`, you can add your own methods as well.
+
+In general, every finder method that does not depend on a single key (like `findById`) needs a backing View on the
+server side. In the example above, it assumes you have a view named `findByLastname` in the `user` design document. You
+can customize the view and design document name through the `@View` annotation. Also make sure you publish them into
+production before accessing it.
+
+This is an example view for the `findByLastname` method:
+
+```javascript
+function (doc, meta) {
+  if(doc._class == "com.example.entity.User" && doc.firstname) {
+    emit(doc.firstname, null);
+  }
+}
+```
+
+You can pass in custom runtime parameters through the `Query` param.
+
+To make the `findAll()` and `count` view work, it needs to look like this (and do not forget the `_count` reduce
+function):
+
+```javascript
+function (doc, meta) {
+  if(doc._class == "com.example.entity.User") {
+    emit(null, null);
+  }
+}
+```
+
+The queries issued on execution will be derived from the method name. Extending `CrudRepository` causes CRUD methods
+being pulled into the interface so that you can easily save and find single entities and collections of them.
+
+You can have Spring automatically create a proxy for the interface by using the following JavaConfig:
 
 ```java
 @Configuration
-public class ApplicationConfig extends AbstractCouchbaseConfiguration {
+@EnableCouchbaseRepositories
+public class Config extends AbstractCouchbaseConfiguration {
 
-  @Bean
-  public CouchbaseClient couchbaseClient() throws Exception {
-    return new CouchbaseClient(
-      Arrays.asList(new URI("http://localhost:8091/pools")),
-      "default",
-      ""
-    );
-  }
+	@Override
+	protected List<String> bootstrapHosts() {
+		return Arrays.asList("host1", "host2");
+	}
 
+	@Override
+	protected String getBucketName() {
+		return "default";
+	}
+
+	@Override
+	protected String getBucketPassword() {
+		return "";
+	}
 }
 ```
 
-Likely, you want to have Repository support (and not only use the template directly). To enable repositories, add the `@EnableCouchbaseRepositories` annotation and give it the namespace where it should search for your repositories:
+This sets up a connection to a Couchbase cluster and enables the detection of Spring Data repositories (through
+`@EnableCouchbaseRepositories). The same configuration would look like this in XML:
 
-```java
-@Configuration
-@EnableCouchbaseRepositories("com.example.business.repositories")
-public class ApplicationConfig extends AbstractCouchbaseConfiguration {
-...
-}
-```
-This will make the repositories automatically available in your `@Autowired` annotations or directly through the context.
-
-If you want to make use of the Caching support provided through the @Cacheable annotations, then you want to configure the CacheManager and add the `@EnableCaching` annotation:
-
-```java
-@Configuration
-@EnableCaching
-public class ApplicationConfig extends AbstractCouchbaseConfiguration {
-
-  @Bean
-  public CouchbaseClient couchbaseClient() throws Exception {
-    return new CouchbaseClient(
-      Arrays.asList(new URI("http://localhost:8091/pools")),
-      "default",
-      ""
-    );
-  }
-
-  @Bean
-  public CouchbaseCacheManager cacheManager() throws Exception {
-    HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
-    instances.put("persistent", couchbaseClient());
-    return new CouchbaseCacheManager(instances);
-  }
-
-}
+```xml
+<couchbase:couchbase id="cb-first" bucket="default" password="" host="localhost" />
+<couchbase:template id="cb-template-first"  client-ref="cb-first" />
+<couchbase:repositories couchbase-template-ref="cb-template-first" />
 ```
 
-## Usage
-Note that the usage guide in this README is intentionally kept very sparse. You'll find much more information in the documentation once its provided.
-
-### Repositories
-The topmost layer of indirection is the Repository abstraction. It provides convenient CRUD access on top of your Entities. If you need more direct access to Couchbase, look at the next chapter.
-
-For a generic introduction into Spring Data Repositories, look [here](http://static.springsource.org/spring-data/data-jpa/docs/current/reference/html/repositories.html).
-
-Create a Entity and a Repository that uses it as its generic type. This will setup everything for you (don't forget to add the proper `@EnableCouchbaseRepositories` with the correct namespace).
-
-A sample Entity (getter and setter omitted):
+This will find the repository interface and register a proxy object in the container. You can use it as shown below:
 
 ```java
-package com.example.business.entities;
+@Service
+public class MyService {
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.Field;
+	private final UserRepository userRepository;
 
+	public MyService(UserRepository userRepository) {
+		this.userRepository = userRepository;
+	}
 
-public class BlogPost {
+	public void doWork() {
+		userRepository.deleteAll();
 
-  @Id
-  private String id;
+		User user = new User();
+		user.setLastname("Jackson");
 
-  private String title;
-  private String content;
-  private String author;
+		user = userRepository.save(user);
 
-  @Field("pub")
-  private boolean published;
+		Query query = new Query();
+		query.setKey(ComplexKey.of("Jackson"));
+		List<User> allUsers = userRepository.findByLastname(query);
 
-  public BlogPost(String title, String content, String author, boolean published) {
-    id = "post:" + title.toLowerCase().replace(" ", "-");
-    this.title = title;
-    this.content = content;
-    this.author = author;
-    this.published = published;
-  }
-
-}
-
-```
-
-Now, we can create a Repository on top of it:
-
-```java
-package com.example.business.repositories;
-
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
-import com.example.business.entities.BlogPost;
-
-public interface BlogPostRepository extends CouchbaseRepository<BlogPost, String> {
+	}
 }
 ```
 
-Jup - thats it! Just by doing this, you'll get full CRUD support on top of your entity. You can now either `@Autowire` the repository in a service class or access it directly from the context.
 
-```java
-public class BlogPostService {
-  @Autowired
-  public BlogPostRepository repository;
-}
-```
+## Contributing to Spring Data
 
-```java
-ApplicationContext context = new AnnotationConfigApplicationContext(ApplicationConfig.class);
-BlogPostRepository repository = context.getBean(BlogPostRepository.class);
-
-// Find a BlogPost by its id
-BlogPost post = bean.findOne("blogpost:my-id");
-```
-
-Note that once we finish find* support through views, more information will be provided here.
-
-### Template
-You can also use the template directly, which gets you one step "closer to the metal". It will still do some Object mapping for you, but you need to be more specific on what you want to get done.
-
-You can again autowire it or access it directly from your beans:
-
-```java
-CouchbaseOperations ops = context.getBean("couchbaseTemplate", CouchbaseOperations.class);
-```
-
-The template provides lots of CRUD methods, as well as more direct access to Views. Exceptions are translated and connection management is handled for you in a more straightforward way.
-
-```java
-BlogPost post1 = new BlogPost("My Title", "Long Content", "Michael", true);
-ops.insert(post1);
-```
-
-### Caching
-While not directly related to Spring Data, the `@Cacheable` annotations in spring provide a very easy and transparent caching mechanism. Note that since you can cache everything, those objects get stored as serialized Java objects into Couchbase and are therefore not directly accessible by Views or the Template class. They provide a very nice mechanism to cache any kind of expensive operations (relational db calls, view rendering results, html,…).
-
-First, configure it as seen in the Configuration section. Then, you can put the `@Cacheable` annotation around any method and it will transparently cache the results for you:
-
-```java
-public class ComplexComputations {
-
-  @Cacheable(value="persistent", key="'longrunsim-'+#time")
-  public String simulateLongRun(long time) {
-    try {
-      Thread.sleep(time);
-    } catch(Exception ex) {
-      System.out.println("This shouldnt happen...");
-    }
-    return "{\"Sleeping\": \""+time+"\"}";
-  }
-
-}
-```
-
-Then access it:
-
-```java
-String result = complex.simulateLongRun(2000);
-```
-
-If you look at the Couchbase UI, you will see get and set requests going on that transparently store and retreive the information. You can find all details about this caching mechanism [here](http://static.springsource.org/spring/docs/3.2.2.RELEASE/spring-framework-reference/html/cache.html).
-
-## Contributing & Troubleshooting
 Here are some ways for you to get involved in the community:
 
-* Get involved with the Spring community on the Spring Community Forums.  Please help out on the [forum](http://forum.springsource.org/forumdisplay.php?f=80) by responding to questions and joining the debate.
-* Create [JIRA](https://jira.springframework.org/browse/DATACOUCH) tickets for bugs and new features and comment and vote on the ones that you are interested in.  
-* Github is for social coding: if you want to write code, we encourage contributions through pull requests from [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please reference a JIRA ticket as well covering the specific issue you are addressing.
+* Get involved with the Spring community on the Spring Community Forums.  Please help out on the
+  [forum](http://forum.springsource.org/forumdisplay.php?f=80) by responding to questions and joining the debate.
+* Create [JIRA](https://jira.springframework.org/browse/DATACOUCH) tickets for bugs and new features and comment and
+  vote on the ones that you are interested in.
+* Github is for social coding: if you want to write code, we encourage contributions through pull requests from
+  [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please reference
+  a JIRA ticket as well covering the specific issue you are addressing.
 * Watch for upcoming articles on Spring by [subscribing](http://www.springsource.org/node/feed) to springframework.org
-* Write blog posts and articles about it! Send them over to us so we can link them properly.
 
-Before we accept a non-trivial patch or pull request we will need you to sign the [contributor's agreement](https://support.springsource.com/spring_committer_signup).  Signing the contributor's agreement does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and you will get an author credit if we do.  Active contributors might be asked to join the core team, and given the ability to merge pull requests.
-
-
+Before we accept a non-trivial patch or pull request we will need you to sign the
+[contributor's agreement](https://support.springsource.com/spring_committer_signup). Signing the contributor's agreement
+does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and
+you will get an author credit if we do.  Active contributors might be asked to join the core team, and given the ability
+to merge pull requests.

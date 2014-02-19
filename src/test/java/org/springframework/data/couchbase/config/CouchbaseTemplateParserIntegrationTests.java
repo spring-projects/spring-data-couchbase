@@ -50,4 +50,25 @@ public class CouchbaseTemplateParserIntegrationTests {
     factory.getBean("couchbaseTemplate");
   }
 
+  @Test
+  public void readsCouchbaseTemplateWithTranslationServiceAttributesCorrectly() {
+    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-template-with-translation-service-bean.xml"));
+
+    BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
+    assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
+
+    factory.getBean("couchbaseTemplate");
+  }
+
+  /**
+   * Test case for DATACOUCH-47.
+   */
+  @Test
+  public void allowsMultipleBuckets() {
+    reader.loadBeanDefinitions(new ClassPathResource("namespace/couchbase-multi-bucket-bean.xml"));
+
+    factory.getBean("cb-template-first");
+    factory.getBean("cb-template-second");
+  }
+
 }

@@ -295,9 +295,10 @@ public class MappingCouchbaseConverterTests {
     source.put("attr2", cattr2);
 
     ListEntity readConverted = converter.read(ListEntity.class, source);
-    System.out.println(readConverted.attr0);
-    System.out.println(readConverted.attr1);
-    System.out.println(readConverted.attr2);
+    assertEquals(2, readConverted.attr0.size());
+    assertEquals(0, readConverted.attr1.size());
+    assertEquals(1, readConverted.attr2.size());
+    assertEquals(2, readConverted.attr2.get(0).size());
   }
 
   @Test

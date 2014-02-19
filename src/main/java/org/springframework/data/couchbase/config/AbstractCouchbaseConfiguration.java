@@ -23,15 +23,19 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
+import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -42,12 +46,61 @@ import java.util.Set;
 public abstract class AbstractCouchbaseConfiguration {
 
   /**
+   * The list of hostnames (or IP addresses to bootstrap from).
+   *
+   * @return the list of bootstrap hosts.
+   */
+  protected abstract List<String> bootstrapHosts();
+
+  /**
+   * The name of the bucket to connect to.
+   *
+   * @return the name of the bucket.
+   */
+  protected abstract String getBucketName();
+
+  /**
+   * The password of the bucket (can be an empty string).
+   *
+   * @return the password of the bucket.
+   */
+  protected abstract String getBucketPassword();
+
+  /**
    * Return the {@link CouchbaseClient} instance to connect to.
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean
-  public abstract CouchbaseClient couchbaseClient() throws Exception;
+  @Bean(destroyMethod = "shutdown")
+  public CouchbaseClient couchbaseClient() throws Exception {
+    setLoggerProperty(couchbaseLogger());
+
+    return new CouchbaseClient(
+      bootstrapUris(bootstrapHosts()),
+      getBucketName(),
+      getBucketPassword()
+    );
+  }
+
+  /**
+   * Specifies the logger to use (defaults to SLF4J).
+   *
+   * @return the logger property string.
+   */
+  protected String couchbaseLogger() {
+    return CouchbaseFactoryBean.DEFAULT_LOGGER_PROPERTY;
+  }
+
+  /**
+   * Prepare the logging property before initializing couchbase.
+   *
+   * @param logger
+   */
+  private void setLoggerProperty(String logger) {
+    Properties systemProperties = System.getProperties();
+    systemProperties.put("net.spy.log.LoggerImpl", logger);
+    System.setProperties(systemProperties);
+  }
 
   /**
    * Creates a {@link CouchbaseTemplate}.
@@ -56,7 +109,7 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   @Bean
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter());
+    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
   }
 
   /**
@@ -67,6 +120,18 @@ public abstract class AbstractCouchbaseConfiguration {
   @Bean
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
     return new MappingCouchbaseConverter(couchbaseMappingContext());
+  }
+
+  /**
+   * Creates a {@link TranslationService}.
+   *
+   * @return TranslationService, defaulting to JacksonTranslationService.
+   */
+  @Bean
+  public TranslationService translationService() {
+    final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+    jacksonTranslationService.afterPropertiesSet();
+    return jacksonTranslationService;
   }
 
   /**
@@ -91,18 +156,12 @@ public abstract class AbstractCouchbaseConfiguration {
     Set<Class<?>> initialEntitySet = new HashSet<Class<?>>();
 
     if (StringUtils.hasText(basePackage)) {
-			ClassPathScanningCandidateComponentProvider componentProvider =
-        new ClassPathScanningCandidateComponentProvider(false);
-			componentProvider.addIncludeFilter(
-        new AnnotationTypeFilter(Document.class));
-			componentProvider.addIncludeFilter(
-        new AnnotationTypeFilter(Persistent.class));
-
-			for (BeanDefinition candidate :
-        componentProvider.findCandidateComponents(basePackage)) {
-				initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(),
-          AbstractCouchbaseConfiguration.class.getClassLoader()));
-			}
+      ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(false);
+      componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
+      componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
+      for (BeanDefinition candidate : componentProvider.findCandidateComponents(basePackage)) {
+        initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(), AbstractCouchbaseConfiguration.class.getClassLoader()));
+      }
     }
 
     return initialEntitySet;
@@ -111,7 +170,7 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
    * class (the concrete class, not this one here) by default.
-   *
+   * <p/>
    * <p>So if you have a {@code com.acme.AppConfig} extending {@link AbstractCouchbaseConfiguration} the base package
    * will be considered {@code com.acme} unless the method is overridden to implement alternate behavior.</p>
    *
@@ -120,6 +179,21 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   protected String getMappingBasePackage() {
     return getClass().getPackage().getName();
+  }
+
+
+  /**
+   * Converts the given list of hostnames into parsable URIs.
+   *
+   * @param hosts the list of hosts to convert.
+   * @return the converted URIs.
+   */
+  private List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
+    List<URI> uris = new ArrayList<URI>();
+    for (String host : hosts) {
+      uris.add(new URI("http://" + host + ":8091/pools"));
+    }
+    return uris;
   }
 
 }

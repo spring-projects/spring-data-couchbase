@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 import java.util.Collection;
@@ -42,6 +44,16 @@ public interface CouchbaseOperations {
   void save(Object objectToSave);
 
   /**
+   * Save the given object.
+   * <p/>
+   * <p>When the document already exists (specified by its unique id), then it will be overriden. Otherwise it will be
+   * created.</p>
+   *
+   * @param objectToSave the object to store in the bucket.
+   */
+  void save(Object objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+  /**
    * Save a list of objects.
    * <p/>
    * <p>When one of the documents already exists (specified by its unique id), then it will be overriden. Otherwise it
@@ -52,14 +64,38 @@ public interface CouchbaseOperations {
   void save(Collection<?> batchToSave);
 
   /**
+   * Save a list of objects.
+   * <p/>
+   * <p>When one of the documents already exists (specified by its unique id), then it will be overriden. Otherwise it
+   * will be created.</p>
+   *
+   * @param batchToSave the list of objects to store in the bucket.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void save(Collection<?> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+  /**
    * Insert the given object.
    * <p/>
    * <p>When the document already exists (specified by its unique id), then it will not be overriden. Use the
    * {@link CouchbaseOperations#save} method for this task.</p>
    *
-   * @param objectToSave the object to add to the bucket.
+   * @param objectToInsert the object to add to the bucket.
    */
-  void insert(Object objectToSave);
+  void insert(Object objectToInsert);
+
+  /**
+   * Insert the given object.
+   * <p/>
+   * <p>When the document already exists (specified by its unique id), then it will not be overriden. Use the
+   * {@link CouchbaseOperations#save} method for this task.</p>
+   *
+   * @param objectToInsert the object to add to the bucket.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void insert(Object objectToInsert, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Insert a list of objects.
@@ -67,9 +103,21 @@ public interface CouchbaseOperations {
    * <p>When one of the documents already exists (specified by its unique id), then it will not be overriden. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
-   * @param batchToSave the list of objects to add to the bucket.
+   * @param batchToInsert the list of objects to add to the bucket.
    */
-  void insert(Collection<?> batchToSave);
+  void insert(Collection<?> batchToInsert);
+
+  /**
+   * Insert a list of objects.
+   * <p/>
+   * <p>When one of the documents already exists (specified by its unique id), then it will not be overriden. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param batchToInsert the list of objects to add to the bucket.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void insert(Collection<?> batchToInsert, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Update the given object.
@@ -77,9 +125,21 @@ public interface CouchbaseOperations {
    * <p>When the document does not exist (specified by its unique id) it will not be created. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
-   * @param objectToSave the object to add to the bucket.
+   * @param objectToUpdate the object to add to the bucket.
    */
-  void update(Object objectToSave);
+  void update(Object objectToUpdate);
+
+  /**
+   * Update the given object.
+   * <p/>
+   * <p>When the document does not exist (specified by its unique id) it will not be created. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param objectToUpdate the object to add to the bucket.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void update(Object objectToUpdate, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Insert a list of objects.
@@ -87,9 +147,21 @@ public interface CouchbaseOperations {
    * <p>If one of the documents does not exist (specified by its unique id), then it will not be created. Use the
    * {@link CouchbaseOperations#save} method for this.</p>
    *
-   * @param batchToSave the list of objects to add to the bucket.
+   * @param batchToUpdate the list of objects to add to the bucket.
    */
-  void update(Collection<?> batchToSave);
+  void update(Collection<?> batchToUpdate);
+
+  /**
+   * Insert a list of objects.
+   * <p/>
+   * <p>If one of the documents does not exist (specified by its unique id), then it will not be created. Use the
+   * {@link CouchbaseOperations#save} method for this.</p>
+   *
+   * @param batchToUpdate the list of objects to add to the bucket.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void update(Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Find an object by its given Id and map it to the corresponding entity.
@@ -150,9 +222,21 @@ public interface CouchbaseOperations {
    * If the object is a String, it will be treated as the document key
    * directly.
    *
-   * @param object the Object to remove.
+   * @param objectToRemove the Object to remove.
    */
-  void remove(Object object);
+  void remove(Object objectToRemove);
+
+  /**
+   * Remove the given object from the bucket by id.
+   * <p/>
+   * If the object is a String, it will be treated as the document key
+   * directly.
+   *
+   * @param objectToRemove the Object to remove.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void remove(Object objectToRemove, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Remove a list of objects from the bucket by id.
@@ -160,6 +244,15 @@ public interface CouchbaseOperations {
    * @param batchToRemove the list of Objects to remove.
    */
   void remove(Collection<?> batchToRemove);
+
+  /**
+   * Remove a list of objects from the bucket by id.
+   *
+   * @param batchToRemove the list of Objects to remove.
+   * @param persistTo the persistence constraint setting.
+   * @param replicateTo the replication constraint setting.
+   */
+  void remove(Collection<?> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
    * Executes a BucketCallback translating any exceptions as necessary.

@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.repository.query;
+package org.springframework.data.couchbase.core;
 
-import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
-
-import java.io.Serializable;
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
- * Marker interface for the Couchbase Entity Information.
+ * A Couchbase specific integrity violation exception, thrown as a result of failing db operations.
  *
  * @author Michael Nitschinger
  */
-public interface CouchbaseEntityInformation<T, ID extends Serializable> extends EntityInformation<T, ID> {
+public class CouchbaseDataIntegrityViolationException extends DataIntegrityViolationException {
+
+  private static final long serialVersionUID = -3724991479213025850L;
+
+  public CouchbaseDataIntegrityViolationException(String msg) {
+    super(msg);
+  }
+
+  public CouchbaseDataIntegrityViolationException(String msg, Throwable cause) {
+    super(msg, cause);
+  }
 
 }

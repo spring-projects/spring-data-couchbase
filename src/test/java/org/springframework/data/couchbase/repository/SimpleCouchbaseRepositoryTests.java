@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -96,6 +97,18 @@ public class SimpleCouchbaseRepositoryTests {
     client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
 
     assertEquals(100, repository.count());
+  }
+
+  @Test
+  public void shouldFindCustom() {
+    Iterable<User> users = repository.customViewQuery(new Query().setLimit(2).setStale(Stale.FALSE));
+    int size = 0;
+    for (User u : users) {
+      size++;
+      assertNotNull(u.getKey());
+      assertNotNull(u.getUsername());
+    }
+    assertEquals(2, size);
   }
 
 }
