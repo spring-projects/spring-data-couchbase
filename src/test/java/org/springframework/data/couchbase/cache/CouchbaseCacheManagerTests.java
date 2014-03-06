@@ -16,10 +16,7 @@
 
 package org.springframework.data.couchbase.cache;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.HashMap;
-
+import com.couchbase.client.CouchbaseClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +24,9 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.couchbase.client.CouchbaseClient;
-import com.googlecode.catchexception.CatchException;
+import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Verifies the correct functionality of the CouchbaseCacheManager.
@@ -56,24 +54,6 @@ public class CouchbaseCacheManagerTests {
 
     CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);
     assertEquals(instances, manager.getClients());
-  }
-
-  /**
-   * After closing cache Manager connection to couchbase is shut down and
-   * reading from it will throw exception
-   * 
-   * @throws Exception
-   */
-  @Test
-  public void testCacheDispose() throws Exception {
-    HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
-    instances.put("test", client);
-
-    CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);
-
-    manager.destroy();
-
-    CatchException.catchException(client, IllegalStateException.class).get("key");
   }
 
 }
