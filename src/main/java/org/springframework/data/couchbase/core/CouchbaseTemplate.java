@@ -65,7 +65,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   private final CouchbaseClient client;
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
   private final CouchbaseExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
-  private final TranslationService<String> translationService;
+  private final TranslationService translationService;
 
   private CouchbaseConverter couchbaseConverter;
   private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;

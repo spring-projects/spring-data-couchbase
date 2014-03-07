@@ -25,6 +25,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -94,11 +95,11 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Prepare the logging property before initializing couchbase.
    *
-   * @param logger
+   * @param logger the logger path to use.
    */
-  private void setLoggerProperty(String logger) {
+  private static void setLoggerProperty(final String logger) {
     Properties systemProperties = System.getProperties();
-    systemProperties.put("net.spy.log.LoggerImpl", logger);
+    systemProperties.setProperty("net.spy.log.LoggerImpl", logger);
     System.setProperties(systemProperties);
   }
 
@@ -119,7 +120,9 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   @Bean
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
-    return new MappingCouchbaseConverter(couchbaseMappingContext());
+    MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext());
+    converter.setCustomConversions(customConversions());
+    return converter;
   }
 
   /**
@@ -143,7 +146,20 @@ public abstract class AbstractCouchbaseConfiguration {
   public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
     CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
     mappingContext.setInitialEntitySet(getInitialEntitySet());
+    mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
     return mappingContext;
+  }
+
+  /**
+   * Register custom Converters in a {@link CustomConversions} object if required. These
+   * {@link CustomConversions} will be registered with the {@link #mappingCouchbaseConverter()} and
+   * {@link #couchbaseMappingContext()}. Returns an empty {@link CustomConversions} instance by default.
+   *
+   * @return must not be {@literal null}.
+   */
+  @Bean
+  public CustomConversions customConversions() {
+    return new CustomConversions(Collections.emptyList());
   }
 
   /**
@@ -188,7 +204,7 @@ public abstract class AbstractCouchbaseConfiguration {
    * @param hosts the list of hosts to convert.
    * @return the converted URIs.
    */
-  private List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
+  private static List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
     List<URI> uris = new ArrayList<URI>();
     for (String host : hosts) {
       uris.add(new URI("http://" + host + ":8091/pools"));
