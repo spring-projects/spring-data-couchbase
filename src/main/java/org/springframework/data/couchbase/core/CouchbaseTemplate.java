@@ -28,6 +28,8 @@ import net.spy.memcached.ReplicateTo;
 import net.spy.memcached.internal.OperationFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -39,6 +41,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
+import org.springframework.data.couchbase.core.mapping.event.AfterDeleteEvent;
+import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeDeleteEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
@@ -56,7 +64,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @author Michael Nitschinger
  */
-public class CouchbaseTemplate implements CouchbaseOperations {
+public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTemplate.class);
   private static final Collection<String> ITERABLE_CLASSES;
@@ -66,6 +74,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
   private final CouchbaseExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
   private final TranslationService translationService;
+  private ApplicationEventPublisher eventPublisher;
 
   private CouchbaseConverter couchbaseConverter;
   private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;
@@ -86,6 +95,10 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     this(client, null, null);
   }
 
+  public CouchbaseTemplate(final CouchbaseClient client, final TranslationService translationService) {
+    this(client, null, translationService);
+  }
+
   public CouchbaseTemplate(final CouchbaseClient client, final CouchbaseConverter couchbaseConverter, final TranslationService translationService) {
     this.client = client;
     this.couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
@@ -93,11 +106,9 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     mappingContext = this.couchbaseConverter.getMappingContext();
   }
 
-  public CouchbaseTemplate(final CouchbaseClient client, final TranslationService translationService) {
-    this.client = client;
-    couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
-    this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
-    mappingContext = couchbaseConverter.getMappingContext();
+  @Override
+  public void setApplicationEventPublisher(final ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
   }
 
   private static CouchbaseConverter getDefaultConverter() {
@@ -282,9 +293,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
     final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class, true) : null;
 
+    maybeEmitEvent(new BeforeConvertEvent<Object>(objectToSave));
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToSave, converted);
 
+    maybeEmitEvent(new BeforeSaveEvent<Object>(objectToSave, converted));
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
@@ -310,6 +323,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
         }
       }
     });
+    maybeEmitEvent(new AfterSaveEvent<Object>(objectToSave, converted));
   }
 
   @Override
@@ -334,9 +348,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       }
     }
 
+    maybeEmitEvent(new BeforeConvertEvent<Object>(objectToInsert));
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToInsert, converted);
 
+    maybeEmitEvent(new BeforeSaveEvent<Object>(objectToInsert, converted));
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
@@ -354,6 +370,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
         return result;
       }
     });
+    maybeEmitEvent(new AfterSaveEvent<Object>(objectToInsert, converted));
   }
 
   @Override
@@ -373,9 +390,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
     final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class, true) : null;
 
+    maybeEmitEvent(new BeforeConvertEvent<Object>(objectToUpdate));
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToUpdate, converted);
 
+    maybeEmitEvent(new BeforeSaveEvent<Object>(objectToUpdate, converted));
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
@@ -397,6 +416,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
         }
       }
     });
+    maybeEmitEvent(new AfterSaveEvent<Object>(objectToUpdate, converted));
   }
 
   @Override
@@ -410,6 +430,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   public void remove(final Object objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
     ensureNotIterable(objectToRemove);
 
+    maybeEmitEvent(new BeforeDeleteEvent<Object>(objectToRemove));
     if (objectToRemove instanceof String) {
       execute(new BucketCallback<Boolean>() {
         @Override
@@ -417,6 +438,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
           return client.delete((String) objectToRemove, persistTo, replicateTo).get();
         }
       });
+      maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
       return;
     }
 
@@ -429,6 +451,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
         return client.delete(converted.getId());
       }
     });
+    maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
   }
 
   @Override
@@ -452,6 +475,18 @@ public class CouchbaseTemplate implements CouchbaseOperations {
       throw new CouchbaseDataIntegrityViolationException(message);
     } else {
       LOGGER.error(message);
+    }
+  }
+
+  /**
+   * Helper method to publish an event if the event publisher is set.
+   *
+   * @param event the event to emit.
+   * @param <T> the enclosed type.
+   */
+  protected <T> void maybeEmitEvent(final CouchbaseMappingEvent<T> event) {
+    if (eventPublisher != null) {
+      eventPublisher.publishEvent(event);
     }
   }
 
