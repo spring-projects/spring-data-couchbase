@@ -43,15 +43,15 @@ public class AbstractCouchbaseEventListenerTests {
 
   @Test
   public void shouldEmitEvents() {
-    assertEquals(0, eventListener.onBeforeSaveEvents.size());
-    assertEquals(0, eventListener.onAfterSaveEvents.size());
-    assertEquals(0, eventListener.onBeforeConvertEvents.size());
+    int beforeSave = eventListener.onBeforeSaveEvents.size();
+    int afterSave = eventListener.onAfterSaveEvents.size();
+    int beforeConvert = eventListener.onBeforeConvertEvents.size();
 
     couchbaseTemplate.save(new User("john smith", 18));
 
-    assertEquals(1, eventListener.onBeforeSaveEvents.size());
-    assertEquals(1, eventListener.onAfterSaveEvents.size());
-    assertEquals(1, eventListener.onBeforeConvertEvents.size());
+    assertEquals(beforeSave+1, eventListener.onBeforeSaveEvents.size());
+    assertEquals(afterSave+1, eventListener.onAfterSaveEvents.size());
+    assertEquals(beforeConvert+1, eventListener.onBeforeConvertEvents.size());
   }
 
 }
