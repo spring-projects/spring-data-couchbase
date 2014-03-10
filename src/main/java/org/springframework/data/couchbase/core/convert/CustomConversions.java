@@ -81,7 +81,7 @@ public class CustomConversions {
 
     this.converters = new ArrayList<Object>();
     this.converters.addAll(converters);
-    this.converters.addAll(JodaTimeConverters.getConvertersToRegister());
+    this.converters.addAll(DateConverters.getConvertersToRegister());
 
     for (Object converter : this.converters) {
       registerConversion(converter);

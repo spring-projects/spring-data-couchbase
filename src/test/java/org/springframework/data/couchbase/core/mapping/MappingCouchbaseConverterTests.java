@@ -383,6 +383,22 @@ public class MappingCouchbaseConverterTests {
       readConverted.listOfEmails.get(0).emailAddr);
   }
 
+  @Test
+  public void writesAndReadsDates() {
+    Date created = new Date();
+    Calendar modified = Calendar.getInstance();
+    DateEntity entity = new DateEntity(created, modified);
+
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converter.write(entity, converted);
+    assertEquals(created.getTime(), converted.getPayload().get("created"));
+    assertEquals(modified.getTimeInMillis() / 1000, converted.getPayload().get("modified"));
+
+    DateEntity read = converter.read(DateEntity.class, converted);
+    assertEquals(created.getTime(), read.created.getTime());
+    assertEquals(modified.getTimeInMillis() / 1000, read.modified.getTimeInMillis() / 1000);
+  }
+
   static class EntityWithoutID {
     private String attr0;
     public EntityWithoutID(String a0) {
@@ -485,6 +501,15 @@ public class MappingCouchbaseConverterTests {
     private String emailAddr;
     public Email(String emailAddr) {
       this.emailAddr = emailAddr;
+    }
+  }
+
+  static class DateEntity extends BaseEntity {
+    private Date created;
+    private Calendar modified;
+    public DateEntity(Date created, Calendar modified) {
+      this.created = created;
+      this.modified = modified;
     }
   }
 
