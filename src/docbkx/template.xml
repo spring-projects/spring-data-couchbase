@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+        "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="couchbase.template">
+    <title>Template &amp; direct Operations</title>
+
+    <abstract>
+        <para>The template provides lower level access to the underlying database and also serves as the foundation for
+        repositories. Any time a repository is too high-level for you needs chances are good that the templates will
+        serve you well.</para>
+    </abstract>
+
+    <section id="template.ops">
+        <title>Supported Operations</title>
+
+        <para>The template can be accessed through the <code>couchbaseTemplate</code> bean out of your context. Once
+        you've got a reference to it, you can run all kinds of operations against it. Other than through a repository,
+        in a template you need to always specifiy the target entity type which you want to get converted.</para>
+
+        <para>To mutate documents, you'll find <code>save</code>, <code>insert</code> and <code>update</code> methods
+        exposed. Saving will insert or update the document, insert will fail if it has been created already and update
+        only works against documents that have already been created.</para>
+
+        <para>Since Couchbase Server has different levels of persistence (by default you'll get a positive response if
+        it has been acknowledged in the managed cache), you can provide higher durability options through the overloaded
+        <code>PersistTo</code> and/or <code>ReplicateTo</code> options. The behaviour is part of the Couchbase Java SDK,
+        please refer to the official documentation for more details.</para>
+
+        <para>Remvoing docouments through the <code>remove</code> methods works exactly the same.</para>
+
+        <para>If you want to load documents, you can do that through the <code>findById</code> method, which is the fastest
+        and if possible your tool of choice. The find methods for views are <code>findByView</code> which converts it
+        into the target entity, but also <code>querView</code> which exposes lower level semantics.</para>
+
+        <para>If you really need low-level semantics, the <code>couchbaseClient</code> bean is also always in scope.</para>
+    </section>
+
+</chapter>
