@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -70,6 +71,11 @@ public class CouchbaseRepositoryViewTests {
     client.query(client.getView("userCustom", "customCountView"), new Query().setStale(FALSE));
     final long value = repository.count();
     assertThat(value, is(100L));
+  }
+
+  @Test(expected = InvalidDataAccessResourceUsageException.class)
+  public void shouldTrimOffFindOnCustomFinder() {
+    repository.findAllSomething();
   }
 
 }

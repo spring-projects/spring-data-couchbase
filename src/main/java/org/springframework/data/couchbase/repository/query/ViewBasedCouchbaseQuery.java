@@ -20,6 +20,7 @@ import com.couchbase.client.protocol.views.Query;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.util.StringUtils;
 
 /**
  * Execute a repository query through the View mechanism.
@@ -69,7 +70,7 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     if (method.hasViewAnnotation()) {
       return method.getViewAnnotation().designDocument();
     } else {
-      return method.getEntityInformation().getJavaType().getSimpleName().toLowerCase();
+      return StringUtils.uncapitalize(method.getEntityInformation().getJavaType().getSimpleName());
     }
   }
 
@@ -82,7 +83,7 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     if (method.hasViewAnnotation()) {
       return method.getViewAnnotation().viewName();
     } else {
-      return method.getName();
+      return StringUtils.uncapitalize(method.getName().replaceFirst("find", ""));
     }
   }
 
