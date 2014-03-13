@@ -21,7 +21,7 @@
 
         <example>
             <title>A simple Document with Fields</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
@@ -140,7 +140,7 @@ public class User {
 
         <example>
             <title>A Document with Map and List</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Document
 public class User {
 
@@ -167,7 +167,7 @@ public class User {
 
         <example>
             <title>A Document with Map and List - JSON</title>
-            <programlisting lang="json"><![CDATA[
+            <programlisting language="json"><![CDATA[
 {
     "_class": "foo.User",
     "childrenAges": {
@@ -189,7 +189,7 @@ public class User {
 
         <example>
             <title>A Document with composed objects</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Document
 public class User {
 
@@ -227,7 +227,7 @@ public class User {
 
         <example>
             <title>A Document with composed objects - JSON</title>
-            <programlisting lang="json"><![CDATA[
+            <programlisting language="json"><![CDATA[
 {
   "_class": "foo.User",
   "children": [
@@ -257,7 +257,7 @@ public class User {
 
         <example>
             <title>A Document with Date and Calendar</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Document
 public class BlogPost {
 
@@ -288,7 +288,7 @@ public class BlogPost {
 
         <example>
             <title>A Document with Date and Calendar - JSON</title>
-            <programlisting lang="json"><![CDATA[
+            <programlisting language="json"><![CDATA[
 {
   "title": "a blog post title",
   "_class": "foo.BlogPost",
@@ -305,7 +305,7 @@ public class BlogPost {
 
         <example>
             <title>Custom Converters</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Override
 public CustomConversions customConversions() {
     return new CustomConversions(Arrays.asList(FooToBarConverter.INSTANCE, BarToFooConverter.INSTANCE));
@@ -374,7 +374,7 @@ public static enum BarToFooConverter implements Converter<Bar, Foo> {
 
         <example>
             <title>A Document with optimistic locking.</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Document
 public class User {
 
@@ -407,7 +407,7 @@ public class User {
 
         <example>
             <title>Validation dependencies</title>
-            <programlisting lang="xml"><![CDATA[
+            <programlisting language="xml"><![CDATA[
 <dependency>
   <groupId>javax.validation</groupId>
   <artifactId>validation-api</artifactId>
@@ -423,7 +423,7 @@ public class User {
 
         <example>
             <title>Validation beans</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Bean
 public LocalValidatorFactoryBean validator() {
     return new LocalValidatorFactoryBean();
@@ -441,7 +441,7 @@ public ValidatingCouchbaseEventListener validationEventListener() {
 
         <example>
             <title>Sample Validation Annotation</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Size(min = 10)
 @Field
 private String name;

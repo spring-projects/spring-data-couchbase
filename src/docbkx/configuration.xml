@@ -18,7 +18,7 @@
         <example>
             <title>Including the dependency through maven</title>
 
-            <programlisting lang="xml"><![CDATA[
+            <programlisting language="xml"><![CDATA[
 <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
@@ -38,7 +38,7 @@
         <example>
             <title>Using a snapshot version</title>
 
-            <programlisting lang="xml"><![CDATA[
+            <programlisting language="xml"><![CDATA[
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
@@ -68,7 +68,7 @@
 
         <example>
             <title>Extending the <code>AbstractCouchbaseConfiguration</code></title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Configuration
 public class Config extends AbstractCouchbaseConfiguration {
     @Override
@@ -115,7 +115,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 
         <example>
             <title>Basic XML configuration</title>
-            <programlisting lang="xml"><![CDATA[
+            <programlisting language="xml"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
 <beans:beans xmlns:beans="http://www.springframework.org/schema/beans"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

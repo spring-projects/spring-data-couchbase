@@ -25,9 +25,9 @@ Release Notes - Spring Data Couchbase - Version 1.0 RC1 - 2014-02-06
     * [DATACOUCH-30] - ObjectMapper configuration must be supported
     * [DATACOUCH-44] - Not consistent unit tests
     * [DATACOUCH-47] - Connecting to multiple buckets fails
-    * [DATACOUCH-51] - update(java.util.Collection) adds new document object 
+    * [DATACOUCH-51] - update(java.util.Collection) adds new document object
     * [DATACOUCH-52] - CouchbaseCacheManager does not shutdown couchbase connections
-    * [DATACOUCH-53] - NPE on CouchbaseCache puting null 
+    * [DATACOUCH-53] - NPE on CouchbaseCache puting null
     * [DATACOUCH-58] - Allow null values for List elements and Map values
 
 ** Improvement

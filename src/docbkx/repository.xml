@@ -2,14 +2,14 @@
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
         "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="couchbase.repository">
-    <title>Repositories</title>
+    <title>Couchbase repositories</title>
 
     <abstract>
         <para>The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code
             required to implement data access layers for various persistence stores.</para>
     </abstract>
 
-    <section id ="repository.configuration">
+    <section id ="couchbase.repository.configuration">
         <title>Configuration</title>
 
         <para>While support for repositories is always present, you need to enable them in general or for a specific
@@ -19,7 +19,7 @@
 
         <example>
             <title>Annotation-Based Repository Setup</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 @Configuration
 @EnableCouchbaseRepositories(basePackages = {"com.couchbase.example.repos"})
 public class Config extends AbstractCouchbaseConfiguration {
@@ -32,14 +32,14 @@ public class Config extends AbstractCouchbaseConfiguration {
 
         <example>
             <title>XML-Based Repository Setup</title>
-            <programlisting lang="xml"><![CDATA[
+            <programlisting language="xml"><![CDATA[
 <couchbase:repositories base-package="com.couchbase.example.repos" />
             ]]></programlisting>
         </example>
 
     </section>
 
-    <section id ="repository.usage">
+    <section id ="couchbase.repository.usage">
         <title>Usage</title>
 
         <para>In the simplest case, your repository will extend the <code>CrudRepository&lt;T, String&gt;</code>, where
@@ -47,7 +47,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 
         <example>
             <title>A User repository</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 import org.springframework.data.repository.CrudRepository;
 
 public interface UserRepository extends CrudRepository<User, String> {
@@ -135,7 +135,7 @@ public interface UserRepository extends CrudRepository<User, String> {
 
         <example>
             <title>An extended User repository</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 public interface UserRepository extends CrudRepository<User, String> {
 
     List<User> findAllAdmins();
@@ -150,7 +150,7 @@ public interface UserRepository extends CrudRepository<User, String> {
             a yet unknown parameter, let's cover that next.</para>
     </section>
 
-    <section id="repository.views">
+    <section id="couchbase.repository.views">
         <title>Backing Views</title>
 
         <para>As a rule of thumb, all repository access methods which are not "by a specific key" require a backing view
@@ -168,7 +168,7 @@ public interface UserRepository extends CrudRepository<User, String> {
 
         <example>
             <title>The all view map function</title>
-            <programlisting lang="javascript"><![CDATA[
+            <programlisting language="javascript"><![CDATA[
 // do not forget the _count reduce function!
 function (doc, meta) {
   if (doc._class == "namespace.to.entity.User") {
@@ -195,7 +195,7 @@ function (doc, meta) {
 
         <example>
             <title>A custom view map function</title>
-            <programlisting lang="javascript"><![CDATA[
+            <programlisting language="javascript"><![CDATA[
 function (doc, meta) {
   if (doc._class == "namespace.to.entity.User" && doc.isAdmin) {
     emit(null, null);
@@ -210,7 +210,7 @@ function (doc, meta) {
 
         <example>
             <title>A parameterized view map function</title>
-            <programlisting lang="javascript"><![CDATA[
+            <programlisting language="javascript"><![CDATA[
 function (doc, meta) {
   if (doc._class == "namespace.to.entity.User") {
     emit(doc.firstname, null);
@@ -224,7 +224,7 @@ function (doc, meta) {
 
         <example>
             <title>Query a repository method with custom params.</title>
-            <programlisting lang="java"><![CDATA[
+            <programlisting language="java"><![CDATA[
 // Load the bean, or @Autowire it
 UserRepository repo = ctx.getBean(UserRepository.class);
 

@@ -1,10 +1,10 @@
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.springframework.data.couchbase
 Bundle-Name: ${project.name}
-Bundle-Vendor: Pivotal
+Bundle-Vendor: Pivotal Software, Inc.
 Bundle-Version: ${project.version}
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Template: 
+Export-Template:
  org.springframework.data.couchbase.*;version="${project.version}"
 Import-Template:
  com.couchbase.client.*;version="${couchbase:[=.=.=,+1.0.0)}",
