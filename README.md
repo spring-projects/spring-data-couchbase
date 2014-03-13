@@ -32,14 +32,8 @@ Add the Maven dependency:
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.RC1</version>
+  <version>1.0.0.RELEASE</version>
 </dependency>
-
-<repository>
-  <id>spring-libs-milestone</id>
-  <name>Spring Milestone Repository</name>
-  <url>http://repo.springsource.org/libs-milestone</url>
-</repository>
 ```
 
 If you'd rather like the latest snapshots of the upcoming major version, use our Maven snapshot repository and declare
@@ -49,13 +43,13 @@ the appropriate dependency version.
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.BUILD-SNAPSHOT</version>
+  <version>1.1.0.BUILD-SNAPSHOT</version>
 </dependency>
 
 <repository>
   <id>spring-libs-snapshot</id>
   <name>Spring Snapshot Repository</name>
-  <url>http://repo.springsource.org/libs-snapshot</url>
+  <url>http://repo.spring.io/libs-snapshot</url>
 </repository>
 ```
 

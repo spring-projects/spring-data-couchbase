@@ -1,3 +1,23 @@
+Release Notes - Spring Data Couchbase - Version 1.0.0.RELEASE - 2014-03-13
+--------------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-50] - findAll(Iterable<ID> ids) in CrudRepository throws java.util.concurrent.ExecutionException
+    * [DATACOUCH-61] - NPE when saving object containing Joda DateTime field
+    * [DATACOUCH-69] - Can't deserialize Date field
+    * [DATACOUCH-70] - Bundle could not be resolved in non J2SE-1.6 runtime environment
+
+** Improvement
+    * [DATACOUCH-55] - Allow support for custom object mapping (like Date objects)
+    * [DATACOUCH-72] - Update Couchbase SDK , Jackson and Spring-Data-Commons
+    * [DATACOUCH-75] - Trim off find on custom repository finder methods.
+
+** New Feature
+    * [DATACOUCH-71] - Support for JS303 Validation (& template events)
+
+** Task
+    * [DATACOUCH-73] - Release 1.0 GA
+    * [DATACOUCH-74] - Initial Documentation for 1.0 GA
+
 Release Notes - Spring Data Couchbase - Version 1.0 RC1 - 2014-02-06
 --------------------------------------------------------------------
 ** Bug
