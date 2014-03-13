@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.*;
  * consumable database represenation.
  *
  * @author Michael Nitschinger
+ * @author Oliver Gierke
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -60,11 +61,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    */
   protected final MappingContext<? extends CouchbasePersistentEntity<?>,
     CouchbasePersistentProperty> mappingContext;
-
-  /**
-   * Always use field access only.
-   */
-  protected boolean useFieldAccessOnly = true;
 
   /**
    * The Couchbase specific type mapper in use.
@@ -172,7 +168,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
           return;
         }
         Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, result);
-        wrapper.setProperty(prop, obj, useFieldAccessOnly);
+        wrapper.setProperty(prop, obj);
       }
 
       private boolean doesPropertyExistInSource(final CouchbasePersistentProperty property) {
@@ -387,7 +383,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
     if (idProperty != null && target.getId() == null) {
-      String id = wrapper.getProperty(idProperty, String.class, useFieldAccessOnly);
+      String id = wrapper.getProperty(idProperty, String.class);
       target.setId(id);
     }
     target.setExpiration(entity.getExpiry());
@@ -399,7 +395,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
           return;
         }
 
-        Object propertyObj = wrapper.getProperty(prop, prop.getType(), useFieldAccessOnly);
+        Object propertyObj = wrapper.getProperty(prop, prop.getType());
         if (null != propertyObj) {
           if (!conversions.isSimpleType(propertyObj.getClass())) {
             writePropertyInternal(propertyObj, target, prop);
@@ -415,7 +411,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
         CouchbasePersistentProperty inverseProp = association.getInverse();
         Class<?> type = inverseProp.getType();
-        Object propertyObj = wrapper.getProperty(inverseProp, type, useFieldAccessOnly);
+        Object propertyObj = wrapper.getProperty(inverseProp, type);
         if (null != propertyObj) {
           writePropertyInternal(propertyObj, target, inverseProp);
         }

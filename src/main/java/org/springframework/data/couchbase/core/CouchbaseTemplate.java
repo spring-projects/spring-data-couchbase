@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * @author Michael Nitschinger
+ * @author Oliver Gierke
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
@@ -291,7 +292,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToSave.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class, true) : null;
+    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToSave));
     final CouchbaseDocument converted = new CouchbaseDocument();
@@ -342,7 +343,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       couchbaseConverter.getConversionService());
 
     if (persistentEntity != null && persistentEntity.hasVersionProperty()) {
-      final Long version = beanWrapper.getProperty(persistentEntity.getVersionProperty(), Long.class, true);
+      final Long version = beanWrapper.getProperty(persistentEntity.getVersionProperty(), Long.class);
       if (version == 0) {
         beanWrapper.setProperty(persistentEntity.getVersionProperty(), 0);
       }
@@ -388,7 +389,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToUpdate.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class, true) : null;
+    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToUpdate));
     final CouchbaseDocument converted = new CouchbaseDocument();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.springframework.aop.interceptor.ExposeInvocationInterceptor;
 import org.springframework.core.NamedThreadLocal;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
 
 import java.lang.reflect.Method;
@@ -34,7 +35,8 @@ import java.util.Map;
  * invoked method. This is necessary to allow redeclaration of CRUD methods in repository interfaces and configure
  * view information on them.
  *
- * @author David Harrigan.
+ * @author David Harrigan
+ * @author Oliver Gierke
  */
 public enum ViewPostProcessor implements RepositoryProxyPostProcessor {
 
@@ -42,8 +44,13 @@ public enum ViewPostProcessor implements RepositoryProxyPostProcessor {
 
   private static final ThreadLocal<Map<Object, Object>> VIEW_METADATA = new NamedThreadLocal<Map<Object, Object>>("View Metadata");
 
+  /* 
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.core.support.RepositoryProxyPostProcessor#postProcess(org.springframework.aop.framework.ProxyFactory, org.springframework.data.repository.core.RepositoryInformation)
+   */
   @Override
-  public void postProcess(final ProxyFactory factory) {
+  public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
+  	
     factory.addAdvice(ExposeInvocationInterceptor.INSTANCE);
     factory.addAdvice(ViewInterceptor.INSTANCE);
   }
