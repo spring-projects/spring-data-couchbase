@@ -10,6 +10,7 @@ Release Notes - Spring Data Couchbase - Version 1.0.0.RELEASE - 2014-03-13
     * [DATACOUCH-55] - Allow support for custom object mapping (like Date objects)
     * [DATACOUCH-72] - Update Couchbase SDK , Jackson and Spring-Data-Commons
     * [DATACOUCH-75] - Trim off find on custom repository finder methods.
+    * [DATACOUCH-76] - Upgrade to latest spring-data-commons and parent
 
 ** New Feature
     * [DATACOUCH-71] - Support for JS303 Validation (& template events)
