@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+        "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="couchbase.entity">
+    <title>Modeling Entities</title>
+
+    <abstract>
+        <para>This chapter describes how to model Entities and explains their counterpart representation in Couchbase
+            Server itself.</para>
+    </abstract>
+
+    <section id="basics">
+        <title>Documents and Fields</title>
+
+        <para>All entities should be annotated with the <code>@Document</code> annotation. Also, every field in the entity
+        should be annotated with the <code>@Field</code> annotation. While this is - strictly speaking - optional, it
+        helps to reduce edge cases and clearly shows the intent and design of the entity.</para>
+
+        <para>There is also a special <code>@Id</code> annotation which needs to be always in place. Best practice is
+        to also name the property <code>id</code>. Here is a very simple <code>User</code> entity:</para>
+
+        <example>
+            <title>A simple Document with Fields</title>
+            <programlisting language="java"><![CDATA[
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
+
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private String firstname;
+
+    @Field
+    private String lastname;
+
+    public User(String id, String firstname, String lastname) {
+        this.id = id;
+        this.firstname = firstname;
+        this.lastname = lastname;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Couchbase Server supports automatic expiration for documents. The library implements support for it through
+        the <code>@Document</code> annotation. You can set a <code>expiry</code> value which translates to the number of
+        seconds until the document gets removed automatically. If you want to make it expire in 10 seconds after mutation,
+        set it like <code>@Document(expiry = 10)</code>.</para>
+
+        <para>If you want a different representation of the field name inside the document in contrast to the field
+        name used in your entity, you can set a different name on the <code>@Field</code> annotation. For example if
+        you want to keep your documents small you can set the firstname field to <code>@Field("fname")</code>. In the
+        JSON document, you'll see <code>{"fname": ".."}</code> instead of <code>{"firstname": ".."}</code>.</para>
+
+        <para>The <code>@Id</code> annotation needs to be present because every document in Couchbase needs a unique
+        key. This key needs to be any string with a length of maximum 250 characters. Feel free to use whatever fits
+        your use case, be it a UUID, an email address or anything else.</para>
+    </section>
+
+    <section id="datatypes">
+        <title>Datatypes and Converters</title>
+
+        <para>The storage format of choice is JSON. It is great, but like many data representations it allows less
+            datatypes than you could express in Java directly. Therefore, for all non-primitive types some form of
+            conversion to and from supported types needs to happen.</para>
+
+        <para>For the following entity field types, you don't need to add special handling:</para>
+
+        <table>
+            <title>Primitive Types</title>
+
+            <tgroup cols="2">
+                <thead>
+                    <row>
+                        <entry>Java Type</entry>
+                        <entry>JSON Representation</entry>
+                    </row>
+                </thead>
+                <tbody>
+                    <row>
+                        <entry>string</entry>
+                        <entry>string</entry>
+                    </row>
+                    <row>
+                        <entry>boolean</entry>
+                        <entry>boolean</entry>
+                    </row>
+                    <row>
+                        <entry>byte</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>short</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>int</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>long</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>float</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>double</entry>
+                        <entry>number</entry>
+                    </row>
+                    <row>
+                        <entry>null</entry>
+                        <entry>Ignored on write</entry>
+                    </row>
+                </tbody>
+            </tgroup>
+        </table>
+
+        <para>Since JSON supports objects ("maps") and lists, <code>Map</code> and <code>List</code> types can be converted
+            naturally. If they only contain primitive field types from the last paragraph, you don't need to add special
+            handling too. Here is an example:</para>
+
+        <example>
+            <title>A Document with Map and List</title>
+            <programlisting language="java"><![CDATA[
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private List<String> firstnames;
+
+    @Field
+    private Map<String, Integer> childrenAges;
+
+    public User(String id, List<String> firstnames, Map<String, Integer> childrenAges) {
+        this.id = id;
+        this.firstnames = firstnames;
+        this.childrenAges = childrenAges;
+    }
+
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Storing a user with some sample data could look like this as a JSON representation:</para>
+
+        <example>
+            <title>A Document with Map and List - JSON</title>
+            <programlisting language="json"><![CDATA[
+{
+    "_class": "foo.User",
+    "childrenAges": {
+        "Alice": 10,
+        "Bob": 5
+    },
+    "firstnames": [
+        "Foo",
+        "Bar",
+        "Baz"
+    ]
+}
+            ]]></programlisting>
+        </example>
+
+        <para>You don't need to break everything down to primitive types and Lists/Maps all the time. Of course, you can
+            also compose other objects out of those primitive values. Let's modify the last example so that we want to
+            store a <code>List</code> of <code>Children</code>:</para>
+
+        <example>
+            <title>A Document with composed objects</title>
+            <programlisting language="java"><![CDATA[
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private List<String> firstnames;
+
+    @Field
+    private List<Child> children;
+
+    public User(String id, List<String> firstnames, List<Child> children) {
+        this.id = id;
+        this.firstnames = firstnames;
+        this.children = children;
+    }
+
+    static class Child {
+        private String name;
+        private int age;
+
+        Child(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+    }
+
+}
+            ]]></programlisting>
+        </example>
+
+        <para>A populated object can look like:</para>
+
+        <example>
+            <title>A Document with composed objects - JSON</title>
+            <programlisting language="json"><![CDATA[
+{
+  "_class": "foo.User",
+  "children": [
+    {
+      "age": 4,
+      "name": "Alice"
+    },
+    {
+      "age": 3,
+      "name": "Bob"
+    }
+  ],
+  "firstnames": [
+    "Foo",
+    "Bar",
+    "Baz"
+  ]
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Most of the time, you also need to store a temporal value like a <code>Date</code>. Since it can't be stored
+        directly in JSON, a conversion needs to happen. The library implements default converters for <code>Date</code>,
+        <code>Calendar</code> and JodaTime types (if on the classpath). All of those are represented by default in the
+        document as a unix timestamp (number). You can always override the default behavior with custom converters as
+        shown later. Here is an example:</para>
+
+        <example>
+            <title>A Document with Date and Calendar</title>
+            <programlisting language="java"><![CDATA[
+@Document
+public class BlogPost {
+
+    @Id
+    private String id;
+
+    @Field
+    private Date created;
+
+    @Field
+    private Calendar updated;
+
+    @Field
+    private String title;
+
+    public BlogPost(String id, Date created, Calendar updated, String title) {
+        this.id = id;
+        this.created = created;
+        this.updated = updated;
+        this.title = title;
+    }
+
+}
+            ]]></programlisting>
+        </example>
+
+        <para>A populated object can look like:</para>
+
+        <example>
+            <title>A Document with Date and Calendar - JSON</title>
+            <programlisting language="json"><![CDATA[
+{
+  "title": "a blog post title",
+  "_class": "foo.BlogPost",
+  "updated": 1394610843,
+  "created": 1394610843897
+}
+                    ]]></programlisting>
+        </example>
+
+
+        <para>If you want to override a converter or implement your own one, this is also possible. The library implements
+            the general Spring Converter pattern. You can plug in custom converters on bean creation time in your
+            configuration. Here's how you can configure it (in your overriden <code>AbstractCouchbaseConfiguration</code>):</para>
+
+        <example>
+            <title>Custom Converters</title>
+            <programlisting language="java"><![CDATA[
+@Override
+public CustomConversions customConversions() {
+    return new CustomConversions(Arrays.asList(FooToBarConverter.INSTANCE, BarToFooConverter.INSTANCE));
+}
+
+@WritingConverter
+public static enum FooToBarConverter implements Converter<Foo, Bar> {
+    INSTANCE;
+
+    @Override
+    public Bar convert(Foo source) {
+        return /* do your conversion here */;
+    }
+
+}
+
+@ReadingConverter
+public static enum BarToFooConverter implements Converter<Bar, Foo> {
+    INSTANCE;
+
+    @Override
+    public Foo convert(Bar source) {
+        return /* do your conversion here */;
+    }
+
+}
+            ]]></programlisting>
+        </example>
+
+        <para>There are a few things to keep in mind with custom conversions:</para>
+
+        <itemizedlist>
+            <listitem>
+                <para>To make it unambiguous, always use the <code>@WritingConverter</code> and <code>@ReadingConverter</code>
+                    annotations on your converters. Especially if you are dealing with primitive type conversions, this will
+                    help to reduce possible wrong conversions.</para>
+            </listitem>
+            <listitem>
+                <para>If you implement a writing converter, make sure to decode into primitive types, maps and lists
+                    only. If you need more complex object types, use the <code>CouchbaseDocument</code> and <code>CouchbaseList</code>
+                    types, which are also understood by the underlying translation engine. Your best bet is to stick with
+                    as simple as possible conversions.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Always put more special converters before generic converters to avoid the case where the wrong
+                    converter gets executed.
+                </para>
+            </listitem>
+        </itemizedlist>
+
+    </section>
+
+    <section id="version">
+        <title>Optimistic Locking</title>
+
+        <para>Couchbase Server does not support multi-document transactions or rollback. To implement optimistic locking,
+            Couchbase uses a CAS (compare and swap) approach. When a document is mutated, the CAS value also changes. The
+            CAS is opaque to the client, the only thing you need to know is that it changes when the content or a meta
+            information changes too.</para>
+
+        <para>In other datastores, similar behavior can be achieved through an arbitrary version field whith a incrementing
+            counter. Since Couchbase supports this in a much better fashion, it is easy to implement. If you want automatic
+            optimistic locking support, all you need to do is add a <code>@Version</code> annotation on a long field like
+            this:</para>
+
+        <example>
+            <title>A Document with optimistic locking.</title>
+            <programlisting language="java"><![CDATA[
+@Document
+public class User {
+
+        @Version
+        private long version;
+
+        // constructor, getters, setters...
+}
+            ]]></programlisting>
+        </example>
+
+        <para>If you load a document through the template or repository, the version field will be automatically populated
+            with the current CAS value. It is important to note that you shouldn't access the field or even change it
+            on your own. Once you save the document back, it will either succeed or fail with a
+            <code>OptimisticLockingFailureException</code>. If you get such an exception, the further approach depends
+            on what you want to achieve application wise. You should either retry the complete load-update-write cycle
+            or propagate the error to the upper layers for proper handling.</para>
+
+    </section>
+
+    <section id="validation">
+        <title>Validation</title>
+
+        <para>The library supports JSR 303 validation, which is based on annotations directly in your entities. Of course
+            you can add all kinds of validation in your service layer, but this way its nicely coupled to your actual
+            entities.</para>
+
+        <para>To make it work, you need to include two additional dependencies. JSR 303 and a library that implements it,
+            like the one supported by hibernate:</para>
+
+        <example>
+            <title>Validation dependencies</title>
+            <programlisting language="xml"><![CDATA[
+<dependency>
+  <groupId>javax.validation</groupId>
+  <artifactId>validation-api</artifactId>
+</dependency>
+<dependency>
+  <groupId>org.hibernate</groupId>
+  <artifactId>hibernate-validator</artifactId>
+</dependency>
+            ]]></programlisting>
+        </example>
+
+        <para>Now you need to add two beans to your configuration:</para>
+
+        <example>
+            <title>Validation beans</title>
+            <programlisting language="java"><![CDATA[
+@Bean
+public LocalValidatorFactoryBean validator() {
+    return new LocalValidatorFactoryBean();
+}
+
+@Bean
+public ValidatingCouchbaseEventListener validationEventListener() {
+    return new ValidatingCouchbaseEventListener(validator());
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Now you can annotate your fields with JSR303 annotations. If a validation on <code>save()</code> fails,
+            a <code>ConstraintViolationException</code> is thrown.</para>
+
+        <example>
+            <title>Sample Validation Annotation</title>
+            <programlisting language="java"><![CDATA[
+@Size(min = 10)
+@Field
+private String name;
+            ]]></programlisting>
+        </example>
+
+    </section>
+
+</chapter>

@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -295,9 +296,10 @@ public class MappingCouchbaseConverterTests {
     source.put("attr2", cattr2);
 
     ListEntity readConverted = converter.read(ListEntity.class, source);
-    System.out.println(readConverted.attr0);
-    System.out.println(readConverted.attr1);
-    System.out.println(readConverted.attr2);
+    assertEquals(2, readConverted.attr0.size());
+    assertEquals(0, readConverted.attr1.size());
+    assertEquals(1, readConverted.attr2.size());
+    assertEquals(2, readConverted.attr2.get(0).size());
   }
 
   @Test
@@ -380,6 +382,25 @@ public class MappingCouchbaseConverterTests {
     assertEquals(addy.emailAddr, readConverted.email.emailAddr);
     assertEquals(listOfEmails.get(0).emailAddr,
       readConverted.listOfEmails.get(0).emailAddr);
+  }
+
+  @Test
+  public void writesAndReadsDates() {
+    Date created = new Date();
+    Calendar modified = Calendar.getInstance();
+    LocalDateTime deleted = LocalDateTime.now();
+    DateEntity entity = new DateEntity(created, modified, deleted);
+
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converter.write(entity, converted);
+    assertEquals(created.getTime(), converted.getPayload().get("created"));
+    assertEquals(modified.getTimeInMillis() / 1000, converted.getPayload().get("modified"));
+    assertEquals(deleted.toDate().getTime(), converted.getPayload().get("deleted"));
+
+    DateEntity read = converter.read(DateEntity.class, converted);
+    assertEquals(created.getTime(), read.created.getTime());
+    assertEquals(modified.getTimeInMillis() / 1000, read.modified.getTimeInMillis() / 1000);
+    assertEquals(deleted.toDate().getTime(), read.deleted.toDate().getTime());
   }
 
   static class EntityWithoutID {
@@ -484,6 +505,18 @@ public class MappingCouchbaseConverterTests {
     private String emailAddr;
     public Email(String emailAddr) {
       this.emailAddr = emailAddr;
+    }
+  }
+
+  static class DateEntity extends BaseEntity {
+    private Date created;
+    private Calendar modified;
+    private LocalDateTime deleted;
+
+    public DateEntity(Date created, Calendar modified, LocalDateTime deleted) {
+      this.created = created;
+      this.modified = modified;
+      this.deleted = deleted;
     }
   }
 

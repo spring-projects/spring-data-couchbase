@@ -20,11 +20,14 @@ import com.couchbase.client.CouchbaseClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,14 +50,28 @@ public class AbstractCouchbaseConfigurationTests {
   @Test
   public void usesConfigClassPackageAsBaseMappingPackage() throws Exception {
     AbstractCouchbaseConfiguration config = new SampleCouchbaseConfiguration();
-
-    assertEquals(config.getMappingBasePackage(),
-      SampleCouchbaseConfiguration.class.getPackage().getName());
+    assertEquals(config.getMappingBasePackage(), SampleCouchbaseConfiguration.class.getPackage().getName());
     assertEquals(config.getInitialEntitySet().size(), 1);
     assertTrue(config.getInitialEntitySet().contains(Entity.class));
   }
 
   class SampleCouchbaseConfiguration extends AbstractCouchbaseConfiguration {
+
+    @Override
+    protected List<String> bootstrapHosts() {
+      return null;
+    }
+
+    @Override
+    protected String getBucketName() {
+      return null;
+    }
+
+    @Override
+    protected String getBucketPassword() {
+      return null;
+    }
+
     @Bean
     @Override
     public CouchbaseClient couchbaseClient() throws Exception {
@@ -64,5 +81,6 @@ public class AbstractCouchbaseConfigurationTests {
 
   @Document
   static class Entity {
+
   }
 }

@@ -1,3 +1,52 @@
+Release Notes - Spring Data Couchbase - Version 1.0.0.RELEASE - 2014-03-13
+--------------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-50] - findAll(Iterable<ID> ids) in CrudRepository throws java.util.concurrent.ExecutionException
+    * [DATACOUCH-61] - NPE when saving object containing Joda DateTime field
+    * [DATACOUCH-69] - Can't deserialize Date field
+    * [DATACOUCH-70] - Bundle could not be resolved in non J2SE-1.6 runtime environment
+
+** Improvement
+    * [DATACOUCH-55] - Allow support for custom object mapping (like Date objects)
+    * [DATACOUCH-72] - Update Couchbase SDK , Jackson and Spring-Data-Commons
+    * [DATACOUCH-75] - Trim off find on custom repository finder methods.
+    * [DATACOUCH-76] - Upgrade to latest spring-data-commons and parent
+
+** New Feature
+    * [DATACOUCH-71] - Support for JS303 Validation (& template events)
+
+** Task
+    * [DATACOUCH-73] - Release 1.0 GA
+    * [DATACOUCH-74] - Initial Documentation for 1.0 GA
+
+Release Notes - Spring Data Couchbase - Version 1.0 RC1 - 2014-02-06
+--------------------------------------------------------------------
+** Bug
+    * [DATACOUCH-30] - ObjectMapper configuration must be supported
+    * [DATACOUCH-44] - Not consistent unit tests
+    * [DATACOUCH-47] - Connecting to multiple buckets fails
+    * [DATACOUCH-51] - update(java.util.Collection) adds new document object
+    * [DATACOUCH-52] - CouchbaseCacheManager does not shutdown couchbase connections
+    * [DATACOUCH-53] - NPE on CouchbaseCache puting null
+    * [DATACOUCH-58] - Allow null values for List elements and Map values
+
+** Improvement
+    * [DATACOUCH-14] - Enable default support for slf4j in couchbase-client
+    * [DATACOUCH-20] - @View annotation on repository finder methods
+    * [DATACOUCH-49] - Enhance @View "Query" params customization
+    * [DATACOUCH-56] - Update Couchbase Client to 1.2.3
+    * [DATACOUCH-57] - Allow for configuring of CouchbaseClient with property/SPEL expressions
+    * [DATACOUCH-60] - Upgrade Dependencies (Couchbase, Jackson, Commons)
+    * [DATACOUCH-62] - Upgrade couchbase java SDK to latest stable version
+    * [DATACOUCH-64] - Add View query methods to repositories
+    * [DATACOUCH-65] - Add @Version support on top of CAS for optimistic locking
+
+** New Feature
+    * [DATACOUCH-63] - support optimistic locking through CAS methods
+
+** Task
+    * [DATACOUCH-66] - Release 1.0 RC1
+
 Release Notes - Spring Data Couchbase - Version 1.0 M2 - 2013-11-14
 -------------------------------------------------------------------
 ** Bug

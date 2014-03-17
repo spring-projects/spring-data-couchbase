@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013, 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.repository.core.EntityInformation;
+import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 
 import java.io.Serializable;
 
@@ -26,4 +27,5 @@ import java.io.Serializable;
  * @author Michael Nitschinger
  */
 public interface CouchbaseEntityInformation<T, ID extends Serializable> extends EntityInformation<T, ID> {
+
 }

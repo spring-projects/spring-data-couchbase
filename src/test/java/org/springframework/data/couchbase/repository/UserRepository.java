@@ -16,9 +16,15 @@
 
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.protocol.views.Query;
+import org.springframework.data.couchbase.core.view.View;
+
 /**
  * @author Michael Nitschinger
  */
 public interface UserRepository extends CouchbaseRepository<User, String> {
+
+  @View(designDocument = "user", viewName = "all")
+  Iterable<User> customViewQuery(Query query);
 
 }

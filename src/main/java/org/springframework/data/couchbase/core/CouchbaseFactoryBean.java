@@ -20,6 +20,7 @@ import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactory;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,6 +28,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +60,16 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    * Defines the password of the default bucket.
    */
   public static final String DEFAULT_PASSWORD = "";
+
+  /**
+   * The name of the default shutdown method to call when the context is destroyed.
+   */
+  public static final String DEFAULT_DESTROY_METHOD = "shutdown";
+
+  /**
+   * Use SLF4J as the default logger if not instructed otherwise.
+   */
+  public static final String DEFAULT_LOGGER_PROPERTY = "net.spy.memcached.compat.log.SLF4JLogger";
 
   /**
    * Holds the enclosed {@link CouchbaseClient}.
@@ -193,6 +205,57 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
   @Override
   public boolean isSingleton() {
     return true;
+  }
+
+  /**
+   * Set the bucket to be used.
+   *
+   * @param bucket the bucket to use.
+   */
+  public void setBucket(final String bucket) {
+    this.bucket = bucket;
+  }
+
+  /**
+   * Set the password.
+   *
+   * @param password the password to use.
+   */
+  public void setPassword(final String password) {
+    this.password = password;
+  }
+
+  /**
+   * Set the array of nodes from a delimited list of hosts.
+   *
+   * @param hosts a comma separated list of hosts.
+   */
+  public void setHost(final String hosts) {
+    this.nodes = convertHosts(hosts);
+  }
+
+  /**
+   * Convert a list of hosts into a URI format that can be used by the {@link CouchbaseClient}.
+   *
+   * To make it simple to use, the list of hosts can be passed in as a comma separated list. This list gets parsed
+   * and converted into a URI format that is suitable for the underlying {@link CouchbaseClient} object.
+   *
+   * @param hosts the host list to convert.
+   * @return the converted list with URIs.
+   */
+  private List<URI> convertHosts(final String hosts) {
+    String[] split = hosts.split(",");
+    List<URI> nodes = new ArrayList<URI>();
+
+    try {
+      for (int i = 0; i < split.length; i++) {
+        nodes.add(new URI("http://" + split[i] + ":8091/pools"));
+      }
+    } catch (URISyntaxException ex) {
+      throw new BeanCreationException("Could not convert host list." + ex);
+    }
+
+    return nodes;
   }
 
   /**

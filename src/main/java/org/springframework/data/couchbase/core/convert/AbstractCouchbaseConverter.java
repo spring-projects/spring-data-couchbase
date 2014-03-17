@@ -48,7 +48,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
    *
    * @param conversionService the conversion service to use.
    */
-  public AbstractCouchbaseConverter(final GenericConversionService conversionService) {
+  protected AbstractCouchbaseConverter(final GenericConversionService conversionService) {
     this.conversionService = conversionService;
   }
 
@@ -57,8 +57,27 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
    *
    * @return the conversion service.
    */
+  @Override
   public ConversionService getConversionService() {
     return conversionService;
+  }
+
+  /**
+   * Set the custom conversions.
+   *
+   * @param conversions the conversions.
+   */
+  public void setCustomConversions(final CustomConversions conversions) {
+    this.conversions = conversions;
+  }
+
+  /**
+   * Set the entity instantiators.
+   *
+   * @param instantiators the instantiators.
+   */
+  public void setInstantiators(final EntityInstantiators instantiators) {
+    this.instantiators = instantiators;
   }
 
   /**
@@ -66,6 +85,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
    */
   @Override
   public void afterPropertiesSet() {
+    conversions.registerConvertersIn(conversionService);
   }
 
 }
