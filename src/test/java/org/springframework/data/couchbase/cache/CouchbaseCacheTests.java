@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
- * 
+ *
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -79,7 +79,7 @@ public class CouchbaseCacheTests {
 
   /**
    * Verifies the deletion of cache objects.
-   * 
+   *
    * @throws Exception
    */
   @Test
