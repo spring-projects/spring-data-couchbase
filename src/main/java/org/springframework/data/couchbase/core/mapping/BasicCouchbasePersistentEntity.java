@@ -70,12 +70,5 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
   			getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
     return annotation == null ? 0 : annotation.expiry();
   }
-
-  @Override
-  public boolean isUpdateExpiryForRead() {
-    org.springframework.data.couchbase.core.mapping.Document annotation = getType().getAnnotation(
-        org.springframework.data.couchbase.core.mapping.Document.class);
-    return annotation == null ? false : annotation.updateExpiryForRead();
-  }
   
 }

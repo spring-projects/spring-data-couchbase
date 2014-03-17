@@ -33,10 +33,4 @@ public interface CouchbasePersistentEntity<T> extends
    */
 	int getExpiry();
 
-    /**
-     * Flag for using getAndTouch operations for reads
-     * @return
-     */
-    boolean isUpdateExpiryForRead();
-
 }
