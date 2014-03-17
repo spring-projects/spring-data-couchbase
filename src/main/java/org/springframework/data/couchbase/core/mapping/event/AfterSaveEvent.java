@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.repository;
+package org.springframework.data.couchbase.core.mapping.event;
 
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**
- * @author David Harrigan
+ * @author Michael Nitschinger
  */
-public interface CustomUserRepository extends CouchbaseRepository<User, String> {
+public class AfterSaveEvent<E> extends CouchbaseMappingEvent<E> {
 
-  @Override
-  @View(designDocument = "user", viewName = "customFindAllView")
-  Iterable<User> findAll();
-
-  @Override
-  @View(designDocument = "userCustom", viewName = "customCountView")
-  long count();
-
-  Iterable<User> findAllSomething();
+  public AfterSaveEvent(E source, CouchbaseDocument document) {
+    super(source, document);
+  }
 
 }

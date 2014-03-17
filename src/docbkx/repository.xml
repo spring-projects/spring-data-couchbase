@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+        "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="couchbase.repository">
+    <title>Couchbase repositories</title>
+
+    <abstract>
+        <para>The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code
+            required to implement data access layers for various persistence stores.</para>
+    </abstract>
+
+    <section id ="couchbase.repository.configuration">
+        <title>Configuration</title>
+
+        <para>While support for repositories is always present, you need to enable them in general or for a specific
+            namespace. If you extend <code>AbstractCouchbaseConfiguration</code>, just use the
+            <code>@EnableCouchbaseRepositories</code> annotation. It provides lots of possible options to narrow or
+            customize the search path, one of the most common ones is <code>basePackages</code>.</para>
+
+        <example>
+            <title>Annotation-Based Repository Setup</title>
+            <programlisting language="java"><![CDATA[
+@Configuration
+@EnableCouchbaseRepositories(basePackages = {"com.couchbase.example.repos"})
+public class Config extends AbstractCouchbaseConfiguration {
+    //...
+}
+            ]]></programlisting>
+        </example>
+
+        <para>XML-based configuration is also available:</para>
+
+        <example>
+            <title>XML-Based Repository Setup</title>
+            <programlisting language="xml"><![CDATA[
+<couchbase:repositories base-package="com.couchbase.example.repos" />
+            ]]></programlisting>
+        </example>
+
+    </section>
+
+    <section id ="couchbase.repository.usage">
+        <title>Usage</title>
+
+        <para>In the simplest case, your repository will extend the <code>CrudRepository&lt;T, String&gt;</code>, where
+            T is the entity that you want to expose. Let's look at a repository for a user:</para>
+
+        <example>
+            <title>A User repository</title>
+            <programlisting language="java"><![CDATA[
+import org.springframework.data.repository.CrudRepository;
+
+public interface UserRepository extends CrudRepository<User, String> {
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Please note that this is just an interface and not an actual class. In the background, when your context
+            gets initialized, actual implementations for your repository descriptions get created and you can access
+            them through regular beans. This means you will save lots of boilerplate code while still exposing full
+            CRUD semantics to your service layer and application.</para>
+
+        <para>Now, let's imagine we <code>@Autowrie</code> the <code>UserRepository</code> to a class that makes use of
+            it. What methods do we have available?</para>
+
+        <table>
+            <title>Exposed methods on the UserRepository</title>
+
+            <tgroup cols="2">
+                <thead>
+                    <row>
+                        <entry>Method</entry>
+                        <entry>Description</entry>
+                    </row>
+                </thead>
+                <tbody>
+                    <row>
+                        <entry>User save(User entity)</entry>
+                        <entry>Save the given entity.</entry>
+                    </row>
+                    <row>
+                        <entry>Iterable&lt;User&gt; save(Iterable&lt;User&gt; entity)</entry>
+                        <entry>Save the list of entities.</entry>
+                    </row>
+                    <row>
+                        <entry>User findOne(String id)</entry>
+                        <entry>Find a entity by its unique id.</entry>
+                    </row>
+                    <row>
+                        <entry>boolean exists(String id)</entry>
+                        <entry>Check if a given entity exists by its unique id.</entry>
+                    </row>
+                    <row>
+                        <entry>Iterable&lt;User&gt; findAll() (*)</entry>
+                        <entry>Find all entities by this type in the bucket.</entry>
+                    </row>
+                    <row>
+                        <entry>Iterable&lt;User&gt; findAll(Iterable&lt;String&gt; ids)</entry>
+                        <entry>Find all entities by this type and the given list of ids.</entry>
+                    </row>
+                    <row>
+                        <entry>long count() (*)</entry>
+                        <entry>Count the number of entities in the bucket.</entry>
+                    </row>
+                    <row>
+                        <entry>void delete(String id)</entry>
+                        <entry>Delete the entity by its id.</entry>
+                    </row>
+                    <row>
+                        <entry>void delete(User entity)</entry>
+                        <entry>Delete the entity.</entry>
+                    </row>
+                    <row>
+                        <entry>void delete(Iterable&lt;User&gt; entities)</entry>
+                        <entry>Delete all given entities.</entry>
+                    </row>
+                    <row>
+                        <entry>void deleteAll() (*)</entry>
+                        <entry>Delete all entities by type in the bucket.</entry>
+                    </row>
+                </tbody>
+            </tgroup>
+        </table>
+
+        <para>Now thats awesome! Just by defining an interface we get full CRUD functionality on top of our managed
+            entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.</para>
+
+        <para>If you are coming from other datastore implementations, you might want to implement the
+            <code>PagingAndSortingRepository</code> as well. Note that as of now, it is not supported but will be in
+            the future.</para>
+
+        <para>While the exposed methods provide you with a great variety of access patterns, very often you need to define
+            custom ones. You can do this by adding method declarations to your interface, which will be automatically
+            resolved to view requests in the background. Here is an example:</para>
+
+        <example>
+            <title>An extended User repository</title>
+            <programlisting language="java"><![CDATA[
+public interface UserRepository extends CrudRepository<User, String> {
+
+    List<User> findAllAdmins();
+
+    List<User> findByFirstname(Query query);
+}
+
+            ]]></programlisting>
+        </example>
+
+        <para>Since we've came across views now multiple times and the <code>findByFirstname(Query query)</code> exposes
+            a yet unknown parameter, let's cover that next.</para>
+    </section>
+
+    <section id="couchbase.repository.views">
+        <title>Backing Views</title>
+
+        <para>As a rule of thumb, all repository access methods which are not "by a specific key" require a backing view
+            to find the one or more matching entities. We'll only cover views to the extend which they are needed, if
+            you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase
+            Java SDK manual.</para>
+
+        <para>To cover the basic CRUD methods from the <code>CrudRepository</code>, one view needs to be implemented
+            in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional
+            reduce function <code>_count</code>.</para>
+
+        <para>Since every view has a design document and view name, by convention we default to <code>all</code> as the
+        view name and the lower-cased entity name as the design document name. So if your entity is named <code>User</code>, then
+        the code expects the <code>all</code> view in the <code>user</code> design document. It needs to look like this: </para>
+
+        <example>
+            <title>The all view map function</title>
+            <programlisting language="javascript"><![CDATA[
+// do not forget the _count reduce function!
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User") {
+    emit(null, null);
+  }
+}
+            ]]></programlisting>
+        </example>
+
+        <para>Note that the important part in this map function is to only include the document IDs which correspond to
+            our entity. Because the library always adds the <code>_class</code> property, this is a quick and easy way to do it.
+            If you have another property in your JSON which does the same job (like a explicit <code>type</code> field), then
+            you can use that as well - you don't have to stick to <code>_class</code> all the time.</para>
+
+        <para>Also make sure to publish your design documents into production so that they can be picked up by the
+            library! Also, if you are curious why we use <code>emit(null, null)</code> in the view: the document id is
+            always sent over to the client implicitly, so we can shave off a view bytes in our view by not duplicating
+            the id. If you use <code>emit(meta.id, null)</code> it won't hurt much too.</para>
+
+        <para>Implementing your custom repository finder methods works the same way. The <code>findAllAdmins</code> calls
+            the <code>allAdmins</code> view in the <code>user</code> design document. Imagine we have a field on our entity
+            which looks like <code>boolean isAdmin</code>. We can write a view like this to expose them (we don't need
+            a reduce function for this one):</para>
+
+        <example>
+            <title>A custom view map function</title>
+            <programlisting language="javascript"><![CDATA[
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User" && doc.isAdmin) {
+    emit(null, null);
+  }
+}
+            ]]></programlisting>
+        </example>
+
+        <para>By now, we've never actually customized our view at query time. This is where the special <code>Query</code>
+            argument comes along - like in our <code>findByFirstname(Query query)</code> method.</para> By adding it we
+            can customize the query at runtime. Let's write our view for this:
+
+        <example>
+            <title>A parameterized view map function</title>
+            <programlisting language="javascript"><![CDATA[
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User") {
+    emit(doc.firstname, null);
+  }
+}
+            ]]></programlisting>
+        </example>
+
+        <para>This view not only emits the document id, but also the firstname of every user as the key. We can now run
+        a <code>Query</code> which returns us all users with a firstname of "Michael" or "Thomas".</para>
+
+        <example>
+            <title>Query a repository method with custom params.</title>
+            <programlisting language="java"><![CDATA[
+// Load the bean, or @Autowire it
+UserRepository repo = ctx.getBean(UserRepository.class);
+
+// Create the CouchbaseClient Query object
+Query query = new Query();
+
+// Filter on those two keys
+query.setKeys(ComplexKey.of("Michael", "Thomas"));
+
+// Run the query and get all matching users returned
+List<User> users = repo.findByFirstname(query));
+            ]]></programlisting>
+        </example>
+
+        <para>On all custom finder methods, you can use the <code>@View</code> annotation to both customize the design
+            document and view name (to override the conventions).</para>
+
+        <para>Please keep in mind that by default, the <code>Stale.UPDATE_AFTER</code> mechanism is used. This means that
+            whatever is in the index gets returned, and then the index gets updated. This strikes a good balance between
+            performance and data freshness. You can tune the behavior through the <code>setStale()</code> method on the
+            query object. For more details on behavior, please consult the Couchbase Server and Java SDK documentation
+            directly.</para>
+
+    </section>
+
+</chapter>

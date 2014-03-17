@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.repository;
-
-import org.springframework.data.couchbase.core.view.View;
+package org.springframework.data.couchbase.core.mapping.event;
 
 /**
- * @author David Harrigan
+ * @author Michael Nitschinger
  */
-public interface CustomUserRepository extends CouchbaseRepository<User, String> {
+public class AfterDeleteEvent<E> extends CouchbaseMappingEvent<E> {
 
-  @Override
-  @View(designDocument = "user", viewName = "customFindAllView")
-  Iterable<User> findAll();
-
-  @Override
-  @View(designDocument = "userCustom", viewName = "customCountView")
-  long count();
-
-  Iterable<User> findAllSomething();
+  public AfterDeleteEvent(E source) {
+    super(source, null);
+  }
 
 }

@@ -1,6 +1,6 @@
 # Spring Data Couchbase
 
-The primary goal of the [Spring Data](http://www.springsource.org/spring-data) project is to make it easier to build
+The primary goal of the [Spring Data](http://projects.spring.io/spring-data/) project is to make it easier to build
 Spring-powered applications that use new data access technologies such as non-relational databases, map-reduce
 frameworks, and cloud based data services.
 
@@ -13,13 +13,13 @@ repository style data access layer.
 
 For a comprehensive treatment of all the Spring Data Couchbase features, please refer to:
 
-* the [User Guide](http://static.springsource.org/spring-data/data-couchbase/docs/current/reference/html/)
-* the [JavaDocs](http://static.springsource.org/spring-data/data-couchbase/docs/current/api/) have extensive comments
+* the [User Guide](http://docs.spring.io/spring-data/couchbase/docs/current/reference/html/)
+* the [JavaDocs](http://docs.spring.io/spring-data/couchbase/docs/current/api/) have extensive comments
   in them as well.
-* for more detailed questions, use the [forum](http://forum.springsource.org/forumdisplay.php?f=80).
+* for more detailed questions, use the [forum](http://forum.spring.io/forum/spring-projects/data/nosql).
 
 If you are new to Spring as well as to Spring Data, look for information about
-[Spring projects](http://www.springsource.org/projects).
+[Spring projects](http://spring.io/projects).
 
 
 ## Quick Start
@@ -32,14 +32,8 @@ Add the Maven dependency:
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.RC1</version>
+  <version>1.0.0.RELEASE</version>
 </dependency>
-
-<repository>
-  <id>spring-libs-milestone</id>
-  <name>Spring Milestone Repository</name>
-  <url>http://repo.springsource.org/libs-milestone</url>
-</repository>
 ```
 
 If you'd rather like the latest snapshots of the upcoming major version, use our Maven snapshot repository and declare
@@ -49,13 +43,13 @@ the appropriate dependency version.
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.0.0.BUILD-SNAPSHOT</version>
+  <version>1.1.0.BUILD-SNAPSHOT</version>
 </dependency>
 
 <repository>
   <id>spring-libs-snapshot</id>
   <name>Spring Snapshot Repository</name>
-  <url>http://repo.springsource.org/libs-snapshot</url>
+  <url>http://repo.spring.io/libs-snapshot</url>
 </repository>
 ```
 
@@ -187,13 +181,13 @@ public class MyService {
 Here are some ways for you to get involved in the community:
 
 * Get involved with the Spring community on the Spring Community Forums.  Please help out on the
-  [forum](http://forum.springsource.org/forumdisplay.php?f=80) by responding to questions and joining the debate.
-* Create [JIRA](https://jira.springframework.org/browse/DATACOUCH) tickets for bugs and new features and comment and
+  [forum](http://forum.spring.io/forum/spring-projects/data/nosql) by responding to questions and joining the debate.
+* Create [JIRA](https://jira.spring.io/browse/DATACOUCH) tickets for bugs and new features and comment and
   vote on the ones that you are interested in.
 * Github is for social coding: if you want to write code, we encourage contributions through pull requests from
   [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please reference
   a JIRA ticket as well covering the specific issue you are addressing.
-* Watch for upcoming articles on Spring by [subscribing](http://www.springsource.org/node/feed) to springframework.org
+* Watch for upcoming articles on Spring by [subscribing](http://assets.spring.io/drupal/node/feed.xml) to spring.io
 
 Before we accept a non-trivial patch or pull request we will need you to sign the
 [contributor's agreement](https://support.springsource.com/spring_committer_signup). Signing the contributor's agreement

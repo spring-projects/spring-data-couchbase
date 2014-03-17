@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+        "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="couchbase.caching">
+    <title>Caching</title>
+
+    <abstract>
+        <para>This chapter describes additional support for caching and <code>@Cacheable</code>.</para>
+    </abstract>
+
+    <section id="caching.usage">
+        <title>Configuration &amp; Usage</title>
+
+        <para>Technically, caching is not part of spring-data, but is implemented directly in the spring core. Most
+        database implementations in the spring-data package can't support <code>@Cacheable</code>, because it is not
+        possible to store arbitrary data.</para>
+
+        <para>Couchbase supports both binary and JSON data, so you can get both out of the same database.</para>
+
+        <para>To make it work, you need to add the <code>@EnableCaching</code> annotation and configure the
+        <code>cacheManager</code> bean:</para>
+
+        <example>
+            <title><code>AbstractCouchbaseConfiguration</code> for Caching</title>
+            <programlisting lang="java"><![CDATA[
+@Configuration
+@EnableCaching
+public class Config extends AbstractCouchbaseConfiguration {
+    // general methods
+
+    @Bean
+    public CouchbaseCacheManager cacheManager() throws Exception {
+        HashMap<String, CouchbaseClient> instances = new HashMap<String, CouchbaseClient>();
+        instances.put("persistent", couchbaseClient());
+        return new CouchbaseCacheManager(instances);
+    }
+}
+            ]]></programlisting>
+        </example>
+
+        <para>The <code>persistent</code> identifier can then be used on the <code>@Cacheable</code> annotation to identify
+        the cache manager to use (you can have more than one configured).</para>
+
+        <para>Once it is set up, you can annotate every method with the <code>@Cacheable</code> annotation to transparently
+        cache it in your couchbase bucket. You can also customize how the key is generated.</para>
+
+        <example>
+            <title>Caching example</title>
+            <programlisting lang="java"><![CDATA[
+@Cacheable(value="persistent", key="'longrunsim-'+#time")
+public String simulateLongRun(long time) {
+    try {
+        Thread.sleep(time);
+    } catch(Exception ex) {
+        System.out.println("This shouldnt happen...");
+    }
+    return "Ive slept " + time + " miliseconds.;
+}
+            ]]></programlisting>
+        </example>
+
+        <para>If you run the method multiple times, you'll see a set operation happening first, followed by multiple
+        get operations and no sleep time (which fakes the expensive execution). You can store whatever you want, if it
+        is JSON of course you can access it through views and look at it in the Web UI.</para>
+
+    </section>
+
+</chapter>

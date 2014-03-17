@@ -14,23 +14,39 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.repository;
+package org.springframework.data.couchbase.core.mapping.event;
 
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.annotation.Id;
+
+import javax.validation.constraints.Min;
+import javax.validation.constraints.Size;
 
 /**
- * @author David Harrigan
+ * @author Michael Nitschinger
  */
-public interface CustomUserRepository extends CouchbaseRepository<User, String> {
+public class User {
 
-  @Override
-  @View(designDocument = "user", viewName = "customFindAllView")
-  Iterable<User> findAll();
+  @Id
+  private String id;
 
-  @Override
-  @View(designDocument = "userCustom", viewName = "customCountView")
-  long count();
+  @Size(min = 10)
+  private String name;
 
-  Iterable<User> findAllSomething();
+  @Min(18)
+  private Integer age;
+
+  public User(String name, Integer age) {
+    id = "id";
+    this.name = name;
+    this.age = age;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public Integer getAge() {
+    return age;
+  }
 
 }
