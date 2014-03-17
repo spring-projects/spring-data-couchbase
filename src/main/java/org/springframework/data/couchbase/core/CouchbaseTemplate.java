@@ -35,7 +35,6 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
-import org.springframework.data.couchbase.core.mapping.*;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -52,7 +51,13 @@ import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -197,6 +202,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return (T) readEntity;
   }
 
+
   @Override
   public <T> List<T> findByView(final String designName, final String viewName, final Query query, final Class<T> entityClass) {
 
@@ -210,8 +216,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final ViewResponse response = queryView(designName, viewName, query);
 
     final List<T> result = new ArrayList<T>(response.size());
-    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
-    boolean touchOnRead = entity.isTouchOnRead();
     for (final ViewRow row : response) {
       result.add(findById(row.getId(), entityClass));
     }

@@ -337,7 +337,6 @@ public class CouchbaseTemplateTests {
   }
 
   /**
->>>>>>> master
    * A sample document with just an id and property.
    */
   @Document
