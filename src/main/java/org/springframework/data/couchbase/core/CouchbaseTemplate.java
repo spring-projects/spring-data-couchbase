@@ -170,10 +170,16 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public final <T> T findById(final String id, final Class<T> entityClass) {
+    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
+
     CASValue result = execute(new BucketCallback<CASValue>() {
       @Override
       public CASValue doInBucket() {
-        return client.gets(id);
+        if (entity.isTouchOnRead()) {
+          return client.getAndTouch(id, entity.getExpiry());
+        } else {
+          return client.gets(id);
+        }
       }
     });
 
