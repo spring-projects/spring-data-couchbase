@@ -1,3 +1,10 @@
+
+Release Notes - Spring Data Couchbase - Version 1.1 M1 - 2014-03-31
+-------------------------------------------------------------------
+** Task
+    * [DATACOUCH-78] - Adapt to changes in BeanWrapper generics
+    * [DATACOUCH-79] - Release 1.1 M1
+
 Release Notes - Spring Data Couchbase - Version 1.0.0.RELEASE - 2014-03-13
 --------------------------------------------------------------------------
 ** Bug
