@@ -42,6 +42,27 @@ public class CouchbaseMappingContext
   private ApplicationContext context;
 
   /**
+   * The default field naming strategy.
+   */
+  private static final FieldNamingStrategy DEFAULT_NAMING_STRATEGY = FallbackFieldNamingStrategy.INSTANCE;
+
+  /**
+   * The field naming strategy to use.
+   */
+  private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
+
+  /**
+   * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
+   * Defaults to a strategy using the plain property name.
+   *
+   * @param fieldNamingStrategy the {@link FieldNamingStrategy} to be used to determine the field name if no manual
+   *  mapping is applied.
+   */
+  public void setFieldNamingStrategy(final FieldNamingStrategy fieldNamingStrategy) {
+    this.fieldNamingStrategy = fieldNamingStrategy == null ? DEFAULT_NAMING_STRATEGY : fieldNamingStrategy;
+  }
+
+  /**
    * Creates a concrete entity based out of the type information passed.
    *
    * @param typeInformation type information of the entity to create.
@@ -69,7 +90,7 @@ public class CouchbaseMappingContext
   @Override
   protected CouchbasePersistentProperty createPersistentProperty(final Field field, final PropertyDescriptor descriptor,
     final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
-    return new BasicCouchbasePersistentProperty(field, descriptor, owner, simpleTypeHolder);
+    return new BasicCouchbasePersistentProperty(field, descriptor, owner, simpleTypeHolder, fieldNamingStrategy);
   }
 
   /**

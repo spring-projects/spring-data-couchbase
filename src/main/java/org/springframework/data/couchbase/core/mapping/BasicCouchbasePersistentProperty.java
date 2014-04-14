@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.mapping;
 
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
+import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
 
@@ -36,6 +37,8 @@ public class BasicCouchbasePersistentProperty
   extends AnnotationBasedPersistentProperty<CouchbasePersistentProperty>
   implements CouchbasePersistentProperty {
 
+  private final FieldNamingStrategy fieldNamingStrategy;
+
   /**
    * Create a new instance of the BasicCouchbasePersistentProperty class.
    *
@@ -45,8 +48,11 @@ public class BasicCouchbasePersistentProperty
    * @param simpleTypeHolder the type holder.
    */
   public BasicCouchbasePersistentProperty(final Field field, final PropertyDescriptor propertyDescriptor,
-    final CouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
+    final CouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder,
+    final FieldNamingStrategy fieldNamingStrategy) {
     super(field, propertyDescriptor, owner, simpleTypeHolder);
+    this.fieldNamingStrategy = fieldNamingStrategy == null ? FallbackFieldNamingStrategy.INSTANCE
+      : fieldNamingStrategy;
   }
 
   /**
@@ -68,8 +74,18 @@ public class BasicCouchbasePersistentProperty
     org.springframework.data.couchbase.core.mapping.Field annotation = getField().
       getAnnotation(org.springframework.data.couchbase.core.mapping.Field.class);
 
-    return annotation != null && StringUtils.hasText(annotation.value())
-      ? annotation.value() : field.getName();
+    if (annotation != null && StringUtils.hasText(annotation.value())) {
+      return annotation.value();
+    }
+
+    String fieldName = fieldNamingStrategy.getFieldName(this);
+
+    if (!StringUtils.hasText(fieldName)) {
+      throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
+        this, fieldNamingStrategy.getClass()));
+    }
+
+    return fieldName;
   }
 
 }

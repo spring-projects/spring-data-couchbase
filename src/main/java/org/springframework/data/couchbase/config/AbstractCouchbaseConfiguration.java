@@ -29,8 +29,7 @@ import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.*;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -147,8 +146,11 @@ public abstract class AbstractCouchbaseConfiguration {
     CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
     mappingContext.setInitialEntitySet(getInitialEntitySet());
     mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
+    mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
     return mappingContext;
   }
+
+
 
   /**
    * Register custom Converters in a {@link CustomConversions} object if required. These
@@ -197,6 +199,23 @@ public abstract class AbstractCouchbaseConfiguration {
     return getClass().getPackage().getName();
   }
 
+  /**
+   * Set to true if field names should be abbreviated with the {@link org.springframework.data.couchbase.core.mapping.CamelCaseAbbreviatingFieldNamingStrategy}.
+   *
+   * @return true if field names should be abbreviated, default is false.
+   */
+  protected boolean abbreviateFieldNames() {
+    return false;
+  }
+
+  /**
+   * Configures a {@link FieldNamingStrategy} on the {@link CouchbaseMappingContext} instance created.
+   *
+   * @return the naming strategy.
+   */
+  protected FieldNamingStrategy fieldNamingStrategy() {
+    return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : FallbackFieldNamingStrategy.INSTANCE;
+  }
 
   /**
    * Converts the given list of hostnames into parsable URIs.

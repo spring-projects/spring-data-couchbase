@@ -74,7 +74,7 @@ public class BasicCouchbasePersistentPropertyTests {
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
     return new BasicCouchbasePersistentProperty(field, null, entity,
-      new SimpleTypeHolder());
+      new SimpleTypeHolder(), FallbackFieldNamingStrategy.INSTANCE);
   }
 
   /**
