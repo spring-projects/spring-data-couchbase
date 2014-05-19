@@ -25,6 +25,8 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.Serializable;
+
 import static org.junit.Assert.*;
 
 /**
@@ -77,6 +79,21 @@ public class CouchbaseCacheTests {
     assertEquals(value, loaded.get());
   }
 
+  @Test
+  public void testGetSetWithCast() {
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
+
+    String key = "couchbase-cache-user";
+    User user = new User();
+    user.firstname = "Michael";
+
+    cache.put(key, user);
+
+    User loaded = cache.get(key, User.class);
+    assertNotNull(loaded);
+    assertEquals(user.firstname, loaded.firstname);
+  }
+
   /**
    * Verifies the deletion of cache objects.
    *
@@ -112,6 +129,10 @@ public class CouchbaseCacheTests {
     cache.put(key, null);
 
     assertNull(cache.get(key));
+  }
+
+  static class User implements Serializable {
+    public String firstname;
   }
 
 }

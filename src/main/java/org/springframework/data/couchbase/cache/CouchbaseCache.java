@@ -81,6 +81,12 @@ public class CouchbaseCache implements Cache {
     return (result != null ? new SimpleValueWrapper(result) : null);
   }
 
+  @SuppressWarnings("unchecked")
+  public final <T> T get(final Object key, final Class<T> clazz) {
+    String documentId = key.toString();
+    return (T) client.get(documentId);
+  }
+
   /**
    * Store a object in Couchbase.
    *
