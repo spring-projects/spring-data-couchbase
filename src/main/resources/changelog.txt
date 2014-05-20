@@ -1,6 +1,14 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.1.0.RELEASE (2014-05-20)
+---------------------------------------------
+* DATACOUCH-89 - Upgrade Java SDK to 1.4.1.
+* DATACOUCH-88 - Upgrade to latest HttpClient for Spring 4 build compatibility.
+* DATACOUCH-87 - Release 1.1 GA.
+* DATACOUCH-86 - Fix compile errors against Spring 4's Cache interface.
+
+
 Changes in version 1.1.0.RC1 (2014-05-02)
 -----------------------------------------
 * DATACOUCH-84 - Release 1.1 RC1.
