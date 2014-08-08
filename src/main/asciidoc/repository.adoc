@@ -1,0 +1,191 @@
+[[couchbase.repository]]
+= Couchbase repositories
+
+The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code required to implement data access layers for various persistence stores.
+
+[[couchbase.repository.configuration]]
+== Configuration
+
+While support for repositories is always present, you need to enable them in general or for a specific namespace. If you extend `AbstractCouchbaseConfiguration`, just use the `@EnableCouchbaseRepositories` annotation. It provides lots of possible options to narrow or customize the search path, one of the most common ones is `basePackages`.
+
+.Annotation-Based Repository Setup
+====
+[source,java]
+----
+@Configuration
+@EnableCouchbaseRepositories(basePackages = {"com.couchbase.example.repos"})
+public class Config extends AbstractCouchbaseConfiguration {
+    //...
+}
+----
+====
+
+XML-based configuration is also available:
+
+.XML-Based Repository Setup
+====
+[source,xml]
+----
+<couchbase:repositories base-package="com.couchbase.example.repos" />
+----
+====
+
+[[couchbase.repository.usage]]
+== Usage
+
+In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose. Let's look at a repository for a user:
+
+.A User repository
+====
+[source,java]
+----
+import org.springframework.data.repository.CrudRepository;
+
+public interface UserRepository extends CrudRepository<User, String> {
+}
+----
+====
+
+Please note that this is just an interface and not an actual class. In the background, when your context gets initialized, actual implementations for your repository descriptions get created and you can access them through regular beans. This means you will save lots of boilerplate code while still exposing full CRUD semantics to your service layer and application.
+
+Now, let's imagine we `@Autowrie` the `UserRepository` to a class that makes use of it. What methods do we have available?
+
+[cols="2", options="header"]
+.Exposed methods on the UserRepository
+|===
+| Method
+| Description
+
+| User save(User entity)
+| Save the given entity.
+
+| Iterable<User> save(Iterable<User> entity)
+| Save the list of entities.
+
+| User findOne(String id)
+| Find a entity by its unique id.
+
+| boolean exists(String id)
+| Check if a given entity exists by its unique id.
+
+| Iterable<User> findAll() (*)
+| Find all entities by this type in the bucket.
+
+| Iterable<User> findAll(Iterable<String> ids)
+| Find all entities by this type and the given list of ids.
+
+| long count() (*)
+| Count the number of entities in the bucket.
+
+| void delete(String id)
+| Delete the entity by its id.
+
+| void delete(User entity)
+| Delete the entity.
+
+| void delete(Iterable<User> entities)
+| Delete all given entities.
+
+| void deleteAll() (*)
+| Delete all entities by type in the bucket.
+|===
+
+Now thats awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
+
+If you are coming from other datastore implementations, you might want to implement the `PagingAndSortingRepository` as well. Note that as of now, it is not supported but will be in the future.
+
+While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to view requests in the background. Here is an example:
+
+.An extended User repository
+====
+[source,java]
+----
+public interface UserRepository extends CrudRepository<User, String> {
+
+    List<User> findAllAdmins();
+
+    List<User> findByFirstname(Query query);
+}
+----
+====
+
+Since we've came across views now multiple times and the `findByFirstname(Query query)` exposes a yet unknown parameter, let's cover that next.
+
+[[couchbase.repository.views]]
+== Backing Views
+
+As a rule of thumb, all repository access methods which are not "by a specific key" require a backing view to find the one or more matching entities. We'll only cover views to the extend which they are needed, if you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase Java SDK manual.
+
+To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
+
+Since every view has a design document and view name, by convention we default to `all` as the view name and the lower-cased entity name as the design document name. So if your entity is named `User`, then the code expects the `all` view in the `user` design document. It needs to look like this:
+
+.The all view map function
+====
+[source,javascript]
+----
+// do not forget the _count reduce function!
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User") {
+    emit(null, null);
+  }
+}
+----
+====
+
+Note that the important part in this map function is to only include the document IDs which correspond to our entity. Because the library always adds the `_class` property, this is a quick and easy way to do it. If you have another property in your JSON which does the same job (like a explicit `type` field), then you can use that as well - you don't have to stick to `_class` all the time.
+
+Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(null, null)` in the view: the document id is always sent over to the client implicitly, so we can shave off a view bytes in our view by not duplicating the id. If you use `emit(meta.id, null)` it won't hurt much too.
+
+Implementing your custom repository finder methods works the same way. The `findAllAdmins` calls the `allAdmins` view in the `user` design document. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one):
+
+.A custom view map function
+====
+[source,javascript]
+----
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User" && doc.isAdmin) {
+    emit(null, null);
+  }
+}
+----
+====
+
+By now, we've never actually customized our view at query time. This is where the special `Query` argument comes along - like in our `findByFirstname(Query query)` method.
+
+.A parameterized view map function
+====
+[source,javascript]
+----
+function (doc, meta) {
+  if (doc._class == "namespace.to.entity.User") {
+    emit(doc.firstname, null);
+  }
+}
+----
+====
+
+This view not only emits the document id, but also the firstname of every user as the key. We can now run a `Query` which returns us all users with a firstname of "Michael" or "Thomas".
+
+.Query a repository method with custom params.
+====
+[source,java]
+----
+// Load the bean, or @Autowire it
+UserRepository repo = ctx.getBean(UserRepository.class);
+
+// Create the CouchbaseClient Query object
+Query query = new Query();
+
+// Filter on those two keys
+query.setKeys(ComplexKey.of("Michael", "Thomas"));
+
+// Run the query and get all matching users returned
+List<User> users = repo.findByFirstname(query));
+----
+====
+
+On all custom finder methods, you can use the `@View` annotation to both customize the design document and view name (to override the conventions).
+
+Please keep in mind that by default, the `Stale.UPDATE_AFTER` mechanism is used. This means that whatever is in the index gets returned, and then the index gets updated. This strikes a good balance between performance and data freshness. You can tune the behavior through the `setStale()` method on the query object. For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
+
