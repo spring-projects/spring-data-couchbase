@@ -31,14 +31,10 @@ public class LoggingEventListener extends AbstractCouchbaseEventListener<Object>
   private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventListener.class);
 
   @Override
-  public void onBeforeDelete(CouchbaseDocument doc) {
-    LOGGER.info("onBeforeDelete: {}", doc);
-  }
+  public void onBeforeDelete(Object source, CouchbaseDocument doc) { LOGGER.info("onBeforeDelete: {}, {}", source, doc); }
 
   @Override
-  public void onAfterDelete(CouchbaseDocument doc) {
-    LOGGER.info("onAfterDelete: {}", doc);
-  }
+  public void onAfterDelete(Object source, CouchbaseDocument doc) { LOGGER.info("onAfterDelete: {} {}", source, doc); }
 
   @Override
   public void onAfterSave(Object source, CouchbaseDocument doc) {
