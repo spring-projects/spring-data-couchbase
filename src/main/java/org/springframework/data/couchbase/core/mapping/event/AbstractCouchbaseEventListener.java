@@ -41,17 +41,18 @@ public class AbstractCouchbaseEventListener<E> implements ApplicationListener<Co
 
   @SuppressWarnings("rawtypes")
   public void onApplicationEvent(CouchbaseMappingEvent<?> event) {
+
+	E source = (E) event.getSource();
+	// Check for matching domain type and invoke callbacks
+	if (source != null && !domainClass.isAssignableFrom(source.getClass())) {
+		return;
+	}
+
     if (event instanceof BeforeDeleteEvent) {
-      onBeforeDelete(event.getDocument());
+      onBeforeDelete(event.getSource(), event.getDocument());
       return;
     } else if (event instanceof AfterDeleteEvent) {
-      onAfterDelete(event.getDocument());
-      return;
-    }
-
-    E source = (E) event.getSource();
-    // Check for matching domain type and invoke callbacks
-    if (source != null && !domainClass.isAssignableFrom(source.getClass())) {
+      onAfterDelete(event.getSource(), event.getDocument());
       return;
     }
 
@@ -82,13 +83,13 @@ public class AbstractCouchbaseEventListener<E> implements ApplicationListener<Co
     }
   }
 
-  public void onAfterDelete(CouchbaseDocument doc) {
+  public void onAfterDelete(Object source, CouchbaseDocument doc) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("onAfterConvert({})", doc);
     }
   }
 
-  public void onBeforeDelete(CouchbaseDocument doc) {
+  public void onBeforeDelete(Object source, CouchbaseDocument doc) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("onAfterConvert({})", doc);
     }
