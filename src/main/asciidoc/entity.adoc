@@ -14,7 +14,6 @@ There is also a special `@Id` annotation which needs to be always in place. Best
 ====
 [source,java]
 ----
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
@@ -49,7 +48,7 @@ public class User {
         return lastname;
     }
 }
-            
+
 ----
 ====
 
@@ -125,7 +124,7 @@ public class User {
         this.childrenAges = childrenAges;
     }
 
-}        
+}
 ----
 ====
 
@@ -147,7 +146,7 @@ Storing a user with some sample data could look like this as a JSON representati
         "Bar",
         "Baz"
     ]
-}        
+}
 ----
 ====
 
@@ -186,7 +185,7 @@ public class User {
 
     }
 
-}           
+}
 ----
 ====
 
@@ -214,7 +213,7 @@ A populated object can look like:
     "Bar",
     "Baz"
   ]
-}        
+}
 ----
 ====
 
@@ -246,7 +245,7 @@ public class BlogPost {
         this.title = title;
     }
 
-}           
+}
 ----
 ====
 
@@ -261,7 +260,7 @@ A populated object can look like:
   "_class": "foo.BlogPost",
   "updated": 1394610843,
   "created": 1394610843897
-}                  
+}
 ----
 ====
 
@@ -296,7 +295,7 @@ public static enum BarToFooConverter implements Converter<Bar, Foo> {
         return /* do your conversion here */;
     }
 
-}          
+}
 ----
 ====
 
@@ -324,7 +323,7 @@ public class User {
         private long version;
 
         // constructor, getters, setters...
-}        
+}
 ----
 ====
 

@@ -1,10 +1,10 @@
 [[couchbase.template]]
-= Template & direct Operations
+= Template & direct operations
 
 The template provides lower level access to the underlying database and also serves as the foundation for repositories. Any time a repository is too high-level for you needs chances are good that the templates will serve you well.
 
 [[template.ops]]
-== Supported Operations
+== Supported operations
 
 The template can be accessed through the `couchbaseTemplate` bean out of your context. Once you've got a reference to it, you can run all kinds of operations against it. Other than through a repository, in a template you need to always specify the target entity type which you want to get converted.
 

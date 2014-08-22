@@ -28,7 +28,7 @@ public class Config extends AbstractCouchbaseConfiguration {
         instances.put("persistent", couchbaseClient());
         return new CouchbaseCacheManager(instances);
     }
-}        
+}
 ----
 ====
 
@@ -47,8 +47,8 @@ public String simulateLongRun(long time) {
     } catch(Exception ex) {
         System.out.println("This shouldnt happen...");
     }
-    return "Ive slept " + time + " miliseconds.;
-}          
+    return "I've slept " + time + " miliseconds.;
+}
 ----
 ====
 

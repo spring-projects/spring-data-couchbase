@@ -37,7 +37,7 @@ You can also grab snapshots from the http://repo.spring.io/libs-snapshot[spring 
 <repository>
   <id>spring-libs-snapshot</id>
   <name>Spring Snapshot Repository</name>
-  <url>http://repo.spring.io/libs-snapshot</url>
+  <url>https://repo.spring.io/libs-snapshot</url>
 </repository>
 ----
 ====
@@ -58,6 +58,7 @@ Please make sure to have cglib support in the classpath so that the annotation b
 
 @Configuration
 public class Config extends AbstractCouchbaseConfiguration {
+
     @Override
     protected List<String> bootstrapHosts() {
         return Collections.singletonList("127.0.0.1");
@@ -72,7 +73,7 @@ public class Config extends AbstractCouchbaseConfiguration {
     protected String getBucketPassword() {
         return "";
     }
-}            
+}
 ----
 ====
 
@@ -103,7 +104,7 @@ The library provides a custom namespace that you can use in your XML configurati
     http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
 
     <couchbase:couchbase bucket="beer-sample" password="" host="127.0.0.1" />
-    
+
 </beans:beans>
 ----
 ====
