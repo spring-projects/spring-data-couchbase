@@ -486,4 +486,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
   }
 
+  @Override
+  public CouchbaseClient getCouchbaseClient() {
+    return client;
+  }
 }

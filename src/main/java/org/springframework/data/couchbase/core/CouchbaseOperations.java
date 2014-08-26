@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 
+import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.ViewResponse;
 import net.spy.memcached.PersistTo;
@@ -272,5 +273,12 @@ public interface CouchbaseOperations {
    * @return CouchbaseConverter.
    */
   CouchbaseConverter getConverter();
+
+  /**
+   * Returns the linked {@link CouchbaseClient} to this template.
+   *
+   * @return the client used for the template.
+   */
+  CouchbaseClient getCouchbaseClient();
 
 }
