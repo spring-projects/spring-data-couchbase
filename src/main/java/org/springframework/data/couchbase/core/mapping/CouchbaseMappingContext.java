@@ -20,6 +20,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.mapping.context.AbstractMappingContext;
+import org.springframework.data.mapping.model.FieldNamingStrategy;
+import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.TypeInformation;
 
@@ -44,7 +46,7 @@ public class CouchbaseMappingContext
   /**
    * The default field naming strategy.
    */
-  private static final FieldNamingStrategy DEFAULT_NAMING_STRATEGY = FallbackFieldNamingStrategy.INSTANCE;
+  private static final FieldNamingStrategy DEFAULT_NAMING_STRATEGY = PropertyNameFieldNamingStrategy.INSTANCE;
 
   /**
    * The field naming strategy to use.

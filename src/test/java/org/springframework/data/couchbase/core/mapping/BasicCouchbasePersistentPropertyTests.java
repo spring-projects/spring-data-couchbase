@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core.mapping;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ReflectionUtils;
@@ -74,7 +75,7 @@ public class BasicCouchbasePersistentPropertyTests {
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
     return new BasicCouchbasePersistentProperty(field, null, entity,
-      new SimpleTypeHolder(), FallbackFieldNamingStrategy.INSTANCE);
+      new SimpleTypeHolder(), PropertyNameFieldNamingStrategy.INSTANCE);
   }
 
   /**

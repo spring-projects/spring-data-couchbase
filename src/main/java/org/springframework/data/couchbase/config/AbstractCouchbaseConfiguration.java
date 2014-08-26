@@ -29,13 +29,22 @@ import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.core.mapping.*;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
+import org.springframework.data.mapping.model.FieldNamingStrategy;
+import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -200,7 +209,7 @@ public abstract class AbstractCouchbaseConfiguration {
   }
 
   /**
-   * Set to true if field names should be abbreviated with the {@link org.springframework.data.couchbase.core.mapping.CamelCaseAbbreviatingFieldNamingStrategy}.
+   * Set to true if field names should be abbreviated with the {@link CamelCaseAbbreviatingFieldNamingStrategy}.
    *
    * @return true if field names should be abbreviated, default is false.
    */
@@ -214,7 +223,7 @@ public abstract class AbstractCouchbaseConfiguration {
    * @return the naming strategy.
    */
   protected FieldNamingStrategy fieldNamingStrategy() {
-    return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : FallbackFieldNamingStrategy.INSTANCE;
+    return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
   }
 
   /**
