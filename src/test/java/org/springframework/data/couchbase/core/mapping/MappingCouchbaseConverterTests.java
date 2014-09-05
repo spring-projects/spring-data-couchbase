@@ -194,7 +194,8 @@ public class MappingCouchbaseConverterTests {
     expected.put("attr1", 0);
 
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    assertEquals(expected.get("_class"), converted.get("_class"));
+    assertEquals(expected.get("attr1"), converted.get("attr1"));
   }
 
   @Test

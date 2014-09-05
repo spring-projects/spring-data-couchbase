@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.Query;
 import com.couchbase.client.protocol.views.Stale;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.spy.memcached.CASValue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,7 +44,11 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Michael Nitschinger
@@ -51,6 +57,11 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = TestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseTemplateViewListener.class)
 public class CouchbaseTemplateTests {
+
+  /**
+   * JSON object mapper to verify results.
+   */
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Autowired
   private CouchbaseClient client;
@@ -68,10 +79,11 @@ public class CouchbaseTemplateTests {
     template.save(beer);
     String result = (String) client.get(id);
 
-    String expected = "{\"_class\":\"org.springframework.data.couchbase.core.Beer\""
-            + ",\"is_active\":false,\"name\":\"The Awesome Stout\"}";
     assertNotNull(result);
-    assertEquals(expected, result);
+    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    assertEquals("org.springframework.data.couchbase.core.Beer", converted.get("_class"));
+    assertEquals(false, converted.get("is_active"));
+    assertEquals("The Awesome Stout", converted.get("name"));
   }
 
   @Test
@@ -89,18 +101,20 @@ public class CouchbaseTemplateTests {
     String id = "double-insert-test";
     client.delete(id).get();
 
-    String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-            + "CouchbaseTemplateTests$SimplePerson\",\"name\":\"Mr. A\"}";
-
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
     String result = (String) client.get(id);
-    assertEquals(expected, result);
+    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
+    assertEquals("Mr. A", converted.get("name"));
 
     doc = new SimplePerson(id, "Mr. B");
     template.insert(doc);
     result = (String) client.get(id);
-    assertEquals(expected, result);
+
+    converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
+    assertEquals("Mr. A", converted.get("name"));
   }
 
 
@@ -145,12 +159,6 @@ public class CouchbaseTemplateTests {
     ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
     template.save(complex);
-
-    String expected = "{\"_class\":\"org.springframework.data.couchbase.core."
-            + "CouchbaseTemplateTests$ComplexPerson\",\"info1\":{\"nullValue\":null,\"foo\":true,\"bar\""
-            + ":false},\"votes\":[],\"firstnames\":[\"Michael\",\"Thomas\",null],\"info2\":"
-            + "{}}";
-    assertEquals(expected, client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);
     assertEquals(names, response.getFirstnames());
