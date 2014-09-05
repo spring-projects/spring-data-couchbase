@@ -1,6 +1,16 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.2.0.RELEASE (2014-09-05)
+---------------------------------------------
+* DATACOUCH-108 - Make sure Spring Data Couchbase can be built using a JDK 8.
+* DATACOUCH-107 - Release 1.2 GA.
+* DATACOUCH-105 - Update to Java SDK 1.4.4.
+* DATACOUCH-103 - Polish reference documentation.
+* DATACOUCH-97 - Support for createRepositoryFactory(CouchbaseOperations operations), getCouchbaseClient().
+* DATACOUCH-94 - Move to FieldNamingStrategy SPI in Spring Data Commons.
+
+
 Changes in version 1.1.4.RELEASE (2014-08-27)
 ---------------------------------------------
 * DATACOUCH-106 - Release 1.1.4.
