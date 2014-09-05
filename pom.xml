@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.data.build</groupId>
     <artifactId>spring-data-parent</artifactId>
-    <version>1.5.1.BUILD-SNAPSHOT</version>
+    <version>1.6.0.BUILD-SNAPSHOT</version>
   </parent>
 
   <properties>
@@ -23,7 +23,7 @@
 
     <couchbase>1.4.4</couchbase>
     <jackson>2.3.2</jackson>
-    <springdata.commons>1.9.1.BUILD-SNAPSHOT</springdata.commons>
+    <springdata.commons>1.10.0.BUILD-SNAPSHOT</springdata.commons>
     <validation>1.0.0.GA</validation>
   </properties>
 
