@@ -7,6 +7,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Template:
  org.springframework.data.couchbase.*;version="${project.version}"
 Import-Template:
+ javax.enterprise.*;version="${cdi:[=.=.=,+1.0.0)}";resolution:=optional,
  com.couchbase.client.*;version="${couchbase:[=.=.=,+1.0.0)}",
  net.spy.memcached.*;version="[2.8.0,3.0.0)",
  com.fasterxml.jackson.*;version="${jackson:[=.=.=,+1.0.0)}",
