@@ -54,12 +54,34 @@ public class CouchbaseList implements CouchbaseStorable {
    * @param initialPayload the initial data to store.
    */
   public CouchbaseList(final List<Object> initialPayload) {
-    payload = initialPayload;
+    this(initialPayload, null);
+  }
 
+  /**
+   * Create a new (empty) list with an existing {@link SimpleTypeHolder}.
+   *
+   * @param simpleTypeHolder context instance.
+   */
+  public CouchbaseList(final SimpleTypeHolder simpleTypeHolder) {
+    this(new ArrayList<Object>(), simpleTypeHolder);
+  }
+
+  /**
+   * Create a new list with a given payload on construction and an existing {@link SimpleTypeHolder}.
+   *
+   * @param initialPayload the initial data to store.
+   * @param simpleTypeHolder context instance.
+   */
+  public CouchbaseList(final List<Object> initialPayload, final SimpleTypeHolder simpleTypeHolder) {
+    this.payload = initialPayload;
     Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
     additionalTypes.add(CouchbaseDocument.class);
     additionalTypes.add(CouchbaseList.class);
-    simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
+    if (simpleTypeHolder != null) {
+        this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
+    } else {
+        this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
+    }
   }
 
   /**
