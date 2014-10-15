@@ -128,7 +128,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   private StringDocument translateEncode(final CouchbaseDocument source) {
     final String json = translationService.encode(source);
-    return StringDocument.create(source.getId(), json, source.getExpiration());
+    return StringDocument.create(source.getId(), source.getExpiration(), json, source.getExpiration());
   }
 
 
@@ -295,8 +295,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
         final StringDocument translateEncode = translateEncode(converted);
         try {
-          final StringDocument document =
-              client.replace(translateEncode, persistTo, replicateTo);
+          final StringDocument document = client.upsert(translateEncode, persistTo, replicateTo);
           if (versionProperty != null) {
             final long newCas = document.cas();
             beanWrapper.setProperty(versionProperty, newCas);

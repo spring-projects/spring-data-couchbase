@@ -46,6 +46,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.document.StringDocument;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -93,19 +94,21 @@ public class CouchbaseTemplateTests {
     String id = "simple-doc-with-expiry";
     DocumentWithExpiry doc = new DocumentWithExpiry(id);
     template.save(doc);
-    assertNotNull(client.get(id));
+    StringDocument document = StringDocument.create(id);
+    assertNotNull(client.get(document));
     Thread.sleep(3000);
-    assertNull(client.get(id));
+    assertNull(client.get(document));
   }
 
   @Test
   public void insertDoesNotOverride() throws Exception {
     String id = "double-insert-test";
-    client.remove(id);
+    StringDocument documentId = StringDocument.create(id);
+    client.remove(documentId);
 
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
-    JsonDocument result = client.get(id);
+    StringDocument result = client.get(documentId);
     Map<String, Object> converted =
         MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
@@ -113,7 +116,7 @@ public class CouchbaseTemplateTests {
 
     doc = new SimplePerson(id, "Mr. B");
     template.insert(doc);
-    result = client.get(id);
+    result = client.get(documentId);
 
     converted =
         MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
@@ -134,21 +137,22 @@ public class CouchbaseTemplateTests {
   @Test
   public void removeDocument() {
     String id = "beers:to-delete-stout";
+    StringDocument documentId = StringDocument.create(id);
     Beer beer = new Beer(id);
 
     template.save(beer);
-    Object result = client.get(id);
+    Object result = client.get(documentId);
     assertNotNull(result);
 
     template.remove(beer);
-    result = client.get(id);
+    result = client.get(documentId);
     assertNull(result);
   }
 
 
   @Test
   public void storeListsAndMaps() {
-    String id = "persons:lots-of-names";
+    StringDocument id = StringDocument.create("persons:lots-of-names");
     List<String> names = new ArrayList<String>();
     names.add("Michael");
     names.add("Thomas");
@@ -160,14 +164,14 @@ public class CouchbaseTemplateTests {
     info1.put("nullValue", null);
     Map<String, Integer> info2 = new HashMap<String, Integer>();
 
-    ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
+    ComplexPerson complex = new ComplexPerson(id.id(), names, votes, info1, info2);
 
     template.save(complex);
 
-    ComplexPerson response = template.findById(id, ComplexPerson.class);
+    ComplexPerson response = template.findById(id.id(), ComplexPerson.class);
     assertEquals(names, response.getFirstnames());
     assertEquals(votes, response.getVotes());
-    assertEquals(id, response.getId());
+    assertEquals(id.id(), response.getId());
     assertEquals(info1, response.getInfo1());
     assertEquals(info2, response.getInfo2());
   }
@@ -175,16 +179,16 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void validFindById() {
-    String id = "beers:findme-stout";
+    StringDocument id = StringDocument.create("beers:findme-stout");
     String name = "The Findme Stout";
     boolean active = true;
-    Beer beer = new Beer(id).setName(name).setActive(active);
+    Beer beer = new Beer(id.id()).setName(name).setActive(active);
     template.save(beer);
 
-    Beer found = template.findById(id, Beer.class);
+    Beer found = template.findById(id.id(), Beer.class);
 
     assertNotNull(found);
-    assertEquals(id, found.getId());
+    assertEquals(id.id(), found.getId());
     assertEquals(name, found.getName());
     assertEquals(active, found.getActive());
   }
