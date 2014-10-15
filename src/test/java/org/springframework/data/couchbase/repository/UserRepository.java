@@ -16,8 +16,9 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.protocol.views.Query;
 import org.springframework.data.couchbase.core.view.View;
+
+import com.couchbase.client.java.query.Query;
 
 /**
  * @author Michael Nitschinger

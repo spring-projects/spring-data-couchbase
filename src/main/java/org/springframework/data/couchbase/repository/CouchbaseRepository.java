@@ -16,9 +16,9 @@
 
 package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.repository.CrudRepository;
-
 import java.io.Serializable;
+
+import org.springframework.data.repository.CrudRepository;
 
 /**
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface.

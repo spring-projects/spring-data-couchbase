@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -24,9 +27,6 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.TypeInformation;
-
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
 
 /**
  * Default implementation of a {@link org.springframework.data.mapping.context.MappingContext} for Couchbase using

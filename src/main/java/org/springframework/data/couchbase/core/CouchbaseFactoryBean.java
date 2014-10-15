@@ -16,24 +16,19 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.CouchbaseConnectionFactory;
-import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
-import net.spy.memcached.FailureMode;
-import org.springframework.beans.factory.BeanCreationException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.CouchbaseCluster;
+import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
 /**
  * Convenient Factory for configuring a {@link CouchbaseClient}.
@@ -43,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Michael Nitschinger
  */
-public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, InitializingBean,
+public class CouchbaseFactoryBean implements FactoryBean<Bucket>, InitializingBean,
   DisposableBean, PersistenceExceptionTranslator {
 
   /**
@@ -74,7 +69,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
   /**
    * Holds the enclosed {@link CouchbaseClient}.
    */
-  private CouchbaseClient couchbaseClient;
+  private Bucket couchbaseClient;
 
   /**
    * The exception translator is used to properly map exceptions to spring-type exceptions.
@@ -94,77 +89,12 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
   /**
    * Contains the list of nodes to connect to.
    */
-  private List<URI> nodes;
+  private List<String> nodes;
 
   /**
    * The builder which allows to customize client settings.
    */
-  private final CouchbaseConnectionFactoryBuilder builder = new CouchbaseConnectionFactoryBuilder();
-
-  /**
-   * Set the observe poll interval in miliseconds.
-   *
-   * @param interval the observe poll interval.
-   */
-  public void setObservePollInterval(final int interval) {
-    builder.setObsPollInterval(interval);
-  }
-
-  /**
-   * Set the maximum number of polls.
-   *
-   * @param max the maximum number of polls.
-   */
-  public void setObservePollMax(final int max) {
-    builder.setObsPollMax(max);
-  }
-
-  /**
-   * Set the reconnect threshold time in seconds.
-   *
-   * @param time the reconnect threshold time.
-   */
-  public void setReconnectThresholdTime(final int time) {
-    builder.setReconnectThresholdTime(time, TimeUnit.SECONDS);
-  }
-
-  /**
-   * Set the view timeout in miliseconds.
-   *
-   * @param timeout the view timeout.
-   */
-  public void setViewTimeout(final int timeout) {
-    builder.setViewTimeout(timeout);
-  }
-
-  /**
-   * Set the failure mode if memcached buckets are used.
-   *
-   * See the proper values of {@link FailureMode} to use.
-   *
-   * @param mode the failure mode.
-   */
-  public void setFailureMode(final String mode) {
-    builder.setFailureMode(FailureMode.valueOf(mode));
-  }
-
-  /**
-   * Set the operation timeout in miliseconds.
-   *
-   * @param timeout the operation timeout.
-   */
-  public void setOpTimeout(final int timeout) {
-    builder.setOpTimeout(timeout);
-  }
-
-  /**
-   * Set the operation queue maximum block time in miliseconds.
-   *
-   * @param time the operation queue maximum block time.
-   */
-  public void setOpQueueMaxBlockTime(final int time) {
-    builder.setOpQueueMaxBlockTime(time);
-  }
+  private final DefaultCouchbaseEnvironment.Builder builder = DefaultCouchbaseEnvironment.builder();
 
   /**
    * Shutdown the client when the bean is destroyed.
@@ -173,7 +103,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    */
   @Override
   public void destroy() throws Exception {
-    couchbaseClient.shutdown();
+    couchbaseClient.close();
   }
 
   /**
@@ -183,7 +113,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    * @throws Exception if returning the client failed.
    */
   @Override
-  public CouchbaseClient getObject() throws Exception {
+  public Bucket getObject() throws Exception {
     return couchbaseClient;
   }
 
@@ -194,7 +124,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    */
   @Override
   public Class<?> getObjectType() {
-    return CouchbaseClient.class;
+    return Bucket.class;
   }
 
   /**
@@ -231,31 +161,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    * @param hosts a comma separated list of hosts.
    */
   public void setHost(final String hosts) {
-    this.nodes = convertHosts(hosts);
-  }
-
-  /**
-   * Convert a list of hosts into a URI format that can be used by the {@link CouchbaseClient}.
-   *
-   * To make it simple to use, the list of hosts can be passed in as a comma separated list. This list gets parsed
-   * and converted into a URI format that is suitable for the underlying {@link CouchbaseClient} object.
-   *
-   * @param hosts the host list to convert.
-   * @return the converted list with URIs.
-   */
-  private List<URI> convertHosts(final String hosts) {
-    String[] split = hosts.split(",");
-    List<URI> nodes = new ArrayList<URI>();
-
-    try {
-      for (int i = 0; i < split.length; i++) {
-        nodes.add(new URI("http://" + split[i] + ":8091/pools"));
-      }
-    } catch (URISyntaxException ex) {
-      throw new BeanCreationException("Could not convert host list." + ex);
-    }
-
-    return nodes;
+    this.nodes = filterNonNullElementsAsList(hosts.split(","));
   }
 
   /**
@@ -263,7 +169,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    *
    * @param nodes the nodes to connect to.
    */
-  public void setNodes(final URI[] nodes) {
+  public void setNodes(final String[] nodes) {
     this.nodes = filterNonNullElementsAsList(nodes);
   }
 
@@ -280,7 +186,7 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
     }
 
     List<T> candidateElements = new ArrayList<T>();
-    for (T element : elements) {
+    for (final T element : elements) {
       if (element != null) {
         candidateElements.add(element);
       }
@@ -296,12 +202,12 @@ public class CouchbaseFactoryBean implements FactoryBean<CouchbaseClient>, Initi
    */
   @Override
   public void afterPropertiesSet() throws Exception {
-    nodes = nodes != null ? nodes : Arrays.asList(new URI("http://" + DEFAULT_NODE + ":8091/pools"));
     bucket = bucket != null ? bucket : DEFAULT_BUCKET;
     password = password != null ? password : DEFAULT_PASSWORD;
 
-    CouchbaseConnectionFactory factory = builder.buildCouchbaseConnection(nodes, bucket, password);
-    couchbaseClient = new CouchbaseClient(factory);
+    final DefaultCouchbaseEnvironment factory = builder.build();
+    final CouchbaseCluster cluster = CouchbaseCluster.create(factory, nodes);
+    couchbaseClient = cluster.openBucket(bucket, password);
   }
 
   /**

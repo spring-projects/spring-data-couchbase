@@ -16,7 +16,13 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.CouchbaseClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.Serializable;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +31,9 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.Serializable;
-
-import static org.junit.Assert.*;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.document.JsonStringDocument;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
@@ -42,7 +48,7 @@ public class CouchbaseCacheTests {
    * Contains a reference to the actual CouchbaseClient.
    */
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   /**
    * Simple name of the cache bucket to create.
@@ -68,10 +74,10 @@ public class CouchbaseCacheTests {
     CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
-    String value = "Hello World!";
+    JsonDocument value = JsonDocument.create("Hello World!");
     cache.put(key, value);
 
-    String stored = (String) client.get(key);
+    JsonDocument stored = client.get(key);
     assertNotNull(stored);
     assertEquals(value, stored);
 
@@ -104,10 +110,10 @@ public class CouchbaseCacheTests {
     CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
-    String value = "Hello World!";
+    JsonStringDocument value = JsonStringDocument.create(key, "Hello World!");
 
-    Boolean success = client.set(key, 0, value).get();
-    assertTrue(success);
+    JsonStringDocument success = client.insert(value);
+    assertTrue(success != null);
 
     cache.evict(key);
     Object result = client.get(key);

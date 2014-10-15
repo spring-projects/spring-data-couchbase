@@ -16,12 +16,21 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.Stale;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.spy.memcached.CASValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,20 +44,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Michael Nitschinger
@@ -64,7 +65,7 @@ public class CouchbaseTemplateTests {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   @Autowired
   private CouchbaseTemplate template;
@@ -77,10 +78,11 @@ public class CouchbaseTemplateTests {
     Beer beer = new Beer(id).setName(name).setActive(active);
 
     template.save(beer);
-    String result = (String) client.get(id);
+    JsonDocument result = client.get(id);
 
     assertNotNull(result);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    Map<String, Object> converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.Beer", converted.get("_class"));
     assertEquals(false, converted.get("is_active"));
     assertEquals("The Awesome Stout", converted.get("name"));
@@ -99,20 +101,22 @@ public class CouchbaseTemplateTests {
   @Test
   public void insertDoesNotOverride() throws Exception {
     String id = "double-insert-test";
-    client.delete(id).get();
+    client.remove(id);
 
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
-    String result = (String) client.get(id);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    JsonDocument result = client.get(id);
+    Map<String, Object> converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
     assertEquals("Mr. A", converted.get("name"));
 
     doc = new SimplePerson(id, "Mr. B");
     template.insert(doc);
-    result = (String) client.get(id);
+    result = client.get(id);
 
-    converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
     assertEquals("Mr. A", converted.get("name"));
   }
@@ -187,10 +191,9 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldLoadAndMapViewDocs() {
-    Query query = new Query();
-    query.setStale(Stale.FALSE);
+    ViewQuery query = ViewQuery.from("test_beers", "by_name").reduce(false).stale(Stale.FALSE);
 
-    final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
+    final List<Beer> beers = template.findByView(query, Beer.class);
     assertTrue(beers.size() > 0);
 
     for (Beer beer : beers) {
@@ -231,18 +234,18 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldHandleCASVersionOnInsert() throws Exception {
-    client.delete("versionedClass:1").get();
+    client.remove("versionedClass:1");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
     assertEquals(0, versionedClass.getVersion());
     template.insert(versionedClass);
-    CASValue<Object> rawStored = client.gets("versionedClass:1");
-    assertEquals(rawStored.getCas(), versionedClass.getVersion());
+    JsonDocument rawStored = client.get("versionedClass:1");
+    assertEquals(rawStored.cas(), versionedClass.getVersion());
   }
 
   @Test
   public void versionShouldNotUpdateOnSecondInsert() throws Exception {
-    client.delete("versionedClass:2").get();
+    client.remove("versionedClass:2");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:2", "foobar");
     template.insert(versionedClass);
@@ -257,7 +260,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldSaveDocumentOnMatchingVersion() throws Exception {
-    client.delete("versionedClass:3").get();
+    client.remove("versionedClass:3");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:3", "foobar");
     template.insert(versionedClass);
@@ -276,12 +279,12 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotSaveDocumentOnNotMatchingVersion() throws Exception {
-    client.delete("versionedClass:4").get();
+    JsonDocument remove = client.remove("versionedClass:4");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.set("versionedClass:4", "different").get());
+    assertTrue(client.upsert(remove) != null);
 
     versionedClass.setField("foobar2");
     template.save(versionedClass);
@@ -289,7 +292,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldUpdateDocumentOnMatchingVersion() throws Exception {
-    client.delete("versionedClass:5").get();
+    client.remove("versionedClass:5");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:5", "foobar");
     template.insert(versionedClass);
@@ -308,12 +311,12 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotUpdateDocumentOnNotMatchingVersion() throws Exception {
-    client.delete("versionedClass:6").get();
+    JsonDocument remove = client.remove("versionedClass:6");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.set("versionedClass:6", "different").get());
+    assertTrue(client.upsert(remove) != null);
 
     versionedClass.setField("foobar2");
     template.update(versionedClass);
@@ -321,7 +324,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldLoadVersionPropertyOnFind() throws Exception {
-    client.delete("versionedClass:7").get();
+    client.remove("versionedClass:7");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:7", "foobar");
     template.insert(versionedClass);

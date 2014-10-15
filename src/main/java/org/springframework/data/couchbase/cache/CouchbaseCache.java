@@ -16,9 +16,11 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.CouchbaseClient;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.Document;
 
 /**
  * The {@link CouchbaseCache} class implements the Spring Cache interface on top of Couchbase Server and the Couchbase
@@ -33,7 +35,7 @@ public class CouchbaseCache implements Cache {
   /**
    * The actual CouchbaseClient instance.
    */
-  private final CouchbaseClient client;
+  private final Bucket bucket;
 
   /**
    * The name of the cache.
@@ -46,9 +48,9 @@ public class CouchbaseCache implements Cache {
    * @param name the name of the cache reference.
    * @param client the CouchbaseClient instance.
    */
-  public CouchbaseCache(final String name, final CouchbaseClient client) {
+  public CouchbaseCache(final String name, final Bucket client) {
     this.name = name;
-    this.client = client;
+    this.bucket = client;
   }
 
   /**
@@ -56,6 +58,7 @@ public class CouchbaseCache implements Cache {
    *
    * @return the name of the cache.
    */
+  @Override
   public final String getName() {
     return name;
   }
@@ -65,8 +68,9 @@ public class CouchbaseCache implements Cache {
    *
    * @return the actual CouchbaseClient instance.
    */
-  public final CouchbaseClient getNativeCache() {
-    return client;
+  @Override
+  public final Bucket getNativeCache() {
+    return bucket;
   }
 
   /**
@@ -75,16 +79,18 @@ public class CouchbaseCache implements Cache {
    * @param key the key to lookup against.
    * @return the fetched value from Couchbase.
    */
+  @Override
   public final ValueWrapper get(final Object key) {
     String documentId = key.toString();
-    Object result = client.get(documentId);
+    Object result = bucket.get(documentId);
     return (result != null ? new SimpleValueWrapper(result) : null);
   }
 
+  @Override
   @SuppressWarnings("unchecked")
   public final <T> T get(final Object key, final Class<T> clazz) {
     String documentId = key.toString();
-    return (T) client.get(documentId);
+    return (T) bucket.get(documentId);
   }
 
   /**
@@ -93,10 +99,10 @@ public class CouchbaseCache implements Cache {
    * @param key the Key of the storable object.
    * @param value the Object to store.
    */
+  @Override
   public final void put(final Object key, final Object value) {
     if (value != null) {
-      String documentId = key.toString();
-      client.set(documentId, 0, value);
+      bucket.insert((Document<?>) value);
     } else {
       evict(key);
     }
@@ -107,9 +113,10 @@ public class CouchbaseCache implements Cache {
    *
    * @param key the Key of the object to delete.
    */
+  @Override
   public final void evict(final Object key) {
     String documentId = key.toString();
-    client.delete(documentId);
+    bucket.remove(documentId);
   }
 
   /**
@@ -118,8 +125,19 @@ public class CouchbaseCache implements Cache {
    * Note that this action is very destructive, so only use it with care.
    * Also note that "flush" may not be enabled on the bucket.
    */
+  @Override
   public final void clear() {
-    client.flush();
+    bucket.bucketManager().flush();
+  }
+
+  @Override
+  public ValueWrapper putIfAbsent(Object key, Object value) {
+    final ValueWrapper valueWrapper = get(key);
+    if (valueWrapper == null) {
+      put(key, value);
+      return new SimpleValueWrapper(value);
+    }
+    return valueWrapper;
   }
 
 }

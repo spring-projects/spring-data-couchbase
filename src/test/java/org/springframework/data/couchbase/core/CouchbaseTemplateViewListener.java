@@ -16,11 +16,16 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.DesignDocument;
-import com.couchbase.client.protocol.views.ViewDesign;
+import java.util.Arrays;
+
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.bucket.BucketManager;
+import com.couchbase.client.java.view.DefaultView;
+import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.view.View;
 
 /**
  * @author Michael Nitschinger
@@ -29,12 +34,13 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    CouchbaseClient client = (CouchbaseClient) testContext.getApplicationContext().getBean("couchbaseClient");
+    Bucket client =
+        (Bucket) testContext.getApplicationContext().getBean("couchbaseClient");
     populateTestData(client);
-    createAndWaitForDesignDocs(client);
+    createAndWaitForDesignDocs(client.bucketManager());
   }
 
-  private void populateTestData(CouchbaseClient client) {
+  private void populateTestData(Bucket client) {
     CouchbaseTemplate template = new CouchbaseTemplate(client);
 
     for(int i=0;i < 100; i++) {
@@ -43,12 +49,13 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
     }
   }
 
-  private void createAndWaitForDesignDocs(CouchbaseClient client) {
-    DesignDocument designDoc = new DesignDocument("test_beers");
-    String mapFunction = "function (doc, meta) { if(doc._class == "
-      + "\"org.springframework.data.couchbase.core.Beer\") { emit(doc.name, null); } }";
-    designDoc.setView(new ViewDesign("by_name", mapFunction));
-    client.createDesignDoc(designDoc);
+  private void createAndWaitForDesignDocs(BucketManager manager) {
+    final String mapFunction =
+        "function (doc, meta) { if(doc._class == "
+        + "\"org.springframework.data.couchbase.core.Beer\") { emit(doc.name, null); } }";
+    final View view = DefaultView.create("by_name", mapFunction);
+    final DesignDocument designDoc = DesignDocument.create("test_beers", Arrays.asList(view));
+    manager.upsertDesignDocument(designDoc);
   }
 
 }

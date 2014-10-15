@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase;
 
-import com.couchbase.client.ClusterManager;
-import com.couchbase.client.clustermanager.BucketType;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -14,9 +12,6 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
-import java.net.URI;
-import java.util.Arrays;
 
 public class BucketCreator implements InitializingBean {
 
@@ -51,7 +46,6 @@ public class BucketCreator implements InitializingBean {
       logger.info("Got execpetion while looking for bucket: " + ex.getMessage());
       if (ex.getMessage().equals("404 Object Not Found")) {
         logger.info("Creating default bucket with admin credentials.");
-        createBucket();
         return;
       } else {
         throw new RuntimeException("Could not see if bucket is already created.", ex);
@@ -59,16 +53,6 @@ public class BucketCreator implements InitializingBean {
     }
 
     logger.info("Checking for bucket returned status code " + entity.getStatusCode());
-  }
-
-  private void createBucket() throws Exception {
-    ClusterManager bucketManager =
-      new ClusterManager(Arrays.asList(new URI(hostUri)), adminUser, adminPass);
-    bucketManager.createDefaultBucket(BucketType.COUCHBASE, 128, 0, true);
-
-    logger.info("Finished creating bucket, sleeping for warmup.");
-    Thread.sleep(5000);
-    bucketManager.shutdown();
   }
 
 }

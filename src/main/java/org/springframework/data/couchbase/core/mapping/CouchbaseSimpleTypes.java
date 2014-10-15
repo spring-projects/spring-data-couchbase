@@ -1,11 +1,11 @@
 package org.springframework.data.couchbase.core.mapping;
 
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 public abstract class CouchbaseSimpleTypes {
 

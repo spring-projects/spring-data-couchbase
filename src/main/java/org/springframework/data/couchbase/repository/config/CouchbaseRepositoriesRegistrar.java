@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.repository.config;
 
+import java.lang.annotation.Annotation;
+
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
-
-import java.lang.annotation.Annotation;
 
 /**
  * @author Michael Nitschinger

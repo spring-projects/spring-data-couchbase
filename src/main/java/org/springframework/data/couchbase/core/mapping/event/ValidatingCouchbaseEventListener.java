@@ -16,14 +16,15 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
+import java.util.Set;
+
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.util.Assert;
-
-import javax.validation.ConstraintViolationException;
-import javax.validation.Validator;
-import java.util.Set;
 
 /**
  * javax.validation dependant entities validator. When it is registered as Spring component its automatically invoked

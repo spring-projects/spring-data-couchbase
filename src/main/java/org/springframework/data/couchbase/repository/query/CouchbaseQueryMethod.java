@@ -16,14 +16,14 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.lang.reflect.Method;
+
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.QueryMethod;
-
-import java.lang.reflect.Method;
 
 /**
  * Represents a query method with couchbase extensions.

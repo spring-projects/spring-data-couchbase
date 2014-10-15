@@ -16,12 +16,12 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.

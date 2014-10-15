@@ -16,7 +16,12 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.CouchbaseClient;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -37,14 +42,8 @@ import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.CouchbaseCluster;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -80,15 +79,15 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean(destroyMethod = "shutdown")
-  public CouchbaseClient couchbaseClient() throws Exception {
+  @Bean(destroyMethod = "close")
+  public Bucket couchbaseClient() throws Exception {
     setLoggerProperty(couchbaseLogger());
+    return cluster().openBucket(getBucketName(), getBucketPassword());
+  }
 
-    return new CouchbaseClient(
-      bootstrapUris(bootstrapHosts()),
-      getBucketName(),
-      getBucketPassword()
-    );
+  @Bean
+  CouchbaseCluster cluster() {
+    return CouchbaseCluster.create(bootstrapHosts());
   }
 
   /**
@@ -224,20 +223,6 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   protected FieldNamingStrategy fieldNamingStrategy() {
     return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
-  }
-
-  /**
-   * Converts the given list of hostnames into parsable URIs.
-   *
-   * @param hosts the list of hosts to convert.
-   * @return the converted URIs.
-   */
-  private static List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
-    List<URI> uris = new ArrayList<URI>();
-    for (String host : hosts) {
-      uris.add(new URI("http://" + host + ":8091/pools"));
-    }
-    return uris;
   }
 
 }

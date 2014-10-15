@@ -16,12 +16,12 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.Map;
+
 import org.springframework.context.expression.MapAccessor;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
-
-import java.util.Map;
 
 /**
  * A property accessor for document properties.

@@ -16,14 +16,15 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.CouchbaseClient;
-import org.springframework.cache.Cache;
-import org.springframework.cache.support.AbstractCacheManager;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+
+import org.springframework.cache.Cache;
+import org.springframework.cache.support.AbstractCacheManager;
+
+import com.couchbase.client.java.Bucket;
 
 /**
  * The {@link CouchbaseCacheManager} orchestrates {@link CouchbaseCache} instances.
@@ -38,14 +39,14 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
   /**
    * Holds the reference to all stored CouchbaseClient cache connections.
    */
-  private final HashMap<String, CouchbaseClient> clients;
+  private final HashMap<String, Bucket> clients;
 
   /**
    * Construct a new CouchbaseCacheManager.
    *
    * @param clients one ore more CouchbaseClients to reference.
    */
-  public CouchbaseCacheManager(final HashMap<String, CouchbaseClient> clients) {
+  public CouchbaseCacheManager(final HashMap<String, Bucket> clients) {
     this.clients = clients;
   }
 
@@ -54,7 +55,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    *
    * @return the actual CouchbaseClient instances.
    */
-  public final HashMap<String, CouchbaseClient> getClients() {
+  public final HashMap<String, Bucket> getClients() {
     return clients;
   }
 
@@ -67,7 +68,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
   protected final Collection<? extends Cache> loadCaches() {
     Collection<Cache> caches = new LinkedHashSet<Cache>();
 
-    for (Map.Entry<String, CouchbaseClient> cache : clients.entrySet()) {
+    for (Map.Entry<String, Bucket> cache : clients.entrySet()) {
       caches.add(new CouchbaseCache(cache.getKey(), cache.getValue()));
     }
 

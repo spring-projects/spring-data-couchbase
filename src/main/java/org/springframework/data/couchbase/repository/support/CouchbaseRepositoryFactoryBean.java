@@ -16,13 +16,13 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.io.Serializable;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.util.Assert;
-
-import java.io.Serializable;
 
 /**
  * The factory bean to create repositories.

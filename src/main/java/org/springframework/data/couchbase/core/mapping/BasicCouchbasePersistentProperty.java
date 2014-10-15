@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -23,9 +26,6 @@ import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
-
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
 
 /**
  * Implements annotated property representations of a given Field instance.

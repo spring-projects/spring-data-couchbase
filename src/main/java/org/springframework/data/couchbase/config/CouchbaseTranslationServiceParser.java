@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
@@ -24,6 +23,8 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Enables Parsing of the "<couchbase:translation-service />" configuration bean.

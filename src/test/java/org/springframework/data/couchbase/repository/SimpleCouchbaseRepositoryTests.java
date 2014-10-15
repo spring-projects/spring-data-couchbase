@@ -16,14 +16,17 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.Stale;
+import static com.couchbase.client.java.query.dsl.Expression.x;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -32,7 +35,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.query.dsl.path.DefaultSelectPath;
+import com.couchbase.client.java.query.dsl.path.FromPath;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
 
 /**
  * @author Michael Nitschinger
@@ -43,7 +50,7 @@ import static org.junit.Assert.*;
 public class SimpleCouchbaseRepositoryTests {
 
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   @Autowired
   private CouchbaseTemplate template;
@@ -79,8 +86,7 @@ public class SimpleCouchbaseRepositoryTests {
    */
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
-    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
-
+    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
     Iterable<User> allUsers = repository.findAll();
     int size = 0;
     for (User u : allUsers) {
@@ -94,14 +100,16 @@ public class SimpleCouchbaseRepositoryTests {
   @Test
   public void shouldCount() {
     // do a non-stale query to populate data for testing.
-    client.query(client.getView("user", "all"), new Query().setStale(Stale.FALSE));
+    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
 
     assertEquals(100, repository.count());
   }
 
   @Test
   public void shouldFindCustom() {
-    Iterable<User> users = repository.customViewQuery(new Query().setLimit(2).setStale(Stale.FALSE));
+    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
+    FromPath query = new DefaultSelectPath(null).select(x("key"), x("username"));
+    Iterable<User> users = repository.customViewQuery(query);
     int size = 0;
     for (User u : users) {
       size++;

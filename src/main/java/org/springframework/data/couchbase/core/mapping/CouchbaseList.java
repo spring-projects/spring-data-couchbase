@@ -16,12 +16,12 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
  * A {@link CouchbaseList} is an abstract list that represents an array stored in a (most of the times JSON) document.

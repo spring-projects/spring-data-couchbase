@@ -16,16 +16,16 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.View;
-import com.couchbase.client.protocol.views.ViewResponse;
-import com.couchbase.client.protocol.views.ViewRow;
-import net.spy.memcached.CASResponse;
-import net.spy.memcached.CASValue;
-import net.spy.memcached.PersistTo;
-import net.spy.memcached.ReplicateTo;
-import net.spy.memcached.internal.OperationFuture;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,15 +50,17 @@ import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEve
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import com.couchbase.client.core.CouchbaseException;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.PersistTo;
+import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.document.Document;
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.document.JsonStringDocument;
+import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.view.ViewResult;
+import com.couchbase.client.java.view.ViewRow;
 
 /**
  * @author Michael Nitschinger
@@ -70,7 +72,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   private static final Collection<String> ITERABLE_CLASSES;
   private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
 
-  private final CouchbaseClient client;
+  private final Bucket client;
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
   private final CouchbaseExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
   private final TranslationService translationService;
@@ -91,15 +93,16 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     writeResultChecking = resultChecking == null ? DEFAULT_WRITE_RESULT_CHECKING : resultChecking;
   }
 
-  public CouchbaseTemplate(final CouchbaseClient client) {
+  public CouchbaseTemplate(final Bucket client) {
     this(client, null, null);
   }
 
-  public CouchbaseTemplate(final CouchbaseClient client, final TranslationService translationService) {
+  public CouchbaseTemplate(final Bucket client, final TranslationService translationService) {
     this(client, null, translationService);
   }
 
-  public CouchbaseTemplate(final CouchbaseClient client, final CouchbaseConverter couchbaseConverter, final TranslationService translationService) {
+  public CouchbaseTemplate(final Bucket client, final CouchbaseConverter couchbaseConverter,
+      final TranslationService translationService) {
     this.client = client;
     this.couchbaseConverter = couchbaseConverter == null ? getDefaultConverter() : couchbaseConverter;
     this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
@@ -123,8 +126,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return jacksonTranslationService;
   }
 
-  private Object translateEncode(final CouchbaseStorable source) {
-    return translationService.encode(source);
+  private Document<?> translateEncode(final CouchbaseDocument source, final long version) {
+    final String json = translationService.encode(source);
+    return JsonStringDocument.create(source.getId(), source.getExpiration(), json, version);
   }
 
 
@@ -134,7 +138,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public final void insert(final Object objectToInsert) {
-    insert(objectToInsert, PersistTo.ZERO, ReplicateTo.ZERO);
+    insert(objectToInsert, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
@@ -146,7 +150,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public void save(final Object objectToSave) {
-    save(objectToSave, PersistTo.ZERO, ReplicateTo.ZERO);
+    save(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
@@ -158,7 +162,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public void update(final Object objectToUpdate) {
-    update(objectToUpdate, PersistTo.ZERO, ReplicateTo.ZERO);
+    update(objectToUpdate, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
@@ -170,10 +174,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public final <T> T findById(final String id, final Class<T> entityClass) {
-    CASValue result = execute(new BucketCallback<CASValue>() {
+    JsonDocument result = execute(new BucketCallback<JsonDocument>() {
       @Override
-      public CASValue doInBucket() {
-        return client.gets(id);
+      public JsonDocument doInBucket() {
+        return client.get(id);
       }
     });
 
@@ -182,13 +186,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
-    Object readEntity = couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(
-      (String) result.getValue(), converted));
+    Object readEntity =
+        couchbaseConverter.read(entityClass,
+            (CouchbaseDocument) translateDecode(result.content().toString(), converted));
 
-		final BeanWrapper<Object> beanWrapper = BeanWrapper.create(readEntity, couchbaseConverter.getConversionService());
+    final BeanWrapper<Object> beanWrapper =
+        BeanWrapper.create(readEntity, couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(readEntity.getClass());
     if (persistentEntity.hasVersionProperty()) {
-      beanWrapper.setProperty(persistentEntity.getVersionProperty(), result.getCas());
+      beanWrapper.setProperty(persistentEntity.getVersionProperty(), result.cas());
     }
 
     return (T) readEntity;
@@ -196,39 +202,30 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
 
   @Override
-  public <T> List<T> findByView(final String designName, final String viewName, final Query query, final Class<T> entityClass) {
+  public <T> List<T> findByView(final ViewQuery query, final Class<T> entityClass) {
+    final ViewResult response = queryView(query);
 
-    if (query.willIncludeDocs()) {
-      query.setIncludeDocs(false);
-    }
-    if (query.willReduce()) {
-      query.setReduce(false);
-    }
-
-    final ViewResponse response = queryView(designName, viewName, query);
-
-    final List<T> result = new ArrayList<T>(response.size());
-    for (final ViewRow row : response) {
-      result.add(findById(row.getId(), entityClass));
+    final List<T> result = new ArrayList<T>();
+    for (final ViewRow row : response.allRows()) {
+      result.add(findById(row.id(), entityClass));
     }
 
     return result;
   }
 
   @Override
-  public ViewResponse queryView(final String designName, final String viewName, final Query query) {
-    return execute(new BucketCallback<ViewResponse>() {
+  public ViewResult queryView(final ViewQuery query) {
+    return execute(new BucketCallback<ViewResult>() {
       @Override
-      public ViewResponse doInBucket() {
-        final View view = client.getView(designName, viewName);
-        return client.query(view, query);
+      public ViewResult doInBucket() {
+        return client.query(query);
       }
     });
   }
 
   @Override
   public void remove(final Object objectToRemove) {
-    remove(objectToRemove, PersistTo.ZERO, ReplicateTo.ZERO);
+    remove(objectToRemove, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
@@ -255,12 +252,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public boolean exists(final String id) {
-    final String result = execute(new BucketCallback<String>() {
-      @Override
-      public String doInBucket() {
-        return (String) client.get(id);
-      }
-    });
+    final JsonDocument result = client.get(id);
     return result != null;
   }
 
@@ -286,10 +278,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   public void save(Object objectToSave, final PersistTo persistTo, final ReplicateTo replicateTo) {
     ensureNotIterable(objectToSave);
 
-		final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToSave, couchbaseConverter.getConversionService());
+    final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToSave, couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToSave.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
+    final Long version =
+        versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : 0L;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToSave));
     final CouchbaseDocument converted = new CouchbaseDocument();
@@ -299,25 +292,19 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        if (version == null) {
-          OperationFuture<Boolean> setFuture = client.set(converted.getId(), converted.getExpiration(),
-            translateEncode(converted), persistTo, replicateTo);
-          boolean future = setFuture.get();
-          if (!future) {
-            handleWriteResultError("Saving document failed: " + setFuture.getStatus().getMessage());
-          }
-          return future;
-        } else {
-          OperationFuture<CASResponse> casFuture = client.asyncCas(converted.getId(), version,
-            converted.getExpiration(), translateEncode(converted), persistTo, replicateTo);
-          CASResponse cas = casFuture.get();
-          if (cas == CASResponse.EXISTS) {
-            throw new OptimisticLockingFailureException("Saving document with version value failed: " + cas);
-          } else {
-            long newCas = casFuture.getCas();
-            beanWrapper.setProperty(versionProperty, newCas);
-            return true;
-          }
+        final Document<?> translateEncode = translateEncode(converted, version);
+        if (version == 0L) {
+          client.insert(translateEncode, persistTo, replicateTo);
+          return true;
+        }
+        try {
+          final Document<?> document = client.replace(translateEncode, persistTo, replicateTo);
+          final long newCas = document.cas();
+          beanWrapper.setProperty(versionProperty, newCas);
+          return true;
+        } catch (final CASMismatchException e) {
+          throw new OptimisticLockingFailureException("Saving document with version value failed: "
+              + version);
         }
       }
     });
@@ -338,11 +325,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToInsert.getClass());
     final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToInsert, couchbaseConverter.getConversionService());
 
+    final long version;
     if (persistentEntity != null && persistentEntity.hasVersionProperty()) {
-      final Long version = beanWrapper.getProperty(persistentEntity.getVersionProperty(), Long.class);
+      version = beanWrapper.getProperty(persistentEntity.getVersionProperty(), Long.class);
       if (version == 0) {
         beanWrapper.setProperty(persistentEntity.getVersionProperty(), 0);
       }
+    } else {
+      version = 0;
     }
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToInsert));
@@ -353,18 +343,17 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        OperationFuture<Boolean> addFuture = client.add(converted.getId(), converted.getExpiration(),
-          translateEncode(converted), persistTo, replicateTo);
-        boolean result = addFuture.get();
-        if(result == false) {
-          handleWriteResultError("Inserting document failed: "
-            + addFuture.getStatus().getMessage());
+        try {
+          Document<?> result =
+              client.insert(translateEncode(converted, version), persistTo, replicateTo);
+          if (result != null && persistentEntity.hasVersionProperty()) {
+            beanWrapper.setProperty(persistentEntity.getVersionProperty(), result.cas());
+          }
+          return true;
+        } catch (final CouchbaseException e) {
+          handleWriteResultError(e, "Inserting document failed: " + e.getMessage());
+          return false;
         }
-
-        if (result && persistentEntity.hasVersionProperty()) {
-          beanWrapper.setProperty(persistentEntity.getVersionProperty(), addFuture.getCas());
-        }
-        return result;
       }
     });
     maybeEmitEvent(new AfterSaveEvent<Object>(objectToInsert, converted));
@@ -384,31 +373,28 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToUpdate, couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToUpdate.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
+    final long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : 0l;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToUpdate));
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToUpdate, converted);
 
     maybeEmitEvent(new BeforeSaveEvent<Object>(objectToUpdate, converted));
-    execute(new BucketCallback<Boolean>() {
+    execute(new BucketCallback<Document<?>>() {
       @Override
-      public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        if (version == null) {
-          return client.replace(converted.getId(), converted.getExpiration(), translateEncode(converted), persistTo,
-            replicateTo).get();
-        } else {
-          OperationFuture<CASResponse> casFuture = client.asyncCas(converted.getId(), version,
-            converted.getExpiration(), translateEncode(converted), persistTo, replicateTo);
-          CASResponse cas = casFuture.get();
-
-          if (cas == CASResponse.EXISTS) {
-            throw new OptimisticLockingFailureException("Updating document with version value failed: " + cas);
-          } else {
-            long newCas = casFuture.getCas();
-            beanWrapper.setProperty(versionProperty, newCas);
-            return true;
-          }
+      public Document<?> doInBucket() throws InterruptedException, ExecutionException {
+        final Document<?> translateEncode = translateEncode(converted, version);
+        if (version == 0L) {
+          return client.replace(translateEncode, persistTo, replicateTo);
+        }
+        try {
+          final Document<?> document = client.replace(translateEncode, persistTo, replicateTo);
+          final long newCas = document.cas();
+          beanWrapper.setProperty(versionProperty, newCas);
+          return document;
+        } catch (final CASMismatchException e) {
+          throw new OptimisticLockingFailureException("Saving document with version value failed: "
+              + version);
         }
       }
     });
@@ -428,10 +414,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     maybeEmitEvent(new BeforeDeleteEvent<Object>(objectToRemove));
     if (objectToRemove instanceof String) {
-      execute(new BucketCallback<Boolean>() {
+      execute(new BucketCallback<JsonDocument>() {
         @Override
-        public Boolean doInBucket() throws InterruptedException, ExecutionException {
-          return client.delete((String) objectToRemove, persistTo, replicateTo).get();
+        public JsonDocument doInBucket() throws InterruptedException, ExecutionException {
+          return client.remove((JsonDocument) objectToRemove, persistTo, replicateTo);
         }
       });
       maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
@@ -441,10 +427,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToRemove, converted);
 
-    execute(new BucketCallback<OperationFuture<Boolean>>() {
+    execute(new BucketCallback<JsonDocument>() {
       @Override
-      public OperationFuture<Boolean> doInBucket() {
-        return client.delete(converted.getId());
+      public JsonDocument doInBucket() {
+        return client.remove(converted.getId());
       }
     });
     maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
@@ -462,16 +448,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
    *
    * @param message the message to use.
    */
-  private void handleWriteResultError(String message) {
+  private void handleWriteResultError(CouchbaseException e, String message) {
     if (writeResultChecking == WriteResultChecking.NONE) {
       return;
     }
 
     if (writeResultChecking == WriteResultChecking.EXCEPTION) {
-      throw new CouchbaseDataIntegrityViolationException(message);
-    } else {
-      LOGGER.error(message);
+      throw new CouchbaseDataIntegrityViolationException(message, e);
     }
+    LOGGER.error(message, e);
   }
 
   /**
@@ -487,7 +472,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public CouchbaseClient getCouchbaseClient() {
+  public Bucket getCouchbaseClient() {
     return client;
   }
 }

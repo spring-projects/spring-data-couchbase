@@ -16,18 +16,17 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.ObservedException;
-import com.couchbase.client.ObservedModifiedException;
-import com.couchbase.client.ObservedTimeoutException;
-import com.couchbase.client.protocol.views.InvalidViewException;
-import com.couchbase.client.vbucket.ConnectionException;
+import java.util.concurrent.CancellationException;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
-import java.util.concurrent.CancellationException;
+import com.couchbase.client.core.endpoint.kv.AuthenticationException;
+import com.couchbase.client.java.error.DesignDocumentException;
+import com.couchbase.client.java.error.ViewDoesNotExistException;
 
 
 /**
@@ -51,13 +50,11 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
   @Override
   public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
 
-    if (ex instanceof ConnectionException) {
+    if (ex instanceof AuthenticationException) {
       return new DataAccessResourceFailureException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof ObservedException
-            || ex instanceof ObservedTimeoutException
-            || ex instanceof ObservedModifiedException) {
+    if (ex instanceof DesignDocumentException) {
       return new DataIntegrityViolationException(ex.getMessage(), ex);
     }
 
@@ -65,7 +62,7 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
       throw new OperationCancellationException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof InvalidViewException) {
+    if (ex instanceof ViewDoesNotExistException) {
       throw new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
     }
 
