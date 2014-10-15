@@ -49,7 +49,6 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
       User u = new User("testuser-" + i, "uname-" + i);
       template.save(u, PersistTo.MASTER, ReplicateTo.NONE);
     }
-
   }
 
   private void createAndWaitForDesignDocs(Bucket client) {

@@ -56,7 +56,7 @@ import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
 import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.document.JsonStringDocument;
+import com.couchbase.client.java.document.StringDocument;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -126,9 +126,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return jacksonTranslationService;
   }
 
-  private Document<?> translateEncode(final CouchbaseDocument source, final long version) {
+  private StringDocument translateEncode(final CouchbaseDocument source) {
     final String json = translationService.encode(source);
-    return JsonStringDocument.create(source.getId(), source.getExpiration(), json, version);
+    return StringDocument.create(source.getId(), json, source.getExpiration());
   }
 
 
@@ -174,10 +174,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public final <T> T findById(final String id, final Class<T> entityClass) {
-    JsonDocument result = execute(new BucketCallback<JsonDocument>() {
+    StringDocument result = execute(new BucketCallback<StringDocument>() {
       @Override
-      public JsonDocument doInBucket() {
-        return client.get(id);
+      public StringDocument doInBucket() {
+        final StringDocument document = StringDocument.create(id);
+        return client.get(document);
       }
     });
 
@@ -292,9 +293,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        final Document<?> translateEncode = translateEncode(converted, version);
+        final StringDocument translateEncode = translateEncode(converted);
         try {
-          final Document<?> document = client.replace(translateEncode, persistTo, replicateTo);
+          final StringDocument document =
+              client.replace(translateEncode, persistTo, replicateTo);
           if (versionProperty != null) {
             final long newCas = document.cas();
             beanWrapper.setProperty(versionProperty, newCas);
@@ -342,8 +344,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
         try {
-          Document<?> result =
-              client.insert(translateEncode(converted, version), persistTo, replicateTo);
+          StringDocument translateEncode = translateEncode(converted);
+          StringDocument result = client.insert(translateEncode, persistTo, replicateTo);
           if (result != null && persistentEntity.hasVersionProperty()) {
             beanWrapper.setProperty(persistentEntity.getVersionProperty(), result.cas());
           }
@@ -381,7 +383,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Document<?>>() {
       @Override
       public Document<?> doInBucket() throws InterruptedException, ExecutionException {
-        final Document<?> translateEncode = translateEncode(converted, version);
+        final StringDocument translateEncode = translateEncode(converted);
         if (version == 0L) {
           return client.replace(translateEncode, persistTo, replicateTo);
         }

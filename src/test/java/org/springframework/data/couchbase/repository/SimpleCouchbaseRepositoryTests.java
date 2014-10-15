@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static com.couchbase.client.java.query.dsl.Expression.x;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -36,8 +35,6 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.query.dsl.path.DefaultSelectPath;
-import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 
@@ -107,8 +104,8 @@ public class SimpleCouchbaseRepositoryTests {
 
   @Test
   public void shouldFindCustom() {
-    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
-    FromPath query = new DefaultSelectPath(null).select(x("key"), x("username"));
+    ViewQuery query = ViewQuery.from("user", "all").stale(Stale.FALSE);
+    client.query(query);
     Iterable<User> users = repository.customViewQuery(query);
     int size = 0;
     for (User u : users) {
