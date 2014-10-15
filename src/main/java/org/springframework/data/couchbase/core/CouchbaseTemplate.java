@@ -293,14 +293,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
         final Document<?> translateEncode = translateEncode(converted, version);
-        if (version == 0L) {
-          client.insert(translateEncode, persistTo, replicateTo);
-          return true;
-        }
         try {
           final Document<?> document = client.replace(translateEncode, persistTo, replicateTo);
-          final long newCas = document.cas();
-          beanWrapper.setProperty(versionProperty, newCas);
+          if (versionProperty != null) {
+            final long newCas = document.cas();
+            beanWrapper.setProperty(versionProperty, newCas);
+          }
           return true;
         } catch (final CASMismatchException e) {
           throw new OptimisticLockingFailureException("Saving document with version value failed: "

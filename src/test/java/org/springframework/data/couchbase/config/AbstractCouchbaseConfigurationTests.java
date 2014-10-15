@@ -31,6 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.CouchbaseCluster;
 
 /**
  * Unit test for {@link AbstractCouchbaseConfiguration}
@@ -74,7 +75,7 @@ public class AbstractCouchbaseConfigurationTests {
 
     @Bean
     @Override
-    public Bucket couchbaseClient() throws Exception {
+    public Bucket couchbaseClient(final CouchbaseCluster cluster) throws Exception {
       return client;
     }
   }

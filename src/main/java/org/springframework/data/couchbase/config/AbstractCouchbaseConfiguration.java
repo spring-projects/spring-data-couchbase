@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -74,20 +75,21 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   protected abstract String getBucketPassword();
 
+  @Bean
+  public CouchbaseCluster cluster() {
+    return CouchbaseCluster.create(bootstrapHosts());
+  }
+
   /**
    * Return the {@link CouchbaseClient} instance to connect to.
    *
    * @throws Exception on Bean construction failure.
    */
   @Bean(destroyMethod = "close")
-  public Bucket couchbaseClient() throws Exception {
+  @Autowired
+  public Bucket couchbaseClient(final CouchbaseCluster cluster) throws Exception {
     setLoggerProperty(couchbaseLogger());
-    return cluster().openBucket(getBucketName(), getBucketPassword());
-  }
-
-  @Bean
-  CouchbaseCluster cluster() {
-    return CouchbaseCluster.create(bootstrapHosts());
+    return cluster.openBucket(getBucketName(), getBucketPassword());
   }
 
   /**
@@ -116,8 +118,9 @@ public abstract class AbstractCouchbaseConfiguration {
    * @throws Exception on Bean construction failure.
    */
   @Bean
-  public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
+  @Autowired
+  public CouchbaseTemplate couchbaseTemplate(final Bucket bucket) throws Exception {
+    return new CouchbaseTemplate(bucket, mappingCouchbaseConverter(), translationService());
   }
 
   /**
