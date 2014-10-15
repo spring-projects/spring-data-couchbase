@@ -498,7 +498,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
         if (val == null || conversions.isSimpleType(val.getClass())) {
           writeSimpleInternal(val, target, simpleKey);
         } else if (val instanceof Collection || val.getClass().isArray()) {
-          target.put(simpleKey, writeCollectionInternal(asCollection(val), new CouchbaseList(), type.getMapValueType()));
+          target.put(simpleKey, writeCollectionInternal(asCollection(val), new CouchbaseList(conversions.getSimpleTypeHolder()), type.getMapValueType()));
         } else {
           CouchbaseDocument embeddedDoc = new CouchbaseDocument();
           TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
@@ -521,7 +521,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the created couchbase list.
    */
   private CouchbaseList createCollection(final Collection<?> collection, final CouchbasePersistentProperty prop) {
-    return writeCollectionInternal(collection, new CouchbaseList(), prop.getTypeInformation());
+    return writeCollectionInternal(collection, new CouchbaseList(conversions.getSimpleTypeHolder()), prop.getTypeInformation());
   }
 
   /**
@@ -542,7 +542,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       if (elementType == null || conversions.isSimpleType(elementType)) {
         target.put(element);
       } else if (element instanceof Collection || elementType.isArray()) {
-        target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(), componentType));
+        target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(conversions.getSimpleTypeHolder()), componentType));
       } else {
         CouchbaseDocument embeddedDoc = new CouchbaseDocument();
         writeInternal(element, embeddedDoc, componentType);

@@ -87,7 +87,7 @@ public class CustomConversions {
       registerConversion(converter);
     }
 
-    simpleTypeHolder = new SimpleTypeHolder();
+    simpleTypeHolder = new SimpleTypeHolder(customSimpleTypes, true);
   }
 
   /**
