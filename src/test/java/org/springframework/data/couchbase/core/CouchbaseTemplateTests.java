@@ -47,6 +47,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -73,13 +74,13 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void saveSimpleEntityCorrectly() throws Exception {
-    String id = "beers:awesome-stout";
+    StringDocument id = StringDocument.create("beers:awesome-stout");
     String name = "The Awesome Stout";
     boolean active = false;
-    Beer beer = new Beer(id).setName(name).setActive(active);
+    Beer beer = new Beer(id.id()).setName(name).setActive(active);
 
     template.save(beer);
-    JsonDocument result = client.get(id);
+    StringDocument result = client.get(id);
 
     assertNotNull(result);
     Map<String, Object> converted =
@@ -125,10 +126,10 @@ public class CouchbaseTemplateTests {
   }
 
 
-  @Test
+  @Test(expected = DocumentDoesNotExistException.class)
   public void updateDoesNotInsert() {
-    String id = "update-does-not-insert";
-    SimplePerson doc = new SimplePerson(id, "Nice Guy");
+    StringDocument id = StringDocument.create("update-does-not-insert");
+    SimplePerson doc = new SimplePerson(id.id(), "Nice Guy");
     template.update(doc);
     assertNull(client.get(id));
   }
@@ -283,12 +284,15 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotSaveDocumentOnNotMatchingVersion() throws Exception {
-    JsonDocument remove = client.remove("versionedClass:4");
+    StringDocument id = StringDocument.create("versionedClass:6");
+    client.remove(id);
 
-    VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
+    VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.upsert(remove) != null);
+    final StringDocument newOne = StringDocument.create("versionedClass:6", "{}");
+    final StringDocument upsert = client.upsert(newOne);
+    assertTrue(upsert.cas() > 0);
 
     versionedClass.setField("foobar2");
     template.save(versionedClass);
@@ -315,12 +319,15 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotUpdateDocumentOnNotMatchingVersion() throws Exception {
-    JsonDocument remove = client.remove("versionedClass:6");
+    StringDocument id = StringDocument.create("versionedClass:6");
+    client.remove(id);
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.upsert(remove) != null);
+    final StringDocument newOne = StringDocument.create("versionedClass:6", "{}");
+    final StringDocument upsert = client.upsert(newOne);
+    assertTrue(upsert.cas() > 0);
 
     versionedClass.setField("foobar2");
     template.update(versionedClass);
