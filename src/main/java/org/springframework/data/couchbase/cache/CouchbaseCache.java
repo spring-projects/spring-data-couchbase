@@ -21,6 +21,7 @@ import org.springframework.cache.support.SimpleValueWrapper;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.Document;
+import com.couchbase.client.java.document.LegacyDocument;
 
 /**
  * The {@link CouchbaseCache} class implements the Spring Cache interface on top of Couchbase Server and the Couchbase
@@ -81,16 +82,17 @@ public class CouchbaseCache implements Cache {
    */
   @Override
   public final ValueWrapper get(final Object key) {
-    String documentId = key.toString();
-    Object result = bucket.get(documentId);
-    return (result != null ? new SimpleValueWrapper(result) : null);
+    LegacyDocument documentId = LegacyDocument.create(key.toString());
+    LegacyDocument result = bucket.get(documentId);
+    return (result != null ? new SimpleValueWrapper(result.content()) : null);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public final <T> T get(final Object key, final Class<T> clazz) {
-    String documentId = key.toString();
-    return (T) bucket.get(documentId);
+    LegacyDocument documentId = LegacyDocument.create(key.toString());
+    LegacyDocument result = bucket.get(documentId);
+    return (T) bucket.get(result).content();
   }
 
   /**
@@ -102,7 +104,8 @@ public class CouchbaseCache implements Cache {
   @Override
   public final void put(final Object key, final Object value) {
     if (value != null) {
-      bucket.insert((Document<?>) value);
+      LegacyDocument document = LegacyDocument.create(key.toString(), value);
+      bucket.upsert((Document<?>) document);
     } else {
       evict(key);
     }
@@ -115,7 +118,7 @@ public class CouchbaseCache implements Cache {
    */
   @Override
   public final void evict(final Object key) {
-    String documentId = key.toString();
+    LegacyDocument documentId = LegacyDocument.create(key.toString());
     bucket.remove(documentId);
   }
 

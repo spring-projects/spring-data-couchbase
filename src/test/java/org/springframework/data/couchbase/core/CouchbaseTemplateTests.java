@@ -45,7 +45,6 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.view.Stale;
@@ -239,12 +238,13 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldHandleCASVersionOnInsert() throws Exception {
-    client.remove("versionedClass:1");
+    StringDocument documentId = StringDocument.create("versionedClass:1");
+    client.remove(documentId);
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
     assertEquals(0, versionedClass.getVersion());
     template.insert(versionedClass);
-    JsonDocument rawStored = client.get("versionedClass:1");
+    StringDocument rawStored = client.get(documentId);
     assertEquals(rawStored.cas(), versionedClass.getVersion());
   }
 

@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -204,6 +205,7 @@ public class CouchbaseFactoryBean implements FactoryBean<Bucket>, InitializingBe
   public void afterPropertiesSet() throws Exception {
     bucket = bucket != null ? bucket : DEFAULT_BUCKET;
     password = password != null ? password : DEFAULT_PASSWORD;
+    nodes = nodes != null ? nodes : Arrays.asList(DEFAULT_NODE);
 
     final DefaultCouchbaseEnvironment factory = builder.build();
     final CouchbaseCluster cluster = CouchbaseCluster.create(factory, nodes);

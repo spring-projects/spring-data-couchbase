@@ -32,8 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.document.JsonStringDocument;
+import com.couchbase.client.java.document.LegacyDocument;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
@@ -74,12 +73,12 @@ public class CouchbaseCacheTests {
     CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
-    JsonDocument value = JsonDocument.create("Hello World!");
+    String value = "Hello World!";
     cache.put(key, value);
 
-    JsonDocument stored = client.get(key);
+    LegacyDocument stored = client.get(LegacyDocument.create(key));
     assertNotNull(stored);
-    assertEquals(value, stored);
+    assertEquals(value, stored.content());
 
     ValueWrapper loaded = cache.get(key);
     assertEquals(value, loaded.get());
@@ -110,9 +109,9 @@ public class CouchbaseCacheTests {
     CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
-    JsonStringDocument value = JsonStringDocument.create(key, "Hello World!");
+    LegacyDocument value = LegacyDocument.create(key, "Hello World!");
 
-    JsonStringDocument success = client.insert(value);
+    LegacyDocument success = client.upsert(value);
     assertTrue(success != null);
 
     cache.evict(key);

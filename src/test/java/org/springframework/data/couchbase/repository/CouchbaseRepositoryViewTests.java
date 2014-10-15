@@ -70,7 +70,7 @@ public class CouchbaseRepositoryViewTests {
 
   @Test
   public void shouldCountWithCustomView() {
-    ViewQuery query = ViewQuery.from("user", "customCountView").stale(Stale.FALSE);
+    ViewQuery query = ViewQuery.from("userCustom", "customCountView").stale(Stale.FALSE);
     client.query(query);
     final long value = repository.count();
     assertThat(value, is(100L));
