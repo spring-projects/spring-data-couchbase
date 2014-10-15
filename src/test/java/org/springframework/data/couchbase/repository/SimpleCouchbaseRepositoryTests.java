@@ -84,6 +84,7 @@ public class SimpleCouchbaseRepositoryTests {
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
     client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
+
     Iterable<User> allUsers = repository.findAll();
     int size = 0;
     for (User u : allUsers) {
@@ -106,7 +107,8 @@ public class SimpleCouchbaseRepositoryTests {
   public void shouldFindCustom() {
     ViewQuery query = ViewQuery.from("user", "all").stale(Stale.FALSE);
     client.query(query);
-    Iterable<User> users = repository.customViewQuery(query);
+
+    Iterable<User> users = repository.customViewQuery(query.limit(2).stale(Stale.FALSE));
     int size = 0;
     for (User u : users) {
       size++;

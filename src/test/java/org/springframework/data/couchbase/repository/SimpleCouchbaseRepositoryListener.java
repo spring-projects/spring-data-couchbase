@@ -47,14 +47,15 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
 
     for (int i = 0; i < 100; i++) {
       User u = new User("testuser-" + i, "uname-" + i);
+      template.remove(u);
       template.save(u, PersistTo.MASTER, ReplicateTo.NONE);
     }
   }
 
   private void createAndWaitForDesignDocs(Bucket client) {
     client.bucketManager().removeDesignDocument("user");
-    String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository." +
- "User\") { emit(null, null); } }";
+    String mapFunction =
+        "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
     View view = DefaultView.create("all", mapFunction, "_count");
     DesignDocument designDoc = DesignDocument.create("user", Arrays.asList(view));
     client.bucketManager().upsertDesignDocument(designDoc);

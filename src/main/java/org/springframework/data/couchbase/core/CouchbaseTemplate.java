@@ -54,8 +54,6 @@ import com.couchbase.client.core.CouchbaseException;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.document.Document;
-import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.StringDocument;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
@@ -254,8 +252,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public boolean exists(final String id) {
-    final JsonDocument result = client.get(id);
-    return result != null;
+    final StringDocument documentId = StringDocument.create(id);
+    return client.get(documentId) != null;
   }
 
   /**
@@ -382,12 +380,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     couchbaseConverter.write(objectToUpdate, converted);
 
     maybeEmitEvent(new BeforeSaveEvent<Object>(objectToUpdate, converted));
-    execute(new BucketCallback<Document<?>>() {
+    execute(new BucketCallback<StringDocument>() {
       @Override
-      public Document<?> doInBucket() throws InterruptedException, ExecutionException {
+      public StringDocument doInBucket() throws InterruptedException, ExecutionException {
         final StringDocument translateEncode = translateEncode(converted, version);
         try {
-          final Document<?> document = client.replace(translateEncode, persistTo, replicateTo);
+          final StringDocument document = client.replace(translateEncode, persistTo, replicateTo);
           final long newCas = document.cas();
           beanWrapper.setProperty(versionProperty, newCas);
           return document;
@@ -413,10 +411,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     maybeEmitEvent(new BeforeDeleteEvent<Object>(objectToRemove));
     if (objectToRemove instanceof String) {
-      execute(new BucketCallback<JsonDocument>() {
+      execute(new BucketCallback<StringDocument>() {
         @Override
-        public JsonDocument doInBucket() throws InterruptedException, ExecutionException {
-          return client.remove((JsonDocument) objectToRemove, persistTo, replicateTo);
+        public StringDocument doInBucket() throws InterruptedException, ExecutionException {
+          final StringDocument documentId = StringDocument.create(objectToRemove.toString());
+          return client.remove(documentId, persistTo, replicateTo);
         }
       });
       maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
@@ -426,10 +425,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final CouchbaseDocument converted = new CouchbaseDocument();
     couchbaseConverter.write(objectToRemove, converted);
 
-    execute(new BucketCallback<JsonDocument>() {
+    execute(new BucketCallback<StringDocument>() {
       @Override
-      public JsonDocument doInBucket() {
-        return client.remove(converted.getId());
+      public StringDocument doInBucket() {
+        final StringDocument documentId = StringDocument.create(converted.getId());
+        return client.remove(documentId);
       }
     });
     maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
