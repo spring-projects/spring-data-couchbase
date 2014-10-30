@@ -121,5 +121,18 @@ public class CouchbaseCache implements Cache {
   public final void clear() {
     client.flush();
   }
-
+  
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.cache.Cache#putIfAbsent(java.lang.Object, java.lang.Object)
+   */
+  public ValueWrapper putIfAbsent(Object key, Object value) {
+		
+		if(get(key) == null) {
+			put(key, value);
+			return null;
+		}
+		
+		return new SimpleValueWrapper(value);
+	}
 }
