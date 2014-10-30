@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.2.1.RELEASE (2014-10-30)
+---------------------------------------------
+* DATACOUCH-114 - Release 1.2.1.
+* DATACOUCH-113 - Ensure Spring 4.1 compatibility.
+
+
 Changes in version 1.2.0.RELEASE (2014-09-05)
 ---------------------------------------------
 * DATACOUCH-108 - Make sure Spring Data Couchbase can be built using a JDK 8.
