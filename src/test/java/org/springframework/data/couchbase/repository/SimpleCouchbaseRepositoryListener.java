@@ -16,14 +16,18 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.DesignDocument;
-import com.couchbase.client.protocol.views.ViewDesign;
-import net.spy.memcached.PersistTo;
-import net.spy.memcached.ReplicateTo;
+import java.util.Arrays;
+
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.PersistTo;
+import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.view.DefaultView;
+import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.view.View;
 
 /**
  * @author Michael Nitschinger
@@ -32,27 +36,29 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    CouchbaseClient client = (CouchbaseClient) testContext.getApplicationContext().getBean("couchbaseClient");
+    Bucket client =
+        (Bucket) testContext.getApplicationContext().getBean("couchbaseClient");
     populateTestData(client);
     createAndWaitForDesignDocs(client);
   }
 
-  private void populateTestData(CouchbaseClient client) {
+  private void populateTestData(Bucket client) {
     CouchbaseTemplate template = new CouchbaseTemplate(client);
 
     for (int i = 0; i < 100; i++) {
       User u = new User("testuser-" + i, "uname-" + i);
-      template.save(u, PersistTo.MASTER, ReplicateTo.ZERO);
+      template.remove(u);
+      template.save(u, PersistTo.MASTER, ReplicateTo.NONE);
     }
-
   }
 
-  private void createAndWaitForDesignDocs(CouchbaseClient client) {
-    DesignDocument designDoc = new DesignDocument("user");
-    String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository." +
-      "User\") { emit(null, null); } }";
-    designDoc.setView(new ViewDesign("all", mapFunction, "_count"));
-    client.createDesignDoc(designDoc);
+  private void createAndWaitForDesignDocs(Bucket client) {
+    client.bucketManager().removeDesignDocument("user");
+    String mapFunction =
+        "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
+    View view = DefaultView.create("all", mapFunction, "_count");
+    DesignDocument designDoc = DesignDocument.create("user", Arrays.asList(view));
+    client.bucketManager().upsertDesignDocument(designDoc);
   }
 
 }

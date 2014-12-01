@@ -16,10 +16,9 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
-
 import java.io.Serializable;
+
+import org.springframework.data.repository.core.EntityInformation;
 
 /**
  * Marker interface for the Couchbase Entity Information.

@@ -16,12 +16,13 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import com.couchbase.client.CouchbaseClient;
+import java.util.Map;
+
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedMetric;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import java.util.HashMap;
+import com.couchbase.client.java.bucket.BucketManager;
 
 /**
  * Exposes basic cluster information.
@@ -31,7 +32,7 @@ import java.util.HashMap;
 @ManagedResource(description =  "Cluster Information")
 public class ClusterInfo extends AbstractMonitor {
 
-  public ClusterInfo(final CouchbaseClient client) {
+  public ClusterInfo(final BucketManager client) {
     super(client);
   }
 
@@ -93,14 +94,13 @@ public class ClusterInfo extends AbstractMonitor {
     }
   }
 
-  private HashMap<String, Object> fetchPoolInfo() {
-    return getTemplate().getForObject("http://"
-      + randomAvailableHostname() + ":8091/pools/default", HashMap.class);
+  private Map<String, Object> fetchPoolInfo() {
+    return getClient().info().raw().toMap();
   }
 
-  private HashMap<String, HashMap> parseStorageTotals() {
-    HashMap<String, Object> stats = fetchPoolInfo();
-    return  (HashMap<String, HashMap>) stats.get("storageTotals");
+  private Map<String, Map> parseStorageTotals() {
+    Map<String, Object> stats = fetchPoolInfo();
+    return (Map<String, Map>) stats.get("storageTotals");
   }
 
 }

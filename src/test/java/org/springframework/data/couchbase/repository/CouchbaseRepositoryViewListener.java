@@ -16,12 +16,16 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.DesignDocument;
-import com.couchbase.client.protocol.views.ViewDesign;
+import java.util.Arrays;
+
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.view.DefaultView;
+import com.couchbase.client.java.view.DesignDocument;
+import com.couchbase.client.java.view.View;
 
 /**
  * @author Michael Nitschinger
@@ -30,29 +34,29 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    CouchbaseClient client = (CouchbaseClient) testContext.getApplicationContext().getBean("couchbaseClient");
+    Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseClient");
     populateTestData(client);
     createAndWaitForDesignDocs(client);
   }
 
-  private void populateTestData(final CouchbaseClient client) {
+  private void populateTestData(final Bucket client) {
     CouchbaseTemplate template = new CouchbaseTemplate(client);
     for (int i = 0; i < 100; i++) {
       template.save(new User("testuser-" + i, "uname-" + i));
     }
   }
 
-  private void createAndWaitForDesignDocs(final CouchbaseClient client) {
-    DesignDocument designDoc = new DesignDocument("user");
+  private void createAndWaitForDesignDocs(final Bucket client) {
+    client.bucketManager().removeDesignDocument("user");
     String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
-    designDoc.setView(new ViewDesign("customFindAllView", mapFunction, "_count"));
+    View view = DefaultView.create("customFindAllView", mapFunction, "_count");
+    DesignDocument designDoc = DesignDocument.create("user", Arrays.asList(view));
+    client.bucketManager().upsertDesignDocument(designDoc);
 
-    client.createDesignDoc(designDoc);
-
-    designDoc = new DesignDocument("userCustom");
-    designDoc.setView(new ViewDesign("customCountView", mapFunction, "_count"));
-
-    client.createDesignDoc(designDoc);
+    client.bucketManager().removeDesignDocument("customCountView");
+    View customView = DefaultView.create("customCountView", mapFunction, "_count");
+    DesignDocument customDoc = DesignDocument.create("userCustom", Arrays.asList(customView));
+    client.bucketManager().upsertDesignDocument(customDoc);
   }
 
 }

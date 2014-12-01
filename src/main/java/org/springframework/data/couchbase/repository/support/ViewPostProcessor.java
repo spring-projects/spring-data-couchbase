@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
@@ -25,10 +29,6 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
-
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * {@link RepositoryProxyPostProcessor} that sets up an interceptor to read {@link View} information from the

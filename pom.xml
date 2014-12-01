@@ -21,15 +21,21 @@
 
     <dist.key>DATACOUCH</dist.key>
 
-    <couchbase>1.4.4</couchbase>
-    <jackson>2.3.2</jackson>
+    <couchbase>2.0.0</couchbase>
+    <jackson>2.4.3</jackson>
     <springdata.commons>1.10.0.BUILD-SNAPSHOT</springdata.commons>
     <validation>1.0.0.GA</validation>
+    <spring>4.1.1.RELEASE</spring>
+    <reflections>0.9.9-RC2</reflections>
   </properties>
 
   <dependencies>
-
-    <dependency>
+	<dependency>
+		<groupId>org.reflections</groupId>
+		<artifactId>reflections</artifactId>
+		<version>${reflections}</version>
+	</dependency>
+	<dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
@@ -50,14 +56,13 @@
 
     <dependency>
       <groupId>com.couchbase.client</groupId>
-      <artifactId>couchbase-client</artifactId>
+      <artifactId>java-client</artifactId>
       <version>${couchbase}</version>
     </dependency>
 
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
-      <version>${spring}</version>
       <scope>test</scope>
     </dependency>
 

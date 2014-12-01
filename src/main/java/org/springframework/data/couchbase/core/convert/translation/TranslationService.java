@@ -32,7 +32,7 @@ public interface TranslationService {
    * @param source the source document to encode.
    * @return the encoded document representation.
    */
-  Object encode(CouchbaseStorable source);
+  String encode(CouchbaseStorable source);
 
   /**
    * Decodes the target format into a {@link CouchbaseDocument}

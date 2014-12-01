@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.CouchbaseClient;
+import java.util.Properties;
+
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
@@ -25,8 +26,6 @@ import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
-
-import java.util.Properties;
 
 /**
  * Parser for "<couchbase:couchbase />" bean definitions.

@@ -16,7 +16,13 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.CouchbaseClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.Serializable;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,9 +31,8 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.Serializable;
-
-import static org.junit.Assert.*;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.LegacyDocument;
 
 /**
  * Tests the CouchbaseCache class and verifies its functionality.
@@ -42,7 +47,7 @@ public class CouchbaseCacheTests {
    * Contains a reference to the actual CouchbaseClient.
    */
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   /**
    * Simple name of the cache bucket to create.
@@ -71,9 +76,9 @@ public class CouchbaseCacheTests {
     String value = "Hello World!";
     cache.put(key, value);
 
-    String stored = (String) client.get(key);
+    LegacyDocument stored = client.get(LegacyDocument.create(key));
     assertNotNull(stored);
-    assertEquals(value, stored);
+    assertEquals(value, stored.content());
 
     ValueWrapper loaded = cache.get(key);
     assertEquals(value, loaded.get());
@@ -104,10 +109,10 @@ public class CouchbaseCacheTests {
     CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
-    String value = "Hello World!";
+    LegacyDocument value = LegacyDocument.create(key, "Hello World!");
 
-    Boolean success = client.set(key, 0, value).get();
-    assertTrue(success);
+    LegacyDocument success = client.upsert(value);
+    assertTrue(success != null);
 
     cache.evict(key);
     Object result = client.get(key);

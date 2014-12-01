@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.CouchbaseClient;
+import static org.junit.Assert.assertEquals;
+
+import java.util.HashMap;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +27,7 @@ import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.HashMap;
-
-import static org.junit.Assert.assertEquals;
+import com.couchbase.client.java.Bucket;
 
 /**
  * Verifies the correct functionality of the CouchbaseCacheManager.
@@ -41,15 +42,14 @@ public class CouchbaseCacheManagerTests {
    * Contains a reference to the actual CouchbaseClient.
    */
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   /**
    * Tests the main functionality of the manager: loading the caches.
    */
   @Test
   public void testCacheInit() {
-    HashMap<String, CouchbaseClient> instances =
-      new HashMap<String, CouchbaseClient>();
+    HashMap<String, Bucket> instances = new HashMap<String, Bucket>();
     instances.put("test", client);
 
     CouchbaseCacheManager manager = new CouchbaseCacheManager(instances);

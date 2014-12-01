@@ -17,15 +17,17 @@
 package org.springframework.data.couchbase.core;
 
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.ViewResponse;
-import net.spy.memcached.PersistTo;
-import net.spy.memcached.ReplicateTo;
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-
 import java.util.Collection;
 import java.util.List;
+
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.PersistTo;
+import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.view.ViewResult;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
@@ -190,7 +192,7 @@ public interface CouchbaseOperations {
    *
    * @return the converted collection
    */
-  <T> List<T> findByView(String design, String view, Query query, Class<T> entityClass);
+  <T> List<T> findByView(ViewQuery query, Class<T> entityClass);
 
 
   /**
@@ -206,7 +208,7 @@ public interface CouchbaseOperations {
    *
    * @return ViewResponse containing the results of the query.
    */
-  ViewResponse queryView(String design, String view, Query query);
+  ViewResult queryView(ViewQuery query);
 
   /**
    * Checks if the given document exists.
@@ -279,6 +281,6 @@ public interface CouchbaseOperations {
    *
    * @return the client used for the template.
    */
-  CouchbaseClient getCouchbaseClient();
+  Bucket getCouchbaseClient();
 
 }

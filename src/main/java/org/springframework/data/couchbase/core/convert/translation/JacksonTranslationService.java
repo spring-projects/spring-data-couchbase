@@ -16,12 +16,11 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -29,8 +28,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import java.io.*;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A Jackson JSON Translator that implements the {@link TranslationService} contract.
@@ -62,7 +65,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
    * @return the encoded JSON String.
    */
   @Override
-  public final Object encode(final CouchbaseStorable source) {
+  public final String encode(final CouchbaseStorable source) {
     Writer writer = new StringWriter();
 
     try {

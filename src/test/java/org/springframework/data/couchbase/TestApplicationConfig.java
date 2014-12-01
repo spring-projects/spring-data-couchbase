@@ -16,7 +16,9 @@
 
 package org.springframework.data.couchbase;
 
-import com.couchbase.client.CouchbaseClient;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,9 +28,8 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 
-import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.CouchbaseCluster;
 
 /**
  * @author Michael Nitschinger
@@ -72,13 +73,13 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
   @Bean
   @Override
   @DependsOn("bucketCreator")
-  public CouchbaseClient couchbaseClient() throws Exception {
-    return super.couchbaseClient();
+  public Bucket couchbaseClient(final CouchbaseCluster cluster) throws Exception {
+    return super.couchbaseClient(cluster);
   }
 
   @Override
-  public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    CouchbaseTemplate template = super.couchbaseTemplate();
+  public CouchbaseTemplate couchbaseTemplate(final Bucket bucket) throws Exception {
+    CouchbaseTemplate template = super.couchbaseTemplate(bucket);
     template.setWriteResultChecking(WriteResultChecking.LOG);
     return template;
   }

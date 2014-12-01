@@ -16,8 +16,9 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,9 +31,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static com.couchbase.client.protocol.views.Stale.FALSE;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
 
 /**
  * @author David Harrigan
@@ -43,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CouchbaseRepositoryViewTests {
 
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   @Autowired
   private CouchbaseTemplate template;
@@ -57,7 +58,8 @@ public class CouchbaseRepositoryViewTests {
 
   @Test
   public void shouldFindAllWithCustomView() {
-    client.query(client.getView("user", "customFindAllView"), new Query().setStale(FALSE));
+    ViewQuery query = ViewQuery.from("user", "customFindAllView").stale(Stale.FALSE);
+    client.query(query);
     Iterable<User> allUsers = repository.findAll();
     int i = 0;
     for (final User allUser : allUsers) {
@@ -68,7 +70,8 @@ public class CouchbaseRepositoryViewTests {
 
   @Test
   public void shouldCountWithCustomView() {
-    client.query(client.getView("userCustom", "customCountView"), new Query().setStale(FALSE));
+    ViewQuery query = ViewQuery.from("userCustom", "customCountView").stale(Stale.FALSE);
+    client.query(query);
     final long value = repository.count();
     assertThat(value, is(100L));
   }

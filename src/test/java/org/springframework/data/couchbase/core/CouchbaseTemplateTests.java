@@ -16,12 +16,21 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.Stale;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.spy.memcached.CASValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,20 +44,13 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.StringDocument;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Michael Nitschinger
@@ -64,23 +66,24 @@ public class CouchbaseTemplateTests {
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Autowired
-  private CouchbaseClient client;
+  private Bucket client;
 
   @Autowired
   private CouchbaseTemplate template;
 
   @Test
   public void saveSimpleEntityCorrectly() throws Exception {
-    String id = "beers:awesome-stout";
+    StringDocument id = StringDocument.create("beers:awesome-stout");
     String name = "The Awesome Stout";
     boolean active = false;
-    Beer beer = new Beer(id).setName(name).setActive(active);
+    Beer beer = new Beer(id.id()).setName(name).setActive(active);
 
     template.save(beer);
-    String result = (String) client.get(id);
+    StringDocument result = client.get(id);
 
     assertNotNull(result);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    Map<String, Object> converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.Beer", converted.get("_class"));
     assertEquals(false, converted.get("is_active"));
     assertEquals("The Awesome Stout", converted.get("name"));
@@ -91,37 +94,41 @@ public class CouchbaseTemplateTests {
     String id = "simple-doc-with-expiry";
     DocumentWithExpiry doc = new DocumentWithExpiry(id);
     template.save(doc);
-    assertNotNull(client.get(id));
+    StringDocument document = StringDocument.create(id);
+    assertNotNull(client.get(document));
     Thread.sleep(3000);
-    assertNull(client.get(id));
+    assertNull(client.get(document));
   }
 
   @Test
   public void insertDoesNotOverride() throws Exception {
     String id = "double-insert-test";
-    client.delete(id).get();
+    StringDocument documentId = StringDocument.create(id);
+    client.remove(documentId);
 
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
-    String result = (String) client.get(id);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    StringDocument result = client.get(documentId);
+    Map<String, Object> converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
     assertEquals("Mr. A", converted.get("name"));
 
     doc = new SimplePerson(id, "Mr. B");
     template.insert(doc);
-    result = (String) client.get(id);
+    result = client.get(documentId);
 
-    converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
+    converted =
+        MAPPER.readValue(result.content().toString(), new TypeReference<Map<String, Object>>() {});
     assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
     assertEquals("Mr. A", converted.get("name"));
   }
 
 
-  @Test
+  @Test(expected = DocumentDoesNotExistException.class)
   public void updateDoesNotInsert() {
-    String id = "update-does-not-insert";
-    SimplePerson doc = new SimplePerson(id, "Nice Guy");
+    StringDocument id = StringDocument.create("update-does-not-insert");
+    SimplePerson doc = new SimplePerson(id.id(), "Nice Guy");
     template.update(doc);
     assertNull(client.get(id));
   }
@@ -130,21 +137,22 @@ public class CouchbaseTemplateTests {
   @Test
   public void removeDocument() {
     String id = "beers:to-delete-stout";
+    StringDocument documentId = StringDocument.create(id);
     Beer beer = new Beer(id);
 
     template.save(beer);
-    Object result = client.get(id);
+    Object result = client.get(documentId);
     assertNotNull(result);
 
     template.remove(beer);
-    result = client.get(id);
+    result = client.get(documentId);
     assertNull(result);
   }
 
 
   @Test
   public void storeListsAndMaps() {
-    String id = "persons:lots-of-names";
+    StringDocument id = StringDocument.create("persons:lots-of-names");
     List<String> names = new ArrayList<String>();
     names.add("Michael");
     names.add("Thomas");
@@ -156,14 +164,14 @@ public class CouchbaseTemplateTests {
     info1.put("nullValue", null);
     Map<String, Integer> info2 = new HashMap<String, Integer>();
 
-    ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
+    ComplexPerson complex = new ComplexPerson(id.id(), names, votes, info1, info2);
 
     template.save(complex);
 
-    ComplexPerson response = template.findById(id, ComplexPerson.class);
+    ComplexPerson response = template.findById(id.id(), ComplexPerson.class);
     assertEquals(names, response.getFirstnames());
     assertEquals(votes, response.getVotes());
-    assertEquals(id, response.getId());
+    assertEquals(id.id(), response.getId());
     assertEquals(info1, response.getInfo1());
     assertEquals(info2, response.getInfo2());
   }
@@ -171,26 +179,25 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void validFindById() {
-    String id = "beers:findme-stout";
+    StringDocument id = StringDocument.create("beers:findme-stout");
     String name = "The Findme Stout";
     boolean active = true;
-    Beer beer = new Beer(id).setName(name).setActive(active);
+    Beer beer = new Beer(id.id()).setName(name).setActive(active);
     template.save(beer);
 
-    Beer found = template.findById(id, Beer.class);
+    Beer found = template.findById(id.id(), Beer.class);
 
     assertNotNull(found);
-    assertEquals(id, found.getId());
+    assertEquals(id.id(), found.getId());
     assertEquals(name, found.getName());
     assertEquals(active, found.getActive());
   }
 
   @Test
   public void shouldLoadAndMapViewDocs() {
-    Query query = new Query();
-    query.setStale(Stale.FALSE);
+    ViewQuery query = ViewQuery.from("test_beers", "by_name").reduce(false).stale(Stale.FALSE);
 
-    final List<Beer> beers = template.findByView("test_beers", "by_name", query, Beer.class);
+    final List<Beer> beers = template.findByView(query, Beer.class);
     assertTrue(beers.size() > 0);
 
     for (Beer beer : beers) {
@@ -231,18 +238,19 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldHandleCASVersionOnInsert() throws Exception {
-    client.delete("versionedClass:1").get();
+    StringDocument documentId = StringDocument.create("versionedClass:1");
+    client.remove(documentId);
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
     assertEquals(0, versionedClass.getVersion());
     template.insert(versionedClass);
-    CASValue<Object> rawStored = client.gets("versionedClass:1");
-    assertEquals(rawStored.getCas(), versionedClass.getVersion());
+    StringDocument rawStored = client.get(documentId);
+    assertEquals(rawStored.cas(), versionedClass.getVersion());
   }
 
   @Test
   public void versionShouldNotUpdateOnSecondInsert() throws Exception {
-    client.delete("versionedClass:2").get();
+    client.remove("versionedClass:2");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:2", "foobar");
     template.insert(versionedClass);
@@ -257,7 +265,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldSaveDocumentOnMatchingVersion() throws Exception {
-    client.delete("versionedClass:3").get();
+    client.remove("versionedClass:3");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:3", "foobar");
     template.insert(versionedClass);
@@ -276,12 +284,15 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotSaveDocumentOnNotMatchingVersion() throws Exception {
-    client.delete("versionedClass:4").get();
+    StringDocument id = StringDocument.create("versionedClass:6");
+    client.remove(id);
 
-    VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
+    VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.set("versionedClass:4", "different").get());
+    final StringDocument newOne = StringDocument.create("versionedClass:6", "{}");
+    final StringDocument upsert = client.upsert(newOne);
+    assertTrue(upsert.cas() > 0);
 
     versionedClass.setField("foobar2");
     template.save(versionedClass);
@@ -289,7 +300,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldUpdateDocumentOnMatchingVersion() throws Exception {
-    client.delete("versionedClass:5").get();
+    client.remove("versionedClass:5");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:5", "foobar");
     template.insert(versionedClass);
@@ -308,12 +319,15 @@ public class CouchbaseTemplateTests {
 
   @Test(expected = OptimisticLockingFailureException.class)
   public void shouldNotUpdateDocumentOnNotMatchingVersion() throws Exception {
-    client.delete("versionedClass:6").get();
+    StringDocument id = StringDocument.create("versionedClass:6");
+    client.remove(id);
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
     template.insert(versionedClass);
 
-    assertTrue(client.set("versionedClass:6", "different").get());
+    final StringDocument newOne = StringDocument.create("versionedClass:6", "{}");
+    final StringDocument upsert = client.upsert(newOne);
+    assertTrue(upsert.cas() > 0);
 
     versionedClass.setField("foobar2");
     template.update(versionedClass);
@@ -321,7 +335,7 @@ public class CouchbaseTemplateTests {
 
   @Test
   public void shouldLoadVersionPropertyOnFind() throws Exception {
-    client.delete("versionedClass:7").get();
+    client.remove("versionedClass:7");
 
     VersionedClass versionedClass = new VersionedClass("versionedClass:7", "foobar");
     template.insert(versionedClass);

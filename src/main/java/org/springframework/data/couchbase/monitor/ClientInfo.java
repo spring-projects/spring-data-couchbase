@@ -16,11 +16,10 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import com.couchbase.client.CouchbaseClient;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import java.net.SocketAddress;
+import com.couchbase.client.java.bucket.BucketManager;
 
 /**
  * Exposes basic client information.
@@ -30,32 +29,17 @@ import java.net.SocketAddress;
 @ManagedResource(description =  "Client Information")
 public class ClientInfo extends AbstractMonitor {
 
-  public ClientInfo(final CouchbaseClient client) {
+  public ClientInfo(final BucketManager client) {
     super(client);
-  }
-
-  @ManagedAttribute(description = "Hostnames of connected nodes")
-  public String getHostNames() {
-    StringBuilder result = new StringBuilder();
-    for (SocketAddress node : getStats().keySet()) {
-      result.append(node.toString()).append(",");
-    }
-    return result.toString();
   }
 
   @ManagedAttribute(description = "Number of connected nodes")
   public int getNumberOfNodes() {
-    return getStats().keySet().size();
+    return getClient().info().nodeCount();
   }
 
-  @ManagedAttribute(description = "Number of connected active nodes")
-  public int getNumberOfActiveNodes() {
-    return getClient().getAvailableServers().size();
+  @ManagedAttribute(description = "Number of replicas")
+  public int getNumberOfReplicaNodes() {
+    return getClient().info().replicaCount();
   }
-
-  @ManagedAttribute(description = "Number of connected inactive nodes")
-  public int getNumberOfInactiveNodes() {
-    return getClient().getUnavailableServers().size();
-  }
-
 }

@@ -16,13 +16,13 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.io.Serializable;
+
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.mapping.model.BeanWrapper;
 import org.springframework.data.repository.core.support.AbstractEntityInformation;
-
-import java.io.Serializable;
 
 /**
  * Entity Information container.
