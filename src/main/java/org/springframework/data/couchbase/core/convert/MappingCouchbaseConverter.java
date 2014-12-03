@@ -500,10 +500,15 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
         } else if (val instanceof Collection || val.getClass().isArray()) {
           target.put(simpleKey, writeCollectionInternal(asCollection(val), new CouchbaseList(), type.getMapValueType()));
         } else {
-          CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-          TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
-          writeInternal(val, embeddedDoc, valueTypeInfo);
-          target.put(simpleKey, embeddedDoc);
+          Class<?> customTarget = conversions.getCustomWriteTarget(val.getClass(), null);
+          if (customTarget != null) {
+            target.put(simpleKey, conversionService.convert(val, customTarget));
+          } else {
+            CouchbaseDocument embeddedDoc = new CouchbaseDocument();
+            TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
+            writeInternal(val, embeddedDoc, valueTypeInfo);
+            target.put(simpleKey, embeddedDoc);
+          }
         }
       } else {
         throw new MappingException("Cannot use a complex object as a key value.");
@@ -544,9 +549,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       } else if (element instanceof Collection || elementType.isArray()) {
         target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(), componentType));
       } else {
-        CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-        writeInternal(element, embeddedDoc, componentType);
-        target.put(embeddedDoc);
+        Class<?> customTarget = conversions.getCustomWriteTarget(element.getClass(), null);
+        if (customTarget != null) {
+          target.put(conversionService.convert(element, customTarget));
+        } else {
+          CouchbaseDocument embeddedDoc = new CouchbaseDocument();
+          writeInternal(element, embeddedDoc, componentType);
+          target.put(embeddedDoc);
+        }
       }
 
     }
