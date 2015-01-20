@@ -63,7 +63,7 @@ public class BucketCreator implements InitializingBean {
 
   private void createBucket() throws Exception {
     ClusterManager bucketManager =
-      new ClusterManager(Arrays.asList(new URI(hostUri)), adminUser, adminPass);
+      new ClusterManager(Arrays.asList(URI.create("http://" + hostUri + ":8091")), adminUser, adminPass);
     bucketManager.createDefaultBucket(BucketType.COUCHBASE, 128, 0, true);
 
     logger.info("Finished creating bucket, sleeping for warmup.");

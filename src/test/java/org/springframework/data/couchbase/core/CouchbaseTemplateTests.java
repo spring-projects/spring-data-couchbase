@@ -58,16 +58,13 @@ import static org.junit.Assert.assertTrue;
 @TestExecutionListeners(CouchbaseTemplateViewListener.class)
 public class CouchbaseTemplateTests {
 
-  /**
-   * JSON object mapper to verify results.
-   */
-  private static final ObjectMapper MAPPER = new ObjectMapper();
-
   @Autowired
   private CouchbaseClient client;
 
   @Autowired
   private CouchbaseTemplate template;
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
 
   @Test
   public void saveSimpleEntityCorrectly() throws Exception {
@@ -78,12 +75,12 @@ public class CouchbaseTemplateTests {
 
     template.save(beer);
     String result = (String) client.get(id);
-
     assertNotNull(result);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
-    assertEquals("org.springframework.data.couchbase.core.Beer", converted.get("_class"));
-    assertEquals(false, converted.get("is_active"));
-    assertEquals("The Awesome Stout", converted.get("name"));
+    Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
+
+    assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get("_class"));
+    assertEquals(false, resultConv.get("is_active"));
+    assertEquals("The Awesome Stout", resultConv.get("name"));
   }
 
   @Test
@@ -104,17 +101,16 @@ public class CouchbaseTemplateTests {
     SimplePerson doc = new SimplePerson(id, "Mr. A");
     template.insert(doc);
     String result = (String) client.get(id);
-    Map<String, Object> converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
-    assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
-    assertEquals("Mr. A", converted.get("name"));
+
+    Map<String, String> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
+    assertEquals("Mr. A", resultConv.get("name"));
 
     doc = new SimplePerson(id, "Mr. B");
     template.insert(doc);
     result = (String) client.get(id);
 
-    converted = MAPPER.readValue(result, new TypeReference<Map<String, Object>>(){});
-    assertEquals("org.springframework.data.couchbase.core.CouchbaseTemplateTests$SimplePerson", converted.get("_class"));
-    assertEquals("Mr. A", converted.get("name"));
+    resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
+    assertEquals("Mr. A", resultConv.get("name"));
   }
 
 
@@ -159,6 +155,7 @@ public class CouchbaseTemplateTests {
     ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
     template.save(complex);
+    assertNotNull(client.get(id));
 
     ComplexPerson response = template.findById(id, ComplexPerson.class);
     assertEquals(names, response.getFirstnames());

@@ -105,7 +105,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @param logger the logger path to use.
    */
-  private static void setLoggerProperty(final String logger) {
+  protected static void setLoggerProperty(final String logger) {
     Properties systemProperties = System.getProperties();
     systemProperties.setProperty("net.spy.log.LoggerImpl", logger);
     System.setProperties(systemProperties);
@@ -232,7 +232,7 @@ public abstract class AbstractCouchbaseConfiguration {
    * @param hosts the list of hosts to convert.
    * @return the converted URIs.
    */
-  private static List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
+  protected static List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
     List<URI> uris = new ArrayList<URI>();
     for (String host : hosts) {
       uris.add(new URI("http://" + host + ":8091/pools"));

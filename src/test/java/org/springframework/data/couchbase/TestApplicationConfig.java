@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase;
 
 import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +27,6 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,7 +73,16 @@ public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
   @Override
   @DependsOn("bucketCreator")
   public CouchbaseClient couchbaseClient() throws Exception {
-    return super.couchbaseClient();
+    setLoggerProperty(couchbaseLogger());
+
+    CouchbaseConnectionFactoryBuilder builder = new CouchbaseConnectionFactoryBuilder();
+    builder.setOpTimeout(10000); // using a higher timeout for tests to reduce flakiness
+
+    return new CouchbaseClient(builder.buildCouchbaseConnection(
+      bootstrapUris(bootstrapHosts()),
+      getBucketName(),
+      getBucketPassword()
+    ));
   }
 
   @Override
