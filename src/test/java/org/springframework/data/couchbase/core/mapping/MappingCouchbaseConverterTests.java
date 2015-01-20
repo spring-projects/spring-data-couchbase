@@ -27,9 +27,23 @@ import org.springframework.data.mapping.model.MappingException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Michael Nitschinger
@@ -71,16 +85,14 @@ public class MappingCouchbaseConverterTests {
   }
 
   @Test
-  public void writesString() {
+  public void writesString() throws Exception {
     CouchbaseDocument converted = new CouchbaseDocument();
     StringEntity entity = new StringEntity("foobar");
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", "foobar");
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals("foobar", result.get("attr0"));
     assertEquals(BaseEntity.ID, converted.getId());
   }
 
@@ -99,12 +111,10 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     NumberEntity entity = new NumberEntity(42);
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", 42);
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals(42L, result.get("attr0"));
     assertEquals(BaseEntity.ID, converted.getId());
   }
 
@@ -123,12 +133,10 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     BooleanEntity entity = new BooleanEntity(true);
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", true);
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals(true, result.get("attr0"));
     assertEquals("mockid", converted.getId());
   }
 
@@ -147,15 +155,13 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     MixedSimpleEntity entity = new MixedSimpleEntity("a", 5, -0.3, true);
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", "a");
-    expected.put("attr1", 5);
-    expected.put("attr2", -0.3);
-    expected.put("attr3", true);
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals("a", result.get("attr0"));
+    assertEquals(5, result.get("attr1"));
+    assertEquals(-0.3, result.get("attr2"));
+    assertEquals(true, result.get("attr3"));
   }
 
   @Test
@@ -189,13 +195,10 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     UninitializedEntity entity = new UninitializedEntity();
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr1", 0);
-
     converter.write(entity, converted);
-    assertEquals(expected.get("_class"), converted.get("_class"));
-    assertEquals(expected.get("attr1"), converted.get("attr1"));
+    Map<String, Object> result = converted.export();
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals(0, result.get("attr1"));
   }
 
   @Test
@@ -226,16 +229,12 @@ public class MappingCouchbaseConverterTests {
 
     MapEntity entity = new MapEntity(attr0, attr1, attr2, attr3);
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", attr0);
-    expected.put("attr1", attr1);
-    expected.put("attr2", attr2);
-    expected.put("attr3", attr3);
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
-
+    Map<String, Object> result = converted.export();
+    assertEquals(attr0, result.get("attr0"));
+    assertEquals(attr1, result.get("attr1"));
+    assertEquals(attr2, result.get("attr2"));
+    assertEquals(attr3, result.get("attr3"));
 
     CouchbaseDocument cattr0 = new CouchbaseDocument();
     cattr0.put("foo", "bar");
@@ -275,14 +274,11 @@ public class MappingCouchbaseConverterTests {
 
     ListEntity entity = new ListEntity(attr0, attr1, attr2);
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", attr0);
-    expected.put("attr1", attr1);
-    expected.put("attr2", attr2);
-
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(attr0, result.get("attr0"));
+    assertEquals(attr1, result.get("attr1"));
+    assertEquals(attr2, result.get("attr2"));
 
     CouchbaseDocument source = new CouchbaseDocument();
     source.put("_class", ListEntity.class.getName());
@@ -315,14 +311,12 @@ public class MappingCouchbaseConverterTests {
     attr2.add(attr0);
 
     SetEntity entity = new SetEntity(attr0, attr1, attr2);
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("attr0", attr0);
-    expected.put("attr1", attr1);
-    expected.put("attr2", attr2);
 
     converter.write(entity, converted);
-    assertEquals(expected.toString(), converted.export().toString());
+    Map<String, Object> result = converted.export();
+    assertEquals(attr0.size(), ((Collection) result.get("attr0")).size());
+    assertEquals(attr1.size(), ((Collection) result.get("attr1")).size());
+    assertEquals(attr2.size(), ((Collection) result.get("attr2")).size());
 
     CouchbaseList cattr0 = new CouchbaseList();
     cattr0.put("foo");
@@ -356,19 +350,12 @@ public class MappingCouchbaseConverterTests {
 
     ValueEntity entity = new ValueEntity(addy, listOfEmails);
     converter.write(entity, converted);
+    Map<String, Object> result = converted.export();
 
-    Map<String, Object> expected = new HashMap<String, Object>();
-    expected.put("_class", entity.getClass().getName());
-    expected.put("email", new HashMap<String, Object>() {{
+    assertEquals(entity.getClass().getName(), result.get("_class"));
+    assertEquals(new HashMap<String, Object>() {{
       put("emailAddr", email);
-    }});
-    expected.put("listOfEmails", new ArrayList<Object>() {{
-      add(new HashMap<String, Object>() {{
-        put("emailAddr", email);
-      }});
-    }});
-
-    assertEquals(expected.toString(), converted.export().toString());
+    }}, result.get("email"));
 
     CouchbaseDocument source = new CouchbaseDocument();
     source.put("_class", ValueEntity.class.getName());
