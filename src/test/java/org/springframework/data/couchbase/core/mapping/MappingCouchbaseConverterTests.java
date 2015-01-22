@@ -20,13 +20,18 @@ import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.TestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -373,6 +378,94 @@ public class MappingCouchbaseConverterTests {
   }
 
   @Test
+  public void writesAndReadsCustomConvertedClass() {
+    List<Object> converters = new ArrayList<Object>();
+    converters.add(BigDecimalToStringConverter.INSTANCE);
+    converters.add(StringToBigDecimalConverter.INSTANCE);
+    converter.setCustomConversions(new CustomConversions(converters));
+    converter.afterPropertiesSet();
+
+    CouchbaseDocument converted = new CouchbaseDocument();
+
+    final String valueStr = "12.345";
+    final BigDecimal value = new BigDecimal(valueStr);
+    final String value2Str = "0.6789";
+    final BigDecimal value2 = new BigDecimal(value2Str);
+    List<BigDecimal> listOfValues = new ArrayList<BigDecimal>();
+    listOfValues.add(value);
+    listOfValues.add(value2);
+    Map<String, BigDecimal> mapOfValues = new HashMap<String, BigDecimal>();
+    mapOfValues.put("val1", value);
+    mapOfValues.put("val2", value2);
+
+    CustomEntity entity = new CustomEntity(value, listOfValues, mapOfValues);
+    converter.write(entity, converted);
+
+    CouchbaseDocument source = new CouchbaseDocument();
+    source.put("_class", CustomEntity.class.getName());
+    source.put("value", valueStr);
+    CouchbaseList listOfValuesDoc = new CouchbaseList();
+    listOfValuesDoc.put(valueStr);
+    listOfValuesDoc.put(value2Str);
+    source.put("listOfValues", listOfValuesDoc);
+    CouchbaseDocument mapOfValuesDoc = new CouchbaseDocument();
+    mapOfValuesDoc.put("val1", valueStr);
+    mapOfValuesDoc.put("val2", value2Str);
+    source.put("mapOfValues", mapOfValuesDoc);
+    assertEquals(source.export().toString(), converted.export().toString());
+
+    CustomEntity readConverted = converter.read(CustomEntity.class, source);
+    assertEquals(value, readConverted.value);
+    assertEquals(listOfValues.get(0), readConverted.listOfValues.get(0));
+    assertEquals(listOfValues.get(1), readConverted.listOfValues.get(1));
+    assertEquals(mapOfValues.get("val1"), readConverted.mapOfValues.get("val1"));
+    assertEquals(mapOfValues.get("val2"), readConverted.mapOfValues.get("val2"));
+  }
+
+  @Test
+  public void writesAndReadsClassContainingCustomConvertedObjects() {
+    List<Object> converters = new ArrayList<Object>();
+    converters.add(BigDecimalToStringConverter.INSTANCE);
+    converters.add(StringToBigDecimalConverter.INSTANCE);
+    converter.setCustomConversions(new CustomConversions(converters));
+    converter.afterPropertiesSet();
+
+    CouchbaseDocument converted = new CouchbaseDocument();
+
+    final String weightStr = "12.34";
+    final BigDecimal weight = new BigDecimal(weightStr);
+    final CustomObject addy = new CustomObject(weight);
+    List<CustomObject> listOfObjects = new ArrayList<CustomObject>();
+    listOfObjects.add(addy);
+    Map<String, CustomObject> mapOfObjects = new HashMap<String, CustomObject>();
+    mapOfObjects.put("obj0", addy);
+    mapOfObjects.put("obj1", addy);
+
+    CustomObjectEntity entity = new CustomObjectEntity(addy, listOfObjects, mapOfObjects);
+    converter.write(entity, converted);
+
+    CouchbaseDocument source = new CouchbaseDocument();
+    source.put("_class", CustomObjectEntity.class.getName());
+    CouchbaseDocument objectDoc = new CouchbaseDocument();
+    objectDoc.put("weight", weightStr);
+    source.put("object", objectDoc);
+    CouchbaseList listOfObjectsDoc = new CouchbaseList();
+    listOfObjectsDoc.put(objectDoc);
+    source.put("listOfObjects", listOfObjectsDoc);
+    CouchbaseDocument mapOfObjectsDoc = new CouchbaseDocument();
+    mapOfObjectsDoc.put("obj0", objectDoc);
+    mapOfObjectsDoc.put("obj1", objectDoc);
+    source.put("mapOfObjects", mapOfObjectsDoc);
+    assertEquals(source.export().toString(), converted.export().toString());
+
+    CustomObjectEntity readConverted = converter.read(CustomObjectEntity.class, source);
+    assertEquals(addy.weight, readConverted.object.weight);
+    assertEquals(listOfObjects.get(0).weight, readConverted.listOfObjects.get(0).weight);
+    assertEquals(mapOfObjects.get("obj0").weight, readConverted.mapOfObjects.get("obj0").weight);
+    assertEquals(mapOfObjects.get("obj1").weight, readConverted.mapOfObjects.get("obj1").weight);
+  }
+
+  @Test
   public void writesAndReadsDates() {
     Date created = new Date();
     Calendar modified = Calendar.getInstance();
@@ -493,6 +586,57 @@ public class MappingCouchbaseConverterTests {
     private String emailAddr;
     public Email(String emailAddr) {
       this.emailAddr = emailAddr;
+    }
+  }
+
+  static class CustomEntity extends BaseEntity {
+    private BigDecimal value;
+    private List<BigDecimal> listOfValues;
+    private Map<String, BigDecimal> mapOfValues;
+
+    public CustomEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
+      this.value = value;
+      this.listOfValues = listOfValues;
+      this.mapOfValues = mapOfValues;
+    }
+  }
+
+  static class CustomObjectEntity extends BaseEntity {
+    private CustomObject object;
+    private List<CustomObject> listOfObjects;
+    private Map<String, CustomObject> mapOfObjects;
+
+    public CustomObjectEntity(CustomObject object, List<CustomObject> listOfObjects, Map<String, CustomObject> mapOfObjects) {
+      this.object = object;
+      this.listOfObjects = listOfObjects;
+      this.mapOfObjects = mapOfObjects;
+    }
+  }
+
+  static class CustomObject {
+    private BigDecimal weight;
+    public CustomObject(BigDecimal weight) {
+      this.weight = weight;
+    }
+  }
+
+  @WritingConverter
+  public static enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {
+    INSTANCE;
+
+    @Override
+    public String convert(BigDecimal source) {
+      return source.toPlainString();
+    }
+  }
+
+  @ReadingConverter
+  public static enum StringToBigDecimalConverter implements Converter<String, BigDecimal> {
+    INSTANCE;
+
+    @Override
+    public BigDecimal convert(String source) {
+      return new BigDecimal(source);
     }
   }
 
