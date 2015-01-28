@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.2.2.RELEASE (2015-01-28)
+---------------------------------------------
+* DATACOUCH-119 - Release 1.2.2.
+* DATACOUCH-117 - Fix shaky builds.
+
+
 Changes in version 1.1.5.RELEASE (2015-01-27)
 ---------------------------------------------
 * DATACOUCH-118 - Release 1.1.5.
