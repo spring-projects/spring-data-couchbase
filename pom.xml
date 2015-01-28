@@ -5,7 +5,7 @@
 
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.2.2.RELEASE</version>
+  <version>1.2.3.BUILD-SNAPSHOT</version>
 
   <name>Spring Data Couchbase</name>
   <description>Spring Data integration for Couchbase</description>
