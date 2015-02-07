@@ -32,6 +32,7 @@ import java.util.Map;
  * {@link CouchbaseCacheManager} orchestrates and handles them for the Spring Cache abstraction layer.
  *
  * @author Michael Nitschinger
+ * @author Konrad Król
  */
 public class CouchbaseCacheManager extends AbstractCacheManager {
 
