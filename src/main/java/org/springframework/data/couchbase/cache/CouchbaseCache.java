@@ -42,15 +42,28 @@ public class CouchbaseCache implements Cache {
   private final String name;
   
   /**
+   * TTL value for objects in this cache
    */
   private final int ttl;
+  
+  /**
+   * Construct the cache and pass in the CouchbaseClient instance.
+   *
+   * @param name the name of the cache reference.
+   * @param client the CouchbaseClient instance.
+   */
+  public CouchbaseCache(final String name, final CouchbaseClient client) {
+    this.name = name;
+    this.client = client;
+    this.ttl = 0;
+  }
 
   /**
    * Construct the cache and pass in the CouchbaseClient instance.
    *
    * @param name the name of the cache reference.
    * @param client the CouchbaseClient instance.
-   * @param ttl TTL value for this cache
+   * @param ttl TTL value for objects in this cache
    */
   public CouchbaseCache(final String name, final CouchbaseClient client, int ttl) {
     this.name = name;

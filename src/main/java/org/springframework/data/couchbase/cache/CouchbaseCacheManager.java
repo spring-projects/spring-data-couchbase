@@ -97,13 +97,9 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    * @param name cache name
    * @return either the cache TTL value or 0 as a default value
    */
-  private int getTtl ( Object name ) {
+  private int getTtl ( String name ) {
       Integer expirationTime = ttlConfiguration.get(name);
-      if(expirationTime == null) {
-          expirationTime = 0;
-      }
-      
-      return expirationTime;
+      return (expirationTime != null ? expirationTime : 0);
   }
 
 }

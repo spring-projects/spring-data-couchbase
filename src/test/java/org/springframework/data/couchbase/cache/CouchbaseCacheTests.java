@@ -56,7 +56,7 @@ public class CouchbaseCacheTests {
    */
   @Test
   public void testConstruction() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 0);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     assertEquals(cacheName, cache.getName());
     assertEquals(client, cache.getNativeCache());
@@ -67,7 +67,7 @@ public class CouchbaseCacheTests {
    */
   @Test
   public void testGetSet() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 0);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
     String value = "Hello World!";
@@ -86,7 +86,7 @@ public class CouchbaseCacheTests {
    */
   @Test
   public void testSetWithTtl() throws InterruptedException {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 1);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 1); // cache for 1 second
 
     String key = "couchbase-cache-test";
     String value = "Hello World!";
@@ -101,7 +101,7 @@ public class CouchbaseCacheTests {
 
   @Test
   public void testGetSetWithCast() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 0);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-user";
     User user = new User();
@@ -121,7 +121,7 @@ public class CouchbaseCacheTests {
    */
   @Test
   public void testEvict() throws Exception {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 0);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
     String value = "Hello World!";
@@ -140,7 +140,7 @@ public class CouchbaseCacheTests {
    */
   @Test
   public void testSettingNullAndGetting() {
-    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 0);
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client);
 
     String key = "couchbase-cache-test";
     String value = "Hello World!";
