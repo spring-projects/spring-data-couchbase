@@ -39,6 +39,11 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    * Holds the reference to all stored CouchbaseClient cache connections.
    */
   private final HashMap<String, CouchbaseClient> clients;
+  
+  /**
+   * Holds the TTL configuration for each cache.
+   */
+  private final HashMap<String, Integer> ttlConfiguration;
 
   /**
    * Construct a new CouchbaseCacheManager.
@@ -47,6 +52,18 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    */
   public CouchbaseCacheManager(final HashMap<String, CouchbaseClient> clients) {
     this.clients = clients;
+    this.ttlConfiguration = new HashMap<String, Integer>();
+  }
+  
+  /**
+   * Construct a new CouchbaseCacheManager.
+   *
+   * @param clients one ore more CouchbaseClients to reference.
+   * @param ttlConfiguration one or more TTL values (in seconds)
+   */
+  public CouchbaseCacheManager(final HashMap<String, CouchbaseClient> clients, final HashMap<String, Integer> ttlConfiguration) {
+    this.clients = clients;
+    this.ttlConfiguration = ttlConfiguration;
   }
 
   /**
@@ -68,10 +85,24 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
     Collection<Cache> caches = new LinkedHashSet<Cache>();
 
     for (Map.Entry<String, CouchbaseClient> cache : clients.entrySet()) {
-      caches.add(new CouchbaseCache(cache.getKey(), cache.getValue()));
+      caches.add(new CouchbaseCache(cache.getKey(), cache.getValue(), getTtl(cache.getKey())));
     }
 
     return caches;
+  }
+  
+  /**
+   * Returns TTL value for single cache
+   * @param name cache name
+   * @return either the cache TTL value or 0 as a default value
+   */
+  private int getTtl ( Object name ) {
+      Integer expirationTime = ttlConfiguration.get(name);
+      if(expirationTime == null) {
+          expirationTime = 0;
+      }
+      
+      return expirationTime;
   }
 
 }

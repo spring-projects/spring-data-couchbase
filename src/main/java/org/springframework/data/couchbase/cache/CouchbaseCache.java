@@ -27,6 +27,7 @@ import org.springframework.cache.support.SimpleValueWrapper;
  * @see <a href="http://static.springsource.org/spring/docs/current/spring-framework-reference/html/cache.html">
  *   Official Spring Cache Reference</a>
  * @author Michael Nitschinger
+ * @author Konrad Król
  */
 public class CouchbaseCache implements Cache {
 
@@ -39,16 +40,22 @@ public class CouchbaseCache implements Cache {
    * The name of the cache.
    */
   private final String name;
+  
+  /**
+   */
+  private final int ttl;
 
   /**
    * Construct the cache and pass in the CouchbaseClient instance.
    *
    * @param name the name of the cache reference.
    * @param client the CouchbaseClient instance.
+   * @param ttl TTL value for this cache
    */
-  public CouchbaseCache(final String name, final CouchbaseClient client) {
+  public CouchbaseCache(final String name, final CouchbaseClient client, int ttl) {
     this.name = name;
     this.client = client;
+    this.ttl = ttl;
   }
 
   /**
@@ -67,6 +74,15 @@ public class CouchbaseCache implements Cache {
    */
   public final CouchbaseClient getNativeCache() {
     return client;
+  }
+  
+  /**
+   * Returns the TTL value for this cache.
+   * 
+   * @return TTL value
+   */
+  public final int getTtl() {
+	  return ttl;
   }
 
   /**
@@ -96,7 +112,7 @@ public class CouchbaseCache implements Cache {
   public final void put(final Object key, final Object value) {
     if (value != null) {
       String documentId = key.toString();
-      client.set(documentId, 0, value);
+      client.set(documentId, ttl, value);
     } else {
       evict(key);
     }
