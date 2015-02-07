@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.cache;
 
 import com.couchbase.client.CouchbaseClient;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ import static org.junit.Assert.*;
  * Tests the CouchbaseCache class and verifies its functionality.
  *
  * @author Michael Nitschinger
+ * @author Konrad Król
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
@@ -77,6 +79,24 @@ public class CouchbaseCacheTests {
 
     ValueWrapper loaded = cache.get(key);
     assertEquals(value, loaded.get());
+  }
+  
+  /**
+   * Verifies set() with TTL value.
+   */
+  @Test
+  public void testSetWithTtl() throws InterruptedException {
+    CouchbaseCache cache = new CouchbaseCache(cacheName, client, 1); // cache for 1 second
+
+    String key = "couchbase-cache-test";
+    String value = "Hello World!";
+    cache.put(key, value);
+    
+    // wait for TTL to expire (double time of TTL)
+    Thread.sleep(2000);
+
+    String stored = (String) client.get(key);
+    assertNull(stored);
   }
 
   @Test
