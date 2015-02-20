@@ -155,6 +155,7 @@ public class MyService {
 
 	private final UserRepository userRepository;
 
+	@Autowired
 	public MyService(UserRepository userRepository) {
 		this.userRepository = userRepository;
 	}
