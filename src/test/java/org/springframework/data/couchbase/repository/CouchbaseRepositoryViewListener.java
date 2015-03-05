@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.repository;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.DesignDocument;
 import com.couchbase.client.protocol.views.ViewDesign;
+import net.spy.memcached.PersistTo;
+import net.spy.memcached.ReplicateTo;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -38,7 +40,7 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
   private void populateTestData(final CouchbaseClient client) {
     CouchbaseTemplate template = new CouchbaseTemplate(client);
     for (int i = 0; i < 100; i++) {
-      template.save(new User("testuser-" + i, "uname-" + i));
+      template.save(new User("testuser-" + i, "uname-" + i), PersistTo.MASTER, ReplicateTo.ZERO);
     }
   }
 
