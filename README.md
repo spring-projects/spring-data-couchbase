@@ -92,8 +92,8 @@ This is an example view for the `findByLastname` method:
 
 ```javascript
 function (doc, meta) {
-  if(doc._class == "com.example.entity.User" && doc.firstname) {
-    emit(doc.firstname, null);
+  if(doc._class == "com.example.entity.User" && doc.lastname) {
+    emit(doc.lastname, null);
   }
 }
 ```
