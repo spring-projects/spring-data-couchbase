@@ -13,8 +13,8 @@ repository style data access layer.
 
 For a comprehensive treatment of all the Spring Data Couchbase features, please refer to:
 
-* the [User Guide](http://static.springsource.org/spring-data/data-couchbase/docs/current/reference/html/)
-* the [JavaDocs](http://static.springsource.org/spring-data/data-couchbase/docs/current/api/) have extensive comments
+* the [User Guide](http://static.springsource.org/spring-data/couchbase/docs/current/reference/html/)
+* the [JavaDocs](http://static.springsource.org/spring-data/couchbase/docs/current/api/) have extensive comments
   in them as well.
 * for more detailed questions, use the [forum](http://forum.springsource.org/forumdisplay.php?f=80).
 
