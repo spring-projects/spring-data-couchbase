@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.config;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean;
+import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 
 import java.lang.annotation.*;
 
@@ -81,6 +82,13 @@ public @interface EnableCouchbaseRepositories {
    * @return
    */
   String namedQueriesLocation() default "";
+
+  /**
+   * Configure the repository base class to be used to create repository proxies for this particular configuration.
+   *
+   * @return
+   */
+  Class<?> repositoryBaseClass() default DefaultRepositoryBaseClass.class;
 
 
   /**
