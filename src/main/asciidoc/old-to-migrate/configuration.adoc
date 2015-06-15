@@ -1,0 +1,114 @@
+[[couchbase.configuration]]
+= Installation & Configuration
+
+This chapter describes the common installation and configuration steps needed when working with the library.
+
+[[installation]]
+== Installation
+
+All versions intented for production use are distributed across Maven Central and the Spring release repository. As a result, the library can be included like any other maven dependency:
+
+.Including the dependency through maven
+====
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-couchbase</artifactId>
+    <version>1.0.0.RELEASE</version>
+</dependency>
+----
+====
+
+This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson as the JSON mapping infrastructure.
+
+You can also grab snapshots from the http://repo.spring.io/libs-snapshot[spring snapshot repository] and milestone releases from the http://repo.spring.io/libs-milestone[milestone repository]. Here is an example on how to use the current SNAPSHOT dependency:
+
+.Using a snapshot version
+====
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>1.1.0.BUILD-SNAPSHOT</version>
+</dependency>
+
+<repository>
+  <id>spring-libs-snapshot</id>
+  <name>Spring Snapshot Repository</name>
+  <url>https://repo.spring.io/libs-snapshot</url>
+</repository>
+----
+====
+
+Once you have all needed dependencies on the classpath, you can start configuring it. Both Java and XML config are supported. The next sections describe both approaches in detail.
+
+[[configuration-java]]
+== Annotation-based Configuration ("JavaConfig")
+
+The annotation based configuration approach is getting more and more popular. It allows you to get rid of XML configuration and treat configuration as part of your code directly. To get started, all you need to do is sublcass the `AbstractCouchbaseConfiguration` and implement the abstract methods.
+
+Please make sure to have cglib support in the classpath so that the annotation based configuration works.
+
+.Extending the `AbstractCouchbaseConfiguration`
+====
+[source,java]
+----
+
+@Configuration
+public class Config extends AbstractCouchbaseConfiguration {
+
+    @Override
+    protected List<String> bootstrapHosts() {
+        return Collections.singletonList("127.0.0.1");
+    }
+
+    @Override
+    protected String getBucketName() {
+        return "beer-sample";
+    }
+
+    @Override
+    protected String getBucketPassword() {
+        return "";
+    }
+}
+----
+====
+
+All you need to provide is a list of Couchbase nodes to bootstrap into (without any ports, just the IP address or hostname). Please note that while one host is sufficient in development, it is recommended to add 3 to 5 bootstrap nodes here. Couchbase will pick up all nodes from the cluster automatically, but it could be the case that the only node you've provided is experiencing issues while you are starting the application.
+
+The `bucketName` and `password` should be the same as configured in Couchbase Server itself. In the example given, we are connecting to the `beer-sample` bucket which is one of the sample buckets shipped with Couchbase Server and has no password set by default.
+
+Depending on how your environment is setup, the configuration will be automatically picked up by the context or you need to instantiate your own one. How to manage configurations is not scope of this manual, please refer to the spring documentation for more information on that topic.
+
+While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration - we'll touch them in the individual manual sections as needed (for example repositories, validation and custom converters).
+
+[[configuration-xml]]
+== XML-based Configuration
+
+The library provides a custom namespace that you can use in your XML configuration:
+
+.Basic XML configuration
+====
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns:beans="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.springframework.org/schema/data/couchbase
+  xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/data/couchbase
+    http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
+
+    <couchbase:couchbase bucket="beer-sample" password="" host="127.0.0.1" />
+
+</beans:beans>
+----
+====
+This code is equivalent to the java configuration approach shown above. It is also possible to configure templates and repositories, which is shown in the appropriate sections.
+
+If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials and host information is correct.
+

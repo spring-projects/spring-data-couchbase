@@ -1,0 +1,15 @@
+[[couchbase.preface]]
+= Preface
+
+This reference documentation describes the general usage of the Spring Data Couchbase library.
+
+[[metadata]]
+[preface]
+== Project Information
+
+* Version control - https://github.com/spring-projects/spring-data-couchbase
+* Bugtracker - https://jira.springsource.org/browse/DATACOUCH
+* Release repository - https://repo.spring.io/libs-release
+* Milestone repository - https://repo.spring.io/libs-milestone
+* Snapshot repository - https://repo.spring.io/libs-snapshot
+

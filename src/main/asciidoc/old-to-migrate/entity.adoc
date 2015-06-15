@@ -1,0 +1,381 @@
+[[couchbase.entity]]
+= Modeling Entities
+
+This chapter describes how to model Entities and explains their counterpart representation in Couchbase Server itself.
+
+[[basics]]
+== Documents and Fields
+
+All entities should be annotated with the `@Document` annotation. Also, every field in the entity should be annotated with the `@Field` annotation. While this is - strictly speaking - optional, it helps to reduce edge cases and clearly shows the intent and design of the entity.
+
+There is also a special `@Id` annotation which needs to be always in place. Best practice is to also name the property `id`. Here is a very simple `User` entity:
+
+.A simple Document with Fields
+====
+[source,java]
+----
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
+
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private String firstname;
+
+    @Field
+    private String lastname;
+
+    public User(String id, String firstname, String lastname) {
+        this.id = id;
+        this.firstname = firstname;
+        this.lastname = lastname;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+}
+
+----
+====
+
+Couchbase Server supports automatic expiration for documents. The library implements support for it through the `@Document` annotation. You can set a `expiry` value which translates to the number of seconds until the document gets removed automatically. If you want to make it expire in 10 seconds after mutation, set it like `@Document(expiry = 10)`.
+
+If you want a different representation of the field name inside the document in contrast to the field name used in your entity, you can set a different name on the `@Field` annotation. For example if you want to keep your documents small you can set the firstname field to `@Field("fname")`. In the JSON document, you'll see `{"fname": ".."}` instead of `{"firstname": ".."}`.
+
+The `@Id` annotation needs to be present because every document in Couchbase needs a unique key. This key needs to be any string with a length of maximum 250 characters. Feel free to use whatever fits your use case, be it a UUID, an email address or anything else.
+
+[[datatypes]]
+== Datatypes and Converters
+
+The storage format of choice is JSON. It is great, but like many data representations it allows less datatypes than you could express in Java directly. Therefore, for all non-primitive types some form of conversion to and from supported types needs to happen.
+
+For the following entity field types, you don't need to add special handling:
+
+
+[cols="2", options="header"]
+.Primitive Types
+|===
+| Java Type
+| JSON Representation
+
+| string
+| string
+
+| boolean
+| boolean
+
+| byte
+| number
+
+| short
+| number
+
+| int
+| number
+
+| long
+| number
+
+| float
+| number
+
+| double
+| number
+
+| null
+| Ignored on write
+|===
+Since JSON supports objects ("maps") and lists, `Map` and `List` types can be converted naturally. If they only contain primitive field types from the last paragraph, you don't need to add special handling too. Here is an example:
+
+.A Document with Map and List
+====
+[source,java]
+----
+
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private List<String> firstnames;
+
+    @Field
+    private Map<String, Integer> childrenAges;
+
+    public User(String id, List<String> firstnames, Map<String, Integer> childrenAges) {
+        this.id = id;
+        this.firstnames = firstnames;
+        this.childrenAges = childrenAges;
+    }
+
+}
+----
+====
+
+Storing a user with some sample data could look like this as a JSON representation:
+
+.A Document with Map and List - JSON
+====
+[source,json]
+----
+
+{
+    "_class": "foo.User",
+    "childrenAges": {
+        "Alice": 10,
+        "Bob": 5
+    },
+    "firstnames": [
+        "Foo",
+        "Bar",
+        "Baz"
+    ]
+}
+----
+====
+
+You don't need to break everything down to primitive types and Lists/Maps all the time. Of course, you can also compose other objects out of those primitive values. Let's modify the last example so that we want to store a `List` of `Children`:
+
+.A Document with composed objects
+====
+[source,java]
+----
+@Document
+public class User {
+
+    @Id
+    private String id;
+
+    @Field
+    private List<String> firstnames;
+
+    @Field
+    private List<Child> children;
+
+    public User(String id, List<String> firstnames, List<Child> children) {
+        this.id = id;
+        this.firstnames = firstnames;
+        this.children = children;
+    }
+
+    static class Child {
+        private String name;
+        private int age;
+
+        Child(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+    }
+
+}
+----
+====
+
+A populated object can look like:
+
+.A Document with composed objects - JSON
+====
+[source,json]
+----
+
+{
+  "_class": "foo.User",
+  "children": [
+    {
+      "age": 4,
+      "name": "Alice"
+    },
+    {
+      "age": 3,
+      "name": "Bob"
+    }
+  ],
+  "firstnames": [
+    "Foo",
+    "Bar",
+    "Baz"
+  ]
+}
+----
+====
+
+Most of the time, you also need to store a temporal value like a `Date`. Since it can't be stored directly in JSON, a conversion needs to happen. The library implements default converters for `Date`, `Calendar` and JodaTime types (if on the classpath). All of those are represented by default in the document as a unix timestamp (number). You can always override the default behavior with custom converters as shown later. Here is an example:
+
+.A Document with Date and Calendar
+====
+[source,java]
+----
+@Document
+public class BlogPost {
+
+    @Id
+    private String id;
+
+    @Field
+    private Date created;
+
+    @Field
+    private Calendar updated;
+
+    @Field
+    private String title;
+
+    public BlogPost(String id, Date created, Calendar updated, String title) {
+        this.id = id;
+        this.created = created;
+        this.updated = updated;
+        this.title = title;
+    }
+
+}
+----
+====
+
+A populated object can look like:
+
+.A Document with Date and Calendar - JSON
+====
+[source,json]
+----
+{
+  "title": "a blog post title",
+  "_class": "foo.BlogPost",
+  "updated": 1394610843,
+  "created": 1394610843897
+}
+----
+====
+
+If you want to override a converter or implement your own one, this is also possible. The library implements the general Spring Converter pattern. You can plug in custom converters on bean creation time in your configuration. Here's how you can configure it (in your overriden `AbstractCouchbaseConfiguration`):
+
+.Custom Converters
+====
+[source,java]
+----
+@Override
+public CustomConversions customConversions() {
+    return new CustomConversions(Arrays.asList(FooToBarConverter.INSTANCE, BarToFooConverter.INSTANCE));
+}
+
+@WritingConverter
+public static enum FooToBarConverter implements Converter<Foo, Bar> {
+    INSTANCE;
+
+    @Override
+    public Bar convert(Foo source) {
+        return /* do your conversion here */;
+    }
+
+}
+
+@ReadingConverter
+public static enum BarToFooConverter implements Converter<Bar, Foo> {
+    INSTANCE;
+
+    @Override
+    public Foo convert(Bar source) {
+        return /* do your conversion here */;
+    }
+
+}
+----
+====
+
+There are a few things to keep in mind with custom conversions:
+
+* To make it unambiguous, always use the `@WritingConverter` and `@ReadingConverter` annotations on your converters. Especially if you are dealing with primitive type conversions, this will help to reduce possible wrong conversions.
+* If you implement a writing converter, make sure to decode into primitive types, maps and lists only. If you need more complex object types, use the `CouchbaseDocument` and `CouchbaseList` types, which are also understood by the underlying translation engine. Your best bet is to stick with as simple as possible conversions.
+* Always put more special converters before generic converters to avoid the case where the wrong converter gets executed.
+
+[[version]]
+== Optimistic Locking
+
+Couchbase Server does not support multi-document transactions or rollback. To implement optimistic locking, Couchbase uses a CAS (compare and swap) approach. When a document is mutated, the CAS value also changes. The CAS is opaque to the client, the only thing you need to know is that it changes when the content or a meta information changes too.
+
+In other datastores, similar behavior can be achieved through an arbitrary version field whith a incrementing counter. Since Couchbase supports this in a much better fashion, it is easy to implement. If you want automatic optimistic locking support, all you need to do is add a `@Version` annotation on a long field like this:
+
+.A Document with optimistic locking.
+====
+[source,java]
+----
+@Document
+public class User {
+
+        @Version
+        private long version;
+
+        // constructor, getters, setters...
+}
+----
+====
+
+If you load a document through the template or repository, the version field will be automatically populated with the current CAS value. It is important to note that you shouldn't access the field or even change it on your own. Once you save the document back, it will either succeed or fail with a `OptimisticLockingFailureException`. If you get such an exception, the further approach depends on what you want to achieve application wise. You should either retry the complete load-update-write cycle or propagate the error to the upper layers for proper handling.
+
+[[validation]]
+== Validation
+
+The library supports JSR 303 validation, which is based on annotations directly in your entities. Of course you can add all kinds of validation in your service layer, but this way its nicely coupled to your actual entities.
+
+To make it work, you need to include two additional dependencies. JSR 303 and a library that implements it, like the one supported by hibernate:
+
+.Validation dependencies
+====
+[source,xml]
+----
+<dependency>
+  <groupId>javax.validation</groupId>
+  <artifactId>validation-api</artifactId>
+</dependency>
+<dependency>
+  <groupId>org.hibernate</groupId>
+  <artifactId>hibernate-validator</artifactId>
+</dependency>
+----
+====
+Now you need to add two beans to your configuration:
+
+.Validation beans
+====
+[source,java]
+----
+@Bean
+public LocalValidatorFactoryBean validator() {
+    return new LocalValidatorFactoryBean();
+}
+
+@Bean
+public ValidatingCouchbaseEventListener validationEventListener() {
+    return new ValidatingCouchbaseEventListener(validator());
+}
+----
+====
+
+Now you can annotate your fields with JSR303 annotations. If a validation on `save()` fails, a `ConstraintViolationException` is thrown.
+
+.Sample Validation Annotation
+====
+[source,java]
+----
+@Size(min = 10)
+@Field
+private String name;
+----
+====
