@@ -25,14 +25,18 @@ package org.springframework.data.couchbase.config;
 public class BeanNames {
 
 	/**
+	 * Refers to the <couchbase:env /> bean.
+	 */
+	static final String COUCHBASE_ENV = "couchbaseEnv";
+	/**
 	 * Refers to the "<couchbase:cluster />" bean.
 	 */
-	static final String COUCHBASE_CLUSTER = "cluster";
+	static final String COUCHBASE_CLUSTER = "couchbaseCluster";
 
 	/**
 	 * Refers to the "<couchbase:bucket />" bean.
 	 */
-	static final String COUCHBASE_BUCKET = "bucket";
+	static final String COUCHBASE_BUCKET = "couchbaseBucket";
 
 	/**
 	 * Refers to the "<couchbase:template />" bean.
@@ -43,5 +47,6 @@ public class BeanNames {
 	 * Refers to the "<couchbase:translation-service />" bean
 	 */
 	static final String TRANSLATION_SERVICE = "translationService";
+
 
 }
