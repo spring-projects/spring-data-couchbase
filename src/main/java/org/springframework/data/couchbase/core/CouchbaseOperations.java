@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-/**
- * This package contains the specific implementations and core classes for
- * Spring Data Couchbase internals. It also contains Couchbase implementation
- * to support the Spring Data template abstraction.
- * <br/>
- * The template provides lower level access to the underlying database and also serves as the foundation for
- * repositories. Any time a repository is too high-level for you needs chances are good that the templates will serve
- * you well.
- */
 package org.springframework.data.couchbase.core;
+
+
+import com.couchbase.client.java.Bucket;
+
+/**
+ * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
+ *
+ * @author Michael Nitschinger
+ * @author Simon Baslé
+ */
+public interface CouchbaseOperations {
+
+	/**
+	 * Returns the linked {@link Bucket} to this template.
+	 *
+	 * @return the client used for the template.
+	 */
+	Bucket getCouchbaseBucket();
+
+}
