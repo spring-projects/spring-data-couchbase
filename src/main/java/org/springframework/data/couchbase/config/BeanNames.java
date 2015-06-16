@@ -46,7 +46,7 @@ public class BeanNames {
 	/**
 	 * Refers to the "<couchbase:translation-service />" bean
 	 */
-	static final String TRANSLATION_SERVICE = "translationService";
+	static final String TRANSLATION_SERVICE = "couchbaseTranslationService";
 
 
 }

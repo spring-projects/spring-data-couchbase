@@ -56,7 +56,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @return the list of bootstrap hosts.
 	 */
-	protected abstract List<String> bootstrapHosts();
+	protected abstract List<String> getBootstrapHosts();
 
 	/**
 	 * The name of the bucket to connect to.
@@ -73,39 +73,33 @@ public abstract class AbstractCouchbaseConfiguration {
 	protected abstract String getBucketPassword();
 
 	/**
-	 * Override this method if you use Couchbase outside of the Spring context.
-	 * If non-null, defines the {@link CouchbaseEnvironment} to use for connection (it is your
-	 * responsibility to shutdown() it).
+	 * Is the {@link #getEnvironment()} to be destroyed by Spring?
 	 *
-	 * @return a pre-existing environment managed outside of Spring, or null if instead a managed
-	 * environment is to be used.
+	 * @return true if Spring should destroy the environment with the context, false otherwise.
 	 */
-	protected CouchbaseEnvironment sharedEnvironment() {
-		return null; //assume most of the time we'll create a dedicated one
+	protected boolean isEnvironmentManagedBySpring() {
+		return true;
 	}
 
 	/**
-	 * Override this method if you want a customized {@link CouchbaseEnvironment} but only
-	 * use it in the Spring context. This environment will be managed by Spring, which will
-	 * call its shutdown() method upon bean destruction.
+	 * Override this method if you want a customized {@link CouchbaseEnvironment}.
+	 * This environment will be managed by Spring, which will call its shutdown()
+	 * method upon bean destruction, unless you override {@link #isEnvironmentManagedBySpring()}
+	 * as well to return false.
 	 *
-	 * @return a customized environment to be managed by Spring, defaults to a {@link DefaultCouchbaseEnvironment}.
+	 * @return a customized environment, defaults to a {@link DefaultCouchbaseEnvironment}.
 	 */
-	protected CouchbaseEnvironment managedEnvironment() {
+	protected CouchbaseEnvironment getEnvironment() {
 		return DefaultCouchbaseEnvironment.create();
 	}
 
 	@Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
-	@Conditional(ConfigurationCondition.class)
 	public CouchbaseEnvironment couchbaseEnvironment() {
-		CouchbaseEnvironment env = sharedEnvironment();
-		if (env != null) {
-			//the shared environment shouldn't have its shutdown method called when
-			//the bean is destroyed, it is the responsibility of the user to destroy it.
-			return new CouchbaseEnvironmentNoShutdownProxy(env);
-		} else {
-			return managedEnvironment();
+		CouchbaseEnvironment env = getEnvironment();
+		if (isEnvironmentManagedBySpring()) {
+			return env;
 		}
+		return new CouchbaseEnvironmentNoShutdownProxy(env);
 	}
 
 	/**
@@ -115,7 +109,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean(destroyMethod = "disconnect", name = BeanNames.COUCHBASE_CLUSTER)
 	public Cluster couchbaseCluster() throws Exception {
-		return CouchbaseCluster.create(couchbaseEnvironment(), bootstrapHosts());
+		return CouchbaseCluster.create(couchbaseEnvironment(), getBootstrapHosts());
 	}
 
 	/**
