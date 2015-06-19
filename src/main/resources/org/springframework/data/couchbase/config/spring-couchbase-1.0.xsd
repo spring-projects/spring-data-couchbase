@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns="http://www.springframework.org/schema/data/couchbase"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:tool="http://www.springframework.org/schema/tool"
+            xmlns:repository="http://www.springframework.org/schema/data/repository"
+            targetNamespace="http://www.springframework.org/schema/data/couchbase"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"/>
+    <xsd:import namespace="http://www.springframework.org/schema/context"/>
+    <xsd:import namespace="http://www.springframework.org/schema/data/repository" schemaLocation="http://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd"/>
+
+    <xsd:element name="couchbase" type="couchbaseType">
+        <xsd:annotation>
+            <xsd:documentation source="org.springframework.data.couchbase.core.CouchbaseFactoryBean"><![CDATA[
+Defines a CouchbaseClient instance used for accessing a Couchbase Cluster.
+			]]></xsd:documentation>
+            <xsd:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.couchbase.client.CouchbaseClient"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+    </xsd:element>
+
+    <xsd:element name="repositories">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="repository:repositories">
+                    <xsd:attributeGroup ref="couchbase-repository-attributes"/>
+                    <xsd:attributeGroup ref="repository:repository-attributes"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="template">
+        <xsd:complexType>
+            <xsd:attribute name="id" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+The id of the couchbase definition (by default "couchbaseFactory").]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="client-ref" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>
+                        The reference to a CouchbaseClient object.
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="com.couchbase.client.CouchbaseClient"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="converter-ref" type="converterRef" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+The reference to a CouchbaseConverter instance.
+					]]>
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="org.springframework.data.couchbase.core.convert.CouchbaseConverter"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="translation-service-ref" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                        The reference to the Translation Service (by default "translationService").]]>
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="org.springframework.data.couchbase.core.convert.translation.TranslationService"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="translation-service">
+        <xsd:complexType>
+            <xsd:attribute name="id" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+The id of the translation-service definition (by default "translationService").]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="objectMapper" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                        The reference to a configured Jackson ObjectMapper.]]>
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="ref">
+                            <tool:assignable-to type="com.fasterxml.jackson.databind.ObjectMapper"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="jmx">
+        <xsd:annotation>
+            <xsd:documentation><![CDATA[
+Defines a JMX Model MBeans for monitoring a Couchbase cluster'.
+			]]></xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+            <xsd:attribute name="couchbase-ref" type="couchbaseRef" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+The name of the Couchbase object that determines what connection to monitor. (by default "couchbase").
+            ]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:simpleType name="converterRef">
+        <xsd:annotation>
+            <xsd:appinfo>
+                <tool:annotation kind="ref">
+                    <tool:assignable-to type="org.springframework.data.couchbase.core.convert.CouchbaseConverter"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:union memberTypes="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="couchbaseTemplateRef">
+        <xsd:annotation>
+            <xsd:appinfo>
+                <tool:annotation kind="ref">
+                    <tool:assignable-to type="org.springframework.data.couchbase.core.CouchbaseTemplate"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:union memberTypes="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="couchbaseRef">
+        <xsd:annotation>
+            <xsd:appinfo>
+                <tool:annotation kind="ref">
+                    <tool:assignable-to type="org.springframework.data.couchbase.core.CouchbaseFactoryBean"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:union memberTypes="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:attributeGroup name="couchbase-repository-attributes">
+        <xsd:attribute name="couchbase-template-ref" type="couchbaseTemplateRef" default="couchbaseTemplate">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The reference to a CouchbaseTemplate. Will default to 'couchbaseTemplate'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:attributeGroup>
+
+    <xsd:complexType name="couchbaseType">
+        <xsd:attribute name="id" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+The name of the couchbase definition (by default "couchbase").]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="bucket" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+The name of the bucket to connect to. Default is "default".
+                ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="password" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+The password of the bucket to connect to. Default is "" (empty).
+                ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="host" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[
+    The host to connect to a Couchbase server. Default is localhost.
+                                ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+
+</xsd:schema>
