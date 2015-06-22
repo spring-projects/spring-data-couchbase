@@ -19,7 +19,9 @@ package org.springframework.data.couchbase.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
+import com.couchbase.client.java.env.CouchbaseEnvironment;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -29,6 +31,19 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 
+/**
+ * The XML parser for a {@link Cluster} definition.
+ *
+ * Such a definition can be tuned by either referencing a {@link CouchbaseEnvironment} via
+ * the {@value #CLUSTER_ENVIRONMENT_REF} attribute or define a custom environment inline via
+ * the &lt;{@value #CLUSTER_ENVIRONMENT_TAG}&gt; tag (not recommended, environments should be
+ * shared as possible).
+ *
+ * To bootstrap the connection, one can provide IPs or hostnames of nodes to connect to
+ * via 1 or more &lt;{@value #CLUSTER_NODE_TAG}&gt; tags.
+ *
+ * @author Simon Baslé
+ */
 public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 
 	/**
@@ -39,12 +54,19 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 	/**
 	 * The unique &lt;env&gt; element in a cluster definition define the environment customizations.
 	 *
-	 * @see CouchbaseEnvironmentParser for the possible fields.
-	 * @see #CLUSTER_ENVIRONMENT_REF as an alternative (giving a reference to an env instead of inline description)
+	 * @see CouchbaseEnvironmentParser CouchbaseEnvironmentParser for the possible fields.
+	 * @see #CLUSTER_ENVIRONMENT_REF CLUSTER_ENVIRONMENT_REF as an alternative (giving a reference to
+	 * an env instead of inline description, lower precedence)
 	 */
 	public static final String CLUSTER_ENVIRONMENT_TAG = "env";
 
-
+	/**
+	 * The &lt;env-ref&gt; attribute allows to use a reference to an {@link CouchbaseEnvironment} to
+	 * tune the connection.
+	 *
+	 * @see #CLUSTER_ENVIRONMENT_TAG CLUSTER_ENVIRONMENT_TAG for an inline alternative
+	 * (which takes priority over this reference)
+	 */
 	public static final String CLUSTER_ENVIRONMENT_REF = "env-ref";
 
 	/**

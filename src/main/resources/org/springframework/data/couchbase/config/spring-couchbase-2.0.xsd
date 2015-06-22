@@ -42,37 +42,6 @@
         </xsd:complexType>
     </xsd:element>
 
-
-
-
-
-
-
-
-    <xsd:element name="couchbase" type="couchbaseType">
-        <xsd:annotation>
-            <xsd:documentation source="org.springframework.data.couchbase.core.CouchbaseFactoryBean"><![CDATA[
-Defines a CouchbaseClient instance used for accessing a Couchbase Cluster.
-			]]></xsd:documentation>
-            <xsd:appinfo>
-                <tool:annotation>
-                    <tool:exports type="com.couchbase.client.CouchbaseClient"/>
-                </tool:annotation>
-            </xsd:appinfo>
-        </xsd:annotation>
-    </xsd:element>
-
-    <xsd:element name="repositories">
-        <xsd:complexType>
-            <xsd:complexContent>
-                <xsd:extension base="repository:repositories">
-                    <xsd:attributeGroup ref="couchbase-repository-attributes"/>
-                    <xsd:attributeGroup ref="repository:repository-attributes"/>
-                </xsd:extension>
-            </xsd:complexContent>
-        </xsd:complexType>
-    </xsd:element>
-
     <xsd:element name="template">
         <xsd:complexType>
             <xsd:attribute name="id" type="xsd:string" use="optional">
@@ -81,14 +50,14 @@ Defines a CouchbaseClient instance used for accessing a Couchbase Cluster.
 The id of the couchbase definition (by default "couchbaseFactory").]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
-            <xsd:attribute name="client-ref" type="xsd:string" use="optional">
+            <xsd:attribute name="bucket-ref" type="xsd:string" use="optional">
                 <xsd:annotation>
                     <xsd:documentation>
-                        The reference to a CouchbaseClient object.
+                        The reference to a Bucket object.
                     </xsd:documentation>
                     <xsd:appinfo>
                         <tool:annotation kind="ref">
-                            <tool:assignable-to type="com.couchbase.client.CouchbaseClient"/>
+                            <tool:assignable-to type="com.couchbase.client.java.Bucket"/>
                         </tool:annotation>
                     </xsd:appinfo>
                 </xsd:annotation>
@@ -151,10 +120,10 @@ Defines a JMX Model MBeans for monitoring a Couchbase cluster'.
 			]]></xsd:documentation>
         </xsd:annotation>
         <xsd:complexType>
-            <xsd:attribute name="couchbase-ref" type="couchbaseRef" use="optional">
+            <xsd:attribute name="bucket-ref" type="couchbaseBucketRef" use="optional">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[
-The name of the Couchbase object that determines what connection to monitor. (by default "couchbase").
+The name of the CouchbaseBucket object that determines what connection to monitor. (by default "couchbaseBucket").
             ]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
@@ -183,56 +152,15 @@ The name of the Couchbase object that determines what connection to monitor. (by
         <xsd:union memberTypes="xsd:string"/>
     </xsd:simpleType>
 
-    <xsd:simpleType name="couchbaseRef">
+    <xsd:simpleType name="couchbaseBucketRef">
         <xsd:annotation>
             <xsd:appinfo>
                 <tool:annotation kind="ref">
-                    <tool:assignable-to type="org.springframework.data.couchbase.core.CouchbaseFactoryBean"/>
+                    <tool:assignable-to type="org.springframework.data.couchbase.config.CouchbaseBucketFactoryBean"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
         <xsd:union memberTypes="xsd:string"/>
     </xsd:simpleType>
-
-    <xsd:attributeGroup name="couchbase-repository-attributes">
-        <xsd:attribute name="couchbase-template-ref" type="couchbaseTemplateRef" default="couchbaseTemplate">
-            <xsd:annotation>
-                <xsd:documentation>
-                    The reference to a CouchbaseTemplate. Will default to 'couchbaseTemplate'.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-    </xsd:attributeGroup>
-
-    <xsd:complexType name="couchbaseType">
-        <xsd:attribute name="id" type="xsd:string" use="optional">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[
-The name of the couchbase definition (by default "couchbase").]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="bucket" type="xsd:string" use="optional">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[
-The name of the bucket to connect to. Default is "default".
-                ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="password" type="xsd:string" use="optional">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[
-The password of the bucket to connect to. Default is "" (empty).
-                ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-        <xsd:attribute name="host" type="xsd:string" use="optional">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[
-    The host to connect to a Couchbase server. Default is localhost.
-                                ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-    </xsd:complexType>
-
 
 </xsd:schema>

@@ -65,6 +65,8 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#autoreleaseAfter(long) autoreleaseAfter}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bufferPoolingEnabled(boolean) bufferPoolingEnabled}</li>
  * </ul>
+ *
+ * @author Simon Baslé
  */
 public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionParser {
 

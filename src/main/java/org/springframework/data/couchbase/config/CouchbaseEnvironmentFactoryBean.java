@@ -24,6 +24,11 @@ import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 
+/**
+ * Factory Bean to help create a CouchbaseEnvironment (by offering setters for supported tuning methods).
+ *
+ * @author Simon Baslé
+ */
 /*package*/ class CouchbaseEnvironmentFactoryBean extends AbstractFactoryBean<CouchbaseEnvironment> {
 
 	private static final CouchbaseEnvironment DEFAULT_ENV = DefaultCouchbaseEnvironment.create();
