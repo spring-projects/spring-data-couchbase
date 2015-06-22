@@ -22,7 +22,7 @@ package org.springframework.data.couchbase.config;
  * @author Michael Nitschinger
  * @author Simon Baslé
  */
-public class BeanNames {
+class BeanNames {
 
 	/**
 	 * Refers to the "&lt;couchbase:env /&gt;" bean.

@@ -19,9 +19,8 @@ package org.springframework.data.couchbase.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.CouchbaseCluster;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -70,7 +69,7 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 	 */
 	@Override
 	protected Class getBeanClass(final Element element) {
-		return Cluster.class;
+		return CouchbaseCluster.class;
 	}
 
 	/**
@@ -81,37 +80,47 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 	 */
 	@Override
 	protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
+		bean.setFactoryMethod("create");
+		bean.setDestroyMethodName("disconnect");
+
 		parseEnvironment(bean, element);
 
-		NodeList nodes = element.getElementsByTagName(CLUSTER_NODE_TAG);
-		if (nodes != null && nodes.getLength() > 0) {
-			List<String> bootstrapUrls = new ArrayList<String>(nodes.getLength());
-			for (int i = 0; i < bootstrapUrls.size(); i++) {
-				bootstrapUrls.add(nodes.item(i).getNodeValue());
+		List<Element> nodes = DomUtils.getChildElementsByTagName(element, CLUSTER_NODE_TAG);
+		if (nodes != null && nodes.size() > 0) {
+			List<String> bootstrapUrls = new ArrayList<String>(nodes.size());
+			for (int i = 0; i < nodes.size(); i++) {
+				bootstrapUrls.add(nodes.get(i).getTextContent());
 			}
 			bean.addConstructorArgValue(bootstrapUrls);
 		}
 	}
 
-	public static boolean parseEnvironment(BeanDefinitionBuilder clusterBuilder, Element clusterElement) {
-		//first try a reference
-		String envRef = clusterElement.getAttribute(CLUSTER_ENVIRONMENT_REF);
-		if (StringUtils.hasText(envRef)) {
-			clusterBuilder.addConstructorArgReference(envRef);
+	protected boolean parseEnvironment(BeanDefinitionBuilder clusterBuilder, Element clusterElement) {
+		//any inline environment description would take precedence over a reference
+		Element envElement = DomUtils.getChildElementByTagName(clusterElement, CLUSTER_ENVIRONMENT_TAG);
+		if (envElement != null && envElement.hasAttributes()) {
+			injectEnvElement(clusterBuilder, envElement);
 			return true;
 		}
 
-		//secondly try to see if an env has been described inline
-		Element envElement = DomUtils.getChildElementByTagName(clusterElement, CLUSTER_ENVIRONMENT_TAG);
-		if (envElement == null || !envElement.hasAttributes()) {
-			return false;
+		//secondly try to see if an env has been referenced
+		String envRef = clusterElement.getAttribute(CLUSTER_ENVIRONMENT_REF);
+		if (StringUtils.hasText(envRef)) {
+			injectEnvReference(clusterBuilder, envRef);
+			return true;
 		}
+		return false;
+	}
 
+	protected void injectEnvElement(BeanDefinitionBuilder clusterBuilder, Element envElement) {
 		BeanDefinitionBuilder envDefinitionBuilder = BeanDefinitionBuilder
 				.genericBeanDefinition(CouchbaseEnvironmentFactoryBean.class);
 		new CouchbaseEnvironmentParser().doParse(envElement, envDefinitionBuilder);
 
 		clusterBuilder.addConstructorArgValue(envDefinitionBuilder.getBeanDefinition());
-		return true;
+	}
+
+	protected void injectEnvReference(BeanDefinitionBuilder clusterBuilder, String envRef) {
+		clusterBuilder.addConstructorArgReference(envRef);
 	}
 }
