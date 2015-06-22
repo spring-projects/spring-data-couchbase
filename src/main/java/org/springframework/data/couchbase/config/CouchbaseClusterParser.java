@@ -37,7 +37,8 @@ import org.springframework.util.xml.DomUtils;
  * Such a definition can be tuned by either referencing a {@link CouchbaseEnvironment} via
  * the {@value #CLUSTER_ENVIRONMENT_REF} attribute or define a custom environment inline via
  * the &lt;{@value #CLUSTER_ENVIRONMENT_TAG}&gt; tag (not recommended, environments should be
- * shared as possible).
+ * shared as possible). If no environment reference or inline description is provided, the
+ * default environment reference {@value BeanNames#COUCHBASE_ENV} is used.
  *
  * To bootstrap the connection, one can provide IPs or hostnames of nodes to connect to
  * via 1 or more &lt;{@value #CLUSTER_NODE_TAG}&gt; tags.
@@ -117,6 +118,10 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 		}
 	}
 
+	/**
+	 * @return true if a custom environment was parsed and injected (either reference or inline), false if
+	 * the default environment reference was used.
+	 */
 	protected boolean parseEnvironment(BeanDefinitionBuilder clusterBuilder, Element clusterElement) {
 		//any inline environment description would take precedence over a reference
 		Element envElement = DomUtils.getChildElementByTagName(clusterElement, CLUSTER_ENVIRONMENT_TAG);
@@ -131,6 +136,9 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 			injectEnvReference(clusterBuilder, envRef);
 			return true;
 		}
+
+		//if no custom value provided, consider it a reference to the default bean for Couchbase Environment
+		injectEnvReference(clusterBuilder, BeanNames.COUCHBASE_ENV);
 		return false;
 	}
 

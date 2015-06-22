@@ -54,8 +54,8 @@ public class CouchbaseClusterParserTest {
 	}
 
 	@Test
-	public void testClusterWithNodes() {
-		BeanDefinition def = factory.getBeanDefinition("clusterWithNodes");
+	public void testClusterWithoutSpecificEnv() {
+		BeanDefinition def = factory.getBeanDefinition("clusterDefault");
 
 		assertThat(def, is(notNullValue()));
 		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
@@ -63,7 +63,25 @@ public class CouchbaseClusterParserTest {
 		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
-				.getArgumentValue(0, List.class);
+				.getArgumentValue(0, CouchbaseEnvironment.class);
+
+		assertThat(holder.getValue(), instanceOf(RuntimeBeanReference.class));
+		RuntimeBeanReference envRef = (RuntimeBeanReference) holder.getValue();
+
+		assertThat(envRef.getBeanName(), is(equalTo("couchbaseEnv")));
+	}
+
+	@Test
+	public void testClusterWithNodes() {
+		BeanDefinition def = factory.getBeanDefinition("clusterWithNodes");
+
+		assertThat(def, is(notNullValue()));
+		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(2)));
+		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
+
+		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
+				.getArgumentValue(1, List.class);
 		assertThat(holder.getValue(), is(instanceOf(List.class)));
 		List nodes = (List<String>) holder.getValue();
 
