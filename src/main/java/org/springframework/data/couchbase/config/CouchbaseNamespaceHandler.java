@@ -34,8 +34,9 @@ public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
 	 */
 	public final void init() {
 		//TODO repositories (CouchbaseRepositoryConfigurationExtension and RepositoryBeanDefinitionParser)
-		//TODO bucket
-		//TODO cluster
+		registerBeanDefinitionParser("env", new CouchbaseEnvironmentParser());
+		registerBeanDefinitionParser("cluster", new CouchbaseClusterParser());
+		registerBeanDefinitionParser("bucket", new CouchbaseBucketParser());
 		registerBeanDefinitionParser("jmx", new CouchbaseJmxParser());
 		registerBeanDefinitionParser("template", new CouchbaseTemplateParser());
 		//TODO translation service

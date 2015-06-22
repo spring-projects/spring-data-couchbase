@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns="http://www.springframework.org/schema/data/couchbase"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:beans="http://www.springframework.org/schema/beans"
+            targetNamespace="http://www.springframework.org/schema/data/couchbase"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans"/>
+    <xsd:import namespace="http://www.springframework.org/schema/context"/>
+
+
+    <xsd:simpleType name="retryStrategyType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="BestEffort"/>
+            <xsd:enumeration value="FailFast"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="envType">
+        <xsd:complexContent>
+            <xsd:extension base="beans:identifiedType">
+                <xsd:attribute name="retryStrategy" type="retryStrategyType"/>
+
+                <xsd:attribute name="managementTimeout" type="xsd:long"/>
+                <xsd:attribute name="queryTimeout" type="xsd:long"/>
+                <xsd:attribute name="viewTimeout" type="xsd:long"/>
+                <xsd:attribute name="kvTimeout" type="xsd:long"/>
+                <xsd:attribute name="connectTimeout" type="xsd:long"/>
+                <xsd:attribute name="disconnectTimeout" type="xsd:long"/>
+                <xsd:attribute name="dnsSrvEnabled" type="xsd:boolean"/>
+
+                <xsd:attribute name="dcpEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="sslEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="sslKeystoreFile" type="xsd:string"/>
+                <xsd:attribute name="sslKeystorePassword" type="xsd:string"/>
+                <xsd:attribute name="queryEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="queryPort" type="xsd:int"/>
+                <xsd:attribute name="bootstrapHttpEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="bootstrapCarrierEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="bootstrapHttpDirectPort" type="xsd:int"/>
+                <xsd:attribute name="bootstrapHttpSslPort" type="xsd:int"/>
+                <xsd:attribute name="bootstrapCarrierDirectPort" type="xsd:int"/>
+                <xsd:attribute name="bootstrapCarrierSslPort" type="xsd:int"/>
+                <xsd:attribute name="ioPoolSize" type="xsd:int"/>
+                <xsd:attribute name="computationPoolSize" type="xsd:int"/>
+                <xsd:attribute name="responseBufferSize" type="xsd:int"/>
+                <xsd:attribute name="requestBufferSize" type="xsd:int"/>
+                <xsd:attribute name="kvEndpoints" type="xsd:int"/>
+                <xsd:attribute name="viewEndpoints" type="xsd:int"/>
+                <xsd:attribute name="queryEndpoints" type="xsd:int"/>
+                <xsd:attribute name="maxRequestLifetime" type="xsd:long"/>
+                <xsd:attribute name="keepAliveInterval" type="xsd:long"/>
+                <xsd:attribute name="autoreleaseAfter" type="xsd:long"/>
+                <xsd:attribute name="bufferPoolingEnabled" type="xsd:boolean"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+</xsd:schema>

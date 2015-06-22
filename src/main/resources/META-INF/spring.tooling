@@ -1,0 +1,4 @@
+# Tooling related information for the Couchbase DB namespace
+http\://www.springframework.org/schema/data/couchbase@name=Couchbase Namespace
+http\://www.springframework.org/schema/data/couchbase@prefix=couchbase
+http\://www.springframework.org/schema/data/couchbase@icon=org/springframework/jdbc/config/spring-jdbc.gif

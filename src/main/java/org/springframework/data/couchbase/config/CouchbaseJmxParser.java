@@ -79,7 +79,7 @@ public class CouchbaseJmxParser implements BeanDefinitionParser {
 	 *
 	 * @param clazz the class type to register.
 	 * @param compositeDef component that can hold nested components.
-	 * @param refName the reference name to the couchbase client.
+	 * @param refName the reference name to the couchbase bucket.
 	 * @param eleSource source element to reference.
 	 * @param parserContext encapsulates the parsing state and configuration.
 	 */
