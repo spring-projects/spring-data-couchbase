@@ -20,7 +20,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
-import org.springframework.core.convert.support.ConversionServiceFactory;
+import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -80,7 +80,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @SuppressWarnings("deprecation")
   public MappingCouchbaseConverter(final MappingContext<? extends CouchbasePersistentEntity<?>,
     CouchbasePersistentProperty> mappingContext) {
-    super(ConversionServiceFactory.createDefaultConversionService());
+    super(new DefaultConversionService());
 
     this.mappingContext = mappingContext;
     typeMapper = new DefaultCouchbaseTypeMapper(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY);
