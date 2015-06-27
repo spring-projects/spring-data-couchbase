@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.java.Bucket;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
  *
@@ -33,5 +35,12 @@ public interface CouchbaseOperations {
 	 * @return the client used for the template.
 	 */
 	Bucket getCouchbaseBucket();
+
+	/**
+	 * Returns the underlying {@link CouchbaseConverter}.
+	 *
+	 * @return CouchbaseConverter.
+	 */
+	CouchbaseConverter getConverter();
 
 }
