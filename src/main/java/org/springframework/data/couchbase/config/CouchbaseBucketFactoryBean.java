@@ -21,6 +21,9 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseBucket;
 
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.support.PersistenceExceptionTranslator;
+import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 
 /**
  * The Factory Bean to help {@link CouchbaseBucketParser} constructing a {@link Bucket} from a given
@@ -28,11 +31,13 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  *
  * @author Simon Baslé
  */
-public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> {
+public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> implements PersistenceExceptionTranslator {
 
 	private final Cluster cluster;
 	private final String bucketName;
 	private final String bucketPassword;
+
+	private final PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 	public CouchbaseBucketFactoryBean(Cluster cluster) {
 		this(cluster, null, null);
@@ -57,10 +62,17 @@ public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> {
 	protected Bucket createInstance() throws Exception {
 		if (bucketName == null) {
 			return cluster.openBucket();
-		} else if (bucketPassword == null) {
+		}
+		else if (bucketPassword == null) {
 			return cluster.openBucket(bucketName);
-		} else {
+		}
+		else {
 			return cluster.openBucket(bucketName, bucketPassword);
 		}
+	}
+
+	@Override
+	public DataAccessException translateExceptionIfPossible(RuntimeException ex) {
+		return exceptionTranslator.translateExceptionIfPossible(ex);
 	}
 }
