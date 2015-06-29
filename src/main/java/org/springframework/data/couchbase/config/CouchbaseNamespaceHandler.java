@@ -39,7 +39,7 @@ public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
 		registerBeanDefinitionParser("bucket", new CouchbaseBucketParser());
 		registerBeanDefinitionParser("jmx", new CouchbaseJmxParser());
 		registerBeanDefinitionParser("template", new CouchbaseTemplateParser());
-		//TODO translation service
+		registerBeanDefinitionParser("translation-service", new CouchbaseTranslationServiceParser());
 	}
 
 }
