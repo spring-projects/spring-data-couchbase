@@ -27,12 +27,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 public interface TranslationService {
 
 	/**
-	 * Encodes a {@link CouchbaseDocument} into the target format.
+	 * Encodes a JSON String into the target format.
 	 *
-	 * @param source the source document to encode.
+	 * @param source the source contents to encode.
 	 * @return the encoded document representation.
 	 */
-	Object encode(CouchbaseStorable source);
+	String encode(CouchbaseStorable source);
 
 	/**
 	 * Decodes the target format into a {@link CouchbaseDocument}
@@ -41,5 +41,5 @@ public interface TranslationService {
 	 * @param target the target of the populated data.
 	 * @return a properly populated document to work with.
 	 */
-	CouchbaseStorable decode(Object source, CouchbaseStorable target);
+	CouchbaseStorable decode(String source, CouchbaseStorable target);
 }

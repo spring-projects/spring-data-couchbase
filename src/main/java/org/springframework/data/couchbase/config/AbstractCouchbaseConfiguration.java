@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.config;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -29,12 +30,15 @@ import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ConfigurationCondition;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -130,17 +134,63 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate() throws Exception {
-		//TODO use mappingCouchbaseConverter and translationService when implemented
-		return new CouchbaseTemplate(couchbaseClient());
+		return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
 	}
 
-	//TODO create beans for mappingCouchbaseConverter, translationService, couchbaseMappingContext when implemented
-	//TODO for mappingCouchbaseConverter, allow registering of customConversions
+	/**
+	 * Creates a {@link MappingCouchbaseConverter} using the configured {@link #couchbaseMappingContext}.
+	 *
+	 * @throws Exception on Bean construction failure.
+	 */
+	@Bean
+	public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
+		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext());
+		converter.setCustomConversions(customConversions());
+		return converter;
+	}
+
+	/**
+	 * Creates a {@link TranslationService}.
+	 *
+	 * @return TranslationService, defaulting to JacksonTranslationService.
+	 */
+	@Bean
+	public TranslationService translationService() {
+		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+		jacksonTranslationService.afterPropertiesSet();
+		return jacksonTranslationService;
+	}
+
+	/**
+	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
+	 *
+	 * @throws Exception on Bean construction failure.
+	 */
+	@Bean
+	public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
+		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
+		mappingContext.setInitialEntitySet(getInitialEntitySet());
+		mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
+		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
+		return mappingContext;
+	}
+
+	/**
+	 * Register custom Converters in a {@link CustomConversions} object if required. These
+	 * {@link CustomConversions} will be registered with the {@link #mappingCouchbaseConverter()} and
+	 * {@link #couchbaseMappingContext()}. Returns an empty {@link CustomConversions} instance by default.
+	 *
+	 * @return must not be {@literal null}.
+	 */
+	@Bean
+	public CustomConversions customConversions() {
+		return new CustomConversions(Collections.emptyList());
+	}
 
 	/**
 	 * Scans the mapping base package for classes annotated with {@link Document}.
 	 *
-	 * @throws ClassNotFoundException if initial entity sets could not be loaded.
+	 * @throws ClassNotFoundException if intial entity sets could not be loaded.
 	 */
 	protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
 		String basePackage = getMappingBasePackage();
@@ -187,7 +237,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return the naming strategy.
 	 */
 	protected FieldNamingStrategy fieldNamingStrategy() {
-		//TODO implement a CouchbaseMappingContext, use this method (update link in javadoc)
 		return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
 	}
 }

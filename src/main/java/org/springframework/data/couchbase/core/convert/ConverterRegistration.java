@@ -86,7 +86,7 @@ class ConverterRegistration {
 	}
 
 	/**
-	 * Returns whether the source type is a Mongo simple one.
+	 * Returns whether the source type is a Couchbase simple one.
 	 *
 	 * @return
 	 */
@@ -95,7 +95,7 @@ class ConverterRegistration {
 	}
 
 	/**
-	 * Returns whether the target type is a Mongo simple one.
+	 * Returns whether the target type is a Couchbase simple one.
 	 *
 	 * @return
 	 */
@@ -104,7 +104,7 @@ class ConverterRegistration {
 	}
 
 	/**
-	 * Returns whether the given type is a type that Mongo can handle basically.
+	 * Returns whether the given type is a type that Couchbase can handle basically.
 	 *
 	 * @param type
 	 * @return
