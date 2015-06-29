@@ -34,12 +34,12 @@ import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -286,9 +286,17 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
 	@Override
 	public <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass) {
-		//TODO find a way of mapping content to T
+		QueryResult queryResult = queryN1QL(n1ql);
+
+		List<QueryRow> allRows = queryResult.allRows();
+		List<T> result = new ArrayList<T>(allRows.size());
+		for (QueryRow row : allRows) {
+			String json = row.value().toString();
+			T decoded = translationService.decodeFragment(json, entityClass);
+			result.add(decoded);
+		}
 		//TODO error handling
-		throw new NotImplementedException();
+		return result;
 	}
 
 	@Override
