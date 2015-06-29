@@ -21,14 +21,17 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.couchbase.client.java.document.RawJsonDocument;
+import com.couchbase.client.java.document.json.JsonArray;
+
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 public abstract class CouchbaseSimpleTypes {
 
 	static {
 		Set<Class<?>> simpleTypes = new HashSet<Class<?>>();
-		simpleTypes.add(CouchbaseDocument.class);
-		simpleTypes.add(CouchbaseList.class);
+		simpleTypes.add(RawJsonDocument.class);
+		simpleTypes.add(JsonArray.class);
 		COUCHBASE_SIMPLE_TYPES = Collections.unmodifiableSet(simpleTypes);
 	}
 

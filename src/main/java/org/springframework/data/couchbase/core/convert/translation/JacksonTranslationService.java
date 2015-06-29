@@ -64,7 +64,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @return the encoded JSON String.
 	 */
 	@Override
-	public final Object encode(final CouchbaseStorable source) {
+	public final String encode(final CouchbaseStorable source) {
 		Writer writer = new StringWriter();
 
 		try {
@@ -125,7 +125,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 	 * @return the decoded structure.
 	 */
 	@Override
-	public final CouchbaseStorable decode(final Object source, final CouchbaseStorable target) {
+	public final CouchbaseStorable decode(final String source, final CouchbaseStorable target) {
 		try {
 			JsonParser parser = factory.createParser((String) source);
 			while (parser.nextToken() != null) {
