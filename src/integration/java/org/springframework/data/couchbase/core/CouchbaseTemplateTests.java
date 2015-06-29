@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.java.query.Select.select;
+import static com.couchbase.client.java.query.dsl.Expression.x;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
@@ -30,12 +32,16 @@ import java.util.Map;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -209,6 +215,28 @@ public class CouchbaseTemplateTests {
 			assertNotNull(beer.getName());
 			assertNotNull(beer.getActive());
 		}
+	}
+
+	@Test
+	public void shouldQueryRaw() {
+		Query query = Query.simple(select("name").from(Expression.i(client.name()))
+				.where(x("name").isNotMissing()));
+
+		QueryResult queryResult = template.queryN1QL(query);
+		assertNotNull(queryResult);
+		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess());
+		assertFalse(queryResult.allRows().isEmpty());
+	}
+
+	@Test(expected = NotImplementedException.class) //TODO remove when implemented
+	public void shouldQueryWithMapping() {
+		Query query = Query.simple(select("name").from(Expression.i(client.name()))
+				.where(x("name").isNotMissing()));
+
+		List<BeerFragment> fragments = template.findByN1QL(query, BeerFragment.class);
+		assertNotNull(fragments);
+		assertFalse(fragments.isEmpty());
+		//TODO assert the content of the fragments, etc...
 	}
 
 	@Test
@@ -552,4 +580,15 @@ public class CouchbaseTemplateTests {
 		}
 	}
 
+	static class BeerFragment {
+		private String name;
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+	}
 }
