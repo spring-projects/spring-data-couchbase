@@ -359,7 +359,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 		final String operationDesc = failOnExist ? "Insert" : failOnMissing ? "Update" : "Upsert";
 
 		final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToPersist, converter.getConversionService());
-		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
 
@@ -384,7 +384,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 						storedDoc = client.insert(doc, persistTo, replicateTo);
 					}
 
-					if (storedDoc != null && storedDoc.cas() != 0) {
+					if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
 						//inject new cas into the bean
 						beanWrapper.setProperty(versionProperty, storedDoc.cas());
 						return true;
