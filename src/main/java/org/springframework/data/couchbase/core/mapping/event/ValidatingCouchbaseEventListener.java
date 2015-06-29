@@ -54,7 +54,9 @@ public class ValidatingCouchbaseEventListener extends AbstractCouchbaseEventList
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void onBeforeSave(Object source, CouchbaseDocument dbo) {
 
-		LOG.debug("Validating object: {}", source);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Validating object: {}", source);
+		}
 		Set violations = validator.validate(source);
 
 		if (!violations.isEmpty()) {
