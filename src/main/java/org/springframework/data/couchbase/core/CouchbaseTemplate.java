@@ -31,15 +31,17 @@ import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
 import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
+import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -262,16 +264,24 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 		query.includeDocs(false);
 		query.reduce(false);
 
-		final ViewResult response = queryView(query);
-		List<ViewRow> allRows = response.allRows();
-		//TODO error handling
+		try {
+			final ViewResult response = queryView(query);
+			if (response.error() != null) {
+				throw new CouchbaseQueryExecutionException("Unable to execute view query due to the following view error: " +
+						response.error().toString());
+			}
 
-		final List<T> result = new ArrayList<T>(allRows.size());
-		for (final ViewRow row : allRows) {
-			result.add(mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass));
+			List<ViewRow> allRows = response.allRows();
+
+			final List<T> result = new ArrayList<T>(allRows.size());
+			for (final ViewRow row : allRows) {
+				result.add(mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass));
+			}
+
+			return result;
+		} catch (TranscodingException e) {
+			throw new CouchbaseQueryExecutionException("Unable to execute view query", e);
 		}
-
-		return result;
 	}
 
 	@Override
@@ -286,9 +296,28 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
 	@Override
 	public <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass) {
-		//TODO find a way of mapping content to T
-		//TODO error handling
-		throw new NotImplementedException();
+		try {
+			QueryResult queryResult = queryN1QL(n1ql);
+
+			if (queryResult.finalSuccess()) {
+				List<QueryRow> allRows = queryResult.allRows();
+				List<T> result = new ArrayList<T>(allRows.size());
+				for (QueryRow row : allRows) {
+					String json = row.value().toString();
+					T decoded = translationService.decodeFragment(json, entityClass);
+					result.add(decoded);
+				}
+				return result;
+			} else {
+				StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
+				for (JsonObject error : queryResult.errors()) {
+					message.append('\n').append(error);
+				}
+				throw new CouchbaseQueryExecutionException(message.toString());
+			}
+		} catch (TranscodingException e) {
+			throw new CouchbaseQueryExecutionException("Unable to execute query", e);
+		}
 	}
 
 	@Override
@@ -359,7 +388,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 		final String operationDesc = failOnExist ? "Insert" : failOnMissing ? "Update" : "Upsert";
 
 		final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToPersist, converter.getConversionService());
-		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
 
@@ -384,7 +413,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 						storedDoc = client.insert(doc, persistTo, replicateTo);
 					}
 
-					if (storedDoc != null && storedDoc.cas() != 0) {
+					if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
 						//inject new cas into the bean
 						beanWrapper.setProperty(versionProperty, storedDoc.cas());
 						return true;

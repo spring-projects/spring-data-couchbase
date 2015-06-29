@@ -17,12 +17,15 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.query.Select.select;
+import static com.couchbase.client.java.query.dsl.Expression.i;
+import static com.couchbase.client.java.query.dsl.Expression.s;
 import static com.couchbase.client.java.query.dsl.Expression.x;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,7 +44,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -219,7 +221,7 @@ public class CouchbaseTemplateTests {
 
 	@Test
 	public void shouldQueryRaw() {
-		Query query = Query.simple(select("name").from(Expression.i(client.name()))
+		Query query = Query.simple(select("name").from(i(client.name()))
 				.where(x("name").isNotMissing()));
 
 		QueryResult queryResult = template.queryN1QL(query);
@@ -228,15 +230,22 @@ public class CouchbaseTemplateTests {
 		assertFalse(queryResult.allRows().isEmpty());
 	}
 
-	@Test(expected = NotImplementedException.class) //TODO remove when implemented
+	@Test
 	public void shouldQueryWithMapping() {
-		Query query = Query.simple(select("name").from(Expression.i(client.name()))
-				.where(x("name").isNotMissing()));
+		FullFragment ff1 = new FullFragment("fullFragment1", 1, "fullFragment", "test1");
+		FullFragment ff2 = new FullFragment("fullFragment2", 2, "fullFragment", "test2");
+		template.save(Arrays.asList(ff1, ff2));
 
-		List<BeerFragment> fragments = template.findByN1QL(query, BeerFragment.class);
+		Query query = Query.simple(select(i("value")) //"value" is a n1ql keyword apparently
+				.from(i(client.name()))
+				.where(x("type").eq(s("fullFragment"))
+				.and(x("criteria").gt(1))));
+
+		List<Fragment> fragments = template.findByN1QL(query, Fragment.class);
 		assertNotNull(fragments);
 		assertFalse(fragments.isEmpty());
-		//TODO assert the content of the fragments, etc...
+		assertEquals(1, fragments.size());
+		assertEquals("test2", fragments.get(0).value);
 	}
 
 	@Test
@@ -580,15 +589,55 @@ public class CouchbaseTemplateTests {
 		}
 	}
 
-	static class BeerFragment {
-		private String name;
+	@Document
+	static class FullFragment {
 
-		public String getName() {
-			return name;
+		@Id
+		private String id;
+
+		private long criteria;
+
+		private String type;
+
+		private String value;
+
+		public FullFragment(String id, long criteria, String type, String value) {
+			this.id = id;
+			this.criteria = criteria;
+			this.type = type;
+			this.value = value;
 		}
 
-		public void setName(String name) {
-			this.name = name;
+		public String getId() {
+			return id;
 		}
+
+		public long getCriteria() {
+			return criteria;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public String getValue() {
+			return value;
+		}
+
+		public void setCriteria(long criteria) {
+			this.criteria = criteria;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+	}
+
+	static class Fragment {
+		public String value;
 	}
 }

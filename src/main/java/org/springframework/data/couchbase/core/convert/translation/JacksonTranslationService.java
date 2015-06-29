@@ -236,7 +236,17 @@ public class JacksonTranslationService implements TranslationService, Initializi
 			case VALUE_NULL:
 				return null;
 			default:
-				throw new MappingException("Could not decode primitve value " + token);
+				throw new MappingException("Could not decode primitive value " + token);
+		}
+	}
+
+	@Override
+	public <T> T decodeFragment(String source, Class<T> target) {
+		try {
+			return objectMapper.readValue(source, target);
+		}
+		catch (IOException e) {
+			throw new RuntimeException("Cannot decode ad-hoc JSON", e);
 		}
 	}
 

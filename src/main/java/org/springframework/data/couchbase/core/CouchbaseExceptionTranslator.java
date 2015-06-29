@@ -38,11 +38,13 @@ import com.couchbase.client.java.error.InvalidPasswordException;
 import com.couchbase.client.java.error.RequestTooBigException;
 import com.couchbase.client.java.error.TemporaryFailureException;
 import com.couchbase.client.java.error.TemporaryLockFailureException;
+import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.error.ViewDoesNotExistException;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.QueryTimeoutException;
@@ -113,6 +115,12 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 
 		if ((ex instanceof RuntimeException && ex.getCause() instanceof TimeoutException)) {
 			return new QueryTimeoutException(ex.getMessage(), ex);
+		}
+
+		if (ex instanceof TranscodingException) {
+			//note: the more specific CouchbaseQueryExecutionException should be thrown by the template
+			//when dealing with TranscodingException in the query/n1ql methods.
+			return new DataRetrievalFailureException(ex.getMessage(), ex);
 		}
 
 		// Unable to translate exception, therefore just throw the original!
