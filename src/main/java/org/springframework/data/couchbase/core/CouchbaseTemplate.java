@@ -92,8 +92,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 		this(client, null, null);
 	}
 
-	public CouchbaseTemplate(final Bucket client, final CouchbaseConverter converter) {
-		this(client, converter, null);
+	public CouchbaseTemplate(final Bucket client, final TranslationService translationService) {
+		this(client, null, translationService);
 	}
 
 	public CouchbaseTemplate(final Bucket client, final CouchbaseConverter converter,

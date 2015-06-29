@@ -3,8 +3,14 @@ package org.springframework.data.couchbase;
 import java.util.Collections;
 import java.util.List;
 
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.CouchbaseBucket;
+import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -15,47 +21,41 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 
 @Configuration
-public class TestApplicationConfig extends AbstractCouchbaseConfiguration {
-
-	@Autowired
-	private Environment springEnv;
+public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
 
 	@Bean
 	public String couchbaseAdminUser() {
-		return springEnv.getProperty("couchbase.adminUser", "Administrator");
+		return "someLogin";
 	}
 
 	@Bean
 	public String couchbaseAdminPassword() {
-		return springEnv.getProperty("couchbase.adminUser", "password");
+		return "somePassword";
 	}
 
 	@Override
 	protected List<String> getBootstrapHosts() {
-		return Collections.singletonList(springEnv.getProperty("couchbase.host", "127.0.0.1"));
+		return Collections.singletonList("192.1.2.3");
 	}
 
 	@Override
 	protected String getBucketName() {
-		return springEnv.getProperty("couchbase.bucket", "default");
+		return "someBucket";
 	}
 
 	@Override
 	protected String getBucketPassword() {
-		return springEnv.getProperty("couchbase.password", "");
+		return "someBucketPassword";
 	}
 
-
-	//TODO maybe create the bucket if doesn't exist
+	@Override
+	public Cluster couchbaseCluster() throws Exception {
+		return Mockito.mock(CouchbaseCluster.class);
+	}
 
 	@Override
-	protected CouchbaseEnvironment getEnvironment() {
-		return DefaultCouchbaseEnvironment.builder()
-				.connectTimeout(10000)
-				.kvTimeout(10000)
-				.queryTimeout(10000)
-				.viewTimeout(10000)
-				.build();
+	public Bucket couchbaseClient() throws Exception {
+		return Mockito.mock(CouchbaseBucket.class);
 	}
 
 	@Override
