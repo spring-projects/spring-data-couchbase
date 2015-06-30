@@ -57,6 +57,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
+import org.springframework.data.couchbase.core.mapping.event.AfterDeleteEvent;
+import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeDeleteEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.BeanWrapper;
 
@@ -179,6 +185,18 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 	@Override
 	public void setApplicationEventPublisher(final ApplicationEventPublisher eventPublisher) {
 		this.eventPublisher = eventPublisher;
+	}
+
+	/**
+	 * Helper method to publish an event if the event publisher is set.
+	 *
+	 * @param event the event to emit.
+	 * @param <T> the enclosed type.
+	 */
+	protected <T> void maybeEmitEvent(final CouchbaseMappingEvent<T> event) {
+		if (eventPublisher != null) {
+			eventPublisher.publishEvent(event);
+		}
 	}
 
 	@Override
@@ -392,11 +410,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 		final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
 
-		//TODO event beforeConvert
+		maybeEmitEvent(new BeforeConvertEvent<Object>(objectToPersist));
 		final CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(objectToPersist, converted);
 
-		//TODO event beforeSave
+		maybeEmitEvent(new BeforeSaveEvent<Object>(objectToPersist, converted));
 		execute(new BucketCallback<Boolean>() {
 			@Override
 			public Boolean doInBucket() throws InterruptedException, ExecutionException {
@@ -430,13 +448,13 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 				}
 			}
 		});
-		//TODO event afterSave
+		maybeEmitEvent(new AfterSaveEvent<Object>(objectToPersist, converted));
 	}
 
 	private void doRemove(final Object objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
 		ensureNotIterable(objectToRemove);
 
-		//TODO event BeforeDelete
+		maybeEmitEvent(new BeforeDeleteEvent<Object>(objectToRemove));
 		if (objectToRemove instanceof String) {
 			execute(new BucketCallback<Boolean>() {
 				@Override
@@ -446,7 +464,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 					return deletedDoc != null;
 				}
 			});
-			//TODO event afterDelete
+			maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
 			return;
 		}
 
@@ -461,7 +479,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 				return deletedDoc != null;
 			}
 		});
-		//TODO event afterDelete
+		maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
 	}
 
 	private <T> T mapToEntity(String id, Document<String> data, Class<T> entityClass) {
