@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.3.1.RELEASE (2015-06-30)
+---------------------------------------------
+* DATACOUCH-132 - Release 1.3.1 (Fowler).
+
+
 Changes in version 1.4.0.M1 (2015-06-02)
 ----------------------------------------
 * DATACOUCH-127 - Release 1.4 M1 (Gosling).
