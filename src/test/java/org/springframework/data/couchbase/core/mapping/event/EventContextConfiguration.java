@@ -18,14 +18,14 @@ package org.springframework.data.couchbase.core.mapping.event;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.TestApplicationConfig;
+import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 /**
  * @author Michael Nitschinger
  */
 @Configuration
-public class EventContextConfiguration extends TestApplicationConfig {
+public class EventContextConfiguration extends UnitTestApplicationConfig {
 
   @Bean
   public LocalValidatorFactoryBean validator() {

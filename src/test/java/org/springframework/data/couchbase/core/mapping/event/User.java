@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
-import org.springframework.data.annotation.Id;
-
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
+
+import org.springframework.data.annotation.Id;
 
 /**
  * @author Michael Nitschinger

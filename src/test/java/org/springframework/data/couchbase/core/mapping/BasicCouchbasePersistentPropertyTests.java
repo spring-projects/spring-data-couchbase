@@ -16,17 +16,18 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import static org.junit.Assert.assertEquals;
+
+import java.lang.reflect.Field;
+
 import org.junit.Before;
 import org.junit.Test;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ReflectionUtils;
-
-import java.lang.reflect.Field;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Verifies the correct behavior of properties on persistable objects.
@@ -46,7 +47,7 @@ public class BasicCouchbasePersistentPropertyTests {
   @Before
   public void setUp() {
     entity = new BasicCouchbasePersistentEntity<Beer>(
-      ClassTypeInformation.from(Beer.class));
+        ClassTypeInformation.from(Beer.class));
   }
 
   /**
@@ -75,7 +76,7 @@ public class BasicCouchbasePersistentPropertyTests {
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
     return new BasicCouchbasePersistentProperty(field, null, entity,
-      new SimpleTypeHolder(), PropertyNameFieldNamingStrategy.INSTANCE);
+        new SimpleTypeHolder(), PropertyNameFieldNamingStrategy.INSTANCE);
   }
 
   /**

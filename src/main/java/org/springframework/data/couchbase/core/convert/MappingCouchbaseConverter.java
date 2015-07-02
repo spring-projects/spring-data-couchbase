@@ -1,11 +1,11 @@
 /*
- * Copyright 2013-2014 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,13 @@
  */
 
 package org.springframework.data.couchbase.core.convert;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -31,13 +38,19 @@ import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.PreferredConstructor.Parameter;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.*;
+import org.springframework.data.mapping.model.BeanWrapper;
+import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
+import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.mapping.model.ParameterValueProvider;
+import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
+import org.springframework.data.mapping.model.PropertyValueProvider;
+import org.springframework.data.mapping.model.SpELContext;
+import org.springframework.data.mapping.model.SpELExpressionEvaluator;
+import org.springframework.data.mapping.model.SpELExpressionParameterValueProvider;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-
-import java.util.*;
 
 /**
  * A mapping converter for Couchbase.
@@ -154,7 +167,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   protected <R> R read(final CouchbasePersistentEntity<R> entity, final CouchbaseDocument source, final Object parent) {
     final DefaultSpELExpressionEvaluator evaluator = new DefaultSpELExpressionEvaluator(source, spELContext);
     ParameterValueProvider<CouchbasePersistentProperty> provider =
-      getParameterProvider(entity, source, evaluator, parent);
+        getParameterProvider(entity, source, evaluator, parent);
     EntityInstantiator instantiator = instantiators.getInstantiatorFor(entity);
 
     R instance = instantiator.createInstance(entity, provider);
@@ -197,7 +210,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the actual property value.
    */
   protected Object getValueInternal(final CouchbasePersistentProperty property, final CouchbaseDocument source,
-    final Object parent) {
+                                    final Object parent) {
     return new CouchbasePropertyValueProvider(source, spELContext, parent).getPropertyValue(property);
   }
 
@@ -211,14 +224,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return a new parameter value provider.
    */
   private ParameterValueProvider<CouchbasePersistentProperty> getParameterProvider(
-    final CouchbasePersistentEntity<?> entity, final CouchbaseDocument source,
-    final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
+      final CouchbasePersistentEntity<?> entity, final CouchbaseDocument source,
+      final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
     CouchbasePropertyValueProvider provider = new CouchbasePropertyValueProvider(source, evaluator, parent);
     PersistentEntityParameterValueProvider<CouchbasePersistentProperty> parameterProvider =
-      new PersistentEntityParameterValueProvider<CouchbasePersistentProperty>(entity, provider, parent);
+        new PersistentEntityParameterValueProvider<CouchbasePersistentProperty>(entity, provider, parent);
 
     return new ConverterAwareSpELExpressionParameterValueProvider(evaluator, conversionService, parameterProvider,
-      parent);
+        parent);
   }
 
   /**
@@ -231,7 +244,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    */
   @SuppressWarnings("unchecked")
   protected Map<Object, Object> readMap(final TypeInformation<?> type, final CouchbaseDocument source,
-    final Object parent) {
+                                        final Object parent) {
     Assert.notNull(source);
 
     Class<?> mapType = typeMapper.readType(source, type).getType();
@@ -368,7 +381,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @param entity the persistent entity to convert from.
    */
   protected void writeInternal(final Object source, final CouchbaseDocument target,
-    final CouchbasePersistentEntity<?> entity) {
+                               final CouchbasePersistentEntity<?> entity) {
     if (source == null) {
       return;
     }
@@ -377,7 +390,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       throw new MappingException("No mapping metadata found for entity of type " + source.getClass().getName());
     }
 
-		final BeanWrapper<Object> wrapper = BeanWrapper.create(source, conversionService);
+    final BeanWrapper<Object> wrapper = BeanWrapper.create(source, conversionService);
     final CouchbasePersistentProperty idProperty = entity.getIdProperty();
     final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
@@ -428,7 +441,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    */
   @SuppressWarnings("unchecked")
   private void writePropertyInternal(final Object source, final CouchbaseDocument target,
-    final CouchbasePersistentProperty prop) {
+                                     final CouchbasePersistentProperty prop) {
     if (source == null) {
       return;
     }
@@ -459,7 +472,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     addCustomTypeKeyIfNecessary(type, source, propertyDoc);
 
     CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass()) ? mappingContext
-      .getPersistentEntity(source.getClass()) : mappingContext.getPersistentEntity(type);
+        .getPersistentEntity(source.getClass()) : mappingContext.getPersistentEntity(type);
     writeInternal(source, propertyDoc, entity);
     target.put(name, propertyDoc);
   }
@@ -487,7 +500,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the written couchbase document.
    */
   private CouchbaseDocument writeMapInternal(final Map<Object, Object> source, final CouchbaseDocument target,
-    final TypeInformation<?> type) {
+                                             final TypeInformation<?> type) {
     for (Map.Entry<Object, Object> entry : source.entrySet()) {
       Object key = entry.getKey();
       Object val = entry.getValue();
@@ -533,7 +546,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the created couchbase list.
    */
   private CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
-    final TypeInformation<?> type) {
+                                                final TypeInformation<?> type) {
     TypeInformation<?> componentType = type == null ? null : type.getComponentType();
 
     for (Object element : source) {
@@ -573,7 +586,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     collectionType = Collection.class.isAssignableFrom(collectionType) ? collectionType : List.class;
     Collection<Object> items = targetType.getType().isArray() ? new ArrayList<Object>() : CollectionFactory
-            .createCollection(collectionType, source.size(false));
+        .createCollection(collectionType, source.size(false));
     TypeInformation<?> componentType = targetType.getComponentType();
     Class<?> rawComponentType = componentType == null ? null : componentType.getType();
 
@@ -709,12 +722,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     private final Object parent;
 
     public CouchbasePropertyValueProvider(final CouchbaseDocument source, final SpELContext factory,
-      final Object parent) {
+                                          final Object parent) {
       this(source, new DefaultSpELExpressionEvaluator(source, factory), parent);
     }
 
     public CouchbasePropertyValueProvider(final CouchbaseDocument source,
-      final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
+                                          final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
       Assert.notNull(source);
       Assert.notNull(evaluator);
 
@@ -744,7 +757,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * A expression parameter value provider.
    */
   private class ConverterAwareSpELExpressionParameterValueProvider extends
-    SpELExpressionParameterValueProvider<CouchbasePersistentProperty> {
+      SpELExpressionParameterValueProvider<CouchbasePersistentProperty> {
 
     private final Object parent;
 
@@ -757,7 +770,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     @Override
     protected <T> T potentiallyConvertSpelValue(final Object object,
-      final Parameter<T, CouchbasePersistentProperty> parameter) {
+                                                final Parameter<T, CouchbasePersistentProperty> parameter) {
       return readValue(object, parameter.getType(), parent);
     }
   }

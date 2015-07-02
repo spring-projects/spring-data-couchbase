@@ -16,9 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-
 import java.util.ArrayList;
+
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**
  * @author Michael Nitschinger

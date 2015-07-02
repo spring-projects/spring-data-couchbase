@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,8 @@
  */
 
 package org.springframework.data.couchbase.core.convert.translation;
+
+import com.couchbase.client.java.query.QueryRow;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
@@ -27,12 +29,12 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 public interface TranslationService {
 
   /**
-   * Encodes a {@link CouchbaseDocument} into the target format.
+   * Encodes a JSON String into the target format.
    *
-   * @param source the source document to encode.
+   * @param source the source contents to encode.
    * @return the encoded document representation.
    */
-  Object encode(CouchbaseStorable source);
+  String encode(CouchbaseStorable source);
 
   /**
    * Decodes the target format into a {@link CouchbaseDocument}
@@ -41,5 +43,15 @@ public interface TranslationService {
    * @param target the target of the populated data.
    * @return a properly populated document to work with.
    */
-  CouchbaseStorable decode(Object source, CouchbaseStorable target);
+  CouchbaseStorable decode(String source, CouchbaseStorable target);
+
+  /**
+   * Decodes an ad-hoc JSON object into a corresponding "case" class.
+   *
+   * @param source the JSON for the ad-hoc JSON object (from a N1QL {@link QueryRow} for instance).
+   * @param target the target class information.
+   * @param <T> the target class.
+   * @return an ad-hoc instance of the decoded JSON into the corresponding "case" class.
+   */
+  <T> T decodeFragment(String source, Class<T> target);
 }

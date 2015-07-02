@@ -16,20 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.joda.time.LocalDateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.TestApplicationConfig;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.mapping.model.MappingException;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.data.couchbase.core.convert.CustomConversions;
-import org.springframework.data.convert.ReadingConverter;
-import org.springframework.data.convert.WritingConverter;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -46,15 +33,27 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.joda.time.LocalDateTime;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.couchbase.UnitTestApplicationConfig;
+import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.mapping.model.MappingException;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TestApplicationConfig.class)
+@ContextConfiguration(classes = UnitTestApplicationConfig.class)
 public class MappingCouchbaseConverterTests {
 
   @Autowired
@@ -86,7 +85,7 @@ public class MappingCouchbaseConverterTests {
   @Test(expected = MappingException.class)
   public void needsIDOnEntity() {
     converter.write(new EntityWithoutID("foo"),
-      new CouchbaseDocument());
+        new CouchbaseDocument());
   }
 
   @Test
@@ -226,7 +225,7 @@ public class MappingCouchbaseConverterTests {
     Map<String, Boolean> attr1 = new TreeMap<String, Boolean>();
     Map<Integer, String> attr2 = new LinkedHashMap<Integer, String>();
     Map<String, Map<String, String>> attr3 =
-      new HashMap<String, Map<String, String>>();
+        new HashMap<String, Map<String, String>>();
 
     attr0.put("foo", "bar");
     attr1.put("bar", true);
@@ -374,7 +373,7 @@ public class MappingCouchbaseConverterTests {
     ValueEntity readConverted = converter.read(ValueEntity.class, source);
     assertEquals(addy.emailAddr, readConverted.email.emailAddr);
     assertEquals(listOfEmails.get(0).emailAddr,
-      readConverted.listOfEmails.get(0).emailAddr);
+        readConverted.listOfEmails.get(0).emailAddr);
   }
 
   @Test
@@ -486,6 +485,7 @@ public class MappingCouchbaseConverterTests {
 
   static class EntityWithoutID {
     private String attr0;
+
     public EntityWithoutID(String a0) {
       attr0 = a0;
     }
@@ -499,6 +499,7 @@ public class MappingCouchbaseConverterTests {
 
   static class StringEntity extends BaseEntity {
     private String attr0;
+
     public StringEntity(String attr0) {
       this.attr0 = attr0;
     }
@@ -506,6 +507,7 @@ public class MappingCouchbaseConverterTests {
 
   static class NumberEntity extends BaseEntity {
     private long attr0;
+
     public NumberEntity(long attr0) {
       this.attr0 = attr0;
     }
@@ -513,6 +515,7 @@ public class MappingCouchbaseConverterTests {
 
   static class BooleanEntity extends BaseEntity {
     private boolean attr0;
+
     public BooleanEntity(boolean attr0) {
       this.attr0 = attr0;
     }
@@ -523,6 +526,7 @@ public class MappingCouchbaseConverterTests {
     private int attr1;
     private double attr2;
     private boolean attr3;
+
     public MixedSimpleEntity(String attr0, int attr1, double attr2, boolean attr3) {
       this.attr0 = attr0;
       this.attr1 = attr1;
@@ -542,6 +546,7 @@ public class MappingCouchbaseConverterTests {
     private Map<String, Boolean> attr1;
     private Map<Integer, String> attr2;
     private Map<String, Map<String, String>> attr3;
+
     public MapEntity(Map<String, String> attr0, Map<String, Boolean> attr1, Map<Integer, String> attr2, Map<String, Map<String, String>> attr3) {
       this.attr0 = attr0;
       this.attr1 = attr1;
@@ -554,6 +559,7 @@ public class MappingCouchbaseConverterTests {
     private List<String> attr0;
     private List<Integer> attr1;
     private List<List<String>> attr2;
+
     ListEntity(List<String> attr0, List<Integer> attr1, List<List<String>> attr2) {
       this.attr0 = attr0;
       this.attr1 = attr1;
@@ -565,6 +571,7 @@ public class MappingCouchbaseConverterTests {
     private Set<String> attr0;
     private Set<Integer> attr1;
     private Set<Set<String>> attr2;
+
     SetEntity(Set<String> attr0, Set<Integer> attr1, Set<Set<String>> attr2) {
       this.attr0 = attr0;
       this.attr1 = attr1;
@@ -584,6 +591,7 @@ public class MappingCouchbaseConverterTests {
 
   static class Email {
     private String emailAddr;
+
     public Email(String emailAddr) {
       this.emailAddr = emailAddr;
     }
@@ -615,6 +623,7 @@ public class MappingCouchbaseConverterTests {
 
   static class CustomObject {
     private BigDecimal weight;
+
     public CustomObject(BigDecimal weight) {
       this.weight = weight;
     }

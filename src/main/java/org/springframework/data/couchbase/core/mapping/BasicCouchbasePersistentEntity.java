@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
  * @author Michael Nitschinger
  */
 public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
-  implements CouchbasePersistentEntity<T>, ApplicationContextAware {
+    implements CouchbasePersistentEntity<T>, ApplicationContextAware {
 
   /**
    * Contains the evaluation context.
@@ -40,6 +40,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 
   /**
    * Create a new entity.
+   *
    * @param typeInformation the type information of the entity.
    */
   public BasicCouchbasePersistentEntity(final TypeInformation<T> typeInformation) {
@@ -55,9 +56,9 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
    */
   @Override
   public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-		context.addPropertyAccessor(new BeanFactoryAccessor());
-		context.setBeanResolver(new BeanFactoryResolver(applicationContext));
-		context.setRootObject(applicationContext);
+    context.addPropertyAccessor(new BeanFactoryAccessor());
+    context.setBeanResolver(new BeanFactoryResolver(applicationContext));
+    context.setRootObject(applicationContext);
   }
 
   /**
@@ -66,9 +67,9 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
    * @return the expiration time.
    */
   public int getExpiry() {
-  	org.springframework.data.couchbase.core.mapping.Document annotation = 
-  			getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
+    org.springframework.data.couchbase.core.mapping.Document annotation =
+        getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
     return annotation == null ? 0 : annotation.expiry();
   }
-  
+
 }

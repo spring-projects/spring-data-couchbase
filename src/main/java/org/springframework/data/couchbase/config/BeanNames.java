@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,22 +20,32 @@ package org.springframework.data.couchbase.config;
  * Contains default bean names that will be used when no "id" is supplied to the beans.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
-public class BeanNames {
+class BeanNames {
 
   /**
-   * Refers to the "<couchbase:couchbase />" bean.
+   * Refers to the "&lt;couchbase:env /&gt;" bean.
    */
-  static final String COUCHBASE = "couchbase";
+  static final String COUCHBASE_ENV = "couchbaseEnv";
+  /**
+   * Refers to the "&lt;couchbase:cluster /&gt;" bean.
+   */
+  static final String COUCHBASE_CLUSTER = "couchbaseCluster";
 
   /**
-   * Refers to the "<couchbase:template />" bean.
+   * Refers to the "&lt;couchbase:bucket /&gt;" bean.
+   */
+  static final String COUCHBASE_BUCKET = "couchbaseBucket";
+
+  /**
+   * Refers to the "&lt;couchbase:template /&gt;" bean.
    */
   static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
 
   /**
-   * Refers to the "<couchbase:translation-service />" bean
+   * Refers to the "&lt;couchbase:translation-service /&gt;" bean
    */
-  static final String TRANSLATION_SERVICE = "translationService";
+  static final String TRANSLATION_SERVICE = "couchbaseTranslationService";
 
 }

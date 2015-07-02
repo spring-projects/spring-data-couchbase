@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,26 +16,30 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.convert.support.GenericConversionService;
-import org.springframework.data.convert.JodaTimeConverters;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * Value object to capture custom conversion.
- *
+ * <p/>
  * <p>Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper
  * inspection nor nested conversion.</p>
  *
@@ -69,6 +73,7 @@ public class CustomConversions {
 
   /**
    * Create a new instance with a given list of conversers.
+   *
    * @param converters the list of custom converters.
    */
   public CustomConversions(final List<?> converters) {
@@ -155,10 +160,12 @@ public class CustomConversions {
       for (GenericConverter.ConvertiblePair pair : genericConverter.getConvertibleTypes()) {
         register(new ConverterRegistration(pair, isReading, isWriting));
       }
-    } else if (converter instanceof Converter) {
+    }
+    else if (converter instanceof Converter) {
       Class<?>[] arguments = GenericTypeResolver.resolveTypeArguments(converter.getClass(), Converter.class);
       register(new ConverterRegistration(arguments[0], arguments[1], isReading, isWriting));
-    } else {
+    }
+    else {
       throw new IllegalArgumentException("Unsupported Converter type!");
     }
   }
@@ -279,7 +286,7 @@ public class CustomConversions {
   }
 
   /**
-   * Inspects the given {@link org.springframework.core.convert.converter.GenericConverter.ConvertiblePair} for ones
+   * Inspects the given {@link GenericConverter.ConvertiblePair} for ones
    * that have a source compatible type as source. Additionally checks assignability of the target type if one is
    * given.
    *
@@ -289,7 +296,7 @@ public class CustomConversions {
    * @return
    */
   private static Class<?> getCustomTarget(Class<?> sourceType, Class<?> requestedTargetType,
-    Iterable<GenericConverter.ConvertiblePair> pairs) {
+                                          Iterable<GenericConverter.ConvertiblePair> pairs) {
     Assert.notNull(sourceType);
     Assert.notNull(pairs);
 

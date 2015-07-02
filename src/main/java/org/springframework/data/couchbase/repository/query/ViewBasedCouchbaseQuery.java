@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.java.view.ViewQuery;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -39,21 +40,21 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] runtimeParams) {
-    Query query = null;
+    ViewQuery query = null;
     for (Object param : runtimeParams) {
-      if (param instanceof Query) {
-        query = (Query) param;
+      if (param instanceof ViewQuery) {
+        query = (ViewQuery) param;
       } else {
         throw new IllegalStateException("Unknown query param: " + param);
       }
     }
 
     if (query == null) {
-      query = new Query();
+      query = ViewQuery.from(designDocName(), viewName());
     }
-    query.setReduce(false);
+    query.reduce(false);
 
-    return operations.findByView(designDocName(), viewName(), query, method.getEntityInformation().getJavaType());
+    return operations.findByView(query, method.getEntityInformation().getJavaType());
   }
 
   @Override

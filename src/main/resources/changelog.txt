@@ -1,6 +1,22 @@
 Spring Data Couchbase Changelog
 ===============================
 
+New Major Version: 2.0
+----------------------
+This version is a complete rewrite of the Spring Data Couchbase project, using the newer 2.x generation
+of the Couchbase Java SDK.
+
+Changes in version 2.0.0.M1 (2015-07-03)
+----------------------------------------
+ * DATACOUCH-135 - Migrate to Couchbase SDK 2.2.0-dp, with support for N1QL in template
+
+
+=================================================================================
+| Below are older release notes for the 1st generation of Spring Data Couchbase |
+| (based on the 1.x Couchbase Java SDK)                                         |
+=================================================================================
+
+
 Changes in version 1.1.6.RELEASE (2015-07-01)
 ---------------------------------------------
 * DATACOUCH-133 - Fix typos in README.

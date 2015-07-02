@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,16 +16,16 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.mapping.model.SimpleTypeHolder;
+
 /**
  * A {@link CouchbaseList} is an abstract list that represents an array stored in a (most of the times JSON) document.
- *
+ * <p/>
  * <p>This {@link CouchbaseList} is part of the potentially nested structure inside one or more
  * {@link CouchbaseDocument}s. It can also contain them recursively, depending on how the document is modeled.</p>
  */
@@ -78,9 +78,10 @@ public class CouchbaseList implements CouchbaseStorable {
     additionalTypes.add(CouchbaseDocument.class);
     additionalTypes.add(CouchbaseList.class);
     if (simpleTypeHolder != null) {
-        this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
-    } else {
-        this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
+      this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
+    }
+    else {
+      this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
     }
   }
 
@@ -133,7 +134,8 @@ public class CouchbaseList implements CouchbaseStorable {
     for (Object value : payload) {
       if (value instanceof CouchbaseDocument) {
         totalSize += ((CouchbaseDocument) value).size(true);
-      } else if (value instanceof CouchbaseList) {
+      }
+      else if (value instanceof CouchbaseList) {
         totalSize += ((CouchbaseList) value).size(true);
       }
     }
@@ -143,7 +145,7 @@ public class CouchbaseList implements CouchbaseStorable {
 
   /**
    * Returns the current payload, including all recursive elements.
-   *
+   * <p/>
    * It either returns the raw results or makes sure that the recusrive elements
    * are also exported properly.
    *
@@ -157,7 +159,8 @@ public class CouchbaseList implements CouchbaseStorable {
       if (entry instanceof CouchbaseDocument) {
         toExport.remove(elem);
         toExport.add(elem, ((CouchbaseDocument) entry).export());
-      } else if (entry instanceof CouchbaseList) {
+      }
+      else if (entry instanceof CouchbaseList) {
         toExport.remove(elem);
         toExport.add(elem, ((CouchbaseList) entry).export());
       }
@@ -188,14 +191,14 @@ public class CouchbaseList implements CouchbaseStorable {
   /**
    * Verifies that only values of a certain and supported type
    * can be stored.
-   *
+   * <p/>
    * <p>If this is not the case, a {@link IllegalArgumentException} is
    * thrown.</p>
    *
    * @param value the object to verify its type.
    */
   private void verifyValueType(final Object value) {
-    if(value == null) {
+    if (value == null) {
       return;
     }
 
@@ -205,7 +208,7 @@ public class CouchbaseList implements CouchbaseStorable {
     }
 
     throw new IllegalArgumentException("Attribute of type "
-      + clazz.getCanonicalName() + "can not be stored and must be converted.");
+        + clazz.getCanonicalName() + "can not be stored and must be converted.");
   }
 
   /**
@@ -216,7 +219,7 @@ public class CouchbaseList implements CouchbaseStorable {
   @Override
   public String toString() {
     return "CouchbaseList{" +
-      "payload=" + payload +
-      '}';
+        "payload=" + payload +
+        '}';
   }
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,9 +28,6 @@ import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.TypeInformation;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-
 /**
  * Default implementation of a {@link org.springframework.data.mapping.context.MappingContext} for Couchbase using
  * {@link BasicCouchbasePersistentEntity} and {@link BasicCouchbasePersistentProperty} as primary abstractions.
@@ -35,8 +35,8 @@ import java.lang.reflect.Field;
  * @author Michael Nitschinger
  */
 public class CouchbaseMappingContext
-  extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
-  implements ApplicationContextAware {
+    extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
+    implements ApplicationContextAware {
 
   /**
    * Contains the application context to configure the application.
@@ -58,7 +58,7 @@ public class CouchbaseMappingContext
    * Defaults to a strategy using the plain property name.
    *
    * @param fieldNamingStrategy the {@link FieldNamingStrategy} to be used to determine the field name if no manual
-   *  mapping is applied.
+   * mapping is applied.
    */
   public void setFieldNamingStrategy(final FieldNamingStrategy fieldNamingStrategy) {
     this.fieldNamingStrategy = fieldNamingStrategy == null ? DEFAULT_NAMING_STRATEGY : fieldNamingStrategy;
@@ -91,7 +91,7 @@ public class CouchbaseMappingContext
    */
   @Override
   protected CouchbasePersistentProperty createPersistentProperty(final Field field, final PropertyDescriptor descriptor,
-    final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
+                                                                 final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
     return new BasicCouchbasePersistentProperty(field, descriptor, owner, simpleTypeHolder, fieldNamingStrategy);
   }
 
@@ -101,9 +101,9 @@ public class CouchbaseMappingContext
    * @param applicationContext the application context to be assigned.
    * @throws BeansException if the context can not be set properly.
    */
-	@Override
-	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-		context = applicationContext;
-	}
+  @Override
+  public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+    context = applicationContext;
+  }
 
 }

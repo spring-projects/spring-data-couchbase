@@ -1,11 +1,11 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,20 +16,21 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter;
-import org.springframework.data.convert.WritingConverter;
-import org.springframework.util.ClassUtils;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+
+import org.joda.time.DateMidnight;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
+import org.springframework.util.ClassUtils;
 
 /**
  * Out of the box conversions for java dates and calendars.
@@ -38,7 +39,8 @@ import java.util.List;
  */
 public final class DateConverters {
 
-  private DateConverters() {}
+  private DateConverters() {
+  }
 
   private static final boolean JODA_TIME_IS_PRESENT = ClassUtils.isPresent("org.joda.time.LocalDate", null);
 
@@ -85,7 +87,7 @@ public final class DateConverters {
 
     @Override
     public Long convert(Calendar source) {
-      return  source == null ? null : source.getTimeInMillis() / 1000;
+      return source == null ? null : source.getTimeInMillis() / 1000;
     }
   }
 

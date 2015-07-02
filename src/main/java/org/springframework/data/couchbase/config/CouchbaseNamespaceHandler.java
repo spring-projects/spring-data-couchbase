@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,11 @@
 
 package org.springframework.data.couchbase.config;
 
+import org.springframework.beans.factory.xml.NamespaceHandler;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
-import org.springframework.data.couchbase.repository.config.CouchbaseRepositoryConfigurationExtension;
-import org.springframework.data.repository.config.RepositoryBeanDefinitionParser;
-import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
 /**
- * {@link org.springframework.beans.factory.xml.NamespaceHandler} for Couchbase configuration.
+ * {@link NamespaceHandler} for Couchbase configuration.
  * <p/>
  * This handler acts as a container for one or more bean parsers and registers them. During parsing, the elements
  * get analyzed and the appropriate registered parser is called.
@@ -35,9 +33,10 @@ public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
    * Register bean definition parsers in the namespace handler.
    */
   public final void init() {
-    RepositoryConfigurationExtension extension = new CouchbaseRepositoryConfigurationExtension();
-    registerBeanDefinitionParser("repositories", new RepositoryBeanDefinitionParser(extension));
-    registerBeanDefinitionParser("couchbase", new CouchbaseParser());
+    //TODO repositories (CouchbaseRepositoryConfigurationExtension and RepositoryBeanDefinitionParser)
+    registerBeanDefinitionParser("env", new CouchbaseEnvironmentParser());
+    registerBeanDefinitionParser("cluster", new CouchbaseClusterParser());
+    registerBeanDefinitionParser("bucket", new CouchbaseBucketParser());
     registerBeanDefinitionParser("jmx", new CouchbaseJmxParser());
     registerBeanDefinitionParser("template", new CouchbaseTemplateParser());
     registerBeanDefinitionParser("translation-service", new CouchbaseTranslationServiceParser());

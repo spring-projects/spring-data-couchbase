@@ -16,18 +16,19 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import javax.validation.ConstraintViolationException;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import javax.validation.ConstraintViolationException;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 /**
  * @author Michael Nitschinger
@@ -46,7 +47,8 @@ public class ValidatingCouchbaseEventListenerTests {
     try {
       template.save(user);
       fail();
-    } catch (ConstraintViolationException e) {
+    }
+    catch (ConstraintViolationException e) {
       assertThat(e.getConstraintViolations().size(), equalTo(2));
     }
   }

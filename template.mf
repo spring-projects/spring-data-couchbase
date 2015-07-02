@@ -8,7 +8,7 @@ Export-Template:
  org.springframework.data.couchbase.*;version="${project.version}"
 Import-Template:
  javax.enterprise.*;version="${cdi:[=.=.=,+1.0.0)}";resolution:=optional,
- com.couchbase.client.*;version="${couchbase:[=.=.=,+1.0.0)}",
+ com.couchbase.client.*;version="${couchbase:[=.=.=,+2.2.0-dp)}",
  net.spy.memcached.*;version="[2.8.0,3.0.0)",
  com.fasterxml.jackson.*;version="${jackson:[=.=.=,+1.0.0)}",
  org.springframework.*;version="${spring:[=.=.=.=,+1.1.0)}",
@@ -18,3 +18,4 @@ Import-Template:
  org.slf4j.*;version="${slf4j:[=.=.=,+1.0.0)}",
  org.joda.time.*;version="${jodatime:[=.=.=,+1.0.0)}";resolution:=optional,
  javax.validation.*;version="${validation:[=.=.=.=,+1.0.0)}";resolution:=optional
+

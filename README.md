@@ -1,3 +1,9 @@
+# Spring Data Couchbase - v2
+This branch is a work in progress, it will contain the do-over of the `Spring-Data Couchbase` connector
+for the `Couchbase Java SDK 2.x` generation.
+
+Below is the v1 README as of `75bce39`:
+
 # Spring Data Couchbase
 
 The primary goal of the [Spring Data](http://www.springsource.org/spring-data) project is to make it easier to build

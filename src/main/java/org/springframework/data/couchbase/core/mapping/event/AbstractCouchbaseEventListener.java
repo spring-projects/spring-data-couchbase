@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.mapping.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -42,25 +43,28 @@ public class AbstractCouchbaseEventListener<E> implements ApplicationListener<Co
   @SuppressWarnings("rawtypes")
   public void onApplicationEvent(CouchbaseMappingEvent<?> event) {
 
-	E source = (E) event.getSource();
-	// Check for matching domain type and invoke callbacks
-	if (source != null && !domainClass.isAssignableFrom(source.getClass())) {
-		return;
-	}
+    E source = (E) event.getSource();
+    // Check for matching domain type and invoke callbacks
+    if (source != null && !domainClass.isAssignableFrom(source.getClass())) {
+      return;
+    }
 
     if (event instanceof BeforeDeleteEvent) {
       onBeforeDelete(event.getSource(), event.getDocument());
       return;
-    } else if (event instanceof AfterDeleteEvent) {
+    }
+    else if (event instanceof AfterDeleteEvent) {
       onAfterDelete(event.getSource(), event.getDocument());
       return;
     }
 
     if (event instanceof BeforeConvertEvent) {
       onBeforeConvert(source);
-    } else if (event instanceof BeforeSaveEvent) {
+    }
+    else if (event instanceof BeforeSaveEvent) {
       onBeforeSave(source, event.getDocument());
-    } else if (event instanceof AfterSaveEvent) {
+    }
+    else if (event instanceof AfterSaveEvent) {
       onAfterSave(source, event.getDocument());
     }
   }

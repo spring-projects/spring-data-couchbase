@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,13 +17,14 @@
 package org.springframework.data.couchbase.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.w3c.dom.Element;
+
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.util.StringUtils;
-import org.w3c.dom.Element;
 
 /**
  * Enables Parsing of the "<couchbase:translation-service />" configuration bean.
@@ -36,7 +37,6 @@ public class CouchbaseTranslationServiceParser extends AbstractSingleBeanDefinit
    * Defines the bean class that will be constructed.
    *
    * @param element the XML element which contains the attributes.
-   *
    * @return the class type to instantiate.
    */
   @Override
@@ -55,17 +55,18 @@ public class CouchbaseTranslationServiceParser extends AbstractSingleBeanDefinit
     final String objectMapper = element.getAttribute("objectMapper");
     if (StringUtils.hasText(objectMapper)) {
       bean.addPropertyReference("objectMapper", objectMapper);
-    } else {
+    }
+    else {
       bean.addPropertyValue("objectMapper", new ObjectMapper());
     }
   }
+
   /**
    * Resolve the bean ID and assign a default if not set.
    *
    * @param element the XML element which contains the attributes.
    * @param definition the bean definition to work with.
    * @param parserContext encapsulates the parsing state and configuration.
-   *
    * @return the ID to work with (e.g., "translationService")
    */
   @Override

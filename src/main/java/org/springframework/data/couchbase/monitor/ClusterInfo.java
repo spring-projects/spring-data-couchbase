@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,23 +16,36 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import com.couchbase.client.CouchbaseClient;
+import java.net.InetAddress;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.bucket.BucketInfo;
+
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedMetric;
 import org.springframework.jmx.export.annotation.ManagedResource;
-
-import java.util.HashMap;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Exposes basic cluster information.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
-@ManagedResource(description =  "Cluster Information")
-public class ClusterInfo extends AbstractMonitor {
+@ManagedResource(description = "Cluster Information")
+public class ClusterInfo {
 
-  public ClusterInfo(final CouchbaseClient client) {
-    super(client);
+  private final RestTemplate template;
+  private final Bucket bucket;
+  private final BucketInfo info;
+
+  public ClusterInfo(final Bucket bucket) {
+    this.template = new RestTemplate();
+    this.bucket = bucket;
+    this.info = bucket.bucketManager().info();
   }
 
   @ManagedMetric(description = "Total RAM assigned")
@@ -80,27 +93,34 @@ public class ClusterInfo extends AbstractMonitor {
    * converted to long.
    *
    * @param value the value to convert.
-   *
    * @return the converted value.
    */
   private long convertPotentialLong(Object value) {
     if (value instanceof Integer) {
       return new Long((Integer) value);
-    } else if (value instanceof Long) {
+    }
+    else if (value instanceof Long) {
       return (Long) value;
-    } else  {
+    }
+    else {
       throw new IllegalStateException("Cannot convert value to long: " + value);
     }
   }
 
+  protected String randomAvailableHostname() {
+    List<InetAddress> available = info.nodeList();
+    Collections.shuffle(available);
+    return available.get(0).getHostName();
+  }
+
   private HashMap<String, Object> fetchPoolInfo() {
-    return getTemplate().getForObject("http://"
-      + randomAvailableHostname() + ":8091/pools/default", HashMap.class);
+    return template.getForObject("http://"
+        + randomAvailableHostname() + ":8091/pools/default", HashMap.class);
   }
 
   private HashMap<String, HashMap> parseStorageTotals() {
     HashMap<String, Object> stats = fetchPoolInfo();
-    return  (HashMap<String, HashMap>) stats.get("storageTotals");
+    return (HashMap<String, HashMap>) stats.get("storageTotals");
   }
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,28 +16,35 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import com.couchbase.client.CouchbaseClient;
+import java.net.InetAddress;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.bucket.BucketInfo;
+
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
-
-import java.net.SocketAddress;
 
 /**
  * Exposes basic client information.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
-@ManagedResource(description =  "Client Information")
-public class ClientInfo extends AbstractMonitor {
+@ManagedResource(description = "Client Information")
+public class ClientInfo {
 
-  public ClientInfo(final CouchbaseClient client) {
-    super(client);
+  private final Bucket bucket;
+  private final BucketInfo info;
+
+  public ClientInfo(final Bucket bucket) {
+    this.bucket = bucket;
+    this.info = bucket.bucketManager().info();
   }
 
   @ManagedAttribute(description = "Hostnames of connected nodes")
   public String getHostNames() {
     StringBuilder result = new StringBuilder();
-    for (SocketAddress node : getStats().keySet()) {
+    for (InetAddress node : info.nodeList()) {
       result.append(node.toString()).append(",");
     }
     return result.toString();
@@ -45,17 +52,9 @@ public class ClientInfo extends AbstractMonitor {
 
   @ManagedAttribute(description = "Number of connected nodes")
   public int getNumberOfNodes() {
-    return getStats().keySet().size();
+    return info.nodeCount();
   }
 
-  @ManagedAttribute(description = "Number of connected active nodes")
-  public int getNumberOfActiveNodes() {
-    return getClient().getAvailableServers().size();
-  }
-
-  @ManagedAttribute(description = "Number of connected inactive nodes")
-  public int getNumberOfInactiveNodes() {
-    return getClient().getUnavailableServers().size();
-  }
+  //TODO obtain count of available nodes vs unavailable ones and expose it
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,20 +16,20 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.data.mapping.model.SimpleTypeHolder;
+
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
- *
+ * <p/>
  * <p>It acts like a {@link HashMap}, but only allows those types to be written that are supported by the underlying
  * storage format, which is currently JSON. Note that JSON conversion is not happening here, but performed at a
  * different stage based on the payload stored in the {@link CouchbaseDocument}.</p>
- *
+ * <p/>
  * <p>In addition to the actual content, meta data is also stored. This especially refers to the document ID and its
  * expiration time. Note that this information is not mandatory, since documents can be nested and therefore only the
  * topmost document most likely has an ID.</p>
@@ -115,7 +115,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
    *
    * @param key the key of the attribute.
    * @return the value to which the specified key is mapped, or
-   *         null if does not contain a mapping for the key.
+   * null if does not contain a mapping for the key.
    */
   public final Object get(final String key) {
     return payload.get(key);
@@ -123,7 +123,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
   /**
    * Returns the current payload, including all recursive elements.
-   *
+   * <p/>
    * It either returns the raw results or makes sure that the recusrive elements
    * are also exported properly.
    *
@@ -134,7 +134,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
     for (Map.Entry<String, Object> entry : payload.entrySet()) {
       if (entry.getValue() instanceof CouchbaseDocument) {
         toExport.put(entry.getKey(), ((CouchbaseDocument) entry.getValue()).export());
-      } else if (entry.getValue() instanceof CouchbaseList) {
+      }
+      else if (entry.getValue() instanceof CouchbaseList) {
         toExport.put(entry.getKey(), ((CouchbaseList) entry.getValue()).export());
       }
     }
@@ -187,7 +188,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
     for (Object value : payload.values()) {
       if (value instanceof CouchbaseDocument) {
         totalSize += ((CouchbaseDocument) value).size(true);
-      } else if (value instanceof CouchbaseList) {
+      }
+      else if (value instanceof CouchbaseList) {
         totalSize += ((CouchbaseList) value).size(true);
       }
     }
@@ -197,7 +199,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
   /**
    * Returns the underlying payload.
-   *
+   * <p/>
    * <p>Note that unlike {@link #export()}, the nested objects are not converted, so the "raw" map is returned.</p>
    *
    * @return the underlying payload.
@@ -208,7 +210,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
   /**
    * Returns the expiration time of the document.
-   *
+   * <p/>
    * If the expiration time is 0, then the document will be persisted until
    * deleted manually ("forever").
    *
@@ -220,7 +222,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
   /**
    * Set the expiration time of the document.
-   *
+   * <p/>
    * If the expiration time is 0, then the document will be persisted until
    * deleted manually ("forever").
    *
@@ -255,19 +257,19 @@ public class CouchbaseDocument implements CouchbaseStorable {
   /**
    * Verifies that only values of a certain and supported type
    * can be stored.
-   *
+   * <p/>
    * <p>If this is not the case, a {@link IllegalArgumentException} is
    * thrown.</p>
    *
    * @param value the object to verify its type.
    */
   private void verifyValueType(final Object value) {
-    if(value == null) {
+    if (value == null) {
       return;
     }
     final Class<?> clazz = value.getClass();
     if (simpleTypeHolder.isSimpleType(clazz)) {
-        return;
+      return;
     }
     throw new IllegalArgumentException("Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
   }
@@ -280,9 +282,9 @@ public class CouchbaseDocument implements CouchbaseStorable {
   @Override
   public String toString() {
     return "CouchbaseDocument{" +
-      "id=" + id +
-      ", exp=" + expiration +
-      ", payload=" + payload +
-      '}';
+        "id=" + id +
+        ", exp=" + expiration +
+        ", payload=" + payload +
+        '}';
   }
 }

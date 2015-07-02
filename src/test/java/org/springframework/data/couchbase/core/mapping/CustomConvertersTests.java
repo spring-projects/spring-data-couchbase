@@ -16,26 +16,29 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import static org.junit.Assert.assertEquals;
+
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
-import org.springframework.data.couchbase.TestApplicationConfig;
+import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests to verify custom mapping logic.
@@ -43,7 +46,7 @@ import static org.junit.Assert.assertEquals;
  * @author Michael Nitschinger
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = TestApplicationConfig.class)
+@ContextConfiguration(classes = UnitTestApplicationConfig.class)
 public class CustomConvertersTests {
 
   @Autowired
@@ -161,9 +164,9 @@ public class CustomConvertersTests {
     @Override
     public CouchbaseDocument convert(BlogPost source) {
       return new CouchbaseDocument()
-        .setId(source.id)
-        .put("title", source.title)
-        .put("slug", source.title.toLowerCase().replaceAll(" ", "_"));
+          .setId(source.id)
+          .put("title", source.title)
+          .put("slug", source.title.toLowerCase().replaceAll(" ", "_"));
     }
   }
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2012-2015 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *        http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,23 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.CouchbaseClient;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.CouchbaseCluster;
+import com.couchbase.client.java.env.CouchbaseEnvironment;
+import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
-import org.springframework.data.couchbase.core.CouchbaseFactoryBean;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
@@ -37,29 +46,21 @@ import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
   /**
-   * The list of hostnames (or IP addresses to bootstrap from).
+   * The list of hostnames (or IP addresses) to bootstrap from.
    *
    * @return the list of bootstrap hosts.
    */
-  protected abstract List<String> bootstrapHosts();
+  protected abstract List<String> getBootstrapHosts();
 
   /**
    * The name of the bucket to connect to.
@@ -76,39 +77,54 @@ public abstract class AbstractCouchbaseConfiguration {
   protected abstract String getBucketPassword();
 
   /**
-   * Return the {@link CouchbaseClient} instance to connect to.
+   * Is the {@link #getEnvironment()} to be destroyed by Spring?
+   *
+   * @return true if Spring should destroy the environment with the context, false otherwise.
+   */
+  protected boolean isEnvironmentManagedBySpring() {
+    return true;
+  }
+
+  /**
+   * Override this method if you want a customized {@link CouchbaseEnvironment}.
+   * This environment will be managed by Spring, which will call its shutdown()
+   * method upon bean destruction, unless you override {@link #isEnvironmentManagedBySpring()}
+   * as well to return false.
+   *
+   * @return a customized environment, defaults to a {@link DefaultCouchbaseEnvironment}.
+   */
+  protected CouchbaseEnvironment getEnvironment() {
+    return DefaultCouchbaseEnvironment.create();
+  }
+
+  @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
+  public CouchbaseEnvironment couchbaseEnvironment() {
+    CouchbaseEnvironment env = getEnvironment();
+    if (isEnvironmentManagedBySpring()) {
+      return env;
+    }
+    return new CouchbaseEnvironmentNoShutdownProxy(env);
+  }
+
+  /**
+   * Returns the {@link Cluster} instance to connect to.
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean(destroyMethod = "shutdown")
-  public CouchbaseClient couchbaseClient() throws Exception {
-    setLoggerProperty(couchbaseLogger());
-
-    return new CouchbaseClient(
-      bootstrapUris(bootstrapHosts()),
-      getBucketName(),
-      getBucketPassword()
-    );
+  @Bean(destroyMethod = "disconnect", name = BeanNames.COUCHBASE_CLUSTER)
+  public Cluster couchbaseCluster() throws Exception {
+    return CouchbaseCluster.create(couchbaseEnvironment(), getBootstrapHosts());
   }
 
   /**
-   * Specifies the logger to use (defaults to SLF4J).
+   * Return the {@link Bucket} instance to connect to.
    *
-   * @return the logger property string.
+   * @throws Exception on Bean construction failure.
    */
-  protected String couchbaseLogger() {
-    return CouchbaseFactoryBean.DEFAULT_LOGGER_PROPERTY;
-  }
-
-  /**
-   * Prepare the logging property before initializing couchbase.
-   *
-   * @param logger the logger path to use.
-   */
-  protected static void setLoggerProperty(final String logger) {
-    Properties systemProperties = System.getProperties();
-    systemProperties.setProperty("net.spy.log.LoggerImpl", logger);
-    System.setProperties(systemProperties);
+  @Bean(destroyMethod = "close", name = BeanNames.COUCHBASE_BUCKET)
+  public Bucket couchbaseClient() throws Exception {
+    //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
+    return couchbaseCluster().openBucket(getBucketName(), getBucketPassword());
   }
 
   /**
@@ -116,7 +132,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean
+  @Bean(name = BeanNames.COUCHBASE_TEMPLATE)
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
     return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
   }
@@ -159,8 +175,6 @@ public abstract class AbstractCouchbaseConfiguration {
     return mappingContext;
   }
 
-
-
   /**
    * Register custom Converters in a {@link CustomConversions} object if required. These
    * {@link CustomConversions} will be registered with the {@link #mappingCouchbaseConverter()} and
@@ -202,7 +216,7 @@ public abstract class AbstractCouchbaseConfiguration {
    * will be considered {@code com.acme} unless the method is overridden to implement alternate behavior.</p>
    *
    * @return the base package to scan for mapped {@link Document} classes or {@literal null} to not enable scanning for
-   *         entities.
+   * entities.
    */
   protected String getMappingBasePackage() {
     return getClass().getPackage().getName();
@@ -225,19 +239,4 @@ public abstract class AbstractCouchbaseConfiguration {
   protected FieldNamingStrategy fieldNamingStrategy() {
     return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
   }
-
-  /**
-   * Converts the given list of hostnames into parsable URIs.
-   *
-   * @param hosts the list of hosts to convert.
-   * @return the converted URIs.
-   */
-  protected static List<URI> bootstrapUris(List<String> hosts) throws URISyntaxException {
-    List<URI> uris = new ArrayList<URI>();
-    for (String host : hosts) {
-      uris.add(new URI("http://" + host + ":8091/pools"));
-    }
-    return uris;
-  }
-
 }

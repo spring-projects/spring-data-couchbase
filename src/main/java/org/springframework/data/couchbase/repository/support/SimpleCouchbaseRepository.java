@@ -16,19 +16,20 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import com.couchbase.client.protocol.views.ComplexKey;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.ViewResponse;
-import com.couchbase.client.protocol.views.ViewRow;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.view.ViewResult;
+import com.couchbase.client.java.view.ViewRow;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.util.Assert;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Repository base implementation for Couchbase.
@@ -130,30 +131,36 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public Iterable<T> findAll() {
     final ResolvedView resolvedView = determineView();
-    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), new Query().setReduce(false), entityInformation.getJavaType());
+    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
+    query.reduce(false);
+    return couchbaseOperations.findByView(query, entityInformation.getJavaType());
   }
 
   @Override
   public Iterable<T> findAll(final Iterable<ID> ids) {
-    Query query = new Query();
-    query.setReduce(false);
-    query.setKeys(ComplexKey.of(ids));
-
     final ResolvedView resolvedView = determineView();
-    return couchbaseOperations.findByView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query, entityInformation.getJavaType());
+    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
+    query.reduce(false);
+    JsonArray keys = JsonArray.create();
+    for (ID id : ids) {
+      keys.add(id);
+    }
+    query.keys(keys);
+
+    return couchbaseOperations.findByView(query, entityInformation.getJavaType());
   }
 
   @Override
   public long count() {
-    Query query = new Query();
-    query.setReduce(true);
-
     final ResolvedView resolvedView = determineView();
-    ViewResponse response = couchbaseOperations.queryView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query);
+    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
+    query.reduce(true);
+
+    ViewResult response = couchbaseOperations.queryView(query);
 
     long count = 0;
     for (ViewRow row : response) {
-      count += Long.parseLong(row.getValue());
+      count += Long.parseLong(String.valueOf(row.value()));
     }
 
     return count;
@@ -161,13 +168,13 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public void deleteAll() {
-    Query query = new Query();
-    query.setReduce(false);
-
     final ResolvedView resolvedView = determineView();
-    ViewResponse response = couchbaseOperations.queryView(resolvedView.getDesignDocument(), resolvedView.getViewName(), query);
+    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
+    query.reduce(false);
+
+    ViewResult response = couchbaseOperations.queryView(query);
     for (ViewRow row : response) {
-      couchbaseOperations.remove(row.getId());
+      couchbaseOperations.remove(row.id());
     }
   }
 
