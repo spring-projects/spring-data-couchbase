@@ -322,8 +322,44 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
         List<QueryRow> allRows = queryResult.allRows();
         List<T> result = new ArrayList<T>(allRows.size());
         for (QueryRow row : allRows) {
-          String json = row.value().toString();
-          T decoded = translationService.decodeFragment(json, entityClass);
+          JsonObject json = row.value();
+          String id = json.getString(SELECT_ID);
+          Long cas = json.getLong(SELECT_CAS);
+          if (id == null || cas == null) {
+            throw new CouchbaseQueryExecutionException("Unable to retrieve enough metadata for N1QL to entity mapping, " +
+                "have you selected " + SELECT_ID + " and " + SELECT_CAS + "?");
+          }
+          json = json.removeKey("_ID").removeKey("_CAS");
+          RawJsonDocument entityDoc = RawJsonDocument.create(id, json.toString(), cas);
+          T decoded = mapToEntity(id, entityDoc, entityClass);
+          result.add(decoded);
+        }
+        return result;
+      }
+      else {
+        StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
+        for (JsonObject error : queryResult.errors()) {
+          message.append('\n').append(error);
+        }
+        throw new CouchbaseQueryExecutionException(message.toString());
+      }
+    }
+    catch (TranscodingException e) {
+      throw new CouchbaseQueryExecutionException("Unable to execute query", e);
+    }
+  }
+
+  @Override
+  public <T> List<T> findByN1QLProjection(Query n1ql, Class<T> entityClass) {
+    try {
+      QueryResult queryResult = queryN1QL(n1ql);
+
+      if (queryResult.finalSuccess()) {
+        List<QueryRow> allRows = queryResult.allRows();
+        List<T> result = new ArrayList<T>(allRows.size());
+        for (QueryRow row : allRows) {
+          JsonObject json = row.value();
+          T decoded = translationService.decodeFragment(json.toString(), entityClass);
           result.add(decoded);
         }
         return result;

@@ -16,11 +16,15 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.io.Serializable;
+import java.lang.reflect.Method;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.MappingException;
@@ -31,9 +35,6 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.Assert;
-
-import java.io.Serializable;
-import java.lang.reflect.Method;
 
 /**
  * Factory to create {@link SimpleCouchbaseRepository} instances.
@@ -125,12 +126,25 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /**
-   * Currently, only views are supported. N1QL support to be added.
+   * Strategy to lookup Couchbase queries implementation to be used.
    */
   private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
     @Override
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
+      String namedQueryName = queryMethod.getNamedQueryName();
+
+      if (queryMethod.hasN1qlAnnotation()) {
+        if (queryMethod.hasInlineN1qlQuery()) {
+          return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations);
+        } else if (namedQueries.hasQuery(namedQueryName)) {
+          String namedQuery = namedQueries.getQuery(namedQueryName);
+          return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations);
+        } else {
+          //FIXME return new PartBasedN1qlQuery(queryMethod, couchbaseOperations, namedQueries);
+          return new StringN1qlBasedQuery("SELECT 1", queryMethod, couchbaseOperations);
+        }
+      }
       return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
     }
   }

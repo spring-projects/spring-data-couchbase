@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
+import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
@@ -109,6 +110,27 @@ public class SimpleCouchbaseRepositoryTests {
       assertNotNull(u.getUsername());
     }
     assertEquals(2, size);
+  }
+
+  @Test
+  public void shouldFindByUsernameUsingN1ql() {
+    User user = repository.findByUsername("uname-1");
+    assertNotNull(user);
+    assertEquals("testuser-1", user.getKey());
+    assertEquals("uname-1", user.getUsername());
+  }
+
+  @Test
+  public void shouldFailFindByUsernameWithNoIdOrCas() {
+    try {
+      User user = repository.findByUsernameBadSelect("uname-1");
+      fail("shouldFailFindByUsernameWithNoIdOrCas");
+    } catch (CouchbaseQueryExecutionException e) {
+      assertTrue(e.getMessage().contains("_ID"));
+      assertTrue(e.getMessage().contains("_CAS"));
+    } catch (Exception e) {
+      fail("CouchbaseQueryExecutionException expected");
+    }
   }
 
 }

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import com.couchbase.client.java.view.ViewQuery;
 
+import org.springframework.data.couchbase.core.view.N1QL;
 import org.springframework.data.couchbase.core.view.View;
 
 /**
@@ -27,5 +28,11 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
   @View(designDocument = "user", viewName = "all")
   Iterable<User> customViewQuery(ViewQuery query);
+
+  @N1QL("$SELECT_ENTITY$ WHERE username = $1")
+  User findByUsername(String username);
+
+  @N1QL("SELECT * FROM $BUCKET$ WHERE username = $1")
+  User findByUsernameBadSelect(String username);
 
 }

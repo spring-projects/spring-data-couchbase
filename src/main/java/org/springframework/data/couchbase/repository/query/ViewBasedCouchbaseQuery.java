@@ -44,6 +44,7 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     for (Object param : runtimeParams) {
       if (param instanceof ViewQuery) {
         query = (ViewQuery) param;
+        //FIXME clone the ViewQuery and use the @View design / viewname
       } else {
         throw new IllegalStateException("Unknown query param: " + param);
       }

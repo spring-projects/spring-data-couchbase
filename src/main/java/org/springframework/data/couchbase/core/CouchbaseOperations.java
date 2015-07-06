@@ -31,6 +31,7 @@ import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
@@ -39,6 +40,9 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
  * @author Simon Baslé
  */
 public interface CouchbaseOperations {
+
+  String SELECT_ID = "_ID";
+  String SELECT_CAS = "_CAS";
 
   /**
    * Save the given object.
@@ -210,17 +214,41 @@ public interface CouchbaseOperations {
   ViewResult queryView(ViewQuery query);
 
   /**
-   * Query the N1QL Service for JSON data of type T. This is done via a {@link Query} that can
-   * contain a {@link Statement}, additional query parameters ({@link QueryParams})
-   * and placeholder values if the statement contains placeholders.
-   * <p>Use {@link Query}'s factory methods to construct this.</p>
+   * Query the N1QL Service for JSON data of type T. Enough data to construct the full
+   * entity is expected to be selected, including the metadata {@value #SELECT_ID} and
+   * {@value #SELECT_CAS} (document id and cas, obtained through N1QL's
+   * "{@code META(bucket).id AS} {@value #SELECT_ID}" and
+   * "{@code META(bucket).cas AS} {@value #SELECT_CAS}").
+   * <p>This is done via a {@link Query} that contains a {@link Statement} and possibly
+   * additional query parameters ({@link QueryParams}) and placeholder values if the
+   * statement contains placeholders.
+   * <br/>
+   * Use {@link Query}'s factory methods to construct such a Query.</p>
    *
    * @param n1ql the N1QL query.
    * @param entityClass the target class for the returned entities.
    * @param <T> the entity class
    * @return the list of entities matching this query.
+   * @throws CouchbaseQueryExecutionException if the id and cas are not selected.
    */
   <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass);
+
+  /**
+   * Query the N1QL Service for partial JSON data of type T. The selected field will be
+   * used in a {@link TranslationService#decodeFragment(String, Class) straightforward decoding}
+   * (no document, metadata like id nor cas) to map to a "fragment class".
+   * <p>This is done via a {@link Query} that contains a {@link Statement} and possibly
+   * additional query parameters ({@link QueryParams}) and placeholder values if the
+   * statement contains placeholders.
+   * <br/>
+   * Use {@link Query}'s factory methods to construct such a Query.</p>
+   *
+   * @param n1ql the N1QL query.
+   * @param fragmentClass the target class for the returned fragments.
+   * @param <T> the fragment class
+   * @return the list of entities matching this query.
+   */
+  <T> List<T> findByN1QLProjection(Query n1ql, Class<T> fragmentClass);
 
   /**
    * Query the N1QL Service with direct access to the {@link QueryResult}.

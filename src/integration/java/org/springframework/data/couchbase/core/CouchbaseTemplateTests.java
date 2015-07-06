@@ -241,7 +241,7 @@ public class CouchbaseTemplateTests {
 				.where(x("type").eq(s("fullFragment"))
 				.and(x("criteria").gt(1))));
 
-		List<Fragment> fragments = template.findByN1QL(query, Fragment.class);
+		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class);
 		assertNotNull(fragments);
 		assertFalse(fragments.isEmpty());
 		assertEquals(1, fragments.size());
