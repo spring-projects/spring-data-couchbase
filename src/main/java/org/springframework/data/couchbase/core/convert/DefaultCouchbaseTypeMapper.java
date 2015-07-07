@@ -32,6 +32,8 @@ public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocum
    */
   public static final String DEFAULT_TYPE_KEY = "_class";
 
+  private final String typeKey;
+
   /**
    * Create a new type mapper with the type key.
    *
@@ -39,6 +41,12 @@ public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocum
    */
   public DefaultCouchbaseTypeMapper(final String typeKey) {
     super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
+    this.typeKey = typeKey;
+  }
+
+  @Override
+  public String getTypeKey() {
+    return this.typeKey;
   }
 
   public static final class CouchbaseDocumentTypeAliasAccessor implements TypeAliasAccessor<CouchbaseDocument> {
