@@ -18,10 +18,13 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -101,6 +104,8 @@ public class SimpleCouchbaseRepositoryTests {
   }
 
   @Test
+  @Ignore("View based query with copy of params from a ViewQuery in the method parameter not implemented")
+  //TODO re-enable test once ViewQuery parameters other than designDoc/viewName can be copied
   public void shouldFindCustom() {
     Iterable<User> users = repository.customViewQuery(ViewQuery.from("", "").limit(2).stale(Stale.FALSE));
     int size = 0;
@@ -131,6 +136,14 @@ public class SimpleCouchbaseRepositoryTests {
     } catch (Exception e) {
       fail("CouchbaseQueryExecutionException expected");
     }
+  }
+
+  @Test
+  public void shouldFindFromDeriveQueryWithRegexpAndIn() {
+    User user = repository.findByUsernameRegexAndUsernameIn("uname-[123]", Arrays.asList("uname-2", "uname-4"));
+    assertNotNull(user);
+    assertEquals("testuser-2", user.getKey());
+    assertEquals("uname-2", user.getUsername());
   }
 
 }

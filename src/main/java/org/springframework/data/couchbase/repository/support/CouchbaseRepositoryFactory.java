@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
@@ -32,6 +33,7 @@ import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.Assert;
@@ -121,7 +123,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   @Override
-  protected QueryLookupStrategy getQueryLookupStrategy(QueryLookupStrategy.Key key) {
+  protected QueryLookupStrategy getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
     return new CouchbaseQueryLookupStrategy();
   }
 
@@ -141,8 +143,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
           String namedQuery = namedQueries.getQuery(namedQueryName);
           return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations);
         } else {
-          //FIXME return new PartBasedN1qlQuery(queryMethod, couchbaseOperations, namedQueries);
-          return new StringN1qlBasedQuery("SELECT 1", queryMethod, couchbaseOperations);
+          return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
         }
       }
       return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);

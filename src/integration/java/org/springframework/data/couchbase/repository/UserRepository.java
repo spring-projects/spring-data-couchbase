@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
+import java.util.List;
+
 import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.view.N1QL;
@@ -34,5 +36,8 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
   @N1QL("SELECT * FROM $BUCKET$ WHERE username = $1")
   User findByUsernameBadSelect(String username);
+
+  @N1QL
+  User findByUsernameRegexAndUsernameIn(String regex, List<String> sample);
 
 }

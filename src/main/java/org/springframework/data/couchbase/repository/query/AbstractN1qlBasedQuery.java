@@ -16,13 +16,10 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import java.util.Iterator;
 import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.Query;
-import com.couchbase.client.java.query.QueryParams;
-import com.couchbase.client.java.query.QueryPlan;
 import com.couchbase.client.java.query.Statement;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -38,7 +35,7 @@ import org.springframework.data.util.StreamUtils;
  */
 public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
-  private final CouchbaseQueryMethod queryMethod;
+  protected final CouchbaseQueryMethod queryMethod;
   private final CouchbaseOperations couchbaseOperations;
 
   protected AbstractN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
@@ -46,45 +43,28 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     this.couchbaseOperations = couchbaseOperations;
   }
 
-  protected abstract Statement getStatement();
+  protected abstract Statement getStatement(ParameterAccessor accessor);
+
+  protected abstract JsonArray getPlaceholderValues(ParameterAccessor accessor);
 
   @Override
   public Object execute(Object[] parameters) {
-    Statement statement = getStatement();
+    ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
+    Statement statement = getStatement(accessor);
+    JsonArray queryPlaceholderValues = getPlaceholderValues(accessor);
 
-    ParameterAccessor parameterAccessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
-    Query query = buildQuery(statement, parameterAccessor.iterator());
+    Query query = buildQuery(statement, queryPlaceholderValues);
     return executeDependingOnType(query, queryMethod, queryMethod.isPageQuery(), queryMethod.isModifyingQuery(),
         queryMethod.isSliceQuery());
   }
 
-  protected static Query buildQuery(Statement statement, Iterator<Object> paramIterator) {
-    JsonArray queryValues = JsonArray.create();
-    QueryParams queryParams = null;
-    QueryPlan preparedPayload = null;
-
-    while (paramIterator.hasNext()) {
-      Object next = paramIterator.next();
-      if (next instanceof QueryParams) {
-        queryParams = (QueryParams) next;
-      }
-      else if (next instanceof QueryPlan) {
-        preparedPayload = (QueryPlan) next;
-      }
-      else {
-        queryValues.add(next);
-      }
-    }
-
+  protected static Query buildQuery(Statement statement, JsonArray queryPlaceholderValues) {
     Query query;
-    if (preparedPayload != null) {
-      query = Query.prepared(preparedPayload, queryValues.isEmpty() ? null : queryValues, queryParams);
-    }
-    else if (!queryValues.isEmpty()) {
-      query = Query.parametrized(statement, queryValues, queryParams);
+    if (!queryPlaceholderValues.isEmpty()) {
+      query = Query.parametrized(statement, queryPlaceholderValues);
     }
     else {
-      query = Query.simple(statement, queryParams);
+      query = Query.simple(statement);
     }
 
     return query;
@@ -122,5 +102,9 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   @Override
   public CouchbaseQueryMethod getQueryMethod() {
     return this.queryMethod;
+  }
+
+  protected CouchbaseOperations getCouchbaseOperations() {
+    return this.couchbaseOperations;
   }
 }

@@ -16,10 +16,12 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.Statement;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
@@ -63,7 +65,17 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  public Statement getStatement() {
+  protected JsonArray getPlaceholderValues(ParameterAccessor accessor) {
+    JsonArray values = JsonArray.create();
+    for (Object value : accessor) {
+      values.add(value);
+    }
+    return values;
+  }
+
+  @Override
+  public Statement getStatement(ParameterAccessor accessor) {
     return this.statement;
   }
+
 }
