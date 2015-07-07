@@ -138,13 +138,25 @@ public abstract class AbstractCouchbaseConfiguration {
   }
 
   /**
+   * Determines the name of the field that will store the type information for complex types when
+   * using the {@link #mappingCouchbaseConverter()}.
+   * Defaults to {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
+   *
+   * @see MappingCouchbaseConverter#TYPEKEY_DEFAULT
+   * @see MappingCouchbaseConverter#TYPEKEY_SYNCGATEWAY_COMPATIBLE
+   */
+  public String typeKey() {
+    return MappingCouchbaseConverter.TYPEKEY_DEFAULT;
+  }
+
+  /**
    * Creates a {@link MappingCouchbaseConverter} using the configured {@link #couchbaseMappingContext}.
    *
    * @throws Exception on Bean construction failure.
    */
   @Bean
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
-    MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext());
+    MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext(), typeKey());
     converter.setCustomConversions(customConversions());
     return converter;
   }

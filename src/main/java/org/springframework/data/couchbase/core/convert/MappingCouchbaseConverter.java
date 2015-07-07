@@ -65,6 +65,19 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
 
   /**
+   * The default "type key", the name of the field that will hold type information.
+   *
+   * @see #TYPEKEY_SYNCGATEWAY_COMPATIBLE
+   */
+  public static final String TYPEKEY_DEFAULT = DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY;
+
+  /**
+   * A "type key" (the name of the field that will hold type information) that is
+   * compatible with Sync Gateway (which doesn't allows underscores).
+   */
+  public static final String TYPEKEY_SYNCGATEWAY_COMPATIBLE = "javaClass";
+
+  /**
    * The overall application context.
    */
   protected ApplicationContext applicationContext;
@@ -90,19 +103,37 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    *
    * @param mappingContext the mapping context to use.
    */
-  @SuppressWarnings("deprecation")
   public MappingCouchbaseConverter(final MappingContext<? extends CouchbasePersistentEntity<?>,
-    CouchbasePersistentProperty> mappingContext) {
+      CouchbasePersistentProperty> mappingContext) {
+    this(mappingContext, TYPEKEY_DEFAULT);
+  }
+
+  /**
+   * Create a new {@link MappingCouchbaseConverter} that will store class name for
+   * complex types in the <i>typeKey</i> attribute.
+   *
+   * @param mappingContext the mapping context to use.
+   * @param typeKey the attribute name to use to store complex types class name.
+   */
+  public MappingCouchbaseConverter(final MappingContext<? extends CouchbasePersistentEntity<?>,
+    CouchbasePersistentProperty> mappingContext, final String typeKey) {
     super(new DefaultConversionService());
 
     this.mappingContext = mappingContext;
-    typeMapper = new DefaultCouchbaseTypeMapper(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY);
+    typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT);
     spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
   }
 
   @Override
   public MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> getMappingContext() {
     return mappingContext;
+  }
+
+  /**
+   * @return the name of the field that will hold type information.
+   */
+  public String getTypeKey() {
+    return typeMapper.getTypeKey();
   }
 
   @Override

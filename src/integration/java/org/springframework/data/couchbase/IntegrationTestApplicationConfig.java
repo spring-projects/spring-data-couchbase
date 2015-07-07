@@ -64,4 +64,10 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
 		template.setWriteResultChecking(WriteResultChecking.LOG);
 		return template;
 	}
+
+  //change the name of the field that will hold type information
+	@Override
+	public String typeKey() {
+		return "javaClass";
+	}
 }

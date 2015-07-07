@@ -50,6 +50,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
 import org.springframework.test.context.ContextConfiguration;
@@ -95,7 +96,9 @@ public class CouchbaseTemplateTests {
 		assertNotNull(result);
 		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get("_class"));
+		//DATACOUCH-134: the class holding field can be changed
+		assertNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get("javaClass"));
 		assertEquals(false, resultConv.get("is_active"));
 		assertEquals("The Awesome Stout", resultConv.get("name"));
 	}

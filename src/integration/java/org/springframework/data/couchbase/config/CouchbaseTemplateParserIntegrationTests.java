@@ -16,8 +16,10 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.document.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,6 +28,9 @@ import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.repository.User;
 
 /**
  * @author Michael Nitschinger
@@ -72,4 +77,27 @@ public class CouchbaseTemplateParserIntegrationTests {
 		factory.getBean("cb-template-second");
 	}
 
+	/**
+	 * Test case for DATACOUCH-134 in xml: field for storing type information can be renamed.
+	 */
+	@Test
+	public void testTypeFieldCanBeChosen() {
+		reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-typekey.xml"));
+		CouchbaseTemplate template = factory.getBean("couchbaseTemplate", CouchbaseTemplate.class);
+
+		assertTrue(template.getConverter() instanceof MappingCouchbaseConverter);
+		MappingCouchbaseConverter converter = ((MappingCouchbaseConverter) template.getConverter());
+
+		assertEquals("javaXmlClass", converter.getTypeKey());
+
+    User u = new User("specialSaveUser", "John Locke");
+    template.save(u);
+    JsonDocument uJsonDoc = template.getCouchbaseBucket().get("specialSaveUser");
+    template.getCouchbaseBucket().remove("specialSaveUser");
+    assertNotNull(uJsonDoc);
+    JsonObject uJson = uJsonDoc.content();
+    assertNull(uJson.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+    assertEquals("org.springframework.data.couchbase.repository.User", uJson.getString("javaXmlClass"));
+    assertEquals("John Locke", uJson.getString("username"));
+	}
 }
