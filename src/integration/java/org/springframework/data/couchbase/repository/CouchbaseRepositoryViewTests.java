@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.Stale;
@@ -74,9 +76,14 @@ public class CouchbaseRepositoryViewTests {
     assertThat(value, is(100L));
   }
 
-  @Test(expected = InvalidDataAccessResourceUsageException.class)
+  @Test
   public void shouldTrimOffFindOnCustomFinder() {
-    repository.findAllSomething();
+    try {
+      repository.findAllSomething();
+      fail("Expected InvalidDataAccessResourceException");
+    } catch (InvalidDataAccessResourceUsageException e) {
+      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/allSomething does not exist"));
+    }
   }
 
 }

@@ -69,11 +69,13 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
    * @return the design document name.
    */
   private String designDocName() {
-    if (method.hasViewAnnotation()) {
-      return method.getViewAnnotation().designDocument();
-    } else {
-      return StringUtils.uncapitalize(method.getEntityInformation().getJavaType().getSimpleName());
-    }
+      if (method.hasViewSpecification()) {
+        return method.getViewAnnotation().designDocument();
+      } else if (method.hasViewAnnotation()) {
+        return StringUtils.uncapitalize(method.getEntityInformation().getJavaType().getSimpleName());
+      } else {
+        throw new IllegalStateException("View-based query should only happen on a method with @View annotation");
+      }
   }
 
   /**
@@ -82,10 +84,12 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
    * @return the view name.
    */
   private String viewName() {
-    if (method.hasViewAnnotation()) {
+    if (method.hasViewSpecification()) {
       return method.getViewAnnotation().viewName();
-    } else {
+    } else if (method.hasViewAnnotation()) {
       return StringUtils.uncapitalize(method.getName().replaceFirst("find", ""));
+    } else {
+      throw new IllegalStateException("View-based query should only happen on a method with @View annotation");
     }
   }
 

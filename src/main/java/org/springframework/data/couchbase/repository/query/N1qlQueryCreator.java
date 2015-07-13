@@ -218,7 +218,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
       case WITHIN:
       case NEAR:
       default:
-        throw new IllegalArgumentException("Unsupported keyword");
+        throw new IllegalArgumentException("Unsupported keyword in N1QL query derivation");
     }
   }
 

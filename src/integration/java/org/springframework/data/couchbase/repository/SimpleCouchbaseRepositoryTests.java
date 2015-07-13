@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.Stale;
@@ -144,6 +145,28 @@ public class SimpleCouchbaseRepositoryTests {
     assertNotNull(user);
     assertEquals("testuser-2", user.getKey());
     assertEquals("uname-2", user.getUsername());
+  }
+
+  @Test
+  public void shouldFindContainsWithoutAnnotation() {
+    List<User> users = repository.findByUsernameContains("-9");
+    assertNotNull(users);
+    assertFalse(users.isEmpty());
+    for (User user : users) {
+      assertTrue(user.getUsername().startsWith("uname-9"));
+    }
+  }
+
+  @Test
+  public void shouldDefaultToN1qlQueryDerivation() {
+    try {
+      User u = repository.findByUsernameNear("london");
+      fail("Expected IllegalArgumentException");
+    } catch (IllegalArgumentException e) {
+      if (!e.getMessage().contains("N1QL")) {
+        fail(e.getMessage());
+      }
+    }
   }
 
 }

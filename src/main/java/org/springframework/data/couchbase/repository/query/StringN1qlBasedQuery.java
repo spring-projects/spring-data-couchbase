@@ -34,8 +34,22 @@ import org.springframework.data.repository.query.RepositoryQuery;
  */
 public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
+  /**
+   * Use this placeholder in a {@link org.springframework.data.couchbase.core.view.Query @Query} annotation's inline
+   * statement. This will be replaced by the correct <code>SELECT x FROM y</code> clause needed for entity mapping.
+   */
   public static final String PLACEHOLDER_SELECT_FROM = "$SELECT_ENTITY$";
+
+  /**
+   * Use this placeholder in a {@link org.springframework.data.couchbase.core.view.Query @Query} annotation's inline
+   * statement. This will be replaced by the bucket name corresponding to the repository's entity.
+   */
   public static final String PLACEHOLDER_BUCKET = "$BUCKET$";
+
+  /**
+   * Use this placeholder in a {@link org.springframework.data.couchbase.core.view.Query @Query} annotation's inline
+   * statement. This will be replaced by the fields allowing to construct the repository's entity (SELECT clause).
+   */
   public static final String PLACEHOLDER_ENTITY = "$ENTITY$";
 
   private final Statement statement;

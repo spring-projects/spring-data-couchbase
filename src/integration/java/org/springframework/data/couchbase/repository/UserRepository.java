@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.couchbase.client.java.view.ViewQuery;
 
-import org.springframework.data.couchbase.core.view.N1QL;
+import org.springframework.data.couchbase.core.view.Query;
 import org.springframework.data.couchbase.core.view.View;
 
 /**
@@ -31,13 +31,16 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
   @View(designDocument = "user", viewName = "all")
   Iterable<User> customViewQuery(ViewQuery query);
 
-  @N1QL("$SELECT_ENTITY$ WHERE username = $1")
+  @Query("$SELECT_ENTITY$ WHERE username = $1")
   User findByUsername(String username);
 
-  @N1QL("SELECT * FROM $BUCKET$ WHERE username = $1")
+  @Query("SELECT * FROM $BUCKET$ WHERE username = $1")
   User findByUsernameBadSelect(String username);
 
-  @N1QL
+  @Query
   User findByUsernameRegexAndUsernameIn(String regex, List<String> sample);
 
+  List<User> findByUsernameContains(String contains);
+
+  User findByUsernameNear(String place);//this is to check that there's a N1QL derivation AND it fails
 }

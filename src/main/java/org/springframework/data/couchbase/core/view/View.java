@@ -35,19 +35,19 @@ public @interface View {
   /**
    * The name of the Design Document to use.
    * <p/>
-   * This field is mandatory.
+   * If the {@link #viewName()} field is set, this field is mandatory.
    *
    * @return name of the Design Document.
    */
-  String designDocument();
+  String designDocument() default "";
 
   /**
    * The name of the View to use.
    * <p/>
-   * This field is mandatory.
+   * If the {@link #designDocument()} field is set, his field is mandatory.
    *
    * @return name of the View
    */
-  String viewName();
+  String viewName() default "";
 
 }

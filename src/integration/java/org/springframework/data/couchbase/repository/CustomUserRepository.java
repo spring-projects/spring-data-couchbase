@@ -31,6 +31,7 @@ public interface CustomUserRepository extends CouchbaseRepository<User, String> 
   @View(designDocument = "userCustom", viewName = "customCountView")
   long count();
 
+  @View
   Iterable<User> findAllSomething();
 
 }

@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.view.N1QL;
+import org.springframework.data.couchbase.core.view.Query;
 import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -58,6 +58,19 @@ public class CouchbaseQueryMethod extends QueryMethod {
   }
 
   /**
+   * If the method has a @View annotation with the designDocument and viewName specified.
+   *
+   * @return true if it has the annotation and full view specified.
+   */
+  public boolean hasViewSpecification() {
+    View annotation = getViewAnnotation();
+    if (annotation == null) {
+      return false;
+    }
+    return StringUtils.hasText(annotation.designDocument()) && StringUtils.hasText(annotation.viewName());
+  }
+
+  /**
    * Returns the @View annotation if set, null otherwise.
    *
    * @return the view annotation of present.
@@ -67,7 +80,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
   }
 
   /**
-   * If the method has a @N1QL annotation.
+   * If the method has a @Query annotation.
    *
    * @return true if it has the annotation, false otherwise.
    */
@@ -76,16 +89,16 @@ public class CouchbaseQueryMethod extends QueryMethod {
   }
 
   /**
-   * Returns the @N1QL annotation if set, null otherwise.
+   * Returns the @Query annotation if set, null otherwise.
    *
    * @return the n1ql annotation if present.
    */
-  public N1QL getN1qlAnnotation() {
-    return method.getAnnotation(N1QL.class);
+  public Query getN1qlAnnotation() {
+    return method.getAnnotation(Query.class);
   }
 
   /**
-   * If the method has a @N1QL annotation with an inline N1QL statement inside.
+   * If the method has a @Query annotation with an inline Query statement inside.
    *
    * @return true if this has the annotation and N1QL inline statement, false otherwise.
    */
@@ -94,7 +107,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
   }
 
   /**
-   * Returns the query string declared in a {@link N1QL} annotation or {@literal null} if neither the annotation found
+   * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation found
    * nor the attribute was specified.
    *
    * @return the query statement if present.

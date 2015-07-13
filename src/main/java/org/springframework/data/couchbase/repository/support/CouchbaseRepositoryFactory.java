@@ -136,17 +136,17 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
       String namedQueryName = queryMethod.getNamedQueryName();
 
-      if (queryMethod.hasN1qlAnnotation()) {
+      if (queryMethod.hasViewAnnotation()) {
+        return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
+      } else if (queryMethod.hasN1qlAnnotation()) {
         if (queryMethod.hasInlineN1qlQuery()) {
           return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations);
         } else if (namedQueries.hasQuery(namedQueryName)) {
           String namedQuery = namedQueries.getQuery(namedQueryName);
           return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations);
-        } else {
-          return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-        }
+        } //otherwise will do default, queryDerivation
       }
-      return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
+      return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
     }
   }
 
