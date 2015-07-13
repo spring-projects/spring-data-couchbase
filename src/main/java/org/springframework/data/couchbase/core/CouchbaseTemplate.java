@@ -314,7 +314,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
           if (cas == CASResponse.EXISTS) {
             throw new OptimisticLockingFailureException("Saving document with version value failed: " + cas);
           } else {
-            long newCas = casFuture.getCas();
+            Long casValue = casFuture.getCas();
+            long newCas = (casValue == null) ? 0 : casValue.longValue();
             beanWrapper.setProperty(versionProperty, newCas);
             return true;
           }
