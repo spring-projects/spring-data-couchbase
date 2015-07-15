@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.springframework.data.couchbase.repository;
 
+import java.util.List;
+
 import org.springframework.data.couchbase.core.view.View;
 
 /**
  * @author David Harrigan
+ * @author Simon Baslé
  */
 public interface CustomUserRepository extends CouchbaseRepository<User, String> {
 
@@ -31,7 +34,42 @@ public interface CustomUserRepository extends CouchbaseRepository<User, String> 
   @View(designDocument = "userCustom", viewName = "customCountView")
   long count();
 
-  @View
-  Iterable<User> findAllSomething();
+  @View(viewName = "allSomething")
+  Iterable<User> findIncorrectExplicitView();
 
+  @View(viewName = "customFindAllView")
+  Iterable<User> findRandomMethodName();
+
+  @View(viewName = "customFindByNameView")
+  long countByUsernameGreaterThanEqualAndUsernameLessThan(String lowBound, String highBound);
+
+  @View(viewName = "customFindByNameView")
+  User findByUsernameIs(String lowKey);
+
+  @View(viewName = "customFindByNameView")
+  List<User> findAllByUsernameIn(List<String> keys);
+
+  @View(viewName = "customFindByNameView")
+  List<User> findByUsernameGreaterThanEqualAndUsernameLessThanEqual(String lowKey, String highKey);
+
+  @View(viewName = "customFindByNameView")
+  List<User> findByUsernameBetween(String lowKey, String highKey);
+
+  @View(viewName = "customFindByNameView")
+  List<User> findTop3ByUsernameGreaterThanEqual(String lowKey);
+
+  @View(viewName = "customFindAllView")
+  List<User> findAllByUsername();
+
+  @View(viewName = "customFindAllView")
+  List<User> findAllByUsernameEqualAndUserblablaIs(String s, String blabla);
+
+  @View
+  List<User> findByIncorrectView();
+
+  @View
+  long countCustomFindAllView();
+
+  @View
+  long countCustomFindInvalid();
 }

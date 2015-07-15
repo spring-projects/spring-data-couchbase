@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package org.springframework.data.couchbase.repository;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.Stale;
@@ -33,12 +35,14 @@ import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author David Harrigan
+ * @author Simon Baslé
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -77,13 +81,89 @@ public class CouchbaseRepositoryViewTests {
   }
 
   @Test
-  public void shouldTrimOffFindOnCustomFinder() {
+  public void shouldDetectMethodNameWithoutPropertyAndIssueGenericQueryOnView() {
+    Iterable<User> users = repository.findRandomMethodName();
+    assertNotNull(users);
+    assertTrue(users.iterator().hasNext());
+
     try {
-      repository.findAllSomething();
+      repository.findIncorrectExplicitView();
       fail("Expected InvalidDataAccessResourceException");
     } catch (InvalidDataAccessResourceUsageException e) {
       assertTrue(e.getMessage(), e.getMessage().startsWith("View user/allSomething does not exist"));
     }
   }
 
+  @Test(expected = PropertyReferenceException.class)
+  public void shouldFailDeriveOnBadProperty() {
+    repository.findAllByUsernameEqualAndUserblablaIs("uname-1", "blabla");
+  }
+
+  @Test
+  public void shouldDeriveViewParametersAndReduce() {
+    long count = repository.countByUsernameGreaterThanEqualAndUsernameLessThan("uname-8", "uname-9");
+    assertEquals(12, count);
+  }
+
+  @Test
+  public void shouldDeriveViewParameters() {
+    String lowKey = "uname-1";
+    String middleKey = "uname-10";
+    String highKey = "uname-11";
+    List<String> keys = Arrays.asList(lowKey, middleKey, highKey);
+
+    User u1 = repository.findByUsernameIs(lowKey);
+    User u2 = repository.findByUsernameIs(middleKey);
+    User u3 = repository.findByUsernameIs(highKey);
+
+
+    List<User> in = repository.findAllByUsernameIn(keys);
+    List<User> gteLte = repository.findByUsernameGreaterThanEqualAndUsernameLessThanEqual(lowKey, highKey);
+    List<User> between = repository.findByUsernameBetween(lowKey, highKey);
+    List<User> gteLimited = repository.findTop3ByUsernameGreaterThanEqual(lowKey);
+
+    assertNotNull(u1);
+    assertNotNull(u2);
+    assertNotNull(u3);
+
+    assertEquals(lowKey, u1.getUsername());
+    assertEquals(middleKey, u2.getUsername());
+    assertEquals(highKey, u3.getUsername());
+
+    List<User> expected = Arrays.asList(u1, u2, u3);
+    assertEquals(expected, in);
+    assertEquals(expected, gteLte);
+    assertEquals(expected, between);
+    assertEquals(expected, gteLimited);
+  }
+
+  @Test
+  public void shouldDeriveToEmptyClause() {
+    List<User> users = repository.findAllByUsername();
+    assertNotNull(users);
+    assertEquals(100, users.size());
+  }
+
+  @Test
+  public void shouldDetermineViewNameFromMethodPrefix() {
+    try {
+      repository.findByIncorrectView();
+      fail("Expected InvalidDataAccessResourceException");
+    } catch (InvalidDataAccessResourceUsageException e) {
+      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/byIncorrectView does not exist"));
+    }
+  }
+
+  @Test
+  public void shouldDetermineViewNameFromCountPrefixAndReduce() {
+    long count = repository.countCustomFindAllView();
+    assertEquals(100, count);
+
+    try {
+      repository.countCustomFindInvalid();
+      fail("Expected InvalidDataAccessResourceException");
+    } catch (InvalidDataAccessResourceUsageException e) {
+      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/customFindInvalid does not exist"));
+    }
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013, 2014 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,11 +63,33 @@ public class CouchbaseQueryMethod extends QueryMethod {
    * @return true if it has the annotation and full view specified.
    */
   public boolean hasViewSpecification() {
+    return hasDesignDoc() && hasViewName();
+  }
+
+  /**
+   * If the method has a @View annotation with the designDocument specified.
+   *
+   * @return true if it has the design document specified.
+   */
+  public boolean hasDesignDoc() {
     View annotation = getViewAnnotation();
     if (annotation == null) {
       return false;
     }
-    return StringUtils.hasText(annotation.designDocument()) && StringUtils.hasText(annotation.viewName());
+    return StringUtils.hasText(annotation.designDocument());
+  }
+
+  /**
+   * If the method has a @View annotation with the viewName specified.
+   *
+   * @return true if it has the view name specified.
+   */
+  public boolean hasViewName() {
+    View annotation = getViewAnnotation();
+    if (annotation == null) {
+      return false;
+    }
+    return StringUtils.hasText(annotation.viewName());
   }
 
   /**

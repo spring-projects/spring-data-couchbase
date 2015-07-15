@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.springframework.data.annotation.Id;
 
 /**
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
 public class User {
 
@@ -41,4 +42,21 @@ public class User {
     return key;
   }
 
+  @Override
+  public String toString() {
+    return this.key;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    User user = (User) o;
+    return key.equals(user.key);
+  }
+
+  @Override
+  public int hashCode() {
+    return key.hashCode();
+  }
 }

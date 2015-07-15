@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,6 +33,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 
 /**
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
 public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExecutionListener {
 
@@ -51,8 +53,10 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
 
   private void createAndWaitForDesignDocs(final Bucket client) {
     String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
+    String mapFunctionName = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(doc.username, null); } }";
     View view = DefaultView.create("customFindAllView", mapFunction, "_count");
-    List<View> views = Collections.singletonList(view);
+    View customFindByNameView = DefaultView.create("customFindByNameView", mapFunctionName, "_count");
+    List<View> views = Arrays.asList(view, customFindByNameView);
     DesignDocument designDoc = DesignDocument.create("user", views);
     client.bucketManager().upsertDesignDocument(designDoc);
 

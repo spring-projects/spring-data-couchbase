@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.lang.annotation.Target;
  * Annotation to support the use of Views with Couchbase.
  *
  * @author David Harrigan.
+ * @author Simon Baslé
  */
 @Documented
 @Target(ElementType.METHOD)
@@ -33,18 +34,16 @@ import java.lang.annotation.Target;
 public @interface View {
 
   /**
-   * The name of the Design Document to use.
-   * <p/>
-   * If the {@link #viewName()} field is set, this field is mandatory.
+   * The name of the Design Document to use. If omitted, defaults to one derived from the entity class name.
    *
    * @return name of the Design Document.
    */
   String designDocument() default "";
 
   /**
-   * The name of the View to use.
-   * <p/>
-   * If the {@link #designDocument()} field is set, his field is mandatory.
+   * The name of the View to use. If omitted, defaults to one derived from the method name (stripped of prefix "find" or
+   * "count"). This is mandatory to trigger a query derivation from the method name (ie. a View query with parameters
+   * like limit, startkey, etc...).
    *
    * @return name of the View
    */
