@@ -54,18 +54,18 @@ public final class DateConverters {
 
     converters.add(DateToLongConverter.INSTANCE);
     converters.add(CalendarToLongConverter.INSTANCE);
-    converters.add(LongToDateConverter.INSTANCE);
-    converters.add(LongToCalendarConverter.INSTANCE);
+    converters.add(NumberToDateConverter.INSTANCE);
+    converters.add(NumberToCalendarConverter.INSTANCE);
 
     if (JODA_TIME_IS_PRESENT) {
       converters.add(LocalDateToLongConverter.INSTANCE);
       converters.add(LocalDateTimeToLongConverter.INSTANCE);
       converters.add(DateTimeToLongConverter.INSTANCE);
       converters.add(DateMidnightToLongConverter.INSTANCE);
-      converters.add(LongToLocalDateConverter.INSTANCE);
-      converters.add(LongToLocalDateTimeConverter.INSTANCE);
-      converters.add(LongToDateTimeConverter.INSTANCE);
-      converters.add(LongToDateMidnightConverter.INSTANCE);
+      converters.add(NumberToLocalDateConverter.INSTANCE);
+      converters.add(NumberToLocalDateTimeConverter.INSTANCE);
+      converters.add(NumberToDateTimeConverter.INSTANCE);
+      converters.add(NumberToDateMidnightConverter.INSTANCE);
     }
 
     return converters;
@@ -92,33 +92,33 @@ public final class DateConverters {
   }
 
   @ReadingConverter
-  public enum LongToDateConverter implements Converter<Long, Date> {
+  public enum NumberToDateConverter implements Converter<Number, Date> {
     INSTANCE;
 
     @Override
-    public Date convert(Long source) {
+    public Date convert(Number source) {
       if (source == null) {
         return null;
       }
 
       Date date = new Date();
-      date.setTime(source);
+      date.setTime(source.longValue());
       return date;
     }
   }
 
   @ReadingConverter
-  public enum LongToCalendarConverter implements Converter<Long, Calendar> {
+  public enum NumberToCalendarConverter implements Converter<Number, Calendar> {
     INSTANCE;
 
     @Override
-    public Calendar convert(Long source) {
+    public Calendar convert(Number source) {
       if (source == null) {
         return null;
       }
 
       Calendar calendar = Calendar.getInstance();
-      calendar.setTimeInMillis(source * 1000);
+      calendar.setTimeInMillis(source.longValue() * 1000);
       return calendar;
     }
   }
@@ -164,42 +164,42 @@ public final class DateConverters {
   }
 
   @ReadingConverter
-  public enum LongToLocalDateConverter implements Converter<Long, LocalDate> {
+  public enum NumberToLocalDateConverter implements Converter<Number, LocalDate> {
     INSTANCE;
 
     @Override
-    public LocalDate convert(Long source) {
-      return source == null ? null : new LocalDate(source);
+    public LocalDate convert(Number source) {
+      return source == null ? null : new LocalDate(source.longValue());
     }
   }
 
   @ReadingConverter
-  public enum LongToLocalDateTimeConverter implements Converter<Long, LocalDateTime> {
+  public enum NumberToLocalDateTimeConverter implements Converter<Number, LocalDateTime> {
     INSTANCE;
 
     @Override
-    public LocalDateTime convert(Long source) {
-      return source == null ? null : new LocalDateTime(source);
+    public LocalDateTime convert(Number source) {
+      return source == null ? null : new LocalDateTime(source.longValue());
     }
   }
 
   @ReadingConverter
-  public enum LongToDateTimeConverter implements Converter<Long, DateTime> {
+  public enum NumberToDateTimeConverter implements Converter<Number, DateTime> {
     INSTANCE;
 
     @Override
-    public DateTime convert(Long source) {
-      return source == null ? null : new DateTime(source);
+    public DateTime convert(Number source) {
+      return source == null ? null : new DateTime(source.longValue());
     }
   }
 
   @ReadingConverter
-  public enum LongToDateMidnightConverter implements Converter<Long, DateMidnight> {
+  public enum NumberToDateMidnightConverter implements Converter<Number, DateMidnight> {
     INSTANCE;
 
     @Override
-    public DateMidnight convert(Long source) {
-      return source == null ? null : new DateMidnight(source);
+    public DateMidnight convert(Number source) {
+      return source == null ? null : new DateMidnight(source.longValue());
     }
   }
 

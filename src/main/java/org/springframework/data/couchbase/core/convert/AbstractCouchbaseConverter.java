@@ -88,4 +88,22 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
     conversions.registerConvertersIn(conversionService);
   }
 
+  @Override
+  public Object convertForWriteIfNeeded(Object value) {
+    if (value == null) {
+      return null;
+    }
+
+    Class<?> targetType = this.conversions.getCustomWriteTarget(value.getClass());
+    if (targetType != null) {
+      return this.conversionService.convert(value, targetType);
+    }
+    return value;
+  }
+
+  @Override
+  public Class<?> getWriteClassFor(Class<?> clazz) {
+    Class<?> targetType = this.conversions.getCustomWriteTarget(clazz);
+    return targetType != null ? targetType : clazz;
+  }
 }

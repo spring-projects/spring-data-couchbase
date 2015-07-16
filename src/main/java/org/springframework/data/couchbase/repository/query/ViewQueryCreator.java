@@ -29,6 +29,7 @@ import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.ViewQuery;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
@@ -64,11 +65,13 @@ public class ViewQueryCreator extends AbstractQueryCreator<ViewQuery, ViewQuery>
   private ViewQuery query;
   private final PartTree tree;
   private final int treeCount;
+  private final CouchbaseConverter converter;
 
-  public ViewQueryCreator(PartTree tree, ParameterAccessor parameters, ViewQuery query) {
+  public ViewQueryCreator(PartTree tree, ParameterAccessor parameters, ViewQuery query, CouchbaseConverter converter) {
     super(tree, parameters);
     this.query = query;
     this.tree = tree;
+    this.converter = converter;
 
     //sanity check the partTree since we have strong restrictions on what's supported:
     int i = 0;
@@ -86,7 +89,9 @@ public class ViewQueryCreator extends AbstractQueryCreator<ViewQuery, ViewQuery>
   }
 
   @Override
-  protected ViewQuery create(Part part, Iterator<Object> iterator) {
+  protected ViewQuery create(Part part, Iterator<Object> objectIterator) {
+    ConvertingIterator iterator = new ConvertingIterator(objectIterator, converter);
+
     switch (part.getType()) {
       case GREATER_THAN_EQUAL:
         startKey(iterator);

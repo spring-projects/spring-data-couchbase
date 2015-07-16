@@ -26,10 +26,29 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
  * Marker interface for the converter, identifying the types to and from that can be converted.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
 public interface CouchbaseConverter
     extends EntityConverter<CouchbasePersistentEntity<?>,
     CouchbasePersistentProperty, Object, CouchbaseDocument>,
     CouchbaseWriter<Object, CouchbaseDocument>,
     EntityReader<Object, CouchbaseDocument> {
+
+  /**
+   * Convert the value if necessary to the class that would actually be stored,
+   * or leave it as is if no conversion needed.
+   *
+   * @param value the value to be converted to the class that would actually be stored.
+   * @return the converted value (or the same value if no conversion necessary).
+   */
+  Object convertForWriteIfNeeded(Object value);
+
+  /**
+   * Return the Class that would actually be stored for a given Class.
+   *
+   * @param clazz the source class.
+   * @return the target class that would actually be stored.
+   * @see #convertForWriteIfNeeded(Object)
+   */
+  Class<?> getWriteClassFor(Class<?> clazz);
 }

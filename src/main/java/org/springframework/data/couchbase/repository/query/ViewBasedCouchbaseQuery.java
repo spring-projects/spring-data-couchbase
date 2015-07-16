@@ -85,7 +85,7 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
 
       ViewQueryCreator creator = new ViewQueryCreator(tree,
           new ParametersParameterAccessor(method.getParameters(), runtimeParams),
-          baseQuery);
+          baseQuery, operations.getConverter());
 
       ViewQuery query = creator.createQuery();
 

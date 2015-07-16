@@ -32,6 +32,7 @@ public abstract class CouchbaseSimpleTypes {
     Set<Class<?>> simpleTypes = new HashSet<Class<?>>();
     simpleTypes.add(RawJsonDocument.class);
     simpleTypes.add(JsonArray.class);
+    simpleTypes.add(Number.class);
     COUCHBASE_SIMPLE_TYPES = Collections.unmodifiableSet(simpleTypes);
   }
 

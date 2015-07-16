@@ -32,10 +32,8 @@ import com.couchbase.client.java.query.dsl.path.OrderByPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
@@ -91,22 +89,19 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression> {
 
-  private final ParameterAccessor accessor;
   private final WherePath selectFrom;
-  private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
+  private final CouchbaseConverter converter;
 
   public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
                           CouchbaseConverter converter) {
     super(tree, parameters);
-    this.accessor = parameters;
     this.selectFrom = selectFrom;
-    this.context = converter.getMappingContext();
+    this.converter = converter;
   }
 
   @Override
   protected Expression create(Part part, Iterator<Object> iterator) {
-    PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
-    return prepareExpression(part, path, iterator);
+    return prepareExpression(part, iterator);
   }
 
   @Override
@@ -144,15 +139,17 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     return selectFrom.where(criteria);
   }
 
-  protected static Expression prepareExpression(Part part, PersistentPropertyPath<CouchbasePersistentProperty> path,
-                                               Iterator<Object> parameterValues) {
-    //FIXME use conversions for the parameters and types
+  protected Expression prepareExpression(Part part, Iterator<Object> iterator) {
+    PersistentPropertyPath<CouchbasePersistentProperty> path = converter.getMappingContext()
+        .getPersistentPropertyPath(part.getProperty());
+    ConvertingIterator parameterValues = new ConvertingIterator(iterator, converter);
+
     //get the whole doted path with fieldNames instead of potentially wrong propNames
     String fieldNamePath = path.toDotPath(CouchbasePersistentProperty.FIELD_NAME);
 
     //deal with ignore case
     boolean ignoreCase = false;
-    Class<?> leafType = path.getLeafProperty().getType();
+    Class<?> leafType = converter.getWriteClassFor(path.getLeafProperty().getType());
     boolean isString = leafType == String.class;
     if (part.shouldIgnoreCase() == Part.IgnoreCaseType.WHEN_POSSIBLE) {
       ignoreCase = isString;
@@ -225,6 +222,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
   protected static Expression regexp(String left, Iterator<Object> parameterValues) {
     //TODO migrate to using the Functions util class when 2.0-dp2 / 2.0 GA
     Object next = parameterValues.next();
+
     String pattern;
     if (next == null) {
       pattern = "";
@@ -298,4 +296,5 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     }
     return JsonArray.from(values);
   }
+
 }
