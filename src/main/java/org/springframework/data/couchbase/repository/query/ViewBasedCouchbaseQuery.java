@@ -22,6 +22,8 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
@@ -39,6 +41,8 @@ import org.springframework.util.StringUtils;
  * @author Simon Baslé
  */
 public class ViewBasedCouchbaseQuery implements RepositoryQuery {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ViewBasedCouchbaseQuery.class);
 
   private final CouchbaseQueryMethod method;
   private final CouchbaseOperations operations;
@@ -99,10 +103,16 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   }
 
   protected Object execute(ViewQuery query) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing view query: " + query.toString());
+    }
     return operations.findByView(query, method.getEntityInformation().getJavaType());
   }
 
   protected Object executeReduce(ViewQuery query, String designDoc, String viewName) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing view reduced query: " + query.toString());
+    }
     ViewResult viewResult = operations.queryView(query);
     List<ViewRow> allRows = viewResult.allRows();
     JsonObject error = viewResult.error();

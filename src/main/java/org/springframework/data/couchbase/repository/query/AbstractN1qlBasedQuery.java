@@ -21,6 +21,8 @@ import java.util.List;
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -34,6 +36,8 @@ import org.springframework.data.util.StreamUtils;
  * and choosing the correct {@link Query} implementation to use.
  */
 public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
+
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractN1qlBasedQuery.class);
 
   protected final CouchbaseQueryMethod queryMethod;
   private final CouchbaseOperations couchbaseOperations;
@@ -65,6 +69,10 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     }
     else {
       query = Query.simple(statement);
+    }
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing N1QL query: " + query.n1ql());
     }
 
     return query;

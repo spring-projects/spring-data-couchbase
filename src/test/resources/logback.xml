@@ -15,4 +15,6 @@
 		<appender-ref ref="console" />
 	</root>
 
+	<logger name="org.springframework.data.couchbase.repository.query" level="debug"/>
+
 </configuration>
