@@ -14,7 +14,34 @@ Since Couchbase Server has different levels of persistence (by default you'll ge
 
 Removing documents through the `remove` methods works exactly the same.
 
-If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice. The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics.
+If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice. The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics. Similarly, find methods using N1QL are provided in `findByN1QL` and `queryN1QL`. Additionally, since N1QL allows you to select specific fields in documents (or even across documents using joins), `findByN1QLProjection` will allow you to skip full `Document` conversion and map these fields to an ad-hoc class.
 
-If you really need low-level semantics, the `couchbaseClient` bean is also always in scope.
+If you really need low-level semantics, the `couchbaseBucket` is also always in scope through `getCouchbaseBucket()`.
+
+[[couchbase.template.xml]]
+== Xml Configuration
+The template can be configured via xml, including setting a custom `TranslationService`.
+
+.XML Based Template Declaration
+====
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
+       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <couchbase:env/>
+    <couchbase:cluster/>
+    <couchbase:bucket/>
+
+    <couchbase:template translation-service-ref="myCustomTranslationService"/>
+
+    <bean id="myCustomTranslationService" class="org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService"/>
+
+</beans>
+----
+====
 

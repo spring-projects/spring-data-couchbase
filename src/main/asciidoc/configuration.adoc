@@ -6,7 +6,7 @@ This chapter describes the common installation and configuration steps needed wh
 [[installation]]
 == Installation
 
-All versions intented for production use are distributed across Maven Central and the Spring release repository. As a result, the library can be included like any other maven dependency:
+All versions intended for production use are distributed across Maven Central and the Spring release repository. As a result, the library can be included like any other maven dependency:
 
 .Including the dependency through maven
 ====
@@ -15,7 +15,7 @@ All versions intented for production use are distributed across Maven Central an
 <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>1.0.0.RELEASE</version>
+    <version>2.0.0.RELEASE</version>
 </dependency>
 ----
 ====
@@ -31,7 +31,7 @@ You can also grab snapshots from the http://repo.spring.io/libs-snapshot[spring 
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>1.1.0.BUILD-SNAPSHOT</version>
+  <version>2.1.0.BUILD-SNAPSHOT</version>
 </dependency>
 
 <repository>
@@ -47,7 +47,7 @@ Once you have all needed dependencies on the classpath, you can start configurin
 [[configuration-java]]
 == Annotation-based Configuration ("JavaConfig")
 
-The annotation based configuration approach is getting more and more popular. It allows you to get rid of XML configuration and treat configuration as part of your code directly. To get started, all you need to do is sublcass the `AbstractCouchbaseConfiguration` and implement the abstract methods.
+The annotation based configuration approach is getting more and more popular. It allows you to get rid of XML configuration and treat configuration as part of your code directly. To get started, all you need to do is subclcass the `AbstractCouchbaseConfiguration` and implement the abstract methods.
 
 Please make sure to have cglib support in the classpath so that the annotation based configuration works.
 
@@ -60,7 +60,7 @@ Please make sure to have cglib support in the classpath so that the annotation b
 public class Config extends AbstractCouchbaseConfiguration {
 
     @Override
-    protected List<String> bootstrapHosts() {
+    protected List<String> getBootstrapHosts() {
         return Collections.singletonList("127.0.0.1");
     }
 
@@ -81,9 +81,13 @@ All you need to provide is a list of Couchbase nodes to bootstrap into (without 
 
 The `bucketName` and `password` should be the same as configured in Couchbase Server itself. In the example given, we are connecting to the `beer-sample` bucket which is one of the sample buckets shipped with Couchbase Server and has no password set by default.
 
-Depending on how your environment is setup, the configuration will be automatically picked up by the context or you need to instantiate your own one. How to manage configurations is not scope of this manual, please refer to the spring documentation for more information on that topic.
+Depending on how your environment is set up, the configuration will be automatically picked up by the context or you need to instantiate your own one. How to manage configurations is not in scope of this manual, please refer to the spring documentation for more information on that topic.
 
-While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration - we'll touch them in the individual manual sections as needed (for example repositories, validation and custom converters).
+Additionally, the SDK environment can be tuned by overriding the `getEnvironment()` method to return a properly tuned `CouchbaseEnvironment`.
+
+While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration (for example repositories, validation and custom converters).
+
+TIP: If you use `SyncGateway` and `CouchbaseMobile`, you may run into problem with fields prefixed by `_`. Since Spring Data Couchbase by default stores the type information as a `_class` attribute this can be problematic. Override `typeKey()` (for example to return `MappingCouchbaseConverter.TYPEKEY_SYNCGATEWAY_COMPATIBLE`) to change the name of said attribute.
 
 [[configuration-xml]]
 == XML-based Configuration
@@ -103,12 +107,15 @@ The library provides a custom namespace that you can use in your XML configurati
     http://www.springframework.org/schema/data/couchbase
     http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
 
-    <couchbase:couchbase bucket="beer-sample" password="" host="127.0.0.1" />
+    <couchbase:cluster>
+      <couchbase:node>127.0.0.1</couchbase:node>
+    </couchbase:cluster>
 
+    <couchbase:bucket bucketName="beer-sample" bucketPassword=""/>
 </beans:beans>
 ----
 ====
-This code is equivalent to the java configuration approach shown above. It is also possible to configure templates and repositories, which is shown in the appropriate sections.
+This code is equivalent to the java configuration approach shown above. You can customize the SDK `CouchbaseEnvironment` via the `<couchbase:env/>` tag, that supports most tuning parameters as attributes. It is also possible to configure templates and repositories, which is shown in the appropriate sections.
 
-If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials and host information is correct.
+If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials and host information are correct.
 

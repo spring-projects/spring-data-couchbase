@@ -264,7 +264,7 @@ A populated object can look like:
 ----
 ====
 
-If you want to override a converter or implement your own one, this is also possible. The library implements the general Spring Converter pattern. You can plug in custom converters on bean creation time in your configuration. Here's how you can configure it (in your overriden `AbstractCouchbaseConfiguration`):
+If you want to override a converter or implement your own one, this is also possible. The library implements the general Spring Converter pattern. You can plug in custom converters on bean creation time in your configuration. Here's how you can configure it (in your overridden `AbstractCouchbaseConfiguration`):
 
 .Custom Converters
 ====
@@ -304,13 +304,14 @@ There are a few things to keep in mind with custom conversions:
 * To make it unambiguous, always use the `@WritingConverter` and `@ReadingConverter` annotations on your converters. Especially if you are dealing with primitive type conversions, this will help to reduce possible wrong conversions.
 * If you implement a writing converter, make sure to decode into primitive types, maps and lists only. If you need more complex object types, use the `CouchbaseDocument` and `CouchbaseList` types, which are also understood by the underlying translation engine. Your best bet is to stick with as simple as possible conversions.
 * Always put more special converters before generic converters to avoid the case where the wrong converter gets executed.
+* For dates, reading converters should be able to read from any `Number` (not just `Long`). This is required for N1QL support.
 
 [[version]]
 == Optimistic Locking
 
 Couchbase Server does not support multi-document transactions or rollback. To implement optimistic locking, Couchbase uses a CAS (compare and swap) approach. When a document is mutated, the CAS value also changes. The CAS is opaque to the client, the only thing you need to know is that it changes when the content or a meta information changes too.
 
-In other datastores, similar behavior can be achieved through an arbitrary version field whith a incrementing counter. Since Couchbase supports this in a much better fashion, it is easy to implement. If you want automatic optimistic locking support, all you need to do is add a `@Version` annotation on a long field like this:
+In other datastores, similar behavior can be achieved through an arbitrary version field with a incrementing counter. Since Couchbase supports this in a much better fashion, it is easy to implement. If you want automatic optimistic locking support, all you need to do is add a `@Version` annotation on a long field like this:
 
 .A Document with optimistic locking.
 ====

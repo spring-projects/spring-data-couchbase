@@ -48,7 +48,7 @@ public interface UserRepository extends CrudRepository<User, String> {
 
 Please note that this is just an interface and not an actual class. In the background, when your context gets initialized, actual implementations for your repository descriptions get created and you can access them through regular beans. This means you will save lots of boilerplate code while still exposing full CRUD semantics to your service layer and application.
 
-Now, let's imagine we `@Autowrie` the `UserRepository` to a class that makes use of it. What methods do we have available?
+Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use of it. What methods do we have available?
 
 [cols="2", options="header"]
 .Exposed methods on the UserRepository
@@ -90,31 +90,85 @@ Now, let's imagine we `@Autowrie` the `UserRepository` to a class that makes use
 | Delete all entities by type in the bucket.
 |===
 
-Now thats awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
+Now that's awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
 
 If you are coming from other datastore implementations, you might want to implement the `PagingAndSortingRepository` as well. Note that as of now, it is not supported but will be in the future.
 
-While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to view requests in the background. Here is an example:
+While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next two sections.
 
-.An extended User repository
+[[couchbase.repository.n1ql]]
+= N1QL based querying
+As of version `4.0`, Couchbase Server ships with a new query language called `N1QL`. In `Spring-Data-Couchbase 2.0`, N1QL is the default way of doing queries and will allow you to fully derive queries from a method name.
+
+Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored.
+
+Here is an example:
+
+.An extended User repository with N1QL queries
 ====
 [source,java]
 ----
 public interface UserRepository extends CrudRepository<User, String> {
 
+    @Query("$SELECT_ENTITY$ WHERE role = 'admin'")
     List<User> findAllAdmins();
 
-    List<User> findByFirstname(Query query);
+    List<User> findByFirstname(String fname);
 }
 ----
 ====
 
-Since we've came across views now multiple times and the `findByFirstname(Query query)` exposes a yet unknown parameter, let's cover that next.
+Here we see two N1QL-backed ways of querying.
+
+The first one uses the `Query` annotation to provide a N1QL statement inline. Notice the special placeholder `$SELECT_ENTITY` which allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+
+The second one use Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
+
+Most Spring-Data keywords are supported:
+.Supported keywords inside @Query (N1QL) method names
+[options = "header, autowidth"]
+|===============
+|Keyword|Sample|N1QL WHERE clause snippet
+|`And`|`findByLastnameAndFirstname`|`lastName = a AND firstName = b`
+|`Or`|`findByLastnameOrFirstname`|`lastName = a OR firstName = b`
+|`Is,Equals`|`findByField`,`findByFieldEquals`|`field = a`
+|`IsNot,Not`|`findByFieldIsNot`|`field != a`
+|`Between`|`findByFieldBetween`|`field BETWEEN a AND b`
+|`IsLessThan,LessThan,IsBefore,Before`|`findByFieldIsLessThan`,`findByFieldBefore`|`field < a`
+|`IsLessThanEqual,LessThanEqual`|`findByFieldIsLessThanEqual`|`field <= a`
+|`IsGreaterThan,GreaterThan,IsAfter,After`|`findByFieldIsGreaterThan`,`findByFieldAfter`|`field > a`
+|`IsGreaterThanEqual,GreaterThanEqual`|`findByFieldGreaterThanEqual`|`field >= a`
+|`IsNull`|`findByFieldIsNull`|`field IS NULL`
+|`IsNotNull,NotNull`|`findByFieldIsNotNull`|`field IS NOT NULL`
+|`IsLike,Like`|`findByFieldLike`|`field LIKE "a"` - a should be a String containing % and _ (matching n and 1 characters)
+|`IsNotLike,NotLike`|`findByFieldNotLike`|`field NOT LIKE "a"` - a should be a String containing % and _ (matching n and 1 characters)
+|`IsStartingWith,StartingWith,StartsWith`|`findByFieldStartingWith`|`field LIKE "a%"` - a should be a String prefix
+|`IsEndingWith,EndingWith,EndsWith`|`findByFieldEndingWith`|`field LIKE "%a"` - a should be a String suffix
+|`IsContaining,Containing,Contains`|`findByFieldContains`|`field LIKE "%a%"` - a should be a String
+|`IsNotContaining,NotContaining,NotContains`|`findByFieldNotContaining`|`field NOT LIKE "%a%"` - a should be a String
+|`IsIn,In`|`findByFieldIn`|`field IN array` - note that the next parameter value (or its children if a collection/array) should be compatible for storage in a `JsonArray`)
+|`IsNotIn,NotIn`|`findByFieldNotIn`|`field NOT IN array` - note that the next parameter value (or its children if a collection/array) should be compatible for storage in a `JsonArray`)
+|`IsTrue,True`|`findByFieldIsTrue`|`field = TRUE`
+|`IsFalse,False`|`findByFieldFalse`|`field = FALSE`
+|`MatchesRegex,Matches,Regex`|`findByFieldMatches`|`REGEXP_LIKE(field, "a")` - note that the ignoreCase is ignored here, a is a regular expression in String form
+|`Exists`|`findByFieldExists`|`field IS NOT MISSING` - used to verify that the JSON contains this attribute
+|`OrderBy`|`findByFieldOrderByLastnameDesc`|`field = a ORDER BY lastname DESC`
+|`IgnoreCase`|`findByFieldIgnoreCase`|`LOWER(field) = LOWER("a")` - a must be a String
+|===============
+
+You can use both counting queries and <<repositories.limit-query-result>> features with this approach.
+
+The second way of querying, supported also in older versions of Couchbase Server, is the View-backed one that we'll see in the next section.
 
 [[couchbase.repository.views]]
 == Backing Views
+This is the historical way of secondary indexing in Couchbase. Views are much more limited in terms of querying flexibility, and each custom method may very well need its own backing view, to be prepared in the cluster beforehand.
 
-As a rule of thumb, all repository access methods which are not "by a specific key" require a backing view to find the one or more matching entities. We'll only cover views to the extend which they are needed, if you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase Java SDK manual.
+We'll only cover views to the extent to which they are needed, if you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase Java SDK manual.
+
+As a rule of thumb, all repository CRUD access methods which are not "by a specific key" still require a single backing view, by default `all`, to find the one or more matching entities.
+
+IMPORTANT: This is only true for the methods directly defined by the `CrudRepository` interface (the one marked with a `*` in `Table 1.` above), since your additional methods can now be backed by N1QL.
 
 To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
 
@@ -137,9 +191,35 @@ Note that the important part in this map function is to only include the documen
 
 Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(null, null)` in the view: the document id is always sent over to the client implicitly, so we can shave off a view bytes in our view by not duplicating the id. If you use `emit(meta.id, null)` it won't hurt much too.
 
-Implementing your custom repository finder methods works the same way. The `findAllAdmins` calls the `allAdmins` view in the `user` design document. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one):
+[[couchbase.repository.views.querying]]
+=== View based querying
 
-.A custom view map function
+In `2.0`, since N1QL has been introduced as a more powerful concept, view-backed queries have changed a bit outside of the CRUD methods:
+
+ - the `@View` annotation is mandatory.
+ - if you just want all the results from the view, you can let the framework guess the view name to use by just using the plain annotation `@View`. **You won't be able to customize** the `ViewQuery` (eg. adding limits and specifying a `startkey`) using this method anymore.
+ - if you want your view query to have restrictions, those can be derived from the method name but in this case you **must** explicitly provide the `viewName` attribute in the annotation.
+ - View based query derivation is limited to a few keywords and only works on simple keys (not compound keys like `[ age, fname ]`).
+ - View based query derivation still needs you to include *one* valid property before keywords in the method name.
+
+.An extended User repository with View queries
+====
+[source,java]
+----
+public interface UserRepository extends CrudRepository<User, String> {
+
+    @View
+    List<User> findAllAdmins();
+
+    @View(viewName="firstNames")
+    List<User> findByFirstnameStartingWith(String fnamePrefix);
+}
+----
+====
+
+Implementing your custom repository finder methods also needs backing views. The `findAllAdmins` guesses to use the `allAdmins` view in the `user` design document, by convention. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one, unless you plan to call one by prefixing your method with `count` instead of `find`!):
+
+.The allAdmins map function
 ====
 [source,javascript]
 ----
@@ -151,9 +231,9 @@ function (doc, meta) {
 ----
 ====
 
-By now, we've never actually customized our view at query time. This is where the special `Query` argument comes along - like in our `findByFirstname(Query query)` method.
+By now, we've never actually customized our view at query time. This is where the alternative, query derivation, comes along - like in our `findByFirstnameStartingWith(String fnamePrefix)` method.
 
-.A parameterized view map function
+.The firstNames view map function
 ====
 [source,javascript]
 ----
@@ -165,7 +245,7 @@ function (doc, meta) {
 ----
 ====
 
-This view not only emits the document id, but also the firstname of every user as the key. We can now run a `Query` which returns us all users with a firstname of "Michael" or "Thomas".
+This view not only emits the document id, but also the firstname of every user as the key. We can now run a `ViewQuery` which returns us all users with a firstname of "Michael" or "Michele".
 
 .Query a repository method with custom params.
 ====
@@ -174,18 +254,30 @@ This view not only emits the document id, but also the firstname of every user a
 // Load the bean, or @Autowire it
 UserRepository repo = ctx.getBean(UserRepository.class);
 
-// Create the CouchbaseClient Query object
-Query query = new Query();
-
-// Filter on those two keys
-query.setKeys(ComplexKey.of("Michael", "Thomas"));
-
-// Run the query and get all matching users returned
-List<User> users = repo.findByFirstname(query));
+// Find all users with first name starting with "Mich"
+List<User> users = repo.findByFirstnameStartingWith("Mich");
 ----
 ====
 
-On all custom finder methods, you can use the `@View` annotation to both customize the design document and view name (to override the conventions).
+On all these derived custom finder methods, you have to use the `@View` annotation with at least the view name specified (and you can also override the design document name, otherwise determined by convention).
 
-Please keep in mind that by default, the `Stale.UPDATE_AFTER` mechanism is used. This means that whatever is in the index gets returned, and then the index gets updated. This strikes a good balance between performance and data freshness. You can tune the behavior through the `setStale()` method on the query object. For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
+IMPORTANT: For any other usage and customization of the `ViewQuery` that goes beyond that, recommended approach is to provide an implementation that uses the underlying template, like described in <<repositories.single-repository-behaviour>>.
+Please keep in mind that one typical parameter that you cannot tune using both view-based approaches is the `Stale` mechanism. You would need to do the implementation yourself in order to tune the behavior through the `setStale()` method on the `ViewQuery` object. For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
 
+For view-based query derivation, here are the supported keywords (A and B are method parameters in this table):
+
+.Supported keywords inside @View method names
+[options = "header, autowidth"]
+|===============
+|`Is,Equals`|`findAllByUsername`,`findByFieldEquals`|`key=A` - if only keyword, the method can have no parameter (return all items from the view)
+|`Between`|`findByFieldBetween`|`startkey=A&endkey=B`
+|`IsLessThan,LessThan,IsBefore,Before`|`findByFieldIsLessThan`,`findByFieldBefore`|`endkey=A`
+|`IsLessThanEqual,LessThanEqual`|`findByFieldIsLessThanEqual`|`endkey=A&inclusive_end=true`
+|`IsGreaterThanEqual,GreaterThanEqual`|`findByFieldGreaterThanEqual`|`startkey=A`
+|`IsStartingWith,StartingWith,StartsWith`|`findByFieldStartingWith`|`startkey="A"&endkey="A\uefff"` - A should be a String prefix
+|`IsIn,In`|`findByFieldIn`|`keys=[A]` - A should be a `Collection`/`Array` with elements compatible for storage in a `JsonArray` (or a single element to be stored in a `JsonArray`)
+|===============
+
+TIP: Note that the `reduce function` (not always a count) will be activated by prefixing with `count` and that <<repositories.limit-query-result>> is also supported.
+
+WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By. You have to include a valid entity property in the naming of your method.

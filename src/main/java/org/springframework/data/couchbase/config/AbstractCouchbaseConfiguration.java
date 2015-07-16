@@ -202,7 +202,7 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Scans the mapping base package for classes annotated with {@link Document}.
    *
-   * @throws ClassNotFoundException if intial entity sets could not be loaded.
+   * @throws ClassNotFoundException if initial entity sets could not be loaded.
    */
   protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
     String basePackage = getMappingBasePackage();

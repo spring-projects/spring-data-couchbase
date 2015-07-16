@@ -1,0 +1,63 @@
+[[couchbase.migrating]]
+= Migrating from Spring-Data-Couchbase 1.x to 2.x
+
+This chapter is a quick reference of what major changes have been introduced in 2.0.x and gives a high-level overview of things to consider when migrating.
+
+
+== Configuration
+The configuration, xml schema, etc... has changed to take the evolution of the 2.x SDK API into account.
+
+Where a single `CouchbaseClient` bean was previously the only bean declarable, you can now declare a `Cluster` bean (`<couchbase:cluster>`), one or more `Bucket` beans (`<couchbase:bucket>`) and even tune the SDK via a `CouchbaseEnvironment` bean (`<couchbase:env>`). All of these can also be created via Java Config method by extending `AbstractCouchbaseConfig`.
+
+The cluster bean lists the nodes to connect through (and references the environment bean if tuning is necessary) while the bucket beans map to bucket names and passwords and actually opens the connections internally.
+
+You can define more beans that are used for internal configuration of the Spring Data Couchbase module (`MappingContext`, `CouchbaseConverter`, `TranslationService`, ...).
+
+For more information, see <<couchbase.configuration>>.
+
+== Repository Queries
+The view-backed query method has evolved and support for N1QL has been introduced. As a result, there are now 4 ways of doing repository queries:
+
+ * Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
+ * Intermediate View query by query derivation (to provide some criteria for the view) @View annotated with `viewName`
+ * N1QL with explicit statements inline - @N1QL annotated with value
+ * N1QL query derivation - @N1QL annotated without value / no annotation (default)
+
+View backed queries are associated with the `@View` annotation, while N1QL backed queries are associated with the `@Query` annotation.
+
+N1QL query derivation is now the default query method (and there the `@Query` annotation is optional).
+
+See <<couchbase.repository.n1ql>> and <<couchbase.repository.views>> for more information.
+
+== Backing Views and View Query Changes
+IMPORTANT: The `all` view is still backing most CRUD operations, but custom repository methods are now by default backed by N1QL.
+
+To instead back them with views, use the `@View` annotation explicitly.
+
+Without a `viewName` specified, the view will be guessed from method name (stripping `count` or `find` prefix).
+Otherwise, query derivation will be used to parameterize the view query from the method name and parameters.
+
+=== Passing a `ViewQuery` object as a parameter to a custom repository method
+This behavior has been removed and the recommended approach is now to either use query derivation (if the query parameters are simple enough) or <<repositories.single-repository-behaviour>>.
+
+For instance, for a view emitting user lastNames, the following:
+
+[source,java]
+----
+@View
+List<User> findByLastname(ViewQuery.from("","").key("test").limit(3));
+----
+
+is to be replaced by the (more flexible):
+
+[source,java]
+----
+@View("byLastName")
+List<User> findFirst3ByLastnameEquals(String lastName);
+----
+
+=== Reduce in Views
+TIP: Reduce is now supported. It will be triggered by prefixing the method name with `count` instead of `find`.
+For example: `countByLastnameContains(String word)` instead of `findByLastnameContains(String word)`.
+
+WARNING: Don't forget to specify an `int/long` reduce function (not limited to `_count`) in your view if you plan to use that. Similarly, views backing a query derivation should emit a simple key (not `null` nor a compound key).
