@@ -23,6 +23,7 @@ import java.util.List;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.QueryParams;
 import com.couchbase.client.java.query.QueryResult;
@@ -327,6 +328,13 @@ public interface CouchbaseOperations {
    * @return the client used for the template.
    */
   Bucket getCouchbaseBucket();
+
+  /**
+   * Returns the {@link ClusterInfo} about the cluster linked to this template.
+   *
+   * @return the info about the cluster the template connects to.
+   */
+  ClusterInfo getCouchbaseClusterInfo();
 
   /**
    * Returns the underlying {@link CouchbaseConverter}.

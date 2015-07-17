@@ -23,6 +23,7 @@ import java.util.List;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
@@ -40,12 +41,13 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseBucket");
-    populateTestData(client);
+    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean("couchbaseClusterInfo");
+    populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
   }
 
-  private void populateTestData(final Bucket client) {
-    CouchbaseTemplate template = new CouchbaseTemplate(client);
+  private void populateTestData(final Bucket client, ClusterInfo clusterInfo) {
+    CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
     for (int i = 0; i < 100; i++) {
       template.save(new User("testuser-" + i, "uname-" + i), PersistTo.MASTER, ReplicateTo.NONE);
     }

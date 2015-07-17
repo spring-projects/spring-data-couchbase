@@ -19,24 +19,24 @@ package org.springframework.data.couchbase.repository.cdi;
 import javax.enterprise.inject.Produces;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.ClusterInfo;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 
 /**
- * Produces a {@link CouchbaseOperations} instance for test usage.
+ * Produces a {@link ClusterInfo} instance for test usage.
  *
- * @author Mark Paluch
+ * @author Simon Baslé
  */
-class CouchbaseOperationsProducer {
+class CouchbaseClusterInfoProducer {
 
   @Produces
-  public CouchbaseOperations createCouchbaseOperations(Bucket couchbaseClient, ClusterInfo clusterInfo) throws Exception {
-
-    CouchbaseTemplate couchbaseTemplate = new CouchbaseTemplate(clusterInfo, couchbaseClient);
-
-    return couchbaseTemplate;
+  public ClusterInfo createClusterInfo() throws Exception {
+    Cluster cluster = CouchbaseCluster.create();
+    return cluster.clusterManager("default", "").info();
   }
 
 }

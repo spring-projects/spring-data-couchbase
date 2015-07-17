@@ -2,12 +2,12 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
@@ -24,12 +24,13 @@ public class QueryDerivationConversionListener extends DependencyInjectionTestEx
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseBucket");
-    populateTestData(client);
+    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean("couchbaseClusterInfo");
+    populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
   }
 
-  private void populateTestData(Bucket client) {
-    CouchbaseTemplate template = new CouchbaseTemplate(client);
+  private void populateTestData(Bucket client, ClusterInfo clusterInfo) {
+    CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
 
     Calendar cal = Calendar.getInstance();
     cal.clear();

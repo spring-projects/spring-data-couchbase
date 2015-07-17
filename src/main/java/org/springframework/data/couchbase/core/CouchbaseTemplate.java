@@ -29,6 +29,7 @@ import java.util.concurrent.TimeoutException;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
@@ -37,6 +38,7 @@ import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.query.QueryRow;
+import com.couchbase.client.java.util.features.CouchbaseFeature;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
@@ -88,6 +90,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   private final Bucket client;
   private final CouchbaseConverter converter;
   private final TranslationService translationService;
+  private final ClusterInfo clusterInfo;
 
 
   private ApplicationEventPublisher eventPublisher;
@@ -96,16 +99,18 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
-  public CouchbaseTemplate(final Bucket client) {
-    this(client, null, null);
+  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client) {
+    this(clusterInfo, client, null, null);
   }
 
-  public CouchbaseTemplate(final Bucket client, final TranslationService translationService) {
-    this(client, null, translationService);
+  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client, final TranslationService translationService) {
+    this(clusterInfo, client, null, translationService);
   }
 
-  public CouchbaseTemplate(final Bucket client, final CouchbaseConverter converter,
+  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client,
+                           final CouchbaseConverter converter,
                            final TranslationService translationService) {
+    this.clusterInfo = clusterInfo;
     this.client = client;
     this.converter = converter == null ? getDefaultConverter() : converter;
     this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
@@ -315,6 +320,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass) {
+    checkN1ql();
     try {
       QueryResult queryResult = queryN1QL(n1ql);
 
@@ -351,6 +357,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> List<T> findByN1QLProjection(Query n1ql, Class<T> entityClass) {
+    checkN1ql();
     try {
       QueryResult queryResult = queryN1QL(n1ql);
 
@@ -379,6 +386,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public QueryResult queryN1QL(final Query query) {
+    checkN1ql();
     return execute(new BucketCallback<QueryResult>() {
       @Override
       public QueryResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
@@ -538,9 +546,21 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return (T) readEntity;
   }
 
+  private void checkN1ql() {
+    if (!getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL)) {
+      throw new UnsupportedCouchbaseFeatureException("Detected usage of N1QL in template, which is unsupported on this cluster",
+          CouchbaseFeature.N1QL);
+    }
+  }
+
   @Override
   public Bucket getCouchbaseBucket() {
     return this.client;
+  }
+
+  @Override
+  public ClusterInfo getCouchbaseClusterInfo() {
+    return this.clusterInfo;
   }
 
   @Override

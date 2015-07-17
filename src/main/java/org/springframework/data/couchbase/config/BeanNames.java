@@ -48,4 +48,8 @@ class BeanNames {
    */
   static final String TRANSLATION_SERVICE = "couchbaseTranslationService";
 
+  /**
+   * Refers to the "&lt;couchbase:clusterInfo&gt;" bean
+   */
+  static final String COUCHBASE_CLUSTER_INFO = "couchbaseClusterInfo";
 }

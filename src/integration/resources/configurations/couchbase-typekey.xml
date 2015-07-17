@@ -7,6 +7,7 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
+    <couchbase:clusterInfo/>
     <couchbase:bucket/>
 
     <!--note that the template needs both converter and translation service if you want to customize converter-->

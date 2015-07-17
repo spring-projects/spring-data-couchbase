@@ -111,6 +111,10 @@ The library provides a custom namespace that you can use in your XML configurati
       <couchbase:node>127.0.0.1</couchbase:node>
     </couchbase:cluster>
 
+    <!-- This is needed to probe the server for N1QL support -->
+    <!-- Can be either cluster credentials or a bucket credentials -->
+    <couchbase:clusterInfo login="beer-sample" password=""/>
+
     <couchbase:bucket bucketName="beer-sample" bucketPassword=""/>
 </beans:beans>
 ----

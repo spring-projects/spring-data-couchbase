@@ -16,23 +16,41 @@
 
 package org.springframework.data.couchbase.config;
 
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.util.StringUtils;
 
 /**
- * Parser for "<couchbase:template />" bean definitions.
+ * The parser for XML definition of a {@link ClusterInfo}, to be constructed from a {@link Cluster} reference.
+ * If no reference is given, the default reference <code>{@value BeanNames#COUCHBASE_CLUSTER_INFO}</code> is used.
  * <p/>
- * The outcome of this bean definition parser will be a constructed {@link CouchbaseTemplate}.
+ * See attributes {@link #CLUSTER_REF_ATTR}, {@link #LOGIN_ATTR} and {@link #PASSWORD_ATTR}.
  *
- * @author Michael Nitschinger
+ * @author Simon Baslé
  */
-public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser {
+public class CouchbaseClusterInfoParser extends AbstractSingleBeanDefinitionParser {
+
+  /**
+   * The <code>cluster-ref</code> attribute in a cluster info definition defines the cluster to build from.
+   */
+  public static final String CLUSTER_REF_ATTR = "cluster-ref";
+
+  /**
+   * The <code>login</code> attribute in a cluster info definition defines the credential to use (can also be a
+   * bucket level credential).
+   */
+  public static final String LOGIN_ATTR = "login";
+
+  /**
+   * The <code>password</code> attribute in a cluster info definition defines the credential's password.
+   */
+  public static final String PASSWORD_ATTR = "password";
 
   /**
    * Resolve the bean ID and assign a default if not set.
@@ -45,7 +63,7 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
   @Override
   protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
-    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_TEMPLATE;
+    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_CLUSTER_INFO;
   }
 
   /**
@@ -56,32 +74,33 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected Class getBeanClass(final Element element) {
-    return CouchbaseTemplate.class;
+    return CouchbaseClusterInfoFactoryBean.class;
   }
 
   /**
    * Parse the bean definition and build up the bean.
    *
    * @param element the XML element which contains the attributes.
-   * @param bean the builder which builds the bean.
+   * @param builder the builder which builds the bean.
    */
   @Override
-  protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    String clusterInfoRef = element.getAttribute("clusterInfo-ref");
-    String bucketRef = element.getAttribute("bucket-ref");
-    String converterRef = element.getAttribute("converter-ref");
-    String translationServiceRef = element.getAttribute("translation-service-ref");
-
-    bean.addConstructorArgReference(StringUtils.hasText(clusterInfoRef) ? clusterInfoRef : BeanNames.COUCHBASE_CLUSTER_INFO);
-    bean.addConstructorArgReference(StringUtils.hasText(bucketRef) ? bucketRef : BeanNames.COUCHBASE_BUCKET);
-
-    if (StringUtils.hasText(converterRef)) {
-      bean.addConstructorArgReference(converterRef);
+  protected void doParse(final Element element, final BeanDefinitionBuilder builder) {
+    String clusterRef = element.getAttribute(CLUSTER_REF_ATTR);
+    if (!StringUtils.hasText(clusterRef)) {
+      clusterRef = BeanNames.COUCHBASE_CLUSTER;
     }
+    builder.addConstructorArgReference(clusterRef);
 
-    if (StringUtils.hasText(translationServiceRef)) {
-      bean.addConstructorArgReference(translationServiceRef);
+    String login = element.getAttribute(LOGIN_ATTR);
+    if (!StringUtils.hasText(login)) {
+      login = "default";
     }
+    builder.addConstructorArgValue(login);
+
+    String password = element.getAttribute(PASSWORD_ATTR);
+    if (!StringUtils.hasText(password)) {
+      password = "";
+    }
+    builder.addConstructorArgValue(password);
   }
-
 }

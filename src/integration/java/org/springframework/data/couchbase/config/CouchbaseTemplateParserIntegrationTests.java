@@ -51,7 +51,7 @@ public class CouchbaseTemplateParserIntegrationTests {
 		reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-bean.xml"));
 
 		BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
-		assertEquals(1, definition.getConstructorArgumentValues().getArgumentCount());
+		assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
 
 		factory.getBean("couchbaseTemplate");
 	}
@@ -61,7 +61,7 @@ public class CouchbaseTemplateParserIntegrationTests {
 		reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-with-translation-service-bean.xml"));
 
 		BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
-		assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
+		assertEquals(3, definition.getConstructorArgumentValues().getArgumentCount());
 
 		factory.getBean("couchbaseTemplate");
 	}

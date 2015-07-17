@@ -7,6 +7,7 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
+    <couchbase:clusterInfo/>
     <couchbase:bucket/>
 
     <couchbase:template/>

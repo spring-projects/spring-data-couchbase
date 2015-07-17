@@ -8,6 +8,7 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
+    <couchbase:clusterInfo/>
 
     <couchbase:bucket id="cb-first"/>
     <couchbase:bucket id="cb-second"/>

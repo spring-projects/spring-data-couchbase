@@ -24,6 +24,7 @@ import java.util.Set;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
+import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
@@ -116,6 +117,11 @@ public abstract class AbstractCouchbaseConfiguration {
     return CouchbaseCluster.create(couchbaseEnvironment(), getBootstrapHosts());
   }
 
+  @Bean(name = BeanNames.COUCHBASE_CLUSTER_INFO)
+  public ClusterInfo couchbaseClusterInfo() throws Exception {
+    return couchbaseCluster().clusterManager(getBucketName(), getBucketPassword()).info();
+  }
+
   /**
    * Return the {@link Bucket} instance to connect to.
    *
@@ -134,7 +140,7 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   @Bean(name = BeanNames.COUCHBASE_TEMPLATE)
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    return new CouchbaseTemplate(couchbaseClient(), mappingCouchbaseConverter(), translationService());
+    return new CouchbaseTemplate(couchbaseClusterInfo(), couchbaseClient(), mappingCouchbaseConverter(), translationService());
   }
 
   /**

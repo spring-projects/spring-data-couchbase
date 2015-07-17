@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;

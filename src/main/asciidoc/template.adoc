@@ -16,6 +16,8 @@ Removing documents through the `remove` methods works exactly the same.
 
 If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice. The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics. Similarly, find methods using N1QL are provided in `findByN1QL` and `queryN1QL`. Additionally, since N1QL allows you to select specific fields in documents (or even across documents using joins), `findByN1QLProjection` will allow you to skip full `Document` conversion and map these fields to an ad-hoc class.
 
+WARNING: If it is detected at runtime that the cluster doesn't support N1QL, these methods will throw a `UnsupportedCouchbaseFeatureException`.
+
 If you really need low-level semantics, the `couchbaseBucket` is also always in scope through `getCouchbaseBucket()`.
 
 [[couchbase.template.xml]]
@@ -35,6 +37,7 @@ The template can be configured via xml, including setting a custom `TranslationS
 
     <couchbase:env/>
     <couchbase:cluster/>
+    <couchbase:clusterInfo/>
     <couchbase:bucket/>
 
     <couchbase:template translation-service-ref="myCustomTranslationService"/>
@@ -44,4 +47,6 @@ The template can be configured via xml, including setting a custom `TranslationS
 </beans>
 ----
 ====
+
+NOTE: In the example above most tags assume their default values, that is a localhost cluster and bucket "default". In production you would have to also provide specifics to these tags.
 

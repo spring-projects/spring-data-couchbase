@@ -19,9 +19,15 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
+import com.couchbase.client.java.util.features.CouchbaseFeature;
+
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.view.Query;
+import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
@@ -104,10 +110,29 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected Object getTargetRepository(final RepositoryInformation metadata) {
+    checkFeatures(metadata);
+
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
     final SimpleCouchbaseRepository simpleCouchbaseRepository = new SimpleCouchbaseRepository(entityInformation, couchbaseOperations);
     simpleCouchbaseRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
     return simpleCouchbaseRepository;
+  }
+
+  private void checkFeatures(RepositoryInformation metadata) {
+    boolean needsN1ql = false;
+    for (Method method : metadata.getQueryMethods()) {
+
+      boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
+      boolean hasView = AnnotationUtils.findAnnotation(method, View.class) != null;
+
+      if (hasN1ql || !hasView) {
+        needsN1ql = true;
+        break;
+      }
+    }
+    if (needsN1ql && !couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL)) {
+      throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", CouchbaseFeature.N1QL);
+    }
   }
 
   /**
