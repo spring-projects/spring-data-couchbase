@@ -483,6 +483,25 @@ public class MappingCouchbaseConverterTests {
     assertEquals(deleted.toDate().getTime(), read.deleted.toDate().getTime());
   }
 
+  @Test
+  public void shouldPrioritizeSpringIdOverSdkId() {
+    SpringIdentified entity = new SpringIdentified();
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converter.write(entity, converted);
+
+    assertEquals("realId", converted.getId());
+  }
+
+  @Test
+  public void shouldIgnoreSdkIdIfSpringIdFound() {
+    AmbiguousIdentified entity = new AmbiguousIdentified();
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converter.write(entity, converted);
+
+    assertEquals("springId", converted.getId());
+  }
+
+
   static class EntityWithoutID {
     private String attr0;
 
@@ -661,4 +680,21 @@ public class MappingCouchbaseConverterTests {
     }
   }
 
+  static class SdkIdentified {
+    @com.couchbase.client.java.repository.annotation.Id
+    public String id = "id";
+  }
+
+  static class SpringIdentified extends SdkIdentified {
+    @org.springframework.data.annotation.Id
+    public String realId = "realId";
+  }
+
+  static class AmbiguousIdentified {
+    @org.springframework.data.annotation.Id
+    public String springId = "springId";
+
+    @com.couchbase.client.java.repository.annotation.Id
+    public String sdkId = "sdkId";
+  }
 }

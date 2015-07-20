@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.repository.cdi;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.Field;
+import com.couchbase.client.java.repository.annotation.Field;
 
 /**
  * @author Mark Paluch

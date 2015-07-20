@@ -25,13 +25,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import com.couchbase.client.java.repository.annotation.Field;
+import com.couchbase.client.java.repository.annotation.Id;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
@@ -121,7 +122,7 @@ public class CustomConvertersTests {
   }
 
   public static class BlogPost {
-    @Id
+    @Id //also tests DATACOUCH-145 (this is SDK's @Id)
     public String id = "key";
 
     @Field

@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import com.couchbase.client.java.repository.annotation.Id;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -59,6 +61,38 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     context.addPropertyAccessor(new BeanFactoryAccessor());
     context.setBeanResolver(new BeanFactoryResolver(applicationContext));
     context.setRootObject(applicationContext);
+  }
+
+  // DATACOUCH-145: allows SDK's @Id annotation to be used
+  @Override
+  protected CouchbasePersistentProperty returnPropertyIfBetterIdPropertyCandidateOrNull(CouchbasePersistentProperty property) {
+    if (!property.isIdProperty()) {
+      return null;
+    }
+
+    if (!this.hasIdProperty()) {
+      return property;
+    }
+
+    //check existing ID vs new candidate
+    boolean currentCbId = this.getIdProperty().isAnnotationPresent(Id.class);
+    boolean currentSpringId = this.getIdProperty().isAnnotationPresent(org.springframework.data.annotation.Id.class);
+    boolean candidateCbId = property.isAnnotationPresent(Id.class);
+    boolean candidateSpringId = property.isAnnotationPresent(org.springframework.data.annotation.Id.class);
+
+    if (currentCbId && candidateSpringId) {
+      //spring IDs will have priority over SDK IDs
+      return property;
+    } else if (currentSpringId && candidateCbId) {
+      //ignore SDK's IDs if current is a Spring ID
+      return null;
+    }
+    /* any of the following will throw:
+      - current is a spring ID and the candidate bears another spring ID
+      - current is a SDK ID and the candidate bears another SDK ID
+      - any other combination involving something else than a SDK or Spring ID
+     */
+    return super.returnPropertyIfBetterIdPropertyCandidateOrNull(property);
   }
 
   /**

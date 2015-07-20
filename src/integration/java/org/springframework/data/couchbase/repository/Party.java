@@ -3,7 +3,7 @@ package org.springframework.data.couchbase.repository;
 import java.util.Date;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.Field;
+import com.couchbase.client.java.repository.annotation.Field;
 
 /**
  * An entity used to test conversion of parameters in query derivations.

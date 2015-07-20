@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.core.mapping;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 
+import com.couchbase.client.java.repository.annotation.Id;
+
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -28,7 +30,7 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
 
 /**
- * Implements annotated property representations of a given Field instance.
+ * Implements annotated property representations of a given {@link com.couchbase.client.java.repository.annotation.Field} instance.
  * <p/>
  * <p>This object is used to gather information out of properties on objects that need to be persisted. For example, it
  * supports overriding of the actual property name by providing custom annotations.</p>
@@ -73,8 +75,8 @@ public class BasicCouchbasePersistentProperty
    */
   @Override
   public String getFieldName() {
-    org.springframework.data.couchbase.core.mapping.Field annotation = getField().
-        getAnnotation(org.springframework.data.couchbase.core.mapping.Field.class);
+    com.couchbase.client.java.repository.annotation.Field annotation = getField().
+        getAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
 
     if (annotation != null && StringUtils.hasText(annotation.value())) {
       return annotation.value();
@@ -90,4 +92,9 @@ public class BasicCouchbasePersistentProperty
     return fieldName;
   }
 
+  // DATACOUCH-145: allows SDK's @Id annotation to be used
+  @Override
+  public boolean isIdProperty() {
+    return isAnnotationPresent(Id.class) || super.isIdProperty();
+  }
 }
