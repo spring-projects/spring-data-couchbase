@@ -1,21 +1,20 @@
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.springframework.data.couchbase
 Bundle-Name: ${project.name}
-Bundle-Vendor: Pivotal Software, Inc.
+Bundle-Vendor: Couchbase Inc., Pivotal Software Inc.
 Bundle-Version: ${project.version}
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Template:
  org.springframework.data.couchbase.*;version="${project.version}"
 Import-Template:
- javax.enterprise.*;version="${cdi:[=.=.=,+1.0.0)}";resolution:=optional,
- com.couchbase.client.*;version="${couchbase:[=.=.=,+2.2.0-dp)}",
- net.spy.memcached.*;version="[2.8.0,3.0.0)",
+ com.couchbase.client.*;version="${couchbase.osgi:[=.=.=,+1.0.0)}",
  com.fasterxml.jackson.*;version="${jackson:[=.=.=,+1.0.0)}",
- org.springframework.*;version="${spring:[=.=.=.=,+1.1.0)}",
+ javax.enterprise.*;version="${cdi:[=.=.=,+1.0.0)}";resolution:=optional,
+ javax.validation.*;version="${validation:[=.=.=.=,+1.0.0)}";resolution:=optional,
+ org.aopalliance.*;version="[1.0.0, 2.0.0)";resolution:=optional,
+ org.joda.time.*;version="${jodatime:[=.=.=,+1.0.0)}";resolution:=optional,
+ org.slf4j.*;version="${slf4j:[=.=.=,+1.0.0)}",
+ org.springframework.*;version="${spring:[=.=.=.=,+1.0.0)}",
  org.springframework.data.*;version="${springdata.commons:[=.=.=.=,+1.0.0)}",
  org.w3c.*;version="0.0.0",
- org.aopalliance.*;version="[1.0.0, 2.0.0)";resolution:=optional,
- org.slf4j.*;version="${slf4j:[=.=.=,+1.0.0)}",
- org.joda.time.*;version="${jodatime:[=.=.=,+1.0.0)}";resolution:=optional,
- javax.validation.*;version="${validation:[=.=.=.=,+1.0.0)}";resolution:=optional
-
+ rx.*;version="${rxjava:[=.=.=,+1.0.0)}"

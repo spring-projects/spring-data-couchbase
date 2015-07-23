@@ -23,6 +23,7 @@
         <dist.key>DATACOUCH</dist.key>
 
         <couchbase>2.2.0-dp</couchbase>
+        <couchbase.osgi>2.2.0</couchbase.osgi>
         <jackson>2.3.2</jackson>
         <springdata.commons>1.11.0.BUILD-SNAPSHOT</springdata.commons>
         <validation>1.0.0.GA</validation>
