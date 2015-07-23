@@ -1,9 +1,9 @@
 [[couchbase.migrating]]
-= Migrating from Spring-Data-Couchbase 1.x to 2.x
+= Migrating from Spring Data Couchbase 1.x to 2.x
 
 This chapter is a quick reference of what major changes have been introduced in 2.0.x and gives a high-level overview of things to consider when migrating.
 
-
+[[couchbase.migrating.configuration]]
 == Configuration
 The configuration, xml schema, etc... has changed to take the evolution of the 2.x SDK API into account.
 
@@ -15,7 +15,8 @@ You can define more beans that are used for internal configuration of the Spring
 
 For more information, see <<couchbase.configuration>>.
 
-== Repository Queries
+[[couchbase.migrating.repository-queries]]
+== Repository queries
 The view-backed query method has evolved and support for N1QL has been introduced. As a result, there are now 4 ways of doing repository queries:
 
  * Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
@@ -29,7 +30,8 @@ N1QL query derivation is now the default query method (and there the `@Query` an
 
 See <<couchbase.repository.n1ql>> and <<couchbase.repository.views>> for more information.
 
-== Backing Views and View Query Changes
+[[couchbase.migrating.backing-views]]
+== Backing views and view query changes
 IMPORTANT: The `all` view is still backing most CRUD operations, but custom repository methods are now by default backed by N1QL.
 
 To instead back them with views, use the `@View` annotation explicitly.
@@ -37,7 +39,8 @@ To instead back them with views, use the `@View` annotation explicitly.
 Without a `viewName` specified, the view will be guessed from method name (stripping `count` or `find` prefix).
 Otherwise, query derivation will be used to parameterize the view query from the method name and parameters.
 
-=== Passing a `ViewQuery` object as a parameter to a custom repository method
+[[couchbase.migrating.view-query]]
+=== Passing a ViewQuery object as a parameter to a custom repository method
 This behavior has been removed and the recommended approach is now to either use query derivation (if the query parameters are simple enough) or <<repositories.single-repository-behaviour>>.
 
 For instance, for a view emitting user lastNames, the following:
@@ -56,8 +59,10 @@ is to be replaced by the (more flexible):
 List<User> findFirst3ByLastnameEquals(String lastName);
 ----
 
-=== Reduce in Views
+[[couchbase.migrating.reduce-in-views]]
+=== Reduce in views
 TIP: Reduce is now supported. It will be triggered by prefixing the method name with `count` instead of `find`.
 For example: `countByLastnameContains(String word)` instead of `findByLastnameContains(String word)`.
 
 WARNING: Don't forget to specify an `int/long` reduce function (not limited to `_count`) in your view if you plan to use that. Similarly, views backing a query derivation should emit a simple key (not `null` nor a compound key).
+

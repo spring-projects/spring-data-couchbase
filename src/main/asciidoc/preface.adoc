@@ -13,3 +13,6 @@ This reference documentation describes the general usage of the Spring Data Couc
 * Milestone repository - https://repo.spring.io/libs-milestone
 * Snapshot repository - https://repo.spring.io/libs-snapshot
 
+[preface]
+include::migrating.adoc[leveloffset=+1]
+

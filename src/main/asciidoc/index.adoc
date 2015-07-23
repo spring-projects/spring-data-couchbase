@@ -17,9 +17,6 @@ include::preface.adoc[]
 [[reference]]
 = Reference Documentation
 
-= Migrating from Spring-Data-Couchbase 1.x to 2.x
-include::migrating.adoc[]
-
 :leveloffset: +1
 include::configuration.adoc[]
 include::entity.adoc[]
