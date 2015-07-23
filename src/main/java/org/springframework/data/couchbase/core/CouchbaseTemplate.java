@@ -187,10 +187,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       (String) result.getValue(), converted));
 
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(readEntity.getClass());
-		final PersistentPropertyAccessor beanWrapper = getPropertyAccessor(persistentEntity.getPropertyAccessor(readEntity));
+		final PersistentPropertyAccessor accessor = getPropertyAccessor(readEntity);
 		
     if (persistentEntity.hasVersionProperty()) {
-      beanWrapper.setProperty(persistentEntity.getVersionProperty(), result.getCas());
+      accessor.setProperty(persistentEntity.getVersionProperty(), result.getCas());
     }
 
     return (T) readEntity;
