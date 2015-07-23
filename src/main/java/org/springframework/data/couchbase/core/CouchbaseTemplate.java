@@ -65,8 +65,9 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeDeleteEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.BeanWrapper;
+import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 
 /**
  * @author Michael Nitschinger
@@ -452,10 +453,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     final String operationDesc = failOnExist ? "Insert" : failOnMissing ? "Update" : "Upsert";
 
-    final BeanWrapper<Object> beanWrapper = BeanWrapper.create(objectToPersist, converter.getConversionService());
+    final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
     final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? beanWrapper.getProperty(versionProperty, Long.class) : null;
+    final Long version = versionProperty != null ? accessor.getProperty(versionProperty, Long.class) : null;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToPersist));
     final CouchbaseDocument converted = new CouchbaseDocument();
@@ -480,7 +481,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
           if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
             //inject new cas into the bean
-            beanWrapper.setProperty(versionProperty, storedDoc.cas());
+            accessor.setProperty(versionProperty, storedDoc.cas());
             return true;
           }
           return false;
@@ -537,13 +538,20 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final CouchbaseDocument converted = new CouchbaseDocument(id);
     Object readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
 
-    final BeanWrapper<Object> beanWrapper = BeanWrapper.create(readEntity, converter.getConversionService());
+    final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(readEntity.getClass());
     if (persistentEntity.hasVersionProperty()) {
-      beanWrapper.setProperty(persistentEntity.getVersionProperty(), data.cas());
+      accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
     }
 
     return (T) readEntity;
+  }
+
+  private final ConvertingPropertyAccessor getPropertyAccessor(Object source) {
+    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
+    PersistentPropertyAccessor accessor = entity.getPropertyAccessor(source);
+
+    return new ConvertingPropertyAccessor(accessor, converter.getConversionService());
   }
 
   private void checkN1ql() {
