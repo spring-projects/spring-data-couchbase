@@ -85,9 +85,11 @@ Depending on how your environment is set up, the configuration will be automatic
 
 Additionally, the SDK environment can be tuned by overriding the `getEnvironment()` method to return a properly tuned `CouchbaseEnvironment`.
 
-While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration (for example repositories, validation and custom converters).
+While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration (for example repositories, query consistency, validation and custom converters).
 
 TIP: If you use `SyncGateway` and `CouchbaseMobile`, you may run into problem with fields prefixed by `_`. Since Spring Data Couchbase by default stores the type information as a `_class` attribute this can be problematic. Override `typeKey()` (for example to return `MappingCouchbaseConverter.TYPEKEY_SYNCGATEWAY_COMPATIBLE`) to change the name of said attribute.
+
+TIP: For generated queries, if you want strong consistency (at the expense of performance), you can override `getDefaultConsistency()` and return `Consistency.READ_YOUR_OWN_WRITES`.
 
 [[configuration-xml]]
 == XML-based Configuration
@@ -120,6 +122,8 @@ The library provides a custom namespace that you can use in your XML configurati
 ----
 ====
 This code is equivalent to the java configuration approach shown above. You can customize the SDK `CouchbaseEnvironment` via the `<couchbase:env/>` tag, that supports most tuning parameters as attributes. It is also possible to configure templates and repositories, which is shown in the appropriate sections.
+
+IMPORTANT: The XML configuration **must** include the `clusterInfo` credentials, in order to be able to detect N1QL feature.
 
 If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials and host information are correct.
 

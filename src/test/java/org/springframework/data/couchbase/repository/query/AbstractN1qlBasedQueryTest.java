@@ -11,11 +11,16 @@ import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.query.ParameterizedQuery;
 import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.QueryParams;
 import com.couchbase.client.java.query.SimpleQuery;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 
 public class AbstractN1qlBasedQueryTest {
@@ -23,12 +28,12 @@ public class AbstractN1qlBasedQueryTest {
   @Test
   public void testEmptyArgumentsShouldProduceSimpleQuery() throws Exception {
     Statement st = select("*");
-    Query query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty());
+    Query query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty(), ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
     assertTrue(query instanceof SimpleQuery);
     assertEquals(st.toString(), query.statement().toString());
-    assertNull(query.params());
+    assertEquals(QueryParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
     assertFalse(queryObject.containsKey("args"));
   }
 
@@ -38,12 +43,12 @@ public class AbstractN1qlBasedQueryTest {
     List<Object> params = new ArrayList<Object>(2);
     params.add("test");
     JsonArray placeholderValues = JsonArray.from(params);
-    Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues);
+    Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
     assertTrue(query instanceof ParameterizedQuery);
     assertEquals(st.toString(), query.statement().toString());
-    assertNull(query.params());
+    assertEquals(QueryParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
     assertTrue(queryObject.containsKey("args"));
     JsonArray args = queryObject.getArray("args");
     assertEquals(1, args.size());
@@ -57,12 +62,12 @@ public class AbstractN1qlBasedQueryTest {
     params.add(123L);
     params.add("test");
     JsonArray placeholderValues = JsonArray.from(params);
-    Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues);
+    Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
     assertTrue(query instanceof ParameterizedQuery);
     assertEquals(st.toString(), query.statement().toString());
-    assertNull(query.params());
+    assertEquals(QueryParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
     assertTrue(queryObject.containsKey("args"));
     JsonArray args = queryObject.getArray("args");
     assertEquals(2, args.size());

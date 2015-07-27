@@ -264,7 +264,7 @@ List<User> users = repo.findByFirstnameStartingWith("Mich");
 On all these derived custom finder methods, you have to use the `@View` annotation with at least the view name specified (and you can also override the design document name, otherwise determined by convention).
 
 IMPORTANT: For any other usage and customization of the `ViewQuery` that goes beyond that, recommended approach is to provide an implementation that uses the underlying template, like described in <<repositories.single-repository-behaviour>>.
-Please keep in mind that one typical parameter that you cannot tune using both view-based approaches is the `Stale` mechanism. You would need to do the implementation yourself in order to tune the behavior through the `setStale()` method on the `ViewQuery` object. For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
+For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
 
 For view-based query derivation, here are the supported keywords (A and B are method parameters in this table):
 
@@ -283,3 +283,27 @@ For view-based query derivation, here are the supported keywords (A and B are me
 TIP: Note that the `reduce function` (not always a count) will be activated by prefixing with `count` and that <<repositories.limit-query-result>> is also supported.
 
 WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By. You have to include a valid entity property in the naming of your method.
+
+[[couchbase.repository.consistency]]
+== Querying with consistency
+One aspect that is often needed and doesn't have a direct equivalent in the Spring Data query derivation mechanism is
+`query consistency`. In both view-based queries and N1QL, you have this concept that the secondary index can return stale
+data, because the latest version hasn't been indexed yet. This gives the best performance at the expense of consistency.
+
+If one wants to have stronger consistency, there are two possibilities described in the next sections.
+
+=== Configure it on a global level
+The global consistency used by generated queries (views and N1QL) is defined at the template level,
+using `Consistency` enumeration (like `Consistency.READ_YOUR_OWN_WRITE`):
+
+ - in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
+ - in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
+
+=== Provide an implementation
+Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency
+(see <<repositories.single-repository-behaviour>>).
+
+ - one can specify the consistency on those via their respective query classes, according to the Couchbase Java SDK documentation.
+ - for example for views `ViewQuery.stale(Stale.FALSE)`
+ - for example for N1QL `Query.simple("SELECT * FROM default", QueryParams.build().consistency(ScanConsistency.REQUEST_PLUS));`
+

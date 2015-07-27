@@ -36,8 +36,10 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.QueryParams;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.query.QueryRow;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -65,6 +67,7 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeDeleteEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.core.view.Consistency;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -99,6 +102,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   private PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
   protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
+
+  //default value is in case the template isn't constructed through configuration mechanisms that use the setter.
+  private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
 
   public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client) {
     this(clusterInfo, client, null, null);
@@ -575,5 +581,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   @Override
   public CouchbaseConverter getConverter() {
     return this.converter;
+  }
+
+  @Override
+  public Consistency getDefaultConsistency() {
+    return configuredConsistency;
+  }
+
+  public void setDefaultConsistency(Consistency consistency) {
+    this.configuredConsistency = consistency;
   }
 }

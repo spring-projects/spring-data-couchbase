@@ -33,6 +33,7 @@ import com.couchbase.client.java.view.ViewResult;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.view.Consistency;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
@@ -340,5 +341,13 @@ public interface CouchbaseOperations {
    * @return CouchbaseConverter.
    */
   CouchbaseConverter getConverter();
+
+  /**
+   * Returns the {@link Consistency consistency} parameter to be used by default for generated queries (views and N1QL)
+   * in repositories. Defaults to {@link Consistency#DEFAULT_CONSISTENCY}.
+   *
+   * @return the consistency to use for generated repository queries.
+   */
+  Consistency getDefaultConsistency();
 
 }

@@ -20,7 +20,9 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.QueryParams;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,18 +59,20 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     Statement statement = getStatement(accessor);
     JsonArray queryPlaceholderValues = getPlaceholderValues(accessor);
 
-    Query query = buildQuery(statement, queryPlaceholderValues);
+    Query query = buildQuery(statement, queryPlaceholderValues,
+        getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
     return executeDependingOnType(query, queryMethod, queryMethod.isPageQuery(), queryMethod.isModifyingQuery(),
         queryMethod.isSliceQuery());
   }
 
-  protected static Query buildQuery(Statement statement, JsonArray queryPlaceholderValues) {
+  protected static Query buildQuery(Statement statement, JsonArray queryPlaceholderValues, ScanConsistency scanConsistency) {
+    QueryParams queryParams = QueryParams.build().consistency(scanConsistency);
     Query query;
     if (!queryPlaceholderValues.isEmpty()) {
-      query = Query.parameterized(statement, queryPlaceholderValues);
+      query = Query.parameterized(statement, queryPlaceholderValues, queryParams);
     }
     else {
-      query = Query.simple(statement);
+      query = Query.simple(statement, queryParams);
     }
 
     if (LOG.isDebugEnabled()) {

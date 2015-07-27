@@ -68,7 +68,8 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
     boolean isReduce = methodName.startsWith("count");
     String viewName = StringUtils.uncapitalize(methodName.replaceFirst("find|count", ""));
 
-    ViewQuery simpleQuery = ViewQuery.from(designDoc, viewName);
+    ViewQuery simpleQuery = ViewQuery.from(designDoc, viewName)
+        .stale(operations.getDefaultConsistency().viewConsistency());
     if (isReduce) {
       simpleQuery.reduce(isReduce);
       return executeReduce(simpleQuery, designDoc, viewName);
@@ -80,7 +81,8 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   protected Object deriveAndExecute(Object[] runtimeParams) {
     String designDoc = designDocName(method);
     String viewName = method.getViewAnnotation().viewName();
-    ViewQuery baseQuery = ViewQuery.from(designDoc, viewName);
+    ViewQuery baseQuery = ViewQuery.from(designDoc, viewName)
+        .stale(operations.getDefaultConsistency().viewConsistency());
     try {
       PartTree tree = new PartTree(method.getName(), method.getEntityInformation().getJavaType());
 

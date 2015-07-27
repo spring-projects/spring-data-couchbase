@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.view.Consistency;
 import org.springframework.util.StringUtils;
 
 /**
@@ -33,6 +36,8 @@ import org.springframework.util.StringUtils;
  * @author Michael Nitschinger
  */
 public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTemplateParser.class);
 
   /**
    * Resolve the bean ID and assign a default if not set.
@@ -81,6 +86,17 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
 
     if (StringUtils.hasText(translationServiceRef)) {
       bean.addConstructorArgReference(translationServiceRef);
+    }
+
+    String consistencyValue = element.getAttribute("consistency");
+    if (consistencyValue != null) {
+      try {
+        Consistency consistency = Consistency.valueOf(consistencyValue);
+        bean.addPropertyValue("defaultConsistency", consistency);
+      } catch (IllegalArgumentException e) {
+        //bad consistency, leave default and log
+        LOGGER.warn("Parsed bad consistency value " + consistencyValue + " in xml template configuration, using default");
+      }
     }
   }
 

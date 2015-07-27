@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
+import org.springframework.data.couchbase.core.view.Consistency;
 
 @Configuration
 public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
@@ -72,5 +73,10 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
     CouchbaseTemplate template = super.couchbaseTemplate();
     template.setWriteResultChecking(WriteResultChecking.LOG);
     return template;
+  }
+
+  @Override
+  protected Consistency getDefaultConsistency() {
+    return Consistency.READ_YOUR_OWN_WRITES;
   }
 }

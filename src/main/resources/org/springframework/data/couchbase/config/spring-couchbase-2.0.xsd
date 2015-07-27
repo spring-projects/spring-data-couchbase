@@ -112,6 +112,18 @@ The reference to a CouchbaseConverter instance.
                     </xsd:appinfo>
                 </xsd:annotation>
             </xsd:attribute>
+            <xsd:attribute name="consistency" type="xsd:string" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+                        The default Consistency value for generated queries.]]>
+                    </xsd:documentation>
+                    <xsd:appinfo>
+                        <tool:annotation kind="direct">
+                            <tool:expected-type type="org.springframework.data.couchbase.core.view.Consistency"/>
+                        </tool:annotation>
+                    </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
         </xsd:complexType>
     </xsd:element>
 

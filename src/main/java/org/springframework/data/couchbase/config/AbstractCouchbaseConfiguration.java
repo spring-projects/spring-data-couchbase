@@ -27,6 +27,8 @@ import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +43,7 @@ import org.springframework.data.couchbase.core.convert.translation.JacksonTransl
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.view.Consistency;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -136,11 +139,16 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Creates a {@link CouchbaseTemplate}.
    *
+   * This uses {@link #couchbaseClusterInfo()}, {@link #couchbaseClient()}, {@link #mappingCouchbaseConverter()},
+   * , {@link #translationService()} and {@link #getDefaultConsistency()} for construction.
+   *
    * @throws Exception on Bean construction failure.
    */
   @Bean(name = BeanNames.COUCHBASE_TEMPLATE)
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    return new CouchbaseTemplate(couchbaseClusterInfo(), couchbaseClient(), mappingCouchbaseConverter(), translationService());
+    CouchbaseTemplate template = new CouchbaseTemplate(couchbaseClusterInfo(), couchbaseClient(), mappingCouchbaseConverter(), translationService());
+    template.setDefaultConsistency(getDefaultConsistency());
+    return template;
   }
 
   /**
@@ -256,5 +264,15 @@ public abstract class AbstractCouchbaseConfiguration {
    */
   protected FieldNamingStrategy fieldNamingStrategy() {
     return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
+  }
+
+  /**
+   * Configures the default consistency for generated {@link ViewQuery view queries}
+   * and {@link Query N1QL queries} in repositories.
+   *
+   * @return the {@link Consistency consistency} to apply by default on generated queries.
+   */
+  protected Consistency getDefaultConsistency() {
+    return Consistency.DEFAULT_CONSISTENCY;
   }
 }
