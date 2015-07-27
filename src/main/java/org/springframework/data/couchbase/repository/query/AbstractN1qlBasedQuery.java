@@ -65,7 +65,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   protected static Query buildQuery(Statement statement, JsonArray queryPlaceholderValues) {
     Query query;
     if (!queryPlaceholderValues.isEmpty()) {
-      query = Query.parametrized(statement, queryPlaceholderValues);
+      query = Query.parameterized(statement, queryPlaceholderValues);
     }
     else {
       query = Query.simple(statement);

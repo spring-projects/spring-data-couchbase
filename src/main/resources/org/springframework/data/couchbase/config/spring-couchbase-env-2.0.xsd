@@ -52,6 +52,8 @@
                 <xsd:attribute name="keepAliveInterval" type="xsd:long"/>
                 <xsd:attribute name="autoreleaseAfter" type="xsd:long"/>
                 <xsd:attribute name="bufferPoolingEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="tcpNodelayEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="mutationTokensEnabled" type="xsd:boolean"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

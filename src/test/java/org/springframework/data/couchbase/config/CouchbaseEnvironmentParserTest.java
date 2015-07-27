@@ -35,75 +35,76 @@ import org.springframework.core.io.ClassPathResource;
 
 public class CouchbaseEnvironmentParserTest {
 
-	private static GenericApplicationContext context;
+  private static GenericApplicationContext context;
 
-	@BeforeClass
-	public static void setUp() {
-		DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
-		BeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
-		reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbaseEnv-bean.xml"));
-		context = new GenericApplicationContext(factory);
-		context.refresh();
-	}
+  @BeforeClass
+  public static void setUp() {
+    DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
+    BeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
+    reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbaseEnv-bean.xml"));
+    context = new GenericApplicationContext(factory);
+    context.refresh();
+  }
 
-	@Test
-	public void testParsingRetryStrategyFailFast() throws Exception {
-			CouchbaseEnvironment env = context.getBean("envWithFailFast", CouchbaseEnvironment.class);
+  @Test
+  public void testParsingRetryStrategyFailFast() throws Exception {
+    CouchbaseEnvironment env = context.getBean("envWithFailFast", CouchbaseEnvironment.class);
 
-			assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
-	}
+    assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
+  }
 
-	@Test
-	public void testParsingRetryStrategyBestEffort() throws Exception {
-			CouchbaseEnvironment env = context.getBean("envWithBestEffort", CouchbaseEnvironment.class);
+  @Test
+  public void testParsingRetryStrategyBestEffort() throws Exception {
+    CouchbaseEnvironment env = context.getBean("envWithBestEffort", CouchbaseEnvironment.class);
 
-			assertThat(env.retryStrategy(), is(instanceOf(BestEffortRetryStrategy.class)));
-	}
+    assertThat(env.retryStrategy(), is(instanceOf(BestEffortRetryStrategy.class)));
+  }
 
-	@Test
-	public void testAllDefaultsOverridden() {
-		CouchbaseEnvironment env = context.getBean("envWithNoDefault", CouchbaseEnvironment.class);
-		CouchbaseEnvironment defaultEnv = DefaultCouchbaseEnvironment.create();
+  @Test
+  public void testAllDefaultsOverridden() {
+    CouchbaseEnvironment env = context.getBean("envWithNoDefault", CouchbaseEnvironment.class);
+    CouchbaseEnvironment defaultEnv = DefaultCouchbaseEnvironment.create();
 
-		assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
+    assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
 
-		assertThat(env.managementTimeout(), is(equalTo(1L)));
-		assertThat(env.queryTimeout(), is(equalTo(2L)));
-		assertThat(env.viewTimeout(), is(equalTo(3L)));
-		assertThat(env.kvTimeout(), is(equalTo(4L)));
-		assertThat(env.connectTimeout(), is(equalTo(5L)));
-		assertThat(env.disconnectTimeout(), is(equalTo(6L)));
-		assertThat(env.dnsSrvEnabled(), allOf(equalTo(true), not(defaultEnv.dnsSrvEnabled())));
+    assertThat(env.managementTimeout(), is(equalTo(1L)));
+    assertThat(env.queryTimeout(), is(equalTo(2L)));
+    assertThat(env.viewTimeout(), is(equalTo(3L)));
+    assertThat(env.kvTimeout(), is(equalTo(4L)));
+    assertThat(env.connectTimeout(), is(equalTo(5L)));
+    assertThat(env.disconnectTimeout(), is(equalTo(6L)));
+    assertThat(env.dnsSrvEnabled(), allOf(equalTo(true), not(defaultEnv.dnsSrvEnabled())));
 
-		//TODO activate test when dcp can be enabled on the environment (add it in the xml)
-//		assertThat(env.dcpEnabled(), allOf(equalTo(true), not(defaultEnv.dcpEnabled())));
-		assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
-		assertThat(env.sslKeystoreFile(), is(equalTo("test")));
-		assertThat(env.sslKeystorePassword(), is(equalTo("test")));
-		assertThat(env.queryEnabled(), allOf(equalTo(true), not(defaultEnv.queryEnabled())));
-		assertThat(env.queryPort(), is(equalTo(7)));
-		assertThat(env.bootstrapHttpEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapHttpEnabled())));
-		assertThat(env.bootstrapCarrierEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapCarrierEnabled())));
-		assertThat(env.bootstrapHttpDirectPort(), is(equalTo(8)));
-		assertThat(env.bootstrapHttpSslPort(), is(equalTo(9)));
-		assertThat(env.bootstrapCarrierDirectPort(), is(equalTo(10)));
-		assertThat(env.bootstrapCarrierSslPort(), is(equalTo(11)));
-		assertThat(env.ioPoolSize(), is(equalTo(12)));
-		assertThat(env.computationPoolSize(), is(equalTo(13)));
-		assertThat(env.responseBufferSize(), is(equalTo(14)));
-		assertThat(env.requestBufferSize(), is(equalTo(15)));
-		assertThat(env.kvEndpoints(), is(equalTo(16)));
-		assertThat(env.viewEndpoints(), is(equalTo(17)));
-		assertThat(env.queryEndpoints(), is(equalTo(18)));
-		assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
-		assertThat(env.maxRequestLifetime(), is(equalTo(19L)));
-		assertThat(env.keepAliveInterval(), is(equalTo(20L)));
-		assertThat(env.autoreleaseAfter(), is(equalTo(21L)));
-		assertThat(env.bufferPoolingEnabled(), allOf(equalTo(false), not(defaultEnv.bufferPoolingEnabled())));
-	}
+    assertThat(env.dcpEnabled(), allOf(equalTo(true), not(defaultEnv.dcpEnabled())));
+    assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
+    assertThat(env.sslKeystoreFile(), is(equalTo("test")));
+    assertThat(env.sslKeystorePassword(), is(equalTo("test")));
+    assertThat(env.queryEnabled(), allOf(equalTo(true), not(defaultEnv.queryEnabled())));
+    assertThat(env.queryPort(), is(equalTo(7)));
+    assertThat(env.bootstrapHttpEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapHttpEnabled())));
+    assertThat(env.bootstrapCarrierEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapCarrierEnabled())));
+    assertThat(env.bootstrapHttpDirectPort(), is(equalTo(8)));
+    assertThat(env.bootstrapHttpSslPort(), is(equalTo(9)));
+    assertThat(env.bootstrapCarrierDirectPort(), is(equalTo(10)));
+    assertThat(env.bootstrapCarrierSslPort(), is(equalTo(11)));
+    assertThat(env.ioPoolSize(), is(equalTo(12)));
+    assertThat(env.computationPoolSize(), is(equalTo(13)));
+    assertThat(env.responseBufferSize(), is(equalTo(14)));
+    assertThat(env.requestBufferSize(), is(equalTo(15)));
+    assertThat(env.kvEndpoints(), is(equalTo(16)));
+    assertThat(env.viewEndpoints(), is(equalTo(17)));
+    assertThat(env.queryEndpoints(), is(equalTo(18)));
+    assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
+    assertThat(env.maxRequestLifetime(), is(equalTo(19L)));
+    assertThat(env.keepAliveInterval(), is(equalTo(20L)));
+    assertThat(env.autoreleaseAfter(), is(equalTo(21L)));
+    assertThat(env.bufferPoolingEnabled(), allOf(equalTo(false), not(defaultEnv.bufferPoolingEnabled())));
+    assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
+    assertThat(env.mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.mutationTokensEnabled())));
+  }
 
-	@AfterClass
-	public static void tearDown() {
-		context.close();
-	}
+  @AfterClass
+  public static void tearDown() {
+    context.close();
+  }
 }

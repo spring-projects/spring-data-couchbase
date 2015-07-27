@@ -150,7 +150,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
    * into a {@link CouchbaseStorable}
    */
   private CouchbaseStorable decodeAndUnwrap(final Document<String> source, final CouchbaseStorable target) {
-    return translationService.decode(source.content(), target); //TODO rework and check
+    //TODO at some point the necessity of CouchbaseStorable should be re-evaluated
+    return translationService.decode(source.content(), target);
   }
 
   /**

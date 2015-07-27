@@ -64,6 +64,8 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#keepAliveInterval(long) keepAliveInterval}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#autoreleaseAfter(long) autoreleaseAfter}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bufferPoolingEnabled(boolean) bufferPoolingEnabled}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#tcpNodelayEnabled(boolean) tcpNodelayEnabled}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#mutationTokensEnabled(boolean) mutationTokensEnabled}</li>
  * </ul>
  *
  * @author Simon Baslé
@@ -134,6 +136,8 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "keepAliveInterval", "keepAliveInterval");
 		setPropertyValue(envDefinitionBuilder, envElement, "autoreleaseAfter", "autoreleaseAfter");
 		setPropertyValue(envDefinitionBuilder, envElement, "bufferPoolingEnabled", "bufferPoolingEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "tcpNodelayEnabled", "tcpNodelayEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "mutationTokensEnabled", "mutationTokensEnabled");
 
 		//retry strategy is particular, in the xsd this is an enum (FailFast, BestEffort)
 		setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");

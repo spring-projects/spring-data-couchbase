@@ -184,13 +184,11 @@ public interface CouchbaseOperations {
    */
   <T> T findById(String id, Class<T> entityClass);
 
-  //TODO add javadoc link to setIncludeDocs when GA
-
   /**
    * Query a View for a list of documents of type T.
    * <p/>
-   * <p>There is no need to setIncludeDocs(boolean) explicitly, because it will be set to true all the
-   * time. It is valid to pass in a empty constructed {@link ViewQuery} object.</p>
+   * <p>There is no need to {@link ViewQuery#includeDocs(boolean) set includeDocs} explicitly, because it will be set to
+   * true all the time. It is valid to pass in a empty constructed {@link ViewQuery} object.</p>
    * <p/>
    * <p>This method does not work with reduced views, because they by design do not contain references to original
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>

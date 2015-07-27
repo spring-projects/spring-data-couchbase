@@ -26,6 +26,7 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.dsl.Expression;
+import com.couchbase.client.java.query.dsl.functions.PatternMatchingFunctions;
 import com.couchbase.client.java.query.dsl.functions.StringFunctions;
 import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.OrderByPath;
@@ -220,7 +221,6 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
   }
 
   protected static Expression regexp(String left, Iterator<Object> parameterValues) {
-    //TODO migrate to using the Functions util class when 2.0-dp2 / 2.0 GA
     Object next = parameterValues.next();
 
     String pattern;
@@ -229,7 +229,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     } else {
       pattern = String.valueOf(next);
     }
-    return x("REGEXP_LIKE(" + left + ", \"" + pattern + "\")");
+    return PatternMatchingFunctions.regexpLike(left, pattern);
   }
 
   protected static Expression leftAndRight(Iterator<Object> parameterValues, boolean ignoreCase) {

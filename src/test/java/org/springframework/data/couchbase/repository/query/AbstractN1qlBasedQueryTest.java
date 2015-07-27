@@ -9,7 +9,7 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.query.ParametrizedQuery;
+import com.couchbase.client.java.query.ParameterizedQuery;
 import com.couchbase.client.java.query.Query;
 import com.couchbase.client.java.query.SimpleQuery;
 import com.couchbase.client.java.query.Statement;
@@ -41,7 +41,7 @@ public class AbstractN1qlBasedQueryTest {
     Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParametrizedQuery);
+    assertTrue(query instanceof ParameterizedQuery);
     assertEquals(st.toString(), query.statement().toString());
     assertNull(query.params());
     assertTrue(queryObject.containsKey("args"));
@@ -60,7 +60,7 @@ public class AbstractN1qlBasedQueryTest {
     Query query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParametrizedQuery);
+    assertTrue(query instanceof ParameterizedQuery);
     assertEquals(st.toString(), query.statement().toString());
     assertNull(query.params());
     assertTrue(queryObject.containsKey("args"));

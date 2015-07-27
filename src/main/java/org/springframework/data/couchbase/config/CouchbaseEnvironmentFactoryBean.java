@@ -31,229 +31,245 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  */
 /*package*/ class CouchbaseEnvironmentFactoryBean extends AbstractFactoryBean<CouchbaseEnvironment> {
 
-	private static final CouchbaseEnvironment DEFAULT_ENV = DefaultCouchbaseEnvironment.create();
-	public static final String RETRYSTRATEGY_FAILFAST = "FailFast";
-	public static final String RETRYSTRATEGY_BESTEFFORT = "BestEffort";
+  private static final CouchbaseEnvironment DEFAULT_ENV = DefaultCouchbaseEnvironment.create();
+  public static final String RETRYSTRATEGY_FAILFAST = "FailFast";
+  public static final String RETRYSTRATEGY_BESTEFFORT = "BestEffort";
 
-	private long managementTimeout = DEFAULT_ENV.managementTimeout();
-	private long queryTimeout = DEFAULT_ENV.queryTimeout();
-	private long viewTimeout = DEFAULT_ENV.viewTimeout();
-	private long kvTimeout = DEFAULT_ENV.kvTimeout();
-	private long connectTimeout = DEFAULT_ENV.connectTimeout();
-	private long disconnectTimeout = DEFAULT_ENV.disconnectTimeout();
-	private boolean dnsSrvEnabled = DEFAULT_ENV.dnsSrvEnabled();
+  private long managementTimeout = DEFAULT_ENV.managementTimeout();
+  private long queryTimeout = DEFAULT_ENV.queryTimeout();
+  private long viewTimeout = DEFAULT_ENV.viewTimeout();
+  private long kvTimeout = DEFAULT_ENV.kvTimeout();
+  private long connectTimeout = DEFAULT_ENV.connectTimeout();
+  private long disconnectTimeout = DEFAULT_ENV.disconnectTimeout();
+  private boolean dnsSrvEnabled = DEFAULT_ENV.dnsSrvEnabled();
 
-	private boolean dcpEnabled = DEFAULT_ENV.dcpEnabled();
-	private boolean sslEnabled = DEFAULT_ENV.sslEnabled();
-	private String sslKeystoreFile = DEFAULT_ENV.sslKeystoreFile();
-	private String sslKeystorePassword = DEFAULT_ENV.sslKeystorePassword();
-	private boolean queryEnabled = DEFAULT_ENV.queryEnabled();
-	private int queryPort = DEFAULT_ENV.queryPort();
-	private boolean bootstrapHttpEnabled = DEFAULT_ENV.bootstrapHttpEnabled();
-	private boolean bootstrapCarrierEnabled = DEFAULT_ENV.bootstrapCarrierEnabled();
-	private int bootstrapHttpDirectPort = DEFAULT_ENV.bootstrapHttpDirectPort();
-	private int bootstrapHttpSslPort = DEFAULT_ENV.bootstrapHttpSslPort();
-	private int bootstrapCarrierDirectPort = DEFAULT_ENV.bootstrapCarrierDirectPort();
-	private int bootstrapCarrierSslPort = DEFAULT_ENV.bootstrapCarrierSslPort();
-	private int ioPoolSize = DEFAULT_ENV.ioPoolSize();
-	private int computationPoolSize = DEFAULT_ENV.computationPoolSize();
-	private int responseBufferSize = DEFAULT_ENV.responseBufferSize();
-	private int requestBufferSize = DEFAULT_ENV.requestBufferSize();
-	private int kvEndpoints = DEFAULT_ENV.kvEndpoints();
-	private int viewEndpoints = DEFAULT_ENV.viewEndpoints();
-	private int queryEndpoints = DEFAULT_ENV.queryEndpoints();
-	private RetryStrategy retryStrategy = DEFAULT_ENV.retryStrategy();
-	private long maxRequestLifetime = DEFAULT_ENV.maxRequestLifetime();
-	private long keepAliveInterval = DEFAULT_ENV.keepAliveInterval();
-	private long autoreleaseAfter = DEFAULT_ENV.autoreleaseAfter();
-	private boolean bufferPoolingEnabled = DEFAULT_ENV.bufferPoolingEnabled();
-	
-	//These are tunings that are not practical to be exposed in a xml configuration
-	//or not supposed to be modified that easily:
-//	observeIntervalDelay
-//	reconnectDelay
-//	retryDelay
-//	userAgent
-//	packageNameAndVersion
-//	ioPool
-//	scheduler
-//	eventBus
-	
-	@Override
-	public Class<?> getObjectType() {
-		return DefaultCouchbaseEnvironment.class;
-	}
+  private boolean dcpEnabled = DEFAULT_ENV.dcpEnabled();
+  private boolean sslEnabled = DEFAULT_ENV.sslEnabled();
+  private String sslKeystoreFile = DEFAULT_ENV.sslKeystoreFile();
+  private String sslKeystorePassword = DEFAULT_ENV.sslKeystorePassword();
+  private boolean queryEnabled = DEFAULT_ENV.queryEnabled();
+  private int queryPort = DEFAULT_ENV.queryPort();
+  private boolean bootstrapHttpEnabled = DEFAULT_ENV.bootstrapHttpEnabled();
+  private boolean bootstrapCarrierEnabled = DEFAULT_ENV.bootstrapCarrierEnabled();
+  private int bootstrapHttpDirectPort = DEFAULT_ENV.bootstrapHttpDirectPort();
+  private int bootstrapHttpSslPort = DEFAULT_ENV.bootstrapHttpSslPort();
+  private int bootstrapCarrierDirectPort = DEFAULT_ENV.bootstrapCarrierDirectPort();
+  private int bootstrapCarrierSslPort = DEFAULT_ENV.bootstrapCarrierSslPort();
+  private int ioPoolSize = DEFAULT_ENV.ioPoolSize();
+  private int computationPoolSize = DEFAULT_ENV.computationPoolSize();
+  private int responseBufferSize = DEFAULT_ENV.responseBufferSize();
+  private int requestBufferSize = DEFAULT_ENV.requestBufferSize();
+  private int kvEndpoints = DEFAULT_ENV.kvEndpoints();
+  private int viewEndpoints = DEFAULT_ENV.viewEndpoints();
+  private int queryEndpoints = DEFAULT_ENV.queryEndpoints();
+  private RetryStrategy retryStrategy = DEFAULT_ENV.retryStrategy();
+  private long maxRequestLifetime = DEFAULT_ENV.maxRequestLifetime();
+  private long keepAliveInterval = DEFAULT_ENV.keepAliveInterval();
+  private long autoreleaseAfter = DEFAULT_ENV.autoreleaseAfter();
+  private boolean bufferPoolingEnabled = DEFAULT_ENV.bufferPoolingEnabled();
+  private boolean tcpNodelayEnabled = DEFAULT_ENV.tcpNodelayEnabled();
+  private boolean mutationTokensEnabled = DEFAULT_ENV.mutationTokensEnabled();
 
-	@Override
-	protected CouchbaseEnvironment createInstance() throws Exception {
-		return DefaultCouchbaseEnvironment.builder()
-				.managementTimeout(managementTimeout)
-				.queryTimeout(queryTimeout)
-				.viewTimeout(viewTimeout)
-				.kvTimeout(kvTimeout)
-				.connectTimeout(connectTimeout)
-				.disconnectTimeout(disconnectTimeout)
-				.dnsSrvEnabled(dnsSrvEnabled)
-				.dcpEnabled(dcpEnabled)
-				.sslEnabled(sslEnabled)
-				.sslKeystoreFile(sslKeystoreFile)
-				.sslKeystorePassword(sslKeystorePassword)
-				.queryEnabled(queryEnabled)
-				.queryPort(queryPort)
-				.bootstrapHttpEnabled(bootstrapHttpEnabled)
-				.bootstrapCarrierEnabled(bootstrapCarrierEnabled)
-				.bootstrapHttpDirectPort(bootstrapHttpDirectPort)
-				.bootstrapHttpSslPort(bootstrapHttpSslPort)
-				.bootstrapCarrierDirectPort(bootstrapCarrierDirectPort)
-				.bootstrapCarrierSslPort(bootstrapCarrierSslPort)
-				.ioPoolSize(ioPoolSize)
-				.computationPoolSize(computationPoolSize)
-				.responseBufferSize(responseBufferSize)
-				.requestBufferSize(requestBufferSize)
-				.kvEndpoints(kvEndpoints)
-				.viewEndpoints(viewEndpoints)
-				.queryEndpoints(queryEndpoints)
-				.retryStrategy(retryStrategy)
-				.maxRequestLifetime(maxRequestLifetime)
-				.keepAliveInterval(keepAliveInterval)
-				.autoreleaseAfter(autoreleaseAfter)
-				.bufferPoolingEnabled(bufferPoolingEnabled)
-			.build();
-	}
+  /*
+  These are tunings that are not practical to be exposed in a xml configuration
+  or not supposed to be modified that easily:
+    observeIntervalDelay
+    reconnectDelay
+    retryDelay
+    userAgent
+    packageNameAndVersion
+    ioPool
+    scheduler
+    eventBus
+    systemMetricsCollectorConfig
+    networkLatencyMetricsCollectorConfig
+   */
 
-	/**
-	 * Sets the {@link RetryStrategy} to use from an enum-like String value.
-	 * Either "FailFast" or "BestEffort" are recognized.
-	 *
-	 * @param retryStrategy the string value enum from which to choose a strategy.
-	 */
-	public void setRetryStrategy(String retryStrategy) {
-		if (RETRYSTRATEGY_FAILFAST.equals(retryStrategy)){
-			this.retryStrategy = FailFastRetryStrategy.INSTANCE;
-		} else if (RETRYSTRATEGY_BESTEFFORT.equals(retryStrategy)) {
-			this.retryStrategy = BestEffortRetryStrategy.INSTANCE;
-		}
-	}
+  @Override
+  public Class<?> getObjectType() {
+    return DefaultCouchbaseEnvironment.class;
+  }
 
-	//==== SETTERS for the factory bean ====
+  @Override
+  protected CouchbaseEnvironment createInstance() throws Exception {
+    return DefaultCouchbaseEnvironment.builder()
+        .managementTimeout(managementTimeout)
+        .queryTimeout(queryTimeout)
+        .viewTimeout(viewTimeout)
+        .kvTimeout(kvTimeout)
+        .connectTimeout(connectTimeout)
+        .disconnectTimeout(disconnectTimeout)
+        .dnsSrvEnabled(dnsSrvEnabled)
+        .dcpEnabled(dcpEnabled)
+        .sslEnabled(sslEnabled)
+        .sslKeystoreFile(sslKeystoreFile)
+        .sslKeystorePassword(sslKeystorePassword)
+        .queryEnabled(queryEnabled)
+        .queryPort(queryPort)
+        .bootstrapHttpEnabled(bootstrapHttpEnabled)
+        .bootstrapCarrierEnabled(bootstrapCarrierEnabled)
+        .bootstrapHttpDirectPort(bootstrapHttpDirectPort)
+        .bootstrapHttpSslPort(bootstrapHttpSslPort)
+        .bootstrapCarrierDirectPort(bootstrapCarrierDirectPort)
+        .bootstrapCarrierSslPort(bootstrapCarrierSslPort)
+        .ioPoolSize(ioPoolSize)
+        .computationPoolSize(computationPoolSize)
+        .responseBufferSize(responseBufferSize)
+        .requestBufferSize(requestBufferSize)
+        .kvEndpoints(kvEndpoints)
+        .viewEndpoints(viewEndpoints)
+        .queryEndpoints(queryEndpoints)
+        .retryStrategy(retryStrategy)
+        .maxRequestLifetime(maxRequestLifetime)
+        .keepAliveInterval(keepAliveInterval)
+        .autoreleaseAfter(autoreleaseAfter)
+        .bufferPoolingEnabled(bufferPoolingEnabled)
+        .tcpNodelayEnabled(tcpNodelayEnabled)
+        .mutationTokensEnabled(mutationTokensEnabled)
+        .build();
+  }
 
-	public void setManagementTimeout(long managementTimeout) {
-		this.managementTimeout = managementTimeout;
-	}
+  /**
+   * Sets the {@link RetryStrategy} to use from an enum-like String value.
+   * Either "FailFast" or "BestEffort" are recognized.
+   *
+   * @param retryStrategy the string value enum from which to choose a strategy.
+   */
+  public void setRetryStrategy(String retryStrategy) {
+    if (RETRYSTRATEGY_FAILFAST.equals(retryStrategy)) {
+      this.retryStrategy = FailFastRetryStrategy.INSTANCE;
+    } else if (RETRYSTRATEGY_BESTEFFORT.equals(retryStrategy)) {
+      this.retryStrategy = BestEffortRetryStrategy.INSTANCE;
+    }
+  }
 
-	public void setQueryTimeout(long queryTimeout) {
-		this.queryTimeout = queryTimeout;
-	}
+  //==== SETTERS for the factory bean ====
 
-	public void setViewTimeout(long viewTimeout) {
-		this.viewTimeout = viewTimeout;
-	}
+  public void setManagementTimeout(long managementTimeout) {
+    this.managementTimeout = managementTimeout;
+  }
 
-	public void setKvTimeout(long kvTimeout) {
-		this.kvTimeout = kvTimeout;
-	}
+  public void setQueryTimeout(long queryTimeout) {
+    this.queryTimeout = queryTimeout;
+  }
 
-	public void setConnectTimeout(long connectTimeout) {
-		this.connectTimeout = connectTimeout;
-	}
+  public void setViewTimeout(long viewTimeout) {
+    this.viewTimeout = viewTimeout;
+  }
 
-	public void setDisconnectTimeout(long disconnectTimeout) {
-		this.disconnectTimeout = disconnectTimeout;
-	}
+  public void setKvTimeout(long kvTimeout) {
+    this.kvTimeout = kvTimeout;
+  }
 
-	public void setDnsSrvEnabled(boolean dnsSrvEnabled) {
-		this.dnsSrvEnabled = dnsSrvEnabled;
-	}
+  public void setConnectTimeout(long connectTimeout) {
+    this.connectTimeout = connectTimeout;
+  }
 
-	public void setDcpEnabled(boolean dcpEnabled) {
-		this.dcpEnabled = dcpEnabled;
-	}
+  public void setDisconnectTimeout(long disconnectTimeout) {
+    this.disconnectTimeout = disconnectTimeout;
+  }
 
-	public void setSslEnabled(boolean sslEnabled) {
-		this.sslEnabled = sslEnabled;
-	}
+  public void setDnsSrvEnabled(boolean dnsSrvEnabled) {
+    this.dnsSrvEnabled = dnsSrvEnabled;
+  }
 
-	public void setSslKeystoreFile(String sslKeystoreFile) {
-		this.sslKeystoreFile = sslKeystoreFile;
-	}
+  public void setDcpEnabled(boolean dcpEnabled) {
+    this.dcpEnabled = dcpEnabled;
+  }
 
-	public void setSslKeystorePassword(String sslKeystorePassword) {
-		this.sslKeystorePassword = sslKeystorePassword;
-	}
+  public void setSslEnabled(boolean sslEnabled) {
+    this.sslEnabled = sslEnabled;
+  }
 
-	public void setQueryEnabled(boolean queryEnabled) {
-		this.queryEnabled = queryEnabled;
-	}
+  public void setSslKeystoreFile(String sslKeystoreFile) {
+    this.sslKeystoreFile = sslKeystoreFile;
+  }
 
-	public void setQueryPort(int queryPort) {
-		this.queryPort = queryPort;
-	}
+  public void setSslKeystorePassword(String sslKeystorePassword) {
+    this.sslKeystorePassword = sslKeystorePassword;
+  }
 
-	public void setBootstrapHttpEnabled(boolean bootstrapHttpEnabled) {
-		this.bootstrapHttpEnabled = bootstrapHttpEnabled;
-	}
+  public void setQueryEnabled(boolean queryEnabled) {
+    this.queryEnabled = queryEnabled;
+  }
 
-	public void setBootstrapCarrierEnabled(boolean bootstrapCarrierEnabled) {
-		this.bootstrapCarrierEnabled = bootstrapCarrierEnabled;
-	}
+  public void setQueryPort(int queryPort) {
+    this.queryPort = queryPort;
+  }
 
-	public void setBootstrapHttpDirectPort(int bootstrapHttpDirectPort) {
-		this.bootstrapHttpDirectPort = bootstrapHttpDirectPort;
-	}
+  public void setBootstrapHttpEnabled(boolean bootstrapHttpEnabled) {
+    this.bootstrapHttpEnabled = bootstrapHttpEnabled;
+  }
 
-	public void setBootstrapHttpSslPort(int bootstrapHttpSslPort) {
-		this.bootstrapHttpSslPort = bootstrapHttpSslPort;
-	}
+  public void setBootstrapCarrierEnabled(boolean bootstrapCarrierEnabled) {
+    this.bootstrapCarrierEnabled = bootstrapCarrierEnabled;
+  }
 
-	public void setBootstrapCarrierDirectPort(int bootstrapCarrierDirectPort) {
-		this.bootstrapCarrierDirectPort = bootstrapCarrierDirectPort;
-	}
+  public void setBootstrapHttpDirectPort(int bootstrapHttpDirectPort) {
+    this.bootstrapHttpDirectPort = bootstrapHttpDirectPort;
+  }
 
-	public void setBootstrapCarrierSslPort(int bootstrapCarrierSslPort) {
-		this.bootstrapCarrierSslPort = bootstrapCarrierSslPort;
-	}
+  public void setBootstrapHttpSslPort(int bootstrapHttpSslPort) {
+    this.bootstrapHttpSslPort = bootstrapHttpSslPort;
+  }
 
-	public void setIoPoolSize(int ioPoolSize) {
-		this.ioPoolSize = ioPoolSize;
-	}
+  public void setBootstrapCarrierDirectPort(int bootstrapCarrierDirectPort) {
+    this.bootstrapCarrierDirectPort = bootstrapCarrierDirectPort;
+  }
 
-	public void setComputationPoolSize(int computationPoolSize) {
-		this.computationPoolSize = computationPoolSize;
-	}
+  public void setBootstrapCarrierSslPort(int bootstrapCarrierSslPort) {
+    this.bootstrapCarrierSslPort = bootstrapCarrierSslPort;
+  }
 
-	public void setResponseBufferSize(int responseBufferSize) {
-		this.responseBufferSize = responseBufferSize;
-	}
+  public void setIoPoolSize(int ioPoolSize) {
+    this.ioPoolSize = ioPoolSize;
+  }
 
-	public void setRequestBufferSize(int requestBufferSize) {
-		this.requestBufferSize = requestBufferSize;
-	}
+  public void setComputationPoolSize(int computationPoolSize) {
+    this.computationPoolSize = computationPoolSize;
+  }
 
-	public void setKvEndpoints(int kvEndpoints) {
-		this.kvEndpoints = kvEndpoints;
-	}
+  public void setResponseBufferSize(int responseBufferSize) {
+    this.responseBufferSize = responseBufferSize;
+  }
 
-	public void setViewEndpoints(int viewEndpoints) {
-		this.viewEndpoints = viewEndpoints;
-	}
+  public void setRequestBufferSize(int requestBufferSize) {
+    this.requestBufferSize = requestBufferSize;
+  }
 
-	public void setQueryEndpoints(int queryEndpoints) {
-		this.queryEndpoints = queryEndpoints;
-	}
+  public void setKvEndpoints(int kvEndpoints) {
+    this.kvEndpoints = kvEndpoints;
+  }
 
-	public void setMaxRequestLifetime(long maxRequestLifetime) {
-		this.maxRequestLifetime = maxRequestLifetime;
-	}
+  public void setViewEndpoints(int viewEndpoints) {
+    this.viewEndpoints = viewEndpoints;
+  }
 
-	public void setKeepAliveInterval(long keepAliveInterval) {
-		this.keepAliveInterval = keepAliveInterval;
-	}
+  public void setQueryEndpoints(int queryEndpoints) {
+    this.queryEndpoints = queryEndpoints;
+  }
 
-	public void setAutoreleaseAfter(long autoreleaseAfter) {
-		this.autoreleaseAfter = autoreleaseAfter;
-	}
+  public void setMaxRequestLifetime(long maxRequestLifetime) {
+    this.maxRequestLifetime = maxRequestLifetime;
+  }
 
-	public void setBufferPoolingEnabled(boolean bufferPoolingEnabled) {
-		this.bufferPoolingEnabled = bufferPoolingEnabled;
-	}
+  public void setKeepAliveInterval(long keepAliveInterval) {
+    this.keepAliveInterval = keepAliveInterval;
+  }
+
+  public void setAutoreleaseAfter(long autoreleaseAfter) {
+    this.autoreleaseAfter = autoreleaseAfter;
+  }
+
+  public void setBufferPoolingEnabled(boolean bufferPoolingEnabled) {
+    this.bufferPoolingEnabled = bufferPoolingEnabled;
+  }
+
+  public void setTcpNodelayEnabled(boolean tcpNodelayEnabled) {
+    this.tcpNodelayEnabled = tcpNodelayEnabled;
+  }
+
+  public void setMutationTokensEnabled(boolean mutationTokensEnabled) {
+    this.mutationTokensEnabled = mutationTokensEnabled;
+  }
 }
