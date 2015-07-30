@@ -33,15 +33,15 @@ XML-based configuration is also available:
 [[couchbase.repository.usage]]
 == Usage
 
-In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose. Let's look at a repository for a user:
+In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose. Let's look at a repository for a UserInfo:
 
-.A User repository
+.A UserInfo repository
 ====
 [source,java]
 ----
 import org.springframework.data.repository.CrudRepository;
 
-public interface UserRepository extends CrudRepository<User, String> {
+public interface UserRepository extends CrudRepository<UserInfo, String> {
 }
 ----
 ====
@@ -56,22 +56,22 @@ Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use
 | Method
 | Description
 
-| User save(User entity)
+| UserInfo save(UserInfo entity)
 | Save the given entity.
 
-| Iterable<User> save(Iterable<User> entity)
+| Iterable<UserInfo> save(Iterable<UserInfo> entity)
 | Save the list of entities.
 
-| User findOne(String id)
+| UserInfo findOne(String id)
 | Find a entity by its unique id.
 
 | boolean exists(String id)
 | Check if a given entity exists by its unique id.
 
-| Iterable<User> findAll() (*)
+| Iterable<UserInfo> findAll() (*)
 | Find all entities by this type in the bucket.
 
-| Iterable<User> findAll(Iterable<String> ids)
+| Iterable<UserInfo> findAll(Iterable<String> ids)
 | Find all entities by this type and the given list of ids.
 
 | long count() (*)
@@ -80,10 +80,10 @@ Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use
 | void delete(String id)
 | Delete the entity by its id.
 
-| void delete(User entity)
+| void delete(UserInfo entity)
 | Delete the entity.
 
-| void delete(Iterable<User> entities)
+| void delete(Iterable<UserInfo> entities)
 | Delete all given entities.
 
 | void deleteAll() (*)
@@ -106,16 +106,16 @@ WARNING: If it is detected at configuration time that the cluster doesn't suppor
 
 Here is an example:
 
-.An extended User repository with N1QL queries
+.An extended UserInfo repository with N1QL queries
 ====
 [source,java]
 ----
-public interface UserRepository extends CrudRepository<User, String> {
+public interface UserRepository extends CrudRepository<UserInfo, String> {
 
     @Query("$SELECT_ENTITY$ WHERE role = 'admin'")
-    List<User> findAllAdmins();
+    List<UserInfo> findAllAdmins();
 
-    List<User> findByFirstname(String fname);
+    List<UserInfo> findByFirstname(String fname);
 }
 ----
 ====
@@ -174,7 +174,7 @@ IMPORTANT: This is only true for the methods directly defined by the `CrudReposi
 
 To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
 
-Since every view has a design document and view name, by convention we default to `all` as the view name and the lower-cased entity name as the design document name. So if your entity is named `User`, then the code expects the `all` view in the `user` design document. It needs to look like this:
+Since every view has a design document and view name, by convention we default to `all` as the view name and the uncapitalized (lowercase first letter) entity name as the design document name. So if your entity is named `UserInfo`, then the code expects the `all` view in the `userInfo` design document. It needs to look like this:
 
 .The all view map function
 ====
@@ -182,7 +182,7 @@ Since every view has a design document and view name, by convention we default t
 ----
 // do not forget the _count reduce function!
 function (doc, meta) {
-  if (doc._class == "namespace.to.entity.User") {
+  if (doc._class == "namespace.to.entity.UserInfo") {
     emit(null, null);
   }
 }
@@ -204,29 +204,29 @@ In `2.0`, since N1QL has been introduced as a more powerful concept, view-backed
  - View based query derivation is limited to a few keywords and only works on simple keys (not compound keys like `[ age, fname ]`).
  - View based query derivation still needs you to include *one* valid property before keywords in the method name.
 
-.An extended User repository with View queries
+.An extended UserInfo repository with View queries
 ====
 [source,java]
 ----
-public interface UserRepository extends CrudRepository<User, String> {
+public interface UserRepository extends CrudRepository<UserInfo, String> {
 
     @View
-    List<User> findAllAdmins();
+    List<UserInfo> findAllAdmins();
 
     @View(viewName="firstNames")
-    List<User> findByFirstnameStartingWith(String fnamePrefix);
+    List<UserInfo> findByFirstnameStartingWith(String fnamePrefix);
 }
 ----
 ====
 
-Implementing your custom repository finder methods also needs backing views. The `findAllAdmins` guesses to use the `allAdmins` view in the `user` design document, by convention. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one, unless you plan to call one by prefixing your method with `count` instead of `find`!):
+Implementing your custom repository finder methods also needs backing views. The `findAllAdmins` guesses to use the `allAdmins` view in the `userInfo` design document, by convention. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one, unless you plan to call one by prefixing your method with `count` instead of `find`!):
 
 .The allAdmins map function
 ====
 [source,javascript]
 ----
 function (doc, meta) {
-  if (doc._class == "namespace.to.entity.User" && doc.isAdmin) {
+  if (doc._class == "namespace.to.entity.UserInfo" && doc.isAdmin) {
     emit(null, null);
   }
 }
@@ -240,14 +240,14 @@ By now, we've never actually customized our view at query time. This is where th
 [source,javascript]
 ----
 function (doc, meta) {
-  if (doc._class == "namespace.to.entity.User") {
+  if (doc._class == "namespace.to.entity.UserInfo") {
     emit(doc.firstname, null);
   }
 }
 ----
 ====
 
-This view not only emits the document id, but also the firstname of every user as the key. We can now run a `ViewQuery` which returns us all users with a firstname of "Michael" or "Michele".
+This view not only emits the document id, but also the firstname of every UserInfo as the key. We can now run a `ViewQuery` which returns us all users with a firstname of "Michael" or "Michele".
 
 .Query a repository method with custom params.
 ====
@@ -257,7 +257,7 @@ This view not only emits the document id, but also the firstname of every user a
 UserRepository repo = ctx.getBean(UserRepository.class);
 
 // Find all users with first name starting with "Mich"
-List<User> users = repo.findByFirstnameStartingWith("Mich");
+List<UserInfo> users = repo.findByFirstnameStartingWith("Mich");
 ----
 ====
 

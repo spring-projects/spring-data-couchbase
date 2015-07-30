@@ -75,27 +75,27 @@ To simplify the creation of data repositories Spring Data Couchbase provides a g
 will automatically create a repository proxy for you that adds implementations of finder methods you specify on an
 interface.
 
-To create a repository on top of a `User` entity, all you need to write is:
+To create a repository on top of a `UserInfo` entity, all you need to write is:
 
 ```java
-public interface UserRepository extends CrudRepository<User, String> {
+public interface UserRepository extends CrudRepository<UserInfo, String> {
 
   /**
-   * Return all users emitted by the view user/adults
+   * Return all users emitted by the view userInfo/adults
    */
   @View
-  List<User> findAdults();
+  List<UserInfo> findAdults();
   
   /**
    * Find all users matching the last name.
    */
   @View(viewName="lastNames")     
-  List<User> findByLastname(String lastName);
+  List<UserInfo> findByLastname(String lastName);
   
   /**
    * Find all the users whose first name contains the word.
    */
-  List<User> findByFirstnameContains(String word);
+  List<UserInfo> findByFirstnameContains(String word);
 
 }
 ```
@@ -104,7 +104,7 @@ Once you get a reference to that repository bean, you'll find a lot of methods t
 entity. In addition to the ones provided through the `CrudRepository`, you can add your own methods as well.
 
 In general, every CRUD method that does not depend on a single key (like `findById`) needs a backing View, `all` on the
-server side (the design document is by default expected to be the uncapitalized name of the entity, like `user`).
+server side (the design document is by default expected to be the uncapitalized name of the entity, like `userInfo`).
 
 ## Custom Repository Methods and Views
 Finder methods you define, if annotated with `@View`, also are backed by views. Either you want to return all items from
@@ -112,7 +112,7 @@ these views and you can let the method name reflect the view name (like in `find
 `adults` view), or provide simple criteria (you explicitly specify the `viewName` and let the method name determine your
 criteria, like in `findByLastname`).
 
-In the example above, it assumes you have a view named `findByLastname` in the `user` design document. You
+In the example above, it assumes you have a view named `findByLastname` in the `userInfo` design document. You
 can customize the view and design document name through the `@View` annotation. Also make sure you publish them into
 production before accessing it.
 
@@ -120,7 +120,7 @@ This is an example view for the `findByLastname` method:
 
 ```javascript
 function (doc, meta) {
-  if(doc._class == "com.example.entity.User" && doc.lastname) {
+  if(doc._class == "com.example.entity.UserInfo" && doc.lastname) {
     emit(doc.lastname, null);
   }
 }
@@ -134,7 +134,7 @@ function):
 
 ```javascript
 function (doc, meta) {
-  if(doc._class == "com.example.entity.User") {
+  if(doc._class == "com.example.entity.UserInfo") {
     emit(null, null);
   }
 }
@@ -148,13 +148,13 @@ This is the default repository query mechanism, so the associated `@Query` annot
 like:
 
 ```java
-public interface UserRepository extends CrudRepository<User, String> {
+public interface UserRepository extends CrudRepository<UserInfo, String> {
 
   /**
    * Advanced querying with N1QL derivation
    */
   @View
-  List<User> findByLastnameEqualsIgnoreCaseAndFirstnameStartsWithAndIsAdultTrue(String lastName, String fnamePrefix);
+  List<UserInfo> findByLastnameEqualsIgnoreCaseAndFirstnameStartsWithAndIsAdultTrue(String lastName, String fnamePrefix);
 }
 ```
 
@@ -169,7 +169,7 @@ placeholder to make sure all necessary fields and metadata are selected by N1QL:
 
 ```java
 @Query("$SELECT_ENTITY$ WHERE firstname LIKE "%ck%"
-List<User> findPatrickAndJackAmongOthers();
+List<UserInfo> findPatrickAndJackAmongOthers();
 ```
 
 ## Using The Repository
@@ -232,12 +232,12 @@ public class MyService {
   public void doWork() {
     userRepository.deleteAll();
 
-    User user = new User();
-    user.setLastname("Jackson");
+    UserInfo userInfo = new UserInfo();
+    UserInfo.setLastname("Jackson");
 
-    user = userRepository.save(user);
+    UserInfo = userRepository.save(userInfo);
 
-    List<User> allJacksons = userRepository.findByLastname("Jackson");
+    List<UserInfo> allJacksons = userRepository.findByLastname("Jackson");
   }
 }
 ```

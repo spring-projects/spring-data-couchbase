@@ -30,6 +30,7 @@ import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Repository base implementation for Couchbase.
@@ -205,7 +206,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    * @return ResolvedView containing the designDocument and viewName.
    */
   private ResolvedView determineView() {
-    String designDocument = entityInformation.getJavaType().getSimpleName().toLowerCase();
+    String designDocument = StringUtils.uncapitalize(entityInformation.getJavaType().getSimpleName());
     String viewName = "all";
 
     final View view = viewMetadataProvider.getView();
