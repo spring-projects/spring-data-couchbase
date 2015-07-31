@@ -52,18 +52,29 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
    */
   public static final String PLACEHOLDER_ENTITY = "$ENTITY$";
 
+  /**
+   * Use this placeholder in a {@link org.springframework.data.couchbase.core.view.Query @Query} annotation's inline
+   * statement WHERE clause. This will be replaced by the expression allowing to only select documents matching the
+   * entity's class.
+   */
+  public static final String PLACEHOLDER_FILTER_TYPE = "$FILTER_TYPE$";
+
   private final Statement statement;
 
   public StringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
     super(queryMethod, couchbaseOperations);
-    this.statement = prepare(statement, couchbaseOperations.getCouchbaseBucket().name());
+    String typeField = getCouchbaseOperations().getConverter().getTypeKey();
+    Class<?> typeValue = getQueryMethod().getEntityInformation().getJavaType();
+    this.statement = prepare(statement, couchbaseOperations.getCouchbaseBucket().name(), typeField, typeValue);
   }
 
-  protected static Statement prepare(String statement, String bucketName) {
+  protected static Statement prepare(String statement, String bucketName, String typeField, Class<?> typeValue) {
     String b = "`" + bucketName + "`";
     String entity = "META(" + b + ").id AS " + CouchbaseOperations.SELECT_ID +
         ", META(" + b + ").cas AS " + CouchbaseOperations.SELECT_CAS;
     String selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
+    String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
+
     String result = statement;
     if (statement.contains(PLACEHOLDER_SELECT_FROM)) {
       result = result.replaceFirst("\\$SELECT_ENTITY\\$", selectEntity);
@@ -75,6 +86,11 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
         result = result.replaceFirst("\\$ENTITY\\$", entity);
       }
     }
+
+    if (statement.contains(PLACEHOLDER_FILTER_TYPE)) {
+      result = result.replaceFirst("\\$FILTER_TYPE\\$", typeSelection);
+    }
+
     return Query.simple(result).statement();
   }
 

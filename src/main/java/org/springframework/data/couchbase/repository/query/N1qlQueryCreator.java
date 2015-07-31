@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.Expression.s;
 import static com.couchbase.client.java.query.dsl.Expression.x;
 
@@ -93,12 +94,14 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
 
   private final WherePath selectFrom;
   private final CouchbaseConverter converter;
+  private final CouchbaseQueryMethod queryMethod;
 
   public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
-                          CouchbaseConverter converter) {
+                          CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
     super(tree, parameters);
     this.selectFrom = selectFrom;
     this.converter = converter;
+    this.queryMethod = queryMethod;
   }
 
   @Override
@@ -122,6 +125,16 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
 
   @Override
   protected LimitPath complete(Expression criteria, Sort sort) {
+    //add part that filters on type key
+    String typeKey = converter.getTypeKey();
+    String typeValue = queryMethod.getEntityInformation().getJavaType().getName();
+    Expression typeSelector = i(typeKey).eq(s(typeValue));
+    if (criteria == null) {
+      criteria = typeSelector;
+    } else {
+      criteria = criteria.and(typeSelector);
+    }
+
     OrderByPath selectFromWhere = selectFrom.where(criteria);
 
     if (sort != null) {

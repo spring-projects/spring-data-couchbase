@@ -51,4 +51,9 @@ public interface CouchbaseConverter
    * @see #convertForWriteIfNeeded(Object)
    */
   Class<?> getWriteClassFor(Class<?> clazz);
+
+  /**
+   * @return the name of the field that will hold type information.
+   */
+  String getTypeKey();
 }

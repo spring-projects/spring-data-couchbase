@@ -112,7 +112,7 @@ Here is an example:
 ----
 public interface UserRepository extends CrudRepository<UserInfo, String> {
 
-    @Query("$SELECT_ENTITY$ WHERE role = 'admin'")
+    @Query("$SELECT_ENTITY$ WHERE role = 'admin' AND $FILTER_TYPE$")
     List<UserInfo> findAllAdmins();
 
     List<UserInfo> findByFirstname(String fname);
@@ -122,9 +122,14 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 
 Here we see two N1QL-backed ways of querying.
 
-The first one uses the `Query` annotation to provide a N1QL statement inline. Notice the special placeholder `$SELECT_ENTITY` which allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+The first one uses the `Query` annotation to provide a N1QL statement inline. Notice the special placeholders:
+
+ - `$SELECT_ENTITY` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+ - `$FILTER_TYPE$` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
 
 The second one use Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
+
+NOTE: Actually the generated N1QL query will also contain an additional N1QL criteria in order to only select documents that match the repository's entity class.
 
 Most Spring-Data keywords are supported:
 .Supported keywords inside @Query (N1QL) method names

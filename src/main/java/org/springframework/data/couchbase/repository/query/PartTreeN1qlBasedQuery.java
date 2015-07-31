@@ -61,7 +61,8 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     }
     WherePath selectFrom = select.from(bucket);
 
-    N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom, getCouchbaseOperations().getConverter());
+    N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
+        getCouchbaseOperations().getConverter(), getQueryMethod());
     LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
 
     if (partTree.isLimiting()) {

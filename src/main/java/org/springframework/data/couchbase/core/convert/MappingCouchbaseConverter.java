@@ -130,9 +130,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     return mappingContext;
   }
 
-  /**
-   * @return the name of the field that will hold type information.
-   */
+  @Override
   public String getTypeKey() {
     return typeMapper.getTypeKey();
   }

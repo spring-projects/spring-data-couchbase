@@ -16,12 +16,15 @@
 
 package org.springframework.data.couchbase.repository;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Date;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,19 +50,50 @@ public class N1qlCrudRepositoryTests {
   private CouchbaseTemplate template;
 
   private PartyRepository partyRepository;
+  private ItemRepository itemRepository;
+
+  private static final Item item = new Item("itemNotParty", "short description");
+  private static final Party party = new Party("partyNotItem", "partyName", "short description", new Date(), 120);
 
   @Before
   public void setup() throws Exception {
     partyRepository = new CouchbaseRepositoryFactory(template).getRepository(PartyRepository.class);
+    itemRepository = new CouchbaseRepositoryFactory(template).getRepository(ItemRepository.class);
+
+    itemRepository.save(item);
+    partyRepository.save(party);
+  }
+
+  @After
+  public void cleanUp() {
+    itemRepository.delete("itemNotParty");
+    partyRepository.delete("partyNotItem");
+  }
+
+  @Test
+  public void shouldDistinguishBetweenItemsAndParties() {
+    List<Object> items = itemRepository.findAllByDescriptionNotNull();
+    List<Object> parties = partyRepository.findAllByDescriptionNotNull();
+
+    assertTrue(items.contains(item));
+    assertTrue(parties.contains(party));
+
+    assertFalse(items.contains(party));
+    assertFalse(parties.contains(item));
   }
 
   @Test
   public void shouldSaveObjectWithN1qlKeywordField() {
     Party party = new Party("partyHasKeyword", "party", "desc is a N1QL keyword", new Date(), 40);
     partyRepository.save(party);
-    List<Party> parties = partyRepository.findAllByDescriptionNotNull();
+    List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
     assertTrue(client.exists("partyHasKeyword"));
     assertTrue(parties.contains(party));
+    for (Object o : parties) {
+      if (!(o instanceof Party)) {
+        fail("expected only Party objects");
+      }
+    }
   }
 }
