@@ -17,4 +17,6 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
   @View(designDocument = "party", viewName = "byDate")
   List<Party> findFirst3ByEventDateGreaterThanEqual(Date targetDate);
 
+  List<Party> findAllByDescriptionNotNull();
+
 }

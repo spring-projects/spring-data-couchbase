@@ -32,6 +32,7 @@ import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.OrderByPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.domain.Sort;
@@ -146,7 +147,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     ConvertingIterator parameterValues = new ConvertingIterator(iterator, converter);
 
     //get the whole doted path with fieldNames instead of potentially wrong propNames
-    String fieldNamePath = path.toDotPath(CouchbasePersistentProperty.FIELD_NAME);
+    String fieldNamePath = path.toDotPath(FIELD_NAME_ESCAPED);
 
     //deal with ignore case
     boolean ignoreCase = false;
@@ -296,5 +297,16 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     }
     return JsonArray.from(values);
   }
+
+  /**
+   * A converter that can be used to extract the {@link CouchbasePersistentProperty#getFieldName() fieldName},
+   * eg. when one wants a path from {@link PersistentPropertyPath#toDotPath(Converter)} made of escaped field names.
+   */
+  Converter<? super CouchbasePersistentProperty,String> FIELD_NAME_ESCAPED = new Converter<CouchbasePersistentProperty, String>() {
+    @Override
+    public String convert(CouchbasePersistentProperty source) {
+      return "`" + source.getFieldName() + "`";
+    }
+  };
 
 }

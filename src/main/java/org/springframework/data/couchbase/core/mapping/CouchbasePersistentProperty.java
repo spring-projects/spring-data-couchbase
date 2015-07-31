@@ -16,9 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mapping.PersistentProperty;
-import org.springframework.data.mapping.context.PersistentPropertyPath;
 
 /**
  * Represents a property part of an entity that needs to be persisted.
@@ -33,17 +31,4 @@ public interface CouchbasePersistentProperty extends PersistentProperty<Couchbas
    * The field name can be different from the actual property name by using a custom annotation.
    */
   String getFieldName();
-
-  /**
-   * A converter that can be used to extract the {@link #getFieldName() fieldName}, eg. when one wants
-   * a path from {@link PersistentPropertyPath#toDotPath(Converter)} made of field names.
-   */
-  Converter<? super CouchbasePersistentProperty,String> FIELD_NAME = new Converter<CouchbasePersistentProperty, String>() {
-    @Override
-    public String convert(CouchbasePersistentProperty source) {
-      return source.getFieldName();
-    }
-  };
-
-
 }
