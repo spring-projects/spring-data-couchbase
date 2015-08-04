@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.4.0.RC1 (2015-08-04)
+-----------------------------------------
+* DATACOUCH-157 - Release 1.4 RC1 (Gosling).
+* DATACOUCH-151 - NullPointerException on auto-boxing in CouchbaseTemplate.
+* DATACOUCH-149 - Switch from BeanWrapper to PersistentPropertyAccessor.
+* DATACOUCH-133 - Fix typos in README.
+* DATACOUCH-129 - Ensure Spring Framework 4.2 compatibility.
+
+
 Changes in version 1.3.2.RELEASE (2015-07-28)
 ---------------------------------------------
 * DATACOUCH-153 - Release 1.3.2 (Fowler).
