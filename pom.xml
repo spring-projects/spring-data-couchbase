@@ -24,8 +24,8 @@
 
         <couchbase>2.2.0-dp2</couchbase>
         <couchbase.osgi>2.2.0</couchbase.osgi>
-        <jackson>2.3.2</jackson>
-        <springdata.commons>1.11.0.BUILD-SNAPSHOT</springdata.commons>
+        <jackson>2.6.0</jackson>
+        <springdata.commons>1.11.0.RC1</springdata.commons>
         <validation>1.0.0.GA</validation>
     </properties>
 
@@ -125,8 +125,8 @@
 
     <repositories>
         <repository>
-            <id>spring-libs-snapshot</id>
-            <url>https://repo.spring.io/libs-snapshot</url>
+            <id>spring-libs-milestone</id>
+            <url>https://repo.spring.io/libs-milestone</url>
         </repository>
         <repository>
             <id>couchbase</id>

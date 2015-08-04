@@ -1,21 +1,26 @@
 Spring Data Couchbase Changelog
 ===============================
 
-New Major Version: 2.0
-----------------------
-This version is a complete rewrite of the Spring Data Couchbase project, using the newer 2.x generation
-of the Couchbase Java SDK.
-
-Changes in version 2.0.0.M1 (2015-07-03)
+Changes in version 2.0.0.M2 (2015-08-04)
 ----------------------------------------
- * DATACOUCH-135 - Migrate to Couchbase SDK 2.2.0-dp, with support for N1QL in template
-
-
-=================================================================================
-| Below are older release notes for the 1st generation of Spring Data Couchbase |
-| (based on the 1.x Couchbase Java SDK)                                         |
-=================================================================================
-
+* DATACOUCH-134 - Support Bucket Shadowing.
+* DATACOUCH-135 - Migrate to Couchbase SDK 2.2.0-dp, with support for N1QL in template.
+* DATACOUCH-136 - Add N1QL query annotation.
+* DATACOUCH-137 - Allow query derivation from @N1QL annotated methods.
+* DATACOUCH-139 - Implement @View as minimalistic query derivation.
+* DATACOUCH-140 - Use Converter on method parameters when deriving query.
+* DATACOUCH-141 - Change query lookup order and make N1QL default.
+* DATACOUCH-142 - Document changes from 1.4 to 2.0 and migration cheat sheet.
+* DATACOUCH-143 - Log repository queries in DEBUG.
+* DATACOUCH-144 - Detect N1QL is unsupported and fail fast.
+* DATACOUCH-145 - Use SDK's Field/Id annotations.
+* DATACOUCH-148 - Allow global configuration of default staleness parameter for view queries.
+* DATACOUCH-149 - Switch from BeanWrapper to PersistentPropertyAccessor.
+* DATACOUCH-150 - Release version 2.0 M1.
+* DATACOUCH-152 - Bump SDK version to 2.2.0-dp2 and make adjustements.
+* DATACOUCH-154 - Use consistent method to guess desing document.
+* DATACOUCH-155 - Escape every field name in N1QL queries.
+* DATACOUCH-156 - Filter on type information in generated N1QL queries.
 
 Changes in version 1.4.0.RC1 (2015-08-04)
 -----------------------------------------
