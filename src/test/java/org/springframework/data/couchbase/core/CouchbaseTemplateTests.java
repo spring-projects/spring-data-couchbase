@@ -35,20 +35,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Michael Nitschinger
@@ -198,13 +189,21 @@ public class CouchbaseTemplateTests {
   }
 
   @Test
-  public void shouldDeserialiseLongs() {
-    final long time = new Date().getTime();
-    SimpleWithLong simpleWithLong = new SimpleWithLong("simpleWithLong:simple", time);
-    template.save(simpleWithLong);
-    simpleWithLong = template.findById("simpleWithLong:simple", SimpleWithLong.class);
-    assertNotNull(simpleWithLong);
-    assertEquals(time, simpleWithLong.getValue());
+  public void shouldDeserialiseLongsAndInts() {
+    final long longValue = new Date().getTime();
+    final int intValue = new Random().nextInt();
+
+    template.save(new SimpleWithLongAndInt("simpleWithLong:simple", longValue, intValue));
+    SimpleWithLongAndInt document = template.findById("simpleWithLong:simple", SimpleWithLongAndInt.class);
+    assertNotNull(document);
+    assertEquals(longValue, document.getLongValue());
+    assertEquals(intValue, document.getIntValue());
+
+    template.save(new SimpleWithLongAndInt("simpleWithLong:simple:other", intValue, intValue));
+    document = template.findById("simpleWithLong:simple:other", SimpleWithLongAndInt.class);
+    assertNotNull(document);
+    assertEquals(intValue, document.getLongValue());
+    assertEquals(intValue, document.getIntValue());
   }
 
   @Test
@@ -406,28 +405,38 @@ public class CouchbaseTemplateTests {
   }
 
   @Document
-  static class SimpleWithLong {
+  static class SimpleWithLongAndInt {
 
     @Id
     private String id;
 
-    private long value;
+    private long longValue;
+    private int intValue;
 
-    SimpleWithLong(final String id, final long value) {
+    SimpleWithLongAndInt(final String id, final long longValue, int intValue) {
       this.id = id;
-      this.value = value;
+      this.longValue = longValue;
+      this.intValue = intValue;
     }
 
     String getId() {
       return id;
     }
 
-    long getValue() {
-      return value;
+    long getLongValue() {
+      return longValue;
     }
 
-    void setValue(final long value) {
-      this.value = value;
+    void setLongValue(final long value) {
+      this.longValue = value;
+    }
+
+    public int getIntValue() {
+      return intValue;
+    }
+
+    public void setIntValue(int intValue) {
+      this.intValue = intValue;
     }
   }
 
