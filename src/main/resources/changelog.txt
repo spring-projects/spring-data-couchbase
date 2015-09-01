@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.4.0.RELEASE (2015-09-01)
+---------------------------------------------
+* DATACOUCH-160 - Release 1.4 GA (Gosling).
+* DATACOUCH-159 - Response time degradation on document conversion with a lot of longs inside.
+
+
 Changes in version 1.4.0.RC1 (2015-08-04)
 -----------------------------------------
 * DATACOUCH-157 - Release 1.4 RC1 (Gosling).
