@@ -98,9 +98,9 @@ public class CouchbaseTemplateTests {
 		assertNotNull(result);
 		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-		//DATACOUCH-134: the class holding field can be changed
-		assertNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get("javaClass"));
+		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertNull(resultConv.get("javaClass"));
+		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
 		assertEquals(false, resultConv.get("is_active"));
 		assertEquals("The Awesome Stout", resultConv.get("name"));
 	}

@@ -66,12 +66,6 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
     return template;
   }
 
-  //change the name of the field that will hold type information
-  @Override
-  public String typeKey() {
-    return "javaClass";
-  }
-
   @Override
   protected Consistency getDefaultConsistency() {
     return Consistency.READ_YOUR_OWN_WRITES;
