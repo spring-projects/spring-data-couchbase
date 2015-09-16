@@ -29,9 +29,12 @@ public class User {
 
   private final String username;
 
-  public User(String key, String username) {
+  private final int age;
+
+  public User(String key, String username, int age) {
     this.key = key;
     this.username = username;
+    this.age = age;
   }
 
   public String getUsername() {
@@ -40,6 +43,10 @@ public class User {
 
   public String getKey() {
     return key;
+  }
+
+  public int getAge() {
+    return age;
   }
 
   @Override

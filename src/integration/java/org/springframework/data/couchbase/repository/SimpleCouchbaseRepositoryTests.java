@@ -34,6 +34,8 @@ import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -64,7 +66,7 @@ public class SimpleCouchbaseRepositoryTests {
   @Test
   public void simpleCrud() {
     String key = "my_unique_user_key";
-    User instance = new User(key, "foobar");
+    User instance = new User(key, "foobar", 22);
     repository.save(instance);
 
     User found = repository.findOne(key);
@@ -168,5 +170,4 @@ public class SimpleCouchbaseRepositoryTests {
       }
     }
   }
-
 }

@@ -16,11 +16,9 @@ import com.couchbase.client.java.query.SimpleQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.QueryMethod;
 
 public class AbstractN1qlBasedQueryTest {
@@ -79,60 +77,111 @@ public class AbstractN1qlBasedQueryTest {
   public void shouldChooseCollectionExecutionWhenCollectionType() {
     CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
     Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(Query.class), any(QueryMethod.class), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
         .thenCallRealMethod();
     when(queryMethod.isCollectionQuery()).thenReturn(true);
 
-    mock.executeDependingOnType(query, queryMethod, false, false, false);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, false, false, false);
     verify(mock).executeCollection(any(Query.class));
     verify(mock, never()).executeEntity(any(Query.class));
     verify(mock, never()).executeStream(any(Query.class));
+    verify(mock, never()).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock, never()).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
   }
 
   @Test
   public void shouldChooseEntityExecutionWhenEntityType() {
     CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
     Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(Query.class), any(QueryMethod.class), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
         .thenCallRealMethod();
     when(queryMethod.isQueryForEntity()).thenReturn(true);
 
-    mock.executeDependingOnType(query, queryMethod, false, false, false);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, false, false, false);
     verify(mock, never()).executeCollection(any(Query.class));
     verify(mock).executeEntity(any(Query.class));
     verify(mock, never()).executeStream(any(Query.class));
+    verify(mock, never()).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock, never()).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
   }
 
   @Test
   public void shouldChooseStreamExecutionWhenStreamType() {
     CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
     Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(Query.class), any(QueryMethod.class), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
         .thenCallRealMethod();
     when(queryMethod.isStreamQuery()).thenReturn(true);
 
-    mock.executeDependingOnType(query, queryMethod, false, false, false);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, false, false, false);
     verify(mock, never()).executeCollection(any(Query.class));
     verify(mock, never()).executeEntity(any(Query.class));
     verify(mock).executeStream(any(Query.class));
+    verify(mock, never()).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock, never()).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
+  }
+
+  @Test
+  public void shouldChoosePagedExecutionWhenPageType() {
+    CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
+    Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
+    AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
+        .thenCallRealMethod();
+
+    mock.executeDependingOnType(query, query, queryMethod, pageable, true, false, false);
+    verify(mock, never()).executeCollection(any(Query.class));
+    verify(mock, never()).executeEntity(any(Query.class));
+    verify(mock, never()).executeStream(any(Query.class));
+    verify(mock).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock, never()).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
+  }
+
+  @Test
+  public void shouldChooseSlicedExecutionWhenSliceType() {
+    CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
+    Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
+    AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
+        .thenCallRealMethod();
+    when(queryMethod.isSliceQuery()).thenReturn(true);
+
+    mock.executeDependingOnType(query, query, queryMethod, pageable, false, true, false);
+    verify(mock, never()).executeCollection(any(Query.class));
+    verify(mock, never()).executeEntity(any(Query.class));
+    verify(mock, never()).executeStream(any(Query.class));
+    verify(mock, never()).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
   }
 
   @Test
   public void shouldThrowWhenUnsupportedType() throws NoSuchMethodException {
     CouchbaseQueryMethod queryMethod = Mockito.mock(CouchbaseQueryMethod.class);
     Query query = Mockito.mock(Query.class);
+    Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(Query.class), any(QueryMethod.class), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(mock.executeDependingOnType(any(Query.class), any(Query.class), any(QueryMethod.class), any(Pageable.class),
+        anyBoolean(), anyBoolean(), anyBoolean()))
         .thenCallRealMethod();
 
-    try { mock.executeDependingOnType(query, queryMethod, true, false, false); } catch (UnsupportedOperationException e) { }
-    try { mock.executeDependingOnType(query, queryMethod, false, true, false); } catch (UnsupportedOperationException e) { }
-    try { mock.executeDependingOnType(query, queryMethod, false, false, true); } catch (UnsupportedOperationException e) { }
+    try { mock.executeDependingOnType(query, query, queryMethod, pageable, false, false, true); fail(); } catch (UnsupportedOperationException e) { }
     verify(mock, never()).executeCollection(any(Query.class));
     verify(mock, never()).executeEntity(any(Query.class));
     verify(mock, never()).executeStream(any(Query.class));
+    verify(mock, never()).executePaged(any(Query.class), any(Query.class), any(Pageable.class));
+    verify(mock, never()).executeSliced(any(Query.class), any(Query.class), any(Pageable.class));
   }
 }

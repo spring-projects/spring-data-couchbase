@@ -92,7 +92,7 @@ public class CouchbaseTemplateParserIntegrationTests {
 
     assertEquals("javaXmlClass", converter.getTypeKey());
 
-    User u = new User("specialSaveUser", "John Locke");
+    User u = new User("specialSaveUser", "John Locke", 46);
     template.save(u);
     JsonDocument uJsonDoc = template.getCouchbaseBucket().get("specialSaveUser");
     template.getCouchbaseBucket().remove("specialSaveUser");

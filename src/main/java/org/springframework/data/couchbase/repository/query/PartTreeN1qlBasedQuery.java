@@ -30,8 +30,11 @@ import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
+import org.springframework.util.Assert;
 
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
@@ -48,16 +51,25 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  protected Statement getStatement(ParameterAccessor accessor) {
+  protected Statement getCount(ParameterAccessor accessor) {
     Expression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
-    Expression metaId = path(meta(bucket), "id").as(CouchbaseOperations.SELECT_ID);
-    Expression metaCas = path(meta(bucket), "cas").as(CouchbaseOperations.SELECT_CAS);
+    WherePath countFrom = select(count("*").as(CountFragment.COUNT_ALIAS)).from(bucket);
+
+    N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, countFrom,
+        getCouchbaseOperations().getConverter(), getQueryMethod());
+    return queryCreator.createQuery();
+  }
+  @Override
+  protected Statement getStatement(ParameterAccessor accessor) {
+    String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
+    Expression bucket = N1qlUtils.escapedBucket(bucketName);
+
 
     FromPath select;
     if (partTree.isCountProjection()) {
       select = select(count("*"));
     } else {
-      select = select(metaId, metaCas, path(bucket, "*"));
+      select = N1qlUtils.createSelectClauseForEntity(bucketName);
     }
     WherePath selectFrom = select.from(bucket);
 
@@ -65,7 +77,15 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
         getCouchbaseOperations().getConverter(), getQueryMethod());
     LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
 
-    if (partTree.isLimiting()) {
+    if (queryMethod.isPageQuery()) {
+      Pageable pageable = accessor.getPageable();
+      Assert.notNull(pageable);
+      return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(pageable.getOffset());
+    } else if (queryMethod.isSliceQuery() && accessor.getPageable() != null) {
+      Pageable pageable = accessor.getPageable();
+      Assert.notNull(pageable);
+      return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(pageable.getOffset());
+    } else if (partTree.isLimiting()) {
       return selectFromWhereOrderBy.limit(partTree.getMaxResults());
     } else {
       return selectFromWhereOrderBy;

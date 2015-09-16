@@ -22,6 +22,9 @@ import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.view.Query;
 import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 
 /**
  * @author Michael Nitschinger
@@ -43,4 +46,8 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
   List<User> findByUsernameContains(String contains);
 
   User findByUsernameNear(String place);//this is to check that there's a N1QL derivation AND it fails
+
+  Page<User> findByAgeGreaterThan(int minAge, Pageable pageable);
+
+  Slice<User> findByAgeLessThan(int maxAge, Pageable pageable);
 }

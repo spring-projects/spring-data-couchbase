@@ -60,19 +60,27 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public static final String PLACEHOLDER_FILTER_TYPE = "$FILTER_TYPE$";
 
   private final Statement statement;
+  private final Statement countStatement;
 
   public StringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
     super(queryMethod, couchbaseOperations);
     String typeField = getCouchbaseOperations().getConverter().getTypeKey();
     Class<?> typeValue = getQueryMethod().getEntityInformation().getJavaType();
-    this.statement = prepare(statement, couchbaseOperations.getCouchbaseBucket().name(), typeField, typeValue);
+    this.statement = prepare(statement, couchbaseOperations.getCouchbaseBucket().name(), typeField, typeValue, false);
+    this.countStatement = prepare(statement, couchbaseOperations.getCouchbaseBucket().name(), typeField, typeValue, true);
   }
 
-  protected static Statement prepare(String statement, String bucketName, String typeField, Class<?> typeValue) {
+  protected static Statement prepare(String statement, String bucketName, String typeField, Class<?> typeValue, boolean isCount) {
     String b = "`" + bucketName + "`";
     String entity = "META(" + b + ").id AS " + CouchbaseOperations.SELECT_ID +
         ", META(" + b + ").cas AS " + CouchbaseOperations.SELECT_CAS;
-    String selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
+    String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
+    String selectEntity;
+    if (isCount) {
+      selectEntity = "SELECT " + count + " FROM " + b;
+    } else {
+      selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
+    }
     String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
 
     String result = statement;
@@ -108,4 +116,8 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return this.statement;
   }
 
+  @Override
+  protected Statement getCount(ParameterAccessor accessor) {
+    return this.countStatement;
+  }
 }

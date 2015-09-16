@@ -16,14 +16,11 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.Expression.s;
 import static com.couchbase.client.java.query.dsl.Expression.x;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.dsl.Expression;
@@ -33,9 +30,10 @@ import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.OrderByPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -95,6 +93,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
   private final WherePath selectFrom;
   private final CouchbaseConverter converter;
   private final CouchbaseQueryMethod queryMethod;
+  private final ParameterAccessor accessor;
 
   public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
                           CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
@@ -102,6 +101,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     this.selectFrom = selectFrom;
     this.converter = converter;
     this.queryMethod = queryMethod;
+    this.accessor = parameters;
   }
 
   @Override
@@ -125,42 +125,32 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
 
   @Override
   protected LimitPath complete(Expression criteria, Sort sort) {
-    //add part that filters on type key
-    String typeKey = converter.getTypeKey();
-    String typeValue = queryMethod.getEntityInformation().getJavaType().getName();
-    Expression typeSelector = i(typeKey).eq(s(typeValue));
-    if (criteria == null) {
-      criteria = typeSelector;
-    } else {
-      criteria = criteria.and(typeSelector);
-    }
+    Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter, this.queryMethod.getEntityInformation());
 
-    OrderByPath selectFromWhere = selectFrom.where(criteria);
+    OrderByPath selectFromWhere = selectFrom.where(whereCriteria);
+
+    //sort of the Pageable takes precedence over the sort in the query name
+    if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && accessor.getPageable() != null) {
+      Pageable pageable = accessor.getPageable();
+      if (pageable.getSort() != null) {
+        sort = pageable.getSort();
+      }
+    }
 
     if (sort != null) {
-      List<com.couchbase.client.java.query.dsl.Sort> cbSortList = new ArrayList<com.couchbase.client.java.query.dsl.Sort>();
-      for (Sort.Order order : sort) {
-        if (order.isAscending()) {
-          cbSortList.add(com.couchbase.client.java.query.dsl.Sort.asc(order.getProperty()));
-        } else {
-          cbSortList.add(com.couchbase.client.java.query.dsl.Sort.desc(order.getProperty()));
-        }
-      }
-      com.couchbase.client.java.query.dsl.Sort[] cbSorts =
-          cbSortList.toArray(new com.couchbase.client.java.query.dsl.Sort[cbSortList.size()]);
+      com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, converter);
       return selectFromWhere.orderBy(cbSorts);
     }
-
-    return selectFrom.where(criteria);
+    return selectFromWhere;
   }
 
   protected Expression prepareExpression(Part part, Iterator<Object> iterator) {
-    PersistentPropertyPath<CouchbasePersistentProperty> path = converter.getMappingContext()
-        .getPersistentPropertyPath(part.getProperty());
+    PersistentPropertyPath<CouchbasePersistentProperty> path = N1qlUtils.getPathWithAlternativeFieldNames(
+        this.converter, part.getProperty());
     ConvertingIterator parameterValues = new ConvertingIterator(iterator, converter);
 
     //get the whole doted path with fieldNames instead of potentially wrong propNames
-    String fieldNamePath = path.toDotPath(FIELD_NAME_ESCAPED);
+    String fieldNamePath = N1qlUtils.getDottedPathWithAlternativeFieldNames(path);
 
     //deal with ignore case
     boolean ignoreCase = false;
@@ -310,16 +300,5 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     }
     return JsonArray.from(values);
   }
-
-  /**
-   * A converter that can be used to extract the {@link CouchbasePersistentProperty#getFieldName() fieldName},
-   * eg. when one wants a path from {@link PersistentPropertyPath#toDotPath(Converter)} made of escaped field names.
-   */
-  Converter<? super CouchbasePersistentProperty,String> FIELD_NAME_ESCAPED = new Converter<CouchbasePersistentProperty, String>() {
-    @Override
-    public String convert(CouchbasePersistentProperty source) {
-      return "`" + source.getFieldName() + "`";
-    }
-  };
 
 }

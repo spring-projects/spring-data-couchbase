@@ -92,8 +92,6 @@ Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use
 
 Now that's awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
 
-If you are coming from other datastore implementations, you might want to implement the `PagingAndSortingRepository` as well. Note that as of now, it is not supported but will be in the future.
-
 While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next two sections.
 
 [[couchbase.repository.n1ql]]
@@ -164,6 +162,23 @@ Most Spring-Data keywords are supported:
 |===============
 
 You can use both counting queries and <<repositories.limit-query-result>> features with this approach.
+
+With N1QL, another possible interface for the repository is the `PagingAndSortingRepository` one (which extends CRUDRepository).
+It adds two methods:
+[cols="2", options="header"]
+.Exposed methods on the PagingAndSortingRepository
+|===
+| Method
+| Description
+
+| Iterable<T> findAll(Sort sort);
+| Allows to retrieve all relevant entities while sorting on one of their attributes.
+
+| Page<T> findAll(Pageable pageable);
+| Allows to retrieve your entities in pages. The returned `Page` allows to easily get the next page's `Pageable` as well as the list of items. For the first call, use `new PageRequest(0, pageSize)` as Pageable.
+|===
+
+TIP: You can also use `Page` and `Slice` as method return types as well with a N1QL backed repository.
 
 The second way of querying, supported also in older versions of Couchbase Server, is the View-backed one that we'll see in the next section.
 

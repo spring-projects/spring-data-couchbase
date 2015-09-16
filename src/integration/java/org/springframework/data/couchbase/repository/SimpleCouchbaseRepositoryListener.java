@@ -48,7 +48,7 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
     CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
 
     for (int i = 0; i < 100; i++) {
-      User u = new User("testuser-" + i, "uname-" + i);
+      User u = new User("testuser-" + i, "uname-" + i, i);
       template.save(u, PersistTo.MASTER, ReplicateTo.NONE);
     }
 

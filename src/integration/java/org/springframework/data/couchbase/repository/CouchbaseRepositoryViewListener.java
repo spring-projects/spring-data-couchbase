@@ -49,7 +49,7 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
   private void populateTestData(final Bucket client, ClusterInfo clusterInfo) {
     CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
     for (int i = 0; i < 100; i++) {
-      template.save(new User("testuser-" + i, "uname-" + i), PersistTo.MASTER, ReplicateTo.NONE);
+      template.save(new User("testuser-" + i, "uname-" + i, i), PersistTo.MASTER, ReplicateTo.NONE);
     }
   }
 

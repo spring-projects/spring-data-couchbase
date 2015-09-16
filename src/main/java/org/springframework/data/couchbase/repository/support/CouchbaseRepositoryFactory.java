@@ -67,6 +67,11 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   private final ViewPostProcessor viewPostProcessor;
 
   /**
+   * Flag indicating if N1QL is available on the underlying cluster (at the time of the factory's creation).
+   */
+  private final boolean isN1qlAvailable;
+
+  /**
    * Create a new factory.
    *
    * @param couchbaseOperations the template for the underlying actions.
@@ -79,6 +84,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     viewPostProcessor = ViewPostProcessor.INSTANCE;
 
     addRepositoryProxyPostProcessor(viewPostProcessor);
+
+    this.isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
   }
 
   /**
@@ -113,24 +120,35 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     checkFeatures(metadata);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
-    final SimpleCouchbaseRepository simpleCouchbaseRepository = new SimpleCouchbaseRepository(entityInformation, couchbaseOperations);
-    simpleCouchbaseRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
-    return simpleCouchbaseRepository;
+    if (this.isN1qlAvailable) {
+      //this implementation also conforms to PagingAndSortingRepository
+      N1qlCouchbaseRepository n1qlRepository = new N1qlCouchbaseRepository(entityInformation, couchbaseOperations);
+      n1qlRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
+      return n1qlRepository;
+    } else {
+      final SimpleCouchbaseRepository simpleCouchbaseRepository = new SimpleCouchbaseRepository(entityInformation, couchbaseOperations);
+      simpleCouchbaseRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
+      return simpleCouchbaseRepository;
+    }
   }
 
   private void checkFeatures(RepositoryInformation metadata) {
-    boolean needsN1ql = false;
-    for (Method method : metadata.getQueryMethods()) {
+    boolean needsN1ql = metadata.isPagingRepository();
+    //paging repo will need N1QL, other repos might also if they don't have only @View methods
+    if (!needsN1ql) {
+      for (Method method : metadata.getQueryMethods()) {
 
-      boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
-      boolean hasView = AnnotationUtils.findAnnotation(method, View.class) != null;
+        boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
+        boolean hasView = AnnotationUtils.findAnnotation(method, View.class) != null;
 
-      if (hasN1ql || !hasView) {
-        needsN1ql = true;
-        break;
+        if (hasN1ql || !hasView) {
+          needsN1ql = true;
+          break;
+        }
       }
     }
-    if (needsN1ql && !couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL)) {
+
+    if (needsN1ql && !this.isN1qlAvailable) {
       throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", CouchbaseFeature.N1QL);
     }
   }
@@ -144,6 +162,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
+    if (isN1qlAvailable) {
+      return N1qlCouchbaseRepository.class;
+    }
     return SimpleCouchbaseRepository.class;
   }
 
