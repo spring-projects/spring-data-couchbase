@@ -1,23 +1,19 @@
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
+import org.springframework.data.couchbase.core.Beer;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.repository.Party;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 
 public class N1qlUtilsTest {
@@ -75,14 +71,14 @@ public class N1qlUtilsTest {
   }
 
   @Test
-  public void testGetPathWithAlternativeFieldNames() throws Exception {
+  public void testGetPathWithAlternativeFieldNamesCallsMapperOnce() throws Exception {
     CouchbaseConverter converter = mock(CouchbaseConverter.class);
-    PropertyPath partyDescPropertyPath = PropertyPath.from("description", Party.class);
+    PropertyPath descPropertyPath = PropertyPath.from("active", Beer.class);
     MappingContext mockMapping = mock(CouchbaseMappingContext.class);
     when(converter.getMappingContext()).thenReturn(mockMapping);
 
-    N1qlUtils.getPathWithAlternativeFieldNames(converter, partyDescPropertyPath);
-    verify(mockMapping).getPersistentPropertyPath(partyDescPropertyPath);
+    N1qlUtils.getPathWithAlternativeFieldNames(converter, descPropertyPath);
+    verify(mockMapping).getPersistentPropertyPath(descPropertyPath);
     verifyNoMoreInteractions(mockMapping);
   }
 
