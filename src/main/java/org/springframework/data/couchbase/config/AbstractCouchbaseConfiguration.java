@@ -27,7 +27,7 @@ import com.couchbase.client.java.CouchbaseCluster;
 import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
-import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -268,7 +268,7 @@ public abstract class AbstractCouchbaseConfiguration {
 
   /**
    * Configures the default consistency for generated {@link ViewQuery view queries}
-   * and {@link Query N1QL queries} in repositories.
+   * and {@link N1qlQuery N1QL queries} in repositories.
    *
    * @return the {@link Consistency consistency} to apply by default on generated queries.
    */

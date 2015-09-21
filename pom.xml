@@ -21,7 +21,7 @@
 
         <dist.key>DATACOUCH</dist.key>
 
-        <couchbase>2.2.0-dp2</couchbase>
+        <couchbase>2.2.0</couchbase>
         <couchbase.osgi>2.2.0</couchbase.osgi>
         <jackson>2.6.0</jackson>
         <springdata.commons>1.11.0.BUILD-SNAPSHOT</springdata.commons>
@@ -126,14 +126,6 @@
         <repository>
             <id>spring-libs-snapshot</id>
             <url>https://repo.spring.io/libs-snapshot</url>
-        </repository>
-        <repository>
-            <id>couchbase</id>
-            <name>couchbase repo</name>
-            <url>http://files.couchbase.com/maven2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
         </repository>
     </repositories>
 

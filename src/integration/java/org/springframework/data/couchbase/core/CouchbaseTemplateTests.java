@@ -36,8 +36,8 @@ import java.util.Random;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.query.Query;
-import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
@@ -226,10 +226,10 @@ public class CouchbaseTemplateTests {
 
 	@Test
 	public void shouldQueryRaw() {
-		Query query = Query.simple(select("name").from(i(client.name()))
+		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name()))
 				.where(x("name").isNotMissing()));
 
-		QueryResult queryResult = template.queryN1QL(query);
+		N1qlQueryResult queryResult = template.queryN1QL(query);
 		assertNotNull(queryResult);
 		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess());
 		assertFalse(queryResult.allRows().isEmpty());
@@ -241,7 +241,7 @@ public class CouchbaseTemplateTests {
 		FullFragment ff2 = new FullFragment("fullFragment2", 2, "fullFragment", "test2");
 		template.save(Arrays.asList(ff1, ff2));
 
-		Query query = Query.simple(select(i("value")) //"value" is a n1ql keyword apparently
+		N1qlQuery query = N1qlQuery.simple(select(i("value")) //"value" is a n1ql keyword apparently
 				.from(i(client.name()))
 				.where(x("type").eq(s("fullFragment"))
 				.and(x("criteria").gt(1))));

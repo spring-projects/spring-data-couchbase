@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 import java.util.List;
 
-import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.path.WherePath;
@@ -68,7 +68,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     Statement st = selectFrom.where(whereCriteria).orderBy(orderings);
 
     //fire the query
-    Query query = Query.simple(st);
+    N1qlQuery query = N1qlQuery.simple(st);
     return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
   }
 
@@ -82,7 +82,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
     //TODO how to avoid to do that more than once?
     //fire the count query and get total count
-    List<CountFragment> countResult = getCouchbaseOperations().findByN1QLProjection(Query.simple(countStatement), CountFragment.class);
+    List<CountFragment> countResult = getCouchbaseOperations().findByN1QLProjection(N1qlQuery.simple(countStatement), CountFragment.class);
     long totalCount = countResult == null || countResult.isEmpty() ? 0 : countResult.get(0).count;
 
     //prepare elements of the data query
@@ -94,7 +94,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     Statement pageStatement = selectFrom.where(whereCriteria).limit(pageable.getPageSize()).offset(pageable.getOffset());
 
     //fire the query
-    Query query = Query.simple(pageStatement);
+    N1qlQuery query = N1qlQuery.simple(pageStatement);
     List<T> pageContent = getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
 
     //return the list as a Page

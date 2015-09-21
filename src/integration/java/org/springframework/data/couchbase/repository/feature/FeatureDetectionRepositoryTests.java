@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
 import com.couchbase.client.java.util.features.Version;
 import org.junit.Assume;
@@ -79,7 +79,7 @@ public class FeatureDetectionRepositoryTests {
 
   @Test
   public void testN1qlIncompatibleClusterTemplateFails() {
-    Query query = Query.simple("SELECT * FROM `" + template.getCouchbaseBucket().name() + "`");
+    N1qlQuery query = N1qlQuery.simple("SELECT * FROM `" + template.getCouchbaseBucket().name() + "`");
     try {
       template.findByN1QL(query, User.class);
       fail("expected findByN1QL to fail with UnsupportedCouchbaseFeatureException");

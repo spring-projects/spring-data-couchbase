@@ -24,9 +24,9 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
 import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.query.Query;
-import com.couchbase.client.java.query.QueryParams;
-import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.N1qlQueryResult;
+import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -219,11 +219,11 @@ public interface CouchbaseOperations {
    * {@value #SELECT_CAS} (document id and cas, obtained through N1QL's
    * "{@code META(bucket).id AS} {@value #SELECT_ID}" and
    * "{@code META(bucket).cas AS} {@value #SELECT_CAS}").
-   * <p>This is done via a {@link Query} that contains a {@link Statement} and possibly
-   * additional query parameters ({@link QueryParams}) and placeholder values if the
+   * <p>This is done via a {@link N1qlQuery} that contains a {@link Statement} and possibly
+   * additional query parameters ({@link N1qlParams}) and placeholder values if the
    * statement contains placeholders.
    * <br/>
-   * Use {@link Query}'s factory methods to construct such a Query.</p>
+   * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
    *
    * @param n1ql the N1QL query.
    * @param entityClass the target class for the returned entities.
@@ -231,38 +231,38 @@ public interface CouchbaseOperations {
    * @return the list of entities matching this query.
    * @throws CouchbaseQueryExecutionException if the id and cas are not selected.
    */
-  <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass);
+  <T> List<T> findByN1QL(N1qlQuery n1ql, Class<T> entityClass);
 
   /**
    * Query the N1QL Service for partial JSON data of type T. The selected field will be
    * used in a {@link TranslationService#decodeFragment(String, Class) straightforward decoding}
    * (no document, metadata like id nor cas) to map to a "fragment class".
-   * <p>This is done via a {@link Query} that contains a {@link Statement} and possibly
-   * additional query parameters ({@link QueryParams}) and placeholder values if the
+   * <p>This is done via a {@link N1qlQuery} that contains a {@link Statement} and possibly
+   * additional query parameters ({@link N1qlParams}) and placeholder values if the
    * statement contains placeholders.
    * <br/>
-   * Use {@link Query}'s factory methods to construct such a Query.</p>
+   * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
    *
    * @param n1ql the N1QL query.
    * @param fragmentClass the target class for the returned fragments.
    * @param <T> the fragment class
    * @return the list of entities matching this query.
    */
-  <T> List<T> findByN1QLProjection(Query n1ql, Class<T> fragmentClass);
+  <T> List<T> findByN1QLProjection(N1qlQuery n1ql, Class<T> fragmentClass);
 
   /**
-   * Query the N1QL Service with direct access to the {@link QueryResult}.
+   * Query the N1QL Service with direct access to the {@link N1qlQueryResult}.
    * <p>
-   * This is done via a {@link Query} that can
-   * contain a {@link Statement}, additional query parameters ({@link QueryParams})
+   * This is done via a {@link N1qlQuery} that can
+   * contain a {@link Statement}, additional query parameters ({@link N1qlParams})
    * and placeholder values if the statement contains placeholders.</p>
    * <p>
-   * Use {@link Query}'s factory methods to construct this.</p>
+   * Use {@link N1qlQuery}'s factory methods to construct this.</p>
    *
    * @param n1ql the N1QL query.
-   * @return {@link QueryResult} containing the results of the n1ql query.
+   * @return {@link N1qlQueryResult} containing the results of the n1ql query.
    */
-  QueryResult queryN1QL(Query n1ql);
+  N1qlQueryResult queryN1QL(N1qlQuery n1ql);
 
   /**
    * Checks if the given document exists.

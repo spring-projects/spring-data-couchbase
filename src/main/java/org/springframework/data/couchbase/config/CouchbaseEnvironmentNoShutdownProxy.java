@@ -250,8 +250,8 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
-  public MetricsCollector systemMetricsCollector() {
-    return delegate.systemMetricsCollector();
+  public MetricsCollector runtimeMetricsCollector() {
+    return delegate.runtimeMetricsCollector();
   }
 
   @Override

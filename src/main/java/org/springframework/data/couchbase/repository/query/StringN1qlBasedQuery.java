@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.query.Query;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -99,7 +99,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
       result = result.replaceFirst("\\$FILTER_TYPE\\$", typeSelection);
     }
 
-    return Query.simple(result).statement();
+    return N1qlQuery.simple(result).statement();
   }
 
   @Override

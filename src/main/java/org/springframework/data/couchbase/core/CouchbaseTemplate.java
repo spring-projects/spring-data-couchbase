@@ -35,10 +35,10 @@ import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.TranscodingException;
-import com.couchbase.client.java.query.Query;
-import com.couchbase.client.java.query.QueryParams;
-import com.couchbase.client.java.query.QueryResult;
-import com.couchbase.client.java.query.QueryRow;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.N1qlQueryResult;
+import com.couchbase.client.java.query.N1qlQueryRow;
+import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
 import com.couchbase.client.java.view.ViewQuery;
@@ -327,15 +327,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public <T> List<T> findByN1QL(Query n1ql, Class<T> entityClass) {
+  public <T> List<T> findByN1QL(N1qlQuery n1ql, Class<T> entityClass) {
     checkN1ql();
     try {
-      QueryResult queryResult = queryN1QL(n1ql);
+      N1qlQueryResult queryResult = queryN1QL(n1ql);
 
       if (queryResult.finalSuccess()) {
-        List<QueryRow> allRows = queryResult.allRows();
+        List<N1qlQueryRow> allRows = queryResult.allRows();
         List<T> result = new ArrayList<T>(allRows.size());
-        for (QueryRow row : allRows) {
+        for (N1qlQueryRow row : allRows) {
           JsonObject json = row.value();
           String id = json.getString(SELECT_ID);
           Long cas = json.getLong(SELECT_CAS);
@@ -364,15 +364,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public <T> List<T> findByN1QLProjection(Query n1ql, Class<T> entityClass) {
+  public <T> List<T> findByN1QLProjection(N1qlQuery n1ql, Class<T> entityClass) {
     checkN1ql();
     try {
-      QueryResult queryResult = queryN1QL(n1ql);
+      N1qlQueryResult queryResult = queryN1QL(n1ql);
 
       if (queryResult.finalSuccess()) {
-        List<QueryRow> allRows = queryResult.allRows();
+        List<N1qlQueryRow> allRows = queryResult.allRows();
         List<T> result = new ArrayList<T>(allRows.size());
-        for (QueryRow row : allRows) {
+        for (N1qlQueryRow row : allRows) {
           JsonObject json = row.value();
           T decoded = translationService.decodeFragment(json.toString(), entityClass);
           result.add(decoded);
@@ -393,11 +393,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public QueryResult queryN1QL(final Query query) {
+  public N1qlQueryResult queryN1QL(final N1qlQuery query) {
     checkN1ql();
-    return execute(new BucketCallback<QueryResult>() {
+    return execute(new BucketCallback<N1qlQueryResult>() {
       @Override
-      public QueryResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
+      public N1qlQueryResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
         return client.query(query);
       }
     });

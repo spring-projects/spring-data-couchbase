@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import com.couchbase.client.java.query.QueryRow;
+import com.couchbase.client.java.query.N1qlQueryRow;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
@@ -48,7 +48,7 @@ public interface TranslationService {
   /**
    * Decodes an ad-hoc JSON object into a corresponding "case" class.
    *
-   * @param source the JSON for the ad-hoc JSON object (from a N1QL {@link QueryRow} for instance).
+   * @param source the JSON for the ad-hoc JSON object (from a N1QL {@link N1qlQueryRow} for instance).
    * @param target the target class information.
    * @param <T> the target class.
    * @return an ad-hoc instance of the decoded JSON into the corresponding "case" class.
