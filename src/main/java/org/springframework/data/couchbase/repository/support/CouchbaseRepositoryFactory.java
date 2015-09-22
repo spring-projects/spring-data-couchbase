@@ -32,6 +32,7 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
+import org.springframework.data.couchbase.repository.query.SpatialViewBasedQuery;
 import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
@@ -184,7 +185,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
       String namedQueryName = queryMethod.getNamedQueryName();
 
-      if (queryMethod.hasViewAnnotation()) {
+      if (queryMethod.hasDimensionalAnnotation()) {
+        return new SpatialViewBasedQuery(queryMethod, couchbaseOperations);
+      } else if (queryMethod.hasViewAnnotation()) {
         return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
       } else if (queryMethod.hasN1qlAnnotation()) {
         if (queryMethod.hasInlineN1qlQuery()) {

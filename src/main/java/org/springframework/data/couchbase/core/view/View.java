@@ -22,6 +22,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.data.annotation.QueryAnnotation;
+
 /**
  * Annotation to support the use of Views with Couchbase.
  *
@@ -31,6 +33,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+//don't set @QueryAnnotation, as it causes problems with reduce and replacing count() method, the reduce detection needs to be improved
 public @interface View {
 
   /**

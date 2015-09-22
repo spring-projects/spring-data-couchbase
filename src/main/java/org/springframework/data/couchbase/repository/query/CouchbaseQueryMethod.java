@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.view.Dimensional;
 import org.springframework.data.couchbase.core.view.Query;
 import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.mapping.context.MappingContext;
@@ -99,6 +100,21 @@ public class CouchbaseQueryMethod extends QueryMethod {
    */
   public View getViewAnnotation() {
     return method.getAnnotation(View.class);
+  }
+
+
+  /**
+   * @return true if the method has a @Dimensional annotation, false otherwise.
+   */
+  public boolean hasDimensionalAnnotation() {
+    return getDimensionalAnnotation() != null;
+  }
+
+  /**
+   * @return the @Dimensional annotation if set, null otherwise.
+   */
+  public Dimensional getDimensionalAnnotation() {
+    return AnnotationUtils.findAnnotation(method, Dimensional.class);
   }
 
   /**

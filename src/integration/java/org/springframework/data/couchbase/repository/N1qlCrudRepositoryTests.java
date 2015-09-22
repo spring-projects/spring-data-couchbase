@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.geo.Point;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -53,7 +54,7 @@ public class N1qlCrudRepositoryTests {
   private ItemRepository itemRepository;
 
   private static final Item item = new Item("itemNotParty", "short description");
-  private static final Party party = new Party("partyNotItem", "partyName", "short description", new Date(), 120);
+  private static final Party party = new Party("partyNotItem", "partyName", "short description", new Date(), 120, new Point(500, 500));
 
   @Before
   public void setup() throws Exception {
@@ -84,7 +85,7 @@ public class N1qlCrudRepositoryTests {
 
   @Test
   public void shouldSaveObjectWithN1qlKeywordField() {
-    Party party = new Party("partyHasKeyword", "party", "desc is a N1QL keyword", new Date(), 40);
+    Party party = new Party("partyHasKeyword", "party", "desc is a N1QL keyword", new Date(), 40, new Point(500, 500));
     partyRepository.save(party);
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 

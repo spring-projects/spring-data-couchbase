@@ -41,6 +41,9 @@ import com.couchbase.client.java.query.N1qlQueryRow;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
+import com.couchbase.client.java.view.SpatialViewQuery;
+import com.couchbase.client.java.view.SpatialViewResult;
+import com.couchbase.client.java.view.SpatialViewRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
@@ -292,7 +295,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> List<T> findByView(ViewQuery query, Class<T> entityClass) {
-    query.includeDocs(false);
+    query.includeDocs(false); //FIXME the doc says it is set to true...
     query.reduce(false);
 
     try {
@@ -321,6 +324,41 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return execute(new BucketCallback<ViewResult>() {
       @Override
       public ViewResult doInBucket() {
+        return client.query(query);
+      }
+    });
+  }
+
+  @Override
+  public <T> List<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass) {
+    //note: don't make any assumption about includeDocs and let the user decide
+
+    try {
+      final SpatialViewResult response = querySpatialView(query);
+      if (response.error() != null) {
+        throw new CouchbaseQueryExecutionException("Unable to execute spatial view query due to the following view error: " +
+            response.error().toString());
+      }
+
+      List<SpatialViewRow> allRows = response.allRows();
+
+      final List<T> result = new ArrayList<T>(allRows.size());
+      for (final SpatialViewRow row : allRows) {
+        result.add(mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass));
+      }
+
+      return result;
+    }
+    catch (TranscodingException e) {
+      throw new CouchbaseQueryExecutionException("Unable to execute view query", e);
+    }
+  }
+
+  @Override
+  public SpatialViewResult querySpatialView(final SpatialViewQuery query) {
+    return execute(new BucketCallback<SpatialViewResult>() {
+      @Override
+      public SpatialViewResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
         return client.query(query);
       }
     });

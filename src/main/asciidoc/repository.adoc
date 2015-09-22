@@ -3,6 +3,14 @@
 
 The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code required to implement data access layers for various persistence stores.
 
+There are three backing mechanisms in Couchbase for repositories, described in the sections of this chapter:
+
+ - <<couchbase.repository.n1ql>>
+ - <<couchbase.repository.views.querying>>
+ - <<couchbase.repository.spatial>>
+
+Note that you can tune the consistency you want for your queries (see <<couchbase.repository.consistency>>).
+
 [[couchbase.repository.configuration]]
 == Configuration
 
@@ -93,7 +101,7 @@ Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use
 
 Now that's awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
 
-While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next two sections.
+While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next sections.
 
 [[couchbase.repository.n1ql]]
 = N1QL based querying
@@ -304,6 +312,38 @@ For view-based query derivation, here are the supported keywords (A and B are me
 TIP: Note that the `reduce function` (not always a count) will be activated by prefixing with `count` and that <<repositories.limit-query-result>> is also supported.
 
 WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By. You have to include a valid entity property in the naming of your method.
+
+
+Last method of querying in Couchbase (from Couchbase Server 4.0, like for N1QL) is querying for dimensional data through *Spatial Views*, as we'll see in the next section.
+
+[[couchbase.repository.spatial]]
+== Spatial View based querying
+Couchbase can accommodate multi-dimensional data and query it with the use of special views, the Spatial Views. Such views allows to perform multi-dimensional queries, not only limited to geographical data.
+
+Integration of these views in `Spring Data Couchbase` repositories is done through the `@Dimensional` annotation. Like `@View`, the annotation allows to indicate usage of a Spatial View as the backing mechanism for the annotated method. The annotation requires you to give the name of the `designDocument` and the `spatialViewName` to use. Additionally, you should specify the number of `dimensions` the view works with (unless it is the default classical 2).
+
+Multi-dimensionality concept is interesting, it means you can craft views that allows you to answer questions like "find all shops that are within Manhattan and open between 14:00 and 23:00" (the third dimension of the view being the opening hours).
+
+Couchbase's Spatial View support querying through ranges that represent "lowest" and "highest" values in each dimension, so for 2D it represents a bounding box, with the southwest-most point [x,y] as `startRange` and northeast-most point [x,y] as `endRange`.
+
+WARNING: Some forms of Geographical queries can only be approximated, for instance querying with a `Polygon` or a `Circle` can only be approximated to the containing bounding `Box` (in DEBUG log level this will be made explicit with each such query).
+
+The following query derivation keywords and parameters relative to geographical data in Spring Data are supported for Spatial Views:
+
+.Supported keywords inside @Dimensional method names
+[options = "header, autowidth"]
+|===============
+|Keyword|Sample|Remarks
+|`Within,IsWithin`|`findByLocationWithin`|
+|`Near,IsNear`|`findByLocationNear`|expects a `Point` and a `Distance`, will approximate to bounding box
+|`Between`|`findByLocationWithinAndOpeningHoursBetween`|useful for dimensions beyond 2, adds two numerical values to the startRange and endRange respectively
+|`GreaterThan,GreaterThanEqual,After`|`findByLocationWithinAndOpeningHoursAfter`|useful for dimensions beyond 2, adds a numerical value to the startRange
+|`LessThan,LessThanEqual,Before`|`findByLocationWithinAndOpeningHoursBefore`|useful for dimensions beyond 2, adds a numerical value to the endRange
+|===============
+
+IMPORTANT: For "within" types of queries, the expected parameters map to geographical 2D data. Classes from the `org.springframework.data.geo` package are usually expected: `Circle` and `Polygon` will be approximated to their surrounding bounding `Box`. Polygon and Boxes can also be expressed as arrays of `Point`s.
+
+TIP: Further dimensions are supported through keywords other than Within and Near and require numerical input.
 
 [[couchbase.repository.consistency]]
 == Querying with consistency

@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -26,6 +27,7 @@ import java.util.List;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.view.ViewResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,9 +77,13 @@ public class CouchbaseRepositoryViewTests {
 
   @Test
   public void shouldCountWithCustomView() {
-    client.query(ViewQuery.from("userCustom", "customCountView").stale(Stale.FALSE));
+    ViewResult clientResult = client.query(ViewQuery.from("userCustom", "customCountView")
+        .reduce().stale(Stale.FALSE));
+    final Object clientRowValue = clientResult.allRows().get(0).value();
     final long value = repository.count();
     assertThat(value, is(100L));
+    assertThat(clientRowValue, instanceOf(Number.class));
+    assertThat(((Number) clientRowValue).longValue(), is(value));
   }
 
   @Test

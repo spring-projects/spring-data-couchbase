@@ -49,6 +49,10 @@ import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
  *    {@value StringN1qlBasedQuery#PLACEHOLDER_ENTITY}
  *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_ENTITY})
  *  </li>
+ *  <li>
+ *    {@value StringN1qlBasedQuery#PLACEHOLDER_FILTER_TYPE}
+ *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_FILTER_TYPE})
+ *  </li>
  * </ul>
  *
  * @author Simon Baslé.

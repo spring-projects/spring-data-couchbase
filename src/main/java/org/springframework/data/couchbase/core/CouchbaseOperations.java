@@ -28,6 +28,8 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.view.SpatialViewQuery;
+import com.couchbase.client.java.view.SpatialViewResult;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 
@@ -214,6 +216,28 @@ public interface CouchbaseOperations {
   ViewResult queryView(ViewQuery query);
 
   /**
+   * Query a Spatial View for a list of documents of type T.
+   * <p/>
+   * <p>It is valid to pass in a empty constructed {@link SpatialViewQuery} object.</p>
+   * <p/>
+   *
+   * @param query the SpatialViewQuery object (also specifying view design document and view name).
+   * @param entityClass the entity to map to.
+   * @return the converted collection
+   */
+  <T> List<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass);
+
+  /**
+   * Query a Spatial View with direct access to the {@link SpatialViewResult}.
+   * <p>This method is available to ease the working with spatial views by still wrapping exceptions into the Spring
+   * infrastructure.</p>
+   *
+   * @param query the SpatialViewQuery object (also specifying view design document and view name).
+   * @return SpatialViewResult containing the results of the query.
+   */
+  SpatialViewResult querySpatialView(SpatialViewQuery query);
+
+  /**
    * Query the N1QL Service for JSON data of type T. Enough data to construct the full
    * entity is expected to be selected, including the metadata {@value #SELECT_ID} and
    * {@value #SELECT_CAS} (document id and cas, obtained through N1QL's
@@ -349,5 +373,4 @@ public interface CouchbaseOperations {
    * @return the consistency to use for generated repository queries.
    */
   Consistency getDefaultConsistency();
-
 }

@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.view.SpatialViewQuery;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -28,6 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Shape;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
@@ -81,23 +84,33 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   protected Object deriveAndExecute(Object[] runtimeParams) {
     String designDoc = designDocName(method);
     String viewName = method.getViewAnnotation().viewName();
+
+    //prepare a ViewQuery to be used as a base for the ViewQueryCreator
     ViewQuery baseQuery = ViewQuery.from(designDoc, viewName)
         .stale(operations.getDefaultConsistency().viewConsistency());
+
     try {
       PartTree tree = new PartTree(method.getName(), method.getEntityInformation().getJavaType());
 
-      ViewQueryCreator creator = new ViewQueryCreator(tree,
-          new ParametersParameterAccessor(method.getParameters(), runtimeParams),
+      //use a ViewQueryCreator to complete the base query
+      ViewQueryCreator creator = new ViewQueryCreator(tree, new ParametersParameterAccessor(method.getParameters(), runtimeParams),
           baseQuery, operations.getConverter());
-
       ViewQuery query = creator.createQuery();
 
+      //detect count prefix in the method name and consider it triggers a reduce
       if (tree.isCountProjection() == Boolean.TRUE) {
         return executeReduce(query, designDoc, viewName);
       } else {
+        //otherwise just execute the query
         return execute(query);
       }
     } catch (PropertyReferenceException e) {
+      /*
+        For views, not including an attribute name in the method will result in returning
+        the whole set of results from the view.
+        This is detected by looking for PropertyReferenceExceptions that seem to complain
+        about a missing property that corresponds to the method name
+     */
       if (e.getPropertyName().equals(method.getName())) {
         return execute(baseQuery);
       }

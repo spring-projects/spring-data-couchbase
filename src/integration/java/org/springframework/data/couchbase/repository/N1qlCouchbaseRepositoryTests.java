@@ -43,7 +43,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
-@TestExecutionListeners(QueryDerivationConversionListener.class)
+@TestExecutionListeners(PartyPopulatorListener.class)
 public class N1qlCouchbaseRepositoryTests {
 
   @Autowired

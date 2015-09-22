@@ -3,6 +3,8 @@ package org.springframework.data.couchbase.repository;
 import java.util.Date;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+
 import com.couchbase.client.java.repository.annotation.Field;
 
 /**
@@ -24,12 +26,15 @@ public class Party {
 
   private final long attendees;
 
-  public Party(String key, String name, String description, Date eventDate, long attendees) {
+  private final Point location;
+
+  public Party(String key, String name, String description, Date eventDate, long attendees, Point location) {
     this.key = key;
     this.name = name;
     this.description = description;
     this.eventDate = eventDate;
     this.attendees = attendees;
+    this.location = location;
   }
 
   public String getKey() {
@@ -50,6 +55,10 @@ public class Party {
 
   public long getAttendees() {
     return attendees;
+  }
+
+  public Point getLocation() {
+    return location;
   }
 
   @Override
