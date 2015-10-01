@@ -16,14 +16,15 @@
 
 package org.springframework.data.couchbase.repository.config;
 
+import org.w3c.dom.Element;
+
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.data.config.ParsingUtils;
+import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 import org.springframework.data.repository.config.XmlRepositoryConfigurationSource;
-import org.w3c.dom.Element;
 
 /**
  * @author Michael Nitschinger
@@ -49,7 +50,7 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
 
   @Override
   public void postProcess(final BeanDefinitionBuilder builder, final AnnotationRepositoryConfigurationSource config) {
-    AnnotationAttributes attributes = config.getAttributes();
-    builder.addPropertyReference("couchbaseOperations", attributes.getString("couchbaseTemplateRef"));
+    builder.addDependsOn(BeanNames.REPO_OPERATIONS_MAPPING);
+    builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.REPO_OPERATIONS_MAPPING);
   }
 }

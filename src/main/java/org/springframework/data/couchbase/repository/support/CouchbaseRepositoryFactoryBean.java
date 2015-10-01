@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
@@ -35,7 +36,7 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
   /**
    * Contains the reference to the template.
    */
-  private CouchbaseOperations operations;
+  private RepositoryOperationsMapping operationsMapping;
 
   /**
    * Set the template reference.
@@ -43,8 +44,12 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
    * @param operations the reference to the operations template.
    */
   public void setCouchbaseOperations(final CouchbaseOperations operations) {
-    this.operations = operations;
-    setMappingContext(operations.getConverter().getMappingContext());
+    setCouchbaseOperationsMapping(new RepositoryOperationsMapping(operations));
+  }
+
+  public void setCouchbaseOperationsMapping(final RepositoryOperationsMapping mapping) {
+    this.operationsMapping = mapping;
+    setMappingContext(operationsMapping.getDefault().getConverter().getMappingContext());
   }
 
   /**
@@ -54,17 +59,17 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
    */
   @Override
   protected RepositoryFactorySupport createRepositoryFactory() {
-    return getFactoryInstance(operations);
+    return getFactoryInstance(operationsMapping);
   }
 
   /**
    * Get the factory instance for the operations.
    *
-   * @param operations the reference to the template.
+   * @param operationsMapping the reference to the template.
    * @return the factory instance.
    */
-  private RepositoryFactorySupport getFactoryInstance(final CouchbaseOperations operations) {
-    return new CouchbaseRepositoryFactory(operations);
+  private RepositoryFactorySupport getFactoryInstance(final RepositoryOperationsMapping operationsMapping) {
+    return new CouchbaseRepositoryFactory(operationsMapping);
   }
 
   /**
@@ -73,6 +78,6 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
   @Override
   public void afterPropertiesSet() {
     super.afterPropertiesSet();
-    Assert.notNull(operations, "CouchbaseTemplate must not be null!");
+    Assert.notNull(operationsMapping, "operationsMapping must not be null!");
   }
 }

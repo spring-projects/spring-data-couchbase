@@ -16,8 +16,10 @@
 
 package org.springframework.data.couchbase.repository.config;
 
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 
@@ -100,7 +102,13 @@ public @interface EnableCouchbaseRepositories {
   Class<?> repositoryFactoryBeanClass() default CouchbaseRepositoryFactoryBean.class;
 
   /**
-   * Configures the name of the {@link CouchbaseTemplate} bean to be used with the repositories detected.
+   * Configures whether nested repository-interfaces (e.g. defined as inner classes) should be discovered by the
+   * repositories infrastructure.
+   */
+  boolean considerNestedRepositories() default false;
+
+  /**
+   * Configures the name of the {@link CouchbaseTemplate} bean to be used by default with the repositories detected.
    *
    * @return
    */

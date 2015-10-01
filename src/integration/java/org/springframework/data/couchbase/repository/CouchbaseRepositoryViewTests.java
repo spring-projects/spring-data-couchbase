@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.test.context.ContextConfiguration;
@@ -53,13 +53,13 @@ public class CouchbaseRepositoryViewTests {
   private Bucket client;
 
   @Autowired
-  private CouchbaseTemplate template;
+  private RepositoryOperationsMapping operationsMapping;
 
   private CustomUserRepository repository;
 
   @Before
   public void setup() throws Exception {
-    repository = new CouchbaseRepositoryFactory(template).getRepository(CustomUserRepository.class);
+    repository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(CustomUserRepository.class);
   }
 
   @Test

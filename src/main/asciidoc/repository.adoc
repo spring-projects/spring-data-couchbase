@@ -19,6 +19,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 }
 ----
 ====
+An advanced usage is described in <<couchbase.repository.multibucket>>.
 
 XML-based configuration is also available:
 
@@ -327,3 +328,59 @@ Provide the implementation and directly use `queryView` and `queryN1QL` methods 
  - for example for views `ViewQuery.stale(Stale.FALSE)`
  - for example for N1QL `Query.simple("SELECT * FROM default", QueryParams.build().consistency(ScanConsistency.REQUEST_PLUS));`
 
+
+[[couchbase.repository.multibucket]]
+== Working with multiple buckets
+The Java Config version allows you to define multiple `Bucket` and `CouchbaseTemplate`, but in order to have different
+repositories use different underlying buckets/templates, you need to follow these steps:
+
+ * in your `AbstractCouchbaseConfiguration` implementation, override the `repositoryOperationsMapping` bean method.
+ * have it return a new `RepositoryOperationsMapping` (or reuse the `super()` one)
+ * configure the mapping by chaining calls to `map`, `mapEntity` and `setDefault`.
+   ** `map` maps a specific repository interface to the `CouchbaseOperations` it should use
+   ** `mapEntity` maps all unmapped repositories of a domain type / entity class to a common `CouchbaseOperations`
+   ** finally the value passed to the constructor or `setDefault` maps all remaining unmapped repositories to a default
+   `CouchaseOperations` (the default, using `couchbaseTemplate` bean unless modified).
+
+The idea is that the framework will look for an entry corresponding to the repository's interface when instantiating it.
+If none is found it will look at the mapping for the repository's domain type. Eventually it will fallback to the default setting.
+Here is an example:
+
+.Example of configuring multiple templates and repositories.
+====
+[source,java]
+----
+@Configuration
+@EnableCouchbaseRepositories
+public class ConcreteCouchbaseConfig extends AbstractCouchbaseConfig {
+
+  //the default bucket and template must be created, implement abstract methods here to that end
+
+  //we want all User objects to be stored in a second bucket
+  //let's define the bucket reference...
+  @Bean
+  public Bucket userBucket() {
+    return couchbaseCluster().openBucket("users", "");
+  }
+
+  //... then the template (inspired by couchbaseTemplate() method)...
+  @Bean
+  public CouchbaseTemplate userTemplate() {
+    CouchbaseTemplate template = new CouchbaseTemplate(
+        couchbaseClusterInfo(), //reuse the default bean
+      userBucket(), //the bucket is non-default
+        mappingCouchbaseConverter(), translationService() //default beans here as well
+    );
+    template.setDefaultConsistency(getDefaultConsistency());
+    return template;
+  }
+
+  //... then finally make sure all repositories of Users will use it
+  @Override
+  public RepositoryOperationsMapping repositoryOperationsMapping() throws Exception {
+    return super.repositoryOperationsMapping() //this is already using couchbaseTemplate as default
+      .mapEntity(User.class, userTemplate()); //every repository dealing with User will be backed by userTemplate()
+  }
+}
+----
+====

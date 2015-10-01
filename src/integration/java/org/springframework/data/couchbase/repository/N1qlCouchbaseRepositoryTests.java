@@ -19,14 +19,13 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.couchbase.client.java.Bucket;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -48,13 +47,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class N1qlCouchbaseRepositoryTests {
 
   @Autowired
-  private CouchbaseTemplate template;
+  private RepositoryOperationsMapping operationsMapping;
 
   private PartyPagingRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
     repository = factory.getRepository(PartyPagingRepository.class);
   }
 

@@ -22,7 +22,7 @@ package org.springframework.data.couchbase.config;
  * @author Michael Nitschinger
  * @author Simon Baslé
  */
-class BeanNames {
+public class BeanNames {
 
   /**
    * Refers to the "&lt;couchbase:env /&gt;" bean.
@@ -52,4 +52,9 @@ class BeanNames {
    * Refers to the "&lt;couchbase:clusterInfo&gt;" bean
    */
   static final String COUCHBASE_CLUSTER_INFO = "couchbaseClusterInfo";
+
+  /**
+   * The bean that stores custom mapping between repositories and their backing couchbaseOperations.
+   */
+  public static final String REPO_OPERATIONS_MAPPING = "repositoryOperationsMapping";
 }

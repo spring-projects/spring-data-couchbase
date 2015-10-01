@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.view.Query;
 import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
@@ -54,7 +55,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   /**
    * Holds the reference to the template.
    */
-  private final CouchbaseOperations couchbaseOperations;
+  private final RepositoryOperationsMapping couchbaseOperationsMapping;
 
   /**
    * Holds the mapping context.
@@ -67,25 +68,18 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   private final ViewPostProcessor viewPostProcessor;
 
   /**
-   * Flag indicating if N1QL is available on the underlying cluster (at the time of the factory's creation).
-   */
-  private final boolean isN1qlAvailable;
-
-  /**
    * Create a new factory.
    *
-   * @param couchbaseOperations the template for the underlying actions.
+   * @param couchbaseOperationsMapping the template for the underlying actions.
    */
-  public CouchbaseRepositoryFactory(final CouchbaseOperations couchbaseOperations) {
-    Assert.notNull(couchbaseOperations);
+  public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping) {
+    Assert.notNull(couchbaseOperationsMapping);
 
-    this.couchbaseOperations = couchbaseOperations;
-    mappingContext = couchbaseOperations.getConverter().getMappingContext();
+    this.couchbaseOperationsMapping = couchbaseOperationsMapping;
+    mappingContext = this.couchbaseOperationsMapping.getDefault().getConverter().getMappingContext();
     viewPostProcessor = ViewPostProcessor.INSTANCE;
 
     addRepositoryProxyPostProcessor(viewPostProcessor);
-
-    this.isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
   }
 
   /**
@@ -117,10 +111,12 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected Object getTargetRepository(final RepositoryInformation metadata) {
-    checkFeatures(metadata);
+    CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
+    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
+    checkFeatures(metadata, isN1qlAvailable);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
-    if (this.isN1qlAvailable) {
+    if (isN1qlAvailable) {
       //this implementation also conforms to PagingAndSortingRepository
       N1qlCouchbaseRepository n1qlRepository = new N1qlCouchbaseRepository(entityInformation, couchbaseOperations);
       n1qlRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
@@ -132,7 +128,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     }
   }
 
-  private void checkFeatures(RepositoryInformation metadata) {
+  private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable) {
     boolean needsN1ql = metadata.isPagingRepository();
     //paging repo will need N1QL, other repos might also if they don't have only @View methods
     if (!needsN1ql) {
@@ -148,7 +144,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
       }
     }
 
-    if (needsN1ql && !this.isN1qlAvailable) {
+    if (needsN1ql && !isN1qlAvailable) {
       throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", CouchbaseFeature.N1QL);
     }
   }
@@ -162,6 +158,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
+    CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(repositoryMetadata.getRepositoryInterface(),
+        repositoryMetadata.getDomainType());
+    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
     if (isN1qlAvailable) {
       return N1qlCouchbaseRepository.class;
     }
@@ -179,6 +178,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
     @Override
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
+      CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
+          metadata.getDomainType());
+
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
       String namedQueryName = queryMethod.getNamedQueryName();
 

@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,13 +33,13 @@ public class PageAndSliceTests {
   private Bucket client;
 
   @Autowired
-  private CouchbaseTemplate template;
+  private RepositoryOperationsMapping operationsMapping;
 
   private UserRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
     repository = factory.getRepository(UserRepository.class);
   }
   @Test

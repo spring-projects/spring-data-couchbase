@@ -30,10 +30,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.repository.User;
 import org.springframework.data.couchbase.repository.UserRepository;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
@@ -49,7 +50,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class FeatureDetectionRepositoryTests {
 
   @Autowired
-  private CouchbaseTemplate template;
+  private RepositoryOperationsMapping operationsMapping;
 
   @Autowired
   private ClusterInfo clusterInfo;
@@ -61,7 +62,7 @@ public class FeatureDetectionRepositoryTests {
 
   @Test
   public void testN1qlIncompatibleClusterFailsFastForN1qlBasedRepository() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
     try {
       factory.getRepository(UserRepository.class);
       fail("expected UnsupportedCouchbaseFeatureException");
@@ -72,13 +73,15 @@ public class FeatureDetectionRepositoryTests {
 
   @Test
   public void testN1qlIncompatibleClusterDoesntFailForViewBasedRepository() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(template);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
     ViewOnlyUserRepository repository = factory.getRepository(ViewOnlyUserRepository.class);
     assertNotNull(repository);
   }
 
   @Test
   public void testN1qlIncompatibleClusterTemplateFails() {
+    final CouchbaseOperations template = operationsMapping.getDefault();
+
     N1qlQuery query = N1qlQuery.simple("SELECT * FROM `" + template.getCouchbaseBucket().name() + "`");
     try {
       template.findByN1QL(query, User.class);

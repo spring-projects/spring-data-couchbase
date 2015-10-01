@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -47,7 +47,7 @@ public class N1qlCrudRepositoryTests {
   private Bucket client;
 
   @Autowired
-  private CouchbaseTemplate template;
+  private RepositoryOperationsMapping operationsMapping;
 
   private PartyRepository partyRepository;
   private ItemRepository itemRepository;
@@ -57,8 +57,8 @@ public class N1qlCrudRepositoryTests {
 
   @Before
   public void setup() throws Exception {
-    partyRepository = new CouchbaseRepositoryFactory(template).getRepository(PartyRepository.class);
-    itemRepository = new CouchbaseRepositoryFactory(template).getRepository(ItemRepository.class);
+    partyRepository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(PartyRepository.class);
+    itemRepository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(ItemRepository.class);
 
     itemRepository.save(item);
     partyRepository.save(party);

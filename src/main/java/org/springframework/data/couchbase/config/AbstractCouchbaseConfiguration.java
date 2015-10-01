@@ -36,6 +36,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
@@ -44,6 +45,8 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -149,6 +152,17 @@ public abstract class AbstractCouchbaseConfiguration {
     CouchbaseTemplate template = new CouchbaseTemplate(couchbaseClusterInfo(), couchbaseClient(), mappingCouchbaseConverter(), translationService());
     template.setDefaultConsistency(getDefaultConsistency());
     return template;
+  }
+
+  /**
+   * Creates the {@link RepositoryOperationsMapping} bean which will be used by the framework to choose which
+   * {@link CouchbaseOperations} should back which {@link CouchbaseRepository}.
+   *
+   * @throws Exception
+   */
+  @Bean(name = BeanNames.REPO_OPERATIONS_MAPPING)
+  public RepositoryOperationsMapping repositoryOperationsMapping() throws  Exception {
+    return new RepositoryOperationsMapping(couchbaseTemplate());
   }
 
   /**
