@@ -166,7 +166,8 @@ public class GeoUtils {
 
   private static void warnBoundingBoxApproximation(String kind) {
     if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Spatial View queries " + kind + " are made using a bounding box approximation");
+      LOGGER.debug("Spatial View queries " + kind + " are made using a bounding box approximation," +
+          "you probably want to remove false positives by applying a PointInShapeEvaluator");
     }
   }
 }
