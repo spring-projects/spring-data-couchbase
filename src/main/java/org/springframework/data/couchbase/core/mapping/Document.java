@@ -21,6 +21,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.annotation.Persistent;
 
@@ -36,8 +37,13 @@ import org.springframework.data.annotation.Persistent;
 public @interface Document {
 
   /**
-   * An optional expiry time for the document.
+   * An optional expiry time for the document. Default is no expiry.
    */
   int expiry() default 0;
+
+  /**
+   * An optional time unit for the document's {@link #expiry()}, if set. Default is {@link TimeUnit#SECONDS}.
+   */
+  TimeUnit expiryUnit() default TimeUnit.SECONDS;
 
 }

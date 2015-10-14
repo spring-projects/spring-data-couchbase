@@ -27,9 +27,18 @@ public interface CouchbasePersistentEntity<T> extends
     PersistentEntity<T, CouchbasePersistentProperty> {
 
   /**
-   * Returns the expiry time for the document.
+   * The threshold (inclusive) after which expiry should be expressed as a Unix UTC time.
+   */
+  long TTL_IN_SECONDS_INCLUSIVE_END = 30 * 24 * 60 * 60;
+
+  /**
+   * Returns the expiration time of the entity.
+   * <p/>
+   * The Couchbase format for expiration time is:
+   *  - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in seconds
+   *  - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
    *
-   * @return the expiration time.
+   * @return the expiration time in correct Couchbase format.
    */
   int getExpiry();
 

@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+
 import com.couchbase.client.java.repository.annotation.Id;
 
 import org.springframework.beans.BeansException;
@@ -95,15 +99,28 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     return super.returnPropertyIfBetterIdPropertyCandidateOrNull(property);
   }
 
-  /**
-   * Returns the expiration time of the entity.
-   *
-   * @return the expiration time.
-   */
+  @Override
   public int getExpiry() {
     org.springframework.data.couchbase.core.mapping.Document annotation =
         getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
-    return annotation == null ? 0 : annotation.expiry();
+    if (annotation == null)
+      return 0;
+
+    long secondsShift = annotation.expiryUnit().toSeconds(annotation.expiry());
+    if (secondsShift > TTL_IN_SECONDS_INCLUSIVE_END) {
+      //we want it to be represented as a UNIX timestamp style, seconds since Epoch in UTC
+      Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+      if (annotation.expiryUnit() == TimeUnit.DAYS) {
+        //makes sure we won't lose resolution
+        cal.add(Calendar.DAY_OF_MONTH, annotation.expiry());
+      } else {
+        //use the shift in seconds since resolution should be smaller
+        cal.add(Calendar.SECOND, (int) secondsShift);
+      }
+      return (int) (cal.getTimeInMillis() / 1000); //note: Unix UTC time representation in int is okay until year 2038
+    } else {
+      return (int) secondsShift;
+    }
   }
 
 }
