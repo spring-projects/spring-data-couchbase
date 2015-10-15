@@ -26,6 +26,10 @@ import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
  * A {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
+ * <p/>
+ * The statement can contain positional placeholders (eg. <code>name = $1</code>) that will map to the
+ * method's parameters, in the same order.
+ * <p/>
  * The statement can contain placeholders for the {@link #PLACEHOLDER_BUCKET bucket namespace},
  * the {@link #PLACEHOLDER_ENTITY ID and CAS fields} necessary for entity reconstruction or
  * a shortcut that covers {@link #PLACEHOLDER_SELECT_FROM SELECT AND FROM clauses}.

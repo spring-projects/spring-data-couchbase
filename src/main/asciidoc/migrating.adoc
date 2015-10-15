@@ -21,8 +21,8 @@ The view-backed query method has evolved and support for N1QL has been introduce
 
  * Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
  * Intermediate View query by query derivation (to provide some criteria for the view) @View annotated with `viewName`
- * N1QL with explicit statements inline - @N1QL annotated with value
- * N1QL query derivation - @N1QL annotated without value / no annotation (default)
+ * N1QL with explicit statements inline - `@Query` annotated with value
+ * N1QL query derivation - `@Query` annotated without value / no annotation (default)
 
 View backed queries are associated with the `@View` annotation, while N1QL backed queries are associated with the `@Query` annotation.
 

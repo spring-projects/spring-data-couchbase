@@ -153,7 +153,7 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
   /**
    * Advanced querying with N1QL derivation
    */
-  @View
+  @Query
   List<UserInfo> findByLastnameEqualsIgnoreCaseAndFirstnameStartsWithAndIsAdultTrue(String lastName, String fnamePrefix);
 }
 ```
@@ -168,8 +168,11 @@ You can alternatively write the statement yourself inside the `@Query` annotatio
 placeholder to make sure all necessary fields and metadata are selected by N1QL:
 
 ```java
-@Query("$SELECT_ENTITY$ WHERE firstname LIKE "%ck%"
+@Query("$SELECT_ENTITY$ WHERE firstname LIKE "%ck%")
 List<UserInfo> findPatrickAndJackAmongOthers();
+
+@Query("$SELECT_ENTITY$ WHERE firstname LIKE $1")
+List<UserInfo> findUsersWithTheirFirstnameLike(String likePattern);
 ```
 
 ## Using The Repository

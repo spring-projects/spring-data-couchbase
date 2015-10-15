@@ -109,7 +109,7 @@ As of version `4.0`, Couchbase Server ships with a new query language called `N1
 
 Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored.
 
-WARNING: If it is detected at configuration time that the cluster doesn't support N1QL while there are @N1QL annotated methods or non-annotated methods in your repository interface, a `UnsupportedCouchbaseFeatureException` will be thrown.
+WARNING: If it is detected at configuration time that the cluster doesn't support N1QL while there are `@Query` annotated methods or non-annotated methods in your repository interface, a `UnsupportedCouchbaseFeatureException` will be thrown.
 
 Here is an example:
 
