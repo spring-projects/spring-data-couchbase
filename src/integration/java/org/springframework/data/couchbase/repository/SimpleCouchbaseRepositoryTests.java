@@ -140,6 +140,14 @@ public class SimpleCouchbaseRepositoryTests {
   }
 
   @Test
+  public void shouldFindFromUsernameInlineWithSpelParsing() {
+    User user = repository.findByUsernameWithSpelAndPlaceholder();
+    assertNotNull(user);
+    assertEquals("testuser-4", user.getKey());
+    assertEquals("uname-4", user.getUsername());
+  }
+
+  @Test
   public void shouldFindFromDeriveQueryWithRegexpAndIn() {
     User user = repository.findByUsernameRegexAndUsernameIn("uname-[123]", Arrays.asList("uname-2", "uname-4"));
     assertNotNull(user);

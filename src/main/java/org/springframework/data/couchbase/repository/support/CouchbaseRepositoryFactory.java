@@ -44,6 +44,7 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
 /**
@@ -52,6 +53,8 @@ import org.springframework.util.Assert;
  * @author Michael Nitschinger
  */
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
+
+  private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
 
   /**
    * Holds the reference to the template.
@@ -170,13 +173,20 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
   @Override
   protected QueryLookupStrategy getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
-    return new CouchbaseQueryLookupStrategy();
+    return new CouchbaseQueryLookupStrategy(contextProvider);
   }
 
   /**
    * Strategy to lookup Couchbase queries implementation to be used.
    */
   private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
+
+    private final EvaluationContextProvider evaluationContextProvider;
+
+    public CouchbaseQueryLookupStrategy(EvaluationContextProvider evaluationContextProvider) {
+      this.evaluationContextProvider = evaluationContextProvider;
+    }
+
     @Override
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
       CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
@@ -191,10 +201,12 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
         return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
       } else if (queryMethod.hasN1qlAnnotation()) {
         if (queryMethod.hasInlineN1qlQuery()) {
-          return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations);
+          return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations,
+              SPEL_PARSER, evaluationContextProvider);
         } else if (namedQueries.hasQuery(namedQueryName)) {
           String namedQuery = namedQueries.getQuery(namedQueryName);
-          return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations);
+          return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations,
+              SPEL_PARSER, evaluationContextProvider);
         } //otherwise will do default, queryDerivation
       }
       return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);

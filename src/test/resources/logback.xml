@@ -15,6 +15,10 @@
 		<appender-ref ref="console" />
 	</root>
 
+	<!-- You can use these logger configurations to log more details:
+	 - log the Couchbase queries produced by the framework
+	 - log details of the parsing of SpEL in N1QL inline queries-->
 	<logger name="org.springframework.data.couchbase.repository.query" level="debug"/>
+	<logger name="org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery" level="trace"/>
 
 </configuration>

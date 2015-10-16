@@ -119,7 +119,7 @@ Here is an example:
 ----
 public interface UserRepository extends CrudRepository<UserInfo, String> {
 
-    @Query("$SELECT_ENTITY$ WHERE role = 'admin' AND $FILTER_TYPE$")
+    @Query("${#n1ql.selectEntity} WHERE role = 'admin' AND ${#n1ql.filter}")
     List<UserInfo> findAllAdmins();
 
     List<UserInfo> findByFirstname(String fname);
@@ -129,12 +129,18 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 
 Here we see two N1QL-backed ways of querying.
 
-The first one uses the `Query` annotation to provide a N1QL statement inline. Notice the special placeholders:
+The first method uses the `Query` annotation to provide a N1QL statement inline. SpEL (Spring Expression Language) is supported by surrounding SpEL expressions between `${` and `}`. You can also include N1QL positional placeholders (eg. `$1`, `$2`).
+A few N1QL-specific values are provided through SpEL:
 
- - `$SELECT_ENTITY` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
- - `$FILTER_TYPE$` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
+ - `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+ - `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
+ - `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
+ - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
 
-The second one use Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
+Another example: "`${#n1ql.selectEntity} WHERE ${#n1ql.filter} AND test = $1`", which is equivalent to
+`SELECT ${#n1ql.fields} FROM ${#n1ql.bucket} WHERE ${#n1ql.filter} AND test = $1`".
+
+The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
 
 NOTE: Actually the generated N1QL query will also contain an additional N1QL criteria in order to only select documents that match the repository's entity class.
 

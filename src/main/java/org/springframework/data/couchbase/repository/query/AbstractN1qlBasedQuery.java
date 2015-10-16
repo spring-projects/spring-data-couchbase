@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
@@ -28,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
@@ -55,16 +53,16 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     this.couchbaseOperations = couchbaseOperations;
   }
 
-  protected abstract Statement getCount(ParameterAccessor accessor);
+  protected abstract Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters);
 
-  protected abstract Statement getStatement(ParameterAccessor accessor);
+  protected abstract Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters);
 
   protected abstract JsonArray getPlaceholderValues(ParameterAccessor accessor);
 
   @Override
   public Object execute(Object[] parameters) {
-    ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
-    Statement statement = getStatement(accessor);
+    ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
+    Statement statement = getStatement(accessor, parameters);
     JsonArray queryPlaceholderValues = getPlaceholderValues(accessor);
 
     //prepare the final query
@@ -73,7 +71,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
     //prepare a count query
     //TODO only do that when necessary (isPageQuery or isSliceQuery)
-    Statement countStatement = getCount(accessor);
+    Statement countStatement = getCount(accessor, parameters);
     N1qlQuery countQuery = buildQuery(countStatement, queryPlaceholderValues,
         getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
 

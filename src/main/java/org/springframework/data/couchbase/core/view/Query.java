@@ -34,24 +34,25 @@ import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
  * <p/>
  * In this case, one can use a placeholder notation of {@code ?0}, {@code ?1} and so on.
  * <p/>
- * Also, the following placeholders can be used to be replaced by the underlying {@link CouchbaseTemplate}
+ * Also, SpEL in the form <code>${spelExpression}</code> is supported, including the
+ * following N1QL variables that will be replaced by the underlying {@link CouchbaseTemplate}
  * associated information:
  * <ul>
  *  <li>
- *    {@value StringN1qlBasedQuery#PLACEHOLDER_SELECT_FROM}
- *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_SELECT_FROM})
+ *    {@value StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE}
+ *    (see {@link StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE})
  *  </li>
  *  <li>
- *    {@value StringN1qlBasedQuery#PLACEHOLDER_BUCKET}
- *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_BUCKET})
+ *    {@value StringN1qlBasedQuery#SPEL_BUCKET}
+ *    (see {@link StringN1qlBasedQuery#SPEL_BUCKET})
  *  </li>
  *  <li>
- *    {@value StringN1qlBasedQuery#PLACEHOLDER_ENTITY}
- *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_ENTITY})
+ *    {@value StringN1qlBasedQuery#SPEL_ENTITY}
+ *    (see {@link StringN1qlBasedQuery#SPEL_ENTITY})
  *  </li>
  *  <li>
- *    {@value StringN1qlBasedQuery#PLACEHOLDER_FILTER_TYPE}
- *    (see {@link StringN1qlBasedQuery#PLACEHOLDER_FILTER_TYPE})
+ *    {@value StringN1qlBasedQuery#SPEL_FILTER}
+ *    (see {@link StringN1qlBasedQuery#SPEL_FILTER})
  *  </li>
  * </ul>
  *

@@ -51,7 +51,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  protected Statement getCount(ParameterAccessor accessor) {
+  protected Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
     Expression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
     WherePath countFrom = select(count("*").as(CountFragment.COUNT_ALIAS)).from(bucket);
 
@@ -60,7 +60,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return queryCreator.createQuery();
   }
   @Override
-  protected Statement getStatement(ParameterAccessor accessor) {
+  protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters) {
     String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
     Expression bucket = N1qlUtils.escapedBucket(bucketName);
 
