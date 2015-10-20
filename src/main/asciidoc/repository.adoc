@@ -315,7 +315,9 @@ For view-based query derivation, here are the supported keywords (A and B are me
 |`IsIn,In`|`findByFieldIn`|`keys=[A]` - A should be a `Collection`/`Array` with elements compatible for storage in a `JsonArray` (or a single element to be stored in a `JsonArray`)
 |===============
 
-TIP: Note that the `reduce function` (not always a count) will be activated by prefixing with `count` and that <<repositories.limit-query-result>> is also supported.
+Note that both `reduce functions` and <<repositories.limit-query-result>> are also supported.
+
+TIP: In order to trigger a `reduce`, you can use the `count` prefix instead of `find`. But sometimes is doesn't make much sense (eg. because you actually use the `_stats` built in function, which returns a JSON object). So alternatively you can also explicitly ask for reduce to be executed by setting `reduce = true` in the `@View` annotation. Be sure to specify a return type that make sense for the reduce function of your view.
 
 WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By. You have to include a valid entity property in the naming of your method.
 

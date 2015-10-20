@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.List;
 
+import com.couchbase.client.java.document.json.JsonObject;
+
 import org.springframework.data.couchbase.core.view.View;
 
 /**
@@ -72,4 +74,7 @@ public interface CustomUserRepository extends CouchbaseRepository<User, String> 
 
   @View
   long countCustomFindInvalid();
+
+  @View(viewName = "customFindByAgeStatsView", reduce = true)
+  JsonObject findByAgeLessThan(int maxAge);
 }

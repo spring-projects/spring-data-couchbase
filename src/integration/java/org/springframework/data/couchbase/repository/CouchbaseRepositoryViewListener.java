@@ -56,9 +56,11 @@ public class CouchbaseRepositoryViewListener extends DependencyInjectionTestExec
   private void createAndWaitForDesignDocs(final Bucket client) {
     String mapFunction = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(null, null); } }";
     String mapFunctionName = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(doc.username, null); } }";
+    String mapFunctionAge = "function (doc, meta) { if(doc._class == \"org.springframework.data.couchbase.repository.User\") { emit(doc.age, doc.age); } }";
     View view = DefaultView.create("customFindAllView", mapFunction, "_count");
     View customFindByNameView = DefaultView.create("customFindByNameView", mapFunctionName, "_count");
-    List<View> views = Arrays.asList(view, customFindByNameView);
+    View customFindByAgeStatsView = DefaultView.create("customFindByAgeStatsView", mapFunctionAge, "_stats");
+    List<View> views = Arrays.asList(view, customFindByNameView, customFindByAgeStatsView);
     DesignDocument designDoc = DesignDocument.create("user", views);
     client.bucketManager().upsertDesignDocument(designDoc);
 

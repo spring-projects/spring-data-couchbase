@@ -52,4 +52,6 @@ public @interface View {
    */
   String viewName() default "";
 
+  boolean reduce() default false;
+
 }

@@ -68,13 +68,14 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
   protected Object guessViewAndExecute() {
     String designDoc = designDocName(method);
     String methodName = method.getName();
-    boolean isReduce = methodName.startsWith("count");
+    boolean isExplicitReduce = method.hasViewAnnotation() && method.getViewAnnotation().reduce();
+    boolean isReduce = methodName.startsWith("count") || isExplicitReduce;
     String viewName = StringUtils.uncapitalize(methodName.replaceFirst("find|count", ""));
 
     ViewQuery simpleQuery = ViewQuery.from(designDoc, viewName)
         .stale(operations.getDefaultConsistency().viewConsistency());
     if (isReduce) {
-      simpleQuery.reduce(isReduce);
+      simpleQuery.reduce();
       return executeReduce(simpleQuery, designDoc, viewName);
     } else {
       return execute(simpleQuery);
@@ -94,15 +95,14 @@ public class ViewBasedCouchbaseQuery implements RepositoryQuery {
 
       //use a ViewQueryCreator to complete the base query
       ViewQueryCreator creator = new ViewQueryCreator(tree, new ParametersParameterAccessor(method.getParameters(), runtimeParams),
-          baseQuery, operations.getConverter());
-      ViewQuery query = creator.createQuery();
+          method.getViewAnnotation(), baseQuery, operations.getConverter());
+      ViewQueryCreator.DerivedViewQuery result = creator.createQuery();
 
-      //detect count prefix in the method name and consider it triggers a reduce
-      if (tree.isCountProjection() == Boolean.TRUE) {
-        return executeReduce(query, designDoc, viewName);
+      if (result.isReduce) {
+        return executeReduce(result.builtQuery, designDoc, viewName);
       } else {
         //otherwise just execute the query
-        return execute(query);
+        return execute(result.builtQuery);
       }
     } catch (PropertyReferenceException e) {
       /*

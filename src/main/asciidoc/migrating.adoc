@@ -61,8 +61,15 @@ List<User> findFirst3ByLastnameEquals(String lastName);
 
 [[couchbase.migrating.reduce-in-views]]
 === Reduce in views
-TIP: Reduce is now supported. It will be triggered by prefixing the method name with `count` instead of `find`.
+Reduce is now supported in view-based querying.
+
+It can be triggered by prefixing the method name with `count` instead of `find`.
 For example: `countByLastnameContains(String word)` instead of `findByLastnameContains(String word)`.
 
-WARNING: Don't forget to specify an `int/long` reduce function (not limited to `_count`) in your view if you plan to use that. Similarly, views backing a query derivation should emit a simple key (not `null` nor a compound key).
+Alternatively, it can be explicitly be activated by setting `reduce = true` on the `@View` annotation.
 
+Be sure to construct your view correctly:
+
+ * specify a reduce function that matches the method return type, which can be anything, eg. long or JSON object
+ * emit a simple key (not `null` nor a compound key).
+ * emit a value suitable for the reduce to work (typically `_count` doesn't need any particular value, but `_stats` will need a numerical value, in addition to the key).

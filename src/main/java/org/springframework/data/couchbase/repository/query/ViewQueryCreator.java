@@ -30,6 +30,7 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.view.View;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
@@ -58,18 +59,21 @@ import org.springframework.data.repository.query.parser.PartTree;
  * </ul>
  * </p>
  * Additionally, {@link PartTree#isLimiting()} will use {@link ViewQuery#limit(int) limit}
- * and {@link PartTree#isCountProjection()} will trigger a {@link ViewQuery#reduce() reduce}.
+ * and either {@link View#reduce()} or {@link PartTree#isCountProjection()} will trigger a {@link ViewQuery#reduce() reduce}.
  */
-public class ViewQueryCreator extends AbstractQueryCreator<ViewQuery, ViewQuery> {
+public class ViewQueryCreator extends AbstractQueryCreator<ViewQueryCreator.DerivedViewQuery, ViewQuery> {
 
   private ViewQuery query;
+  private final View viewAnnotation;
   private final PartTree tree;
   private final int treeCount;
   private final CouchbaseConverter converter;
 
-  public ViewQueryCreator(PartTree tree, ParameterAccessor parameters, ViewQuery query, CouchbaseConverter converter) {
+  public ViewQueryCreator(PartTree tree, ParameterAccessor parameters, View viewAnnotation,
+                          ViewQuery query, CouchbaseConverter converter) {
     super(tree, parameters);
     this.query = query;
+    this.viewAnnotation = viewAnnotation;
     this.tree = tree;
     this.converter = converter;
 
@@ -268,7 +272,7 @@ public class ViewQueryCreator extends AbstractQueryCreator<ViewQuery, ViewQuery>
   }
 
   @Override
-  protected ViewQuery complete(ViewQuery criteria, Sort sort) {
+  protected DerivedViewQuery complete(ViewQuery criteria, Sort sort) {
     boolean descending = false;
 
     if (sort != null) {
@@ -290,8 +294,27 @@ public class ViewQueryCreator extends AbstractQueryCreator<ViewQuery, ViewQuery>
       query.limit(tree.getMaxResults());
     }
 
-    query.reduce(tree.isCountProjection() == Boolean.TRUE);
+    boolean isCount = tree.isCountProjection() == Boolean.TRUE;
+    boolean isExplicitReduce = viewAnnotation != null && viewAnnotation.reduce();
+    if (isCount || isExplicitReduce) {
+      query.reduce();
+    }
 
-    return query;
+    return new DerivedViewQuery(query, tree.isLimiting(), isCount || isExplicitReduce);
+  }
+
+  /**
+   * Wrapper class allowing to see downstream if the built query was built with options like reduce and limit.
+   */
+  protected static class DerivedViewQuery {
+    public final ViewQuery builtQuery;
+    public final boolean isLimited;
+    public final boolean isReduce;
+
+    public DerivedViewQuery(ViewQuery builtQuery, boolean isLimited, boolean isReduce) {
+      this.builtQuery = builtQuery;
+      this.isLimited = isLimited;
+      this.isReduce = isReduce;
+    }
   }
 }

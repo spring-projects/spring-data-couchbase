@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -109,6 +110,17 @@ public class CouchbaseRepositoryViewTests {
   public void shouldDeriveViewParametersAndReduce() {
     long count = repository.countByUsernameGreaterThanEqualAndUsernameLessThan("uname-8", "uname-9");
     assertEquals(12, count);
+  }
+
+  @Test
+  public void shouldDeriveViewParametersAndReduceNonNumerical() {
+    JsonObject reduceResult = repository.findByAgeLessThan(50);
+
+    assertNotNull(reduceResult);
+    assertEquals(51, (long) reduceResult.getLong("count"));
+    assertEquals(50, (long) reduceResult.getLong("max"));
+    assertEquals(0, (long) reduceResult.getLong("min"));
+    assertEquals(1275, (long) reduceResult.getLong("sum"));
   }
 
   @Test
