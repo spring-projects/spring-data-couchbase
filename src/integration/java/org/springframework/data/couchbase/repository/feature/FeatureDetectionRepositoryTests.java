@@ -36,6 +36,7 @@ import org.springframework.data.couchbase.repository.User;
 import org.springframework.data.couchbase.repository.UserRepository;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -53,6 +54,9 @@ public class FeatureDetectionRepositoryTests {
   private RepositoryOperationsMapping operationsMapping;
 
   @Autowired
+  private IndexManager indexManager;
+
+  @Autowired
   private ClusterInfo clusterInfo;
 
   @Before
@@ -62,7 +66,7 @@ public class FeatureDetectionRepositoryTests {
 
   @Test
   public void testN1qlIncompatibleClusterFailsFastForN1qlBasedRepository() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     try {
       factory.getRepository(UserRepository.class);
       fail("expected UnsupportedCouchbaseFeatureException");
@@ -73,7 +77,7 @@ public class FeatureDetectionRepositoryTests {
 
   @Test
   public void testN1qlIncompatibleClusterDoesntFailForViewBasedRepository() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     ViewOnlyUserRepository repository = factory.getRepository(ViewOnlyUserRepository.class);
     assertNotNull(repository);
   }

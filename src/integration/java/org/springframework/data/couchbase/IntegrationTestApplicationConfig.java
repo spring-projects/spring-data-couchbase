@@ -13,7 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
-import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.core.query.Consistency;
 
 @Configuration
 public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfiguration {

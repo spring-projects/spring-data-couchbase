@@ -39,6 +39,11 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
   private RepositoryOperationsMapping operationsMapping;
 
   /**
+   * Contains the reference to the IndexManager.
+   */
+  private IndexManager indexManager;
+
+  /**
    * Set the template reference.
    *
    * @param operations the reference to the operations template.
@@ -53,31 +58,43 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
   }
 
   /**
+   * Set the IndexManager reference.
+   *
+   * @param indexManager the IndexManager to use.
+   */
+  public void setIndexManager(final IndexManager indexManager) {
+    this.indexManager = indexManager;
+  }
+
+  /**
    * Returns a factory instance.
    *
    * @return the factory instance.
    */
   @Override
   protected RepositoryFactorySupport createRepositoryFactory() {
-    return getFactoryInstance(operationsMapping);
+    return getFactoryInstance(operationsMapping, indexManager);
   }
 
   /**
    * Get the factory instance for the operations.
    *
    * @param operationsMapping the reference to the template.
+   * @param indexManager the reference to the {@link IndexManager}.
    * @return the factory instance.
    */
-  private RepositoryFactorySupport getFactoryInstance(final RepositoryOperationsMapping operationsMapping) {
-    return new CouchbaseRepositoryFactory(operationsMapping);
+  private RepositoryFactorySupport getFactoryInstance(final RepositoryOperationsMapping operationsMapping,
+                                                      IndexManager indexManager) {
+    return new CouchbaseRepositoryFactory(operationsMapping, indexManager);
   }
 
   /**
-   * Make sure that the template is set and not null.
+   * Make sure that the dependencies are set and not null.
    */
   @Override
   public void afterPropertiesSet() {
     super.afterPropertiesSet();
     Assert.notNull(operationsMapping, "operationsMapping must not be null!");
+    Assert.notNull(indexManager, "indexManager must not be null!");
   }
 }

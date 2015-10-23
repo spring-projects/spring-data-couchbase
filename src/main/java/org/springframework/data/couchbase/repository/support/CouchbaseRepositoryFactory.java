@@ -26,8 +26,11 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.view.Query;
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
+import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.View;
+import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
@@ -51,6 +54,7 @@ import org.springframework.util.Assert;
  * Factory to create {@link SimpleCouchbaseRepository} instances.
  *
  * @author Michael Nitschinger
+ * @author Simon Baslé
  */
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
@@ -60,6 +64,11 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    * Holds the reference to the template.
    */
   private final RepositoryOperationsMapping couchbaseOperationsMapping;
+
+  /**
+   * Holds the reference to the {@link IndexManager}.
+   */
+  private final IndexManager indexManager;
 
   /**
    * Holds the mapping context.
@@ -76,10 +85,12 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    *
    * @param couchbaseOperationsMapping the template for the underlying actions.
    */
-  public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping) {
+  public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping, final IndexManager indexManager) {
     Assert.notNull(couchbaseOperationsMapping);
+    Assert.notNull(indexManager);
 
     this.couchbaseOperationsMapping = couchbaseOperationsMapping;
+    this.indexManager = indexManager;
     mappingContext = this.couchbaseOperationsMapping.getDefault().getConverter().getMappingContext();
     viewPostProcessor = ViewPostProcessor.INSTANCE;
 
@@ -117,7 +128,14 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   protected Object getTargetRepository(final RepositoryInformation metadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
     boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
-    checkFeatures(metadata, isN1qlAvailable);
+
+    ViewIndexed viewIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), ViewIndexed.class);
+    N1qlPrimaryIndexed n1qlPrimaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlPrimaryIndexed.class);
+    N1qlSecondaryIndexed n1qlSecondaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlSecondaryIndexed.class);
+
+    checkFeatures(metadata, isN1qlAvailable, n1qlPrimaryIndexed, n1qlSecondaryIndexed);
+
+    indexManager.buildIndexes(metadata, viewIndexed, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
     if (isN1qlAvailable) {
@@ -132,10 +150,14 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     }
   }
 
-  private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable) {
-    boolean needsN1ql = metadata.isPagingRepository();
-    //paging repo will need N1QL, other repos might also if they don't have only @View methods
+  private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable,
+                             N1qlPrimaryIndexed n1qlPrimaryIndexed, N1qlSecondaryIndexed n1qlSecondaryIndexed) {
+    //paging repo will always need N1QL, also check if the repository requires a N1QL index
+    boolean needsN1ql = metadata.isPagingRepository() || n1qlPrimaryIndexed != null || n1qlSecondaryIndexed != null;
+
+    //for other repos, they might also need N1QL if they don't have only @View methods
     if (!needsN1ql) {
+
       for (Method method : metadata.getQueryMethods()) {
 
         boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;

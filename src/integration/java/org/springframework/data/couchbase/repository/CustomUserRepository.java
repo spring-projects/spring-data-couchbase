@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonObject;
 
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.View;
 
 /**
  * @author David Harrigan

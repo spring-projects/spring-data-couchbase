@@ -52,7 +52,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public static final String SPEL_PREFIX = "n1ql";
 
   /**
-   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.view.Query @Query}
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the correct <code>SELECT x FROM y</code> clause needed
    * for entity mapping. Eg. <code>"${{@value StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE}} WHERE test = true"</code>.
    * Note this only makes sense once, as the beginning of the statement.
@@ -60,21 +60,21 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public static final String SPEL_SELECT_FROM_CLAUSE = "#" + SPEL_PREFIX + ".selectEntity";
 
   /**
-   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.view.Query @Query}
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the (escaped) bucket name corresponding to the repository's
    * entity. Eg. <code>"SELECT * FROM ${{@value StringN1qlBasedQuery#SPEL_BUCKET}} LIMIT 3"</code>.
    */
   public static final String SPEL_BUCKET = "#" + SPEL_PREFIX + ".bucket";
 
   /**
-   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.view.Query @Query}
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the fields allowing to construct the repository's entity
    * (SELECT clause). Eg. <code>"SELECT ${{@value StringN1qlBasedQuery#SPEL_ENTITY}} FROM test"</code>.
    */
   public static final String SPEL_ENTITY = "#" + SPEL_PREFIX + ".fields";
 
   /**
-   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.view.Query @Query}
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement WHERE clause. This will be replaced by the expression allowing to only select
    * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND ${{@value StringN1qlBasedQuery#SPEL_FILTER}}"</code>.
    */

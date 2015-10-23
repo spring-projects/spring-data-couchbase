@@ -16,6 +16,7 @@ import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
@@ -37,11 +38,14 @@ public class DimensionalQueryTests {
   @Autowired
   private RepositoryOperationsMapping templateMapping;
 
+  @Autowired
+  private IndexManager indexManager;
+
   private DimensionalPartyRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(templateMapping);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(templateMapping, indexManager);
     repository = factory.getRepository(DimensionalPartyRepository.class);
   }
 

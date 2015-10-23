@@ -57,4 +57,9 @@ public class BeanNames {
    * The bean that stores custom mapping between repositories and their backing couchbaseOperations.
    */
   public static final String REPO_OPERATIONS_MAPPING = "repositoryOperationsMapping";
+
+  /**
+   * The bean that drives how some indexes are automatically created.
+   */
+  public static final String COUCHBASE_INDEX_MANAGER = "couchbaseIndexManager";
 }

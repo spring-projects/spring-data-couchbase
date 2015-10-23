@@ -25,6 +25,7 @@ import java.util.Set;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.cdi.CdiRepositoryBean;
 import org.springframework.data.repository.config.CustomRepositoryImplementationDetector;
 import org.springframework.util.Assert;
@@ -63,7 +64,8 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
     protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Object customImplementation) {
         CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
         RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
-        return new CouchbaseRepositoryFactory(couchbaseOperationsMapping).getRepository(repositoryType, customImplementation);
+        IndexManager indexManager = new IndexManager();
+        return new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager).getRepository(repositoryType, customImplementation);
     }
 
     @Override

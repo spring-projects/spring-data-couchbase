@@ -30,7 +30,7 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.User;
 
 /**

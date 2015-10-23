@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.support;
 
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.View;
 
 /**
  * Interface to abstract {@link ViewMetadataProvider} that provides {@link View}s to be used for query execution.

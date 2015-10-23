@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -36,11 +37,14 @@ public class QueryDerivationConversionTests {
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
 
+  @Autowired
+  private IndexManager indexManager;
+
   private PartyRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     repository = factory.getRepository(PartyRepository.class);
   }
 

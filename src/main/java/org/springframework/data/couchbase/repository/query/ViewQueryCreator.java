@@ -30,7 +30,7 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;

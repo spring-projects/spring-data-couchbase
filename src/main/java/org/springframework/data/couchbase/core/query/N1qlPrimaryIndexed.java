@@ -14,30 +14,22 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.view;
+package org.springframework.data.couchbase.core.query;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.springframework.data.annotation.QueryAnnotation;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
 /**
- * An annotation to mark a repository method as querying using a Couchbase Spatial View.
- * The attributes will be used to resolve the actual Spatial View to be used and to determine
- * the expected number of dimensions in the Spatial View keys. It can also be used as meta-annotation.
+ * This annotation is targeted at {@link CouchbaseRepository Repository} interfaces, indicating that the framework
+ * should ensure a N1QL Primary Index is present on the repository's associated bucket when the repository is created.
+ *
+ * @author Simon Baslé
  */
-@Documented
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
-@QueryAnnotation
-public @interface Dimensional {
-  /** The name of the design document to be queried */
-  String designDocument();
-  /** The name of the spatial view to be queried */
-  String spatialViewName();
-  /** The number of dimensions in the spatial view, defaults to 2 */
-  int dimensions() default 2;
+public @interface N1qlPrimaryIndexed {
 }

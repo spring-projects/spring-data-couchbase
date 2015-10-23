@@ -140,6 +140,9 @@ function (doc, meta) {
 }
 ```
 
+Alternatively, if view creation isn't too costly, you can ask the framework to create it automatically by annotating the
+repository with `@ViewIndexed(designDoc = "userInfo", viewName = "all")`.
+
 ## N1QL and Query Derivation
 With the introduction of `N1QL`, Couchbase can now better support query derivation (the mechanism that allows you to
 add custom methods that will automatically be implemented as a N1QL query derived from the method's name).
@@ -174,6 +177,10 @@ List<UserInfo> findPatrickAndJackAmongOthers();
 @Query("$SELECT_ENTITY$ WHERE firstname LIKE $1")
 List<UserInfo> findUsersWithTheirFirstnameLike(String likePattern);
 ```
+
+N1QL needs at least a generic purpose `N1QL primary index` to work with, and can make use of a more entity
+type-specific `N1QL secondary index`. You can create both automatically (provided you are confident this
+is not to much of a cost) by annotating a repository with `@N1qlPrimaryIndexed` and/or `@N1qlSecondaryIndexed`. 
 
 ## Using The Repository
 

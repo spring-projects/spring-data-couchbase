@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.view;
+package org.springframework.data.couchbase.core.query;
 
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.view.Stale;

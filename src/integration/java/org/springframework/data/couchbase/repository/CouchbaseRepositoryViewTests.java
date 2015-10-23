@@ -38,6 +38,7 @@ import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -58,11 +59,14 @@ public class CouchbaseRepositoryViewTests {
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
 
+  @Autowired
+  private IndexManager indexManager;
+
   private CustomUserRepository repository;
 
   @Before
   public void setup() throws Exception {
-    repository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(CustomUserRepository.class);
+    repository = new CouchbaseRepositoryFactory(operationsMapping, indexManager).getRepository(CustomUserRepository.class);
   }
 
   @Test

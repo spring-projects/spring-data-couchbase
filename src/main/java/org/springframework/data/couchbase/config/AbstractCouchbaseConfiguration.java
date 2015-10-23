@@ -44,9 +44,13 @@ import org.springframework.data.couchbase.core.convert.translation.JacksonTransl
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
+import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
+import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -225,6 +229,20 @@ public abstract class AbstractCouchbaseConfiguration {
   @Bean
   public CustomConversions customConversions() {
     return new CustomConversions(Collections.emptyList());
+  }
+
+  /**
+   * Register an {@link IndexManager} bean that will be used to process {@link ViewIndexed},
+   * {@link N1qlPrimaryIndexed} and {@link N1qlSecondaryIndexed} annotations on repositories
+   * to automatically create indexes.
+   * <p/>
+   * If this configuration is used in a context where such automatic creations are not desired (eg.
+   * you want automatic index creation in Dev but not in Prod, and this configuration is the Prod one),
+   * override the bean and use the {@link IndexManager#IndexManager(boolean, boolean, boolean)} constructor.
+   */
+  @Bean(name = BeanNames.COUCHBASE_INDEX_MANAGER)
+  public IndexManager indexManager() {
+    return new IndexManager();
   }
 
   /**

@@ -35,7 +35,7 @@ import com.couchbase.client.java.view.ViewResult;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.core.query.Consistency;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.

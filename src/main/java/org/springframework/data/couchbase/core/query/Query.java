@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.view;
+package org.springframework.data.couchbase.core.query;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

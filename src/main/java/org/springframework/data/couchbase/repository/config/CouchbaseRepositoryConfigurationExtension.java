@@ -31,7 +31,11 @@ import org.springframework.data.repository.config.XmlRepositoryConfigurationSour
  */
 public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
+  /** The reference property to use in xml configuration to specify the template to use with a repository. */
   private static final String COUCHBASE_TEMPLATE_REF = "couchbase-template-ref";
+
+  /** The reference property to use in xml configuration to specify the index manager bean to use with a repository. */
+  private static final String COUCHBASE_INDEX_MANAGER_REF = "couchbase-index-manager-ref";
 
   @Override
   protected String getModulePrefix() {
@@ -46,11 +50,14 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
   public void postProcess(final BeanDefinitionBuilder builder, final XmlRepositoryConfigurationSource config) {
     Element element = config.getElement();
     ParsingUtils.setPropertyReference(builder, element, COUCHBASE_TEMPLATE_REF, "couchbaseOperations");
+    ParsingUtils.setPropertyReference(builder, element, COUCHBASE_INDEX_MANAGER_REF, "indexManager");
   }
 
   @Override
   public void postProcess(final BeanDefinitionBuilder builder, final AnnotationRepositoryConfigurationSource config) {
     builder.addDependsOn(BeanNames.REPO_OPERATIONS_MAPPING);
+    builder.addDependsOn(BeanNames.COUCHBASE_INDEX_MANAGER);
     builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.REPO_OPERATIONS_MAPPING);
+    builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
   }
 }

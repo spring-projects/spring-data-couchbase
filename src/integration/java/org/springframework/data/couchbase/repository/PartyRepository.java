@@ -3,7 +3,7 @@ package org.springframework.data.couchbase.repository;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.View;
 
 /**
  * @author Simon Baslé

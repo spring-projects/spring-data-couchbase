@@ -119,7 +119,7 @@ The reference to a CouchbaseConverter instance.
                     </xsd:documentation>
                     <xsd:appinfo>
                         <tool:annotation kind="direct">
-                            <tool:expected-type type="org.springframework.data.couchbase.core.view.Consistency"/>
+                            <tool:expected-type type="org.springframework.data.couchbase.core.query.Consistency"/>
                         </tool:annotation>
                     </xsd:appinfo>
                 </xsd:annotation>
@@ -178,11 +178,30 @@ The name of the CouchbaseBucket object that determines what connection to monito
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="indexManager">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="ignoreViews" type="xsd:boolean" default="false" use="optional"/>
+                    <xsd:attribute name="ignorePrimary" type="xsd:boolean" default="false" use="optional"/>
+                    <xsd:attribute name="ignoreSecondary" type="xsd:boolean" default="false" use="optional"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
     <xsd:attributeGroup name="couchbase-repository-attributes">
         <xsd:attribute name="couchbase-template-ref" type="couchbaseTemplateRef" default="couchbaseTemplate">
             <xsd:annotation>
                 <xsd:documentation>
                     The reference to a CouchbaseTemplate. Will default to 'couchbaseTemplate'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="couchbase-index-manager-ref" type="couchbaseIndexManagerRef" default="couchbaseIndexManager">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The reference to an IndexManager. Will default to 'couchbaseIndexManager'.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -215,6 +234,17 @@ The name of the CouchbaseBucket object that determines what connection to monito
             <xsd:appinfo>
                 <tool:annotation kind="ref">
                     <tool:assignable-to type="org.springframework.data.couchbase.config.CouchbaseBucketFactoryBean"/>
+                </tool:annotation>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:union memberTypes="xsd:string"/>
+    </xsd:simpleType>
+
+    <xsd:simpleType name="couchbaseIndexManagerRef">
+        <xsd:annotation>
+            <xsd:appinfo>
+                <tool:annotation kind="ref">
+                    <tool:assignable-to type="org.springframework.data.couchbase.repository.support.IndexManager"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>

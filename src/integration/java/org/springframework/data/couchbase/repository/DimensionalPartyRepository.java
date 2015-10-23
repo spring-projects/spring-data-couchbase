@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 
-import org.springframework.data.couchbase.core.view.Dimensional;
+import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;

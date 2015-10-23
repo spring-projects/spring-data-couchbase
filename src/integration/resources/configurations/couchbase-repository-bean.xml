@@ -12,6 +12,8 @@
 
     <couchbase:template/>
 
+    <couchbase:indexManager/>
+
     <couchbase:repositories base-package="org.springframework.data.couchbase.repository.xmlconfig"/>
 
 </beans>

@@ -16,28 +16,21 @@
 
 package org.springframework.data.couchbase.config;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.util.StringUtils;
 
 /**
- * Parser for "<couchbase:template />" bean definitions.
- * <p/>
- * The outcome of this bean definition parser will be a constructed {@link CouchbaseTemplate}.
+ * The XML parser for a {@link IndexManager} definition.
  *
- * @author Michael Nitschinger
+ * @author Simon Baslé
  */
-public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTemplateParser.class);
+public class CouchbaseIndexManagerParser extends AbstractSingleBeanDefinitionParser {
 
   /**
    * Resolve the bean ID and assign a default if not set.
@@ -50,7 +43,7 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
   @Override
   protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
-    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_TEMPLATE;
+    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_INDEX_MANAGER;
   }
 
   /**
@@ -61,7 +54,7 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected Class getBeanClass(final Element element) {
-    return CouchbaseTemplate.class;
+    return IndexManager.class;
   }
 
   /**
@@ -72,32 +65,13 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    String clusterInfoRef = element.getAttribute("clusterInfo-ref");
-    String bucketRef = element.getAttribute("bucket-ref");
-    String converterRef = element.getAttribute("converter-ref");
-    String translationServiceRef = element.getAttribute("translation-service-ref");
+    boolean ignoreViews = Boolean.parseBoolean(element.getAttribute("ignoreViews"));
+    boolean ignorePrimary = Boolean.parseBoolean(element.getAttribute("ignorePrimary"));
+    boolean ignoreSecondary = Boolean.parseBoolean(element.getAttribute("ignoreSecondary"));
 
-    bean.addConstructorArgReference(StringUtils.hasText(clusterInfoRef) ? clusterInfoRef : BeanNames.COUCHBASE_CLUSTER_INFO);
-    bean.addConstructorArgReference(StringUtils.hasText(bucketRef) ? bucketRef : BeanNames.COUCHBASE_BUCKET);
-
-    if (StringUtils.hasText(converterRef)) {
-      bean.addConstructorArgReference(converterRef);
-    }
-
-    if (StringUtils.hasText(translationServiceRef)) {
-      bean.addConstructorArgReference(translationServiceRef);
-    }
-
-    String consistencyValue = element.getAttribute("consistency");
-    if (consistencyValue != null) {
-      try {
-        Consistency consistency = Consistency.valueOf(consistencyValue);
-        bean.addPropertyValue("defaultConsistency", consistency);
-      } catch (IllegalArgumentException e) {
-        //bad consistency, leave default and log
-        LOGGER.warn("Parsed bad consistency value " + consistencyValue + " in xml template configuration, using default");
-      }
-    }
+    bean.addConstructorArgValue(ignoreViews);
+    bean.addConstructorArgValue(ignorePrimary);
+    bean.addConstructorArgValue(ignoreSecondary);
   }
 
 }

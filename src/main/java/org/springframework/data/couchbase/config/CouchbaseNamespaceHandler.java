@@ -44,6 +44,7 @@ public class CouchbaseNamespaceHandler extends NamespaceHandlerSupport {
     registerBeanDefinitionParser("jmx", new CouchbaseJmxParser());
     registerBeanDefinitionParser("template", new CouchbaseTemplateParser());
     registerBeanDefinitionParser("translation-service", new CouchbaseTranslationServiceParser());
+    registerBeanDefinitionParser("indexManager", new CouchbaseIndexManagerParser());
   }
 
 }

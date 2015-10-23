@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
-import org.springframework.data.couchbase.core.view.Consistency;
+import org.springframework.data.couchbase.core.query.Consistency;
 
 @Configuration
 public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {

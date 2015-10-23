@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.geo.Point;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -50,6 +51,9 @@ public class N1qlCrudRepositoryTests {
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
 
+  @Autowired
+  private IndexManager indexManager;
+
   private PartyRepository partyRepository;
   private ItemRepository itemRepository;
 
@@ -58,8 +62,8 @@ public class N1qlCrudRepositoryTests {
 
   @Before
   public void setup() throws Exception {
-    partyRepository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(PartyRepository.class);
-    itemRepository = new CouchbaseRepositoryFactory(operationsMapping).getRepository(ItemRepository.class);
+    partyRepository = new CouchbaseRepositoryFactory(operationsMapping, indexManager).getRepository(PartyRepository.class);
+    itemRepository = new CouchbaseRepositoryFactory(operationsMapping, indexManager).getRepository(ItemRepository.class);
 
     itemRepository.save(item);
     partyRepository.save(party);

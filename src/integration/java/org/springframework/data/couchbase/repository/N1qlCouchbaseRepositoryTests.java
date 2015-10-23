@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -49,11 +50,14 @@ public class N1qlCouchbaseRepositoryTests {
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
 
+  @Autowired
+  private IndexManager indexManager;
+
   private PartyPagingRepository repository;
 
   @Before
   public void setup() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping);
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     repository = factory.getRepository(PartyPagingRepository.class);
   }
 

@@ -20,8 +20,8 @@ import java.util.List;
 
 import com.couchbase.client.java.view.ViewQuery;
 
-import org.springframework.data.couchbase.core.view.Query;
-import org.springframework.data.couchbase.core.view.View;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;

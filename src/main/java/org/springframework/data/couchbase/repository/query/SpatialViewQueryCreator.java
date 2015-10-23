@@ -20,18 +20,13 @@ import java.util.Iterator;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.view.SpatialViewQuery;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.view.Dimensional;
+import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.repository.query.support.GeoUtils;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.geo.Box;
-import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
-import org.springframework.data.geo.Polygon;
 import org.springframework.data.geo.Shape;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;

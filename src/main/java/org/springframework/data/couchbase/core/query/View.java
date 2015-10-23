@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.view;
+package org.springframework.data.couchbase.core.query;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
-import org.springframework.data.annotation.QueryAnnotation;
 
 /**
  * Annotation to support the use of Views with Couchbase.
