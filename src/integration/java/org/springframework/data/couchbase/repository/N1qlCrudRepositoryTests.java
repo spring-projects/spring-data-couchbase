@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,8 +58,12 @@ public class N1qlCrudRepositoryTests {
   private PartyRepository partyRepository;
   private ItemRepository itemRepository;
 
-  private static final Item item = new Item("itemNotParty", "short description");
-  private static final Party party = new Party("partyNotItem", "partyName", "short description", new Date(), 120, new Point(500, 500));
+  private static final String KEY_ITEM = "itemNotParty";
+  private static final String KEY_PARTY = "partyNotItem";
+  private static final String KEY_PARTY_KEYWORD = "partyHasKeyword";
+
+  private static final Item item = new Item(KEY_ITEM, "short description");
+  private static final Party party = new Party(KEY_PARTY, "partyName", "short description", new Date(), 120, new Point(500, 500));
 
   @Before
   public void setup() throws Exception {
@@ -71,8 +76,9 @@ public class N1qlCrudRepositoryTests {
 
   @After
   public void cleanUp() {
-    itemRepository.delete("itemNotParty");
-    partyRepository.delete("partyNotItem");
+    try { itemRepository.delete(KEY_ITEM); } catch (DocumentDoesNotExistException e) {}
+    try { partyRepository.delete(KEY_PARTY); } catch (DocumentDoesNotExistException e) {}
+    try { partyRepository.delete(KEY_PARTY_KEYWORD); } catch (DocumentDoesNotExistException e) {}
   }
 
   @Test
@@ -89,12 +95,12 @@ public class N1qlCrudRepositoryTests {
 
   @Test
   public void shouldSaveObjectWithN1qlKeywordField() {
-    Party party = new Party("partyHasKeyword", "party", "desc is a N1QL keyword", new Date(), 40, new Point(500, 500));
-    partyRepository.save(party);
+    Party partyHasKeyword = new Party(KEY_PARTY_KEYWORD, "party", "desc is a N1QL keyword", new Date(), 40, new Point(500, 500));
+    partyRepository.save(partyHasKeyword);
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
-    assertTrue(client.exists("partyHasKeyword"));
-    assertTrue(parties.contains(party));
+    assertTrue(client.exists(KEY_PARTY_KEYWORD));
+    assertTrue(parties.contains(partyHasKeyword));
     for (Object o : parties) {
       if (!(o instanceof Party)) {
         fail("expected only Party objects");

@@ -36,8 +36,10 @@ import java.util.Random;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
@@ -242,9 +244,11 @@ public class CouchbaseTemplateTests {
 		template.save(Arrays.asList(ff1, ff2));
 
 		N1qlQuery query = N1qlQuery.simple(select(i("value")) //"value" is a n1ql keyword apparently
-				.from(i(client.name()))
-				.where(x("type").eq(s("fullFragment"))
-				.and(x("criteria").gt(1))));
+						.from(i(client.name()))
+						.where(x("type").eq(s("fullFragment"))
+								.and(x("criteria").gt(1))),
+
+				N1qlParams.build().consistency(ScanConsistency.REQUEST_PLUS));
 
 		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class);
 		assertNotNull(fragments);
