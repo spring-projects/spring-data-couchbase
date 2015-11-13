@@ -106,8 +106,8 @@ public class RepositoryTemplateWiringTests {
     }
 
     @Override
-    public RepositoryOperationsMapping repositoryOperationsMapping() throws Exception {
-      return new RepositoryOperationsMapping(templateC())
+    public void configureRepositoryOperationsMapping(RepositoryOperationsMapping base) {
+      base.setDefault(templateC())
           .map(BucketBRepository.class, templateB())
           .mapEntity(Item.class, templateA());
     }

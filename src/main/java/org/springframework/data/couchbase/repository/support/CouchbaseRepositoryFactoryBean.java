@@ -54,7 +54,7 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
 
   public void setCouchbaseOperationsMapping(final RepositoryOperationsMapping mapping) {
     this.operationsMapping = mapping;
-    setMappingContext(operationsMapping.getDefault().getConverter().getMappingContext());
+    setMappingContext(operationsMapping.getMappingContext());
   }
 
   /**

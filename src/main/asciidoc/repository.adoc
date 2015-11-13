@@ -457,12 +457,12 @@ Provide the implementation and directly use `queryView` and `queryN1QL` methods 
 The Java Config version allows you to define multiple `Bucket` and `CouchbaseTemplate`, but in order to have different
 repositories use different underlying buckets/templates, you need to follow these steps:
 
- * in your `AbstractCouchbaseConfiguration` implementation, override the `repositoryOperationsMapping` bean method.
- * have it return a new `RepositoryOperationsMapping` (or reuse the `super()` one)
+ * in your `AbstractCouchbaseConfiguration` implementation, override the `configureRepositoryOperationsMapping` method.
+ * mutate the provided `RepositoryOperationsMapping` as needed (it defaults to mapping everything to the default template).
  * configure the mapping by chaining calls to `map`, `mapEntity` and `setDefault`.
    ** `map` maps a specific repository interface to the `CouchbaseOperations` it should use
    ** `mapEntity` maps all unmapped repositories of a domain type / entity class to a common `CouchbaseOperations`
-   ** finally the value passed to the constructor or `setDefault` maps all remaining unmapped repositories to a default
+   ** `setDefault` maps all remaining unmapped repositories to a default
    `CouchaseOperations` (the default, using `couchbaseTemplate` bean unless modified).
 
 The idea is that the framework will look for an entry corresponding to the repository's interface when instantiating it.
@@ -500,8 +500,8 @@ public class ConcreteCouchbaseConfig extends AbstractCouchbaseConfig {
 
   //... then finally make sure all repositories of Users will use it
   @Override
-  public RepositoryOperationsMapping repositoryOperationsMapping() throws Exception {
-    return super.repositoryOperationsMapping() //this is already using couchbaseTemplate as default
+  public void configureRepositoryOperationsMapping(RepositoryOperationsMapping baseMapping) {
+    baseMapping //this is already using couchbaseTemplate as default
       .mapEntity(User.class, userTemplate()); //every repository dealing with User will be backed by userTemplate()
   }
 }

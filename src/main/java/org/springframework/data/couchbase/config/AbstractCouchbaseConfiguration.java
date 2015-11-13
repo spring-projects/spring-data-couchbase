@@ -161,12 +161,27 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Creates the {@link RepositoryOperationsMapping} bean which will be used by the framework to choose which
    * {@link CouchbaseOperations} should back which {@link CouchbaseRepository}.
+   * Override {@link #configureRepositoryOperationsMapping(RepositoryOperationsMapping)} in order to customize this.
    *
    * @throws Exception
    */
   @Bean(name = BeanNames.REPO_OPERATIONS_MAPPING)
   public RepositoryOperationsMapping repositoryOperationsMapping() throws  Exception {
-    return new RepositoryOperationsMapping(couchbaseTemplate());
+    //create a base mapping that associates all repositories to the default template
+    RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate());
+    //let the user tune it
+    configureRepositoryOperationsMapping(baseMapping);
+    return baseMapping;
+  }
+
+  /**
+   * In order to customize the mapping between repositories/entity types to couchbase templates,
+   * use the provided mapping's api (eg. in order to have different buckets backing different repositories).
+   *
+   * @param mapping the default mapping (will associate all repositories to the default template).
+   */
+  protected void configureRepositoryOperationsMapping(RepositoryOperationsMapping mapping) {
+    //NO_OP
   }
 
   /**

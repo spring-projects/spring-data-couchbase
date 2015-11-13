@@ -20,6 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.util.Assert;
 
 /**
  * A utility class for configuration allowing to tell which {@link CouchbaseOperations} should be backing
@@ -33,12 +37,14 @@ public class RepositoryOperationsMapping {
   private Map<String, CouchbaseOperations> byRepository = new HashMap<String, CouchbaseOperations>();
   private Map<String, CouchbaseOperations> byEntity = new HashMap<String, CouchbaseOperations>();
 
+
   /**
    * Creates a new mapping, setting the default fallback to use by otherwise non mapped repositories.
    *
    * @param defaultOperations the default fallback couchbase operations.
    */
   public RepositoryOperationsMapping(CouchbaseOperations defaultOperations) {
+    Assert.notNull(defaultOperations);
     this.defaultOperations = defaultOperations;
   }
 
@@ -49,6 +55,7 @@ public class RepositoryOperationsMapping {
    * @return the mapping, for chaining.
    */
   public RepositoryOperationsMapping setDefault(CouchbaseOperations aDefault) {
+    Assert.notNull(aDefault);
     this.defaultOperations = aDefault;
     return this;
   }
@@ -83,6 +90,15 @@ public class RepositoryOperationsMapping {
    */
   public CouchbaseOperations getDefault() {
     return defaultOperations;
+  }
+
+  /**
+   * Get the {@link MappingContext} to use in repositories. It is extracted from the default {@link CouchbaseOperations}.
+   *
+   *  @return the mapping context.
+   */
+  public MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> getMappingContext() {
+    return defaultOperations.getConverter().getMappingContext();
   }
 
   /**

@@ -91,7 +91,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
     this.couchbaseOperationsMapping = couchbaseOperationsMapping;
     this.indexManager = indexManager;
-    mappingContext = this.couchbaseOperationsMapping.getDefault().getConverter().getMappingContext();
+    mappingContext = this.couchbaseOperationsMapping.getMappingContext();
     viewPostProcessor = ViewPostProcessor.INSTANCE;
 
     addRepositoryProxyPostProcessor(viewPostProcessor);
@@ -157,7 +157,6 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
     //for other repos, they might also need N1QL if they don't have only @View methods
     if (!needsN1ql) {
-
       for (Method method : metadata.getQueryMethods()) {
 
         boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
