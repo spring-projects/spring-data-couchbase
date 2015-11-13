@@ -16,8 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +68,7 @@ public class N1qlCouchbaseRepositoryTests {
       assertTrue(party.getAttendees() <= previousAttendance);
       previousAttendance = party.getAttendees();
     }
+    assertFalse("Expected to find several parties", previousAttendance == Long.MAX_VALUE);
   }
 
   @Test
@@ -81,6 +81,7 @@ public class N1qlCouchbaseRepositoryTests {
       }
       previousDesc = party.getDescription();
     }
+    assertNotNull("Expected to find several parties", previousDesc);
   }
 
   @Test
@@ -88,7 +89,7 @@ public class N1qlCouchbaseRepositoryTests {
     Pageable pageable = new PageRequest(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(14, page1.getTotalElements()); //13 generated parties + 1 specifically crafted party
+    assertEquals(13, page1.getTotalElements()); //12 generated parties + 1 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
   }
 }

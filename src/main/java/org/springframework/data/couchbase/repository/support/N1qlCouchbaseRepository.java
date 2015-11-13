@@ -19,8 +19,11 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 import java.util.List;
 
+import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.SimpleN1qlQuery;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
@@ -68,21 +71,24 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     Statement st = selectFrom.where(whereCriteria).orderBy(orderings);
 
     //fire the query
-    N1qlQuery query = N1qlQuery.simple(st);
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1qlQuery query = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
     return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
   }
 
   @Override
   public Page<T> findAll(Pageable pageable) {
     Assert.notNull(pageable);
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
 
     //prepare the count total query
     Statement countStatement = N1qlUtils.createCountQueryForEntity(getCouchbaseOperations().getCouchbaseBucket().name(),
         getCouchbaseOperations().getConverter(), getEntityInformation());
+    SimpleN1qlQuery countQuery = N1qlQuery.simple(countStatement, N1qlParams.build().consistency(consistency));
 
-    //TODO how to avoid to do that more than once?
-    //fire the count query and get total count
-    List<CountFragment> countResult = getCouchbaseOperations().findByN1QLProjection(N1qlQuery.simple(countStatement), CountFragment.class);
+        //TODO how to avoid to do that more than once?
+        //fire the count query and get total count
+        List < CountFragment > countResult = getCouchbaseOperations().findByN1QLProjection(countQuery, CountFragment.class);
     long totalCount = countResult == null || countResult.isEmpty() ? 0 : countResult.get(0).count;
 
     //prepare elements of the data query
@@ -94,7 +100,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     Statement pageStatement = selectFrom.where(whereCriteria).limit(pageable.getPageSize()).offset(pageable.getOffset());
 
     //fire the query
-    N1qlQuery query = N1qlQuery.simple(pageStatement);
+    N1qlQuery query = N1qlQuery.simple(pageStatement, N1qlParams.build().consistency(consistency));
     List<T> pageContent = getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
 
     //return the list as a Page
