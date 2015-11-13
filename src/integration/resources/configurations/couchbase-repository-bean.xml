@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
+       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <couchbase:env/>
+    <couchbase:cluster/>
+    <couchbase:clusterInfo/>
+    <couchbase:bucket/>
+
+    <couchbase:template/>
+
+    <couchbase:repositories base-package="org.springframework.data.couchbase.repository.xmlconfig"/>
+
+</beans>

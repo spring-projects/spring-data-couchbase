@@ -167,6 +167,27 @@ The name of the CouchbaseBucket object that determines what connection to monito
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:element name="repositories">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="repository:repositories">
+                    <xsd:attributeGroup ref="couchbase-repository-attributes"/>
+                    <xsd:attributeGroup ref="repository:repository-attributes"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:attributeGroup name="couchbase-repository-attributes">
+        <xsd:attribute name="couchbase-template-ref" type="couchbaseTemplateRef" default="couchbaseTemplate">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The reference to a CouchbaseTemplate. Will default to 'couchbaseTemplate'.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:attributeGroup>
+
     <xsd:simpleType name="converterRef">
         <xsd:annotation>
             <xsd:appinfo>
@@ -199,5 +220,4 @@ The name of the CouchbaseBucket object that determines what connection to monito
         </xsd:annotation>
         <xsd:union memberTypes="xsd:string"/>
     </xsd:simpleType>
-
 </xsd:schema>
