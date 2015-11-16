@@ -136,8 +136,8 @@ public class SimpleCouchbaseRepositoryTests {
       User user = repository.findByUsernameBadSelect("uname-1");
       fail("shouldFailFindByUsernameWithNoIdOrCas");
     } catch (CouchbaseQueryExecutionException e) {
-      assertTrue(e.getMessage().contains("_ID"));
-      assertTrue(e.getMessage().contains("_CAS"));
+      assertTrue("_ID expected in exception " + e, e.getMessage().contains("_ID"));
+      assertTrue("_CAS expected in exception " + e, e.getMessage().contains("_CAS"));
     } catch (Exception e) {
       fail("CouchbaseQueryExecutionException expected");
     }

@@ -12,13 +12,14 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 public class StringN1QlBasedQueryTest {
 
   private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
+  private static final EvaluationContext SPEL_EVALUATION_CONTEXT = new StandardEvaluationContext();
+
   private StringN1qlBasedQuery mockStringUnderscoreClass;
   private StringN1qlBasedQuery mockStringAtClass;
 
@@ -30,33 +31,30 @@ public class StringN1QlBasedQueryTest {
     N1qlSpelValues contextCountStringAtClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "@class", String.class, true);
 
     mockStringUnderscoreClass = mock(StringN1qlBasedQuery.class);
-    when(mockStringUnderscoreClass.parseSpel(anyString(), anyBoolean(), any(Object[].class))).thenCallRealMethod();
-    when(mockStringUnderscoreClass.evaluateSpelExpression(anyString(), anyBoolean(), any(Object[].class)))
+    when(mockStringUnderscoreClass.parseSpel(anyString(), anyBoolean(), any(Object[].class)))
         .thenAnswer(mockSpelEvaluation(contextStringUnderscoreClass, contextCountStringUnderscoreClass));
 
     mockStringAtClass = mock(StringN1qlBasedQuery.class);
-    when(mockStringAtClass.parseSpel(anyString(),anyBoolean(), any(Object[].class))).thenCallRealMethod();
-    when(mockStringAtClass.evaluateSpelExpression(anyString(), anyBoolean(), any(Object[].class)))
-      .thenAnswer(mockSpelEvaluation(contextStringAtClass, contextCountStringAtClass));
+    when(mockStringAtClass.parseSpel(anyString(),anyBoolean(), any(Object[].class)))
+        .thenAnswer(mockSpelEvaluation(contextStringAtClass, contextCountStringAtClass));
   }
 
   private static Answer<?> mockSpelEvaluation(final N1qlSpelValues spelValues, final N1qlSpelValues countSpelValues) {
     return new Answer<Object>() {
       @Override
       public Object answer(InvocationOnMock invocation) throws Throwable {
-        EvaluationContext context = new StandardEvaluationContext();
-        Expression expression = SPEL_PARSER.parseExpression((String) invocation.getArguments()[0]);
+        String statement = (String) invocation.getArguments()[0];
         boolean isCount = (Boolean) invocation.getArguments()[1];
         if (isCount)
-          return doEvaluate(context, expression, countSpelValues);
+          return doParse(statement, SPEL_PARSER, SPEL_EVALUATION_CONTEXT, countSpelValues);
         else
-          return doEvaluate(context, expression, spelValues);
+          return doParse(statement, SPEL_PARSER, SPEL_EVALUATION_CONTEXT, spelValues);
       }
     };
   }
 
   private static String spel(String expression) {
-    return "${" + expression + "}";
+    return "#{" + expression + "}";
   }
 
   @Test
@@ -100,21 +98,5 @@ public class StringN1QlBasedQueryTest {
     String parsed = mockStringUnderscoreClass.parseSpel(statement, true, new Object[0]);
 
     assertEquals("SELECT COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM `B` WHERE true", parsed);
-  }
-
-  @Test
-  public void testParsingOfSpel() {
-    StringN1qlBasedQuery mock = mock(StringN1qlBasedQuery.class);
-    when(mock.parseSpel(anyString(), anyBoolean(), any(Object[].class))).thenCallRealMethod();
-    when(mock.evaluateSpelExpression(anyString(), anyBoolean(), any(Object[].class)))
-      .thenReturn("EXPRESSION1", "EXPRESSION2isMuchMoreLongerThanTheTextItReplaces", "EXPRESSION3", "LASTEXPRESSION"
-      );
-
-    String spelStatement = "some statement with ${ad{\"toto\"}.lib} spel ${expression.parsed}${{several{close}}expressions}";
-    String expected = "some statement with EXPRESSION1 spel EXPRESSION2isMuchMoreLongerThanTheTextItReplacesEXPRESSION3";
-
-    String parsed = mock.parseSpel(spelStatement, false, new Object[0]);
-
-    assertEquals(expected, parsed);
   }
 }

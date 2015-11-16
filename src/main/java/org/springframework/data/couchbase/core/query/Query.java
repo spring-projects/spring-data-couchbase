@@ -34,7 +34,7 @@ import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
  * <p/>
  * In this case, one can use a placeholder notation of {@code ?0}, {@code ?1} and so on.
  * <p/>
- * Also, SpEL in the form <code>${spelExpression}</code> is supported, including the
+ * Also, SpEL in the form <code>#{spelExpression}</code> is supported, including the
  * following N1QL variables that will be replaced by the underlying {@link CouchbaseTemplate}
  * associated information:
  * <ul>

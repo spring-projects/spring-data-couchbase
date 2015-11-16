@@ -28,6 +28,7 @@ import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
+import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
@@ -36,8 +37,9 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
  * The statement can contain positional placeholders (eg. <code>name = $1</code>) that will map to the
  * method's parameters, in the same order.
  * <p/>
- * The statement can also contain SpEL expressions enclosed in <code>${}</code>.
- * <p/> There are couchbase-provided variables included for the {@link #SPEL_BUCKET bucket namespace},
+ * The statement can also contain SpEL expressions enclosed in <code>#{</code> and <code>}</code>.
+ * <p/>
+ * There are couchbase-provided variables included for the {@link #SPEL_BUCKET bucket namespace},
  * the {@link #SPEL_ENTITY ID and CAS fields} necessary for entity reconstruction
  * or a shortcut that covers {@link #SPEL_SELECT_FROM_CLAUSE SELECT AND FROM clauses},
  * along with a variable for {@link #SPEL_FILTER WHERE clause filtering} of the correct entity.
@@ -54,7 +56,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   /**
    * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the correct <code>SELECT x FROM y</code> clause needed
-   * for entity mapping. Eg. <code>"${{@value StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE}} WHERE test = true"</code>.
+   * for entity mapping. Eg. <code>"#{{@value StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE}} WHERE test = true"</code>.
    * Note this only makes sense once, as the beginning of the statement.
    */
   public static final String SPEL_SELECT_FROM_CLAUSE = "#" + SPEL_PREFIX + ".selectEntity";
@@ -62,21 +64,21 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   /**
    * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the (escaped) bucket name corresponding to the repository's
-   * entity. Eg. <code>"SELECT * FROM ${{@value StringN1qlBasedQuery#SPEL_BUCKET}} LIMIT 3"</code>.
+   * entity. Eg. <code>"SELECT * FROM #{{@value StringN1qlBasedQuery#SPEL_BUCKET}} LIMIT 3"</code>.
    */
   public static final String SPEL_BUCKET = "#" + SPEL_PREFIX + ".bucket";
 
   /**
    * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement. This will be replaced by the fields allowing to construct the repository's entity
-   * (SELECT clause). Eg. <code>"SELECT ${{@value StringN1qlBasedQuery#SPEL_ENTITY}} FROM test"</code>.
+   * (SELECT clause). Eg. <code>"SELECT #{{@value StringN1qlBasedQuery#SPEL_ENTITY}} FROM test"</code>.
    */
   public static final String SPEL_ENTITY = "#" + SPEL_PREFIX + ".fields";
 
   /**
    * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
    * annotation's inline statement WHERE clause. This will be replaced by the expression allowing to only select
-   * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND ${{@value StringN1qlBasedQuery#SPEL_FILTER}}"</code>.
+   * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND #{{@value StringN1qlBasedQuery#SPEL_FILTER}}"</code>.
    */
   public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
 
@@ -123,81 +125,28 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   /**
-   * Parse the statement to detect SPEL expressions (delimited by <code>${</code> and <code>}</code>)
-   * and replace said expressions with their corresponding values (see {@link #evaluateSpelExpression(String, boolean, Object[])}).
+   * Parse the statement to detect SPEL blocks (delimited by <code>#{</code> and <code>}</code>)
+   * and replace said expression blocks with their corresponding values.
    *
    * @param statement the full statement into which SpEL expressions should be parsed and replaced.
    * @param runtimeParameters the parameters passed into the method at runtime.
    * @return the statement with the SpEL interpreted and replaced by its values.
    */
   protected String parseSpel(String statement, boolean isCount, Object[] runtimeParameters) {
-    StringBuilder parsed = new StringBuilder(statement);
-
-    int currentIndex = 0;
-    while(currentIndex > -1 && currentIndex < parsed.length()) {
-      if (LOGGER.isTraceEnabled()) {
-        LOGGER.trace("Evaluating from index {}, {}", currentIndex, parsed.substring(currentIndex));
-      }
-      int opening = parsed.indexOf("${", currentIndex);
-      if (opening == -1) {
-        break;
-      } else {
-        //find the end of the ${ } expression, eat inner braces
-        int closing = opening + 2;
-        int curlyBraceOpenCnt = 1;
-
-        while (curlyBraceOpenCnt > 0) {
-          switch (parsed.charAt(closing++)) {
-            case '{':
-              curlyBraceOpenCnt++;
-              break;
-            case '}':
-              curlyBraceOpenCnt--;
-              break;
-            default:
-          }
-        }
-
-        //we're now at the end of the expression
-        //evaluate and replace
-        String expression = parsed.substring(opening + 2, closing - 1);
-        String replacement = evaluateSpelExpression(expression, isCount, runtimeParameters);
-
-        if (LOGGER.isTraceEnabled()) {
-          LOGGER.trace("Replacing SPEL \"{}\" with value \"{}\"", expression, replacement);
-        }
-
-        parsed.replace(opening, closing, replacement);
-
-        //move on
-        currentIndex = opening + replacement.length();
-      }
-    }
-    return parsed.toString();
-  }
-
-  /**
-   * This method is in charge of evaluating a single SPEL expression (as delimited by <code>${</code> and <code>}</code>)
-   * and returning the corresponding computed value.
-   *
-   * @param expression the SPEL expression.
-   * @param runtimeParameters the parameters using during method call.
-   * @return the corresponding value.
-   */
-  protected String evaluateSpelExpression(String expression, boolean isCount, Object[] runtimeParameters) {
     EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
-    Expression parsedExpression = parser.parseExpression(expression);
     N1qlSpelValues n1qlSpelValues = this.statementContext;
     if (isCount) {
       n1qlSpelValues = this.countContext;
     }
-
-    return doEvaluate(evaluationContext, parsedExpression, n1qlSpelValues);
+    return doParse(statement, parser, evaluationContext, n1qlSpelValues);
   }
 
-  protected static String doEvaluate(EvaluationContext context, Expression parsedExpression, N1qlSpelValues spelValues) {
-    context.setVariable(SPEL_PREFIX, spelValues);
-    return parsedExpression.getValue(context, String.class);
+  //this static method can be used to test the parsing behavior for Couchbase specific spel variables
+  //in isolation from the rest of the spel parser initialization chain.
+  protected static String doParse(String statement, SpelExpressionParser parser, EvaluationContext evaluationContext, N1qlSpelValues n1qlSpelValues) {
+    Expression parsedExpression = parser.parseExpression(statement, new TemplateParserContext());
+    evaluationContext.setVariable(SPEL_PREFIX, n1qlSpelValues);
+    return parsedExpression.getValue(evaluationContext, String.class);
   }
 
   @Override
@@ -228,25 +177,25 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public static final class N1qlSpelValues {
 
     /**
-     * <code>${{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
      * selectEntity</code> will be replaced by the SELECT-FROM clause corresponding to the entity. Use once at the beginning.
      */
     public final String selectEntity;
 
     /**
-     * <code>${{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
      * fields</code> will be replaced by the list of N1QL fields allowing to reconstruct the entity.
      */
     public final String fields;
 
     /**
-     * <code>${{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
      * bucket</code> will be replaced by (escaped) bucket name in which the entity is stored.
      */
     public final String bucket;
 
     /**
-     * <code>${{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
      * filter</code> will be replaced by an expression allowing to select only entries matching the entity in a WHERE clause.
      */
     public final String filter;
