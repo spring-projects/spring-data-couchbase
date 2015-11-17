@@ -82,6 +82,7 @@ public class Party {
     return "Party{" +
         "name='" + name + '\'' +
         ", eventDate=" + eventDate +
+        ", location=" + location +
         '}';
   }
 }

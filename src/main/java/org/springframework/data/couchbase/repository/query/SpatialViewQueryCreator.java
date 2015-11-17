@@ -16,18 +16,30 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.view.SpatialViewQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Dimensional;
+import org.springframework.data.couchbase.repository.query.support.AwtPointInShapeEvaluator;
 import org.springframework.data.couchbase.repository.query.support.GeoUtils;
+import org.springframework.data.couchbase.repository.query.support.PointInShapeEvaluator;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Box;
+import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
+import org.springframework.data.geo.Polygon;
 import org.springframework.data.geo.Shape;
+import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
@@ -58,7 +70,9 @@ import org.springframework.data.repository.query.parser.PartTree;
  * </p>
  * Additionally, {@link PartTree#isLimiting()} will trigger usage of {@link SpatialViewQuery#limit(int) limit}.
  */
-public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQuery, SpatialViewQuery> {
+public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQueryCreator.SpatialViewQueryWrapper, SpatialViewQuery> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(SpatialViewQueryCreator.class);
 
   private final SpatialViewQuery query;
   private final PartTree tree;
@@ -67,6 +81,7 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
   private final int dimensions;
   private final JsonArray startRange;
   private final JsonArray endRange;
+  private final List<AbstractFalsePositiveEvaluator> evaluators;
 
   public SpatialViewQueryCreator(int dimensions, PartTree tree, ParameterAccessor parameters, SpatialViewQuery query,
                                  CouchbaseConverter converter) {
@@ -77,6 +92,7 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
     this.dimensions = dimensions;
     this.startRange = JsonArray.create();
     this.endRange = JsonArray.create();
+    this.evaluators = new ArrayList<AbstractFalsePositiveEvaluator>();
   }
 
   @Override
@@ -85,10 +101,10 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
 
     switch (part.getType()) {
       case WITHIN:
-        applyWithin(startRange, endRange, iterator);
+        applyWithin(startRange, endRange, iterator, evaluators, part.getProperty());
         break;
       case NEAR:
-        applyNear(startRange, endRange, iterator);
+        applyNear(startRange, endRange, iterator, evaluators, part.getProperty());
         break;
       case GREATER_THAN:
       case GREATER_THAN_EQUAL:
@@ -125,20 +141,28 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
     }
   }
 
-  private static void applyWithin(JsonArray startRange, JsonArray endRange, Iterator<Object> iterator) {
+  private static void applyWithin(JsonArray startRange, JsonArray endRange, Iterator<Object> iterator,
+                                  List<AbstractFalsePositiveEvaluator> evaluators, PropertyPath path) {
     if (!iterator.hasNext()) {
       throw new IllegalArgumentException("Not enough parameters for within");
     }
 
     Object next = iterator.next();
-    if (next instanceof Shape) {
-      GeoUtils.convertShapeTo2DRanges(startRange, endRange, (Shape) next);
+    if (next instanceof Circle) {
+      evaluators.add(new CircleFalsePositiveEvaluator(path, (Circle) next));
+      GeoUtils.convertShapeTo2DRanges(startRange, endRange, (Circle) next);
+    } else if (next instanceof Polygon) {
+      evaluators.add(new PolygonFalsePositiveEvaluator(path, (Polygon) next));
+      GeoUtils.convertShapeTo2DRanges(startRange, endRange, (Polygon) next);
+    } else if (next instanceof Box) {
+      GeoUtils.convertShapeTo2DRanges(startRange, endRange, (Box) next);
     } else if (next instanceof Point) {
       //expect another point for the other corner of the bounding box
       Point northwest = (Point) next;
       Point southeast = checkedNext(iterator, Point.class, "Cannot compute a bounding box for within, 2 Point needed");
       GeoUtils.convertPointsTo2DRanges(startRange, endRange, true, northwest, southeast);
     } else if (next instanceof Point[]) {
+      evaluators.add(new PointArrayFalsePositiveEvaluator(path, (Point[]) next));
       GeoUtils.convertPointsTo2DRanges(startRange, endRange, false, (Point[]) next);
     }  else if (next instanceof JsonArray) { //discouraged, leaks Couchbase classes into signatures
       JsonArray first = (JsonArray) next;
@@ -151,20 +175,20 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
         endRange.add(o);
       }
     } else {
-      //TODO Collection<Point>: same as polygon
-      //TODO Collection<Double/Number>: one collection per range
-      //TODO Number[]: one array per range
       throw new IllegalArgumentException("Unsupported parameter type for within: " + next.getClass());
     }
   }
 
-  private static void applyNear(JsonArray startRange, JsonArray endRange, Iterator<Object> iterator) {
+  private static void applyNear(JsonArray startRange, JsonArray endRange, Iterator<Object> iterator,
+                                List<AbstractFalsePositiveEvaluator> evaluators, PropertyPath path) {
     if (!iterator.hasNext()) {
       throw new IllegalArgumentException("Not enough parameters for near");
     }
 
     Point near = checkedNext(iterator, Point.class, "Near queries need a Point as first argument");
     Distance distance = checkedNext(iterator, Distance.class, "Near queries need a maximum Distance as second argument");
+
+    evaluators.add(new CircleFalsePositiveEvaluator(path, new Circle(near, distance)));
 
     double[] boundingBox = GeoUtils.getBoundingBoxForNear(near, distance);
 
@@ -215,7 +239,7 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
   }
 
   @Override
-  protected SpatialViewQuery complete(SpatialViewQuery criteria, Sort sort) {
+  protected SpatialViewQueryWrapper complete(SpatialViewQuery criteria, Sort sort) {
     if (sort != null) {
       throw new IllegalArgumentException("Sort is not supported on Spatial View queries");
     }
@@ -225,11 +249,113 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
     }
 
     if (startRange.isEmpty() && endRange.isEmpty()) {
-      return query;
+      return new SpatialViewQueryWrapper(query, evaluators);
     }
 
     completeRangeIfNeeded(startRange, dimensions);
     completeRangeIfNeeded(endRange, dimensions);
-    return query.range(startRange, endRange);
+    return new SpatialViewQueryWrapper(query.range(startRange, endRange), evaluators);
   }
+
+
+  public static abstract class AbstractFalsePositiveEvaluator {
+    protected static final PointInShapeEvaluator POINT_IN_SHAPE = new AwtPointInShapeEvaluator();
+    protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractFalsePositiveEvaluator.class);
+
+    protected final PropertyPath propertyPath;
+
+    protected AbstractFalsePositiveEvaluator(PropertyPath path) {
+      this.propertyPath = path;
+    }
+
+    public boolean evaluate(Object original, BeanWrapper bean) {
+      Object value = bean.getPropertyValue(propertyPath.toDotPath());//TODO use the aliases?
+      if (value instanceof Point) {
+        return evaluateCriteria((Point) value);
+      } else if (value == null) {
+        LOGGER.trace("Cannot find a Point (was null) for attribute {}, object is {}", propertyPath.toDotPath(), original);
+        return false;
+      } else {
+        LOGGER.trace("Cannot find a Point (was {}) for attribute {}, object is {}", value.getClass().getName(),
+            propertyPath.toDotPath(), original);
+        return false;
+      }
+    }
+
+    protected abstract boolean evaluateCriteria(Point p);
+  }
+
+  public static class CircleFalsePositiveEvaluator extends AbstractFalsePositiveEvaluator {
+    private final Circle criteria;
+
+    public CircleFalsePositiveEvaluator(PropertyPath path, Circle criteria) {
+      super(path);
+      this.criteria = criteria;
+    }
+
+    protected boolean evaluateCriteria(Point p) {
+      return POINT_IN_SHAPE.pointInCircle(p, criteria);
+    }
+  }
+
+  public static class PolygonFalsePositiveEvaluator extends AbstractFalsePositiveEvaluator {
+    private final Polygon criteria;
+
+    public PolygonFalsePositiveEvaluator(PropertyPath path, Polygon criteria) {
+      super(path);
+      this.criteria = criteria;
+    }
+
+    @Override
+    protected boolean evaluateCriteria(Point p) {
+      return POINT_IN_SHAPE.pointInPolygon(p, criteria);
+    }
+  }
+
+  public static final class PointArrayFalsePositiveEvaluator extends AbstractFalsePositiveEvaluator {
+    private final Point[] criteria;
+
+    public PointArrayFalsePositiveEvaluator(PropertyPath path, Point[] criteria) {
+      super(path);
+      this.criteria = criteria;
+    }
+
+    @Override
+    protected boolean evaluateCriteria(Point p) {
+      return POINT_IN_SHAPE.pointInPolygon(p, criteria);
+    }
+  }
+
+
+  public static class SpatialViewQueryWrapper {
+    private SpatialViewQuery query;
+    private List<AbstractFalsePositiveEvaluator> eliminators;
+
+    public SpatialViewQueryWrapper(SpatialViewQuery query, List<AbstractFalsePositiveEvaluator> eliminators) {
+      this.query = query;
+      this.eliminators = eliminators;
+    }
+
+    public SpatialViewQuery getQuery() {
+      return query;
+    }
+
+    public <T> List<T> eliminate(List<T> objects) {
+      List<T> result = new ArrayList<T>(objects.size());
+      for (T object : objects) {
+        BeanWrapper bean = new BeanWrapperImpl(object);
+        boolean pass = true;
+        for (AbstractFalsePositiveEvaluator eliminator : eliminators) {
+          pass = pass && eliminator.evaluate(object, bean);
+        }
+        if (pass) {
+          result.add(object);
+        } else {
+          LOGGER.trace("Object {} was a false positive in geo query", object);
+        }
+      }
+      return result;
+    }
+  }
+
 }

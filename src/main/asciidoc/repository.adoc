@@ -350,7 +350,7 @@ Multi-dimensionality concept is interesting, it means you can craft views that a
 
 Couchbase's Spatial View support querying through ranges that represent "lowest" and "highest" values in each dimension, so for 2D it represents a bounding box, with the southwest-most point [x,y] as `startRange` and northeast-most point [x,y] as `endRange`.
 
-WARNING: Some forms of Geographical queries can only be approximated, for instance querying with a `Polygon` or a `Circle` can only be approximated to the containing bounding `Box` (in DEBUG log level this will be made explicit with each such query).
+TIP: Even though Couchbase Spatial View engine only support Bounding Box querying, the Spring Data Couchbase framework will attempt to remove false positives for you when querying with a `Polygon` or a `Circle` (in TRACE log level each false positive elimination will be logged). Note that a point on the edge of a `Polygon` is *not* considered within (whereas it is when dealing with a `Circle`).
 
 The following query derivation keywords and parameters relative to geographical data in Spring Data are supported for Spatial Views:
 
@@ -367,67 +367,7 @@ The following query derivation keywords and parameters relative to geographical 
 
 IMPORTANT: For "within" types of queries, the expected parameters map to geographical 2D data. Classes from the `org.springframework.data.geo` package are usually expected, but Polygon and Boxes can also be expressed as arrays of `Point`s.
 
-TIP: Further dimensions are supported through keywords other than Within and Near and require numerical input.
-
-=== Removing False Positives
-`Circle` and `Polygon` will be approximated to their surrounding bounding `Box`, but we provide `PointInShapeEvaluator` (`AwtPointInShapeEvaluator`) to be used on the results if you want to remove false positives.
-
-Here is an example of a repository using a spatial view with 3 dimensions (x, y and opening hours).
-Second example demonstrates querying it within a `Polygon` then removing false positives in a second pass:
-
-.Example of dimensional repository
-====
-[source,java]
-----
-public interface StoreRepository extends PagingAndSortingRepository<Store, String> {
-
-  @Dimensional(designDocument = "store", spatialViewName = "byLocationOpening", dimensions = 3)
-  public List<Store> findByLocationWithinAndOpenBefore(Polygon zone, Integer minOpeningHourMinute);
-
-}
-----
-====
-
-.Query a spatial view and eliminate false positives on the geo aspect
-====
-[source,java]
-----
-// Load the bean, or @Autowire it
-StoreRepository repo = ctx.getBean(StoreRepository.class);
-
-// Prepare an arbitrary polygon (a triangle)
-Polygon zone = new Polygon(
-  new Point(2.0, 0.0),
-  new Point(4.0, 0.0),
-  new Point(3.0, -5.5),
-  new Point(2.0, 0.0)); //we explicitly closed the polygon
-
-// Find all stores located inside the triangle.
-// Use 3rd dimension to also query on opening hours, making sure one can go there at 8:00am
-List<Store> stores = repo.findByLocationWithinAndOpenBefore(zone, 800);
-
-// The view will return all matching stores that are actually within the enclosing rectangle around the polygon
-// So we remove false positives
-PointInShapeEvaluator evaluator = new AwtPointInShapeEvaluator();
-List<Store> truePositives = new ArrayList<Store>(stores.size());
-for (Store store : stores) {
-  if (evaluator.pointInPolygon(store.getLocation(), zone)) {
-    truePositives.add(store);
-  } //else this is a false positive
-}
-
-// Alternatively, use "removeFalsePositives" to get the list right away.
-truePositives = evaluator.removeFalsePositives(stores,
-  //this method needs a Converter to know where to find the location
-  new Converter<Store, Point>() {
-    @Override
-    public Point convert(Store source) {
-      return source.getLocation();
-    }
-  },
-  zone);
-----
-====
+Further dimensions are supported through keywords other than Within and Near and require numerical input.
 
 [[couchbase.repository.consistency]]
 == Querying with consistency

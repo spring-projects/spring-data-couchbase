@@ -83,7 +83,15 @@ public class DimensionalQueryTests {
       assertTrue(expectedKeys.contains(party.getKey()));
     }
 
+    //with this one, testparty-2 is within the bounding box but not in correct distance
     parties = repository.findByLocationNear(new Point(0, 0), new Distance(2.5));
+    assertEquals(2, parties.size());
+    for (Party party : parties) {
+      assertTrue(expectedKeys.contains(party.getKey()));
+    }
+
+    //here we adjust the distance so that testparty-2 falls just on the edge
+    parties = repository.findByLocationNear(new Point(0, 0), new Distance(2.8284271247461903));
     expectedKeys.add("testparty-2");
     assertEquals(3, parties.size());
     for (Party party : parties) {
@@ -125,17 +133,19 @@ public class DimensionalQueryTests {
 
   @Test
   public void testByLocationInCircle() {
-    Circle zone1 = new Circle(new Point(-5,5), new Distance(5.5));
-    Circle zone2 = new Circle(new Point(6, -6), new Distance(10));
+    Circle zoneBboxFalse = new Circle(new Point(-5,5), new Distance(5.5));
+    Circle zoneEdge = new Circle(new Point(-5, 0), new Distance(5));
+    Circle zoneInside = new Circle(new Point(6, -6), new Distance(10));
     Circle zoneEmpty = new Circle(new Point(6,6), new Distance(3));
 
-    List<Party> parties = repository.findByLocationWithin(zone1);
+    List<Party> parties = repository.findByLocationWithin(zoneBboxFalse);
+    assertEquals(0, parties.size());
 
+    parties = repository.findByLocationWithin(zoneEdge);
     assertEquals(1, parties.size());
     assertEquals("testparty-0", parties.get(0).getKey());
 
-    parties = repository.findByLocationWithin(zone2);
-
+    parties = repository.findByLocationWithin(zoneInside);
     assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmpty);
@@ -163,14 +173,22 @@ public class DimensionalQueryTests {
 
   @Test
   public void testByLocationInPolygon() {
-    //bounding box of (-10.5, -0.5),(0.5, 10.5)
-    Polygon zone1 = new Polygon(
-        new Point(-10.5, -0.5),
-        new Point(-10.5, 10.5),
-        new Point(0.5, 10.5),
-        new Point(0.4, 1));
+    //slightly skewed square triangle that cuts just short of (0,0)
+    //bounding box of (-1,-1),(0.5,1)
+    Polygon zoneFalsePositive = new Polygon(
+        new Point(-1, 1),
+        new Point(0.5, 1),
+        new Point(-1, -1)
+    );
+    //square triangle that comes through (0,0)
+    //bounding box of (-1,-1),(1,1)
+    Polygon zoneEdge = new Polygon(
+        new Point(-1, 1),
+        new Point(1, 1),
+        new Point(-1, -1)
+    );
     //bounding box of (-4, -16),(16,4)
-    Polygon zone2 = new Polygon(
+    Polygon zoneWithin = new Polygon(
         new Point(-4, -10),
         new Point(-3, 4),
         new Point(14, 2),
@@ -186,13 +204,13 @@ public class DimensionalQueryTests {
         new Point(6, 5),
         new Point(6, 3));
 
-    List<Party> parties = repository.findByLocationWithin(zone1);
+    List<Party> parties = repository.findByLocationWithin(zoneFalsePositive);
+    assertEquals("points outside a polygon but within bounding box shouldn't be considered within", 0, parties.size());
 
-    assertEquals(1, parties.size());
-    assertEquals("testparty-0", parties.get(0).getKey());
+    parties = repository.findByLocationWithin(zoneEdge);
+    assertEquals("point on edge of a polygon shouldn't be considered within", 0, parties.size());
 
-    parties = repository.findByLocationWithin(zone2);
-
+    parties = repository.findByLocationWithin(zoneWithin);
     assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmpty);

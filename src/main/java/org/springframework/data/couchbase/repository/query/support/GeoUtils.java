@@ -34,8 +34,6 @@ import org.springframework.data.geo.Shape;
  */
 public class GeoUtils {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GeoUtils.class);
-
   /**
    * Computes the bounding box approximation for a "near" query (max distance from a point of origin).
    *
@@ -46,7 +44,6 @@ public class GeoUtils {
    */
   public static double[] getBoundingBoxForNear(Point origin, Distance distance) {
     if (origin == null || distance == null) throw new NullPointerException("Origin and distance required");
-    warnBoundingBoxApproximation("near a Point (within Distance)");
 
     //since maxDistance COULD be negative, we have to make sure we have correct min/max
     double maxDistance = Math.abs(distance.getNormalizedValue());
@@ -90,7 +87,6 @@ public class GeoUtils {
       endRange.add(points[1].getX()).add(points[1].getY());
     } else {
       //this is like a polygon, find the bounding box
-      warnBoundingBoxApproximation("within a sequence of Points (polygon)");
       //find the lowest and highest X and Y to get the bounding box
       double xMin = Double.POSITIVE_INFINITY;
       double yMin = Double.POSITIVE_INFINITY;
@@ -128,7 +124,6 @@ public class GeoUtils {
           .add(box.getSecond().getX())
           .add(box.getSecond().getY());
     } else if (shape instanceof Polygon) {
-      warnBoundingBoxApproximation("within a Polygon");
       //find the lowest and highest X and Y to get the bounding box
       double xMin = Double.POSITIVE_INFINITY;
       double yMin = Double.POSITIVE_INFINITY;
@@ -146,7 +141,6 @@ public class GeoUtils {
       startRange.add(xMin).add(yMin);
       endRange.add(xMax).add(yMax);
     } else if (shape instanceof Circle) {
-      warnBoundingBoxApproximation("within a Circle");
       //here the bounding box is the box that contains the circle
       Circle circle = (Circle) shape;
       Point center = circle.getCenter();
@@ -161,13 +155,6 @@ public class GeoUtils {
       endRange.add(xMax).add(yMax);
     } else {
       throw new IllegalArgumentException("Unsupported shape " + shape.getClass().getName());
-    }
-  }
-
-  private static void warnBoundingBoxApproximation(String kind) {
-    if (LOGGER.isDebugEnabled()) {
-      LOGGER.debug("Spatial View queries " + kind + " are made using a bounding box approximation," +
-          "you probably want to remove false positives by applying a PointInShapeEvaluator");
     }
   }
 }

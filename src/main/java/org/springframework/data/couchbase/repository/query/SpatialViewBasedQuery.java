@@ -16,14 +16,26 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.couchbase.client.java.view.SpatialViewQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Dimensional;
+import org.springframework.data.couchbase.repository.query.support.GeoUtils;
+import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
 /**
@@ -64,17 +76,20 @@ public class SpatialViewBasedQuery implements RepositoryQuery {
     SpatialViewQueryCreator creator = new SpatialViewQueryCreator(dimensions,
         tree, new ParametersParameterAccessor(method.getParameters(), runtimeParams),
         baseSpatialQuery, operations.getConverter());
-    SpatialViewQuery finalQuery = creator.createQuery();
+    SpatialViewQueryCreator.SpatialViewQueryWrapper finalQuery = creator.createQuery();
 
     //execute the spatial query
     return execute(finalQuery);
   }
 
-  protected Object execute(SpatialViewQuery query) {
+  protected Object execute(SpatialViewQueryCreator.SpatialViewQueryWrapper query) {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Executing spatial view query: " + query.toString());
+      LOG.debug("Executing spatial view query: " + query.getQuery().toString());
     }
-    return operations.findBySpatialView(query, method.getEntityInformation().getJavaType());
+
+    return query.eliminate(
+        operations.findBySpatialView(query.getQuery(), method.getEntityInformation().getJavaType())
+    );
   }
 
   @Override
