@@ -21,8 +21,8 @@
 
         <dist.key>DATACOUCH</dist.key>
 
-        <couchbase>2.2.0</couchbase>
-        <couchbase.osgi>2.2.0</couchbase.osgi>
+        <couchbase>2.2.2</couchbase>
+        <couchbase.osgi>2.2.2</couchbase.osgi>
         <jackson>2.6.0</jackson>
         <springdata.commons>1.11.0.BUILD-SNAPSHOT</springdata.commons>
         <validation>1.0.0.GA</validation>

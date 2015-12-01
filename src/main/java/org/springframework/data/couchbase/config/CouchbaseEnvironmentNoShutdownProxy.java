@@ -48,6 +48,11 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   //===== DELEGATION METHODS =====
 
   @Override
+  public Observable<Boolean> shutdownAsync() {
+    return delegate.shutdownAsync();
+  }
+
+  @Override
   public EventLoopGroup ioPool() {
     return delegate.ioPool();
   }
@@ -155,6 +160,16 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
+  public int dcpConnectionBufferSize() {
+    return delegate.dcpConnectionBufferSize();
+  }
+
+  @Override
+  public double dcpConnectionBufferAckThreshold() {
+    return delegate.dcpConnectionBufferAckThreshold();
+  }
+
+  @Override
   public int kvEndpoints() {
     return delegate.kvEndpoints();
   }
@@ -247,6 +262,11 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public NetworkLatencyMetricsCollector networkLatencyMetricsCollector() {
     return delegate.networkLatencyMetricsCollector();
+  }
+
+  @Override
+  public int socketConnectTimeout() {
+    return delegate.socketConnectTimeout();
   }
 
   @Override
