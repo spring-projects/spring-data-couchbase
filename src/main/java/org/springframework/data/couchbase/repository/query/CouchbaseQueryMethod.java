@@ -1,5 +1,5 @@
 /*
- * Copyright 2013, 2014 the original author or authors.
+ * Copyright 2013-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import java.lang.reflect.Method;
+
 import org.springframework.data.couchbase.core.view.View;
-import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.QueryMethod;
-
-import java.lang.reflect.Method;
 
 /**
  * Represents a query method with couchbase extensions.
@@ -32,15 +30,11 @@ import java.lang.reflect.Method;
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
-  private final Method method;
-  private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
+  private final View viewAnnotation;
 
-  public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata,
-    MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
-    super(method, metadata);
-
-    this.method = method;
-    this.mappingContext = mappingContext;
+  public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory) {
+    super(method, metadata, factory);
+    this.viewAnnotation = method.getAnnotation(View.class);
   }
 
   /**
@@ -53,14 +47,11 @@ public class CouchbaseQueryMethod extends QueryMethod {
   }
 
   /**
-   * Returns the @View annoation if set, null otherwise.
+   * Returns the @View annotation if set, null otherwise.
    *
    * @return the view annotation of present.
    */
   public View getViewAnnotation() {
-    return method.getAnnotation(View.class);
+    return viewAnnotation;
   }
-
-
-
 }

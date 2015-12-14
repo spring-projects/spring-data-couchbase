@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -128,9 +129,16 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    * Currently, only views are supported. N1QL support to be added.
    */
   private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
-    @Override
-    public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, NamedQueries namedQueries) {
-      CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, mappingContext);
+  	
+  	/* 
+  	 * (non-Javadoc)
+  	 * @see org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(java.lang.reflect.Method, org.springframework.data.repository.core.RepositoryMetadata, org.springframework.data.projection.ProjectionFactory, org.springframework.data.repository.core.NamedQueries)
+  	 */
+  	@Override
+  	public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
+  			NamedQueries namedQueries) {
+  	
+      CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory);
       return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
     }
   }
