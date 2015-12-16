@@ -106,8 +106,11 @@ Now that's awesome! Just by defining an interface we get full CRUD functionality
 
 While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next sections.
 
+[[couchbase.repository.querying]]
+== Repositories and Querying
+
 [[couchbase.repository.n1ql]]
-= N1QL based querying
+=== N1QL based querying
 As of version `4.0`, Couchbase Server ships with a new query language called `N1QL`. In `Spring-Data-Couchbase 2.0`, N1QL is the default way of doing queries and will allow you to fully derive queries from a method name.
 
 Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored.
@@ -201,7 +204,7 @@ TIP: You can also use `Page` and `Slice` as method return types as well with a N
 The second way of querying, supported also in older versions of Couchbase Server, is the View-backed one that we'll see in the next section.
 
 [[couchbase.repository.views]]
-== Backing Views
+=== Backing Views
 This is the historical way of secondary indexing in Couchbase. Views are much more limited in terms of querying flexibility, and each custom method may very well need its own backing view, to be prepared in the cluster beforehand.
 
 We'll only cover views to the extent to which they are needed, if you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase Java SDK manual.
@@ -232,7 +235,7 @@ Note that the important part in this map function is to only include the documen
 Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(null, null)` in the view: the document id is always sent over to the client implicitly, so we can shave off a view bytes in our view by not duplicating the id. If you use `emit(meta.id, null)` it won't hurt much too.
 
 [[couchbase.repository.indexing]]
-== Automatic Index Management
+=== Automatic Index Management
 We've seen that the repositories default methods can be backed by two broad kind of features: views and N1QL (in the case of paging and sorting).
 In order for the CRUD operations to work, the adequate view must have been created beforehand, and this is usually left for the user to do because view creation (and index creation) is an expensive operation that can take quite some time if the quantity of documents is high.
 
@@ -341,7 +344,7 @@ WARNING: Compound keys are not supported, and neither are Or composition, Ignore
 Last method of querying in Couchbase (from Couchbase Server 4.0, like for N1QL) is querying for dimensional data through *Spatial Views*, as we'll see in the next section.
 
 [[couchbase.repository.spatial]]
-== Spatial View based querying
+=== Spatial View based querying
 Couchbase can accommodate multi-dimensional data and query it with the use of special views, the Spatial Views. Such views allows to perform multi-dimensional queries, not only limited to geographical data.
 
 Integration of these views in `Spring Data Couchbase` repositories is done through the `@Dimensional` annotation. Like `@View`, the annotation allows to indicate usage of a Spatial View as the backing mechanism for the annotated method. The annotation requires you to give the name of the `designDocument` and the `spatialViewName` to use. Additionally, you should specify the number of `dimensions` the view works with (unless it is the default classical 2).
@@ -370,21 +373,21 @@ IMPORTANT: For "within" types of queries, the expected parameters map to geograp
 Further dimensions are supported through keywords other than Within and Near and require numerical input.
 
 [[couchbase.repository.consistency]]
-== Querying with consistency
+=== Querying with consistency
 One aspect that is often needed and doesn't have a direct equivalent in the Spring Data query derivation mechanism is
 `query consistency`. In both view-based queries and N1QL, you have this concept that the secondary index can return stale
 data, because the latest version hasn't been indexed yet. This gives the best performance at the expense of consistency.
 
 If one wants to have stronger consistency, there are two possibilities described in the next sections.
 
-=== Configure it on a global level
+==== Configure it on a global level
 The global consistency used by generated queries (views and N1QL) is defined at the template level,
 using `Consistency` enumeration (like `Consistency.READ_YOUR_OWN_WRITE`):
 
  - in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
  - in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
 
-=== Provide an implementation
+==== Provide an implementation
 Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency
 (see <<repositories.single-repository-behaviour>>).
 
