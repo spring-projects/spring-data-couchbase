@@ -1,6 +1,26 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.0.0.RC1 (2015-12-22)
+-----------------------------------------
+* DATACOUCH-159 - Response time degradation on document conversion with a lot of longs inside.
+* DATACOUCH-172 - PagingAndSorting doesn't use configurable consistency.
+* DATACOUCH-174 - Fix xml creation of repositories.
+* DATACOUCH-158 - Take expiry as a long+TimeUnit in Document annotation.
+* DATACOUCH-168 - Support non-numerical return types for view reduce.
+* DATACOUCH-170 - N1QL documentation fixes.
+* DATACOUCH-173 - some integration tests don't pass on empty bucket.
+* DATACOUCH-176 - Automatic false positive elimination in geo queries.
+* DATACOUCH-177 - Upgrade SDK dependency to 2.2.2.
+* DATACOUCH-138 - Add support for paging and sorting.
+* DATACOUCH-165 - Add support for GeoSpatial querying using views.
+* DATACOUCH-166 - Support SpEL in inline N1QL queries.
+* DATACOUCH-169 - Offer main indexes creation as an option in the configuration.
+* DATACOUCH-163 - integration test data generation should take typeKey into account.
+* DATACOUCH-164 - SDC 2.0.0 must rely on stable version of the SDK.
+* DATACOUCH-183 - Release 2.0 RC1.
+
+
 Changes in version 1.4.2.RELEASE (2015-12-18)
 ---------------------------------------------
 * DATACOUCH-182 - Release 1.4.2 (Gosling).
