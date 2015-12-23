@@ -54,6 +54,8 @@ public final class DateConverters {
     converters.add(CalendarToLongConverter.INSTANCE);
     converters.add(LongToDateConverter.INSTANCE);
     converters.add(LongToCalendarConverter.INSTANCE);
+    converters.add(IntegerToDateConverter.INSTANCE);
+    converters.add(IntegerToCalendarConverter.INSTANCE);
 
     if (JODA_TIME_IS_PRESENT) {
       converters.add(LocalDateToLongConverter.INSTANCE);
@@ -64,6 +66,10 @@ public final class DateConverters {
       converters.add(LongToLocalDateTimeConverter.INSTANCE);
       converters.add(LongToDateTimeConverter.INSTANCE);
       converters.add(LongToDateMidnightConverter.INSTANCE);
+      converters.add(IntegerToLocalDateConverter.INSTANCE);
+      converters.add(IntegerToLocalDateTimeConverter.INSTANCE);
+      converters.add(IntegerToDateTimeConverter.INSTANCE);
+      converters.add(IntegerToDateMidnightConverter.INSTANCE);
     }
 
     return converters;
@@ -117,6 +123,38 @@ public final class DateConverters {
 
       Calendar calendar = Calendar.getInstance();
       calendar.setTimeInMillis(source * 1000);
+      return calendar;
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToDateConverter implements Converter<Integer, Date> {
+    INSTANCE;
+
+    @Override
+    public Date convert(Integer source) {
+      if (source == null) {
+        return null;
+      }
+
+      Date date = new Date();
+      date.setTime(new Long(source));
+      return date;
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToCalendarConverter implements Converter<Integer, Calendar> {
+    INSTANCE;
+
+    @Override
+    public Calendar convert(Integer source) {
+      if (source == null) {
+        return null;
+      }
+
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTimeInMillis(new Long(source * 1000));
       return calendar;
     }
   }
@@ -198,6 +236,46 @@ public final class DateConverters {
     @Override
     public DateMidnight convert(Long source) {
       return source == null ? null : new DateMidnight(source);
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToLocalDateConverter implements Converter<Integer, LocalDate> {
+    INSTANCE;
+
+    @Override
+    public LocalDate convert(Integer source) {
+      return source == null ? null : new LocalDate(new Long(source));
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToLocalDateTimeConverter implements Converter<Integer, LocalDateTime> {
+    INSTANCE;
+
+    @Override
+    public LocalDateTime convert(Integer source) {
+      return source == null ? null : new LocalDateTime(new Long(source));
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToDateTimeConverter implements Converter<Integer, DateTime> {
+    INSTANCE;
+
+    @Override
+    public DateTime convert(Integer source) {
+      return source == null ? null : new DateTime(new Long(source));
+    }
+  }
+
+  @ReadingConverter
+  public enum IntegerToDateMidnightConverter implements Converter<Integer, DateMidnight> {
+    INSTANCE;
+
+    @Override
+    public DateMidnight convert(Integer source) {
+      return source == null ? null : new DateMidnight(new Long(source));
     }
   }
 
