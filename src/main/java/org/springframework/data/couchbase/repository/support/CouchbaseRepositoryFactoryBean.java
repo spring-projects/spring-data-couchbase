@@ -83,7 +83,7 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
    * @param indexManager the reference to the {@link IndexManager}.
    * @return the factory instance.
    */
-  private RepositoryFactorySupport getFactoryInstance(final RepositoryOperationsMapping operationsMapping,
+  protected CouchbaseRepositoryFactory getFactoryInstance(final RepositoryOperationsMapping operationsMapping,
                                                       IndexManager indexManager) {
     return new CouchbaseRepositoryFactory(operationsMapping, indexManager);
   }

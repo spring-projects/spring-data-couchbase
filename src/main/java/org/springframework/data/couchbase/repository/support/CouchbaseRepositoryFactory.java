@@ -31,6 +31,7 @@ import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
@@ -118,14 +119,18 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /**
-   * Returns a new Repository based on the metadata.
+   * Returns a new Repository based on the metadata. Two categories of repositories can be instantiated:
+   * {@link SimpleCouchbaseRepository} and {@link N1qlCouchbaseRepository}.
+   *
+   * This method performs feature checks to decide which of the two categories can be instantiated (eg. is N1QL available?).
+   * Instantiation is done via reflection, see {@link #getRepositoryBaseClass(RepositoryMetadata)}.
    *
    * @param metadata the repository metadata.
    *
    * @return a new created repository.
    */
   @Override
-  protected Object getTargetRepository(final RepositoryInformation metadata) {
+  protected final Object getTargetRepository(final RepositoryInformation metadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
     boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
 
@@ -138,16 +143,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     indexManager.buildIndexes(metadata, viewIndexed, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
-    if (isN1qlAvailable) {
-      //this implementation also conforms to PagingAndSortingRepository
-      N1qlCouchbaseRepository n1qlRepository = new N1qlCouchbaseRepository(entityInformation, couchbaseOperations);
-      n1qlRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
-      return n1qlRepository;
-    } else {
-      final SimpleCouchbaseRepository simpleCouchbaseRepository = new SimpleCouchbaseRepository(entityInformation, couchbaseOperations);
-      simpleCouchbaseRepository.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
-      return simpleCouchbaseRepository;
-    }
+    SimpleCouchbaseRepository repo = getTargetRepositoryViaReflection(metadata, entityInformation, couchbaseOperations);
+    repo.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
+    return repo;
   }
 
   private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable,
@@ -175,20 +173,33 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /**
-   * The base class for this repository.
+   * Returns the base class for the repository being constructed. Two categories of repositories can be produced by
+   * this factory: {@link SimpleCouchbaseRepository} and {@link N1qlCouchbaseRepository}. This method checks if N1QL
+   * is available to choose between the two, but the actual concrete class is determined respectively by
+   * {@link #getSimpleBaseClass(RepositoryMetadata)} and {@link #getN1qlBaseClass(RepositoryMetadata)}.
+   *
+   * Override these methods if you want to change the base class for all your repositories.
    *
    * @param repositoryMetadata metadata for the repository.
    *
    * @return the base class.
    */
   @Override
-  protected Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
+  protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(repositoryMetadata.getRepositoryInterface(),
         repositoryMetadata.getDomainType());
     boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
     if (isN1qlAvailable) {
-      return N1qlCouchbaseRepository.class;
+      return getN1qlBaseClass(repositoryMetadata);
     }
+    return getSimpleBaseClass(repositoryMetadata);
+  }
+
+  protected Class<? extends N1qlCouchbaseRepository> getN1qlBaseClass(final RepositoryMetadata repositoryMetadata) {
+    return N1qlCouchbaseRepository.class;
+  }
+
+  protected Class<? extends SimpleCouchbaseRepository> getSimpleBaseClass(final RepositoryMetadata repositoryMetadata) {
     return SimpleCouchbaseRepository.class;
   }
 
