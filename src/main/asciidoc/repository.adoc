@@ -378,14 +378,19 @@ One aspect that is often needed and doesn't have a direct equivalent in the Spri
 `query consistency`. In both view-based queries and N1QL, you have this concept that the secondary index can return stale
 data, because the latest version hasn't been indexed yet. This gives the best performance at the expense of consistency.
 
+Note that weaker consistencies can lead to data being returned that doesn't match the criteria of a derived query.
+
 If one wants to have stronger consistency, there are two possibilities described in the next sections.
 
 ==== Configure it on a global level
-The global consistency used by generated queries (views and N1QL) is defined at the template level,
-using `Consistency` enumeration (like `Consistency.READ_YOUR_OWN_WRITE`):
+A global consistency can be defined using the `Consistency` enumeration (eg. `Consistency.READ_YOUR_OWN_WRITE`):
 
  - in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
  - in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
+
+By default it is `Consistency.UPDATE_AFTER` (which means speed is prioritized over consistency, but the view index will be updated after each request).
+
+IMPORTANT: This is **only used in repositories**, either for index-backed methods automatically provided by the repository interface (`findAll()`, `findAll(keys)`, `count()`, `deleteAll()`...) or methods you define in your specific interface using query derivation.
 
 ==== Provide an implementation
 Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency

@@ -134,6 +134,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     final ResolvedView resolvedView = determineView();
     ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
     query.reduce(false);
+    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
     return couchbaseOperations.findByView(query, entityInformation.getJavaType());
   }
 
@@ -142,6 +143,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     final ResolvedView resolvedView = determineView();
     ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
     query.reduce(false);
+    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
     JsonArray keys = JsonArray.create();
     for (ID id : ids) {
       keys.add(id);
@@ -156,6 +158,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     final ResolvedView resolvedView = determineView();
     ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
     query.reduce(true);
+    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
 
     ViewResult response = couchbaseOperations.queryView(query);
 
@@ -172,6 +175,8 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     final ResolvedView resolvedView = determineView();
     ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
     query.reduce(false);
+    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
+
 
     ViewResult response = couchbaseOperations.queryView(query);
     for (ViewRow row : response) {
