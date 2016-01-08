@@ -190,9 +190,13 @@ public interface CouchbaseOperations {
   /**
    * Query a View for a list of documents of type T.
    * <p/>
-   * <p>There is no need to {@link ViewQuery#includeDocs(boolean) set includeDocs} explicitly, because it will be set to
-   * true all the time. It is valid to pass in a empty constructed {@link ViewQuery} object.</p>
+   * <p>There is no need to {@link ViewQuery#includeDocs(boolean) set includeDocs} explicitly, since this method will
+   * manage the retrieval of documents internally. It is valid to pass in a empty constructed {@link ViewQuery} object.</p>
    * <p/>
+   * <p>Weak consistency in the query (<code>stale(Stale.TRUE)</code>) can lead to some documents being unreachable due
+   * to their deletion not having been indexed. These deleted null documents are eliminated from the result of this
+   * method.</p>
+   * </p>
    * <p>This method does not work with reduced views, because they by design do not contain references to original
    * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
    *
@@ -217,9 +221,13 @@ public interface CouchbaseOperations {
 
   /**
    * Query a Spatial View for a list of documents of type T.
+   * </p>
+   * <p>There is no need to {@link SpatialViewQuery#includeDocs(boolean) set includeDocs} explicitly, since this method
+   * will manage the retrieval of documents internally. It is valid to pass in a empty constructed {@link SpatialViewQuery} object.</p>
    * <p/>
-   * <p>It is valid to pass in a empty constructed {@link SpatialViewQuery} object.</p>
-   * <p/>
+   * <p>Weak consistency in the query (<code>stale(Stale.TRUE)</code>) can lead to some documents being unreachable due
+   * to their deletion not having been indexed. These deleted null documents are eliminated from the result of this
+   * method.</p>
    *
    * @param query the SpatialViewQuery object (also specifying view design document and view name).
    * @param entityClass the entity to map to.
@@ -248,6 +256,10 @@ public interface CouchbaseOperations {
    * statement contains placeholders.
    * <br/>
    * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
+   * <p/>
+   * <p>Weak consistency in the query (eg. <code>ScanConsistency.NOT_BOUND</code>) can lead to some documents being
+   * unreachable due to their deletion not having been indexed. These deleted null documents are eliminated from the
+   * result of this method.</p>
    *
    * @param n1ql the N1QL query.
    * @param entityClass the target class for the returned entities.
@@ -266,6 +278,10 @@ public interface CouchbaseOperations {
    * statement contains placeholders.
    * <br/>
    * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
+   * <p/>
+   * <p>Weak consistency in the query (eg. <code>ScanConsistency.NOT_BOUND</code>) can lead to some documents being
+   * unreachable due to their deletion not having been indexed. These deleted null documents are eliminated from the
+   * result of this method.</p>
    *
    * @param n1ql the N1QL query.
    * @param fragmentClass the target class for the returned fragments.

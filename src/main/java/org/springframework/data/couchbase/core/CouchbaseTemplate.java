@@ -293,7 +293,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> List<T> findByView(ViewQuery query, Class<T> entityClass) {
-    query.includeDocs(false); //FIXME the doc says it is set to true...
+    //we'll always need to get documents, as a RawJsonDocument, so we should force includeDocs(false)
+    //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
+    query.includeDocs(false);
+    //we'll always map the document to the entity, hence reduce never makes sense.
     query.reduce(false);
 
     try {
@@ -307,7 +310,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
       final List<T> result = new ArrayList<T>(allRows.size());
       for (final ViewRow row : allRows) {
-        result.add(mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass));
+        //cope with potential weak consistency and deletions
+        T entity = mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass);
+        if (entity != null) {
+          result.add(entity);
+        }
       }
 
       return result;
@@ -329,7 +336,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> List<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass) {
-    //note: don't make any assumption about includeDocs and let the user decide
+    //we'll always need to get documents, as a RawJsonDocument, so we should force includeDocs(false)
+    //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
+    query.includeDocs(false);
 
     try {
       final SpatialViewResult response = querySpatialView(query);
@@ -342,7 +351,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
       final List<T> result = new ArrayList<T>(allRows.size());
       for (final SpatialViewRow row : allRows) {
-        result.add(mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass));
+        //cope with potential weak consistency and deletions
+        T entity = mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass);
+        if (entity != null) {
+          result.add(entity);
+        }
       }
 
       return result;
@@ -379,7 +392,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
             throw new CouchbaseQueryExecutionException("Unable to retrieve enough metadata for N1QL to entity mapping, " +
                 "have you selected " + SELECT_ID + " and " + SELECT_CAS + "?");
           }
-          json = json.removeKey("_ID").removeKey("_CAS");
+          json = json.removeKey(SELECT_ID).removeKey(SELECT_CAS);
           RawJsonDocument entityDoc = RawJsonDocument.create(id, json.toString(), cas);
           T decoded = mapToEntity(id, entityDoc, entityClass);
           result.add(decoded);

@@ -379,6 +379,7 @@ One aspect that is often needed and doesn't have a direct equivalent in the Spri
 data, because the latest version hasn't been indexed yet. This gives the best performance at the expense of consistency.
 
 Note that weaker consistencies can lead to data being returned that doesn't match the criteria of a derived query.
+One trickier case is when documents are deleted from Couchbase but views have not yet caught up to the deletion. With weak consistency this can mean that a view would return IDs that are not in the database anymore, leading to null entities. The `CouchbaseTemplate`s `findByView` and `findBySpatialView` methods will remove such stale deleted entities from their result in order to avoid having nulls in the returned collections. Similarly, `CouchbaseRepository`'s `deleteAll` method will ignore documents that the backing view provided but the SDK remove operation couldn't find.
 
 If one wants to have stronger consistency, there are two possibilities described in the next sections.
 

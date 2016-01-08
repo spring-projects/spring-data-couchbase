@@ -21,10 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
 
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
@@ -180,7 +182,12 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
     ViewResult response = couchbaseOperations.queryView(query);
     for (ViewRow row : response) {
-      couchbaseOperations.remove(row.id());
+      try {
+        couchbaseOperations.remove(row.id());
+      } catch (DataRetrievalFailureException e) {
+        //ignore stale deletions
+        if (!(e.getCause() instanceof DocumentDoesNotExistException)) throw e;
+      }
     }
   }
 

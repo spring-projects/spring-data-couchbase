@@ -33,6 +33,7 @@ import com.couchbase.client.java.error.BucketDoesNotExistException;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DesignDocumentException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.error.DurabilityException;
 import com.couchbase.client.java.error.InvalidPasswordException;
 import com.couchbase.client.java.error.RequestTooBigException;
@@ -88,6 +89,10 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 
     if (ex instanceof DocumentAlreadyExistsException) {
       return new DuplicateKeyException(ex.getMessage(), ex);
+    }
+
+    if (ex instanceof DocumentDoesNotExistException) {
+      return new DataRetrievalFailureException(ex.getMessage(), ex);
     }
 
     if (ex instanceof CASMismatchException

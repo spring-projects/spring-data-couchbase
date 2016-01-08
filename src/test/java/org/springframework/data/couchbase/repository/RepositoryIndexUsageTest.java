@@ -2,6 +2,7 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
@@ -19,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Consistency;
@@ -39,8 +42,10 @@ public class RepositoryIndexUsageTest {
   public void initMocks() {
     ViewRow mockCountRow1 = mock(ViewRow.class);
     when(mockCountRow1.value()).thenReturn("100");
+    when(mockCountRow1.id()).thenReturn("id1");
     ViewRow mockCountRow2 = mock(ViewRow.class);
     when(mockCountRow2.value()).thenReturn("200");
+    when(mockCountRow2.id()).thenReturn("id2");
     List<ViewRow> allCountRows = Arrays.asList(mockCountRow1, mockCountRow2);
 
     ViewResult mockCountResult = mock(ViewResult.class);
@@ -163,5 +168,21 @@ public class RepositoryIndexUsageTest {
     assertEquals(CONSISTENCY.n1qlConsistency().n1ql(), query.getString("scan_consistency"));
     String statement = query.getString("statement");
     assertTrue("Expected " + expectedLimitClause + " in " + statement, statement.contains(expectedLimitClause));
+  }
+
+  @Test
+  public void testDeleteAllSwallowsDocumentDoesNotExistException() {
+    doThrow(new DataRetrievalFailureException("ignored", new DocumentDoesNotExistException())).when(couchbaseOperations).remove("id1");
+    doThrow(new DataRetrievalFailureException("thrown")).when(couchbaseOperations).remove("id2");
+    try {
+      repository.deleteAll();
+      fail("Expected DataRetrievalFailureException on id2");
+    } catch (DataRetrievalFailureException e) {
+      if (!"thrown".equals(e.getMessage())) {
+        fail("DataRetrievalFailureException caused by DocumentDoesNotExistException should have been ignored");
+      }
+    }
+    verify(couchbaseOperations).remove("id1");
+    verify(couchbaseOperations).remove("id2");
   }
 }
