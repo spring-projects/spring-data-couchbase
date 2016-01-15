@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.repository.base;
+package org.springframework.data.couchbase.repository.extending.base;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,9 +37,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.repository.base.impl.MyRepository;
-import org.springframework.data.couchbase.repository.base.impl.MyRepositoryImpl;
+import org.springframework.data.couchbase.repository.User;
+import org.springframework.data.couchbase.repository.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.extending.base.impl.MyRepository;
+import org.springframework.data.couchbase.repository.extending.base.impl.MyRepositoryImpl;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -67,7 +70,14 @@ public class RepositoryBaseTest {
   @Autowired
   ItemRepository repositoryA;
 
+  @Autowired
+  UserRepository repositoryB;
+
   public interface ItemRepository extends MyRepository<Item, String> {
+    //
+  }
+
+  public interface UserRepository extends MyRepository<User, String> {
     //
   }
 
@@ -99,9 +109,13 @@ public class RepositoryBaseTest {
   @Test
   public void testRepositoryBaseIsChanged() {
     assertNotNull(repositoryA);
+    assertNotNull(repositoryB);
 
     assertEquals(4, repositoryA.sharedCustomMethod("toto"));
     assertEquals(4000, repositoryA.sharedCustomMethod("anna"));
+
+    assertEquals(repositoryA.sharedCustomMethod("sameInput"), repositoryB.sharedCustomMethod("sameInput"));
+    assertEquals(repositoryA.sharedCustomMethod("anna"), repositoryB.sharedCustomMethod("anna"));
   }
 
   private static class Item {

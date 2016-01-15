@@ -1,4 +1,4 @@
-package org.springframework.data.couchbase.repository.base.impl;
+package org.springframework.data.couchbase.repository.extending.base.impl;
 
 import java.io.Serializable;
 

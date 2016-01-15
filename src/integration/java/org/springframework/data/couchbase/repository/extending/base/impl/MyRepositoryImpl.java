@@ -1,8 +1,9 @@
-package org.springframework.data.couchbase.repository.base.impl;
+package org.springframework.data.couchbase.repository.extending.base.impl;
 
 import java.io.Serializable;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.extending.base.impl.MyRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.support.N1qlCouchbaseRepository;
 

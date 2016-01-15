@@ -317,7 +317,7 @@ List<UserInfo> users = repo.findByFirstnameStartingWith("Mich");
 
 On all these derived custom finder methods, you have to use the `@View` annotation with at least the view name specified (and you can also override the design document name, otherwise determined by convention).
 
-IMPORTANT: For any other usage and customization of the `ViewQuery` that goes beyond that, recommended approach is to provide an implementation that uses the underlying template, like described in <<repositories.single-repository-behaviour>>.
+IMPORTANT: For any other usage and customization of the `ViewQuery` that goes beyond that, recommended approach is to provide an implementation that uses the underlying template, like described in <<couchbase.repository.changing-repository-behaviour>>.
 For more details on behavior, please consult the Couchbase Server and Java SDK documentation directly.
 
 For view-based query derivation, here are the supported keywords (A and B are method parameters in this table):
@@ -395,7 +395,7 @@ IMPORTANT: This is **only used in repositories**, either for index-backed method
 
 ==== Provide an implementation
 Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency
-(see <<repositories.single-repository-behaviour>>).
+(see <<couchbase.repository.changing-repository-behaviour>>).
 
  - one can specify the consistency on those via their respective query classes, according to the Couchbase Java SDK documentation.
  - for example for views `ViewQuery.stale(Stale.FALSE)`
@@ -456,3 +456,122 @@ public class ConcreteCouchbaseConfig extends AbstractCouchbaseConfig {
 }
 ----
 ====
+
+[[couchbase.repository.changing-repository-behaviour]]
+== Changing repository behaviour
+Sometimes you don't simply want the repository to create methods for you, but instead you want to tune the base repository's behaviour. You can either do that for *all* repositories - by changing the _base class_ for them - or just for a single repository - by adding custom implementations for either new or existing methods - (see <<repositories.custom-implementations>> for a generic introduction to these concepts).
+
+=== Couchbase specifics about changing the base class
+This follows the standard procedure for changing all repositories' base class:
+
+. Create an generic interface for your base that extends `CouchbaseRepository` (CRUD) or `CouchbasePagingAndSortingRepository`. Declare any method you want to add to all repositories there.
+. Create an implementation (eg. `MyRepositoryImpl`). This should extend one the concrete base classes (`SimpleCouchbaseRepository` or `N1qlCouchbaseRepository`) and you can also override existing methods from the Spring Data interfaces.
+. Declare your repository interfaces as extending `MyRepository` instead of eg. `CRUDRepository` or `CouchbaseRepository`.
+. In the `@EnableCouchbaseRepositories` annotation of your configuration, use the `repositoryBaseClass` parameter.
+
+Here is a complete example that you can find in `RepositoryBaseTest` in the integration tests:
+
+.Changing repository base class
+[source,java]
+----
+@NoRepositoryBean <1>
+public interface MyRepository<T, ID extends Serializable> extends CouchbaseRepository<T, ID> { <2>
+
+  int sharedCustomMethod(ID id); <3>
+}
+
+public class MyRepositoryImpl<T, ID extends Serializable>
+    extends N1qlCouchbaseRepository<T, ID> <4>
+    implements MyRepository<T, ID> { <5>
+
+  public MyRepositoryImpl(CouchbaseEntityInformation<T, String> metadata, CouchbaseOperations couchbaseOperations) { <6>
+    super(metadata, couchbaseOperations);
+  }
+
+  @Override
+  public int sharedCustomMethod(ID id) {
+    //... implement common behavior <7>
+  }
+}
+
+@EnableCouchbaseRepositories(repositoryBaseClass = MyRepositoryImpl.class) <8>
+public class MyConfig extends AbstractCouchbaseConfiguration { /** ... */ }
+----
+<1> This annotation prevents picking this custom interface as a repository declaration.
+<2> The new base interface extends one from Spring Data Couchbase.
+<3> This method will be available in all repositories.
+<4> Custom base implementation relies on the existing bases...
+<5> ...and also implements new interface (so that common methods are exposed).
+<6> Constructors that follow the signature of superconstructor will be picked up by the framework.
+<7> Custom functionality to be implemented by the user (eg. return string's length).
+<8> Weaving it all in by changing the repository base class.
+
+=== Couchbase specifics about adding methods to a single repository
+Again following the standard procedure for custom repository methods, here is a complete example that you can find in `RepositoryCustomMethodTest` in the integration tests:
+
+.Adding and overriding methods in a single repository
+[source,java]
+----
+public interface MyRepositoryCustom {
+  long customCountItems(); <1>
+}
+
+public interface MyRepository extends CrudRepository<MyItem, String>, MyRepositoryCustom { } <2>
+
+public class MyRepositoryImpl implements MyRepositoryCustom { <3>
+
+  @Autowired
+  RepositoryOperationsMapping templateProvider; <4>
+
+  @Override
+  public long customCountItems() {
+    CouchbaseOperations template = templateProvider.resolve(MyRepository.class, Item.class); <5>
+
+    CouchbasePersistentEntity<Object> itemPersistenceEntity = (CouchbasePersistentEntity<Object>)
+        template.getConverter()
+            .getMappingContext()
+            .getPersistentEntity(MyItem.class);
+
+    CouchbaseEntityInformation<? extends Object, String> itemEntityInformation =
+        new MappingCouchbaseEntityInformation<Object, String>(itemPersistenceEntity);
+
+    Statement countStatement = N1qlUtils.createCountQueryForEntity( <6>
+        template.getCouchbaseBucket().name(),
+        template.getConverter(),
+        itemEntityInformation);
+
+    ScanConsistency consistency = template.getDefaultConsistency().n1qlConsistency(); <7>
+    N1qlParams queryParams = N1qlParams.build().consistency(consistency);
+    N1qlQuery query = N1qlQuery.simple(countStatement, queryParams);
+
+    List<CountFragment> countFragments = template.findByN1QLProjection(query, CountFragment.class); <8>
+
+    if (countFragments == null || countFragments.isEmpty()) {
+      return 0L;
+    } else {
+      return countFragments.get(0).count * -1L; <9>
+    }
+  }
+
+  public long count() { <10>
+    return 100;
+  }
+}
+----
+<1> This method is to be added with a user-provided implementation for a single repository.
+<2> This is the declaration of the customized repository, both a CRUD and exposing the custom interface.
+<3> This is the implementation of the custom interface.
+<4> The custom implementation doesn't have access to the original base implementation, so use dependency injection to get access to necessary resources.
+<5> Here is a couchbase specificity: if you need to use the `CouchbaseTemplate`, be sure to use the one that would be associated with the customized repository or associated entity type.
+<6> We use `N1QLUtils` to prepare a complete `N1QL` statement for counting. It relies on the information above that we got from the correct template.
+<7> We want to make sure that the default consistency configured in the associated template is used for this query.
+<8> Using `CouchbaseTemplate.findByN1qlProjection`, we execute the count query and store the single aggregation result into a `CountFragment`.
+<9> Now we return this count result with a twist: it is negated.
+<10> *TIP*: You can actually also change implementation of methods from the `CRUDRepository` interface!
+
+By storing 3 items using a `MyRepository` instance and calling `count()` then `customCountItems()`, we'd obtain
+
+----
+100
+-3
+----
