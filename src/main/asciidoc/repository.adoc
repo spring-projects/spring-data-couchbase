@@ -146,6 +146,47 @@ A few N1QL-specific values are provided through SpEL:
 Another example: "`#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1`", which is equivalent to
 `SELECT #{#n1ql.fields} FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND test = $1`".
 
+.A practical application of SpEL with Spring Security
+****
+SpEL can be useful when you want to do a query depending on data injected by other Spring components, like Spring Security.
+Here is what you need to do to extend the SpEL context to get access to such external data.
+
+First, you need to implement an `EvaluationContextExtension` (use the support class as below):
+[source,java]
+----
+class SecurityEvaluationContextExtension extends EvaluationContextExtensionSupport {
+
+  @Override
+  public String getExtensionId() {
+    return "security";
+  }
+
+  @Override
+  public SecurityExpressionRoot getRootObject() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return new SecurityExpressionRoot(authentication) {};
+  }
+}
+----
+
+Then all you need to do for Spring Data Couchbase to be able to access associated SpEL values is to declare a corresponding bean in your configuration:
+[source,java]
+----
+@Bean
+EvaluationContextExtension securityExtension() {
+    return new SecurityEvaluationContextExtension();
+}
+----
+
+This could be useful to craft a query according to the role of the connected user for instance:
+[source,java]
+----
+@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND " +
+"role = '?#{hasRole('ROLE_ADMIN') ? 'public_admin' : 'admin'}'")
+List<UserInfo> findAllAdmins(); //only ROLE_ADMIN users will see hidden admins
+----
+****
+
 The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
 
 NOTE: Actually the generated N1QL query will also contain an additional N1QL criteria in order to only select documents that match the repository's entity class.
