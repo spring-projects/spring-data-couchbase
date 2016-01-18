@@ -143,6 +143,10 @@ A few N1QL-specific values are provided through SpEL:
  - `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
  - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
 
+IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE clause with a `filter` SpEL (since otherwise your query could be impacted by entities from other repositories).
+
+You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...). Such projection would have a simple return type like `long`, `boolean` or `String`. This is *NOT* intended for projections to DTOs.
+
 Another example: "`#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1`", which is equivalent to
 `SELECT #{#n1ql.fields} FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND test = $1`".
 

@@ -170,6 +170,11 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return N1qlQuery.simple(parsedCountStatement).statement();
   }
 
+  @Override
+  protected boolean useGeneratedCountQuery() {
+    return this.originalStatement.contains(SPEL_SELECT_FROM_CLAUSE);
+  }
+
   /**
    * This class is exposed to SpEL parsing through the variable <code>#{@value StringN1qlBasedQuery#SPEL_PREFIX}</code>.
    * Use the attributes in your SpEL expressions: {@link #selectEntity}, {@link #fields}, {@link #bucket} and {@link #filter}.

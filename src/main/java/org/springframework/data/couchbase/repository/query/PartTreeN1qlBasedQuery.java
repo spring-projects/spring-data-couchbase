@@ -91,4 +91,9 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       return selectFromWhereOrderBy;
     }
   }
+
+  @Override
+  protected boolean useGeneratedCountQuery() {
+    return false; //generated count query is just for Page/Slice, not projections
+  }
 }

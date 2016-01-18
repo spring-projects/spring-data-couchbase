@@ -154,4 +154,9 @@ public class CouchbaseQueryMethod extends QueryMethod {
     String query = (String) AnnotationUtils.getValue(getN1qlAnnotation());
     return StringUtils.hasText(query) ? query : null;
   }
+
+  @Override
+  public String toString() {
+    return super.toString();
+  }
 }
