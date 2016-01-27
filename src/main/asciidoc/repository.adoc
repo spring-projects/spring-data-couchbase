@@ -135,7 +135,7 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 
 Here we see two N1QL-backed ways of querying.
 
-The first method uses the `Query` annotation to provide a N1QL statement inline. SpEL (Spring Expression Language) is supported by surrounding SpEL expression blocks between `#{` and `}`. You can also include N1QL positional placeholders (eg. `$1`, `$2`).
+The first method uses the `Query` annotation to provide a N1QL statement inline. SpEL (Spring Expression Language) is supported by surrounding SpEL expression blocks between `#{` and `}`.
 A few N1QL-specific values are provided through SpEL:
 
  - `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
@@ -144,6 +144,8 @@ A few N1QL-specific values are provided through SpEL:
  - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
 
 IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE clause with a `filter` SpEL (since otherwise your query could be impacted by entities from other repositories).
+
+String-based queries support parametrized queries. You can either use positional placeholders like "`$1`", in which case each of the method parameters will map, in order, to `$1`, `$2`, `$3`... Alternatively, you can use named placeholders using the "`$someString`" syntax. Method parameters will be matched with their corresponding placeholder using the parameter's name, which can be overridden by annotating each parameter (except a `Pageable` or `Sort`) with `@Param` (eg. `@Param("someString")`). You cannot mix the two approaches in your query and will get an `IllegalArgumentException` if you do.
 
 You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...). Such projection would have a simple return type like `long`, `boolean` or `String`. This is *NOT* intended for projections to DTOs.
 

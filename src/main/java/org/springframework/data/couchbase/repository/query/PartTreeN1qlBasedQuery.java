@@ -18,11 +18,14 @@ package org.springframework.data.couchbase.repository.query;
 
 import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.Expression.i;
-import static com.couchbase.client.java.query.dsl.Expression.path;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
 
+import com.couchbase.client.core.lang.Tuple;
+import com.couchbase.client.core.lang.Tuple2;
 import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.path.FromPath;
@@ -46,7 +49,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  protected JsonArray getPlaceholderValues(ParameterAccessor accessor) {
+  protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
     return JsonArray.empty();
   }
 

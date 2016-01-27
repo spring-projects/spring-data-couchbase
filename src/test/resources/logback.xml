@@ -18,7 +18,7 @@
 	<!-- You can use these logger configurations to log more details:
 	 - log the Couchbase queries produced by the framework
 	 - log details of geo queries and false positive elimination
-	 - log details of the parsing of SpEL in N1QL inline queries
+	 - log details of the detection of placeholders in N1QL inline queries
 	 - log additional debug info during automatic index creation
 	-->
 	<logger name="org.springframework.data.couchbase.repository.query" level="debug"/>

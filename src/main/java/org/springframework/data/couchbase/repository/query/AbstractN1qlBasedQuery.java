@@ -20,10 +20,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.client.core.lang.Tuple2;
 import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.error.QueryExecutionException;
-import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlParams;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import org.slf4j.Logger;
@@ -34,10 +36,8 @@ import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryCreationException;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.util.StreamUtils;
@@ -73,13 +73,13 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
   protected abstract Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters);
 
-  protected abstract JsonArray getPlaceholderValues(ParameterAccessor accessor);
+  protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
   @Override
   public Object execute(Object[] parameters) {
     ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
     Statement statement = getStatement(accessor, parameters);
-    JsonArray queryPlaceholderValues = getPlaceholderValues(accessor);
+    JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
     //prepare the final query
     N1qlQuery query = buildQuery(statement, queryPlaceholderValues,
@@ -94,13 +94,15 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
         queryMethod.isPageQuery(), queryMethod.isSliceQuery(), queryMethod.isModifyingQuery());
   }
 
-  protected static N1qlQuery buildQuery(Statement statement, JsonArray queryPlaceholderValues, ScanConsistency scanConsistency) {
+  protected static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
     N1qlParams n1qlParams = N1qlParams.build().consistency(scanConsistency);
     N1qlQuery query;
-    if (!queryPlaceholderValues.isEmpty()) {
-      query = N1qlQuery.parameterized(statement, queryPlaceholderValues, n1qlParams);
-    }
-    else {
+
+    if (queryPlaceholderValues instanceof JsonObject && !((JsonObject) queryPlaceholderValues).isEmpty()) {
+      query = N1qlQuery.parameterized(statement, (JsonObject) queryPlaceholderValues, n1qlParams);
+    } else if (queryPlaceholderValues instanceof JsonArray && !((JsonArray) queryPlaceholderValues).isEmpty()) {
+      query = N1qlQuery.parameterized(statement, (JsonArray) queryPlaceholderValues, n1qlParams);
+    } else {
       query = N1qlQuery.simple(statement, n1qlParams);
     }
     return query;

@@ -3,14 +3,17 @@ package org.springframework.data.couchbase.repository;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
+import org.springframework.data.repository.query.Param;
 
 /**
  * @author Simon Baslé
  */
 @ViewIndexed(designDoc = "party", viewName = "all")
+@N1qlSecondaryIndexed(indexName = "party")
 public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   List<Party> findByAttendeesGreaterThanEqual(int minAttendees);
@@ -38,4 +41,17 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   @Query("SELECT 1 = 1")
   boolean justABoolean();
+
+  @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND `desc` LIKE '%' || $included ||  '%' AND attendees >= $min" +
+      " AND `desc` NOT LIKE '%' || $excluded || '%'")
+  List<Party> findAllWithNamedParams(@Param("excluded") String ex, @Param("included") String inc, @Param("min") long minimumAttendees);
+
+  @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND `desc` LIKE '%' || $2 ||  '%' AND attendees >= $3" +
+      " AND `desc` NOT LIKE '%' || $1 || '%'")
+  List<Party> findAllWithPositionalParams(String ex, String inc, long minimumAttendees);
+
+  @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND `desc` LIKE '%' || $2 ||  '%' AND attendees >= $3" +
+      " AND `desc` NOT LIKE '%' || $1 || '%' AND `desc` != \"this is \\\"$excluded\\\"\"")
+  List<Party> findAllWithPositionalParamsAndQuotedNamedParams(@Param("excluded") String ex, @Param("included") String inc, @Param("min") long min);
+
 }
