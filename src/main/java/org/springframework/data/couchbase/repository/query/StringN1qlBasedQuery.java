@@ -23,8 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.ParameterOutOfBoundsException;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -81,6 +85,27 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
    * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND #{{@value StringN1qlBasedQuery#SPEL_FILTER}}"</code>.
    */
   public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
+  
+  /**
+   * String used to add limits and skip to a query.
+   */
+  private static final String QUERY_PAGENATION = " LIMIT %1s OFFSET %2s";
+
+  /**
+   * String used to construct ordering in query.
+   * 
+   */
+  private static final String QUERY_ORDER = " ORDER BY ";
+
+  /**
+   * String used to seperate order params.
+   */
+  private static final String QUERY_ORDER_SEP = ", ";
+
+  /**
+   * String used to seperate order direction and param.
+   */
+  private static final String QUERY_DIRECTION_SEP = " ";
 
   private final String originalStatement;
   private final SpelExpressionParser parser;
@@ -149,19 +174,44 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return parsedExpression.getValue(evaluationContext, String.class);
   }
 
+
   @Override
   protected JsonArray getPlaceholderValues(ParameterAccessor accessor) {
     JsonArray values = JsonArray.create();
-    for (Object value : accessor) {
-      values.add(value);
+    try {
+      for (Object value : accessor) {
+          values.add(value);
+      }
+    } catch (ParameterOutOfBoundsException pobe) {
+      //the accessor is causing an out of bounds exception if there are params and a pagenator
     }
     return values;
   }
 
   @Override
   public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters) {
-    String parsedStatement = parseSpel(this.originalStatement, false, runtimeParameters);
-    return N1qlQuery.simple(parsedStatement).statement();
+    StringBuilder statement = new StringBuilder();
+    statement.append(parseSpel(this.originalStatement, false, runtimeParameters));
+    //if there is a pageable object we need to append the sort and pagenation
+    Pageable pageable = accessor.getPageable();
+    if (pageable != null) {
+      Sort sort = pageable.getSort();
+      if (sort != null) {
+        statement.append(QUERY_ORDER);
+        boolean first = true;
+        for (Order order : sort) {
+          if (!first) {
+            statement.append(QUERY_ORDER_SEP);
+          }
+          String orderString = new String();
+          orderString = order.getProperty().concat(QUERY_DIRECTION_SEP).concat(order.getDirection().toString());
+          statement.append(orderString);
+          first = false;
+        }
+      }
+      statement.append(String.format(QUERY_PAGENATION, pageable.getPageSize(), pageable.getOffset()));
+    }
+    return N1qlQuery.simple(statement.toString()).statement();
   }
 
   @Override
