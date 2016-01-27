@@ -103,7 +103,7 @@ The reference to a CouchbaseConverter instance.
             <xsd:attribute name="translation-service-ref" type="xsd:string" use="optional">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[
-                        The reference to the Translation Service (by default "translationService").]]>
+                        The reference to the Translation Service (by default "couchbaseTranslationService").]]>
                     </xsd:documentation>
                     <xsd:appinfo>
                         <tool:annotation kind="ref">
@@ -132,7 +132,7 @@ The reference to a CouchbaseConverter instance.
             <xsd:attribute name="id" type="xsd:string" use="optional">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[
-The id of the translation-service definition (by default "translationService").]]></xsd:documentation>
+The id of the translation-service definition (by default "couchbaseTranslationService").]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="objectMapper" type="xsd:string" use="optional">

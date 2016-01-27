@@ -55,9 +55,9 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
 
   @Override
   public void postProcess(final BeanDefinitionBuilder builder, final AnnotationRepositoryConfigurationSource config) {
-    builder.addDependsOn(BeanNames.REPO_OPERATIONS_MAPPING);
+    builder.addDependsOn(BeanNames.COUCHBASE_OPERATIONS_MAPPING);
     builder.addDependsOn(BeanNames.COUCHBASE_INDEX_MANAGER);
-    builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.REPO_OPERATIONS_MAPPING);
+    builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.COUCHBASE_OPERATIONS_MAPPING);
     builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
   }
 }

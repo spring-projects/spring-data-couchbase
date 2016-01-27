@@ -165,7 +165,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception
    */
-  @Bean(name = BeanNames.REPO_OPERATIONS_MAPPING)
+  @Bean(name = BeanNames.COUCHBASE_OPERATIONS_MAPPING)
   public RepositoryOperationsMapping repositoryOperationsMapping() throws  Exception {
     //create a base mapping that associates all repositories to the default template
     RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate());
@@ -201,7 +201,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean
+  @Bean(name = BeanNames.COUCHBASE_MAPPING_CONVERTER)
   public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
     MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext(), typeKey());
     converter.setCustomConversions(customConversions());
@@ -213,7 +213,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @return TranslationService, defaulting to JacksonTranslationService.
    */
-  @Bean
+  @Bean(name = BeanNames.COUCHBASE_TRANSLATION_SERVICE)
   public TranslationService translationService() {
     final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
     jacksonTranslationService.afterPropertiesSet();
@@ -225,7 +225,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @throws Exception on Bean construction failure.
    */
-  @Bean
+  @Bean(name = BeanNames.COUCHBASE_MAPPING_CONTEXT)
   public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
     CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
     mappingContext.setInitialEntitySet(getInitialEntitySet());
@@ -241,7 +241,7 @@ public abstract class AbstractCouchbaseConfiguration {
    *
    * @return must not be {@literal null}.
    */
-  @Bean
+  @Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
   public CustomConversions customConversions() {
     return new CustomConversions(Collections.emptyList());
   }

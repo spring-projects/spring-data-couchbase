@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
+import org.springframework.core.convert.converter.Converter;
+
 /**
  * Contains default bean names that will be used when no "id" is supplied to the beans.
  *
@@ -46,7 +48,7 @@ public class BeanNames {
   /**
    * Refers to the "&lt;couchbase:translation-service /&gt;" bean
    */
-  static final String TRANSLATION_SERVICE = "couchbaseTranslationService";
+  static final String COUCHBASE_TRANSLATION_SERVICE = "couchbaseTranslationService";
 
   /**
    * Refers to the "&lt;couchbase:clusterInfo&gt;" bean
@@ -56,10 +58,25 @@ public class BeanNames {
   /**
    * The bean that stores custom mapping between repositories and their backing couchbaseOperations.
    */
-  public static final String REPO_OPERATIONS_MAPPING = "repositoryOperationsMapping";
+  public static final String COUCHBASE_OPERATIONS_MAPPING = "couchbaseRepositoryOperationsMapping";
 
   /**
    * The bean that drives how some indexes are automatically created.
    */
   public static final String COUCHBASE_INDEX_MANAGER = "couchbaseIndexManager";
+
+  /**
+   * The bean that performs conversion to/from representation suitable for storage in couchbase.
+   */
+  public static final String COUCHBASE_MAPPING_CONVERTER = "couchbaseMappingConverter";
+
+  /**
+   * The bean that stores mapping metadata for entities stored in couchbase.
+   */
+  public static final String COUCHBASE_MAPPING_CONTEXT = "couchbaseMappingContext";
+
+  /**
+   * The bean that registers custom {@link Converter Converters} to encode/decode entity members.
+   */
+  public static final String COUCHBASE_CUSTOM_CONVERSIONS = "couchbaseCustomConversions";
 }

@@ -67,12 +67,12 @@ public class CouchbaseTranslationServiceParser extends AbstractSingleBeanDefinit
    * @param element the XML element which contains the attributes.
    * @param definition the bean definition to work with.
    * @param parserContext encapsulates the parsing state and configuration.
-   * @return the ID to work with (e.g., "translationService")
+   * @return the ID to work with (e.g., "couchbaseTranslationService")
    */
   @Override
   protected String resolveId(final Element element, final AbstractBeanDefinition definition, final ParserContext parserContext) {
     String id = super.resolveId(element, definition, parserContext);
-    return StringUtils.hasText(id) ? id : BeanNames.TRANSLATION_SERVICE;
+    return StringUtils.hasText(id) ? id : BeanNames.COUCHBASE_TRANSLATION_SERVICE;
   }
 
 }
