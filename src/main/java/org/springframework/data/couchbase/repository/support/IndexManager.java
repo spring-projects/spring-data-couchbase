@@ -56,7 +56,7 @@ public class IndexManager {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(IndexManager.class);
 
-  private static final String TEMPLATE_MAP_FUNCTION = "function (doc, meta) { if(doc.%s == \"%s\") { emit(null, null); } }";
+  private static final String TEMPLATE_MAP_FUNCTION = "function (doc, meta) { if(doc.%s == \"%s\") { emit(meta.id, null); } }";
 
   private static final JsonObject SUCCESS_MARKER = JsonObject.empty();
 

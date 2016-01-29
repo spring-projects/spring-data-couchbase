@@ -269,7 +269,7 @@ Since every view has a design document and view name, by convention we default t
 // do not forget the _count reduce function!
 function (doc, meta) {
   if (doc._class == "namespace.to.entity.UserInfo") {
-    emit(null, null);
+    emit(meta.id, null);
   }
 }
 ----
@@ -277,7 +277,7 @@ function (doc, meta) {
 
 Note that the important part in this map function is to only include the document IDs which correspond to our entity. Because the library always adds the `_class` property, this is a quick and easy way to do it. If you have another property in your JSON which does the same job (like a explicit `type` field), then you can use that as well - you don't have to stick to `_class` all the time.
 
-Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(null, null)` in the view: the document id is always sent over to the client implicitly, so we can shave off a view bytes in our view by not duplicating the id. If you use `emit(meta.id, null)` it won't hurt much too.
+Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(meta.id, null)` in the view despite the document id being always sent over to the client implicitly, it is so the view can be queried with a list of ids, eg. in the `findAll(Iterable<ID> ids)` CRUD method.
 
 [[couchbase.repository.indexing]]
 === Automatic Index Management
@@ -286,7 +286,7 @@ In order for the CRUD operations to work, the adequate view must have been creat
 
 In the case where the index creation cost isn't considered too high, it can be triggered automatically instead. You just need to annotate the repositories you want managed with the relevant annotation(s):
 
- - `@ViewIndexed` will create a view like the "all" view previously seen, to list all entities in the bucket. It can also be used on methods, allowing multiple views to be created with custom map function and reduce function.
+ - `@ViewIndexed` will create a view like the "all" view previously seen, to list all entities in the bucket.
  - `@N1qlPrimaryIndexed` can be used to ensure a general-purpose PRIMARY INDEX is available in N1QL.
  - `@N1qlSecondaryIndexed` will create a more specific N1QL index that does the same kind of filtering on entity type that the view does. It'll allow for efficient listing of all documents that correspond to a Repository's associated domain object.
 

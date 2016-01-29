@@ -29,24 +29,25 @@ import java.lang.annotation.Target;
  * The view must at least be described as a design document name and view name. Default map function
  * will filter documents on the type associated to the repository, and default reduce function is "_count".
  * <p/>
- * One can specify a custom reduce function as well as a non-default map function. This can be done on methods,
- * allowing for multiple views per repository to be created.
+ * One can specify a custom reduce function as well as a non-default map function.
  *
  * @author Simon Baslé
  */
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ViewIndexed {
 
   /**
-   * The design document in which to create/look for the view.
+   * The design document in which to create/look for the view. Usually to create the backing view for CRUD
+   * methods, the expected designDoc value is the entity's simple class name, with a lowercase first letter
+   * (eg. a UserInfo repository would expect a design document named "userInfo").
    */
   String designDoc();
 
   /**
-   * The name of the view.
+   * The name of the view, defaults to "all" (which is what CRUD methods expect by default).
    */
-  String viewName();
+  String viewName() default "all";
 
   /**
    * The map function to use (default is empty, which will trigger a default map function filtering on the

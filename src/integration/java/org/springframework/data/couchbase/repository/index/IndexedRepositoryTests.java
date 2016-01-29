@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository.index;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.view.DesignDocument;
@@ -143,5 +145,41 @@ public class IndexedRepositoryTests {
         if (view.name().equals(IGNORED_VIEW_NAME)) fail("Found unexpected " + IGNORED_VIEW_NAME);
       }
     }
+  }
+
+  @Test
+  public void shouldFindListOfIdsThroughDefaulViewIndexed() {
+    IndexedFooRepository.Foo foo1 = new IndexedFooRepository.Foo("foo1", "foo", 1);
+    IndexedFooRepository.Foo foo2 = new IndexedFooRepository.Foo("foo2", "bar", 2);
+
+    IndexedFooRepository repository = factory.getRepository(IndexedFooRepository.class);
+
+    DesignDocument designDoc = template.getCouchbaseBucket()
+        .bucketManager()
+        .getDesignDocument("foo");
+
+    assertNotNull(designDoc);
+    boolean foundView = false;
+    for (View view : designDoc.views()) {
+      if (view.name().equals("all")) {
+        foundView = true;
+        break;
+      }
+    }
+    assertTrue("Expected to find view \"all\" on design document \"foo\"", foundView);
+
+    repository.save(foo1);
+    repository.save(foo2);
+
+    int count = 0;
+    for (Object o : repository.findAll(Arrays.asList("foo1", "foo2"))) {
+      count++;
+    }
+    assertEquals(2L, count);
+    count = 0;
+    for (Object o : repository.findAll(Arrays.asList("foo1", "foo3"))) {
+      count++;
+    }
+    assertEquals(1L, count);
   }
 }

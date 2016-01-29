@@ -18,6 +18,7 @@ public class IndexedRepositoryTestListener extends DependencyInjectionTestExecut
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseBucket");
     client.bucketManager().removeDesignDocument(IndexedRepositoryTests.VIEW_DOC);
+    client.bucketManager().removeDesignDocument("foo");
     client.query(N1qlQuery.simple(Index.dropPrimaryIndex(client.name())));
     client.query(N1qlQuery.simple(Index.dropIndex(client.name(), IndexedRepositoryTests.SECONDARY)));
   }
