@@ -89,23 +89,13 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   /**
    * String used to add limits and skip to a query.
    */
-  private static final String QUERY_PAGENATION = " LIMIT %1s OFFSET %2s";
+  private static final String QUERY_PAGINATION = " LIMIT %1s OFFSET %2s";
 
   /**
    * String used to construct ordering in query.
    * 
    */
   private static final String QUERY_ORDER = " ORDER BY ";
-
-  /**
-   * String used to seperate order params.
-   */
-  private static final String QUERY_ORDER_SEP = ", ";
-
-  /**
-   * String used to seperate order direction and param.
-   */
-  private static final String QUERY_DIRECTION_SEP = " ";
 
   private final String originalStatement;
   private final SpelExpressionParser parser;
@@ -192,7 +182,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters) {
     StringBuilder statement = new StringBuilder();
     statement.append(parseSpel(this.originalStatement, false, runtimeParameters));
-    //if there is a pageable object we need to append the sort and pagenation
+    //if there is a pageable object we need to append the sort and pagination
     Pageable pageable = accessor.getPageable();
     if (pageable != null) {
       Sort sort = pageable.getSort();
@@ -201,15 +191,15 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
         boolean first = true;
         for (Order order : sort) {
           if (!first) {
-            statement.append(QUERY_ORDER_SEP);
+            statement.append(", ");
           }
           String orderString = new String();
-          orderString = order.getProperty().concat(QUERY_DIRECTION_SEP).concat(order.getDirection().toString());
+          orderString = order.getProperty().concat(" ").concat(order.getDirection().toString());
           statement.append(orderString);
           first = false;
         }
       }
-      statement.append(String.format(QUERY_PAGENATION, pageable.getPageSize(), pageable.getOffset()));
+      statement.append(String.format(QUERY_PAGINATION, pageable.getPageSize(), pageable.getOffset()));
     }
     return N1qlQuery.simple(statement.toString()).statement();
   }
