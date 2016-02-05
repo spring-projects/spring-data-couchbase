@@ -70,24 +70,24 @@ public class IndexManager {
 
   /**
    * Construct an IndexManager that can be used as a Bean in a {@link Profile @Profile} annotated configuration
-   * in order to ignore all or part of automatic index creations in some contexts (like activating it in Dev but
+   * in order to activate only all or part of automatic index creations in some contexts (like activating it in Dev but
    * not in Prod).
    *
-   * @param ignoreViews true to ignore {@link ViewIndexed} annotations.
-   * @param ignoreN1qlPrimary true to ignore {@link N1qlPrimaryIndexed} annotations.
-   * @param ignoreN1qlSecondary true to ignore {@link N1qlSecondaryIndexed} annotations.
+   * @param processViews true to process, false to ignore {@link ViewIndexed} annotations.
+   * @param processN1qlPrimary true to process, false to ignore {@link N1qlPrimaryIndexed} annotations.
+   * @param processN1qlSecondary true to process, false to ignore {@link N1qlSecondaryIndexed} annotations.
    */
-  public IndexManager(boolean ignoreViews, boolean ignoreN1qlPrimary, boolean ignoreN1qlSecondary) {
-    this.ignoreViews = ignoreViews;
-    this.ignoreN1qlPrimary = ignoreN1qlPrimary;
-    this.ignoreN1qlSecondary = ignoreN1qlSecondary;
+  public IndexManager(boolean processViews, boolean processN1qlPrimary, boolean processN1qlSecondary) {
+    this.ignoreViews = !processViews;
+    this.ignoreN1qlPrimary = !processN1qlPrimary;
+    this.ignoreN1qlSecondary = !processN1qlSecondary;
   }
 
   /**
    * Construct a default IndexManager that process all three types of automatic index creations.
    */
   public IndexManager() {
-    this(false, false, false);
+    this(true, true, true);
   }
 
   /**

@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -103,6 +104,12 @@ public class RepositoryTemplateWiringTests {
     @Bean
     public CouchbaseOperations templateC() {
       return mockOpsC;
+    }
+
+    //this is for dev so it is ok to auto-create indexes
+    @Override
+    public IndexManager indexManager() {
+      return new IndexManager();
     }
 
     @Override

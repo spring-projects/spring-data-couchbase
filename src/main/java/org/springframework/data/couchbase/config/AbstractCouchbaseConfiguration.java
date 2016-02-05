@@ -249,15 +249,18 @@ public abstract class AbstractCouchbaseConfiguration {
   /**
    * Register an {@link IndexManager} bean that will be used to process {@link ViewIndexed},
    * {@link N1qlPrimaryIndexed} and {@link N1qlSecondaryIndexed} annotations on repositories
-   * to automatically create indexes.
+   * to automatically create indexes. By default, since such automatic creations are discouraged in
+   * production envrironment, the configuration will assume the worst and will ignore these annotations.
    * <p/>
-   * If this configuration is used in a context where such automatic creations are not desired (eg.
-   * you want automatic index creation in Dev but not in Prod, and this configuration is the Prod one),
-   * override the bean and use the {@link IndexManager#IndexManager(boolean, boolean, boolean)} constructor.
+   * If you are sure this configuration used in a context where such automatic creations are desired (eg.
+   * you want automatic index creation in Dev, just not in Prod, and this configuration is the Dev one),
+   * override the bean and use the {@link IndexManager#IndexManager()} constructor (or
+   * {@link IndexManager#IndexManager(boolean, boolean, boolean)} constructor with appropriate flags set to true to
+   * activate).
    */
   @Bean(name = BeanNames.COUCHBASE_INDEX_MANAGER)
   public IndexManager indexManager() {
-    return new IndexManager();
+    return new IndexManager(false, false, false); //this ignores view, N1QL primary and secondary annotations
   }
 
   /**

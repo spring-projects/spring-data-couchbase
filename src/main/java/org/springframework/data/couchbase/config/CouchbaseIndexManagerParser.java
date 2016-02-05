@@ -65,13 +65,14 @@ public class CouchbaseIndexManagerParser extends AbstractSingleBeanDefinitionPar
    */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    boolean ignoreViews = Boolean.parseBoolean(element.getAttribute("ignoreViews"));
-    boolean ignorePrimary = Boolean.parseBoolean(element.getAttribute("ignorePrimary"));
-    boolean ignoreSecondary = Boolean.parseBoolean(element.getAttribute("ignoreSecondary"));
+    //the following values default to false, so you must opt-in by providing them
+    boolean processViews = Boolean.parseBoolean(element.getAttribute("processViews"));
+    boolean processPrimary = Boolean.parseBoolean(element.getAttribute("processPrimary"));
+    boolean processSecondary = Boolean.parseBoolean(element.getAttribute("processSecondary"));
 
-    bean.addConstructorArgValue(ignoreViews);
-    bean.addConstructorArgValue(ignorePrimary);
-    bean.addConstructorArgValue(ignoreSecondary);
+    bean.addConstructorArgValue(processViews);
+    bean.addConstructorArgValue(processPrimary);
+    bean.addConstructorArgValue(processSecondary);
   }
 
 }

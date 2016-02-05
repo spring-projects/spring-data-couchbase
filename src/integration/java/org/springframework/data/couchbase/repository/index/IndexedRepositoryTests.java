@@ -67,7 +67,7 @@ public class IndexedRepositoryTests {
   private RepositoryFactorySupport factory;
 
   private RepositoryFactorySupport ignoringIndexFactory;
-  private IndexManager ignoringIndexManager = new IndexManager(true, true, true);
+  private IndexManager ignoringIndexManager = new IndexManager(false, false, false);
 
   @Before
   public void setup() throws Exception {

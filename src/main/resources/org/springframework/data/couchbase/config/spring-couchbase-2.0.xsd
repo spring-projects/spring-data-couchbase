@@ -182,9 +182,9 @@ The name of the CouchbaseBucket object that determines what connection to monito
         <xsd:complexType>
             <xsd:complexContent>
                 <xsd:extension base="beans:identifiedType">
-                    <xsd:attribute name="ignoreViews" type="xsd:boolean" default="false" use="optional"/>
-                    <xsd:attribute name="ignorePrimary" type="xsd:boolean" default="false" use="optional"/>
-                    <xsd:attribute name="ignoreSecondary" type="xsd:boolean" default="false" use="optional"/>
+                    <xsd:attribute name="processViews" type="xsd:boolean" default="false" use="optional"/>
+                    <xsd:attribute name="processPrimary" type="xsd:boolean" default="false" use="optional"/>
+                    <xsd:attribute name="processSecondary" type="xsd:boolean" default="false" use="optional"/>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

@@ -10,7 +10,7 @@ There are three backing mechanisms in Couchbase for repositories, described in t
  - <<couchbase.repository.spatial>>
 
 CRUD operations are still mostly backed by Couchbase views (see <<couchbase.repository.views>>).
-Such views (and, for N1QL, equivalent indexes) can be automatically built, but note this is an **expensive operation** (see <<couchbase.repository.indexing>>).
+Such views (and, for N1QL, equivalent indexes) can be automatically built, but note this is **discouraged in production** and can be an **expensive operation** (see <<couchbase.repository.indexing>>).
 
 Note that you can tune the consistency you want for your queries (see <<couchbase.repository.consistency>>) and have different repositories backed by different buckets (see <<couchbase.repository.multibucket>>)
 
@@ -284,15 +284,35 @@ Also make sure to publish your design documents into production so that they can
 [[couchbase.repository.indexing]]
 === Automatic Index Management
 We've seen that the repositories default methods can be backed by two broad kind of features: views and N1QL (in the case of paging and sorting).
-In order for the CRUD operations to work, the adequate view must have been created beforehand, and this is usually left for the user to do because view creation (and index creation) is an expensive operation that can take quite some time if the quantity of documents is high.
+In order for the CRUD operations to work, the adequate view must have been created beforehand, and this is usually left for the user to do. First because view creation (and index creation) is an expensive operation that can take quite some time if the quantity of documents is high. Second, because in production it is considered best practice to avoid administration of the cluster elements like buckets, indexes and view by an application code.
 
-In the case where the index creation cost isn't considered too high, it can be triggered automatically instead. You just need to annotate the repositories you want managed with the relevant annotation(s):
+In the case where the index creation cost isn't considered too high and you are not in a production environment, it can be triggered automatically instead, in two steps. You will first need to annotate the repositories you want managed with the relevant annotation(s):
 
  - `@ViewIndexed` will create a view like the "all" view previously seen, to list all entities in the bucket.
  - `@N1qlPrimaryIndexed` can be used to ensure a general-purpose PRIMARY INDEX is available in N1QL.
  - `@N1qlSecondaryIndexed` will create a more specific N1QL index that does the same kind of filtering on entity type that the view does. It'll allow for efficient listing of all documents that correspond to a Repository's associated domain object.
 
-Note that sometimes you only want this automatic creation in certain contexts (eg. in Dev but not in Production). To that end, you can customize the `IndexManager` bean in an env-specific `AbstractCouchbaseConfiguration` (eg. via `@Profile`) to ignore certain types of index creation annotations. This is done through the `IndexManager(boolean ignoreView, boolean ignoreN1qlPrimary, boolean ignoreN1qlSecondary)` constructor. You can even declare multiple beans and differentiate them using Spring annotations.
+Secondly, you'll need to opt-in to this feature by customizing the `indexManager()` bean of your env-specific `AbstractCouchbaseConfiguration` to take certain types of annotations into account. This is done through the `IndexManager(boolean processViews, boolean processN1qlPrimary, boolean processN1qlSecondary)` constructor. Set the flags for the category of annotations you want processed to true, or false to deactivate the automatic creation feature.
+
+The `@Profile` annotation is one possible Spring annotation to be used to differentiate configurations (or individual beans) per environment.
+
+.A Dev configuration where only @ViewIndexed annotations will be processed.
+====
+[source,java]
+----
+@Configuration
+public class ExampleDevApplicationConfig extends AbstractCouchbaseConfiguration {
+
+  // note a few other overrides are actually needed
+
+  //this is for dev so it is ok to auto-create indexes
+  @Override
+  public IndexManager indexManager() {
+    return new IndexManager(true, false, false);
+  }
+}
+----
+====
 
 [[couchbase.repository.views.querying]]
 === View based querying

@@ -14,6 +14,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 
 @Configuration
 public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfiguration {
@@ -64,6 +65,12 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
     CouchbaseTemplate template = super.couchbaseTemplate();
     template.setWriteResultChecking(WriteResultChecking.LOG);
     return template;
+  }
+
+  //this is for dev so it is ok to auto-create indexes
+  @Override
+  public IndexManager indexManager() {
+    return new IndexManager();
   }
 
   @Override

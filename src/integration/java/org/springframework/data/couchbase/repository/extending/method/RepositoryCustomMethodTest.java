@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -66,6 +67,12 @@ public class RepositoryCustomMethodTest {
     @Override
     protected String getBucketPassword() {
       return "";
+    }
+
+    //this is for dev so it is ok to auto-create indexes
+    @Override
+    public IndexManager indexManager() {
+      return new IndexManager();
     }
 
     @Override

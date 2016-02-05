@@ -42,6 +42,7 @@ import org.springframework.data.couchbase.repository.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.extending.base.impl.MyRepository;
 import org.springframework.data.couchbase.repository.extending.base.impl.MyRepositoryImpl;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -103,6 +104,12 @@ public class RepositoryBaseTest {
     @Bean
     public CouchbaseOperations couchbaseOperations() {
       return mockOpsA;
+    }
+
+    //this is for dev so it is ok to auto-create indexes
+    @Override
+    public IndexManager indexManager() {
+      return new IndexManager();
     }
   }
 

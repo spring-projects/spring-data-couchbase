@@ -16,6 +16,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 
 @Configuration
 public class FeatureDetectionTestApplicationConfig extends AbstractCouchbaseConfiguration {
@@ -69,6 +70,12 @@ public class FeatureDetectionTestApplicationConfig extends AbstractCouchbaseConf
   @Override
   public ClusterInfo couchbaseClusterInfo() throws Exception {
     return new DefaultClusterInfo(JsonObject.empty());
+  }
+
+  //this is for dev so it is ok to auto-create indexes
+  @Override
+  public IndexManager indexManager() {
+    return new IndexManager();
   }
 
   //change the name of the field that will hold type information
