@@ -1,6 +1,22 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.0.0.RELEASE (2016-02-08)
+---------------------------------------------
+* DATACOUCH-180 - Named N1QL param doesn't work.
+* DATACOUCH-184 - Add support for customizing repository base class.
+* DATACOUCH-185 - Base repository methods should also use the configured default consistency.
+* DATACOUCH-186 - Template methods based on stale indexes should not take deleted docs into account.
+* DATACOUCH-187 - Support long return type in @Query when selecting single aggregation.
+* DATACOUCH-188 - Update Couchbase java-client to latest version (2.2.3).
+* DATACOUCH-189 - Document how to extend a repository / change the base class.
+* DATACOUCH-190 - Give an example of SpEL support in documentation.
+* DATACOUCH-192 - Ensure no bean created by SDC clashes with other datastores by having couchbase in their name.
+* DATACOUCH-196 - ViewIndexed emits ids so that findAll(ids) works.
+* DATACOUCH-199 - Auto Index creation should be opt-in.
+* DATACOUCH-201 - Release 2.0 GA.
+
+
 Changes in version 2.0.0.RC1 (2015-12-22)
 -----------------------------------------
 * DATACOUCH-159 - Response time degradation on document conversion with a lot of longs inside.
