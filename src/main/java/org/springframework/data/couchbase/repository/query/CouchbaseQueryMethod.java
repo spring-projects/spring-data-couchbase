@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.util.StringUtils;
@@ -35,18 +36,17 @@ import org.springframework.util.StringUtils;
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
+ * @author Oliver Gierke
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
   private final Method method;
-  private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
-  public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata,
+  public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
     MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
-    super(method, metadata);
+    super(method, metadata, factory);
 
     this.method = method;
-    this.mappingContext = mappingContext;
   }
 
   /**
