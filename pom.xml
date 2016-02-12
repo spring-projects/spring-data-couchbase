@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>1.8.0.BUILD-SNAPSHOT</version>
+        <version>1.8.0.M1</version>
     </parent>
 
     <properties>
@@ -23,7 +23,7 @@
 
         <couchbase>2.2.3</couchbase>
         <couchbase.osgi>2.2.3</couchbase.osgi>
-        <springdata.commons>1.12.0.BUILD-SNAPSHOT</springdata.commons>
+        <springdata.commons>1.12.0.M1</springdata.commons>
         <validation>1.0.0.GA</validation>
     </properties>
 
@@ -123,8 +123,8 @@
 
     <repositories>
         <repository>
-            <id>spring-libs-snapshot</id>
-            <url>https://repo.spring.io/libs-snapshot</url>
+            <id>spring-libs-milestone</id>
+            <url>https://repo.spring.io/libs-milestone</url>
         </repository>
     </repositories>
 
