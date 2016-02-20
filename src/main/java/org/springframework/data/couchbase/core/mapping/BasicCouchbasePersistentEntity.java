@@ -16,12 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.util.Calendar;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-
 import com.couchbase.client.java.repository.annotation.Id;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -30,6 +25,10 @@ import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
+
+import java.util.Calendar;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The representation of a persistent entity.
@@ -121,6 +120,13 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     } else {
       return (int) secondsShift;
     }
+  }
+
+  @Override
+  public boolean isTouchOnRead() {
+    org.springframework.data.couchbase.core.mapping.Document annotation = getType().getAnnotation(
+        org.springframework.data.couchbase.core.mapping.Document.class);
+    return annotation == null ? false : getExpiry() > 0 && annotation.touchOnRead();
   }
 
 }

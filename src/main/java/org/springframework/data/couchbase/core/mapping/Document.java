@@ -41,6 +41,8 @@ public @interface Document {
    */
   int expiry() default 0;
 
+  boolean touchOnRead() default false;
+
   /**
    * An optional time unit for the document's {@link #expiry()}, if set. Default is {@link TimeUnit#SECONDS}.
    */
