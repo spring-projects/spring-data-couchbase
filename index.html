@@ -41,30 +41,32 @@ badges:
 
 {% capture billboard_description %}
 
-Spring Data for [Couchbase](http://www.couchbase.com) is part of the umbrella 
-Spring Data project which aims to provide a familiar and consistent Spring-based 
-programming model for new datastores while retaining store-specific features and 
+Spring Data for [Couchbase](http://www.couchbase.com) is part of the umbrella
+Spring Data project which aims to provide a familiar and consistent Spring-based
+programming model for new datastores while retaining store-specific features and
 capabilities.
 
 {% endcapture %}
 
 {% capture main_content %}
 
-The Spring Data Couchbase project provides integration with the Couchbase Server 
-database. Key functional areas of Spring Data Couchbase are a POJO centric model 
-for interacting with Couchbase Buckets and easily writing a Repository style data 
+The Spring Data Couchbase project provides integration with the Couchbase Server
+database. Key functional areas of Spring Data Couchbase are a POJO centric model
+for interacting with Couchbase Buckets and easily writing a Repository style data
 access layer.
 
 ## Features
 
-* Spring configuration support using Java based @Configuration classes or an XML namespace for the Couchbase driver.
-* CouchbaseTemplate helper class that increases productivity performing common Couchbase operations. Includes integrated object mapping between documents and POJOs.
+* Spring configuration support using Java based `@Configuration` classes or an XML namespace for the Couchbase driver (Java SDK version `2.x`).
+* `CouchbaseTemplate` helper class that increases productivity performing common Couchbase operations. Includes integrated object mapping between documents and POJOs.
 * Exception translation into Spring's portable Data Access Exception hierarchy.
 * Feature Rich Object Mapping integrated with Spring's Conversion Service.
 * Annotation based mapping metadata but extensible to support other metadata formats.
-* Automatic implementation of Repository interfaces including support for custom finder methods (backed by Couchbase Views).
+* Automatic implementation of `Repository` interfaces including support for custom finder methods (backed by Couchbase's query language, `N1QL`) and `PagingAndSortingRepository`.
+* For Couchbase server versions < 4.0, repositories can still be backed by Couchbase Views.
+* Support for geospatial and multidimensional querying (backed by Couchbase Spatial Views)
 * JMX administration and monitoring
-* Transparent @Cacheable support to cache any objects you need for high performance access.
+* Can serve as the backend for `@Cacheable` support, to cache any objects you need for high performance access (see sibling Spring Cache project in Couchbase's github, [couchbaselabs/couchbase-spring-cache](https://github.com/couchbaselabs/couchbase-spring-cache)).
 
 <span id="quick-start"></span>
 ## Quick Start
@@ -72,6 +74,10 @@ access layer.
 {% include download_widget.md %}
 
 ## Configuration
+The minimal configuration requires you to set the name and password of the main `Bucket` into which Spring Data Couchbase will store the data: `getBucketName()` and `getBucketPassword()`.
+
+The other required information is a list of IPs or hostnames to bootstrap from (at least one, preferably two): `getBootstrapHosts()`. These are just used to initiate connection to the cluster, after which the client will discover all nodes and keep the cluster map up to date.
+
 ```java
 package foo;
 
@@ -82,7 +88,7 @@ import foo;
 public class Config extends AbstractCouchbaseConfiguration {
 
     @Override
-    protected List<String> bootstrapHosts() {
+    protected List<String> getBootstrapHosts() {
         return Arrays.asList("host1", "host2");
     }
 
@@ -103,42 +109,31 @@ public class Config extends AbstractCouchbaseConfiguration {
 public interface UserRepository extends CrudRepository<User, String> {
 
     /**
-     * Additional custom finder method.
+     * Additional custom finder method, backed by an auto-generated
+     * N1QL query.
      */
-    List<User> findByLastname(Query query);
+    List<User> findByLastnameAndAgeBetween(String lastName, int minAge,
+        int maxAge);
 
+    /**
+     * Additional custom finder method, backed by a View that indexes
+     * the names.
+     */
+    @View(designDocument = "user", viewName = "byName")
+    List<User> findByLastname(String lastName);
+
+    /**
+     * Additional custom finder method, backed by a geospatial view and
+     * allowing multi-dimensional queries.
+     * You can also query within a Circle or a Polygon.
+     */
+    @Dimensional(designDocument = "userGeo", spatialViewName = "byLocation")
+    List<User> findByLocationWithin(Box cityBoundingBox);
 }
 ```
 
-## Usage
-```java
-@Service
-public class MyService {
-
-    private final UserRepository userRepository;
-
-    @Autowired
-    public MyService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    public void doWork() {
-        userRepository.deleteAll();
-
-        User user = new User();
-        user.setLastname("Jackson");
-
-        user = userRepository.save(user);
-
-        Query query = new Query();
-        query.setKey(ComplexKey.of("Jackson"));
-        List<User> allUsers = userRepository.findByLastname(query);
-
-    }
-}
-```
-
-Note that to back the custom finders, you need to set up two Views on the server:
+## Server-side Setup
+Note that some CRUD operations like `findAll` and `count`, as well as view-based custom finders each require you to set up a corresponding View on the server side:
 
 For `findByLastname`:
 
@@ -157,6 +152,53 @@ function (doc, meta) {
   if(doc._class == "com.example.entity.User") {
     emit(null, null);
   }
+}
+```
+
+For `findByLocationWithin`:
+
+```javascript
+function (doc, meta) {
+    if(doc._class == "com.example.entity.User" && doc.location) {
+        emit([doc.location.x, doc.location.y], null);
+    }
+}
+```
+
+For more information on server side setup and how it can be partially automated in development environments, see the [Backing Views](http://docs.spring.io/spring-data/couchbase/docs/current/reference/html/#couchbase.repository.views) and [Automatic Index Management](http://docs.spring.io/spring-data/couchbase/docs/current/reference/html/#couchbase.repository.indexing) sections of the documentation.
+
+## Usage
+```java
+@Service
+public class MyService {
+
+    private final UserRepository userRepository;
+
+    @Autowired
+    public MyService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public void doWork() {
+        userRepository.deleteAll();
+
+        User user = new User();
+        user.setLastname("Jackson");
+        user.setLocation(new Point(123, 456));
+
+        user = userRepository.save(user);
+
+        List<User> jacksonChildren =
+            userRepository.findByLastNameAndAgeBetween("Jackson", 0, 18);
+
+        List<User> jacksonFamily =
+            userRepository.findByLastName("Jackson");
+
+        //bounding box is lower-left, upper-right corners
+        Box cityBounds = new Box(new Point(100, 100), new Point(150, 500));
+        List<User> jacksonsInSomeCity =
+            userRepository.findByLocationWithin(cityBounds);
+    }
 }
 ```
 
