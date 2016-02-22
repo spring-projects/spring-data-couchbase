@@ -35,7 +35,7 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
     ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
     populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
