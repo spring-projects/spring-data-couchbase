@@ -14,6 +14,7 @@ import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.SpatialView;
 import com.couchbase.client.java.view.View;
 
+import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.geo.Point;
 import org.springframework.test.context.TestContext;
@@ -26,8 +27,8 @@ public class PartyPopulatorListener extends DependencyInjectionTestExecutionList
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseBucket");
-    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean("couchbaseClusterInfo");
+    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
+    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
     populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
   }

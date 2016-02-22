@@ -24,6 +24,7 @@ import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
 
+import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
@@ -34,8 +35,8 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean("couchbaseBucket");
-    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean("couchbaseClusterInfo");
+    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
     populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
   }

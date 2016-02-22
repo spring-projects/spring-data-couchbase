@@ -52,20 +52,20 @@ public class CouchbaseTemplateParserIntegrationTests {
   public void readsCouchbaseTemplateAttributesCorrectly() {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-bean.xml"));
 
-    BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
+    BeanDefinition definition = factory.getBeanDefinition(BeanNames.COUCHBASE_TEMPLATE);
     assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
 
-    factory.getBean("couchbaseTemplate");
+    factory.getBean(BeanNames.COUCHBASE_TEMPLATE);
   }
 
   @Test
   public void readsCouchbaseTemplateWithTranslationServiceAttributesCorrectly() {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-with-translation-service-bean.xml"));
 
-    BeanDefinition definition = factory.getBeanDefinition("couchbaseTemplate");
+    BeanDefinition definition = factory.getBeanDefinition(BeanNames.COUCHBASE_TEMPLATE);
     assertEquals(3, definition.getConstructorArgumentValues().getArgumentCount());
 
-    factory.getBean("couchbaseTemplate");
+    factory.getBean(BeanNames.COUCHBASE_TEMPLATE);
   }
 
   /**
@@ -85,7 +85,7 @@ public class CouchbaseTemplateParserIntegrationTests {
   @Test
   public void testTypeFieldCanBeChosen() {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-typekey.xml"));
-    CouchbaseTemplate template = factory.getBean("couchbaseTemplate", CouchbaseTemplate.class);
+    CouchbaseTemplate template = factory.getBean(BeanNames.COUCHBASE_TEMPLATE, CouchbaseTemplate.class);
 
     assertTrue(template.getConverter() instanceof MappingCouchbaseConverter);
     MappingCouchbaseConverter converter = ((MappingCouchbaseConverter) template.getConverter());
@@ -130,7 +130,7 @@ public class CouchbaseTemplateParserIntegrationTests {
   public void shouldHaveDefaultsForStaleness() {
     //use another resource where staleness isn't customized
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-with-translation-service-bean.xml"));
-    CouchbaseTemplate template = factory.getBean("couchbaseTemplate", CouchbaseTemplate.class);
+    CouchbaseTemplate template = factory.getBean(BeanNames.COUCHBASE_TEMPLATE, CouchbaseTemplate.class);
 
     assertEquals(Consistency.DEFAULT_CONSISTENCY, template.getDefaultConsistency());
   }

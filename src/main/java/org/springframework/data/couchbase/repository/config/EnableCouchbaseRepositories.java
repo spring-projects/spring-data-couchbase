@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.config;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
@@ -112,6 +113,6 @@ public @interface EnableCouchbaseRepositories {
    *
    * @return
    */
-  String couchbaseTemplateRef() default "couchbaseTemplate";
+  String couchbaseTemplateRef() default BeanNames.COUCHBASE_TEMPLATE;
 
 }
