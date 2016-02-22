@@ -21,10 +21,11 @@ repository style data access layer.
 
 For a comprehensive treatment of all the Spring Data Couchbase features, please refer to:
 
-* the [User Guide](http://static.springsource.org/spring-data/couchbase/docs/current/reference/html/)
-* the [JavaDocs](http://static.springsource.org/spring-data/couchbase/docs/current/api/) have extensive comments
+* the [User Guide](http://docs.spring.io/spring-data/couchbase/docs/current/reference/html/) for the current GA version.
+* the [JavaDocs](http://docs.spring.io/spring-data/couchbase/docs/current/api/) have extensive comments
   in them as well.
-* for more detailed questions, use the [forum](http://forum.springsource.org/forumdisplay.php?f=80).
+* for more detailed questions, use the [StackOverflow `spring-data-couchbase` tag](http://stackoverflow.com/questions/tagged/spring-data-couchbase)
+or Couchbase's own [forums](https://forums.couchbase.com/c/java-sdk).
 
 If you are new to Spring as well as to Spring Data, look for information about
 [Spring projects](http://www.springsource.org/projects).
@@ -257,14 +258,16 @@ public class MyService {
 
 Here are some ways for you to get involved in the community:
 
-* Get involved with the Spring community on the Spring Community Forums.  Please help out on the
-  [forum](http://forum.springsource.org/forumdisplay.php?f=80) by responding to questions and joining the debate.
-* Create [JIRA](https://jira.springframework.org/browse/DATACOUCH) tickets for bugs and new features and comment and
+* Get involved with the Spring community on Stack Overflow.  Please help out on the
+  [`spring-data`](http://stackoverflow.com/questions/tagged/spring-data) and
+  [`spring-data-couchbase`](http://stackoverflow.com/questions/tagged/spring-data-couchbase) tags by responding to
+  questions.
+* Create [JIRA](jira.spring.io/browse/DATACOUCH) `DATACOUCH` tickets for bugs and new features and comment and
   vote on the ones that you are interested in.
 * Github is for social coding: if you want to write code, we encourage contributions through pull requests from
   [forks of this repository](http://help.github.com/forking/). If you want to contribute code this way, please reference
   a JIRA ticket as well covering the specific issue you are addressing.
-* Watch for upcoming articles on Spring by [subscribing](http://www.springsource.org/node/feed) to springframework.org
+* Watch for upcoming articles on Spring by [subscribing](http://assets.spring.io/drupal/node/feed.xml) to spring.io RSS feed.
 
 Before we accept a non-trivial patch or pull request we will need you to sign the
 [contributor's agreement](https://support.springsource.com/spring_committer_signup). Signing the contributor's agreement
