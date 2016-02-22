@@ -40,9 +40,9 @@ public enum Consistency {
   EVENTUALLY_CONSISTENT(Stale.TRUE, ScanConsistency.NOT_BOUNDED);
 
   /**
-   * The static default Consistency ({@link #UPDATE_AFTER}).
+   * The static default Consistency ({@link #READ_YOUR_OWN_WRITES}).
    */
-  public static final Consistency DEFAULT_CONSISTENCY = UPDATE_AFTER;
+  public static final Consistency DEFAULT_CONSISTENCY = READ_YOUR_OWN_WRITES;
 
   private final Stale viewConsistency;
   private final ScanConsistency n1qlConsistency;

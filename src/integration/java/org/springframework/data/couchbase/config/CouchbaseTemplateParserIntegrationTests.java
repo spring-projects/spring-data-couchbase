@@ -111,7 +111,7 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-consistency.xml"));
     CouchbaseTemplate template = factory.getBean("template", CouchbaseTemplate.class);
 
-    assertEquals(Consistency.READ_YOUR_OWN_WRITES, template.getDefaultConsistency());
+    assertEquals(Consistency.EVENTUALLY_CONSISTENT, template.getDefaultConsistency());
     assertNotEquals(Consistency.DEFAULT_CONSISTENCY, template.getDefaultConsistency());
   }
 

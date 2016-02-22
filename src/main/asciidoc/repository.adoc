@@ -456,7 +456,7 @@ A global consistency can be defined using the `Consistency` enumeration (eg. `Co
  - in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
  - in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
 
-By default it is `Consistency.UPDATE_AFTER` (which means speed is prioritized over consistency, but the view index will be updated after each request).
+By default it is `Consistency.READ_YOUR_OWN_WRITES` (which means consistency is prioritized over speed, especially when a large number of documents has been created recently).
 
 IMPORTANT: This is **only used in repositories**, either for index-backed methods automatically provided by the repository interface (`findAll()`, `findAll(keys)`, `count()`, `deleteAll()`...) or methods you define in your specific interface using query derivation.
 

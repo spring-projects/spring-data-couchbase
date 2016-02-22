@@ -10,7 +10,7 @@
     <couchbase:clusterInfo/>
     <couchbase:bucket/>
 
-    <couchbase:template id="template" consistency="READ_YOUR_OWN_WRITES"/>
+    <couchbase:template id="template" consistency="EVENTUALLY_CONSISTENT"/>
     <couchbase:template id="templateBad" consistency="BadConsistency"/>
 
 </beans>
