@@ -46,4 +46,10 @@ public @interface Document {
    */
   TimeUnit expiryUnit() default TimeUnit.SECONDS;
 
+  /**
+   * An optional flag associated with {@link #expiry()} indicating whether the expiry timer should
+   * be reset whenever the document is directly read (eg. findByOne, findById).
+   */
+  boolean touchOnRead() default false;
+
 }

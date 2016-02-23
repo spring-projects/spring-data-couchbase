@@ -403,6 +403,22 @@ public class CouchbaseTemplateTests {
 	}
 
 	/**
+	 * @see DATACOUCH-59
+   */
+	@Test
+	public void expiryWhenTouchOnReadDocument() throws InterruptedException {
+		String id = "simple-doc-with-update-expiry-for-read";
+		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
+		template.save(doc);
+		Thread.sleep(1500);
+		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		Thread.sleep(1500);
+		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		Thread.sleep(3000);
+		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
+	}
+
+	/**
 	 * A sample document with just an id and property.
 	 */
 	@Document
@@ -429,6 +445,20 @@ public class CouchbaseTemplateTests {
 		private final String id;
 
 		public DocumentWithExpiry(String id) {
+			this.id = id;
+		}
+	}
+
+	/**
+	 * A sample document that expires in 2 seconds and touchOnRead set.
+	 */
+	@Document(expiry = 2, touchOnRead = true)
+	static class DocumentWithTouchOnRead {
+
+		@Id
+		private final String id;
+
+		public DocumentWithTouchOnRead(String id) {
 			this.id = id;
 		}
 	}

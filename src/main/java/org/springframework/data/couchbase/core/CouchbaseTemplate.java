@@ -281,10 +281,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> T findById(final String id, Class<T> entityClass) {
+    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
     RawJsonDocument result = execute(new BucketCallback<RawJsonDocument>() {
       @Override
       public RawJsonDocument doInBucket() {
-        return client.get(id, RawJsonDocument.class);
+        if (entity.isTouchOnRead()) {
+          return client.getAndTouch(id, entity.getExpiry(), RawJsonDocument.class);
+        } else {
+          return client.get(id, RawJsonDocument.class);
+        }
       }
     });
 

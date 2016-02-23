@@ -42,4 +42,12 @@ public interface CouchbasePersistentEntity<T> extends
    */
   int getExpiry();
 
+  /**
+   * Flag for using getAndTouch operations for reads, resetting the expiration (if one was set) when the
+   * entity is directly read (eg. findOne, findById).
+   *
+   * @return true if a direct read of the document should trigger a touch, resetting its expiration timer.
+   */
+   boolean isTouchOnRead();
+
 }
