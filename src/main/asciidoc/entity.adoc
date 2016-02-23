@@ -386,3 +386,88 @@ Now you can annotate your fields with JSR303 annotations. If a validation on `sa
 private String name;
 ----
 ====
+
+[[auditing]]
+== Auditing
+Entities can be automatically audited (tracing which user created the object, updated the object, and at what times) through Spring Data auditing mechanisms.
+
+First, note that only entities that have a `@Version` annotated field can be audited for creation (otherwise the framework will interpret a creation as an update).
+
+Auditing works by annotating fields with `@CreatedBy`, `@CreatedDate`, `@LastModifiedBy` and `@LastModifiedDate`. The framework will automatically inject the correct values on those fields when persisting the entity. The xxxDate annotations must be put on a `Date` field (or compatible, eg. jodatime classes) while the xxxBy annotations can be put on fields of any class `T` (albeit both fields must be of the same type).
+
+To configure auditing, first you need to have an auditor aware bean in the context. Said bean must be of type `AuditorAware<T>` (allowing to produce a value that can be stored in the xxxBy fields of type `T` we saw earlier). Secondly, you must activate auditing in your `@Configuration` class by using the `@EnableCouchbaseAuditing` annotation.
+
+Here is an example:
+
+.Sample Auditing Entity
+====
+[source,java]
+----
+@Document
+public class AuditedItem {
+
+  @Id
+  private final String id;
+
+  private String value;
+
+  @CreatedBy
+  private String creator;
+
+  @LastModifiedBy
+  private String lastModifiedBy;
+
+  @LastModifiedDate
+  private Date lastModification;
+
+  @CreatedDate
+  private Date creationDate;
+
+  @Version
+  private long version;
+
+  //..omitted constructor/getters/setters/...
+}
+----
+====
+Notice both `@CreatedBy` and `@LastModifiedBy` are both put on a `String` field, so our `AuditorAware` must work with `String`.
+
+.Sample AuditorAware implementation
+====
+[source,java]
+----
+public class NaiveAuditorAware implements AuditorAware<String> {
+
+  private String auditor = "auditor";
+
+  @Override
+  public String getCurrentAuditor() {
+    return auditor;
+  }
+
+  public void setAuditor(String auditor) {
+    this.auditor = auditor;
+  }
+}
+----
+====
+
+To tie all that together, we use the java configuration both to declare an AuditorAware bean and to activate auditing:
+
+.Sample Auditing Configuration
+====
+[source,java]
+----
+@Configuration
+@EnableCouchbaseAuditing //this activates auditing
+public class AuditConfiguration extends AbstractCouchbaseConfiguration {
+
+    //... a few abstract methods omitted here
+
+    // this creates the auditor aware bean that will feed the annotations
+    @Bean
+    public NaiveAuditorAware testAuditorAware() {
+      return new NaiveAuditorAware();
+    }
+----
+====

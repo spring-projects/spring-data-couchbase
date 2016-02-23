@@ -24,6 +24,7 @@ import com.couchbase.client.java.env.CouchbaseEnvironment;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.support.IsNewStrategyFactory;
 
 /**
  * Contains default bean names for Couchbase beans.
@@ -108,4 +109,9 @@ public class BeanNames {
    * The name for the  bean that registers custom {@link Converter Converters} to encode/decode entity members.
    */
   public static final String COUCHBASE_CUSTOM_CONVERSIONS = "couchbaseCustomConversions";
+
+  /**
+   * The name for the bean that will handle audit trail marking of entities.
+   */
+  public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
 }
