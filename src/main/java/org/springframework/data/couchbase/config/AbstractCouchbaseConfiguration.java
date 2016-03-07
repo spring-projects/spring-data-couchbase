@@ -33,9 +33,11 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
+ * @author Stephane Nicoll
  */
 @Configuration
-public abstract class AbstractCouchbaseConfiguration extends AbstractCouchbaseDataConfiguration {
+public abstract class AbstractCouchbaseConfiguration
+        extends AbstractCouchbaseDataConfiguration implements CouchbaseConfigurer {
 
   /**
    * The list of hostnames (or IP addresses) to bootstrap from.
@@ -77,6 +79,11 @@ public abstract class AbstractCouchbaseConfiguration extends AbstractCouchbaseDa
    */
   protected CouchbaseEnvironment getEnvironment() {
     return DefaultCouchbaseEnvironment.create();
+  }
+
+  @Override
+  protected CouchbaseConfigurer couchbaseConfigurer() {
+    return this;
   }
 
   @Override

@@ -57,10 +57,7 @@ import org.springframework.util.StringUtils;
 @Configuration
 public abstract class AbstractCouchbaseDataConfiguration {
 
-  public abstract CouchbaseEnvironment couchbaseEnvironment() throws Exception;
-  public abstract Cluster couchbaseCluster() throws Exception;
-  public abstract ClusterInfo couchbaseClusterInfo() throws Exception;
-  public abstract Bucket couchbaseClient() throws Exception;
+  protected abstract CouchbaseConfigurer couchbaseConfigurer();
 
   /**
    * Creates a {@link CouchbaseTemplate}.
@@ -76,7 +73,8 @@ public abstract class AbstractCouchbaseDataConfiguration {
    */
   @Bean(name = BeanNames.COUCHBASE_TEMPLATE)
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    CouchbaseTemplate template = new CouchbaseTemplate(couchbaseClusterInfo(), couchbaseClient(), mappingCouchbaseConverter(), translationService());
+    CouchbaseTemplate template = new CouchbaseTemplate(couchbaseConfigurer().couchbaseClusterInfo(),
+            couchbaseConfigurer().couchbaseClient(), mappingCouchbaseConverter(), translationService());
     template.setDefaultConsistency(getDefaultConsistency());
     return template;
   }
