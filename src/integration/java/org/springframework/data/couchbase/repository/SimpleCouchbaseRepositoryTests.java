@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import org.junit.Before;
@@ -30,8 +32,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
+import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
@@ -58,11 +64,13 @@ public class SimpleCouchbaseRepositoryTests {
   private IndexManager indexManager;
 
   private UserRepository repository;
+  private VersionedDataRepository versionedDataRepository;
 
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     repository = factory.getRepository(UserRepository.class);
+    versionedDataRepository = factory.getRepository(VersionedDataRepository.class);
   }
 
   @Test
@@ -180,4 +188,85 @@ public class SimpleCouchbaseRepositoryTests {
       }
     }
   }
+
+  @Test
+  public void shouldTakeVersionIntoAccountWhenDoingMultipleUpdates() {
+    final String key = "versionedUserTest";
+    VersionedData initial = new VersionedData(key, "ABCD");
+    versionedDataRepository.save(initial);
+    assertNotEquals(0L, initial.version);
+
+    VersionedData fetch1 = versionedDataRepository.findOne(key);
+    assertNotSame(initial, fetch1);
+    assertEquals(fetch1.version, initial.version);
+
+    JsonDocument bypass = client.get(key);
+    bypass.content().put("data", "BBBB");
+    JsonDocument bypassed = client.upsert(bypass);
+
+    assertNotEquals(bypassed.cas(), fetch1.version);
+    System.out.println(bypassed.cas());
+
+    try {
+      fetch1.setData("ZZZZ");
+      versionedDataRepository.save(fetch1);
+      fail("Expected CAS failure");
+    }  catch (OptimisticLockingFailureException e) {
+      //success
+      assertTrue("optimistic locking should have CASMismatchException as cause, got " + e.getCause(),
+          e.getCause() instanceof CASMismatchException);
+    } finally {
+      client.remove(key);
+    }
+  }
+
+  public interface VersionedDataRepository extends CouchbaseRepository<VersionedData, String> { }
+
+  @Document
+  public static class VersionedData {
+
+    @Id
+    private final String key;
+
+    @Version
+    public long version = 0L;
+
+    private String data;
+
+    public VersionedData(String key, String data) {
+      this.key = key;
+      this.data = data;
+    }
+
+    public String getKey() {
+      return key;
+    }
+
+    public String getData() {
+      return data;
+    }
+
+    public void setData(String data) {
+      this.data = data;
+    }
+
+    @Override
+    public String toString() {
+      return this.key + " " + this.data;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      VersionedData vd = (VersionedData) o;
+      return key.equals(vd.key);
+    }
+
+    @Override
+    public int hashCode() {
+      return key.hashCode();
+    }
+  }
+
 }

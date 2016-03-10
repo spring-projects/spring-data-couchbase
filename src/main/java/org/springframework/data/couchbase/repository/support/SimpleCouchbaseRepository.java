@@ -82,7 +82,6 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public <S extends T> S save(S entity) {
     Assert.notNull(entity, "Entity must not be null!");
-
     couchbaseOperations.save(entity);
     return entity;
   }

@@ -34,6 +34,8 @@ import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.DocumentAlreadyExistsException;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
@@ -220,7 +222,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public void save(Object objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
-    doPersist(objectToSave, persistTo, replicateTo, false, false);
+    doPersist(objectToSave, persistTo, replicateTo, PersistType.SAVE);
   }
 
   @Override
@@ -231,7 +233,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   @Override
   public void save(Collection<?> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToSave) {
-      doPersist(o, persistTo, replicateTo, false, false);
+      doPersist(o, persistTo, replicateTo, PersistType.SAVE);
     }
   }
 
@@ -242,7 +244,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public void insert(Object objectToInsert, PersistTo persistTo, ReplicateTo replicateTo) {
-    doPersist(objectToInsert, persistTo, replicateTo, true, false);
+    doPersist(objectToInsert, persistTo, replicateTo, PersistType.INSERT);
   }
 
   @Override
@@ -253,7 +255,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   @Override
   public void insert(Collection<?> batchToInsert, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToInsert) {
-      doPersist(o, persistTo, replicateTo, true, false);
+      doPersist(o, persistTo, replicateTo, PersistType.INSERT);
     }
   }
 
@@ -264,7 +266,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public void update(Object objectToUpdate, PersistTo persistTo, ReplicateTo replicateTo) {
-    doPersist(objectToUpdate, persistTo, replicateTo, false, true);
+    doPersist(objectToUpdate, persistTo, replicateTo, PersistType.UPDATE);
   }
 
   @Override
@@ -275,7 +277,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   @Override
   public void update(Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToUpdate) {
-      doPersist(o, persistTo, replicateTo, false, true);
+      doPersist(o, persistTo, replicateTo, PersistType.UPDATE);
     }
   }
 
@@ -509,10 +511,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   private void doPersist(Object objectToPersist, final PersistTo persistTo, final ReplicateTo replicateTo,
-                         final boolean failOnExist, final boolean failOnMissing) {
+                         final PersistType persistType) {
     ensureNotIterable(objectToPersist);
-
-    final String operationDesc = failOnExist ? "Insert" : failOnMissing ? "Update" : "Upsert";
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
     final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
@@ -529,15 +529,23 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
+        boolean checkVersion = version != null && version > 0L;
         try {
-          if (!failOnExist && !failOnMissing) {
-            storedDoc = client.upsert(doc, persistTo, replicateTo);
-          }
-          else if (failOnMissing) {
-            storedDoc = client.replace(doc, persistTo, replicateTo);
-          }
-          else {
-            storedDoc = client.insert(doc, persistTo, replicateTo);
+          switch (persistType) {
+            case SAVE:
+              if (checkVersion) {
+                storedDoc = client.replace(doc, persistTo, replicateTo);
+              } else {
+                storedDoc = client.upsert(doc, persistTo, replicateTo);
+              }
+              break;
+            case UPDATE:
+              storedDoc = client.replace(doc, persistTo, replicateTo);
+              break;
+            case INSERT:
+            default:
+              storedDoc = client.insert(doc, persistTo, replicateTo);
+              break;
           }
 
           if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
@@ -546,13 +554,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
             return true;
           }
           return false;
-        }
-        catch (CASMismatchException e) {
-          throw new OptimisticLockingFailureException(operationDesc +
-              " document with version value failed: " + version);
-        }
-        catch (Exception e) {
-          handleWriteResultError(operationDesc + " document failed: " + e.getMessage(), e);
+        } catch (CASMismatchException e) {
+          throw new OptimisticLockingFailureException(persistType.getSpringDataOperationName() +
+              " document with version value failed: " + version, e);
+        } catch (Exception e) {
+          handleWriteResultError(persistType.getSpringDataOperationName() + " document failed: " + e.getMessage(), e);
           return false; //this could be skipped if WriteResultChecking.EXCEPTION
         }
       }
@@ -644,5 +650,27 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   public void setDefaultConsistency(Consistency consistency) {
     this.configuredConsistency = consistency;
+  }
+
+  private enum PersistType {
+    SAVE("Save", "Upsert"),
+    INSERT("Insert", "Insert"),
+    UPDATE("Update", "Replace");
+
+    private final String sdkOperationName;
+    private final String springDataOperationName;
+
+    PersistType(String sdkOperationName, String springDataOperationName) {
+      this.sdkOperationName = sdkOperationName;
+      this.springDataOperationName = springDataOperationName;
+    }
+
+    public String getSdkOperationName() {
+      return sdkOperationName;
+    }
+
+    public String getSpringDataOperationName() {
+      return springDataOperationName;
+    }
   }
 }
