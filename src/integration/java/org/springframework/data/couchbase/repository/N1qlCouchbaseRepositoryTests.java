@@ -85,11 +85,24 @@ public class N1qlCouchbaseRepositoryTests {
   }
 
   @Test
+  public void shouldSortWithoutCaseSensitivity() {
+    Iterable<Party> parties = repository.findAll(new Sort(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase()));
+    String previousDesc = null;
+    for (Party party : parties) {
+      if (previousDesc != null) {
+        assertTrue(party.getDescription().compareToIgnoreCase(previousDesc) <= 0);
+      }
+      previousDesc = party.getDescription();
+    }
+    assertNotNull("Expected to find several parties", previousDesc);
+  }
+
+  @Test
   public void shouldPageThroughEntities() {
     Pageable pageable = new PageRequest(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(13, page1.getTotalElements()); //12 generated parties + 1 specifically crafted party
+    assertEquals(15, page1.getTotalElements()); //12 generated parties + 3 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
   }
 }

@@ -102,6 +102,22 @@ public class N1qlUtilsTest {
   }
 
   @Test
+  public void testCreateSortIgnoresCaseWhenSpecified() throws Exception {
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    Sort sortDescription = new Sort(
+            new Sort.Order(Sort.Direction.ASC, "description").ignoreCase(),
+            new Sort.Order(Sort.Direction.ASC, "attendees")
+    );
+    com.couchbase.client.java.query.dsl.Sort[] realSort = N1qlUtils.createSort(sortDescription, converter);
+
+    assertEquals(2, realSort.length);
+    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("LOWER(TOSTRING(`description`))").toString(), realSort[0].toString());
+    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`").toString(), realSort[1].toString());
+
+    verifyZeroInteractions(converter);
+  }
+
+  @Test
   public void testCreateCountQueryForEntity() throws Exception {
     CouchbaseConverter converter = mock(CouchbaseConverter.class);
     when(converter.getTypeKey()).thenReturn("_class", "otherField");
