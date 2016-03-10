@@ -55,6 +55,8 @@ public class PartyPopulatorListener extends DependencyInjectionTestExecutionList
     cal.set(Calendar.MONTH, Calendar.JANUARY);
     cal.set(Calendar.DAY_OF_MONTH, 01);
     template.save(new Party("aTestParty", "New Year's Eve 90", "Happy New Year", cal.getTime(), 1230000, new Point(100, 100)));
+    template.save(new Party("lowercaseParty", "lowercase party", "lowercase party", cal.getTime(), 1000, new Point(100, 100)));
+    template.save(new Party("uppercaseParty", "Uppercase party", "Uppercase party", cal.getTime(), 1000, new Point(100, 100)));
   }
 
   private void createAndWaitForDesignDocs(Bucket client) {

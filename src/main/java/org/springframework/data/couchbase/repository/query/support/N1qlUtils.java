@@ -22,12 +22,14 @@ import static com.couchbase.client.java.query.dsl.Expression.path;
 import static com.couchbase.client.java.query.dsl.Expression.s;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
+import static com.couchbase.client.java.query.dsl.functions.StringFunctions.lower;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
+import com.couchbase.client.java.query.dsl.functions.TypeFunctions;
 import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 import com.couchbase.client.java.repository.annotation.Field;
@@ -145,8 +147,11 @@ public class N1qlUtils {
     List<com.couchbase.client.java.query.dsl.Sort> cbSortList = new ArrayList<com.couchbase.client.java.query.dsl.Sort>();
     for (Sort.Order order : sort) {
       String orderProperty = order.getProperty();
-        //FIXME the order property should be converted to its corresponding fieldName
+      //FIXME the order property should be converted to its corresponding fieldName
       Expression orderFieldName = i(orderProperty);
+      if (order.isIgnoreCase()) {
+        orderFieldName = lower(TypeFunctions.toString(orderFieldName));
+      }
       if (order.isAscending()) {
         cbSortList.add(com.couchbase.client.java.query.dsl.Sort.asc(orderFieldName));
       } else {
