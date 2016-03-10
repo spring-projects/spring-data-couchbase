@@ -36,6 +36,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.List;
+
 /**
  * This tests PaginAndSortingRepository features in the Couchbase connector.
  *
@@ -104,5 +106,23 @@ public class N1qlCouchbaseRepositoryTests {
     Page<Party> page1 = repository.findAll(pageable);
     assertEquals(15, page1.getTotalElements()); //12 generated parties + 3 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
+  }
+
+  @Test
+  public void shouldPageThroughSortedEntities() {
+    Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
+
+    Page<Party> page1 = repository.findAll(pageable);
+    assertEquals(15, page1.getTotalElements()); //12 generated parties + 3 specifically crafted party
+    assertEquals(8, page1.getNumberOfElements());
+
+    List<Party> parties = page1.getContent();
+    Long previousAttendees = null;
+    for (Party party : parties) {
+      if (previousAttendees != null) {
+        assertTrue(party.getAttendees() <= previousAttendees);
+      }
+      previousAttendees = party.getAttendees();
+    }
   }
 }

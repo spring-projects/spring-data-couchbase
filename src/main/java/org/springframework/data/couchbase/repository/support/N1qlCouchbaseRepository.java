@@ -25,6 +25,8 @@ import com.couchbase.client.java.query.SimpleN1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.query.dsl.Expression;
+import com.couchbase.client.java.query.dsl.path.GroupByPath;
+import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -93,11 +95,22 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
     //prepare elements of the data query
     WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+
+    //add where criteria
     Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
         getEntityInformation());
+    GroupByPath groupBy = selectFrom.where(whereCriteria);
+
+    //apply the sort if available
+    LimitPath limitPath = groupBy;
+    if (pageable.getSort() != null) {
+      com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(pageable.getSort(),
+          getCouchbaseOperations().getConverter());
+      limitPath = groupBy.orderBy(orderings);
+    }
 
     //apply the paging
-    Statement pageStatement = selectFrom.where(whereCriteria).limit(pageable.getPageSize()).offset(pageable.getOffset());
+    Statement pageStatement = limitPath.limit(pageable.getPageSize()).offset(pageable.getOffset());
 
     //fire the query
     N1qlQuery query = N1qlQuery.simple(pageStatement, N1qlParams.build().consistency(consistency));
