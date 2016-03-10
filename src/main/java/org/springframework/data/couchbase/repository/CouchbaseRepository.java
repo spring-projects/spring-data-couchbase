@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import java.io.Serializable;
 
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.CrudRepository;
 
 /**
@@ -26,5 +27,10 @@ import org.springframework.data.repository.CrudRepository;
  * @author Michael Nitschinger
  */
 public interface CouchbaseRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
+
+  /**
+   * @return a reference to the underlying {@link CouchbaseOperations operation template}.
+   */
+  CouchbaseOperations getCouchbaseOperations();
 
 }

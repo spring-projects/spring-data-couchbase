@@ -191,12 +191,8 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     }
   }
 
-  /**
-   * Returns the underlying operation template.
-   *
-   * @return the underlying template.
-   */
-  protected CouchbaseOperations getCouchbaseOperations() {
+  @Override
+  public CouchbaseOperations getCouchbaseOperations() {
     return couchbaseOperations;
   }
 
