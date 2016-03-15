@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,14 @@
 
 package org.springframework.data.couchbase.repository.cdi;
 
-import javax.inject.Inject;
-
-import com.couchbase.client.java.Bucket;
+import org.springframework.data.repository.CrudRepository;
 
 /**
  * @author Mark Paluch
+ * @see DATACOUCH-203
  */
-class CdiRepositoryClient {
+@PersonDB
+@OtherQualifier
+public interface QualifiedPersonRepository extends CrudRepository<Person, String> {
 
-	@Inject
-	private CdiPersonRepository cdiPersonRepository;
-
-	@Inject
-	@OtherQualifier
-	@PersonDB
-	private QualifiedPersonRepository qualifiedPersonRepository;
-
-	@Inject
-	private Bucket couchbaseClient;
-
-	public CdiPersonRepository getCdiPersonRepository() {
-		return cdiPersonRepository;
-	}
-
-	public QualifiedPersonRepository getQualifiedPersonRepository() {
-		return qualifiedPersonRepository;
-	}
-
-	public Bucket getCouchbaseClient() {
-		return couchbaseClient;
-	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import org.springframework.data.repository.cdi.CdiRepositoryExtensionSupport;
  */
 public class CouchbaseRepositoryExtension extends CdiRepositoryExtensionSupport{
 
-	private final Map<String, Bean<CouchbaseOperations>> couchbaseOperationsMap = new HashMap<String, Bean<CouchbaseOperations>>();
+	private final Map<Set<Annotation>, Bean<CouchbaseOperations>> couchbaseOperationsMap = new HashMap<Set<Annotation>, Bean<CouchbaseOperations>>();
 
 	/**
 	 * Implementation of a an observer which checks for CouchbaseOperations beans and stores them in {@link #couchbaseOperationsMap} for
@@ -52,7 +52,7 @@ public class CouchbaseRepositoryExtension extends CdiRepositoryExtensionSupport{
 		Bean<T> bean = processBean.getBean();
 		for (Type type : bean.getTypes()) {
 			if (type instanceof Class<?> && CouchbaseOperations.class.isAssignableFrom((Class<?>) type)) {
-				couchbaseOperationsMap.put(bean.getQualifiers().toString(), ((Bean<CouchbaseOperations>) bean));
+				couchbaseOperationsMap.put(bean.getQualifiers(), ((Bean<CouchbaseOperations>) bean));
 			}
 		}
 	}
@@ -87,8 +87,7 @@ public class CouchbaseRepositoryExtension extends CdiRepositoryExtensionSupport{
 	 */
 	private <T> CdiRepositoryBean<T> createRepositoryBean(Class<T> repositoryType, Set<Annotation> qualifiers, BeanManager beanManager) {
 
-		Bean<CouchbaseOperations> couchbaseOperationsBean = this.couchbaseOperationsMap.get(qualifiers
-				.toString());
+		Bean<CouchbaseOperations> couchbaseOperationsBean = this.couchbaseOperationsMap.get(qualifiers);
 
 		if (couchbaseOperationsBean == null) {
 			throw new UnsatisfiedResolutionException(String.format("Unable to resolve a bean for '%s' with qualifiers %s.",

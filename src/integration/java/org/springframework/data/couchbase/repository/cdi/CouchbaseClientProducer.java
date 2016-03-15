@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package org.springframework.data.couchbase.repository.cdi;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Disposes;
 import javax.enterprise.inject.Produces;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
 
 import org.springframework.data.couchbase.config.CouchbaseBucketFactoryBean;
@@ -34,15 +36,23 @@ import org.springframework.data.couchbase.config.CouchbaseBucketFactoryBean;
 class CouchbaseClientProducer {
 
 	@Produces
-	public Bucket createCouchbaseClient() throws Exception {
-		//FIXME produce a Cluster and close it properly?
-		CouchbaseBucketFactoryBean couchbaseFactoryBean = new CouchbaseBucketFactoryBean(
-				CouchbaseCluster.create(), "default");
+	@ApplicationScoped
+	public Cluster cluster() {
+		return CouchbaseCluster.create();
+	}
+
+	@Produces
+	public Bucket createCouchbaseClient(Cluster cluster) throws Exception {
+		CouchbaseBucketFactoryBean couchbaseFactoryBean = new CouchbaseBucketFactoryBean(cluster, "default");
 		couchbaseFactoryBean.afterPropertiesSet();
 		return couchbaseFactoryBean.getObject();
 	}
 
 	public void close(@Disposes Bucket couchbaseClient) {
 		couchbaseClient.close();
+	}
+
+	public void close(@Disposes Cluster cluster) {
+		cluster.disconnect();
 	}
 }

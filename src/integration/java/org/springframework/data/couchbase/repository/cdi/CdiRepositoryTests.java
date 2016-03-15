@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public class CdiRepositoryTests {
 
 	private static CdiTestContainer cdiContainer;
 	private CdiPersonRepository repository;
+	private QualifiedPersonRepository qualifiedPersonRepository;
 	private Bucket couchbaseClient;
 
 	@BeforeClass
@@ -58,6 +59,7 @@ public class CdiRepositoryTests {
 	public void setUp() {
 		CdiRepositoryClient repositoryClient = cdiContainer.getInstance(CdiRepositoryClient.class);
 		repository = repositoryClient.getCdiPersonRepository();
+		qualifiedPersonRepository = repositoryClient.getQualifiedPersonRepository();
 
 		couchbaseClient = repositoryClient.getCouchbaseClient();
 		createAndWaitForDesignDocs(couchbaseClient);
@@ -91,7 +93,26 @@ public class CdiRepositoryTests {
 		assertNotNull(retrieved);
 		assertEquals(bean.getName(), retrieved.getName());
 		assertEquals(bean.getId(), retrieved.getId());
+	}
+	
+	/**
+	 * @see DATACOUCH-203
+	 */
+	@Test
+	public void testQualifiedCdiRepository() {
+		assertNotNull(qualifiedPersonRepository);
+		qualifiedPersonRepository.deleteAll();
 
+		Person bean = new Person("key", "username");
+
+		qualifiedPersonRepository.save(bean);
+
+		assertTrue(qualifiedPersonRepository.exists(bean.getId()));
+
+		Person retrieved = qualifiedPersonRepository.findOne(bean.getId());
+		assertNotNull(retrieved);
+		assertEquals(bean.getName(), retrieved.getName());
+		assertEquals(bean.getId(), retrieved.getId());
 	}
 
 	/**

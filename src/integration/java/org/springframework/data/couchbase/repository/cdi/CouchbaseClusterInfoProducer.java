@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
  * Produces a {@link ClusterInfo} instance for test usage.
  *
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 class CouchbaseClusterInfoProducer {
 
   @Produces
-  public ClusterInfo createClusterInfo() throws Exception {
-    Cluster cluster = CouchbaseCluster.create();
+  public ClusterInfo createClusterInfo(Cluster cluster) throws Exception {
     return cluster.clusterManager("default", "").info();
   }
 
