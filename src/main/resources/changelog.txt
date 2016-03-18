@@ -1,6 +1,22 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.1.0.RC1 (2016-03-18)
+-----------------------------------------
+* DATACOUCH-216 - Add template getter on CouchbaseRepository interface.
+* DATACOUCH-215 - isolate dependency to core SDK beans in a CouchbaseConfigurer.
+* DATACOUCH-214 - N1qlUtils.createSort does not Sort.Order::isIgnoreCase.
+* DATACOUCH-213 - Release 2.1 RC1 (Hopper).
+* DATACOUCH-212 - Optimistic Locking is not working when using Repository save method.
+* DATACOUCH-211 - Pageable.getSort() value not honoured in N1qlCouchbaseRepository.
+* DATACOUCH-209 - Default Consistency should be READ_YOUR_OWN_WRITES.
+* DATACOUCH-208 - Allow CouchbaseConfiguration couchbaseTemplate to be any CouchbaseOperations.
+* DATACOUCH-207 - Make BeanNames constants public.
+* DATACOUCH-204 - Make sure package-info.java exist for all packages.
+* DATACOUCH-203 - CDI support can fail due to Set.toString() used as Map key.
+* DATACOUCH-77 - Links to documentation.
+
+
 Changes in version 1.4.4.RELEASE (2016-02-23)
 ---------------------------------------------
 * DATACOUCH-205 - Release 1.4.4 (Gosling SR4).
