@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.1.1.RELEASE (2016-04-06)
+---------------------------------------------
+* DATACOUCH-220 - Release 2.1.1 (Hopper SR1).
+
+
 Changes in version 2.1.0.RELEASE (2016-04-06)
 ---------------------------------------------
 * DATACOUCH-219 - Add pull request template.
