@@ -283,4 +283,44 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   public boolean tcpNodelayEnabled() {
     return delegate.tcpNodelayEnabled();
   }
+
+  @Override
+  public boolean callbacksOnIoPool() {
+    return delegate.callbacksOnIoPool();
+  }
+
+  @Override
+  public String coreBuild() {
+    return delegate.coreBuild();
+  }
+
+  @Override
+  public String coreVersion() {
+    return delegate.coreVersion();
+  }
+
+  @Override
+  public String dcpConnectionName() {
+    return delegate.dcpConnectionName();
+  }
+
+  @Override
+  public int searchEndpoints() {
+    return delegate.searchEndpoints();
+  }
+
+  @Override
+  public String clientBuild() {
+    return delegate.clientBuild();
+  }
+
+  @Override
+  public String clientVersion() {
+    return delegate.clientVersion();
+  }
+
+  @Override
+  public long searchTimeout() {
+    return delegate.searchTimeout();
+  }
 }
