@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2016 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import rx.Scheduler;
  * to be invoked. Useful when the delegate is not to be lifecycle-managed by Spring.
  *
  * @author Simon Baslé
+ * @author Jonathan Edwards
  */
 public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment {
 
@@ -282,5 +283,45 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public boolean tcpNodelayEnabled() {
     return delegate.tcpNodelayEnabled();
+  }
+
+  @Override
+  public boolean callbacksOnIoPool() {
+    return delegate.callbacksOnIoPool();
+  }
+
+  @Override
+  public String coreBuild() {
+    return delegate.coreBuild();
+  }
+
+  @Override
+  public String coreVersion() {
+    return delegate.coreVersion();
+  }
+
+  @Override
+  public String dcpConnectionName() {
+    return delegate.dcpConnectionName();
+  }
+
+  @Override
+  public int searchEndpoints() {
+    return delegate.searchEndpoints();
+  }
+
+  @Override
+  public String clientBuild() {
+    return delegate.clientBuild();
+  }
+
+  @Override
+  public String clientVersion() {
+    return delegate.clientVersion();
+  }
+
+  @Override
+  public long searchTimeout() {
+    return delegate.searchTimeout();
   }
 }
