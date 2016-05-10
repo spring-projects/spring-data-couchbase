@@ -35,7 +35,6 @@ import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.error.TranscodingException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
@@ -49,7 +48,6 @@ import com.couchbase.client.java.view.ViewResult;
 import com.couchbase.client.java.view.ViewRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -529,14 +527,22 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
-        boolean checkVersion = version != null && version > 0L;
+        //We will check version only if required
+        boolean versionPresent = versionProperty != null;
+        //If version is not set - assumption that document is new, otherwise updating
+        boolean existingDocument = version != null && version > 0L;
         try {
           switch (persistType) {
             case SAVE:
-              if (checkVersion) {
+              if (!versionPresent) {
+                //No version field - no cas
+                storedDoc = client.upsert(doc, persistTo, replicateTo);
+              } else if (existingDocument) {
+                //Updating existing document with cas
                 storedDoc = client.replace(doc, persistTo, replicateTo);
               } else {
-                storedDoc = client.upsert(doc, persistTo, replicateTo);
+                //Creating new document
+                storedDoc = client.insert(doc, persistTo, replicateTo);
               }
               break;
             case UPDATE:
@@ -554,6 +560,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
             return true;
           }
           return false;
+        } catch (DocumentAlreadyExistsException e) {
+          throw new OptimisticLockingFailureException(persistType.getSpringDataOperationName() +
+                  " document with version value failed: " + version, e);
         } catch (CASMismatchException e) {
           throw new OptimisticLockingFailureException(persistType.getSpringDataOperationName() +
               " document with version value failed: " + version, e);
