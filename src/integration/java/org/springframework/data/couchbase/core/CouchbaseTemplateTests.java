@@ -26,12 +26,20 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.RawJsonDocument;
@@ -40,12 +48,13 @@ import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
-import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +77,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseTemplateViewListener.class)
 public class CouchbaseTemplateTests {
+
+	@Rule
+	public TestName testName = new TestName();
 
 	@Autowired
 	private Bucket client;
@@ -132,7 +144,11 @@ public class CouchbaseTemplateTests {
 		assertEquals("Mr. A", resultConv.get("name"));
 
 		doc = new SimplePerson(id, "Mr. B");
-		template.insert(doc);
+		try {
+			template.insert(doc);
+		} catch (OptimisticLockingFailureException e) {
+			//ignore, since this insert should fail
+		}
 
 		resultDoc = client.get(id, RawJsonDocument.class);
 		assertNotNull(resultDoc);
@@ -315,7 +331,11 @@ public class CouchbaseTemplateTests {
 		VersionedClass versionedClass = new VersionedClass("versionedClass:2", "foobar");
 		template.insert(versionedClass);
 		long version1 = versionedClass.getVersion();
-		template.insert(versionedClass);
+		try {
+			template.insert(versionedClass);
+		} catch (OptimisticLockingFailureException e) {
+			//ignore, since this insert should fail
+		}
 		long version2 = versionedClass.getVersion();
 
 		assertTrue(version1 > 0);
@@ -400,6 +420,67 @@ public class CouchbaseTemplateTests {
 
 		VersionedClass foundClass = template.findById("versionedClass:7", VersionedClass.class);
 		assertEquals(versionedClass.getVersion(), foundClass.getVersion());
+	}
+
+	@Test
+	public void shouldUpdateAlreadyExistingDocument() throws Exception {
+		final String key = testName.getMethodName();
+		removeIfExist(key);
+
+		final AtomicLong counter = new AtomicLong();
+
+		VersionedClass initial = new VersionedClass(key, "value-0");
+		template.save(initial);
+
+		AsyncUtils.executeConcurrently(3, new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				boolean saved = false;
+				while(!saved) {
+					long counterValue = counter.incrementAndGet();
+					VersionedClass messageData = template.findById(key, VersionedClass.class);
+					messageData.field = "value-" + counterValue;
+					try {
+						template.save(messageData);
+						saved = true;
+					} catch (OptimisticLockingFailureException e) {
+					}
+				}
+				return null;
+			}
+		});
+
+		VersionedClass actual = template.findById(key, VersionedClass.class);
+
+		assertNotEquals(initial.field, actual.field);
+		assertNotEquals(initial.version, actual.version);
+	}
+
+	@Test
+	public void shouldInsertOnlyFirstDocumentAndNextAttemptsShouldFailWithOptimisticLockingException() throws Exception {
+		final String key = testName.getMethodName();
+		removeIfExist(key);
+
+		final AtomicLong counter = new AtomicLong();
+		final AtomicLong optimisticLockCounter = new AtomicLong();
+		AsyncUtils.executeConcurrently(5, new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				long counterValue = counter.incrementAndGet();
+				String data = "value-" + counterValue;
+				VersionedClass messageData = new VersionedClass(key, data);
+				try {
+					template.insert(messageData);
+				} catch (OptimisticLockingFailureException e) {
+					optimisticLockCounter.incrementAndGet();
+				}
+				//should save operation throw OptimisticLockingFailureException on next attempts to save?
+				return null;
+			}
+		});
+
+
+		assertEquals(4, optimisticLockCounter.intValue());
 	}
 
 	/**
@@ -646,6 +727,15 @@ public class CouchbaseTemplateTests {
 
 		public void setField(String field) {
 			this.field = field;
+		}
+
+		@Override
+		public String toString() {
+			return "VersionedClass{" +
+					"id='" + id + '\'' +
+					", version=" + version +
+					", field='" + field + '\'' +
+					'}';
 		}
 	}
 
