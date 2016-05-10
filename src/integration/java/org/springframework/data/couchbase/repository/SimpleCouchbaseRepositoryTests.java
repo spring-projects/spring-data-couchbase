@@ -16,27 +16,26 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-import java.util.List;
-
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
+import org.springframework.data.couchbase.core.AsyncUtils;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
+import org.springframework.data.couchbase.core.CouchbaseTemplateTests;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -46,6 +45,15 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.*;
+
 /**
  * @author Michael Nitschinger
  */
@@ -53,6 +61,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(SimpleCouchbaseRepositoryListener.class)
 public class SimpleCouchbaseRepositoryTests {
+
+  @Rule
+  public TestName testName = new TestName();
 
   @Autowired
   private Bucket client;
@@ -71,6 +82,13 @@ public class SimpleCouchbaseRepositoryTests {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     repository = factory.getRepository(UserRepository.class);
     versionedDataRepository = factory.getRepository(VersionedDataRepository.class);
+  }
+
+  private void remove(String key) {
+    try {
+      client.remove(key);
+    } catch (DocumentDoesNotExistException e) {
+    }
   }
 
   @Test
@@ -219,6 +237,69 @@ public class SimpleCouchbaseRepositoryTests {
       client.remove(key);
     }
   }
+
+  @Test
+  public void shouldUpdateDocumentConcurrently() throws Exception {
+    final String key = testName.getMethodName();
+    remove(key);
+
+    final AtomicLong counter = new AtomicLong();
+    final AtomicLong updatedCounter = new AtomicLong();
+    VersionedData initial = new VersionedData(key, "value-initial");
+    versionedDataRepository.save(initial);
+    assertNotEquals(0L, initial.version);
+
+    Callable<Void> task = new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        boolean updated = false;
+        while(!updated) {
+          long counterValue = counter.incrementAndGet();
+          VersionedData messageData = versionedDataRepository.findOne(key);
+          messageData.data = "value-" + counterValue;
+          try {
+            versionedDataRepository.save(messageData);
+            updated = true;
+            updatedCounter.incrementAndGet();
+          } catch (OptimisticLockingFailureException e) {
+          }
+        }
+        return null;
+      }
+    };
+    AsyncUtils.executeConcurrently(5, task);
+
+    assertNotEquals(initial.data, versionedDataRepository.findOne(key).data);
+    assertEquals(5, updatedCounter.intValue());
+  }
+
+  @Test
+  public void shouldFailOnMultipleConcurrentSaves() throws Exception {
+    final String key = testName.getMethodName();
+    remove(key);
+
+    final AtomicLong counter = new AtomicLong();
+    final AtomicLong optimisticLockCounter = new AtomicLong();
+
+    Callable<Void> task = new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
+        long counterValue = counter.incrementAndGet();
+        VersionedData messageData = new VersionedData(key, "value-" + counterValue);
+        try {
+          versionedDataRepository.save(messageData);
+        } catch (OptimisticLockingFailureException e) {
+          optimisticLockCounter.incrementAndGet();
+        }
+        return null;
+      }
+    };
+
+    AsyncUtils.executeConcurrently(5, task);
+
+    assertEquals(4, optimisticLockCounter.intValue());
+  }
+
 
   public interface VersionedDataRepository extends CouchbaseRepository<VersionedData, String> { }
 
