@@ -52,6 +52,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
+ * @author Geoffrey Mina
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = UnitTestApplicationConfig.class)

@@ -62,6 +62,7 @@ import com.couchbase.client.java.repository.annotation.Field;
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
+ * @author Geoffrey Mina
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
