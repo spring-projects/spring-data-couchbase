@@ -52,6 +52,7 @@ import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import com.couchbase.client.java.repository.annotation.Field;
 
 /**
  * A mapping converter for Couchbase.
@@ -61,6 +62,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
+ * @author Geoffrey Mina
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -100,6 +102,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   private final SpELContext spELContext;
 
   /**
+   * Enable strict @Field checking on mapper
+   */
+  private boolean enableStrictFieldChecking = false;
+
+  /**
    * Create a new {@link MappingCouchbaseConverter}.
    *
    * @param mappingContext the mapping context to use.
@@ -133,6 +140,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @Override
   public String getTypeKey() {
     return typeMapper.getTypeKey();
+  }
+
+  public void setEnableStrictFieldChecking(boolean enableStrictFieldChecking){
+    this.enableStrictFieldChecking = enableStrictFieldChecking;
   }
 
   @Override
@@ -433,6 +444,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       @Override
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
+          return;
+        }else if(enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)){
           return;
         }
 
