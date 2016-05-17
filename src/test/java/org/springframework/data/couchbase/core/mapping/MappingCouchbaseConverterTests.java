@@ -16,21 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
-import org.joda.time.LocalDateTime;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter;
-import org.springframework.data.convert.WritingConverter;
-import org.springframework.data.couchbase.UnitTestApplicationConfig;
-import org.springframework.data.couchbase.core.convert.CustomConversions;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.mapping.model.MappingException;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -47,10 +33,21 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.joda.time.LocalDateTime;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.convert.ReadingConverter;
+import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.couchbase.UnitTestApplicationConfig;
+import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.mapping.model.MappingException;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
@@ -504,38 +501,6 @@ public class MappingCouchbaseConverterTests {
     assertEquals("springId", converted.getId());
   }
 
-  @Test
-  public void testStrictFieldChecking() throws Exception{
-    try {
-      CouchbaseDocument converted;
-      AnnotatedEntity entity;
-      converter.setEnableStrictFieldChecking(true);
-
-      converted = new CouchbaseDocument();
-      entity = new AnnotatedEntity();
-      converter.write(entity,converted);
-
-      assertTrue(converted.getId() != null);
-      assertTrue(converted.getPayload().containsKey("annotatedField"));
-      assertFalse(converted.getPayload().containsKey("nonAnnotatedField"));
-
-      converter.setEnableStrictFieldChecking(false);
-
-      converted = new CouchbaseDocument();
-      entity = new AnnotatedEntity();
-      converter.write(entity,converted);
-
-      assertTrue(converted.getId() != null);
-      assertTrue(converted.getPayload().containsKey("annotatedField"));
-      assertTrue(converted.getPayload().containsKey("nonAnnotatedField"));
-
-    }finally{
-      converter.setEnableStrictFieldChecking(false);
-    }
-
-  }
-
-
 
   static class EntityWithoutID {
     private String attr0;
@@ -682,19 +647,6 @@ public class MappingCouchbaseConverterTests {
       this.weight = weight;
     }
   }
-
-  static class AnnotatedEntity{
-    @Id private String uuid;
-    @Field private String annotatedField;
-    private String nonAnnotatedField;
-
-    public AnnotatedEntity(){
-      this.uuid = java.util.UUID.randomUUID().toString();
-      this.annotatedField = "Annotated Property";
-      this.nonAnnotatedField = "Non Annotated Property";
-    }
-  }
-
 
   @WritingConverter
   public static enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {

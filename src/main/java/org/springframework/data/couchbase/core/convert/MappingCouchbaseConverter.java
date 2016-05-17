@@ -16,6 +16,13 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
@@ -45,13 +52,6 @@ import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 /**
  * A mapping converter for Couchbase.
@@ -100,11 +100,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   private final SpELContext spELContext;
 
   /**
-  * Determines whether only properties with @Field annotation will be candidates for mapping
-  */
-  private boolean enableStrictFieldChecking = false;
-
-  /**
    * Create a new {@link MappingCouchbaseConverter}.
    *
    * @param mappingContext the mapping context to use.
@@ -138,10 +133,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @Override
   public String getTypeKey() {
     return typeMapper.getTypeKey();
-  }
-
-  public void setEnableStrictFieldChecking(boolean enableStrictFieldChecking){
-      this.enableStrictFieldChecking = enableStrictFieldChecking;
   }
 
   @Override
@@ -443,8 +434,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
           return;
-        }else if(enableStrictFieldChecking && !prop.isAnnotationPresent(com.couchbase.client.java.repository.annotation.Field.class)){
-            return;
         }
 
         Object propertyObj = accessor.getProperty(prop, prop.getType());
