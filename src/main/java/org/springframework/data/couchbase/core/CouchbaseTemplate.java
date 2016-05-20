@@ -40,14 +40,18 @@ import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.N1qlQueryRow;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
+import com.couchbase.client.java.view.AsyncViewResult;
+import com.couchbase.client.java.view.AsyncViewRow;
 import com.couchbase.client.java.view.SpatialViewQuery;
 import com.couchbase.client.java.view.SpatialViewResult;
 import com.couchbase.client.java.view.SpatialViewRow;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
-import com.couchbase.client.java.view.ViewRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.functions.Func1;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -297,36 +301,64 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public <T> List<T> findByView(ViewQuery query, Class<T> entityClass) {
-    //we'll always need to get documents, as a RawJsonDocument, so we should force includeDocs(false)
+  public <T> List<T> findByView(ViewQuery query, final Class<T> entityClass) {
+    //we'll always need to get documents, as a RawJsonDocument, so we should force that target class
     //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
-    query.includeDocs(false);
+    //TODO DATACOUCH-227 reproduce retainOrder parameter
+    if (!query.isIncludeDocs() || !query.includeDocsTarget().equals(RawJsonDocument.class)) {
+      query.includeDocs(RawJsonDocument.class);
+    }
     //we'll always map the document to the entity, hence reduce never makes sense.
     query.reduce(false);
 
-    try {
-      final ViewResult response = queryView(query);
-      if (response.error() != null) {
-        throw new CouchbaseQueryExecutionException("Unable to execute view query due to the following view error: " +
-            response.error().toString());
-      }
-
-      List<ViewRow> allRows = response.allRows();
-
-      final List<T> result = new ArrayList<T>(allRows.size());
-      for (final ViewRow row : allRows) {
-        //cope with potential weak consistency and deletions
-        T entity = mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass);
-        if (entity != null) {
-          result.add(entity);
-        }
-      }
-
-      return result;
-    }
-    catch (TranscodingException e) {
-      throw new CouchbaseQueryExecutionException("Unable to execute view query", e);
-    }
+    return executeAsync(client.async().query(query))
+        .flatMap(new Func1<AsyncViewResult, Observable<AsyncViewRow>>() {
+          @Override
+          public Observable<AsyncViewRow> call(AsyncViewResult asyncViewResult) {
+            return asyncViewResult
+                .error()
+                .flatMap(new Func1<JsonObject, Observable<AsyncViewRow>>() {
+                  @Override
+                  public Observable<AsyncViewRow> call(JsonObject error) {
+                    return Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query due to the following view error: " + error.toString()));
+                  }})
+                .switchIfEmpty(asyncViewResult.rows());
+          }
+        })
+        .flatMap(new Func1<AsyncViewRow, Observable<T>>() {
+          @Override
+          public Observable<T> call(AsyncViewRow row) {
+            final String id = row.id();
+            return row
+                .document(RawJsonDocument.class)
+                .map(new Func1<RawJsonDocument, T>() {
+                  @Override
+                  public T call(RawJsonDocument rawJsonDocument) {
+                    //cope with potential weak consistency and deletions
+                    T entity = mapToEntity(id, rawJsonDocument, entityClass);
+                    return entity;
+                  }
+                });
+          }})
+        .filter(new Func1<T, Boolean>() {
+          @Override
+          public Boolean call(T t) {
+            return t != null;
+          }
+        })
+        .onErrorResumeNext(new Func1<Throwable, Observable<T>>() {
+          @Override
+          public Observable<T> call(Throwable throwable) {
+            if (throwable instanceof TranscodingException) {
+              return Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query", throwable));
+            } else {
+              return Observable.error(throwable);
+            }
+          }
+        })
+        .toList()
+        .toBlocking()
+        .single();
   }
 
   @Override
@@ -506,6 +538,26 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     catch (ExecutionException e) {
       throw new OperationInterruptedException(e.getMessage(), e);
     }
+  }
+
+  public <T> Observable<T> executeAsync(Observable<T> asyncAction) {
+    return asyncAction
+        .onErrorResumeNext(new Func1<Throwable, Observable<T>>() {
+          @Override
+          public Observable<T> call(Throwable e) {
+            if (e instanceof RuntimeException) {
+              return Observable.error(exceptionTranslator.translateExceptionIfPossible((RuntimeException) e));
+            } else if (e instanceof TimeoutException) {
+              return Observable.error(new QueryTimeoutException(e.getMessage(), e));
+            } else if (e instanceof InterruptedException) {
+              return Observable.error(new OperationInterruptedException(e.getMessage(), e));
+            } else if (e instanceof ExecutionException) {
+              return Observable.error(new OperationInterruptedException(e.getMessage(), e));
+            } else {
+              return Observable.error(e);
+            }
+          }
+        });
   }
 
   private void doPersist(Object objectToPersist, final PersistTo persistTo, final ReplicateTo replicateTo,
