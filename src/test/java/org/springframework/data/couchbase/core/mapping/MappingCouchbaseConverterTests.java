@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.couchbase.client.java.repository.annotation.Field;
 import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +52,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
+ * @author Geoffrey Mina
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = UnitTestApplicationConfig.class)
@@ -501,6 +503,41 @@ public class MappingCouchbaseConverterTests {
     assertEquals("springId", converted.getId());
   }
 
+  @Test
+  public void testStrictFieldCheckingIgnoresUnannotated() throws Exception{
+    try {
+      CouchbaseDocument converted = new CouchbaseDocument();
+      AnnotatedEntity entity = new AnnotatedEntity();
+
+      converter.setEnableStrictFieldChecking(true);
+      converter.write(entity,converted);
+
+      assertTrue(converted.getId() != null);
+      assertTrue(converted.getPayload().containsKey("annotatedField"));
+      assertFalse(converted.getPayload().containsKey("nonAnnotatedField"));
+    } finally {
+      converter.setEnableStrictFieldChecking(false);
+    }
+  }
+
+  @Test
+  public void testLenientFieldCheckingStoresUnannotated() throws Exception{
+    try {
+      CouchbaseDocument converted = new CouchbaseDocument();
+      AnnotatedEntity entity = new AnnotatedEntity();
+
+      converter.setEnableStrictFieldChecking(false);
+      converter.write(entity,converted);
+
+      assertTrue(converted.getId() != null);
+      assertTrue(converted.getPayload().containsKey("annotatedField"));
+      assertTrue(converted.getPayload().containsKey("nonAnnotatedField"));
+    } finally {
+      converter.setEnableStrictFieldChecking(false);
+    }
+  }
+
+
 
   static class EntityWithoutID {
     private String attr0;
@@ -647,6 +684,20 @@ public class MappingCouchbaseConverterTests {
       this.weight = weight;
     }
   }
+
+  static class AnnotatedEntity{
+    @Id private String uuid;
+    @Field private String annotatedField;
+    private String nonAnnotatedField;
+
+    public AnnotatedEntity(){
+      this.uuid = java.util.UUID.randomUUID().toString();
+      this.annotatedField = "Annotated Property";
+      this.nonAnnotatedField = "Non Annotated Property";
+    }
+  }
+
+
 
   @WritingConverter
   public static enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {

@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.client.java.repository.annotation.Field;
+
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
@@ -61,6 +63,7 @@ import org.springframework.util.CollectionUtils;
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
+ * @author Geoffrey Mina
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -100,6 +103,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   private final SpELContext spELContext;
 
   /**
+   * Enable strict @Field checking on mapper
+   */
+  private boolean enableStrictFieldChecking = false;
+
+  /**
    * Create a new {@link MappingCouchbaseConverter}.
    *
    * @param mappingContext the mapping context to use.
@@ -133,6 +141,20 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @Override
   public String getTypeKey() {
     return typeMapper.getTypeKey();
+  }
+
+  /**
+   * Toggles strict checking of the couchbase {@link Field} annotation. If enabled,
+   * strict checking will prevent non-annotated properties to be serialized. This only
+   * applies to the Couchbase datastore, allowing other Spring Data datastores to still
+   * deal with the property.
+   *
+   * @param enableStrictFieldChecking true to only consider Field-annotated properties for
+   * Couchbase serialization.
+   * @see DATACOUCH-226
+   */
+  public void setEnableStrictFieldChecking(boolean enableStrictFieldChecking){
+    this.enableStrictFieldChecking = enableStrictFieldChecking;
   }
 
   @Override
@@ -433,6 +455,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       @Override
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
+          return;
+        } else if(enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)){
           return;
         }
 
