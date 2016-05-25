@@ -172,7 +172,8 @@ public class IndexManager {
             if (json == SUCCESS_MARKER) {
               LOGGER.debug("N1QL primary index created for repository {}", metadata.getRepositoryInterface().getSimpleName());
               return Observable.empty();
-            } else if (json.getString("msg").contains("Index #primary already exist")) {
+            } else if (json.getString("msg").contains("Index #primary already exist") ||
+                (json.containsKey("code") && json.getLong("code") == 4300L)) {
               LOGGER.debug("Primary index already exist, skipping");
               return Observable.empty(); //ignore, the index already exist
             } else {
@@ -209,7 +210,8 @@ public class IndexManager {
             if (json == SUCCESS_MARKER) {
               LOGGER.debug("N1QL secondary index created for repository {}", metadata.getRepositoryInterface().getSimpleName());
               return Observable.empty();
-            } else if (json.getString("msg").contains("Index " + indexName + " already exist")) {
+            } else if (json.getString("msg").contains("Index " + indexName + " already exist") ||
+                (json.containsKey("code") && json.getLong("code") == 4300L)) {
               LOGGER.debug("Secondary index already exist, skipping");
               return Observable.empty(); //ignore, the index already exist
             } else {
