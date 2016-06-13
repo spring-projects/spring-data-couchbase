@@ -304,9 +304,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   public <T> List<T> findByView(ViewQuery query, final Class<T> entityClass) {
     //we'll always need to get documents, as a RawJsonDocument, so we should force that target class
     //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
-    //TODO DATACOUCH-227 reproduce retainOrder parameter
     if (!query.isIncludeDocs() || !query.includeDocsTarget().equals(RawJsonDocument.class)) {
-      query.includeDocs(RawJsonDocument.class);
+      if (query.isOrderRetained()) {
+        query.includeDocsOrdered(RawJsonDocument.class);
+      } else {
+        query.includeDocs(RawJsonDocument.class);
+      }
     }
     //we'll always map the document to the entity, hence reduce never makes sense.
     query.reduce(false);
