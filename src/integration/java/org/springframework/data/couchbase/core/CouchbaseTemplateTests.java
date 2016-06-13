@@ -17,17 +17,13 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.query.Select.select;
-import static com.couchbase.client.java.query.dsl.Expression.i;
-import static com.couchbase.client.java.query.dsl.Expression.s;
-import static com.couchbase.client.java.query.dsl.Expression.x;
+import static com.couchbase.client.java.query.dsl.Expression.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,10 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.couchbase.client.java.Bucket;
@@ -48,6 +40,7 @@ import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.repository.annotation.Field;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -64,7 +57,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
-import com.couchbase.client.java.repository.annotation.Field;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -497,6 +489,27 @@ public class CouchbaseTemplateTests {
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
 		Thread.sleep(3000);
 		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
+	}
+
+	/**
+	 * @see DATACOUCH-227
+	 */
+	@Test
+	public void shouldRetainOrderWhenQueryingViewOrdered() {
+		ViewQuery q = ViewQuery.from("test_beers", "by_name");
+		q.descending().includeDocsOrdered(true);
+
+		String prev = null;
+		List<Beer> beers = template.findByView(q, Beer.class);
+		assertTrue(q.isIncludeDocs());
+		assertTrue(q.isOrderRetained());
+		assertEquals(RawJsonDocument.class, q.includeDocsTarget());
+		for (Beer beer : beers) {
+			if (prev != null) {
+				assertThat(beer.getName() + " not alphabetically < to " + prev, beer.getName().compareTo(prev) < 0);
+			}
+			prev = beer.getName();
+		}
 	}
 
 	/**
