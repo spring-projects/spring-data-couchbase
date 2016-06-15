@@ -1,6 +1,17 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.1.2.RELEASE (2016-06-15)
+---------------------------------------------
+* DATACOUCH-231 - Bump SDK to 2.2.7 for Hopper SR2, Ingals.
+* DATACOUCH-229 - Some N1QL/index error messages checked by DATACOUCH are changing in Couchbase Server 4.5.
+* DATACOUCH-228 - findByView could be made more performant by using async API internally.
+* DATACOUCH-227 - findByView won't use retainOrder parameter if RawJsonDocument target is not used.
+* DATACOUCH-225 - spring-data-couchbase 2.x series incompatible with Couchbase SDK > 2.2.3.
+* DATACOUCH-224 - Improve concurrent save/insert optimistic locking.
+* DATACOUCH-222 - Release 2.1.2 (Hopper SR2).
+
+
 Changes in version 2.1.1.RELEASE (2016-04-06)
 ---------------------------------------------
 * DATACOUCH-220 - Release 2.1.1 (Hopper SR1).
