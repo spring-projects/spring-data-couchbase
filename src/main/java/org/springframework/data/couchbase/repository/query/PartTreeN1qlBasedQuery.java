@@ -58,7 +58,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     Expression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
     WherePath countFrom = select(count("*").as(CountFragment.COUNT_ALIAS)).from(bucket);
 
-    N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, countFrom,
+    N1qlQueryCreator queryCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
         getCouchbaseOperations().getConverter(), getQueryMethod());
     return queryCreator.createQuery();
   }
