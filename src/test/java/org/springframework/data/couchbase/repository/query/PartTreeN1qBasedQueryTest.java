@@ -33,96 +33,96 @@ import com.couchbase.client.java.query.Statement;
 
 public class PartTreeN1qBasedQueryTest {
 
-    @Test
-    public void testGetCountExcludesStaticSortClause() throws Exception {
-        
-        PageRequest pr = new PageRequest(0, 10);
-        
-        CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-        CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
-        CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
-        MappingContext mappingContext = mock(MappingContext.class);
-        PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
-        CouchbasePersistentProperty leafProperty = mock(CouchbasePersistentProperty.class);
-        EntityMetadata entityInformation = mock(EntityMetadata.class);
-        ParameterAccessor accessor = mock(ParameterAccessor.class);
-        ProjectionFactory factory = mock(ProjectionFactory.class);
+	@Test
+	public void testGetCountExcludesStaticSortClause() throws Exception {
 
-        Method method = TestRepository.class.getMethod("findByNameOrderByName", String.class, Pageable.class);
-        RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
-        
-        CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-        
-        when(entityInformation.getJavaType()).thenReturn(Beer.class);
-        when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
-        when(couchbaseBucket.name()).thenReturn("default");
-        when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
-        when(couchbaseConverter.getMappingContext()).thenReturn(mappingContext);
-        when(mappingContext.getPersistentPropertyPath(isA(PropertyPath.class))).thenReturn(persistentPropertyPath);
-        when(persistentPropertyPath.toDotPath(isA(Converter.class))).thenReturn("name");
-        when(persistentPropertyPath.getLeafProperty()).thenReturn(leafProperty);
-        when(leafProperty.getType()).thenReturn((Class)String.class);
-        when(accessor.iterator()).thenReturn(Arrays.asList((Object)"value", pr).iterator());
-        when(couchbaseConverter.getTypeKey()).thenReturn("_class");
-        when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
-        
-        PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-        Statement statement = query.getCount(accessor, new Object[]{"value", pr});
-        
-        assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
-                + "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
-        
-    }
-    
-    @Test
-    public void testGetCountExcludesDynamicSortClause() throws Exception {
-        
-        Sort sort = new Sort(Direction.ASC, "name");
-        PageRequest pr = new PageRequest(0, 10, sort);
-        
-        CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-        CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
-        CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
-        MappingContext mappingContext = mock(MappingContext.class);
-        PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
-        CouchbasePersistentProperty leafProperty = mock(CouchbasePersistentProperty.class);
-        EntityMetadata entityInformation = mock(EntityMetadata.class);
-        ParameterAccessor accessor = mock(ParameterAccessor.class);
-        ProjectionFactory factory = mock(ProjectionFactory.class);
+		PageRequest pr = new PageRequest(0, 10);
 
-        Method method = TestRepository.class.getMethod("findByName", String.class, Pageable.class);
-        RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
-        
-        CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-        
-        when(entityInformation.getJavaType()).thenReturn(Beer.class);
-        when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
-        when(couchbaseBucket.name()).thenReturn("default");
-        when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
-        when(couchbaseConverter.getMappingContext()).thenReturn(mappingContext);
-        when(mappingContext.getPersistentPropertyPath(isA(PropertyPath.class))).thenReturn(persistentPropertyPath);
-        when(persistentPropertyPath.toDotPath(isA(Converter.class))).thenReturn("name");
-        when(persistentPropertyPath.getLeafProperty()).thenReturn(leafProperty);
-        when(leafProperty.getType()).thenReturn((Class)String.class);
-        when(accessor.iterator()).thenReturn(Arrays.asList((Object)"value", pr).iterator());
-        when(accessor.getSort()).thenReturn(sort);
-        when(couchbaseConverter.getTypeKey()).thenReturn("_class");
-        when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
-        
-        PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-        Statement statement = query.getCount(accessor, new Object[]{"value", pr});
-        
-        assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
-                + "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
-        
-    }
-    
-    public static interface TestRepository extends CrudRepository<Beer, String> {
-        
-        Page<Beer> findByNameOrderByName(String name, Pageable pageRequest);
-        
-        Page<Beer> findByName(String name, Pageable pageRequest);
-        
-    }
-    
+		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
+		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
+		MappingContext mappingContext = mock(MappingContext.class);
+		PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
+		CouchbasePersistentProperty leafProperty = mock(CouchbasePersistentProperty.class);
+		EntityMetadata entityInformation = mock(EntityMetadata.class);
+		ParameterAccessor accessor = mock(ParameterAccessor.class);
+		ProjectionFactory factory = mock(ProjectionFactory.class);
+
+		Method method = TestRepository.class.getMethod("findByNameOrderByName", String.class, Pageable.class);
+		RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
+
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+
+		when(entityInformation.getJavaType()).thenReturn(Beer.class);
+		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
+		when(couchbaseBucket.name()).thenReturn("default");
+		when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
+		when(couchbaseConverter.getMappingContext()).thenReturn(mappingContext);
+		when(mappingContext.getPersistentPropertyPath(isA(PropertyPath.class))).thenReturn(persistentPropertyPath);
+		when(persistentPropertyPath.toDotPath(isA(Converter.class))).thenReturn("name");
+		when(persistentPropertyPath.getLeafProperty()).thenReturn(leafProperty);
+		when(leafProperty.getType()).thenReturn((Class) String.class);
+		when(accessor.iterator()).thenReturn(Arrays.asList((Object) "value", pr).iterator());
+		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
+		when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
+
+		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
+		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
+
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
+				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+
+	}
+
+	@Test
+	public void testGetCountExcludesDynamicSortClause() throws Exception {
+
+		Sort sort = new Sort(Direction.ASC, "name");
+		PageRequest pr = new PageRequest(0, 10, sort);
+
+		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
+		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
+		MappingContext mappingContext = mock(MappingContext.class);
+		PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
+		CouchbasePersistentProperty leafProperty = mock(CouchbasePersistentProperty.class);
+		EntityMetadata entityInformation = mock(EntityMetadata.class);
+		ParameterAccessor accessor = mock(ParameterAccessor.class);
+		ProjectionFactory factory = mock(ProjectionFactory.class);
+
+		Method method = TestRepository.class.getMethod("findByName", String.class, Pageable.class);
+		RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
+
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+
+		when(entityInformation.getJavaType()).thenReturn(Beer.class);
+		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
+		when(couchbaseBucket.name()).thenReturn("default");
+		when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
+		when(couchbaseConverter.getMappingContext()).thenReturn(mappingContext);
+		when(mappingContext.getPersistentPropertyPath(isA(PropertyPath.class))).thenReturn(persistentPropertyPath);
+		when(persistentPropertyPath.toDotPath(isA(Converter.class))).thenReturn("name");
+		when(persistentPropertyPath.getLeafProperty()).thenReturn(leafProperty);
+		when(leafProperty.getType()).thenReturn((Class) String.class);
+		when(accessor.iterator()).thenReturn(Arrays.asList((Object) "value", pr).iterator());
+		when(accessor.getSort()).thenReturn(sort);
+		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
+		when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
+
+		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
+		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
+
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
+				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+
+	}
+
+	public static interface TestRepository extends CrudRepository<Beer, String> {
+
+		Page<Beer> findByNameOrderByName(String name, Pageable pageRequest);
+
+		Page<Beer> findByName(String name, Pageable pageRequest);
+
+	}
+
 }
