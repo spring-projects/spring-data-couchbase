@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2016 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     Expression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
     WherePath countFrom = select(count("*").as(CountFragment.COUNT_ALIAS)).from(bucket);
 
-    N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, countFrom,
+    N1qlQueryCreator queryCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
         getCouchbaseOperations().getConverter(), getQueryMethod());
     return queryCreator.createQuery();
   }
