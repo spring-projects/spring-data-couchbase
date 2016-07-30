@@ -29,6 +29,7 @@ import org.springframework.data.annotation.Persistent;
  * Identifies a domain object to be persisted to Couchbase.
  *
  * @author Michael Nitschinger
+ * @author Andrey Rubtsov
  */
 @Persistent
 @Inherited
@@ -38,8 +39,21 @@ public @interface Document {
 
   /**
    * An optional expiry time for the document. Default is no expiry.
+   * Only one of two might might be set at the same time: either {@link #expiry()} or {@link #expiryExpression()}
    */
   int expiry() default 0;
+
+  /**
+   * Same as {@link #expiry} but allows the actual value to be set using standard Spring property sources mechanism.
+   * Only one might be set at the same time: either {@link #expiry()} or {@link #expiryExpression()}. <br />
+   * Syntax is the same as for {@link org.springframework.core.env.Environment#resolveRequiredPlaceholders(String)}.
+   * <br /><br />
+   * The value will be recalculated for every {@link org.springframework.data.couchbase.core.CouchbaseTemplate} save/insert/update call,
+   * thus allowing actual expiration to reflect changes on-the-fly as soon as property sources change.
+   * <br /><br />
+   * SpEL is NOT supported.
+   */
+  String expiryExpression() default "";
 
   /**
    * An optional time unit for the document's {@link #expiry()}, if set. Default is {@link TimeUnit#SECONDS}.

@@ -75,7 +75,7 @@ public class CouchbaseMappingContext
   protected <T> BasicCouchbasePersistentEntity<?> createPersistentEntity(final TypeInformation<T> typeInformation) {
     BasicCouchbasePersistentEntity<T> entity = new BasicCouchbasePersistentEntity<T>(typeInformation);
     if (context != null) {
-      entity.setApplicationContext(context);
+      entity.setEnvironment(context.getEnvironment());
     }
     return entity;
   }
