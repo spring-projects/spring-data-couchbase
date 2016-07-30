@@ -58,7 +58,8 @@ public class User {
 ----
 ====
 
-Couchbase Server supports automatic expiration for documents. The library implements support for it through the `@Document` annotation. You can set a `expiry` value which translates to the number of seconds until the document gets removed automatically. If you want to make it expire in 10 seconds after mutation, set it like `@Document(expiry = 10)`.
+Couchbase Server supports automatic expiration for documents. The library implements support for it through the `@Document` annotation. You can set a `expiry` value which translates to the number of seconds until the document gets removed automatically. If you want to make it expire in 10 seconds after mutation, set it like `@Document(expiry = 10)`. Alternatively, you can configure the expiry using Spring's property support and the `expiryExpression` parameter, to allow for dynamically changing the expiry value. For example: `@Document(expiryExpression = "${valid.document.expiry}")`. The property must be resolvable to an int value and the two approaches cannot be mixed.
+
 
 If you want a different representation of the field name inside the document in contrast to the field name used in your entity, you can set a different name on the `@Field` annotation. For example if you want to keep your documents small you can set the firstname field to `@Field("fname")`. In the JSON document, you'll see `{"fname": ".."}` instead of `{"firstname": ".."}`.
 
