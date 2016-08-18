@@ -147,10 +147,25 @@ IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE 
 
 String-based queries support parametrized queries. You can either use positional placeholders like "`$1`", in which case each of the method parameters will map, in order, to `$1`, `$2`, `$3`... Alternatively, you can use named placeholders using the "`$someString`" syntax. Method parameters will be matched with their corresponding placeholder using the parameter's name, which can be overridden by annotating each parameter (except a `Pageable` or `Sort`) with `@Param` (eg. `@Param("someString")`). You cannot mix the two approaches in your query and will get an `IllegalArgumentException` if you do.
 
+Note that you can mix N1QL placeholders and SpEL. N1QL placeholders will still consider all method parameters, so be sure to use the correct index like in the example below:
+
+.An inline query that mixes SpEL and N1QL placeholders
+====
+[source,java]
+----
+@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND #{[0]} = $2")
+public List<User> findUsersByDynamicCriteria(String criteriaField, Object criteriaValue)
+----
+====
+
+This allows you to generate queries that would work similarly to eg. `AND name = "someName"` or `AND age = 3`, with a single method declaration.
+
 You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...). Such projection would have a simple return type like `long`, `boolean` or `String`. This is *NOT* intended for projections to DTOs.
 
-Another example: "`#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1`", which is equivalent to
-`SELECT #{#n1ql.fields} FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND test = $1`".
+Another example: +
+`#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1` +
+is equivalent to +
+`SELECT #{#n1ql.fields} FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND test = $1`
 
 .A practical application of SpEL with Spring Security
 ****

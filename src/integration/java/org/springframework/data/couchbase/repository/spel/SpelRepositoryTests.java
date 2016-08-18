@@ -16,11 +16,14 @@
 
 package org.springframework.data.couchbase.repository.spel;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.*;
 
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,6 +67,17 @@ public class SpelRepositoryTests {
     assertEquals(1, users.size());
     assertEquals("testuser-3", users.get(0).getKey());
     assertEquals("uname-3", users.get(0).getUsername());
+  }
+
+  @Test
+  public void testSpelArgumentResolution() {
+    List<User> usersByName = repository.findUserWithDynamicCriteria("username", "uname-5");
+    List<User> usersByAge = repository.findUserWithDynamicCriteria("age", 4);
+
+    assertThat(usersByName, hasSize(1));
+    assertThat(usersByAge, hasSize(1));
+    assertThat(usersByName.get(0).getKey(), is("testuser-5"));
+    assertThat(usersByAge.get(0).getKey(), is("testuser-4"));
   }
 
 }
