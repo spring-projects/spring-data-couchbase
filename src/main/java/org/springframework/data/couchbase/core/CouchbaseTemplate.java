@@ -81,6 +81,7 @@ import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
  * @author Michael Nitschinger
  * @author Oliver Gierke
  * @author Simon Baslé
+ * @author Young-Gu Chae
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
@@ -638,9 +639,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       execute(new BucketCallback<Boolean>() {
         @Override
         public Boolean doInBucket() throws InterruptedException, ExecutionException {
-          RawJsonDocument deletedDoc = client.remove((String) objectToRemove, persistTo, replicateTo,
-              RawJsonDocument.class);
-          return deletedDoc != null;
+          try {
+            RawJsonDocument deletedDoc = client.remove((String) objectToRemove, persistTo, replicateTo,
+                RawJsonDocument.class);
+            return deletedDoc != null;
+          } catch (Exception e) {
+            handleWriteResultError("Delete document failed: " + e.getMessage(), e);
+            return false; //this could be skipped if WriteResultChecking.EXCEPTION
+          }
         }
       });
       maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
@@ -653,9 +659,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() {
-        RawJsonDocument deletedDoc = client.remove(converted.getId(), persistTo, replicateTo
-            , RawJsonDocument.class);
-        return deletedDoc != null;
+        try {
+          RawJsonDocument deletedDoc = client.remove(converted.getId(), persistTo, replicateTo
+              , RawJsonDocument.class);
+          return deletedDoc != null;
+        } catch (Exception e) {
+          handleWriteResultError("Delete document failed: " + e.getMessage(), e);
+          return false; //this could be skipped if WriteResultChecking.EXCEPTION
+        }
       }
     });
     maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
