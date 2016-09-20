@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.monitor;
 
 import com.couchbase.client.CouchbaseClient;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +31,11 @@ import static org.hamcrest.Matchers.greaterThan;
 
 /**
  * @author Michael Nitschinger
+ * @author Christoph Strobl
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = TestApplicationConfig.class)
+@Ignore("route 'pools/default' not available on CI env.")
 public class ClusterInfoTests {
 
   /**
