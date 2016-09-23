@@ -6,10 +6,16 @@ import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 import org.junit.Test;
+import org.springframework.data.couchbase.core.BeerDTO;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.mapping.*;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.Beer;
+import org.springframework.data.couchbase.core.BeerProjection;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -18,10 +24,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -30,6 +36,7 @@ import org.springframework.data.repository.query.ParameterAccessor;
 
 import com.couchbase.client.java.CouchbaseBucket;
 import com.couchbase.client.java.query.Statement;
+import org.springframework.data.repository.query.ResultProcessor;
 
 public class PartTreeN1qBasedQueryTest {
 
@@ -117,12 +124,79 @@ public class PartTreeN1qBasedQueryTest {
 
 	}
 
+	@Test
+	public void testProjectionInterface() throws Exception {
+
+		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
+		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
+		EntityMetadata entityInformation = mock(EntityMetadata.class);
+		ParameterAccessor accessor = mock(ParameterAccessor.class);
+
+		ProjectionFactory factory = new SpelAwareProxyProjectionFactory();
+		factory.createProjection(BeerProjection.class);
+		MappingContext mappingContext = new CouchbaseMappingContext();
+		RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
+		Method method = TestRepository.class.getMethod("findAllProjectedBy");
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
+
+
+		when(entityInformation.getJavaType()).thenReturn(Beer.class);
+		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
+		when(couchbaseBucket.name()).thenReturn("B");
+		when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
+		when(couchbaseOperations.getConverter().getMappingContext()).thenReturn(mappingContext);
+		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
+		when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
+
+		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
+		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+
+		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`desc` FROM `B` WHERE "
+				+ "`_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+
+	}
+
+	@Test
+	public void testProjectionDTO() throws Exception {
+		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
+		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
+		EntityMetadata entityInformation = mock(EntityMetadata.class);
+		ProjectionFactory factory = new SpelAwareProxyProjectionFactory();
+		ParameterAccessor accessor = mock(ParameterAccessor.class);
+
+		RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
+		Method method = TestRepository.class.getMethod("findAllDtoedBy");
+		MappingContext mappingContext = new CouchbaseMappingContext();
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
+
+		when(entityInformation.getJavaType()).thenReturn(Beer.class);
+		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
+		when(couchbaseBucket.name()).thenReturn("B");
+		when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
+		when(couchbaseOperations.getConverter().getMappingContext()).thenReturn(mappingContext);
+		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
+
+		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
+		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+
+		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`name`, `B`.`desc` FROM `B` "
+				+ "WHERE `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+
+	}
+
 	public static interface TestRepository extends CrudRepository<Beer, String> {
 
 		Page<Beer> findByNameOrderByName(String name, Pageable pageRequest);
 
 		Page<Beer> findByName(String name, Pageable pageRequest);
 
-	}
+		Collection<BeerProjection> findAllProjectedBy();
 
+		List<BeerDTO> findAllDtoedBy();
+
+	}
 }

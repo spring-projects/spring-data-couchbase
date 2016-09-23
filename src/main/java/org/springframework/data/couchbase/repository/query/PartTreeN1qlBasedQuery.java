@@ -19,12 +19,7 @@ package org.springframework.data.couchbase.repository.query;
 import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
-import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
-
-import com.couchbase.client.core.lang.Tuple;
-import com.couchbase.client.core.lang.Tuple2;
 import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
@@ -36,8 +31,17 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.util.Assert;
+
+/**
+ * A {@link RepositoryQuery} for Couchbase, based on query derivation
+ *
+ * @author Simon Baslé
+ * @author Subhashni Balakrishnan
+ */
 
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
@@ -63,16 +67,15 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return queryCreator.createQuery();
   }
   @Override
-  protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters) {
+  protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
     Expression bucket = N1qlUtils.escapedBucket(bucketName);
-
 
     FromPath select;
     if (partTree.isCountProjection()) {
       select = select(count("*"));
     } else {
-      select = N1qlUtils.createSelectClauseForEntity(bucketName);
+        select = N1qlUtils.createSelectClauseForEntity(bucketName, returnedType, this.getCouchbaseOperations().getConverter());
     }
     WherePath selectFrom = select.from(bucket);
 

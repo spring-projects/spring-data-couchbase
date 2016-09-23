@@ -33,10 +33,10 @@ import com.couchbase.client.java.query.dsl.functions.TypeFunctions;
 import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 import com.couchbase.client.java.repository.annotation.Field;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
@@ -44,10 +44,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
+import org.springframework.data.repository.query.ReturnedType;
 
 /**
  * Utility class to deal with constructing well formed N1QL queries around Spring Data entities, so that
  * the framework can use N1QL to find such entities (eg. restrict the bucket search to a particular type).
+ *
+ * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class N1qlUtils {
 
@@ -72,17 +76,48 @@ public class N1qlUtils {
 
   /**
    * Produce a {@link Statement} that corresponds to the SELECT clause for looking for Spring Data entities
+   * stored in Couchbase. Notably it will select the content of the document AND its id and cas and use custom
+   * construction of query if required.
+   *
+   * @param bucketName the bucket that stores the entity documents (will be escaped).
+   * @param returnedType Returned type projection information from result processor.
+   * @param converter couchbase converter
+   * @return the needed SELECT clause of the statement.
+   */
+  public static FromPath createSelectClauseForEntity(String bucketName, ReturnedType returnedType, CouchbaseConverter converter) {
+    Expression bucket = escapedBucket(bucketName);
+    Expression metaId = path(meta(bucket), "id").as(CouchbaseOperations.SELECT_ID);
+    Expression metaCas = path(meta(bucket), "cas").as(CouchbaseOperations.SELECT_CAS);
+    List<Expression> expList = new ArrayList<Expression>();
+    expList.add(metaId);
+    expList.add(metaCas);
+
+    if (returnedType != null && returnedType.needsCustomConstruction()) {
+      List<String> properties = returnedType.getInputProperties();
+      CouchbasePersistentEntity<?> entity = converter.getMappingContext().getPersistentEntity(returnedType.getDomainType());
+
+      for (String property : properties) {
+        expList.add(path(bucket, i(entity.getPersistentProperty(property).getFieldName())));
+      }
+    } else {
+      expList.add(path(bucket, "*"));
+    }
+
+    Expression[] propertiesExp = new Expression[expList.size()];
+    propertiesExp = expList.toArray(propertiesExp);
+
+    return select(propertiesExp);
+  }
+
+  /**
+   * Produce a {@link Statement} that corresponds to the SELECT clause for looking for Spring Data entities
    * stored in Couchbase. Notably it will select the content of the document AND its id and cas.
    *
    * @param bucketName the bucket that stores the entity documents (will be escaped).
    * @return the needed SELECT clause of the statement.
    */
   public static FromPath createSelectClauseForEntity(String bucketName) {
-    Expression bucket = escapedBucket(bucketName);
-    Expression metaId = path(meta(bucket), "id").as(CouchbaseOperations.SELECT_ID);
-    Expression metaCas = path(meta(bucket), "cas").as(CouchbaseOperations.SELECT_CAS);
-
-    return select(metaId, metaCas, path(bucket, "*"));
+    return createSelectClauseForEntity(bucketName, null, null);
   }
 
   /**

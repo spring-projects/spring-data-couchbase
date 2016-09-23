@@ -45,7 +45,7 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
     CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
 
     for (int i = 0; i < 100; i++) {
-      Beer b = new Beer("testbeer-" + i).setName("MyBeer " + i).setActive(true);
+      Beer b = new Beer("testbeer-" + i, "MyBeer" + i, true, "");
       template.save(b);
     }
   }
