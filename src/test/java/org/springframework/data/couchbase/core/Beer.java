@@ -24,6 +24,7 @@ import com.couchbase.client.java.repository.annotation.Field;
  * Test class for persisting and loading from {@link CouchbaseTemplate}.
  *
  * @author Michael Nitschinger
+ * @author Subhashni Balakrishnan
  */
 public class Beer {
 
@@ -35,13 +36,19 @@ public class Beer {
   @Field("is_active")
   private boolean active = true;
 
-  public Beer(String id) {
+  @Field("desc")
+  private String description;
+
+  public Beer(String id, String name, Boolean active, String description) {
     this.id = id;
+    this.name = name;
+    this.active = active;
+    this.description = description;
   }
 
   @Override
   public String toString() {
-    return "Beer [id=" + id + ", name=" + name + ", active=" + active + "]";
+    return "Beer [id=" + id + ", name=" + name + ", active=" + active + ", description=" + description + "]";
   }
 
   public Beer setName(String name) {
@@ -60,6 +67,15 @@ public class Beer {
 
   public boolean getActive() {
     return active;
+  }
+
+  public Beer setDescription(String description) {
+    this.description = description;
+    return this;
+  }
+
+  public String getDescription() {
+    return description;
   }
 
   public String getId() {

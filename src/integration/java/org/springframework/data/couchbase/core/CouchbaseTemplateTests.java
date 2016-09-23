@@ -95,7 +95,7 @@ public class CouchbaseTemplateTests {
 		String id = "beers:awesome-stout";
 		String name = "The Awesome Stout";
 		boolean active = false;
-		Beer beer = new Beer(id).setName(name).setActive(active);
+		Beer beer = new Beer(id, name, active, "");
 
 		template.save(beer);
 		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
@@ -163,7 +163,7 @@ public class CouchbaseTemplateTests {
 	@Test
 	public void removeDocument() {
 		String id = "beers:to-delete-stout";
-		Beer beer = new Beer(id);
+		Beer beer = new Beer(id, "", false, "");
 
 		template.save(beer);
 		Object result = client.get(id);
@@ -208,7 +208,7 @@ public class CouchbaseTemplateTests {
 		String id = "beers:findme-stout";
 		String name = "The Findme Stout";
 		boolean active = true;
-		Beer beer = new Beer(id).setName(name).setActive(active);
+		Beer beer = new Beer(id, name, active, "");
 		template.save(beer);
 
 		Beer found = template.findById(id, Beer.class);

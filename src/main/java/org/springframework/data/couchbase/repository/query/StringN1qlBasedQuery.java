@@ -34,6 +34,7 @@ import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.TemplateParserContext;
@@ -53,6 +54,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
  * along with a variable for {@link #SPEL_FILTER WHERE clause filtering} of the correct entity.
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
@@ -264,7 +266,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters) {
+  public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     String parsedStatement = parseSpel(this.originalStatement, false, runtimeParameters);
     return N1qlQuery.simple(parsedStatement).statement();
   }
