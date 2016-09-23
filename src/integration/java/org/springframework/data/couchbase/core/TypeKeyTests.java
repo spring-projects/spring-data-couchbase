@@ -59,7 +59,7 @@ public class TypeKeyTests {
     String id = "beers:awesome-stout";
     String name = "The Awesome Stout";
     boolean active = false;
-    Beer beer = new Beer(id).setName(name).setActive(active);
+    Beer beer = new Beer(id, name, active, "");
 
     template.save(beer);
     RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
