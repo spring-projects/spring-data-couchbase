@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 1.4.6.RELEASE (2016-09-29)
+---------------------------------------------
+* DATACOUCH-252 - Release 1.4.6 (Gosling SR6).
+
+
 Changes in version 1.4.5.RELEASE (2016-09-20)
 ---------------------------------------------
 * DATACOUCH-248 - Ignore tests not running on AWS to security restrictions.
