@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.1.5.RELEASE (2016-11-03)
+---------------------------------------------
+* DATACOUCH-253 - Release 2.1.5 (Hopper SR5).
+
+
 Changes in version 2.1.4.RELEASE (2016-09-29)
 ---------------------------------------------
 * DATACOUCH-249 - Release 2.1.4 (Hopper SR4).
