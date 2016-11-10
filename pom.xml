@@ -5,26 +5,22 @@
 
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>2.2.0.BUILD-SNAPSHOT</version>
+    <version>3.0.0.BUILD-SNAPSHOT</version>
 
     <name>Spring Data Couchbase</name>
     <description>Spring Data integration for Couchbase</description>
-    <url>https://github.com/SpringSource/spring-data-couchbase</url>
+    <url>https://github.com/spring-projects/spring-data-couchbase</url>
 
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>1.9.0.BUILD-SNAPSHOT</version>
+        <version>2.0.0.BUILD-SNAPSHOT</version>
     </parent>
 
     <properties>
-
-        <dist.key>DATACOUCH</dist.key>
-
         <couchbase>2.2.8</couchbase>
         <couchbase.osgi>2.2.8</couchbase.osgi>
-        <springdata.commons>1.13.0.BUILD-SNAPSHOT</springdata.commons>
-        <validation>1.0.0.GA</validation>
+        <springdata.commons>2.0.0.BUILD-SNAPSHOT</springdata.commons>
     </properties>
 
     <dependencies>
@@ -64,7 +60,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>4.2.0.Final</version>
+            <version>5.2.4.Final</version>
             <scope>test</scope>
         </dependency>
 
