@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.repository.query.support;
 
+import static com.couchbase.client.java.query.dsl.Expression.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -131,5 +132,20 @@ public class N1qlUtilsTest {
 
     assertEquals(expectedDefault, real);
     assertEquals(expectedTypeKey, realWithTypeKey);
+  }
+
+  @Test
+  public void testCreateWhereFilterForEntityWithBaseCriteria() throws Exception {
+    String expected = "(field1 >= 30 OR field2 = \"foo\") AND `_class` = \"java.lang.String\"";
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    when(converter.getTypeKey()).thenReturn("_class");
+    EntityMetadata metadata = mock(EntityMetadata.class);
+    when(metadata.getJavaType()).thenReturn(String.class);
+
+    String real = N1qlUtils.createWhereFilterForEntity(
+            x("field1").gte(30).or(x("field2").eq(s("foo"))),
+            converter, metadata).toString();
+
+    assertEquals(expected, real);
   }
 }
