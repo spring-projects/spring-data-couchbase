@@ -54,4 +54,6 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
       " AND `desc` NOT LIKE '%' || $1 || '%' AND `desc` != \"this is \\\"$excluded\\\"\"")
   List<Party> findAllWithPositionalParamsAndQuotedNamedParams(@Param("excluded") String ex, @Param("included") String inc, @Param("min") long min);
 
+  List<Party> findByDescriptionOrName(String description, String name);
+
 }

@@ -18,11 +18,13 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -56,10 +58,28 @@ public class N1qlCouchbaseRepositoryTests {
 
   private PartyPagingRepository repository;
 
+  private PartyRepository partyRepository;
+
+  private ItemRepository itemRepository;
+
+  private final String KEY_PARTY = "Party1";
+  private final String KEY_ITEM = "Item1";
+
+
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     repository = factory.getRepository(PartyPagingRepository.class);
+    partyRepository = factory.getRepository(PartyRepository.class);
+    itemRepository = factory.getRepository(ItemRepository.class);
+    partyRepository.save(new Party(KEY_PARTY, "partyName", "MatchingDescription", null, 0, null));
+    itemRepository.save(new Item(KEY_ITEM, "MatchingDescription"));
+  }
+
+  @After
+  public void cleanUp() {
+    try { itemRepository.delete(KEY_ITEM); } catch (DataRetrievalFailureException e) {}
+    try { partyRepository.delete(KEY_PARTY); } catch (DataRetrievalFailureException e) {}
   }
 
   @Test
@@ -104,7 +124,7 @@ public class N1qlCouchbaseRepositoryTests {
     Pageable pageable = new PageRequest(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(15, page1.getTotalElements()); //12 generated parties + 3 specifically crafted party
+    assertEquals(16, page1.getTotalElements()); //12 generated parties + 4 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
   }
 
@@ -113,7 +133,7 @@ public class N1qlCouchbaseRepositoryTests {
     Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(15, page1.getTotalElements()); //12 generated parties + 3 specifically crafted party
+    assertEquals(16, page1.getTotalElements()); //12 generated parties + 4 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
 
     List<Party> parties = page1.getContent();
@@ -124,5 +144,11 @@ public class N1qlCouchbaseRepositoryTests {
       }
       previousAttendees = party.getAttendees();
     }
+  }
+
+  @Test
+  public void testWrapWhereCriteria() {
+    List<Party> partyList = partyRepository.findByDescriptionOrName("MatchingDescription", "partyName");
+    assertTrue(partyList.size() == 1);
   }
 }
