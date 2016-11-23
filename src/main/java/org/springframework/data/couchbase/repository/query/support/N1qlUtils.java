@@ -20,6 +20,7 @@ import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.Expression.path;
 import static com.couchbase.client.java.query.dsl.Expression.s;
+import static com.couchbase.client.java.query.dsl.Expression.x;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
 import static com.couchbase.client.java.query.dsl.functions.StringFunctions.lower;
@@ -149,7 +150,7 @@ public class N1qlUtils {
     if (baseWhereCriteria == null) {
       baseWhereCriteria = typeSelector;
     } else {
-      baseWhereCriteria = baseWhereCriteria.and(typeSelector);
+      baseWhereCriteria = x("(" + baseWhereCriteria.toString() + ")").and(typeSelector);
     }
     return baseWhereCriteria;
   }
