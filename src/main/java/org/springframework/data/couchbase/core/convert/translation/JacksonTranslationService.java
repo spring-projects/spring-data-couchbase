@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.core.convert.translation;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +28,9 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Map;
 
 /**
@@ -215,21 +216,17 @@ public class JacksonTranslationService implements TranslationService, Initializi
     switch (token) {
       case VALUE_TRUE:
       case VALUE_FALSE:
-        return parser.getValueAsBoolean();
+        return parser.getBooleanValue();
       case VALUE_STRING:
         return parser.getValueAsString();
       case VALUE_NUMBER_INT:
-        try {
-          return parser.getValueAsInt();
-        } catch (final JsonParseException e) {
-          return parser.getValueAsLong();
-        }
+        return parser.getNumberValue();
       case VALUE_NUMBER_FLOAT:
-        return parser.getValueAsDouble();
+        return parser.getDoubleValue();
       case VALUE_NULL:
         return null;
       default:
-        throw new MappingException("Could not decode primitve value " + token);
+        throw new MappingException("Could not decode primitive value " + token);
     }
   }
 
