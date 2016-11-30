@@ -128,7 +128,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
 
-  private CouchbaseStorable translateDecode(final String source, final CouchbaseStorable target) {
+  private CouchbaseStorable translateDecode(final Object source, final CouchbaseStorable target) {
     return translationService.decode(source, target);
   }
 
@@ -182,8 +182,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
-    Object readEntity = couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(
-      (String) result.getValue(), converted));
+    Object readEntity = couchbaseConverter.read(entityClass, (CouchbaseDocument) translateDecode(result.getValue(), converted));
 
 		final BeanWrapper<Object> beanWrapper = BeanWrapper.create(readEntity, couchbaseConverter.getConversionService());
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(readEntity.getClass());
@@ -255,10 +254,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public boolean exists(final String id) {
-    final String result = execute(new BucketCallback<String>() {
+    final Object result = execute(new BucketCallback<Object>() {
       @Override
-      public String doInBucket() {
-        return (String) client.get(id);
+      public Object doInBucket() {
+        return client.get(id);
       }
     });
     return result != null;
