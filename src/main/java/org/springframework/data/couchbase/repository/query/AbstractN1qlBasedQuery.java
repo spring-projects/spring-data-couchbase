@@ -57,7 +57,6 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
   protected final CouchbaseQueryMethod queryMethod;
   private final CouchbaseOperations couchbaseOperations;
-  private Class<?> returnedType;
 
   protected AbstractN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
     this.queryMethod = queryMethod;
@@ -87,11 +86,9 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
     ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
     ReturnedType returnedType = processor.getReturnedType();
-    this.returnedType = returnedType.getReturnedType();
-
-    if (this.returnedType.isInterface()) {
-      this.returnedType = returnedType.getDomainType();
-    }
+    
+    Class<?> typeToRead = returnedType.getTypeToRead();
+    typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
     Statement statement = getStatement(accessor, parameters, returnedType);
     JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
@@ -104,8 +101,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     Statement countStatement = getCount(accessor, parameters);
     N1qlQuery countQuery = buildQuery(countStatement, queryPlaceholderValues,
         getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
-    return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(),
-            queryMethod.isPageQuery(), queryMethod.isSliceQuery(), queryMethod.isModifyingQuery()));
+    return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(), typeToRead));
   }
 
   protected static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
@@ -122,22 +118,23 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     return query;
   }
 
-  protected Object executeDependingOnType(N1qlQuery query, N1qlQuery countQuery, QueryMethod queryMethod, Pageable pageable,
-                                          boolean isPage, boolean isSlice, boolean isModifying) {
-    if (isModifying) {
+  protected Object executeDependingOnType(N1qlQuery query, N1qlQuery countQuery, QueryMethod queryMethod,
+      Pageable pageable, Class<?> typeToRead) {
+
+    if (queryMethod.isModifyingQuery()) {
       throw new UnsupportedOperationException("Modifying queries not yet supported");
     }
 
-    if (isPage) {
-      return executePaged(query, countQuery, pageable);
-    } else if (isSlice) {
-      return executeSliced(query, countQuery, pageable);
+    if (queryMethod.isPageQuery()) {
+      return executePaged(query, countQuery, pageable, typeToRead);
+    } else if (queryMethod.isSliceQuery()) {
+      return executeSliced(query, countQuery, pageable, typeToRead);
     } else if (queryMethod.isCollectionQuery()) {
-      return executeCollection(query);
-    } else if (queryMethod.isQueryForEntity()) {
-      return executeEntity(query);
+      return executeCollection(query, typeToRead);
     } else if (queryMethod.isStreamQuery()){
-      return executeStream(query);
+      return executeStream(query, typeToRead);
+    } else if (queryMethod.isQueryForEntity()) {
+      return executeEntity(query, typeToRead);
     } else if (queryMethod.getReturnedObjectType().isPrimitive()
         && useGeneratedCountQuery()) {
       //attempt to execute the created COUNT query
@@ -156,24 +153,24 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     }
   }
 
-  protected List<?> executeCollection(N1qlQuery query) {
+  protected List<?> executeCollection(N1qlQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
-    List<?> result = couchbaseOperations.findByN1QL(query, this.returnedType);
+    List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
     return result;
   }
 
-  protected Object executeEntity(N1qlQuery query) {
+  protected Object executeEntity(N1qlQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
-    List<?> result = executeCollection(query);
+    List<?> result = executeCollection(query, typeToRead);
     return result.isEmpty() ? null : result.get(0);
   }
 
-  protected Object executeStream(N1qlQuery query) {
+  protected Object executeStream(N1qlQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
-    return StreamUtils.createStreamFromIterator(executeCollection(query).iterator());
+    return StreamUtils.createStreamFromIterator(executeCollection(query, typeToRead).iterator());
   }
 
-  protected Object executePaged(N1qlQuery query, N1qlQuery countQuery, Pageable pageable) {
+  protected Object executePaged(N1qlQuery query, N1qlQuery countQuery, Pageable pageable, Class<?> typeToRead) {
     Assert.notNull(pageable);
     long total = 0L;
     logIfNecessary(countQuery);
@@ -183,14 +180,14 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     }
 
     logIfNecessary(query);
-    List<?> result = couchbaseOperations.findByN1QL(query,  this.returnedType);
+    List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
     return new PageImpl(result, pageable, total);
   }
 
-  protected Object executeSliced(N1qlQuery query, N1qlQuery countQuery, Pageable pageable) {
+  protected Object executeSliced(N1qlQuery query, N1qlQuery countQuery, Pageable pageable, Class<?> typeToRead) {
     Assert.notNull(pageable);
     logIfNecessary(query);
-    List<?> result = couchbaseOperations.findByN1QL(query, this.returnedType);
+    List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
     int pageSize = pageable.getPageSize();
     boolean hasNext = result.size() > pageSize;
 
