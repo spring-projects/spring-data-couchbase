@@ -34,16 +34,15 @@ import org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRe
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.util.Assert;
 
 /**
  * A {@link CouchbasePagingAndSortingRepository} implementation. It uses N1QL for its {@link PagingAndSortingRepository}
  * method implementation.
+ * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class N1qlCouchbaseRepository<T, ID extends Serializable>
     extends SimpleCouchbaseRepository<T, ID>
@@ -118,5 +117,111 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
     //return the list as a Page
     return new PageImpl<T>(pageContent, pageable, totalCount);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#findAll(org.springframework.data.domain.Example)
+   */
+  @Override
+  public <S extends T> List<S> findAll(Example<S> example) {
+    Assert.notNull(example);
+    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    Expression whereCriteria = N1qlUtils.createWhereFilterByExampleForEntity(null, getCouchbaseOperations().getConverter(),
+            getEntityInformation(), example);
+
+    Statement st = selectFrom.where(whereCriteria);
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1qlQuery query = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
+    return getCouchbaseOperations().findByN1QL(query, example.getProbeType());
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#findAll(org.springframework.data.domain.Example, org.springframework.data.domain.Sort)
+   */
+  @Override
+  public <S extends T> List<S> findAll(Example<S> example, Sort sort) {
+    Assert.notNull(sort);
+    Assert.notNull(example);
+    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    Expression whereCriteria = N1qlUtils.createWhereFilterByExampleForEntity(null, getCouchbaseOperations().getConverter(),
+            getEntityInformation(), example);
+
+    com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(sort, getCouchbaseOperations().getConverter());
+    Statement st = selectFrom.where(whereCriteria).orderBy(orderings);
+
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1qlQuery query = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
+    return getCouchbaseOperations().findByN1QL(query, example.getProbeType());
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#findOne(org.springframework.data.domain.Example)
+   */
+  public <S extends T> S findOne(Example<S> example) {
+    Assert.notNull(example);
+    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    Expression whereCriteria = N1qlUtils.createWhereFilterByExampleForEntity(null, getCouchbaseOperations().getConverter(),
+            getEntityInformation(), example);
+
+    Statement st = selectFrom.where(whereCriteria).limit(1);
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1qlQuery query = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
+    List<S> result = getCouchbaseOperations().findByN1QL(query, example.getProbeType());
+    return result.size() > 0 ? result.get(0) : null;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#findAll(org.springframework.data.domain.Example, org.springframework.data.domain.Pageable)
+   */
+  public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable){
+    Assert.notNull(pageable);
+    Assert.notNull(example);
+    long totalCount = this.count(example);
+
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    Expression whereCriteria = N1qlUtils.createWhereFilterByExampleForEntity(null, getCouchbaseOperations().getConverter(),
+            getEntityInformation(), example);
+
+    GroupByPath groupBy = selectFrom.where(whereCriteria);
+    LimitPath limitPath = groupBy;
+    if (pageable.getSort() != null) {
+      com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(pageable.getSort(),
+              getCouchbaseOperations().getConverter());
+      limitPath = groupBy.orderBy(orderings);
+    }
+    Statement pageStatement = limitPath.limit(pageable.getPageSize()).offset(pageable.getOffset());
+    N1qlQuery query = N1qlQuery.simple(pageStatement, N1qlParams.build().consistency(consistency));
+    List<S> pageContent = getCouchbaseOperations().findByN1QL(query, example.getProbeType());
+    return new PageImpl<S>(pageContent, pageable, totalCount);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#count(org.springframework.data.domain.Example)
+   */
+  public <S extends T> long count(Example<S> example) {
+    Assert.notNull(example);
+    Statement st = N1qlUtils.createCountQueryByExampleForEntity(getCouchbaseOperations().getCouchbaseBucket().name(),
+            getCouchbaseOperations().getConverter(), getEntityInformation(), example);
+
+    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    SimpleN1qlQuery countQuery = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
+    List <CountFragment> countResult = getCouchbaseOperations().findByN1QLProjection(countQuery, CountFragment.class);
+    return (countResult == null || countResult.isEmpty()) ? 0 : countResult.get(0).count;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.query.QueryByExampleExecutor#exists(org.springframework.data.domain.Example)
+   */
+  public <S extends T> boolean exists(Example<S> example){
+    Assert.notNull(example);
+    long count = this.count(example);
+    return count > 0;
   }
 }

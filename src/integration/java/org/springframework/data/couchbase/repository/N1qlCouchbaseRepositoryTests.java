@@ -29,10 +29,13 @@ import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.geo.Point;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -44,6 +47,7 @@ import java.util.List;
  * This tests PaginAndSortingRepository features in the Couchbase connector.
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -151,4 +155,136 @@ public class N1qlCouchbaseRepositoryTests {
     List<Party> partyList = partyRepository.findByDescriptionOrName("MatchingDescription", "partyName");
     assertTrue(partyList.size() == 1);
   }
+
+  @Test
+  public void shouldFindAllByExample() {
+    Party party = new Party();
+    party.setName("party");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    Iterable<Party> parties = repository.findAll(sample);
+    int count = 0;
+    for(Party p:parties) {
+      count +=1;
+    }
+    assertEquals("Count mismatch", 15, count);
+  }
+
+  @Test
+  public void shouldFindAllByExampleAndSort() {
+    Party party = new Party();
+    party.setName("party");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    Iterable<Party> parties = repository.findAll(sample, new Sort(Sort.Direction.ASC, "attendees"));
+    long attendees = 0;
+    for(Party p:parties) {
+      assertTrue(p.getAttendees() >= attendees);
+      attendees = p.getAttendees();
+    }
+  }
+
+  @Test
+  public void shouldFindOneByExample() {
+    Party party = new Party();
+    party.setName("party");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.STARTING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    Party result = repository.findOne(sample);
+    assertNotNull(result);
+    assertTrue(result.getName().contains("party"));
+  }
+
+
+  @Test
+  public void shouldFindOneByExampleWithNoResult() {
+    Party party = new Party();
+    party.setName("noparty");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.STARTING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    Party result = repository.findOne(sample);
+    assertNull(result);
+  }
+
+  @Test
+  public void shouldFindCountByExample() {
+    Party party = new Party();
+    party.setName("party");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    long count = repository.count(sample);
+    assertEquals("Result count mismatch", 15, count);
+  }
+
+  @Test
+  public void shouldFindCountByExampleWithNoResult() {
+    Party party = new Party();
+    party.setName("noparty");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    long count = repository.count(sample);
+    assertEquals("Result count mismatch", 0, count);
+  }
+
+  @Test
+  public void shouldPageThroughFoundEntitiesByExample() {
+    Party party = new Party();
+    party.setName("party");
+    Pageable pageable = new PageRequest(0, 8);
+
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIgnoreNullValues().withIgnorePaths("attendees"));
+    Page<Party> page1 = repository.findAll(sample, pageable);
+    assertEquals(15, page1.getTotalElements());
+    assertEquals(8, page1.getNumberOfElements());
+  }
+
+  @Test
+  public void shouldFindEntitiesByExampleIncludingNullValues() {
+    Party party = new Party();
+    party.setName("party");
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching()
+            .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING).withIncludeNullValues().withIgnorePaths("attendees"));
+    Iterable<Party> parties = repository.findAll(sample);
+    int count = 0;
+    for(Party p:parties) {
+      count +=1;
+    }
+    assertEquals("Result count mismatch", 0, count);
+  }
+
+  @Test
+  public void shouldFindEntitiesByExampleWithNonStringMatch() {
+    Party party = new Party();
+    party.setAttendees(1000);
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching().withIgnoreNullValues());
+    Iterable<Party> parties = repository.findAll(sample);
+    int count = 0;
+    for(Party p:parties) {
+      count +=1;
+    }
+    assertEquals("Result count mismatch", 2, count);
+  }
+
+  @Test
+  public void existsByExample() {
+    Party party = new Party();
+    party.setAttendees(1000);
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching().withIgnoreNullValues());
+    assertTrue(repository.exists(sample));
+  }
+
+  @Test
+  public void shouldFindEntitiesByExampleWithNestedObjectMatch() {
+    Party party = new Party();
+    party.setLocation(new Point(100, 100));
+    Example<Party> sample = Example.of(party, ExampleMatcher.matching().withIgnoreNullValues().withIgnorePaths("attendees"));
+    Iterable<Party> parties = repository.findAll(sample);
+    int count = 0;
+    for(Party p:parties) {
+      count +=1;
+    }
+    assertEquals("Result count mismatch", 3, count);
+  }
+
 }

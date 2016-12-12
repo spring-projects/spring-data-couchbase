@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository;
 import java.io.Serializable;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.QueryByExampleExecutor;
 
 /**
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface that is
@@ -27,5 +28,5 @@ import org.springframework.data.repository.PagingAndSortingRepository;
  * @author Simon Baslé
  */
 public interface CouchbasePagingAndSortingRepository<T, ID extends Serializable>
-    extends CouchbaseRepository<T, ID>, PagingAndSortingRepository<T, ID> {
+    extends CouchbaseRepository<T, ID>, PagingAndSortingRepository<T, ID>, QueryByExampleExecutor<T> {
 }

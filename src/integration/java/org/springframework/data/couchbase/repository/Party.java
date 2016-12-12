@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 
 import com.couchbase.client.java.repository.annotation.Field;
+import org.springframework.data.repository.query.parser.Part;
 
 /**
  * An entity used to test conversion of parameters in query derivations.
@@ -15,18 +16,22 @@ import com.couchbase.client.java.repository.annotation.Field;
 public class Party {
 
   @Id
-  private final String key;
+  private String key;
 
-  private final String name;
+  private String name;
 
   @Field("desc")
-  private final String description;
+  private String description;
 
-  private final Date eventDate;
+  private Date eventDate;
 
-  private final long attendees;
+  private long attendees;
 
-  private final Point location;
+  private Point location;
+
+  public Party() {
+    this(null, null, null, null, 0, null);
+  }
 
   public Party(String key, String name, String description, Date eventDate, long attendees, Point location) {
     this.key = key;
@@ -41,25 +46,51 @@ public class Party {
     return key;
   }
 
+  public void setKey(String key) {
+    this.key = key;
+  }
+
   public String getName() {
     return name;
+  }
+
+  public void setName(String name) {
+    this.name = name;
   }
 
   public String getDescription() {
     return description;
   }
 
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
   public Date getEventDate() {
     return eventDate;
+  }
+
+  public void setEventDate(Date date) {
+    this.eventDate = date;
   }
 
   public long getAttendees() {
     return attendees;
   }
 
+  public void setAttendees(long attendees) {
+    this.attendees = attendees;
+  }
+
   public Point getLocation() {
     return location;
   }
+
+  public void setLocation(Point location) {
+    this.location = location;
+  }
+
 
   @Override
   public boolean equals(Object o) {
