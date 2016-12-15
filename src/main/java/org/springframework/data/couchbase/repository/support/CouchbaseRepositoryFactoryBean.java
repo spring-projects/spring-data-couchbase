@@ -42,6 +42,15 @@ public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID e
    * Contains the reference to the IndexManager.
    */
   private IndexManager indexManager;
+  
+  /**
+   * Creates a new {@link CouchbaseRepositoryFactoryBean} for the given repository interface.
+   * 
+   * @param repositoryInterface must not be {@literal null}.
+   */
+  public CouchbaseRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
+    super(repositoryInterface);
+  }
 
   /**
    * Set the template reference.
