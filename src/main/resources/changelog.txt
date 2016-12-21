@@ -1,6 +1,20 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.0.RC1 (2016-12-21)
+-----------------------------------------
+* DATACOUCH-262 - Adapt API in RepositoryFactoryBeanSupport implementation.
+* DATACOUCH-261 - Register repository factory in spring.factories for multi-store support.
+* DATACOUCH-251 - Keyword "Or" not working properly.
+* DATACOUCH-246 - Add support for projections on repository query methods.
+* DATACOUCH-243 - CouchbaseTemplate.doRemove() should handle exceptions as the same way with doPersist().
+* DATACOUCH-241 - Document mixing SpEL and N1QL placeholders.
+* DATACOUCH-239 - Allow configurable expiry in @Document.
+* DATACOUCH-238 - Release 2.2 RC1 (Ingalls).
+* DATACOUCH-237 - Query method with pagination + sort creates invalid count statement.
+* DATACOUCH-235 - WARNING: More than 1 Couchbase Environments found (2) with <couchbase:env/>.
+
+
 Changes in version 3.0.0.M1 (2016-11-23)
 ----------------------------------------
 * DATACOUCH-256 - Set up 3.0 development.
