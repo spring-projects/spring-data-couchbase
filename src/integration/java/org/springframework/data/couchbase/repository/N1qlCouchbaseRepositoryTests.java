@@ -72,7 +72,7 @@ public class N1qlCouchbaseRepositoryTests {
     repository = factory.getRepository(PartyPagingRepository.class);
     partyRepository = factory.getRepository(PartyRepository.class);
     itemRepository = factory.getRepository(ItemRepository.class);
-    partyRepository.save(new Party(KEY_PARTY, "partyName", "MatchingDescription", null, 0, null));
+    partyRepository.save(new Party(KEY_PARTY, "partyName", "MatchingDescription", null, 1, null));
     itemRepository.save(new Item(KEY_ITEM, "MatchingDescription"));
   }
 
@@ -150,5 +150,31 @@ public class N1qlCouchbaseRepositoryTests {
   public void testWrapWhereCriteria() {
     List<Party> partyList = partyRepository.findByDescriptionOrName("MatchingDescription", "partyName");
     assertTrue(partyList.size() == 1);
+  }
+
+  @Test
+  public void shouldPageWithStringBasedQuery() {
+    Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
+    Page<Party> page1 = partyRepository.findPartiesWithAttendee(1, pageable);
+    assertEquals(16, page1.getTotalElements()); //12 generated parties + 4 specifically crafted party
+    assertEquals(8, page1.getNumberOfElements());
+
+    List<Party> parties = page1.getContent();
+    Long previousAttendees = null;
+    for (Party party : parties) {
+      if (previousAttendees != null) {
+        assertTrue(party.getAttendees() <= previousAttendees);
+      }
+      previousAttendees = party.getAttendees();
+    }
+    Page<Party> page2 = partyRepository.findPartiesWithAttendee(1, page1.nextPageable());
+    assertEquals(8, page2.getNumberOfElements());
+    parties = page2.getContent();
+    for (Party party : parties) {
+      if (previousAttendees != null) {
+        assertTrue(party.getAttendees() <= previousAttendees);
+      }
+      previousAttendees = party.getAttendees();
+    }
   }
 }
