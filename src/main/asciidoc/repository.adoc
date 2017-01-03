@@ -263,6 +263,8 @@ It adds two methods:
 
 TIP: You can also use `Page` and `Slice` as method return types as well with a N1QL backed repository.
 
+NOTE: If pageable and sort parameters are used with inline queries, there should not be any order by, limit or offset clause in the inline query itself otherwise the server would reject the query as malformed.
+
 The second way of querying, supported also in older versions of Couchbase Server, is the View-backed one that we'll see in the next section.
 
 [[couchbase.repository.views]]

@@ -26,10 +26,16 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.dsl.path.DefaultLimitPath;
+import com.couchbase.client.java.query.dsl.path.DefaultOrderByPath;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -39,6 +45,7 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.util.Assert;
 
 /**
  * A {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
@@ -111,6 +118,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   private final N1qlSpelValues countContext;
   private final N1qlSpelValues statementContext;
 
+
   protected String getTypeField() {
     return getCouchbaseOperations().getConverter().getTypeKey();
   }
@@ -122,7 +130,6 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   public StringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations,
                               SpelExpressionParser spelParser, final EvaluationContextProvider evaluationContextProvider) {
     super(queryMethod, couchbaseOperations);
-
     this.originalStatement = statement;
     this.placeHolderType = checkPlaceholders(statement);
 
@@ -268,7 +275,25 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   @Override
   public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     String parsedStatement = parseSpel(this.originalStatement, false, runtimeParameters);
-    return N1qlQuery.simple(parsedStatement).statement();
+
+    String orderByPart = "";
+    String limitByPart = "";
+
+    Sort sort = accessor.getSort();
+    if (sort != null) {
+      com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, getCouchbaseOperations().getConverter());
+      orderByPart = " " + new DefaultOrderByPath(null).orderBy(cbSorts).toString();
+    }
+    if (queryMethod.isPageQuery()) {
+      Pageable pageable = accessor.getPageable();
+      Assert.notNull(pageable);
+      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize()).offset(pageable.getOffset()).toString();
+    } else if (queryMethod.isSliceQuery()) {
+      Pageable pageable = accessor.getPageable();
+      Assert.notNull(pageable);
+      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize() + 1).offset(pageable.getOffset()).toString();
+    }
+    return N1qlQuery.simple(parsedStatement + orderByPart + limitByPart).statement();
   }
 
   @Override
