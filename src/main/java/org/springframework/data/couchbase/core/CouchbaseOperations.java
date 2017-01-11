@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.query.Consistency;
 
+
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
  *
@@ -44,9 +45,6 @@ import org.springframework.data.couchbase.core.query.Consistency;
  * @author Simon Baslé
  */
 public interface CouchbaseOperations {
-
-  String SELECT_ID = "_ID";
-  String SELECT_CAS = "_CAS";
 
   /**
    * Save the given object.
@@ -247,10 +245,7 @@ public interface CouchbaseOperations {
 
   /**
    * Query the N1QL Service for JSON data of type T. Enough data to construct the full
-   * entity is expected to be selected, including the metadata {@value #SELECT_ID} and
-   * {@value #SELECT_CAS} (document id and cas, obtained through N1QL's
-   * "{@code META(bucket).id AS} {@value #SELECT_ID}" and
-   * "{@code META(bucket).cas AS} {@value #SELECT_CAS}").
+   * entity is expected to be selected, including the metadata (document id and cas), obtained through N1QL's query.
    * <p>This is done via a {@link N1qlQuery} that contains a {@link Statement} and possibly
    * additional query parameters ({@link N1qlParams}) and placeholder values if the
    * statement contains placeholders.

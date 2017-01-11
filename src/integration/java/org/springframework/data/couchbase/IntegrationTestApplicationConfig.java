@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.config.CouchbaseConfigurer;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.core.query.Consistency;
@@ -76,5 +77,11 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
   @Override
   protected Consistency getDefaultConsistency() {
     return Consistency.READ_YOUR_OWN_WRITES;
+  }
+
+
+  @Override
+  protected CouchbaseConfigurer couchbaseConfigurer() {
+    return this;
   }
 }

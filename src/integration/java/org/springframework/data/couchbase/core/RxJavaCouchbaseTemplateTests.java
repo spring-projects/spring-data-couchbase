@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,39 +22,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.PersistTo;
+import com.couchbase.client.java.ReplicateTo;
 import com.couchbase.client.java.document.RawJsonDocument;
+import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.query.AsyncN1qlQueryResult;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.repository.annotation.Field;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
+import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
@@ -62,13 +56,12 @@ import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * @author Michael Nitschinger
- * @author Simon Baslé
- * @author Anastasiia Smirnova */
+ * @author Subhashni Balakrishnan
+ **/
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
-@TestExecutionListeners(CouchbaseTemplateViewListener.class)
-public class CouchbaseTemplateTests {
+@ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
+@TestExecutionListeners(ReactiveCouchbaseTemplateViewListener.class)
+public class RxJavaCouchbaseTemplateTests {
 
 	@Rule
 	public TestName testName = new TestName();
@@ -77,101 +70,69 @@ public class CouchbaseTemplateTests {
 	private Bucket client;
 
 	@Autowired
-	private CouchbaseTemplate template;
+	private RxJavaCouchbaseOperations template;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 
+
 	private void removeIfExist(String key) {
-		try {
-			client.remove(key);
-		}
-		catch (DocumentDoesNotExistException e) {
-			//ignore
-		}
+		template.remove(key).subscribe();
+	}
+
+	private void removeCollectionIfExist(Collection<ReactiveBeer> beers) {
+		template.remove(beers, PersistTo.MASTER, ReplicateTo.NONE)
+					.subscribe();
 	}
 
 	@Test
 	public void saveSimpleEntityCorrectly() throws Exception {
-		String id = "beers:awesome-stout";
+		String id = "reactivebeers:awesome-stout";
 		removeIfExist(id);
 
 		String name = "The Awesome Stout";
 		boolean active = false;
-		Beer beer = new Beer(id, name, active, "");
+		ReactiveBeer beer = new ReactiveBeer(id, name, active, "");
 
-		template.save(beer);
+		template.save(beer)
+				.subscribe();
 		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
 		assertNotNull(resultDoc);
 		String result = resultDoc.content();
 		assertNotNull(result);
-		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
+		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {
+		});
 
 		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
 		assertNull(resultConv.get("javaClass"));
-		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertEquals("org.springframework.data.couchbase.core.ReactiveBeer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
 		assertEquals(false, resultConv.get("is_active"));
 		assertEquals("The Awesome Stout", resultConv.get("name"));
-	}
-
-	@Test
-	public void saveDocumentWithExpiry() throws Exception {
-		String id = "simple-doc-with-expiry";
-		DocumentWithExpiry doc = new DocumentWithExpiry(id);
-		template.save(doc);
-		assertNotNull(client.get(id));
-		Thread.sleep(3000);
-		assertNull(client.get(id));
-	}
-
-	@Test
-	public void insertDoesNotOverride() throws Exception {
-		String id = "double-insert-test";
 		removeIfExist(id);
-
-		SimplePerson doc = new SimplePerson(id, "Mr. A");
-		template.insert(doc);
-		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		String result = resultDoc.content();
-
-		Map<String, String> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
-
-		doc = new SimplePerson(id, "Mr. B");
-		try {
-			template.insert(doc);
-		} catch (OptimisticLockingFailureException e) {
-			//ignore, since this insert should fail
-		}
-
-		resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		result = resultDoc.content();
-
-		resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
 	}
-
 
 	@Test
-	public void updateDoesNotInsert() {
-		String id = "update-does-not-insert";
-		SimplePerson doc = new SimplePerson(id, "Nice Guy");
-		template.update(doc);
-		assertNull(client.get(id));
-	}
+	public void saveCollectionCorrectly() throws Exception {
+		Collection<ReactiveBeer> beers = new ArrayList<>();
+		String name = "The Awesome Stout";
 
+		for (int i=0; i < 10000; i++) {
+			beers.add(new ReactiveBeer("beerCollItem" + i, name + i, false, ""));
+		}
+		removeCollectionIfExist(beers);
+		template.save(beers).subscribe();
+	}
 
 	@Test
 	public void removeDocument() {
 		String id = "beers:to-delete-stout";
-		Beer beer = new Beer(id, "", false, "");
+		ReactiveBeer beer = new ReactiveBeer(id, "", false, "");
+		removeIfExist(id);
 
-		template.save(beer);
+		template.save(beer).subscribe();
 		Object result = client.get(id);
 		assertNotNull(result);
 
-		template.remove(beer);
+		template.remove(beer).subscribe();
 		result = client.get(id);
 		assertNull(result);
 	}
@@ -193,10 +154,10 @@ public class CouchbaseTemplateTests {
 
 		ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
-		template.save(complex);
+		template.save(complex).toBlocking();
 		assertNotNull(client.get(id));
 
-		ComplexPerson response = template.findById(id, ComplexPerson.class);
+		ComplexPerson response = template.findById(id, ComplexPerson.class).toBlocking().single();
 		assertEquals(names, response.getFirstnames());
 		assertEquals(votes, response.getVotes());
 		assertEquals(id, response.getId());
@@ -207,13 +168,13 @@ public class CouchbaseTemplateTests {
 
 	@Test
 	public void validFindById() {
-		String id = "beers:findme-stout";
-		String name = "The Findme Stout";
+		String id = "reactive beers:findme-stout";
+		String name = "Findme Stout";
 		boolean active = true;
-		Beer beer = new Beer(id, name, active, "");
-		template.save(beer);
+		ReactiveBeer beer = new ReactiveBeer(id, name, active, "");
+		template.save(beer).subscribe();
 
-		Beer found = template.findById(id, Beer.class);
+		ReactiveBeer found = template.findById(id, ReactiveBeer.class).toBlocking().single();
 
 		assertNotNull(found);
 		assertEquals(id, found.getId());
@@ -223,13 +184,13 @@ public class CouchbaseTemplateTests {
 
 	@Test
 	public void shouldLoadAndMapViewDocs() {
-		ViewQuery query = ViewQuery.from("test_beers", "by_name");
+		ViewQuery query = ViewQuery.from("reactive_test_beers", "by_name");
 		query.stale(Stale.FALSE);
 
-		final List<Beer> beers = template.findByView(query, Beer.class);
+		final List<ReactiveBeer> beers = template.findByView(query, ReactiveBeer.class).toList().toBlocking().single();
 		assertTrue(beers.size() > 0);
 
-		for (Beer beer : beers) {
+		for (ReactiveBeer beer : beers) {
 			assertNotNull(beer.getId());
 			assertNotNull(beer.getName());
 			assertNotNull(beer.getActive());
@@ -241,10 +202,10 @@ public class CouchbaseTemplateTests {
 		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name()))
 				.where(x("name").isNotMissing()));
 
-		N1qlQueryResult queryResult = template.queryN1QL(query);
+		AsyncN1qlQueryResult queryResult = template.queryN1QL(query).toBlocking().single();
 		assertNotNull(queryResult);
-		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess());
-		assertFalse(queryResult.allRows().isEmpty());
+		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess().toBlocking().single());
+		assertFalse(queryResult.rows().toList().toBlocking().single().isEmpty());
 	}
 
 	@Test
@@ -260,29 +221,26 @@ public class CouchbaseTemplateTests {
 
 				N1qlParams.build().consistency(ScanConsistency.REQUEST_PLUS));
 
-		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class);
+		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class).toList().toBlocking().single();
 		assertNotNull(fragments);
 		assertFalse(fragments.isEmpty());
 		assertEquals(1, fragments.size());
 		assertEquals("test2", fragments.get(0).value);
 	}
 
-	/**
-	 * @see DATACOUCH-159
-	 */
 	@Test
 	public void shouldDeserialiseLongsAndInts() {
 		final long longValue = new Date().getTime();
 		final int intValue = new Random().nextInt();
 
-		template.save(new SimpleWithLongAndInt("simpleWithLong:simple", longValue, intValue));
-		SimpleWithLongAndInt document = template.findById("simpleWithLong:simple", SimpleWithLongAndInt.class);
+		template.save(new SimpleWithLongAndInt("simpleWithLong:simple", longValue, intValue)).toBlocking().single();
+		SimpleWithLongAndInt document = template.findById("simpleWithLong:simple", SimpleWithLongAndInt.class).toBlocking().single();
 		assertNotNull(document);
 		assertEquals(longValue, document.getLongValue());
 		assertEquals(intValue, document.getIntValue());
 
-		template.save(new SimpleWithLongAndInt("simpleWithLong:simple:other", intValue, intValue));
-		document = template.findById("simpleWithLong:simple:other", SimpleWithLongAndInt.class);
+		template.save(new SimpleWithLongAndInt("simpleWithLong:simple:other", intValue, intValue)).toBlocking().single();
+		document = template.findById("simpleWithLong:simple:other", SimpleWithLongAndInt.class).toBlocking().single();
 		assertNotNull(document);
 		assertEquals(intValue, document.getLongValue());
 		assertEquals(intValue, document.getIntValue());
@@ -291,8 +249,8 @@ public class CouchbaseTemplateTests {
 	@Test
 	public void shouldDeserialiseEnums() {
 		SimpleWithEnum simpleWithEnum = new SimpleWithEnum("simpleWithEnum:enum", SimpleWithEnum.Type.BIG);
-		template.save(simpleWithEnum);
-		simpleWithEnum = template.findById("simpleWithEnum:enum", SimpleWithEnum.class);
+		template.save(simpleWithEnum).toBlocking().single();
+		simpleWithEnum = template.findById("simpleWithEnum:enum", SimpleWithEnum.class).toBlocking().single();
 		assertNotNull(simpleWithEnum);
 		assertEquals(simpleWithEnum.getType(), SimpleWithEnum.Type.BIG);
 	}
@@ -301,212 +259,36 @@ public class CouchbaseTemplateTests {
 	public void shouldDeserialiseClass() {
 		SimpleWithClass simpleWithClass = new SimpleWithClass("simpleWithClass:class", Integer.class);
 		simpleWithClass.setValue("The dish ran away with the spoon.");
-		template.save(simpleWithClass);
-		simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class);
+		template.save(simpleWithClass).toBlocking().single();
+		simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class).toBlocking().single();
 		assertNotNull(simpleWithClass);
 		assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
 	}
 
 	@Test
-	public void shouldHandleCASVersionOnInsert() throws Exception {
-		removeIfExist("versionedClass:1");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
-		assertEquals(0, versionedClass.getVersion());
-		template.insert(versionedClass);
-		RawJsonDocument rawStored = client.get("versionedClass:1", RawJsonDocument.class);
-		assertEquals(rawStored.cas(), versionedClass.getVersion());
-	}
-
-	@Test
-	public void versionShouldNotUpdateOnSecondInsert() throws Exception {
-		removeIfExist("versionedClass:2");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:2", "foobar");
-		template.insert(versionedClass);
-		long version1 = versionedClass.getVersion();
-		try {
-			template.insert(versionedClass);
-		} catch (OptimisticLockingFailureException e) {
-			//ignore, since this insert should fail
-		}
-		long version2 = versionedClass.getVersion();
-
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertEquals(version1, version2);
-	}
-
-	@Test
-	public void shouldSaveDocumentOnMatchingVersion() throws Exception {
-		removeIfExist("versionedClass:3");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:3", "foobar");
-		template.insert(versionedClass);
-		long version1 = versionedClass.getVersion();
-
-		versionedClass.setField("foobar2");
-		template.save(versionedClass);
-		long version2 = versionedClass.getVersion();
-
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertNotEquals(version1, version2);
-
-		assertEquals("foobar2", template.findById("versionedClass:3", VersionedClass.class).getField());
-	}
-
-	@Test(expected = OptimisticLockingFailureException.class)
-	public void shouldNotSaveDocumentOnNotMatchingVersion() throws Exception {
-		removeIfExist("versionedClass:4");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
-		template.insert(versionedClass);
-
-		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:4", "different");
-		assertNotNull(client.upsert(toCompare));
-
-		versionedClass.setField("foobar2");
-		//save (aka upsert) won't error in case of CAS mismatch anymore
-		template.update(versionedClass);
-	}
-
-	@Test
-	public void shouldUpdateDocumentOnMatchingVersion() throws Exception {
-		removeIfExist("versionedClass:5");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:5", "foobar");
-		template.insert(versionedClass);
-		long version1 = versionedClass.getVersion();
-
-		versionedClass.setField("foobar2");
-		template.update(versionedClass);
-		long version2 = versionedClass.getVersion();
-
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertNotEquals(version1, version2);
-
-		assertEquals("foobar2", template.findById("versionedClass:5", VersionedClass.class).getField());
-	}
-
-	@Test(expected = OptimisticLockingFailureException.class)
-	public void shouldNotUpdateDocumentOnNotMatchingVersion() throws Exception {
-		removeIfExist("versionedClass:6");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
-		template.insert(versionedClass);
-
-		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:6", "different");
-		assertNotNull(client.upsert(toCompare));
-
-		versionedClass.setField("foobar2");
-		template.update(versionedClass);
-	}
-
-	@Test
-	public void shouldLoadVersionPropertyOnFind() throws Exception {
-		removeIfExist("versionedClass:7");
-
-		VersionedClass versionedClass = new VersionedClass("versionedClass:7", "foobar");
-		template.insert(versionedClass);
-		assertTrue(versionedClass.getVersion() > 0);
-
-		VersionedClass foundClass = template.findById("versionedClass:7", VersionedClass.class);
-		assertEquals(versionedClass.getVersion(), foundClass.getVersion());
-	}
-
-	@Test
-	public void shouldUpdateAlreadyExistingDocument() throws Exception {
-		final String key = testName.getMethodName();
-		removeIfExist(key);
-
-		final AtomicLong counter = new AtomicLong();
-
-		VersionedClass initial = new VersionedClass(key, "value-0");
-		template.save(initial);
-
-		AsyncUtils.executeConcurrently(3, new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				boolean saved = false;
-				while(!saved) {
-					long counterValue = counter.incrementAndGet();
-					VersionedClass messageData = template.findById(key, VersionedClass.class);
-					messageData.field = "value-" + counterValue;
-					try {
-						template.save(messageData);
-						saved = true;
-					} catch (OptimisticLockingFailureException e) {
-					}
-				}
-				return null;
-			}
-		});
-
-		VersionedClass actual = template.findById(key, VersionedClass.class);
-
-		assertNotEquals(initial.field, actual.field);
-		assertNotEquals(initial.version, actual.version);
-	}
-
-	@Test
-	public void shouldInsertOnlyFirstDocumentAndNextAttemptsShouldFailWithOptimisticLockingException() throws Exception {
-		final String key = testName.getMethodName();
-		removeIfExist(key);
-
-		final AtomicLong counter = new AtomicLong();
-		final AtomicLong optimisticLockCounter = new AtomicLong();
-		AsyncUtils.executeConcurrently(5, new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				long counterValue = counter.incrementAndGet();
-				String data = "value-" + counterValue;
-				VersionedClass messageData = new VersionedClass(key, data);
-				try {
-					template.insert(messageData);
-				} catch (OptimisticLockingFailureException e) {
-					optimisticLockCounter.incrementAndGet();
-				}
-				//should save operation throw OptimisticLockingFailureException on next attempts to save?
-				return null;
-			}
-		});
-
-
-		assertEquals(4, optimisticLockCounter.intValue());
-	}
-
-	/**
-	 * @see DATACOUCH-59
-   */
-	@Test
 	public void expiryWhenTouchOnReadDocument() throws InterruptedException {
 		String id = "simple-doc-with-update-expiry-for-read";
 		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
-		template.save(doc);
+		template.save(doc).subscribe();
 		Thread.sleep(1500);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
 		Thread.sleep(1500);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
 		Thread.sleep(3000);
-		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
 	}
 
-	/**
-	 * @see DATACOUCH-227
-	 */
 	@Test
 	public void shouldRetainOrderWhenQueryingViewOrdered() {
-		ViewQuery q = ViewQuery.from("test_beers", "by_name");
+		ViewQuery q = ViewQuery.from("reactive_test_beers", "by_name");
 		q.descending().includeDocsOrdered(true);
 
 		String prev = null;
-		List<Beer> beers = template.findByView(q, Beer.class);
+		List<ReactiveBeer> beers = template.findByView(q, ReactiveBeer.class).toList().toBlocking().single();
 		assertTrue(q.isIncludeDocs());
 		assertTrue(q.isOrderRetained());
 		assertEquals(RawJsonDocument.class, q.includeDocsTarget());
-		for (Beer beer : beers) {
+		for (ReactiveBeer beer : beers) {
 			if (prev != null) {
 				assertThat(beer.getName() + " not alphabetically < to " + prev, beer.getName().compareTo(prev) < 0);
 			}
@@ -650,7 +432,7 @@ public class CouchbaseTemplateTests {
 			BIG
 		}
 
-		private Type type;
+		Type type;
 
 		SimpleWithEnum(final String id, final Type type) {
 			this.id = id;
