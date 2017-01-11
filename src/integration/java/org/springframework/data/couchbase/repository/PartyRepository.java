@@ -9,6 +9,7 @@ import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Param;
 
 /**
@@ -46,6 +47,9 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND `attendees` >= $1")
   Page<Party> findPartiesWithAttendee(int count, Pageable pageable);
+
+  @Query("#{#n1ql.selectEntity}")
+  List<Party> findParties(Sort sort);
 
   @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND `desc` LIKE '%' || $included ||  '%' AND attendees >= $min" +
       " AND `desc` NOT LIKE '%' || $excluded || '%'")
