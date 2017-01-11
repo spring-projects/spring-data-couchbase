@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core;
 
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,6 +77,9 @@ import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
+
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
 
 /**
  * @author Michael Nitschinger

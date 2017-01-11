@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import com.couchbase.client.java.env.CouchbaseEnvironment;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.support.IsNewStrategyFactory;
 
 /**
  * Contains default bean names for Couchbase beans.
@@ -91,6 +91,16 @@ public class BeanNames {
   public static final String COUCHBASE_OPERATIONS_MAPPING = "couchbaseRepositoryOperationsMapping";
 
   /**
+   * The name for the bean that stores custom mapping between reactive repositories and their backing reactiveCouchbaseOperations.
+   */
+  public static final String REACTIVE_COUCHBASE_OPERATIONS_MAPPING = "reactiveCouchbaseRepositoryOperationsMapping";
+
+  /**
+   * The name for the bean that stores custom mapping between rxjava repositories and their backing rxjavaCouchbaseOperations.
+   */
+  public static final String RXJAVA_COUCHBASE_OPERATIONS_MAPPING = "rxJavaCouchbaseRepositoryOperationsMapping";
+
+  /**
    * The name for the  bean that drives how some indexes are automatically created.
    */
   public static final String COUCHBASE_INDEX_MANAGER = "couchbaseIndexManager";
@@ -114,4 +124,22 @@ public class BeanNames {
    * The name for the bean that will handle audit trail marking of entities.
    */
   public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
+
+  /**
+   * The name for the default {@link ReactiveCouchbaseOperations} bean.
+   *
+   * See {@link AbstractReactiveCouchbaseConfiguration#reactiveCouchbaseTemplate()} for java config, and
+   * the "&lt;couchbase:template /&gt;" element for xml config.
+   */
+  public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
+
+  /**
+   * The name for the default {@link RxJavaCouchbaseOperations} bean.
+   *
+   * See {@link AbstractRxJavaCouchbaseConfiguration#rxjava1CouchbaseTemplate()} for java config, and
+   * the "&lt;couchbase:template /&gt;" element for xml config.
+   */
+  public static final String RXJAVA1_COUCHBASE_TEMPLATE = "rxjava1CouchbaseTemplate";
+
+
 }

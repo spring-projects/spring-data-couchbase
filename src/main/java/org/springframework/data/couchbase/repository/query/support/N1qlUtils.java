@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,19 @@ import static com.couchbase.client.java.query.dsl.Expression.x;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
 import static com.couchbase.client.java.query.dsl.functions.StringFunctions.lower;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.document.json.JsonValue;
+import com.couchbase.client.java.query.N1qlParams;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.functions.TypeFunctions;
 import com.couchbase.client.java.query.dsl.path.FromPath;
@@ -41,11 +49,15 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
+import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ReturnedType;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.common.TemplateParserContext;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * Utility class to deal with constructing well formed N1QL queries around Spring Data entities, so that
@@ -87,8 +99,8 @@ public class N1qlUtils {
    */
   public static FromPath createSelectClauseForEntity(String bucketName, ReturnedType returnedType, CouchbaseConverter converter) {
     Expression bucket = escapedBucket(bucketName);
-    Expression metaId = path(meta(bucket), "id").as(CouchbaseOperations.SELECT_ID);
-    Expression metaCas = path(meta(bucket), "cas").as(CouchbaseOperations.SELECT_CAS);
+    Expression metaId = path(meta(bucket), "id").as(SELECT_ID);
+    Expression metaCas = path(meta(bucket), "cas").as(SELECT_CAS);
     List<Expression> expList = new ArrayList<Expression>();
     expList.add(metaId);
     expList.add(metaCas);
@@ -208,4 +220,28 @@ public class N1qlUtils {
   public static <T> Statement createCountQueryForEntity(String bucketName, CouchbaseConverter converter, CouchbaseEntityInformation<T, String> entityInformation) {
     return select(count("*").as(CountFragment.COUNT_ALIAS)).from(escapedBucket(bucketName)).where(createWhereFilterForEntity(null, converter, entityInformation));
   }
+
+  /**
+   * Creates N1QLQuery object from the statement, query placeholder values and scan consistency
+   *
+   * @param statement
+   * @param queryPlaceholderValues
+   * @param scanConsistency
+   * @return
+   */
+  public static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
+    N1qlParams n1qlParams = N1qlParams.build().consistency(scanConsistency);
+    N1qlQuery query;
+
+    if (queryPlaceholderValues instanceof JsonObject && !((JsonObject) queryPlaceholderValues).isEmpty()) {
+      query = N1qlQuery.parameterized(statement, (JsonObject) queryPlaceholderValues, n1qlParams);
+    } else if (queryPlaceholderValues instanceof JsonArray && !((JsonArray) queryPlaceholderValues).isEmpty()) {
+      query = N1qlQuery.parameterized(statement, (JsonArray) queryPlaceholderValues, n1qlParams);
+    } else {
+      query = N1qlQuery.simple(statement, n1qlParams);
+    }
+    return query;
+  }
+
+
 }

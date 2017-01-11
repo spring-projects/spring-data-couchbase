@@ -58,4 +58,16 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
     client.bucketManager().upsertDesignDocument(designDoc);
   }
 
+  @Override
+  public void afterTestClass(final TestContext testContext) throws Exception {
+    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
+    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
+    CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
+
+    for (int i = 0; i < 100; i++) {
+      Beer b = new Beer("testbeer-" + i, "MyBeer" + i, true, "");
+      template.remove(b);
+    }
+  }
+
 }

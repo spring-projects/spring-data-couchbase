@@ -134,9 +134,9 @@ public class CouchbaseRepositoryViewTests {
     String highKey = "uname-11";
     List<String> keys = Arrays.asList(lowKey, middleKey, highKey);
 
-    User u1 = repository.findByUsernameIs(lowKey);
-    User u2 = repository.findByUsernameIs(middleKey);
-    User u3 = repository.findByUsernameIs(highKey);
+    User u1 = repository.findByUsernameIs(lowKey).get(0);
+    User u2 = repository.findByUsernameIs(middleKey).get(0);
+    User u3 = repository.findByUsernameIs(highKey).get(0);
 
 
     List<User> in = repository.findAllByUsernameIn(keys);

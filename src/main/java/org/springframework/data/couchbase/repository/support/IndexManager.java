@@ -21,6 +21,7 @@ import static com.couchbase.client.java.query.dsl.Expression.x;
 
 import java.util.Collections;
 
+import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.bucket.BucketManager;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.query.AsyncN1qlQueryResult;
@@ -31,6 +32,7 @@ import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import rx.Observable;
 import rx.exceptions.CompositeException;
 import rx.functions.Action1;
@@ -134,15 +136,15 @@ public class IndexManager {
     Observable<Void> n1qlSecondaryAsync = Observable.empty();
 
     if (viewIndexed != null && !ignoreViews) {
-      viewAsync = buildAllView(viewIndexed, metadata, couchbaseOperations);
+      viewAsync = buildAllView(viewIndexed, metadata, couchbaseOperations.getCouchbaseBucket(), couchbaseOperations.getConverter().getTypeKey());
     }
 
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
-      n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations);
+      n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations.getCouchbaseBucket());
     }
 
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
-      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, couchbaseOperations);
+      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, couchbaseOperations.getCouchbaseBucket(), couchbaseOperations.getConverter().getTypeKey());
     }
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
@@ -151,14 +153,54 @@ public class IndexManager {
         .lastOrDefault(null);
   }
 
-  private Observable<Void> buildN1qlPrimary(final RepositoryInformation metadata, CouchbaseOperations couchbaseOperations) {
-    final String bucketName = couchbaseOperations.getCouchbaseBucket().name();
+  /**
+   * Build the relevant indexes according to the provided annotation and repository metadata, in parallel but blocking
+   * until all relevant indexes are created. Existing indexes will be detected and skipped.
+   * <p/>
+   * Note that this IndexManager could be configured to ignore some of the annotation types.
+   * In case of multiple errors, a {@link CompositeException} can be raised with up to 3 causes (one per type of index).
+   *
+   * @param metadata the repository's metadata (allowing to find out the type of entity stored, the key under which type
+   *  information is stored, etc...).
+   * @param viewIndexed the annotation for creation of a View-based index.
+   * @param n1qlPrimaryIndexed the annotation for creation of a N1QL-based primary index (generic).
+   * @param n1qlSecondaryIndexed the annotation for creation of a N1QL-based secondary index (specific to the repository
+   *   stored entity).
+   * @param rxjava1CouchbaseOperations the template to use for index creation.
+   * @throws CompositeException when several errors (for multiple index types) have been raised.
+   */
+  public void buildIndexes(RepositoryInformation metadata, ViewIndexed viewIndexed, N1qlPrimaryIndexed n1qlPrimaryIndexed,
+                           N1qlSecondaryIndexed n1qlSecondaryIndexed, RxJavaCouchbaseOperations rxjava1CouchbaseOperations) {
+    Observable<Void> viewAsync = Observable.empty();
+    Observable<Void> n1qlPrimaryAsync = Observable.empty();
+    Observable<Void> n1qlSecondaryAsync = Observable.empty();
+
+    if (viewIndexed != null && !ignoreViews) {
+      viewAsync = buildAllView(viewIndexed, metadata, rxjava1CouchbaseOperations.getCouchbaseBucket(), rxjava1CouchbaseOperations.getConverter().getTypeKey());
+    }
+
+    if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
+      n1qlPrimaryAsync = buildN1qlPrimary(metadata, rxjava1CouchbaseOperations.getCouchbaseBucket());
+    }
+
+    if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
+      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, rxjava1CouchbaseOperations.getCouchbaseBucket(), rxjava1CouchbaseOperations.getConverter().getTypeKey());
+    }
+
+    //trigger the builds, wait for the last one, throw CompositeException if errors
+    Observable.mergeDelayError(viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync)
+            .toBlocking()
+            .lastOrDefault(null);
+  }
+
+  private Observable<Void> buildN1qlPrimary(final RepositoryInformation metadata, Bucket bucket) {
+    final String bucketName = bucket.name();
     Statement createPrimary = Index.createPrimaryIndex()
         .on(bucketName)
         .using(IndexType.GSI);
 
     LOGGER.debug("Creating N1QL primary index for repository {}", metadata.getRepositoryInterface().getSimpleName());
-    return couchbaseOperations.getCouchbaseBucket().async().query(createPrimary)
+    return bucket.async().query(createPrimary)
         .flatMap(new Func1<AsyncN1qlQueryResult, Observable<JsonObject>>() {
           @Override
           public Observable<JsonObject> call(AsyncN1qlQueryResult asyncN1qlQueryResult) {
@@ -184,10 +226,9 @@ public class IndexManager {
         });
   }
 
-  private Observable<Void> buildN1qlSecondary(N1qlSecondaryIndexed config, final RepositoryInformation metadata, CouchbaseOperations couchbaseOperations) {
-    final String bucketName = couchbaseOperations.getCouchbaseBucket().name();
+  private Observable<Void> buildN1qlSecondary(N1qlSecondaryIndexed config, final RepositoryInformation metadata, Bucket bucket, String typeKey) {
+    final String bucketName = bucket.name();
     final String indexName = config.indexName();
-    String typeKey = couchbaseOperations.getConverter().getTypeKey();
     final String type = metadata.getDomainType().getName();
 
     Statement createIndex = Index.createIndex(indexName)
@@ -196,7 +237,7 @@ public class IndexManager {
         .using(IndexType.GSI);
 
     LOGGER.debug("Creating N1QL secondary index for repository {}", metadata.getRepositoryInterface().getSimpleName());
-    return couchbaseOperations.getCouchbaseBucket().async().query(createIndex)
+    return bucket.async().query(createIndex)
         .flatMap(new Func1<AsyncN1qlQueryResult, Observable<JsonObject>>() {
           @Override
           public Observable<JsonObject> call(AsyncN1qlQueryResult asyncN1qlQueryResult) {
@@ -222,15 +263,14 @@ public class IndexManager {
         });
   }
 
-  private Observable<Void> buildAllView(ViewIndexed config, final RepositoryInformation metadata, CouchbaseOperations couchbaseOperations) {
+  private Observable<Void> buildAllView(ViewIndexed config, final RepositoryInformation metadata, Bucket bucket, String typeKey) {
     if (config == null) return Observable.empty();
     LOGGER.debug("Creating View index index for repository {}", metadata.getRepositoryInterface().getSimpleName());
 
-    BucketManager manager = couchbaseOperations.getCouchbaseBucket().bucketManager();
+    BucketManager manager = bucket.bucketManager();
     String viewName = config.viewName();
     String mapFunction = config.mapFunction();
     if (mapFunction.isEmpty()) {
-      String typeKey = couchbaseOperations.getConverter().getTypeKey();
       String type = metadata.getDomainType().getName();
 
       mapFunction = String.format(TEMPLATE_MAP_FUNCTION, typeKey, type);

@@ -34,13 +34,13 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
   @View(designDocument = "user", viewName = "all")
   Iterable<User> customViewQuery(ViewQuery query);
 
-  @Query("#{#n1ql.selectEntity} WHERE username = $1")
+  @Query("#{#n1ql.selectEntity} WHERE username = $1 and #{#n1ql.filter}")
   User findByUsername(String username);
 
-  @Query("SELECT * FROM #{#n1ql.bucket} WHERE username = $1")
+  @Query("SELECT * FROM #{#n1ql.bucket} WHERE username = $1 and #{#n1ql.filter} ")
   User findByUsernameBadSelect(String username);
 
-  @Query("#{#n1ql.selectEntity} WHERE username LIKE '%-#{3 + 1}'")
+  @Query("#{#n1ql.selectEntity} WHERE username LIKE '%-#{3 + 1}' and #{#n1ql.filter}'")
   User findByUsernameWithSpelAndPlaceholder();
 
   @Query
