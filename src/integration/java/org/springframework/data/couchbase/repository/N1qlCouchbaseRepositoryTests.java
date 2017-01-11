@@ -33,6 +33,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.model.MappingInstantiationException;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
@@ -176,5 +177,12 @@ public class N1qlCouchbaseRepositoryTests {
       }
       previousAttendees = party.getAttendees();
     }
+  }
+
+  //Fails on deserialization as a different entity item is also present
+  @Test(expected = MappingInstantiationException.class)
+  public void shouldFailWithMissingFilterStringBasedQuery() {
+    Sort sort = new Sort(Sort.Direction.DESC, "attendees");
+    List<Party> parties = partyRepository.findParties(sort);
   }
 }
