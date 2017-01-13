@@ -269,8 +269,5 @@ Here are some ways for you to get involved in the community:
   a JIRA ticket as well covering the specific issue you are addressing.
 * Watch for upcoming articles on Spring by [subscribing](http://assets.spring.io/drupal/node/feed.xml) to spring.io RSS feed.
 
-Before we accept a non-trivial patch or pull request we will need you to sign the
-[contributor's agreement](https://support.springsource.com/spring_committer_signup). Signing the contributor's agreement
-does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and
-you will get an author credit if we do.  Active contributors might be asked to join the core team, and given the ability
+Before we accept a non-trivial patch or pull request we will need you to [sign the Contributor License Agreement](https://cla.pivotal.io/sign/spring). Signing the contributor’s agreement does not grant anyone commit rights to the main repository, but it does mean that we can accept your contributions, and you will get an author credit if we do. If you forget to do so, you'll be reminded when you submit a pull request. Active contributors might be asked to join the core team, and given the ability
 to merge pull requests.
