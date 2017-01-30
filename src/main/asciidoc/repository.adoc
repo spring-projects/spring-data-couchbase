@@ -273,7 +273,7 @@ We'll only cover views to the extent to which they are needed, if you need in-de
 
 As a rule of thumb, all repository CRUD access methods which are not "by a specific key" still require a single backing view, by default `all`, to find the one or more matching entities.
 
-IMPORTANT: This is only true for the methods directly defined by the `CrudRepository` interface (the one marked with a `*` in `Table 1.` above), since your additional methods can now be backed by N1QL.
+IMPORTANT: This is only true for the methods directly defined by the `CrudRepository` interface (the one marked with a `*` in `Table 3.` above), since your additional methods can now be backed by N1QL.
 
 To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
 
