@@ -200,7 +200,10 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<Void> delete(Iterable<? extends T> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return mapMono(operations.remove(entities).map(res -> Observable.<Void>empty()).toSingle());
+        return mapMono(operations
+                .remove(entities)
+                .last()
+                .map(res -> Observable.<Void>empty()).toSingle());
     }
 
 
