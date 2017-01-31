@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.util.StringUtils;
  * Repository base implementation for Couchbase.
  *
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 public class SimpleCouchbaseRepository<T, ID extends Serializable> implements CouchbaseRepository<T, ID> {
 
@@ -63,8 +64,8 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
    * @param couchbaseOperations the reference to the template used.
    */
   public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata, final CouchbaseOperations couchbaseOperations) {
-    Assert.notNull(couchbaseOperations);
-    Assert.notNull(metadata);
+    Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
+    Assert.notNull(couchbaseOperations, "CouchbaseOperations must not be null!");
 
     entityInformation = metadata;
     this.couchbaseOperations = couchbaseOperations;

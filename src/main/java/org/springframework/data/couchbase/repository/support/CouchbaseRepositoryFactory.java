@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2016 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import org.springframework.util.Assert;
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Oliver Gierke
+ * @author Mark Paluch
  */
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
@@ -88,8 +89,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    * @param couchbaseOperationsMapping the template for the underlying actions.
    */
   public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping, final IndexManager indexManager) {
-    Assert.notNull(couchbaseOperationsMapping);
-    Assert.notNull(indexManager);
+    Assert.notNull(couchbaseOperationsMapping, "RepositoryOperationsMapping must not be null!");
+    Assert.notNull(indexManager, "IndexManager must not be null!");
 
     this.couchbaseOperationsMapping = couchbaseOperationsMapping;
     this.indexManager = indexManager;
