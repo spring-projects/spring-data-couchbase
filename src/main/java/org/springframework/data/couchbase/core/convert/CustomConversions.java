@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.springframework.util.Assert;
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
+ * @author Mark Paluch
  */
 public class CustomConversions {
 
@@ -77,7 +78,7 @@ public class CustomConversions {
    * @param converters the list of custom converters.
    */
   public CustomConversions(final List<?> converters) {
-    Assert.notNull(converters);
+    Assert.notNull(converters, "List of Converters must not be null!");
 
     readingPairs = new LinkedHashSet<GenericConverter.ConvertiblePair>();
     writingPairs = new LinkedHashSet<GenericConverter.ConvertiblePair>();
@@ -216,7 +217,7 @@ public class CustomConversions {
    * @return
    */
   public Class<?> getCustomWriteTarget(Class<?> sourceType, Class<?> requestedTargetType) {
-    Assert.notNull(sourceType);
+    Assert.notNull(sourceType, "Source type must not be null!");
     return getCustomTarget(sourceType, requestedTargetType, writingPairs);
   }
 
@@ -228,7 +229,7 @@ public class CustomConversions {
    * @return
    */
   public boolean hasCustomWriteTarget(Class<?> sourceType) {
-    Assert.notNull(sourceType);
+    Assert.notNull(sourceType, "Source type must not be null!");
     return hasCustomWriteTarget(sourceType, null);
   }
 
@@ -241,7 +242,7 @@ public class CustomConversions {
    * @return
    */
   public boolean hasCustomWriteTarget(Class<?> sourceType, Class<?> requestedTargetType) {
-    Assert.notNull(sourceType);
+    Assert.notNull(sourceType, "Source type must not be null!");
     return getCustomWriteTarget(sourceType, requestedTargetType) != null;
   }
 
@@ -253,8 +254,8 @@ public class CustomConversions {
    * @return
    */
   public boolean hasCustomReadTarget(Class<?> sourceType, Class<?> requestedTargetType) {
-    Assert.notNull(sourceType);
-    Assert.notNull(requestedTargetType);
+    Assert.notNull(sourceType, "Source type must not be null!");
+    Assert.notNull(requestedTargetType, "Requested target type must not be null!");
     return getCustomReadTarget(sourceType, requestedTargetType) != null;
   }
 
@@ -267,7 +268,7 @@ public class CustomConversions {
    * @return
    */
   private Class<?> getCustomReadTarget(Class<?> sourceType, Class<?> requestedTargetType) {
-    Assert.notNull(sourceType);
+    Assert.notNull(sourceType, "Source type must not be null!");
     if (requestedTargetType == null) {
       return null;
     }
@@ -297,8 +298,8 @@ public class CustomConversions {
    */
   private static Class<?> getCustomTarget(Class<?> sourceType, Class<?> requestedTargetType,
                                           Iterable<GenericConverter.ConvertiblePair> pairs) {
-    Assert.notNull(sourceType);
-    Assert.notNull(pairs);
+    Assert.notNull(sourceType, "Source type must not be null!");
+    Assert.notNull(pairs, "Pairs must not be null!");
 
     for (GenericConverter.ConvertiblePair typePair : pairs) {
       if (typePair.getSourceType().isAssignableFrom(sourceType)) {

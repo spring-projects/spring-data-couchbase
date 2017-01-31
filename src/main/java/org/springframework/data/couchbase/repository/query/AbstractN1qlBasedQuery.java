@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,10 @@ import org.springframework.util.Assert;
 /**
  * Abstract base for all Couchbase {@link RepositoryQuery}. It is in charge of inspecting the parameters
  * and choosing the correct {@link N1qlQuery} implementation to use.
+ *
+ * @author Simon Baslé
+ * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  */
 public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
@@ -160,7 +164,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   }
 
   protected Object executePaged(N1qlQuery query, N1qlQuery countQuery, Pageable pageable) {
-    Assert.notNull(pageable);
+    Assert.notNull(pageable, "Pageable must not be null!");
     long total = 0L;
     logIfNecessary(countQuery);
     List<CountFragment> countResult = couchbaseOperations.findByN1QLProjection(countQuery, CountFragment.class);
@@ -174,7 +178,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   }
 
   protected Object executeSliced(N1qlQuery query, N1qlQuery countQuery, Pageable pageable) {
-    Assert.notNull(pageable);
+    Assert.notNull(pageable, "Pageable must not be null!");
     logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, queryMethod.getEntityInformation().getJavaType());
     int pageSize = pageable.getPageSize();

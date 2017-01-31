@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.util.Assert;
+
+/**
+ * A {@link RepositoryQuery} for Couchbase, based on query derivation
+ *
+ * @author Simon Baslé
+ * @author Subhashni Balakrishnan
+ * @author Mark Paluch
+ */
 
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
@@ -82,11 +90,11 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
     if (queryMethod.isPageQuery()) {
       Pageable pageable = accessor.getPageable();
-      Assert.notNull(pageable);
+      Assert.notNull(pageable, "Pageable must not be null!");
       return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(pageable.getOffset());
     } else if (queryMethod.isSliceQuery() && accessor.getPageable() != null) {
       Pageable pageable = accessor.getPageable();
-      Assert.notNull(pageable);
+      Assert.notNull(pageable, "Pageable must not be null!");
       return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(pageable.getOffset());
     } else if (partTree.isLimiting()) {
       return selectFromWhereOrderBy.limit(partTree.getMaxResults());
