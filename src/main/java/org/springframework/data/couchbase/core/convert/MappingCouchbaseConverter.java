@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import org.springframework.util.CollectionUtils;
  * @author Michael Nitschinger
  * @author Oliver Gierke
  * @author Geoffrey Mina
+ * @author Mark Paluch
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   implements ApplicationContextAware {
@@ -296,7 +297,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @SuppressWarnings("unchecked")
   protected Map<Object, Object> readMap(final TypeInformation<?> type, final CouchbaseDocument source,
                                         final Object parent) {
-    Assert.notNull(source);
+    Assert.notNull(source, "CouchbaseDocument must not be null!");
 
     Class<?> mapType = typeMapper.readType(source, type).getType();
     Map<Object, Object> map = CollectionFactory.createMap(mapType, source.export().keySet().size());
@@ -630,7 +631,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    */
   @SuppressWarnings("unchecked")
   private Object readCollection(final TypeInformation<?> targetType, final CouchbaseList source, final Object parent) {
-    Assert.notNull(targetType);
+    Assert.notNull(targetType, "Target type must not be null!");
 
     Class<?> collectionType = targetType.getType();
     if (source.isEmpty()) {
@@ -788,8 +789,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     public CouchbasePropertyValueProvider(final CouchbaseDocument source,
                                           final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
-      Assert.notNull(source);
-      Assert.notNull(evaluator);
+      Assert.notNull(source, "CouchbaseDocument must not be null!");
+      Assert.notNull(evaluator, "DefaultSpELExpressionEvaluator must not be null!");
 
       this.source = source;
       this.evaluator = evaluator;

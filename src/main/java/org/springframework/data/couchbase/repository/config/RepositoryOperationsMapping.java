@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.util.Assert;
  * by repository domain type or as a default fallback.
  *
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 public class RepositoryOperationsMapping {
   private CouchbaseOperations defaultOperations;
@@ -44,7 +45,7 @@ public class RepositoryOperationsMapping {
    * @param defaultOperations the default fallback couchbase operations.
    */
   public RepositoryOperationsMapping(CouchbaseOperations defaultOperations) {
-    Assert.notNull(defaultOperations);
+    Assert.notNull(defaultOperations, "CouchbaseOperations must not be null!");
     this.defaultOperations = defaultOperations;
   }
 
@@ -55,7 +56,7 @@ public class RepositoryOperationsMapping {
    * @return the mapping, for chaining.
    */
   public RepositoryOperationsMapping setDefault(CouchbaseOperations aDefault) {
-    Assert.notNull(aDefault);
+    Assert.notNull(aDefault, "CouchbaseOperations must not be null!");
     this.defaultOperations = aDefault;
     return this;
   }
