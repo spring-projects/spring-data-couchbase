@@ -117,8 +117,6 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "sslEnabled", "sslEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystoreFile", "sslKeystoreFile");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystorePassword", "sslKeystorePassword");
-		setPropertyValue(envDefinitionBuilder, envElement, "queryEnabled", "queryEnabled");
-		setPropertyValue(envDefinitionBuilder, envElement, "queryPort", "queryPort");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapHttpEnabled", "bootstrapHttpEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapCarrierEnabled", "bootstrapCarrierEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapHttpDirectPort", "bootstrapHttpDirectPort");

@@ -46,7 +46,7 @@ public interface CustomUserRepository extends CouchbaseRepository<User, String> 
   long countByUsernameGreaterThanEqualAndUsernameLessThan(String lowBound, String highBound);
 
   @View(viewName = "customFindByNameView")
-  User findByUsernameIs(String lowKey);
+  List<User> findByUsernameIs(String lowKey);
 
   @View(viewName = "customFindByNameView")
   List<User> findAllByUsernameIn(List<String> keys);
