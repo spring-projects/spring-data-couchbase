@@ -79,8 +79,6 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
     assertThat(env.sslKeystoreFile(), is(equalTo("test")));
     assertThat(env.sslKeystorePassword(), is(equalTo("test")));
-    assertThat(env.queryEnabled(), allOf(equalTo(true), not(defaultEnv.queryEnabled())));
-    assertThat(env.queryPort(), is(equalTo(7)));
     assertThat(env.bootstrapHttpEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapHttpEnabled())));
     assertThat(env.bootstrapCarrierEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapCarrierEnabled())));
     assertThat(env.bootstrapHttpDirectPort(), is(equalTo(8)));
