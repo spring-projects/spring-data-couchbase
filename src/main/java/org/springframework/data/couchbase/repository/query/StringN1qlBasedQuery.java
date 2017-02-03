@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import org.springframework.util.Assert;
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  */
 public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   private final SpelExpressionParser parser;
@@ -89,18 +90,20 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     String limitByPart = "";
 
     Sort sort = accessor.getSort();
-    if (sort != null) {
+    if (sort.isSorted()) {
       com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, getCouchbaseOperations().getConverter());
       orderByPart = " " + new DefaultOrderByPath(null).orderBy(cbSorts).toString();
     }
     if (queryMethod.isPageQuery()) {
       Pageable pageable = accessor.getPageable();
-      Assert.notNull(pageable);
-      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize()).offset(pageable.getOffset()).toString();
+      Assert.notNull(pageable, "Pageable must not be null!");
+      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize())
+			  .offset(Math.toIntExact(pageable.getOffset())).toString();
     } else if (queryMethod.isSliceQuery()) {
       Pageable pageable = accessor.getPageable();
-      Assert.notNull(pageable);
-      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize() + 1).offset(pageable.getOffset()).toString();
+      Assert.notNull(pageable, "Pageable must not be null!");
+      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize() + 1)
+			  .offset(Math.toIntExact(pageable.getOffset())).toString();
     }
     return N1qlQuery.simple(parsedStatement + orderByPart + limitByPart).statement();
   }

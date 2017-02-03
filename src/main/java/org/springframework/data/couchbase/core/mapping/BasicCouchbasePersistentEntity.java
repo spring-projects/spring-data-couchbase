@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,10 @@ import java.util.concurrent.TimeUnit;
  * The representation of a persistent entity.
  *
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
-    implements CouchbasePersistentEntity<T>, EnvironmentAware {
+        implements CouchbasePersistentEntity<T>, EnvironmentAware {
 
   private Environment environment;
 
@@ -74,8 +75,12 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     }
 
     //check existing ID vs new candidate
-    boolean currentCbId = this.getIdProperty().isAnnotationPresent(Id.class);
-    boolean currentSpringId = this.getIdProperty().isAnnotationPresent(org.springframework.data.annotation.Id.class);
+    boolean currentCbId = this.getIdProperty()
+            .map(couchbasePersistentProperty -> couchbasePersistentProperty.isAnnotationPresent(Id.class))
+            .orElse(false);
+    boolean currentSpringId = this.getIdProperty()
+            .map(couchbasePersistentProperty -> couchbasePersistentProperty.isAnnotationPresent(org.springframework.data.annotation.Id.class))
+            .orElse(false);
     boolean candidateCbId = property.isAnnotationPresent(Id.class);
     boolean candidateSpringId = property.isAnnotationPresent(org.springframework.data.annotation.Id.class);
 
@@ -137,7 +142,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
   @Override
   public boolean isTouchOnRead() {
     org.springframework.data.couchbase.core.mapping.Document annotation = getType().getAnnotation(
-        org.springframework.data.couchbase.core.mapping.Document.class);
+            org.springframework.data.couchbase.core.mapping.Document.class);
     return annotation == null ? false : annotation.touchOnRead() && getExpiry() > 0;
   }
 

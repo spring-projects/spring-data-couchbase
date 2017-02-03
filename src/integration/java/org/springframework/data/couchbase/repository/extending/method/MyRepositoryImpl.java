@@ -29,7 +29,7 @@ public class MyRepositoryImpl implements MyRepositoryCustom {
     CouchbasePersistentEntity<Object> itemPersistenceEntity = (CouchbasePersistentEntity<Object>)
         template.getConverter()
             .getMappingContext()
-            .getPersistentEntity(MyItem.class);
+            .getRequiredPersistentEntity(MyItem.class);
 
     CouchbaseEntityInformation<? extends Object, String> itemEntityInformation =
         new MappingCouchbaseEntityInformation<Object, String>(itemPersistenceEntity);

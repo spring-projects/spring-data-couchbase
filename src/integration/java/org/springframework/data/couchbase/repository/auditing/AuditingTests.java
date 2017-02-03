@@ -3,19 +3,19 @@ package org.springframework.data.couchbase.repository.auditing;
 import static org.junit.Assert.*;
 
 import java.util.Date;
+import java.util.Optional;
 
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AuditedApplicationConfig.class)
@@ -42,20 +42,24 @@ public class AuditingTests {
 
     auditorAware.setAuditor("auditor");
     repository.save(item);
-    AuditedItem persisted = repository.findOne(KEY);
+    Optional<AuditedItem> persisted = repository.findOne(KEY);
 
-    assertNotNull("expected entity to be persisted", persisted);
-    assertNotNull("expected creation date audit trail", persisted.getCreationDate());
-    assertEquals("expected creation user audit trail", "auditor", persisted.getCreator());
+    assertTrue(persisted.isPresent());
 
-    assertTrue("creation date is too early", persisted.getCreationDate().after(start));
-    assertTrue("creation date is too late", persisted.getCreationDate().before(new Date()));
+    persisted.ifPresent(actual -> {
 
-    assertNull("expected modification date to be empty", persisted.getLastModification());
-    assertNull("expected modification user to be empty", persisted.getLastModifiedBy());
+      assertNotNull("expected creation date audit trail", actual.getCreationDate());
+      assertEquals("expected creation user audit trail", "auditor", actual.getCreator());
 
-    assertNotNull("expected version to be non null", persisted.getVersion());
-    assertTrue("expected version to be greater than 0", persisted.getVersion() > 0L);
+      assertTrue("creation date is too early", actual.getCreationDate().after(start));
+      assertTrue("creation date is too late", actual.getCreationDate().before(new Date()));
+
+      assertNull("expected modification date to be empty", actual.getLastModification());
+      assertNull("expected modification user to be empty", actual.getLastModifiedBy());
+
+      assertNotNull("expected version to be non null", actual.getVersion());
+      assertTrue("expected version to be greater than 0", actual.getVersion() > 0L);
+    });
   }
 
   @Test
@@ -68,11 +72,11 @@ public class AuditingTests {
     auditorAware.setAuditor(expectedCreator);
 
     repository.save(item);
-    AuditedItem created = repository.findOne(KEY);
+    AuditedItem created = repository.findOne(KEY).orElse(null);
 
     auditorAware.setAuditor(expectedUpdater);
     repository.save(item);
-    AuditedItem updated = repository.findOne(KEY);
+    AuditedItem updated = repository.findOne(KEY).orElse(null);
 
     assertNotNull("expected entity to be persisted", updated);
     assertNotNull("expected creation date audit trail", updated.getCreationDate());

@@ -65,6 +65,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  */
 public class N1qlUtils {
 
@@ -107,10 +108,10 @@ public class N1qlUtils {
 
     if (returnedType != null && returnedType.needsCustomConstruction()) {
       List<String> properties = returnedType.getInputProperties();
-      CouchbasePersistentEntity<?> entity = converter.getMappingContext().getPersistentEntity(returnedType.getDomainType());
+      CouchbasePersistentEntity<?> entity = converter.getMappingContext().getRequiredPersistentEntity(returnedType.getDomainType());
 
       for (String property : properties) {
-        expList.add(path(bucket, i(entity.getPersistentProperty(property).getFieldName())));
+        expList.add(path(bucket, i(entity.getRequiredPersistentProperty(property).getFieldName())));
       }
     } else {
       expList.add(path(bucket, "*"));

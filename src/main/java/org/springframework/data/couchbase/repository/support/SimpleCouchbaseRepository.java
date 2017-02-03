@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
@@ -100,9 +101,9 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public T findOne(ID id) {
+  public Optional<T> findOne(ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    return couchbaseOperations.findById(id.toString(), entityInformation.getJavaType());
+    return Optional.ofNullable(couchbaseOperations.findById(id.toString(), entityInformation.getJavaType()));
   }
 
   @Override

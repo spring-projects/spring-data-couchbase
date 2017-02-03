@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import java.lang.annotation.Annotation;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -50,7 +51,7 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
      */
     public CouchbaseRepositoryBean(Bean<CouchbaseOperations> operations, Set<Annotation> qualifiers, Class<T> repositoryType,
             BeanManager beanManager, CustomRepositoryImplementationDetector detector) {
-        super(qualifiers, repositoryType, beanManager, detector);
+        super(qualifiers, repositoryType, beanManager, Optional.of(detector));
 
         Assert.notNull(operations, "Cannot create repository with 'null' for CouchbaseOperations.");
         this.couchbaseOperationsBean = operations;
@@ -61,11 +62,17 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	 * @see org.springframework.data.repository.cdi.CdiRepositoryBean#create(javax.enterprise.context.spi.CreationalContext, java.lang.Class, java.lang.Object)
 	 */
     @Override
-    protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Object customImplementation) {
+    protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Optional<Object> customImplementation) {
+
         CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
         RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
         IndexManager indexManager = new IndexManager();
-        return new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager).getRepository(repositoryType, customImplementation);
+
+        CouchbaseRepositoryFactory factory =
+                new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager);
+
+        return customImplementation.map(o -> factory.getRepository(repositoryType, o))
+                .orElseGet(() -> factory.getRepository(repositoryType));
     }
 
     @Override

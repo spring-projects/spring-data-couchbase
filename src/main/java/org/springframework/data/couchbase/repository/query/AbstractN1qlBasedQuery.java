@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
@@ -85,7 +86,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   public Object execute(Object[] parameters) {
     ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
 
-    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
+    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
     ReturnedType returnedType = processor.getReturnedType();
     
     Class<?> typeToRead = returnedType.getTypeToRead();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -86,6 +87,7 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
  * @author Oliver Gierke
  * @author Simon Baslé
  * @author Young-Gu Chae
+ * @author Mark Paluch
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
@@ -290,7 +292,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
   @Override
   public <T> T findById(final String id, Class<T> entityClass) {
-    final CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(entityClass);
+    final CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
     RawJsonDocument result = execute(new BucketCallback<RawJsonDocument>() {
       @Override
       public RawJsonDocument doInBucket() {
@@ -573,9 +575,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     ensureNotIterable(objectToPersist);
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
-    final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(objectToPersist.getClass());
-    final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty != null ? accessor.getProperty(versionProperty, Long.class) : null;
+    final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(objectToPersist.getClass());
+    final Optional<CouchbasePersistentProperty> versionProperty = persistentEntity.getVersionProperty();
+    final Long version = versionProperty.flatMap(p -> accessor.getProperty(p, Long.class)).orElse(null);
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToPersist));
     final CouchbaseDocument converted = new CouchbaseDocument();
@@ -588,7 +590,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
         //We will check version only if required
-        boolean versionPresent = versionProperty != null;
+        boolean versionPresent = versionProperty.isPresent();
         //If version is not set - assumption that document is new, otherwise updating
         boolean existingDocument = version != null && version > 0L;
         try {
@@ -614,9 +616,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
               break;
           }
 
-          if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
+          if (storedDoc != null && storedDoc.cas() != 0) {
             //inject new cas into the bean
-            accessor.setProperty(versionProperty, storedDoc.cas());
+            versionProperty.ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(storedDoc.cas())));
             return true;
           }
           return false;
@@ -685,16 +687,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     Object readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
-    CouchbasePersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(readEntity.getClass());
-    if (persistentEntity.hasVersionProperty()) {
-      accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
-    }
+    CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
+    persistentEntity.getVersionProperty().ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(data.cas())));
 
     return (T) readEntity;
   }
 
   private final ConvertingPropertyAccessor getPropertyAccessor(Object source) {
-    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
+    CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
     PersistentPropertyAccessor accessor = entity.getPropertyAccessor(source);
 
     return new ConvertingPropertyAccessor(accessor, converter.getConversionService());

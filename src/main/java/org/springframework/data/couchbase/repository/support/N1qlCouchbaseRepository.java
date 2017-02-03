@@ -105,14 +105,14 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
     //apply the sort if available
     LimitPath limitPath = groupBy;
-    if (pageable.getSort() != null) {
+    if (pageable.getSort().isSorted()) {
       com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(pageable.getSort(),
           getCouchbaseOperations().getConverter());
       limitPath = groupBy.orderBy(orderings);
     }
 
     //apply the paging
-    Statement pageStatement = limitPath.limit(pageable.getPageSize()).offset(pageable.getOffset());
+    Statement pageStatement = limitPath.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
 
     //fire the query
     N1qlQuery query = N1qlQuery.simple(pageStatement, N1qlParams.build().consistency(consistency));

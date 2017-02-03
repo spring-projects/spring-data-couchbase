@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import com.couchbase.client.java.util.features.CouchbaseFeature;
 
@@ -111,12 +112,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   public <T, ID extends Serializable> CouchbaseEntityInformation<T, ID> getEntityInformation(final Class<T> domainClass) {
-    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(domainClass);
 
-    if (entity == null) {
-      throw new MappingException(String.format("Could not lookup mapping metadata for domain class %s!", domainClass.getName()));
-    }
-
+    CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(domainClass);
     return new MappingCouchbaseEntityInformation<T, ID>((CouchbasePersistentEntity<T>) entity);
   }
 
@@ -206,8 +203,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   @Override
-  protected QueryLookupStrategy getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
-    return new CouchbaseQueryLookupStrategy(contextProvider);
+  protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
+    return Optional.of(new CouchbaseQueryLookupStrategy(contextProvider));
   }
 
   /**

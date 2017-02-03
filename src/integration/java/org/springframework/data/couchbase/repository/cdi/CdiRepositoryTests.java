@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2016 the original author or authors.
+ * Copyright 2014-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.DefaultView;
@@ -89,10 +90,12 @@ public class CdiRepositoryTests {
 
 		assertTrue(repository.exists(bean.getId()));
 
-		Person retrieved = repository.findOne(bean.getId());
-		assertNotNull(retrieved);
-		assertEquals(bean.getName(), retrieved.getName());
-		assertEquals(bean.getId(), retrieved.getId());
+		Optional<Person> retrieved = repository.findOne(bean.getId());
+		assertTrue(retrieved.isPresent());
+		retrieved.ifPresent(actual -> {
+			assertEquals(bean.getName(), actual.getName());
+			assertEquals(bean.getId(), actual.getId());
+		});
 	}
 	
 	/**
@@ -109,10 +112,12 @@ public class CdiRepositoryTests {
 
 		assertTrue(qualifiedPersonRepository.exists(bean.getId()));
 
-		Person retrieved = qualifiedPersonRepository.findOne(bean.getId());
-		assertNotNull(retrieved);
-		assertEquals(bean.getName(), retrieved.getName());
-		assertEquals(bean.getId(), retrieved.getId());
+		Optional<Person> retrieved = qualifiedPersonRepository.findOne(bean.getId());
+		assertTrue(retrieved.isPresent());
+		retrieved.ifPresent(actual -> {
+			assertEquals(bean.getName(), actual.getName());
+			assertEquals(bean.getId(), actual.getId());
+		});
 	}
 
 	/**

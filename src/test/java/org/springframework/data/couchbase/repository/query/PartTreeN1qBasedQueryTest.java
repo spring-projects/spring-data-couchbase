@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.Test;
 import org.springframework.data.couchbase.core.BeerDTO;
@@ -60,6 +61,7 @@ public class PartTreeN1qBasedQueryTest {
 
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
+		when(accessor.getSort()).thenReturn(Sort.unsorted());
 		when(entityInformation.getJavaType()).thenReturn(Beer.class);
 		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
 		when(couchbaseBucket.name()).thenReturn("default");
@@ -139,9 +141,8 @@ public class PartTreeN1qBasedQueryTest {
 		RepositoryMetadata metadata = new DefaultRepositoryMetadata(TestRepository.class);
 		Method method = TestRepository.class.getMethod("findAllProjectedBy");
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
-
+		when(accessor.getDynamicProjection()).thenReturn(Optional.of(BeerProjection.class));
 		when(entityInformation.getJavaType()).thenReturn(Beer.class);
 		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
 		when(couchbaseBucket.name()).thenReturn("B");
@@ -149,6 +150,8 @@ public class PartTreeN1qBasedQueryTest {
 		when(couchbaseOperations.getConverter().getMappingContext()).thenReturn(mappingContext);
 		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
 		when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
+
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
@@ -171,14 +174,16 @@ public class PartTreeN1qBasedQueryTest {
 		Method method = TestRepository.class.getMethod("findAllDtoedBy");
 		MappingContext mappingContext = new CouchbaseMappingContext();
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
+		when(accessor.getDynamicProjection()).thenReturn(Optional.of(BeerDTO.class));
 		when(entityInformation.getJavaType()).thenReturn(Beer.class);
 		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
 		when(couchbaseBucket.name()).thenReturn("B");
 		when(couchbaseOperations.getConverter()).thenReturn(couchbaseConverter);
 		when(couchbaseOperations.getConverter().getMappingContext()).thenReturn(mappingContext);
 		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
+
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());

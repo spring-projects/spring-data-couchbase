@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@ package org.springframework.data.couchbase.core.mapping;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.lang.reflect.Field;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
@@ -36,6 +36,7 @@ import org.springframework.util.ReflectionUtils;
  * Verifies the correct behavior of properties on persistable objects.
  *
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 public class BasicCouchbasePersistentPropertyTests {
 
@@ -50,7 +51,7 @@ public class BasicCouchbasePersistentPropertyTests {
   @Before
   public void setUp() {
     entity = new BasicCouchbasePersistentEntity<Beer>(
-        ClassTypeInformation.from(Beer.class));
+            ClassTypeInformation.from(Beer.class));
   }
 
   /**
@@ -74,7 +75,7 @@ public class BasicCouchbasePersistentPropertyTests {
   @Test
   public void testPrefersSpringIdAnnotation() {
     BasicCouchbasePersistentEntity<Beer> test = new BasicCouchbasePersistentEntity<Beer>(
-        ClassTypeInformation.from(Beer.class));
+            ClassTypeInformation.from(Beer.class));
 
     Field sdkIdField = ReflectionUtils.findField(Beer.class, "sdkId");
     CouchbasePersistentProperty sdkIdProperty = getPropertyFor(sdkIdField);
@@ -89,24 +90,32 @@ public class BasicCouchbasePersistentPropertyTests {
     assertTrue(sdkIdProperty.isIdProperty());
     assertTrue(springIdProperty.isIdProperty());
 
-    assertEquals(springIdProperty, test.getIdProperty());
+    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
+    assertTrue(property.isPresent());
+    property.ifPresent(actual -> {
+      assertEquals(springIdProperty, actual);
+    });
   }
 
   @Test
   public void testAcceptsSdkIdAnnotation() {
     BasicCouchbasePersistentEntity<SdkIdentified> test = new BasicCouchbasePersistentEntity<SdkIdentified>(
-        ClassTypeInformation.from(SdkIdentified.class));
+            ClassTypeInformation.from(SdkIdentified.class));
     Field id = ReflectionUtils.findField(SdkIdentified.class, "id");
     CouchbasePersistentProperty idProperty = getPropertyFor(id);
     test.addPersistentProperty(idProperty);
 
-    assertEquals(idProperty, test.getIdProperty());
+    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
+    assertTrue(property.isPresent());
+    property.ifPresent(actual -> {
+      assertEquals(idProperty, actual);
+    });
   }
 
   @Test
   public void testSdkIdAnnotationEvaluatedAfterSpringIdAnnotationIsIgnored() {
     BasicCouchbasePersistentEntity<Beer> test = new BasicCouchbasePersistentEntity<Beer>(
-        ClassTypeInformation.from(Beer.class));
+            ClassTypeInformation.from(Beer.class));
     Field sdkIdField = ReflectionUtils.findField(Beer.class, "sdkId");
     CouchbasePersistentProperty sdkIdProperty = getPropertyFor(sdkIdField);
     Field springIdField = ReflectionUtils.findField(Beer.class, "springId");
@@ -115,9 +124,20 @@ public class BasicCouchbasePersistentPropertyTests {
     //here this simulates the order in which the annotations would be found
     // when "overriding" Spring @Id with SDK's @Id...
     test.addPersistentProperty(springIdProperty);
-    assertEquals(springIdProperty, test.getIdProperty());
+
+    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
+    assertTrue(property.isPresent());
+    property.ifPresent(actual -> {
+      assertEquals(springIdProperty, actual);
+    });
+
     test.addPersistentProperty(sdkIdProperty);
-    assertEquals(springIdProperty, test.getIdProperty());
+
+    property = test.getIdProperty();
+    assertTrue(property.isPresent());
+    property.ifPresent(actual -> {
+      assertEquals(springIdProperty, actual);
+    });
   }
 
   /**
@@ -127,8 +147,8 @@ public class BasicCouchbasePersistentPropertyTests {
    * @return the actual BasicCouchbasePersistentProperty instance.
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
-    return new BasicCouchbasePersistentProperty(field, null, entity,
-        new SimpleTypeHolder(), PropertyNameFieldNamingStrategy.INSTANCE);
+    return new BasicCouchbasePersistentProperty(Property.of(field), entity, new SimpleTypeHolder(),
+            PropertyNameFieldNamingStrategy.INSTANCE);
   }
 
   /**

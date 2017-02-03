@@ -16,6 +16,8 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.util.Map;
+import java.util.Optional;
+
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
@@ -29,6 +31,7 @@ import reactor.core.publisher.Flux;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  * @since 3.0
  */
 public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery {
@@ -49,7 +52,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
     @Override
     public Object execute(Object[] parameters) {
         ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(queryMethod, parameters);
-        ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
+        ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
         ReturnedType returnedType = processor.getReturnedType();
 
         Class<?> typeToRead = returnedType.getTypeToRead();

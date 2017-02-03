@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -56,6 +57,7 @@ import static org.junit.Assert.*;
 
 /**
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -97,14 +99,18 @@ public class SimpleCouchbaseRepositoryTests {
     User instance = new User(key, "foobar", 22);
     repository.save(instance);
 
-    User found = repository.findOne(key);
-    assertEquals(instance.getKey(), found.getKey());
-    assertEquals(instance.getUsername(), found.getUsername());
+    Optional<User> found = repository.findOne(key);
+    assertTrue(found.isPresent());
 
-    assertTrue(repository.exists(key));
-    repository.delete(found);
+    found.ifPresent(actual -> {
+      assertEquals(instance.getKey(), actual.getKey());
+      assertEquals(instance.getUsername(), actual.getUsername());
 
-    assertNull(repository.findOne(key));
+      assertTrue(repository.exists(key));
+      repository.delete(actual);
+    });
+
+    assertFalse(repository.findOne(key).isPresent());
     assertFalse(repository.exists(key));
   }
 
@@ -214,20 +220,26 @@ public class SimpleCouchbaseRepositoryTests {
     versionedDataRepository.save(initial);
     assertNotEquals(0L, initial.version);
 
-    VersionedData fetch1 = versionedDataRepository.findOne(key);
-    assertNotSame(initial, fetch1);
-    assertEquals(fetch1.version, initial.version);
+    Optional<VersionedData> fetch1 = versionedDataRepository.findOne(key);
+
+    assertTrue(fetch1.isPresent());
+    fetch1.ifPresent(actual -> {
+      assertNotSame(initial, actual);
+      assertEquals(actual.version, initial.version);
+    });
+
+    VersionedData versionedData = fetch1.get();
 
     JsonDocument bypass = client.get(key);
     bypass.content().put("data", "BBBB");
     JsonDocument bypassed = client.upsert(bypass);
 
-    assertNotEquals(bypassed.cas(), fetch1.version);
+    assertNotEquals(bypassed.cas(), versionedData.version);
     System.out.println(bypassed.cas());
 
     try {
-      fetch1.setData("ZZZZ");
-      versionedDataRepository.save(fetch1);
+      versionedData.setData("ZZZZ");
+      versionedDataRepository.save(versionedData);
       fail("Expected CAS failure");
     }  catch (OptimisticLockingFailureException e) {
       //success
@@ -255,7 +267,7 @@ public class SimpleCouchbaseRepositoryTests {
         boolean updated = false;
         while(!updated) {
           long counterValue = counter.incrementAndGet();
-          VersionedData messageData = versionedDataRepository.findOne(key);
+          VersionedData messageData = versionedDataRepository.findOne(key).get();
           messageData.data = "value-" + counterValue;
           try {
             versionedDataRepository.save(messageData);
@@ -269,7 +281,7 @@ public class SimpleCouchbaseRepositoryTests {
     };
     AsyncUtils.executeConcurrently(5, task);
 
-    assertNotEquals(initial.data, versionedDataRepository.findOne(key).data);
+    assertNotEquals(initial.data, versionedDataRepository.findOne(key).get().data);
     assertEquals(5, updatedCounter.intValue());
   }
 

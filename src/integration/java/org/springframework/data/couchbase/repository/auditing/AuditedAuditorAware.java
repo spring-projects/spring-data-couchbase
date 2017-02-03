@@ -1,18 +1,19 @@
 package org.springframework.data.couchbase.repository.auditing;
 
 import org.springframework.data.domain.AuditorAware;
-import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 public class AuditedAuditorAware implements AuditorAware<String> {
 
-  private String auditor = "auditor";
+  private Optional<String> auditor = Optional.of("auditor");
 
   @Override
-  public String getCurrentAuditor() {
+  public Optional<String> getCurrentAuditor() {
     return auditor;
   }
 
   public void setAuditor(String auditor) {
-    this.auditor = auditor;
+    this.auditor = Optional.of(auditor);
   }
 }

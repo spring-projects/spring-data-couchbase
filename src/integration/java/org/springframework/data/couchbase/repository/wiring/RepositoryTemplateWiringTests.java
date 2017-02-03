@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
@@ -33,6 +34,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * underlying {@link CouchbaseOperations} beans.
  *
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 @SuppressWarnings("SpringJavaAutowiringInspection")
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -128,13 +130,15 @@ public class RepositoryTemplateWiringTests {
 
     boolean existA = repositoryA.exists("testA");
     boolean existB = repositoryB.exists("testB");
-    Misc valueC = repositoryC.findOne("toto");
+    Optional<Misc> valueC = repositoryC.findOne("toto");
 
     assertTrue(existA);
     assertFalse(existB);
-    assertNotNull(valueC);
-    assertEquals("mock", valueC.id);
-    assertEquals(true, valueC.random);
+    assertTrue(valueC.isPresent());
+    valueC.ifPresent(actual -> {
+      assertEquals("mock", actual.id);
+      assertEquals(true, actual.random);
+    });
 
     verify(mockOpsA).exists("testA");
     verify(mockOpsB).exists("testB");

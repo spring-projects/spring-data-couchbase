@@ -67,7 +67,7 @@ public class PageAndSliceTests {
     assertEquals(10, page3.getNumberOfElements());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = UnsupportedOperationException.class)
   public void shouldThrowWhenPageableIsNullInPageQuery() {
     repository.findByAgeGreaterThan(9, null);
   }
@@ -86,7 +86,7 @@ public class PageAndSliceTests {
     assertEquals(9, allMatching.size());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test(expected = UnsupportedOperationException.class)
   public void shouldThrowWhenPageableIsNullSliceQuery() {
     repository.findByAgeLessThan(9, null);
   }

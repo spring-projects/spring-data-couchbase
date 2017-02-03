@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
+import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.TypeInformation;
@@ -83,16 +81,15 @@ public class CouchbaseMappingContext
   /**
    * Creates a concrete property based on the field information and entity.
    *
-   * @param field the reflection on the field to be used as a property.
-   * @param descriptor the property descriptor.
+   * @param property the property descriptor.
    * @param owner the entity which owns the property.
    * @param simpleTypeHolder the type holder.
    * @return the constructed property.
    */
   @Override
-  protected CouchbasePersistentProperty createPersistentProperty(final Field field, final PropertyDescriptor descriptor,
+  protected CouchbasePersistentProperty createPersistentProperty(Property property,
                                                                  final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
-    return new BasicCouchbasePersistentProperty(field, descriptor, owner, simpleTypeHolder, fieldNamingStrategy);
+    return new BasicCouchbasePersistentProperty(property, owner, simpleTypeHolder, fieldNamingStrategy);
   }
 
   /**

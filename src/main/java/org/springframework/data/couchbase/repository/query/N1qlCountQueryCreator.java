@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.util.Iterator;
+import java.util.Optional;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +31,7 @@ import com.couchbase.client.java.query.dsl.path.WherePath;
 /**
  * 
  * @author Mark Ramach
- *
+ * @author Mark Paluch
  */
 public class N1qlCountQueryCreator extends N1qlQueryCreator {
 
@@ -42,7 +43,7 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 	@Override
 	protected LimitPath complete(Expression criteria, Sort sort) {
 		// Sorting is not allowed on aggregate count queries.
-		return super.complete(criteria, null);
+		return super.complete(criteria, Sort.unsorted());
 	}
 
 	private static class CountParameterAccessor implements ParameterAccessor {
@@ -54,14 +55,14 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 		}
 
 		public Pageable getPageable() {
-			return delegate.getPageable() != null ? new CountPageable(delegate.getPageable()) : null;
+			return delegate.getPageable() != Pageable.NONE ? new CountPageable(delegate.getPageable()) : Pageable.NONE;
 		}
 
 		public Sort getSort() {
-			return null;
+			return Sort.unsorted();
 		}
 
-		public Class<?> getDynamicProjection() {
+		public Optional<Class<?>> getDynamicProjection() {
 			return delegate.getDynamicProjection();
 		}
 
@@ -95,13 +96,13 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 			return delegate.getPageSize();
 		}
 
-		public int getOffset() {
+		public long getOffset() {
 			return delegate.getOffset();
 		}
 
 		public Sort getSort() {
 		  // Sorting is not allowed on aggregate count queries.
-			return null;
+			return Sort.unsorted();
 		}
 
 		public Pageable next() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ import org.springframework.data.repository.query.parser.PartTree;
  * </ul>
  * </p>
  * Additionally, {@link PartTree#isLimiting()} will trigger usage of {@link SpatialViewQuery#limit(int) limit}.
+ *
+ * @author Mark Paluch
  */
 public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQueryCreator.SpatialViewQueryWrapper, SpatialViewQuery> {
 
@@ -240,7 +242,7 @@ public class SpatialViewQueryCreator extends AbstractQueryCreator<SpatialViewQue
 
   @Override
   protected SpatialViewQueryWrapper complete(SpatialViewQuery criteria, Sort sort) {
-    if (sort != null) {
+    if (sort.isSorted()) {
       throw new IllegalArgumentException("Sort is not supported on Spatial View queries");
     }
 

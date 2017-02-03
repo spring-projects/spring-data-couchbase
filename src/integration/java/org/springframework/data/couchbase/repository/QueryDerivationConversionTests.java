@@ -2,10 +2,12 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
@@ -25,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -50,9 +53,8 @@ public class QueryDerivationConversionTests {
 
   @Test
   public void testConvertsDateParameterInN1qlQuery() {
-    Party partyApril = repository.findOne("testparty-3");
-    assertNotNull(partyApril);
-    System.out.println(partyApril);
+    Optional<Party> partyApril = repository.findOne("testparty-3");
+    assertTrue(partyApril.isPresent());
 
     Calendar cal = Calendar.getInstance();
     cal.clear();

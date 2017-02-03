@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import org.springframework.data.auditing.IsNewAwareAuditingHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.util.Assert;
 
+import java.util.Optional;
+
 /**
  * Event listener to populate auditing related fields on an entity about to be saved.
  *
  * @author Oliver Gierke
  * @author Simon Baslé
+ * @author Mark Paluch
  */
 public class AuditingEventListener implements ApplicationListener<BeforeConvertEvent<Object>> {
 
@@ -51,6 +54,6 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
   public void onApplicationEvent(BeforeConvertEvent<Object> event) {
 
     Object entity = event.getSource();
-    auditingHandlerFactory.getObject().markAudited(entity);
+    auditingHandlerFactory.getObject().markAudited(Optional.of(entity));
   }
 }

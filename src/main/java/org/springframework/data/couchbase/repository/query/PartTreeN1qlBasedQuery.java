@@ -43,7 +43,6 @@ import org.springframework.util.Assert;
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  */
-
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   private final PartTree partTree;
@@ -87,11 +86,11 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     if (queryMethod.isPageQuery()) {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
-      return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(pageable.getOffset());
-    } else if (queryMethod.isSliceQuery() && accessor.getPageable() != null) {
+      return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
+    } else if (queryMethod.isSliceQuery() && accessor.getPageable() != Pageable.NONE) {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
-      return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(pageable.getOffset());
+      return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
     } else if (partTree.isLimiting()) {
       return selectFromWhereOrderBy.limit(partTree.getMaxResults());
     } else {
