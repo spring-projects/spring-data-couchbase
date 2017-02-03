@@ -76,7 +76,7 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = \"value\") "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
 
 	}
@@ -119,7 +119,7 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE name = \"value\" "
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = \"value\") "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
 
 	}

@@ -123,14 +123,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     this.couchbaseEnvBuilder.sslKeystorePassword(sslKeystorePassword);
   }
 
-  public void setQueryEnabled(boolean queryEnabled) {
-    this.couchbaseEnvBuilder.queryEnabled(queryEnabled);
-  }
-
-  public void setQueryPort(int queryPort) {
-    this.couchbaseEnvBuilder.queryPort(queryPort);
-  }
-
   public void setBootstrapHttpEnabled(boolean bootstrapHttpEnabled) {
     this.couchbaseEnvBuilder.bootstrapHttpEnabled(bootstrapHttpEnabled);
   }

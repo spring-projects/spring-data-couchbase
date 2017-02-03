@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
+import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.view.DesignDocument;
@@ -81,13 +82,10 @@ public class IndexedRepositoryTests {
     IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT COUNT(name) = 1 AS exist FROM system:indexes WHERE keyspace_id = \"" + bucket
-        + "\" AND is_primary");
+    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"`");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
     assertTrue(exist.finalSuccess());
-    assertEquals(1, exist.allRows().size());
-    assertEquals(true, exist.allRows().get(0).value().getBoolean("exist"));
   }
 
   @Test
@@ -95,22 +93,24 @@ public class IndexedRepositoryTests {
     IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT COUNT(name) = 1 AS exist FROM system:indexes WHERE keyspace_id = \"" + bucket
-        + "\" AND name = \"" + SECONDARY + "\"");
+    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  SECONDARY +")");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
     assertTrue(exist.finalSuccess());
-    assertEquals(1, exist.allRows().size());
-    assertEquals(true, exist.allRows().get(0).value().getBoolean("exist"));
   }
 
   @Test
   public void shouldFindViewIndex() {
     IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
 
-    DesignDocument designDoc = template.getCouchbaseBucket()
-        .bucketManager()
-        .getDesignDocument(VIEW_DOC);
+    DesignDocument designDoc = null;
+    try {
+      designDoc = template.getCouchbaseBucket()
+              .bucketManager()
+              .getDesignDocument(VIEW_DOC);
+    } catch(DesignDocumentDoesNotExistException ex) {
+
+    }
 
     assertNotNull(designDoc);
     for (View view : designDoc.views()) {
@@ -123,22 +123,24 @@ public class IndexedRepositoryTests {
     AnotherIndexedUserRepository repository = ignoringIndexFactory.getRepository(AnotherIndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT COUNT(name) = 1 AS exist FROM system:indexes WHERE keyspace_id = \"" + bucket
-        + "\" AND name = \"" + IGNORED_SECONDARY + "\"");
+    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  IGNORED_SECONDARY +")");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
-    assertTrue(exist.finalSuccess());
-    assertEquals(1, exist.allRows().size());
-    assertEquals(false, exist.allRows().get(0).value().getBoolean("exist"));
+    assertFalse(exist.finalSuccess());
   }
 
   @Test
   public void shouldNotFindViewIndexWithIgnoringIndexManager() {
     AnotherIndexedUserRepository repository = ignoringIndexFactory.getRepository(AnotherIndexedUserRepository.class);
 
-    DesignDocument designDoc = template.getCouchbaseBucket()
-        .bucketManager()
-        .getDesignDocument(VIEW_DOC);
+    DesignDocument designDoc = null;
+    try {
+      designDoc = template.getCouchbaseBucket()
+              .bucketManager()
+              .getDesignDocument(VIEW_DOC);
+    } catch(DesignDocumentDoesNotExistException ex) {
+      //ignored
+    }
 
     if (designDoc != null) {
       for (View view : designDoc.views()) {
