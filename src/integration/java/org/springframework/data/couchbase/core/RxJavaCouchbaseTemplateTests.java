@@ -28,8 +28,6 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
 import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.query.AsyncN1qlQueryResult;
 import com.couchbase.client.java.query.N1qlParams;
 import com.couchbase.client.java.query.N1qlQuery;
@@ -39,7 +37,6 @@ import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -60,7 +57,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  **/
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
-@TestExecutionListeners(ReactiveCouchbaseTemplateViewListener.class)
+@TestExecutionListeners(RxCouchbaseTemplateQueryListener.class)
 public class RxJavaCouchbaseTemplateTests {
 
 	@Rule
@@ -76,12 +73,18 @@ public class RxJavaCouchbaseTemplateTests {
 
 
 	private void removeIfExist(String key) {
-		template.remove(key).subscribe();
+		template.remove(key).subscribe(
+				v -> {},
+				err -> {}
+		);
 	}
 
 	private void removeCollectionIfExist(Collection<ReactiveBeer> beers) {
 		template.remove(beers, PersistTo.MASTER, ReplicateTo.NONE)
-					.subscribe();
+				.subscribe(
+				v -> {},
+				err -> {}
+		);
 	}
 
 	@Test
@@ -129,7 +132,7 @@ public class RxJavaCouchbaseTemplateTests {
 		removeIfExist(id);
 
 		template.save(beer).subscribe();
-		Object result = client.get(id);
+		Object result = template.findById(id, ReactiveBeer.class).toBlocking().single();
 		assertNotNull(result);
 
 		template.remove(beer).subscribe();
@@ -154,7 +157,7 @@ public class RxJavaCouchbaseTemplateTests {
 
 		ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
-		template.save(complex).toBlocking();
+		template.save(complex).subscribe();
 		assertNotNull(client.get(id));
 
 		ComplexPerson response = template.findById(id, ComplexPerson.class).toBlocking().single();
@@ -199,12 +202,10 @@ public class RxJavaCouchbaseTemplateTests {
 
 	@Test
 	public void shouldQueryRaw() {
-		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name()))
-				.where(x("name").isNotMissing()));
+		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name())).limit(1));
 
 		AsyncN1qlQueryResult queryResult = template.queryN1QL(query).toBlocking().single();
-		assertNotNull(queryResult);
-		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess().toBlocking().single());
+		assertTrue(queryResult.finalSuccess().toBlocking().single());
 		assertFalse(queryResult.rows().toList().toBlocking().single().isEmpty());
 	}
 
@@ -212,7 +213,7 @@ public class RxJavaCouchbaseTemplateTests {
 	public void shouldQueryWithMapping() {
 		FullFragment ff1 = new FullFragment("fullFragment1", 1, "fullFragment", "test1");
 		FullFragment ff2 = new FullFragment("fullFragment2", 2, "fullFragment", "test2");
-		template.save(Arrays.asList(ff1, ff2));
+		template.save(Arrays.asList(ff1, ff2)).subscribe();
 
 		N1qlQuery query = N1qlQuery.simple(select(i("value")) //"value" is a n1ql keyword apparently
 						.from(i(client.name()))
@@ -270,9 +271,9 @@ public class RxJavaCouchbaseTemplateTests {
 		String id = "simple-doc-with-update-expiry-for-read";
 		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
 		template.save(doc).subscribe();
-		Thread.sleep(1500);
+		Thread.sleep(1000);
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
-		Thread.sleep(1500);
+		Thread.sleep(1000);
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
 		Thread.sleep(3000);
 		assertNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());

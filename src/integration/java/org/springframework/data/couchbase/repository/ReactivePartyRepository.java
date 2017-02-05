@@ -13,15 +13,15 @@ import reactor.core.publisher.Mono;
 /**
  * @author Subhashni Balakrishnan
  */
-@ViewIndexed(designDoc = "party", viewName = "all")
-@N1qlSecondaryIndexed(indexName = "party")
+@ViewIndexed(designDoc = "reactiveParty", viewName = "all")
+@N1qlSecondaryIndexed(indexName = "reactiveParty")
 public interface ReactivePartyRepository extends ReactiveCouchbaseRepository<Party, String> {
 
 	Flux<Party> findByAttendeesGreaterThanEqual(int minAttendees);
 
 	Flux<Party> findByEventDateIs(Date targetDate);
 
-	@View(designDocument = "party", viewName = "byDate")
+	@View(designDocument = "reactiveParty", viewName = "byDate")
 	Flux<Party> findFirst3ByEventDateGreaterThanEqual(Date targetDate);
 
 	Flux<Object> findAllByDescriptionNotNull();

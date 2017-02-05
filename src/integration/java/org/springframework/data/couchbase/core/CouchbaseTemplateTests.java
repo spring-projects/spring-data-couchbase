@@ -67,7 +67,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Anastasiia Smirnova */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
-@TestExecutionListeners(CouchbaseTemplateViewListener.class)
+@TestExecutionListeners(CouchbaseTemplateQueryListener.class)
 public class CouchbaseTemplateTests {
 
 	@Rule
@@ -83,7 +83,7 @@ public class CouchbaseTemplateTests {
 
 	private void removeIfExist(String key) {
 		try {
-			client.remove(key);
+			template.remove(key);
 		}
 		catch (DocumentDoesNotExistException e) {
 			//ignore

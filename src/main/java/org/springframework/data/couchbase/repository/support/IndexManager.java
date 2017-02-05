@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Collections;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.bucket.BucketManager;
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
 import com.couchbase.client.java.query.AsyncN1qlQueryResult;
 import com.couchbase.client.java.query.Index;
 import com.couchbase.client.java.query.Statement;
@@ -53,6 +54,7 @@ import org.springframework.data.repository.core.RepositoryInformation;
  * Index creation will be attempted in parallel using the asynchronous APIs, but the overall process is still blocking.
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class IndexManager {
 
@@ -281,7 +283,12 @@ public class IndexManager {
     }
 
     com.couchbase.client.java.view.View view = DefaultView.create(viewName, mapFunction, reduceFunction);
-    DesignDocument doc = manager.getDesignDocument(config.designDoc());
+    DesignDocument doc = null;
+    try {
+      doc = manager.getDesignDocument(config.designDoc());
+    } catch(DesignDocumentDoesNotExistException ex) {
+      //ignore
+    }
     if (doc != null) {
       for (com.couchbase.client.java.view.View existingView : doc.views()) {
         if (existingView.name().equals(viewName)) {

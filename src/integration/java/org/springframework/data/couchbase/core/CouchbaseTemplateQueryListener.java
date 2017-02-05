@@ -20,18 +20,21 @@ import java.util.Collections;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.cluster.ClusterInfo;
+import com.couchbase.client.java.query.Index;
+import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
 
 import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.repository.index.IndexedRepositoryTests;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 /**
  * @author Michael Nitschinger
  */
-public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecutionListener {
+public class CouchbaseTemplateQueryListener extends DependencyInjectionTestExecutionListener {
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
@@ -39,6 +42,7 @@ public class CouchbaseTemplateViewListener extends DependencyInjectionTestExecut
     ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
     populateTestData(client, clusterInfo);
     createAndWaitForDesignDocs(client);
+    client.query(N1qlQuery.simple(Index.createPrimaryIndex().on(client.name())));
   }
 
   private void populateTestData(Bucket client, ClusterInfo clusterInfo) {
