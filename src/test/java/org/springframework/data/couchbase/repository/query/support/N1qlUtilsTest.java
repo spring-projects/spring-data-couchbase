@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.Beer;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -16,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.EntityMetadata;
+
+import java.lang.annotation.Annotation;
 
 public class N1qlUtilsTest {
 
@@ -145,6 +148,20 @@ public class N1qlUtilsTest {
     String real = N1qlUtils.createWhereFilterForEntity(
             x("field1").gte(30).or(x("field2").eq(s("foo"))),
             converter, metadata).toString();
+
+    assertEquals(expected, real);
+  }
+
+  @Test
+  public void testCreateWhereFilterForEntityTakesTypeAliasAnnotationIntoAccount() throws Exception {
+    String expected = "`_class` = \"CustomDiscriminator\"";
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    when(converter.getTypeKey()).thenReturn("_class");
+    EntityMetadata metadata = mock(EntityMetadata.class);
+    @TypeAlias("CustomDiscriminator") class EntityMock {};
+    when(metadata.getJavaType()).thenReturn(EntityMock.class);
+
+    String real = N1qlUtils.createWhereFilterForEntity(null, converter, metadata).toString();
 
     assertEquals(expected, real);
   }
