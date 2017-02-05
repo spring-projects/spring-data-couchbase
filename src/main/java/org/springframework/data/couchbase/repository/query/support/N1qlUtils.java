@@ -35,6 +35,7 @@ import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 import com.couchbase.client.java.repository.annotation.Field;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -145,7 +146,7 @@ public class N1qlUtils {
                                                       EntityMetadata<?> entityInformation) {
     //add part that filters on type key
     String typeKey = converter.getTypeKey();
-    String typeValue = entityInformation.getJavaType().getName();
+    String typeValue = getTypeValue(entityInformation);
     Expression typeSelector = i(typeKey).eq(s(typeValue));
     if (baseWhereCriteria == null) {
       baseWhereCriteria = typeSelector;
@@ -155,6 +156,13 @@ public class N1qlUtils {
     return baseWhereCriteria;
   }
 
+  private static String getTypeValue(EntityMetadata<?> entityInformation) {
+    final TypeAlias typeAliasAnnotation = entityInformation.getJavaType().getAnnotation(TypeAlias.class);
+    if(typeAliasAnnotation != null) {
+      return typeAliasAnnotation.value();
+    }
+    return entityInformation.getJavaType().getName();
+  }
   /**
    * Given a common {@link PropertyPath}, returns the corresponding {@link PersistentPropertyPath}
    * of {@link CouchbasePersistentProperty} which will allow to discover alternative naming for fields.
