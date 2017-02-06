@@ -123,8 +123,8 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return getCouchbaseOperations().getConverter().getTypeKey();
   }
 
-  protected Class<?> getTypeValue() {
-    return getQueryMethod().getEntityInformation().getJavaType();
+  protected String getTypeValue() {
+    return N1qlUtils.getTypeValue(getQueryMethod().getEntityInformation());
   }
 
   public StringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations,
@@ -193,7 +193,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     return true;
   }
 
-  public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, Class<?> typeValue, boolean isCount) {
+  public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue, boolean isCount) {
     String b = "`" + bucketName + "`";
     String entity = "META(" + b + ").id AS " + CouchbaseOperations.SELECT_ID +
         ", META(" + b + ").cas AS " + CouchbaseOperations.SELECT_CAS;
@@ -204,7 +204,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     } else {
       selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
     }
-    String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
+    String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
     return new N1qlSpelValues(selectEntity, entity, b, typeSelection);
   }

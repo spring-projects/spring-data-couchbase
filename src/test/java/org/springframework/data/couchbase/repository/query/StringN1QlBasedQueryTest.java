@@ -25,10 +25,10 @@ public class StringN1QlBasedQueryTest {
 
   @Before
   public void initMock() {
-    N1qlSpelValues contextStringUnderscoreClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "_class", String.class, false);
-    N1qlSpelValues contextCountStringUnderscoreClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "_class", String.class, true);
-    N1qlSpelValues contextStringAtClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "@class", String.class, false);
-    N1qlSpelValues contextCountStringAtClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "@class", String.class, true);
+    N1qlSpelValues contextStringUnderscoreClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "_class", String.class.getName(), false);
+    N1qlSpelValues contextCountStringUnderscoreClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "_class", String.class.getName(), true);
+    N1qlSpelValues contextStringAtClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "@class", String.class.getName(), false);
+    N1qlSpelValues contextCountStringAtClass = StringN1qlBasedQuery.createN1qlSpelValues("B", "@class", String.class.getName(), true);
 
     mockStringUnderscoreClass = mock(StringN1qlBasedQuery.class);
     when(mockStringUnderscoreClass.parseSpel(anyString(), anyBoolean(), any(Object[].class)))

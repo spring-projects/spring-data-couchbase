@@ -156,7 +156,7 @@ public class N1qlUtils {
     return baseWhereCriteria;
   }
 
-  private static String getTypeValue(EntityMetadata<?> entityInformation) {
+  public static String getTypeValue(EntityMetadata<?> entityInformation) {
     final TypeAlias typeAliasAnnotation = entityInformation.getJavaType().getAnnotation(TypeAlias.class);
     if(typeAliasAnnotation != null) {
       return typeAliasAnnotation.value();
