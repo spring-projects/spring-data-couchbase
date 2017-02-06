@@ -165,4 +165,31 @@ public class N1qlUtilsTest {
 
     assertEquals(expected, real);
   }
+
+  @Test
+  public void testGetTypeValueWhenClassBeenAnnotatedWithTypeAlias() throws Exception {
+    String expected = "CustomDiscriminator";
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    when(converter.getTypeKey()).thenReturn("_class");
+    EntityMetadata metadata = mock(EntityMetadata.class);
+    @TypeAlias("CustomDiscriminator") class EntityMock {};
+    when(metadata.getJavaType()).thenReturn(EntityMock.class);
+
+    String real = N1qlUtils.getTypeValue(metadata);
+
+    assertEquals(expected, real);
+  }
+
+  @Test
+  public void testGetTypeValueWhenClassNotAnnotatedWithTypeAlias() throws Exception {
+    String expected = "java.lang.String";
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    when(converter.getTypeKey()).thenReturn("_class");
+    EntityMetadata metadata = mock(EntityMetadata.class);
+    when(metadata.getJavaType()).thenReturn(String.class);
+
+    String real = N1qlUtils.getTypeValue(metadata);
+
+    assertEquals(expected, real);
+  }
 }
