@@ -16,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.stereotype.Repository;
@@ -25,15 +23,17 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * This test case demonstrates that the {@link AbstractCouchbaseConfiguration} can take its SDK beans
+ * This test case demonstrates that the {@link AbstractCouchbaseDataConfiguration} can take its SDK beans
  * from a sibling {@link Configuration}.
+ *
+ * Tests DATACOUCH-279
  *
  * @author Simon Baslé
  */
 @SuppressWarnings("SpringJavaAutowiringInspection")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
-public class AbstractCouchbaseConfigurationTest {
+public class AbstractCouchbaseDataConfigurationTest {
 
   @Autowired
   ItemRepository repository;
@@ -74,8 +74,8 @@ public class AbstractCouchbaseConfigurationTest {
   }
 
   @Configuration
-  @EnableCouchbaseRepositories(basePackageClasses = AbstractCouchbaseConfigurationTest.class, considerNestedRepositories = true)
-  abstract static class Config extends AbstractCouchbaseConfiguration {
+  @EnableCouchbaseRepositories(basePackageClasses = AbstractCouchbaseDataConfigurationTest.class, considerNestedRepositories = true)
+  static class Config extends AbstractCouchbaseDataConfiguration {
 
     @Autowired
     Cluster c;
@@ -88,25 +88,6 @@ public class AbstractCouchbaseConfigurationTest {
 
     @Autowired
     CouchbaseEnvironment e;
-
-    //TODO maybe create the bucket if doesn't exist
-
-    @Override
-    protected CouchbaseEnvironment getEnvironment() {
-      return DefaultCouchbaseEnvironment.builder()
-              .connectTimeout(10000)
-              .kvTimeout(10000)
-              .queryTimeout(10000)
-              .viewTimeout(10000)
-              .build();
-    }
-
-    @Override
-    public CouchbaseTemplate couchbaseTemplate() throws Exception {
-      CouchbaseTemplate template = super.couchbaseTemplate();
-      template.setWriteResultChecking(WriteResultChecking.LOG);
-      return template;
-    }
 
     @Override
     protected CouchbaseConfigurer couchbaseConfigurer() {
