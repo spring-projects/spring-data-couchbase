@@ -1,6 +1,14 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.1.RELEASE (2017-03-02)
+---------------------------------------------
+* DATACOUCH-278 - Table reference incorrect in repository doc.
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-272 - Release 2.2.1 (Ingalls SR1).
+* DATACOUCH-265 - SpEL expressions for 'Pageable' and 'Sort'.
+
+
 Changes in version 2.1.7.RELEASE (2017-01-26)
 ---------------------------------------------
 * DATACOUCH-266 - Release 2.1.7 (Hopper SR7).
