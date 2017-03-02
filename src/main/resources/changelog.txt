@@ -17,6 +17,12 @@ Changes in version 3.0.0.M2 (2017-04-04)
 * DATACOUCH-146 - Add experimental Reactive support.
 
 
+Changes in version 2.1.8.RELEASE (2017-03-02)
+---------------------------------------------
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-271 - Release 2.1.8 (Hopper SR8).
+
+
 Changes in version 2.2.1.RELEASE (2017-03-02)
 ---------------------------------------------
 * DATACOUCH-278 - Table reference incorrect in repository doc.
