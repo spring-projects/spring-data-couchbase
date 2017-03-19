@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,11 +36,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import com.couchbase.client.java.repository.annotation.Field;
 import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.Id;
@@ -49,6 +50,8 @@ import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.couchbase.client.java.repository.annotation.Field;
 
 /**
  * @author Michael Nitschinger
@@ -227,7 +230,7 @@ public class MappingCouchbaseConverterTests {
     Map<String, Boolean> attr1 = new TreeMap<String, Boolean>();
     Map<Integer, String> attr2 = new LinkedHashMap<Integer, String>();
     Map<String, Map<String, String>> attr3 =
-        new HashMap<String, Map<String, String>>();
+            new HashMap<String, Map<String, String>>();
 
     attr0.put("foo", "bar");
     attr1.put("bar", true);
@@ -267,6 +270,53 @@ public class MappingCouchbaseConverterTests {
     assertEquals(attr3, readConverted.attr3);
   }
 
+  @Test
+  @SuppressWarnings("unchecked")
+  public void writesAndReadDynamicNestedMaps() {
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converted.setId("ANY_ID");
+    
+    Map<String, Object> root = new HashMap<String, Object>();
+    Map<String, Object> inner1 = new HashMap<String, Object>();
+    Map<String, Object> inner2 = new HashMap<String, Object>();
+
+    inner2.put("inner3", "ANY_VALUE");
+    inner1.put("inner2", inner2);
+    root.put("inner1", inner1);
+
+    converter.write(root, converted);
+    
+    Map<String, Object> result = converted.export();
+    assertEquals(inner1, result.get("inner1"));
+    
+    Map<String, Object> resultInner1 = (Map<String, Object>) result.get("inner1");
+    assertEquals(inner2, resultInner1.get("inner2"));
+    
+    Map<String, Object> resultInner2 = (Map<String, Object>) resultInner1.get("inner2");
+    assertEquals("ANY_VALUE", resultInner2.get("inner3"));
+
+    CouchbaseDocument innerDoc2 = new CouchbaseDocument();
+	innerDoc2.put("inner3", "ANY_VALUE");
+	
+	CouchbaseDocument innerDoc1 = new CouchbaseDocument();
+	innerDoc1.put("inner2", innerDoc2);
+	
+	CouchbaseDocument rootDoc = new CouchbaseDocument();
+	rootDoc.put("inner1", innerDoc1);
+	rootDoc.put("_class", HashMap.class.getName());
+	
+	Map<String, Object> readConverted = converter.read(HashMap.class, rootDoc);
+	assertEquals(inner1, readConverted.get("inner1"));
+	
+	Map<String, Object> actualInner1 = (Map<String, Object>) readConverted.get("inner1");
+	assertEquals(inner2, actualInner1.get("inner2"));
+	
+	Map<String, Object> actualInner2 = (Map<String, Object>) actualInner1.get("inner2");
+	assertEquals( "ANY_VALUE", actualInner2.get("inner3"));
+	  
+  }
+
+  
   @Test
   public void writesAndReadsListAndNestedList() {
     CouchbaseDocument converted = new CouchbaseDocument();
