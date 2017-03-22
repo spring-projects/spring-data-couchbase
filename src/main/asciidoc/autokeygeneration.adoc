@@ -1,0 +1,106 @@
+[[couchbase.autokeygeneration]]
+= Auto generating keys
+
+This chapter describes how couchbase document keys can be auto-generated using builtin mechanisms.
+There are two types of auto-generation strategies supported.
+
+ - <<couchbase.autokeygeneration.usingattributes>>
+ - <<couchbase.autokeygeneration.unique>>
+
+NOTE: The maximum key length supported by couchbase is 250 bytes.
+
+[[couchbase.autokeygeneration.configuration]]
+== Configuration
+
+Keys to be auto-generated should be annotated with `@GeneratedValue`. The default strategy is `USE_ATTRIBUTES`. Prefix
+and suffix for the key can be provided as part of the entity itself, these values are not persisted, they are only
+used for key generation. The prefixes and suffixes are ordered using the `order` value. The default order is `0`, multiple
+prefixes without order will overwrite the previous. If a value for id is already available, auto-generation will be skipped.
+The delimiter for concatenation can be provided using `delimiter`, the default delimiter is `.`.
+
+.Annotation for GeneratedValue
+====
+[source,java]
+----
+@Document
+public class User {
+     @Id @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ".")
+     private String id;
+     @IdPrefix(order=0)
+     private String userPrefix;
+     @IdSuffix(order=0)
+     private String userSuffix;
+     ...
+}
+----
+====
+
+Common prefix and suffix for all entities keys can be added to `CouchbaseTemplate` directly. Once added to the `CouchbaseTemplate`,
+they become immutable. These settings are always applied irrespective of the `GeneratedValue` annotation.
+
+.Common key settings in CouchbaseTemplate
+====
+[source,java]
+----
+@Autowired
+CouchbaseTemplate couchbaseTemplate;
+...
+couchbaseTemplate.keySettings(KeySettings.build().prefix("ApplicationA").suffix("Server1").delimiter("::"));
+----
+====
+
+Key will be auto-generated only for operations with direct entity input like insert, update, save, delete using entity.
+For other operations requiring just the key, it can be generated using `CouchbaseTemplate`.
+
+.Standalone key generation in CouchbaseTemplate
+====
+[source,java]
+----
+@Autowired
+CouchbaseTemplate couchbaseTemplate;
+...
+String id = couchbaseTemplate.getGeneratedId(entity);
+...
+repo.exists(id);
+----
+====
+
+[[couchbase.autokeygeneration.usingattributes]]
+== Key generation using attributes
+
+It is a common practice to generate keys using a combination of the document attributes. Key generation using attributes
+concatenates all the attribute values annotated with `IdAttribute`, based on the ordering provided similar to prefixes and suffixes.
+
+.Annotation for IdAttribute
+====
+[source,java]
+----
+@Document
+public class User {
+     @Id @GeneratedValue(strategy = USE_ATTRIBUTES)
+     private String id;
+     @IdAttribute
+     private String userid;
+     ...
+}
+----
+====
+
+[[couchbase.autokeygeneration.unique]]
+== Key generation using uuid
+
+This auto-generation uses UUID random generator to generate document keys consuming 16 bytes of key space. This mechanism
+is only recommended for test scaffolding.
+
+.Annotation for Unique key generation
+====
+[source,java]
+----
+@Document
+public class User {
+     @Id @GeneratedValue(strategy = UNIQUE)
+     private String id;
+     ...
+}
+----
+====
