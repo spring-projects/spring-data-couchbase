@@ -53,7 +53,7 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
    */
   public void onApplicationEvent(BeforeConvertEvent<Object> event) {
 
-    Object entity = event.getSource();
-    auditingHandlerFactory.getObject().markAudited(Optional.of(entity));
+    Optional.ofNullable(event.getSource())//
+            .ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
   }
 }

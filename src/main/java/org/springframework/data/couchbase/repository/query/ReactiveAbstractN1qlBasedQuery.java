@@ -52,7 +52,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
     @Override
     public Object execute(Object[] parameters) {
         ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(queryMethod, parameters);
-        ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
+        ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
         ReturnedType returnedType = processor.getReturnedType();
 
         Class<?> typeToRead = returnedType.getTypeToRead();

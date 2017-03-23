@@ -132,7 +132,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     OrderByPath selectFromWhere = selectFrom.where(whereCriteria);
 
     //sort of the Pageable takes precedence over the sort in the query name
-    if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && !Pageable.NONE.equals(accessor.getPageable())) {
+    if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && accessor.getPageable().isPaged()) {
       Pageable pageable = accessor.getPageable();
         sort = pageable.getSort();
     }

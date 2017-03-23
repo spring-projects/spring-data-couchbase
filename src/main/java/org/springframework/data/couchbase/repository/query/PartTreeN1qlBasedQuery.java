@@ -87,7 +87,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
       return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
-    } else if (queryMethod.isSliceQuery() && accessor.getPageable() != Pageable.NONE) {
+    } else if (queryMethod.isSliceQuery() && accessor.getPageable().isPaged()) {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
       return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));

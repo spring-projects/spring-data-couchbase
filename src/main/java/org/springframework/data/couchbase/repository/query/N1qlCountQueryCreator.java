@@ -29,7 +29,7 @@ import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 
 /**
- * 
+ *
  * @author Mark Ramach
  * @author Mark Paluch
  */
@@ -55,7 +55,7 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 		}
 
 		public Pageable getPageable() {
-			return delegate.getPageable() != Pageable.NONE ? new CountPageable(delegate.getPageable()) : Pageable.NONE;
+			return delegate.getPageable().isPaged() ? new CountPageable(delegate.getPageable()) : Pageable.unpaged();
 		}
 
 		public Sort getSort() {

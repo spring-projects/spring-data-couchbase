@@ -151,7 +151,7 @@ public class PartTreeN1qBasedQueryTest {
 		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
 		when(couchbaseConverter.convertForWriteIfNeeded(eq("value"))).thenReturn("value");
 
-		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
@@ -183,7 +183,7 @@ public class PartTreeN1qBasedQueryTest {
 		when(couchbaseOperations.getConverter().getMappingContext()).thenReturn(mappingContext);
 		when(couchbaseConverter.getTypeKey()).thenReturn("_class");
 
-		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
+		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());

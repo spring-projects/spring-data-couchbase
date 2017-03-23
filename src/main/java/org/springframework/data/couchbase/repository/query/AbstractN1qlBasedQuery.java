@@ -86,9 +86,9 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   public Object execute(Object[] parameters) {
     ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
 
-    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(Optional.of(accessor));
+    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
     ReturnedType returnedType = processor.getReturnedType();
-    
+
     Class<?> typeToRead = returnedType.getTypeToRead();
     typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
