@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -25,12 +25,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
@@ -40,6 +37,9 @@ import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.couchbase.client.java.repository.annotation.Field;
+import com.couchbase.client.java.repository.annotation.Id;
 
 /**
  * Tests to verify custom mapping logic.

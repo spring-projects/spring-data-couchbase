@@ -16,15 +16,13 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;

@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;

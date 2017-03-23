@@ -1,7 +1,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
@@ -11,20 +11,20 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.Test;
-import org.springframework.data.couchbase.core.BeerDTO;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.mapping.*;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.Beer;
+import org.springframework.data.couchbase.core.BeerDTO;
 import org.springframework.data.couchbase.core.BeerProjection;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.projection.ProjectionFactory;
@@ -34,10 +34,10 @@ import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.ResultProcessor;
 
 import com.couchbase.client.java.CouchbaseBucket;
 import com.couchbase.client.java.query.Statement;
-import org.springframework.data.repository.query.ResultProcessor;
 
 public class PartTreeN1qBasedQueryTest {
 

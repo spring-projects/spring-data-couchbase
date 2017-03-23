@@ -1,12 +1,12 @@
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser.*;
 
 import org.junit.Test;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import static org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser.*;
 
 public class StringN1QlBasedQueryTest {
   private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();

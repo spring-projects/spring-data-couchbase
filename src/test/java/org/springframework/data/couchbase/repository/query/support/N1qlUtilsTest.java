@@ -1,12 +1,11 @@
 package org.springframework.data.couchbase.repository.query.support;
 
 import static com.couchbase.client.java.query.dsl.Expression.*;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.Ignore;
 import org.junit.Test;
-
 import org.springframework.data.couchbase.core.Beer;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;

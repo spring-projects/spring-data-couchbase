@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.annotation.Id;
+
 import com.couchbase.client.java.repository.annotation.Field;
 
 

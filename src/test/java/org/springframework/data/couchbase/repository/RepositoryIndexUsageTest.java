@@ -1,26 +1,16 @@
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.ViewQuery;
-import com.couchbase.client.java.view.ViewResult;
-import com.couchbase.client.java.view.ViewRow;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -30,6 +20,14 @@ import org.springframework.data.couchbase.repository.support.N1qlCouchbaseReposi
 import org.springframework.data.couchbase.repository.support.ViewMetadataProvider;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.view.ViewResult;
+import com.couchbase.client.java.view.ViewRow;
 
 public class RepositoryIndexUsageTest {
 

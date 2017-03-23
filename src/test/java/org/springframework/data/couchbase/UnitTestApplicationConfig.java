@@ -1,9 +1,18 @@
 package org.springframework.data.couchbase;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.util.Collections;
 import java.util.List;
+
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.WriteResultChecking;
+import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
@@ -13,15 +22,6 @@ import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.cluster.DefaultClusterInfo;
 import com.couchbase.client.java.util.features.CouchbaseFeature;
 import com.couchbase.client.java.util.features.Version;
-import org.mockito.Mockito;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.WriteResultChecking;
-import org.springframework.data.couchbase.core.query.Consistency;
-import org.springframework.data.couchbase.repository.support.IndexManager;
 
 @Configuration
 public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {

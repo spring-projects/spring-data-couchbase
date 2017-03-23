@@ -15,8 +15,9 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.Select.select;
+import static com.couchbase.client.java.query.Select.*;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
@@ -26,14 +27,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.query.ParameterizedN1qlQuery;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.SimpleN1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -46,6 +39,15 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.query.QueryMethod;
+
+import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.query.N1qlParams;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.ParameterizedN1qlQuery;
+import com.couchbase.client.java.query.SimpleN1qlQuery;
+import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 
 /**
  * Unit tests for {@link AbstractN1qlBasedQuery}.

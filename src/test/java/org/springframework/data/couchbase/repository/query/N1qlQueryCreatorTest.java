@@ -1,16 +1,16 @@
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.springframework.data.couchbase.repository.query.N1qlQueryCreator.createExpression;
+import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.repository.query.N1qlQueryCreator.*;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import com.couchbase.client.java.query.dsl.Expression;
 import org.junit.Test;
-
 import org.springframework.data.repository.query.parser.Part;
+
+import com.couchbase.client.java.query.dsl.Expression;
 
 public class N1qlQueryCreatorTest {
 

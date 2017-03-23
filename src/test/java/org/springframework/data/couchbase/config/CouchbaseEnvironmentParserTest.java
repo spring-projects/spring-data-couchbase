@@ -17,21 +17,21 @@
 package org.springframework.data.couchbase.config;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
-import com.couchbase.client.core.retry.BestEffortRetryStrategy;
-import com.couchbase.client.core.retry.FailFastRetryStrategy;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.ClassPathResource;
+
+import com.couchbase.client.core.retry.BestEffortRetryStrategy;
+import com.couchbase.client.core.retry.FailFastRetryStrategy;
+import com.couchbase.client.java.env.CouchbaseEnvironment;
+import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
 public class CouchbaseEnvironmentParserTest {
 

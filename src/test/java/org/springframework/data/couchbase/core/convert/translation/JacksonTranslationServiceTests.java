@@ -16,12 +16,10 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 import org.junit.Before;
 import org.junit.Test;
-
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**

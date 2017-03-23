@@ -1,16 +1,16 @@
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
-import com.couchbase.client.java.document.json.JsonArray;
 import org.junit.Test;
-
 import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.geo.Polygon;
 import org.springframework.data.geo.Shape;
+
+import com.couchbase.client.java.document.json.JsonArray;
 
 /**
  * Unit tests for the {@link GeoUtils} utility class.
