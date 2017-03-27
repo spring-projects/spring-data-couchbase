@@ -27,6 +27,7 @@ import org.springframework.data.repository.config.AnnotationRepositoryConfigurat
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  * @since 3.0
  */
 public class ReactiveCouchbaseRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
@@ -42,7 +43,7 @@ public class ReactiveCouchbaseRepositoryConfigurationExtension extends Repositor
 		return "reactive-couchbase";
 	}
 
-	public String getRepositoryFactoryClassName() {
+	public String getRepositoryFactoryBeanClassName() {
 		return ReactiveCouchbaseRepositoryFactoryBean.class.getName();
 	}
 

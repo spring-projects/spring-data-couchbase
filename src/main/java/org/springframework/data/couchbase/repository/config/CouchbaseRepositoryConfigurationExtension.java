@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.config;
 
 import org.w3c.dom.Element;
@@ -28,6 +27,7 @@ import org.springframework.data.repository.config.XmlRepositoryConfigurationSour
 
 /**
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
@@ -42,7 +42,7 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
     return "couchbase";
   }
 
-  public String getRepositoryFactoryClassName() {
+  public String getRepositoryFactoryBeanClassName() {
     return CouchbaseRepositoryFactoryBean.class.getName();
   }
 
