@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.core;
 
 import static org.springframework.data.couchbase.core.CouchbaseTemplate.ensureNotIterable;
 
-import java.util.Collection;
 import java.util.Optional;
 
 import com.couchbase.client.java.AsyncBucket;
@@ -29,10 +28,13 @@ import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.document.Document;
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.*;
 import com.couchbase.client.java.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
@@ -44,44 +46,92 @@ import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import rx.Observable;
+import rx.functions.Action4;
+import rx.functions.Func3;
+import rx.functions.Func4;
 
 /**
  * RxJavaCouchbaseTemplate implements operations using rxjava1 observables
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Alex Derkach
  * @since 3.0
  */
 public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     private static final Logger LOGGER = LoggerFactory.getLogger(RxJavaCouchbaseTemplate.class);
+
+    private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
+
+    protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
     private Bucket syncClient;
     private AsyncBucket client;
     private final ClusterInfo clusterInfo;
     private final CouchbaseConverter converter;
     private final TranslationService translationService;
-    protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
     private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
-
-    private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
     private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;
 
-
     public <T> Observable<T> save(T objectToSave) {
-        return doPersist(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
+        return save(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
     }
 
-    public <T> Observable<T>  save(Iterable<T> batchToSave) {
+    public <T> Observable<T> save(Iterable<T> batchToSave) {
         return Observable.from(batchToSave)
-                .flatMap(object -> save(object));
+                .flatMap(this::save);
     }
 
     public <T> Observable<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
-        return doPersist(objectToSave, persistTo, replicateTo);
+        return doPersist(objectToSave, PersistType.SAVE, persistTo, replicateTo);
     }
 
     public <T> Observable<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
         return Observable.from(batchToSave)
                 .flatMap(object -> save(object, persistTo, replicateTo));
+    }
+
+    @Override
+    public <T> Observable<T> insert(T objectToSave) {
+        return insert(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
+    }
+
+    @Override
+    public <T> Observable<T> insert(Iterable<T> batchToSave) {
+        return Observable.from(batchToSave)
+                .flatMap(this::insert);
+    }
+
+    @Override
+    public <T> Observable<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return doPersist(objectToSave, PersistType.INSERT, persistTo, replicateTo);
+    }
+
+    @Override
+    public <T> Observable<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Observable.from(batchToSave)
+                .flatMap(objectToSave -> insert(objectToSave, persistTo, replicateTo));
+    }
+
+    @Override
+    public <T> Observable<T> update(T objectToSave) {
+        return update(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
+    }
+
+    @Override
+    public <T> Observable<T> update(Iterable<T> batchToSave) {
+        return Observable.from(batchToSave)
+                .flatMap(this::update);
+    }
+
+    @Override
+    public <T> Observable<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return doPersist(objectToSave, PersistType.UPDATE, persistTo, replicateTo);
+    }
+
+    @Override
+    public <T> Observable<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Observable.from(batchToSave)
+                .flatMap(objectToSave -> update(objectToSave, persistTo, replicateTo));
     }
 
     public <T> Observable<T> remove(T objectToRemove) {
@@ -90,7 +140,7 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
 
     public <T> Observable<T> remove(Iterable<T> batchToRemove) {
         return Observable.from(batchToRemove)
-                .flatMap(object -> remove(object));
+                .flatMap(this::remove);
     }
 
     public <T> Observable<T> remove(T objectToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
@@ -101,7 +151,6 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return Observable.from(batchToRemove)
                 .flatMap(object -> remove(object, persistTo, replicateTo));
     }
-
 
     public RxJavaCouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client) {
         this(clusterInfo, client, null, null);
@@ -117,8 +166,8 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     }
 
     public RxJavaCouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client,
-                                     final CouchbaseConverter converter,
-                                     final TranslationService translationService) {
+                                   final CouchbaseConverter converter,
+                                   final TranslationService translationService) {
         this.syncClient = client;
         this.clusterInfo = clusterInfo;
         this.client = client.async();
@@ -157,38 +206,82 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return new ConvertingPropertyAccessor(accessor, converter.getConversionService());
     }
 
+    private <T> Observable<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
+        // If version is not set - assumption that document is new, otherwise updating
+        Optional<Long> version = getVersion(objectToPersist);
+        Func3<RawJsonDocument, PersistTo, ReplicateTo, Observable<RawJsonDocument>> persistFunction;
+        switch (persistType) {
+            case SAVE:
+                if (!version.isPresent()) {
+                    //No version field - no cas
+                    persistFunction = client::upsert;
+                } else if (version.get() > 0) {
+                    //Updating existing document with cas
+                    persistFunction = client::replace;
+                } else {
+                    //Creating new document
+                    persistFunction = client::insert;
+                }
+                break;
+            case UPDATE:
+                persistFunction = client::replace;
+                break;
+            case INSERT:
+            default:
+                persistFunction = client::insert;
+                break;
+        }
+        return persistFunction.call(toJsonDocument(objectToPersist), persistTo, replicateTo)
+                .flatMap(storedDoc -> {
+                    if (storedDoc != null && storedDoc.cas() != 0) {
+                        setVersion(objectToPersist, storedDoc.cas());
+                    }
+                    return Observable.just(objectToPersist);
+                })
+                .onErrorResumeNext(e -> {
+                    if (e instanceof DocumentAlreadyExistsException) {
+                        throw new OptimisticLockingFailureException(persistType.springDataOperationName +
+                                " document with version value failed: " + version.orElse(null), e);
+                    }
+                    if (e instanceof CASMismatchException) {
+                        throw new OptimisticLockingFailureException(persistType.springDataOperationName +
+                                " document with version value failed: " + version.orElse(null), e);
+                    }
+                    return TemplateUtils.translateError(e);
+                });
+    }
 
-    private <T> Observable<T> doPersist(T objectToPersist, final PersistTo persistTo, final ReplicateTo replicateTo) {
-        ensureNotIterable(objectToPersist);
-
-        final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
-        final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(objectToPersist.getClass());
-        Optional<CouchbasePersistentProperty> versionProperty = persistentEntity.getVersionProperty();
-		final Long version = versionProperty.flatMap(p -> accessor.getProperty(p, Long.class)).orElse(null);
+    private <T> RawJsonDocument toJsonDocument(T object) {
+        ensureNotIterable(object);
 
         final CouchbaseDocument converted = new CouchbaseDocument();
-        converter.write(objectToPersist, converted);
-        RawJsonDocument doc = encodeAndWrap(converted, version);
-        return client.upsert(doc, persistTo, replicateTo)
-                .flatMap(rawJsonDocument -> Observable.just(objectToPersist))
-                .doOnError(e -> TemplateUtils.translateError(e));
+        converter.write(object, converted);
+        return encodeAndWrap(converted, getVersion(object).orElse(null));
+    }
+
+    private <T> Optional<CouchbasePersistentProperty> versionProperty(T object) {
+        final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(object.getClass());
+        return persistentEntity.getVersionProperty();
+    }
+
+    private <T> Optional<Long> getVersion(T object) {
+        final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
+        Optional<CouchbasePersistentProperty> versionProperty = versionProperty(object);
+        return versionProperty.flatMap(p -> accessor.getProperty(p, Long.class));
+    }
+
+    private <T> void setVersion(T object, long cas) {
+        final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
+        versionProperty(object).ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(cas)));
     }
 
     private <T> Observable<T> doRemove(T objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
-        ensureNotIterable(objectToRemove);
         if(objectToRemove instanceof String) {
             return client.remove((String) objectToRemove, persistTo, replicateTo)
                     .flatMap(rawJsonDocument -> Observable.just(objectToRemove))
                     .doOnError(e -> TemplateUtils.translateError(e));
         } else {
-            final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToRemove);
-            final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(objectToRemove.getClass());
-            final Optional<CouchbasePersistentProperty> versionProperty = persistentEntity.getVersionProperty();
-            final Long version = versionProperty.flatMap(p -> accessor.getProperty(p, Long.class)).orElse(null);
-
-            final CouchbaseDocument converted = new CouchbaseDocument();
-            converter.write(objectToRemove, converted);
-            RawJsonDocument doc = encodeAndWrap(converted, version);
+            RawJsonDocument doc = toJsonDocument(objectToRemove);
             return client.remove(doc, persistTo, replicateTo)
                     .flatMap(rawJsonDocument -> Observable.just(objectToRemove))
                     .doOnError(e -> TemplateUtils.translateError(e));
@@ -361,6 +454,21 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     @Override
     public ClusterInfo getCouchbaseClusterInfo() {
         return this.clusterInfo;
+    }
+
+    private enum PersistType {
+        SAVE("Save", "Upsert"),
+        INSERT("Insert", "Insert"),
+        UPDATE("Update", "Replace");
+
+        private final String sdkOperationName;
+        private final String springDataOperationName;
+
+        PersistType(String sdkOperationName, String springDataOperationName) {
+            this.sdkOperationName = sdkOperationName;
+            this.springDataOperationName = springDataOperationName;
+        }
+
     }
 
 }
