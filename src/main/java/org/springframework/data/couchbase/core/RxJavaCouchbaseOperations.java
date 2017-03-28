@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import java.util.Collection;
-
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
 import com.couchbase.client.java.ReplicateTo;
@@ -33,6 +31,7 @@ import rx.Observable;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Alex Derkach
  * @since 3.0
  */
 public interface RxJavaCouchbaseOperations {
@@ -44,6 +43,22 @@ public interface RxJavaCouchbaseOperations {
     <T>Observable<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
     <T>Observable<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+    <T>Observable<T> insert(T objectToSave);
+
+    <T>Observable<T> insert(Iterable<T> batchToSave);
+
+    <T>Observable<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+    <T>Observable<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+    <T>Observable<T> update(T objectToSave);
+
+    <T>Observable<T> update(Iterable<T> batchToSave);
+
+    <T>Observable<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+
+    <T>Observable<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
     <T>Observable<T> remove(T objectToRemove);
 

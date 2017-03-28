@@ -22,6 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import com.couchbase.client.java.Bucket;
@@ -37,12 +38,15 @@ import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
@@ -51,9 +55,11 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import rx.observers.TestSubscriber;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Alex Derkach
  **/
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
@@ -70,76 +76,198 @@ public class RxJavaCouchbaseTemplateTests {
 	private RxJavaCouchbaseOperations template;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
+	private static final String DEFAULT_ID = "reactivebeers:awesome-stout";
+	private static final String DEFAULT_NAME = "The Awesome Stout";
+	private static final boolean DEFAULT_ACTIVE = false;
+	private static final String DEFAULT_DESCRIPTION = "";
 
+	@Before
+	public void setUp() throws Exception {
+		removeIfExist(DEFAULT_ID);
+	}
 
 	private void removeIfExist(String key) {
-		template.remove(key).subscribe(
-				v -> {},
-				err -> {}
-		);
+		TestSubscriber<Object> subscriber = TestSubscriber.create();
+		template.remove(key)
+				.subscribe(subscriber);
+		subscriber.awaitTerminalEvent();
 	}
 
 	private void removeCollectionIfExist(Collection<ReactiveBeer> beers) {
+		TestSubscriber<Object> subscriber = TestSubscriber.create();
 		template.remove(beers, PersistTo.MASTER, ReplicateTo.NONE)
-				.subscribe(
-				v -> {},
-				err -> {}
-		);
+				.subscribe(subscriber);
+		subscriber.awaitTerminalEvent();
 	}
 
 	@Test
-	public void saveSimpleEntityCorrectly() throws Exception {
-		String id = "reactivebeers:awesome-stout";
-		removeIfExist(id);
+	public void upsertNonVersionedEntityCorrectlyWhenSaveIsCalled() throws Exception {
+		String newName = DEFAULT_NAME + "Second";
+		ReactiveBeer firstBeer = new ReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		ReactiveBeer secondBeer = new ReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		TestSubscriber<ReactiveBeer> firstSaveSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
 
-		String name = "The Awesome Stout";
-		boolean active = false;
-		ReactiveBeer beer = new ReactiveBeer(id, name, active, "");
+		template.save(firstBeer).subscribe(firstSaveSubscriber);
+		template.save(secondBeer).subscribe(secondSaveSubscriber);
 
-		template.save(beer)
-				.subscribe();
-		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		String result = resultDoc.content();
-		assertNotNull(result);
-		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {
-		});
+		AsyncUtils.awaitCompletedWithAnyValue(firstSaveSubscriber);
+		AsyncUtils.awaitCompletedWithAnyValue(secondSaveSubscriber);
+		validateBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, ReactiveBeer.class);
+	}
 
-		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertNull(resultConv.get("javaClass"));
-		assertEquals("org.springframework.data.couchbase.core.ReactiveBeer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertEquals(false, resultConv.get("is_active"));
-		assertEquals("The Awesome Stout", resultConv.get("name"));
-		removeIfExist(id);
+	@Test
+	public void replaceVersionedEntityCorrectlyWhenSaveIsCalledAndCasIsNotZero() throws Exception {
+		String newName = DEFAULT_NAME + "Second";
+		VersionedReactiveBeer firstBeer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+
+		long version = template.save(firstBeer).toBlocking().single().getVersion();
+		assertTrue(version > 0);
+		secondBeer.setVersion(version);
+		long newVersion = template.save(secondBeer).toBlocking().single().getVersion();
+		assertTrue(newVersion > 0);
+		assertNotEquals(version, newVersion);
+
+		validateBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, VersionedReactiveBeer.class);
+	}
+
+	@Test
+	public void throwExceptionWhenSaveIsCalledAndCasIsMissmatched() throws Exception {
+		String newName = DEFAULT_NAME + "Second";
+		VersionedReactiveBeer firstBeer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		TestSubscriber<VersionedReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
+
+		long version = template.save(firstBeer).toBlocking().single().getVersion();
+		assertTrue(version > 0);
+		secondBeer.setVersion(version + 1234);
+		template.save(secondBeer).subscribe(secondSaveSubscriber);
+		AsyncUtils.awaitError(secondSaveSubscriber, OptimisticLockingFailureException.class);
+
+		validateBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, VersionedReactiveBeer.class);
+	}
+
+	@Test
+	public void throwExceptionWhenSaveIsCalledAndCasIsZeroAndEntityAlreadyExists() throws Exception {
+		String newName = DEFAULT_NAME + "Second";
+		VersionedReactiveBeer firstBeer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+		TestSubscriber<VersionedReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
+
+		long version = template.save(firstBeer).toBlocking().single().getVersion();
+		assertTrue(version > 0);
+		template.save(secondBeer).subscribe(secondSaveSubscriber);
+		AsyncUtils.awaitError(secondSaveSubscriber, OptimisticLockingFailureException.class);
+
+		validateBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, VersionedReactiveBeer.class);
 	}
 
 	@Test
 	public void saveCollectionCorrectly() throws Exception {
 		Collection<ReactiveBeer> beers = new ArrayList<>();
-		String name = "The Awesome Stout";
-
-		for (int i=0; i < 10000; i++) {
+		TestSubscriber<ReactiveBeer> testSubscriber = TestSubscriber.create();
+		String name = DEFAULT_NAME;
+		int collectionSize = 10000;
+		for (int i = 0; i < collectionSize; i++) {
 			beers.add(new ReactiveBeer("beerCollItem" + i, name + i, false, ""));
 		}
 		removeCollectionIfExist(beers);
-		template.save(beers).subscribe();
+
+		template.save(beers).subscribe(testSubscriber);
+
+		AsyncUtils.awaitCompletedWithValueCount(testSubscriber, collectionSize);
+	}
+
+	@Test
+	public void insertSimpleEntityCorrectly() throws Exception {
+		TestSubscriber<ReactiveBeer> testSubscriber = TestSubscriber.create();
+		ReactiveBeer beer = new ReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+
+		template.insert(beer).subscribe(testSubscriber);
+
+		AsyncUtils.awaitCompletedWithAnyValue(testSubscriber);
+		validateBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, ReactiveBeer.class);
+	}
+
+	@Test
+	public void expectErrorWhenDocumentExistsAndInsertIsCalled() throws Exception {
+		TestSubscriber<ReactiveBeer> firstInsertSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> secondInsertSubscriber = TestSubscriber.create();
+		ReactiveBeer beer = new ReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+
+		template.insert(beer).subscribe(firstInsertSubscriber);
+		AsyncUtils.awaitCompletedWithAnyValue(firstInsertSubscriber);
+
+		template.insert(beer).subscribe(secondInsertSubscriber);
+		AsyncUtils.awaitError(secondInsertSubscriber, OptimisticLockingFailureException.class);
+	}
+
+	@Test
+	public void insertCollectionCorrectly() throws Exception {
+		TestSubscriber<ReactiveBeer> testSubscriber = TestSubscriber.create();
+		Collection<ReactiveBeer> beers = new ArrayList<>();
+		String name = DEFAULT_NAME;
+		int collectionSize = 10000;
+
+		for (int i = 0; i < collectionSize; i++) {
+			beers.add(new ReactiveBeer("beerCollItem" + i, name + i, false, ""));
+		}
+		removeCollectionIfExist(beers);
+
+		template.insert(beers).subscribe(testSubscriber);
+
+		AsyncUtils.awaitCompletedWithValueCount(testSubscriber, collectionSize);
+	}
+
+	@Test
+	public void replaceSimpleEntityCorrectly() throws Exception {
+		TestSubscriber<VersionedReactiveBeer> firstInsertSubscriber = TestSubscriber.create();
+		TestSubscriber<VersionedReactiveBeer> replaceTestSubscriber = TestSubscriber.create();
+		String newName = DEFAULT_NAME + " New";
+		VersionedReactiveBeer beer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+
+		template.insert(beer).subscribe(firstInsertSubscriber);
+		AsyncUtils.awaitCompletedWithAnyValue(firstInsertSubscriber);
+
+		template.findById(DEFAULT_ID, VersionedReactiveBeer.class)
+				.doOnNext(v -> v.setName(newName))
+				.flatMap(v -> template.update(v))
+				.subscribe(replaceTestSubscriber);
+
+		AsyncUtils.awaitCompletedWithAnyValue(replaceTestSubscriber);
+		validateBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, VersionedReactiveBeer.class);
+	}
+
+	@Test
+	public void expectErrorWhenReplacingSimpleEntityWhichDoesNotExist() throws Exception {
+		TestSubscriber<VersionedReactiveBeer> testSubscriber = TestSubscriber.create();
+		VersionedReactiveBeer beer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
+
+		template.update(beer).subscribe(testSubscriber);
+		AsyncUtils.awaitError(testSubscriber, DataRetrievalFailureException.class);
 	}
 
 	@Test
 	public void removeDocument() {
-		String id = "beers:to-delete-stout";
-		ReactiveBeer beer = new ReactiveBeer(id, "", false, "");
-		removeIfExist(id);
+		TestSubscriber<ReactiveBeer> firstInsertSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> firstFindSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> removalTestSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> secondFindSubscriber = TestSubscriber.create();
+		ReactiveBeer beer = new ReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 
-		template.save(beer).subscribe();
-		Object result = template.findById(id, ReactiveBeer.class).toBlocking().single();
-		assertNotNull(result);
+		template.save(beer).subscribe(firstInsertSubscriber);
+		AsyncUtils.awaitCompletedWithAnyValue(firstInsertSubscriber);
 
-		template.remove(beer).subscribe();
-		result = client.get(id);
-		assertNull(result);
+		template.findById(DEFAULT_ID, ReactiveBeer.class).subscribe(firstFindSubscriber);
+		AsyncUtils.awaitCompletedWithValueCount(firstFindSubscriber, 1);
+
+		template.remove(beer).subscribe(removalTestSubscriber);
+		AsyncUtils.awaitCompletedWithValueCount(removalTestSubscriber, 1);
+
+		template.findById(DEFAULT_ID, ReactiveBeer.class).subscribe(secondFindSubscriber);
+		AsyncUtils.awaitValue(secondFindSubscriber, null);
 	}
-
 
 	@Test
 	public void storeListsAndMaps() {
@@ -171,18 +299,16 @@ public class RxJavaCouchbaseTemplateTests {
 
 	@Test
 	public void validFindById() {
-		String id = "reactive beers:findme-stout";
-		String name = "Findme Stout";
-		boolean active = true;
-		ReactiveBeer beer = new ReactiveBeer(id, name, active, "");
-		template.save(beer).subscribe();
+		TestSubscriber<ReactiveBeer> saveSubscriber = TestSubscriber.create();
+		TestSubscriber<ReactiveBeer> findSubscriber = TestSubscriber.create();
 
-		ReactiveBeer found = template.findById(id, ReactiveBeer.class).toBlocking().single();
+		ReactiveBeer beer = new ReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 
-		assertNotNull(found);
-		assertEquals(id, found.getId());
-		assertEquals(name, found.getName());
-		assertEquals(active, found.getActive());
+		template.save(beer).subscribe(saveSubscriber);
+		AsyncUtils.awaitCompletedWithAnyValue(saveSubscriber);
+
+		template.findById(DEFAULT_ID, ReactiveBeer.class).subscribe(findSubscriber);
+		AsyncUtils.awaitValue(findSubscriber, beer);
 	}
 
 	@Test
@@ -295,6 +421,21 @@ public class RxJavaCouchbaseTemplateTests {
 			}
 			prev = beer.getName();
 		}
+	}
+
+	private void validateBeer(String id, String name, boolean active, String description, Class<?> clazz) throws IOException {
+		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
+		assertNotNull(resultDoc);
+		String result = resultDoc.content();
+		assertNotNull(result);
+		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
+
+		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertNull(resultConv.get("javaClass"));
+		assertEquals(clazz.getCanonicalName(), resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertEquals(active, resultConv.get("is_active"));
+		assertEquals(name, resultConv.get("name"));
+		assertEquals(description, resultConv.get("desc"));
 	}
 
 	/**

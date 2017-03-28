@@ -16,20 +16,19 @@
 
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.repository.annotation.Field;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
-
-import com.couchbase.client.java.repository.annotation.Field;
+import org.springframework.data.annotation.Version;
 
 
 /**
  * Test class for persisting and loading from {@link RxJavaCouchbaseTemplate}.
  *
- * @author Subhashni Balakrishnan
  * @author Alex Derkach
  */
 @EqualsAndHashCode
-public class ReactiveBeer {
+public class VersionedReactiveBeer {
 
 	@Id
 	private final String id;
@@ -42,7 +41,10 @@ public class ReactiveBeer {
 	@Field("desc")
 	private String description;
 
-	public ReactiveBeer(String id, String name, Boolean active, String description) {
+	@Version
+	private long version;
+
+	public VersionedReactiveBeer(String id, String name, Boolean active, String description) {
 		this.id = id;
 		this.name = name;
 		this.active = active;
@@ -54,7 +56,7 @@ public class ReactiveBeer {
 		return "Beer [id=" + id + ", name=" + name + ", active=" + active + ", description=" + description + "]";
 	}
 
-	public ReactiveBeer setName(String name) {
+	public VersionedReactiveBeer setName(String name) {
 		this.name = name;
 		return this;
 	}
@@ -63,7 +65,7 @@ public class ReactiveBeer {
 		return name;
 	}
 
-	public ReactiveBeer setActive(boolean active) {
+	public VersionedReactiveBeer setActive(boolean active) {
 		this.active = active;
 		return this;
 	}
@@ -72,7 +74,7 @@ public class ReactiveBeer {
 		return active;
 	}
 
-	public ReactiveBeer setDescription(String description) {
+	public VersionedReactiveBeer setDescription(String description) {
 		this.description = description;
 		return this;
 	}
@@ -85,4 +87,11 @@ public class ReactiveBeer {
 		return id;
 	}
 
+	public void setVersion(long version) {
+		this.version = version;
+	}
+
+	public long getVersion() {
+		return version;
+	}
 }
