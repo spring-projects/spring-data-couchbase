@@ -1,6 +1,22 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.0.M2 (2017-04-04)
+----------------------------------------
+* DATACOUCH-289 - Adapt to API changes in RepositoryConfigurationExtensionSupport.
+* DATACOUCH-278 - Table reference incorrect in repository doc.
+* DATACOUCH-274 - Remove references to single-argument assertion methods of Spring.
+* DATACOUCH-273 - Integrate Data Commons Java 8 upgrade branch.
+* DATACOUCH-270 - Update project documentation with the CLA tool integration.
+* DATACOUCH-265 - SpEL expressions for 'Pageable' and 'Sort'.
+* DATACOUCH-262 - Adapt API in RepositoryFactoryBeanSupport implementation.
+* DATACOUCH-261 - Register repository factory in spring.factories for multi-store support.
+* DATACOUCH-259 - Release 3.0 M2 (Kay).
+* DATACOUCH-251 - Keyword "Or" not working properly.
+* DATACOUCH-246 - Add support for projections on repository query methods.
+* DATACOUCH-146 - Add experimental Reactive support.
+
+
 Changes in version 2.2.1.RELEASE (2017-03-02)
 ---------------------------------------------
 * DATACOUCH-278 - Table reference incorrect in repository doc.
