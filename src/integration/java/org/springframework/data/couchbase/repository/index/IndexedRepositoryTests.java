@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 
+import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.N1qlQueryResult;
 import com.couchbase.client.java.view.DesignDocument;
@@ -136,9 +137,15 @@ public class IndexedRepositoryTests {
   public void shouldNotFindViewIndexWithIgnoringIndexManager() {
     AnotherIndexedUserRepository repository = ignoringIndexFactory.getRepository(AnotherIndexedUserRepository.class);
 
-    DesignDocument designDoc = template.getCouchbaseBucket()
-        .bucketManager()
-        .getDesignDocument(VIEW_DOC);
+    DesignDocument designDoc = null;
+
+    try {
+      designDoc = template.getCouchbaseBucket()
+              .bucketManager()
+              .getDesignDocument(VIEW_DOC);
+    } catch (DesignDocumentDoesNotExistException ex) {
+      //ignore
+    }
 
     if (designDoc != null) {
       for (View view : designDoc.views()) {

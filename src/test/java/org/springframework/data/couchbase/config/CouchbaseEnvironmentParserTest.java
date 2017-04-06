@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,8 +79,6 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
     assertThat(env.sslKeystoreFile(), is(equalTo("test")));
     assertThat(env.sslKeystorePassword(), is(equalTo("test")));
-    assertThat(env.queryEnabled(), allOf(equalTo(true), not(defaultEnv.queryEnabled())));
-    assertThat(env.queryPort(), is(equalTo(7)));
     assertThat(env.bootstrapHttpEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapHttpEnabled())));
     assertThat(env.bootstrapCarrierEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapCarrierEnabled())));
     assertThat(env.bootstrapHttpDirectPort(), is(equalTo(8)));
@@ -101,6 +99,7 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.bufferPoolingEnabled(), allOf(equalTo(false), not(defaultEnv.bufferPoolingEnabled())));
     assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
     assertThat(env.mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.mutationTokensEnabled())));
+    assertThat(env.analyticsTimeout(), is(equalTo(30L)));
   }
 
   @AfterClass
