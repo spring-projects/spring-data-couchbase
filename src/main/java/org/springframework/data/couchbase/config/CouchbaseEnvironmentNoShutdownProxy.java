@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.config;
 import java.security.KeyStore;
 import java.util.concurrent.TimeUnit;
 
-import com.couchbase.client.core.env.WaitStrategyFactory;
+import com.couchbase.client.core.env.*;
 import com.couchbase.client.core.event.EventBus;
 import com.couchbase.client.core.metrics.MetricsCollector;
 import com.couchbase.client.core.metrics.NetworkLatencyMetricsCollector;
@@ -357,5 +357,35 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public MemcachedHashingStrategy memcachedHashingStrategy() {
     return delegate.memcachedHashingStrategy();
+  }
+
+  @Override
+  public long analyticsTimeout() {
+    return delegate.analyticsTimeout();
+  }
+
+  @Override
+  public long configPollInterval() {
+    return delegate.configPollInterval();
+  }
+
+  @Override
+  public KeyValueServiceConfig kvServiceConfig() {
+    return delegate.kvServiceConfig();
+  }
+
+  @Override
+  public QueryServiceConfig queryServiceConfig() {
+    return delegate.queryServiceConfig();
+  }
+
+  @Override
+  public SearchServiceConfig searchServiceConfig() {
+    return delegate.searchServiceConfig();
+  }
+
+  @Override
+  public ViewServiceConfig viewServiceConfig() {
+    return delegate.viewServiceConfig();
   }
 }
