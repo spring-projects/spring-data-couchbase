@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,6 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslEnabled(boolean) sslEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystoreFile(String) sslKeystoreFile}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystorePassword(String) sslKeystorePassword}</li>
- * <li>{@link DefaultCouchbaseEnvironment.Builder#queryEnabled(boolean) queryEnabled}</li>
- * <li>{@link DefaultCouchbaseEnvironment.Builder#queryPort(int) queryPort}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bootstrapHttpEnabled(boolean) bootstrapHttpEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bootstrapCarrierEnabled(boolean) bootstrapCarrierEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bootstrapHttpDirectPort(int) bootstrapHttpDirectPort}</li>
@@ -66,9 +64,11 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#bufferPoolingEnabled(boolean) bufferPoolingEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#tcpNodelayEnabled(boolean) tcpNodelayEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#mutationTokensEnabled(boolean) mutationTokensEnabled}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#analyticsTimeout(long) analyticsTimeout}</li>
  * </ul>
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionParser {
 
@@ -117,8 +117,6 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "sslEnabled", "sslEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystoreFile", "sslKeystoreFile");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystorePassword", "sslKeystorePassword");
-		setPropertyValue(envDefinitionBuilder, envElement, "queryEnabled", "queryEnabled");
-		setPropertyValue(envDefinitionBuilder, envElement, "queryPort", "queryPort");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapHttpEnabled", "bootstrapHttpEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapCarrierEnabled", "bootstrapCarrierEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "bootstrapHttpDirectPort", "bootstrapHttpDirectPort");
@@ -138,6 +136,7 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "bufferPoolingEnabled", "bufferPoolingEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "tcpNodelayEnabled", "tcpNodelayEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "mutationTokensEnabled", "mutationTokensEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "analyticsTimeout", "analyticsTimeout");
 
 		//retry strategy is particular, in the xsd this is an enum (FailFast, BestEffort)
 		setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");
