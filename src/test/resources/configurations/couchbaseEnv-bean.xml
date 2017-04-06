@@ -23,8 +23,6 @@
                    sslEnabled="true"
                    sslKeystoreFile="test"
                    sslKeystorePassword="test"
-                   queryEnabled="true"
-                   queryPort="7"
                    bootstrapHttpEnabled="false"
                    bootstrapCarrierEnabled="false"
                    bootstrapHttpDirectPort="8"
@@ -45,6 +43,7 @@
                    bufferPoolingEnabled="false"
                    tcpNodelayEnabled="false"
                    mutationTokensEnabled="true"
+                   analyticsTimeout="30"
                    />
 
 </beans>
