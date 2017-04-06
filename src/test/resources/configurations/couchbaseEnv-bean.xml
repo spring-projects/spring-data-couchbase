@@ -43,6 +43,7 @@
                    bufferPoolingEnabled="false"
                    tcpNodelayEnabled="false"
                    mutationTokensEnabled="true"
+                   analyticsTimeout = "30"
                    />
 
 </beans>

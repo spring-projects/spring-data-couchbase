@@ -52,6 +52,17 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     eventBus
     systemMetricsCollectorConfig
     networkLatencyMetricsCollectorConfig
+    requestBufferWaitStrategy
+    sslKeystore
+    memcachedHashingStrategy
+    kvIoPool
+    queryIoPool
+    searchIoPool
+    viewIoPool
+    kvServiceConfig
+    queryServiceConfig
+    searchServiceConfig
+    viewServiceConfig
    */
 
   @Override
@@ -198,5 +209,9 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setMutationTokensEnabled(boolean mutationTokensEnabled) {
     this.couchbaseEnvBuilder.mutationTokensEnabled(mutationTokensEnabled);
+  }
+
+  public void setAnalyticsTimeout(long analyticsTimeout) {
+    this.couchbaseEnvBuilder.analyticsTimeout(analyticsTimeout);
   }
 }
