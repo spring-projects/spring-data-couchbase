@@ -271,6 +271,7 @@ A populated object can look like:
 ----
 ====
 
+Optionally, Date can be converted to and from ISO-8601 compliant strings by setting system property `org.springframework.data.couchbase.useISOStringConverterForDate` to true.
 If you want to override a converter or implement your own one, this is also possible. The library implements the general Spring Converter pattern. You can plug in custom converters on bean creation time in your configuration. Here's how you can configure it (in your overridden `AbstractCouchbaseConfiguration`):
 
 .Custom Converters
