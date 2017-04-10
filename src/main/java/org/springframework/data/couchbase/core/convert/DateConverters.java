@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import static java.time.ZoneId.systemDefault;
+
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -36,6 +39,7 @@ import org.springframework.util.ClassUtils;
  * Out of the box conversions for java dates and calendars.
  *
  * @author Michael Nitschinger
+ * @author Subhashni Balakrishnan
  */
 public final class DateConverters {
 
@@ -52,9 +56,18 @@ public final class DateConverters {
   public static Collection<Converter<?, ?>> getConvertersToRegister() {
     List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
 
-    converters.add(DateToLongConverter.INSTANCE);
+    boolean useISOStringConverterForDate = Boolean.parseBoolean(
+            System.getProperty("org.springframework.data.couchbase.useISOStringConverterForDate", "false"));
+
+    if (useISOStringConverterForDate) {
+      converters.add(DateToStringConverter.INSTANCE);
+    } else {
+      converters.add(DateToLongConverter.INSTANCE);
+    }
+
+    converters.add(SerializedObjectToDateConverter.INSTANCE);
+
     converters.add(CalendarToLongConverter.INSTANCE);
-    converters.add(NumberToDateConverter.INSTANCE);
     converters.add(NumberToCalendarConverter.INSTANCE);
 
     if (JODA_TIME_IS_PRESENT) {
@@ -69,6 +82,38 @@ public final class DateConverters {
     }
 
     return converters;
+  }
+
+  @WritingConverter
+  public enum DateToStringConverter implements Converter<Date, String> {
+    INSTANCE;
+
+    @Override
+    public String convert(Date source) {
+      return source == null ? null : source.toInstant().toString();
+    }
+  }
+
+  @ReadingConverter
+  public enum SerializedObjectToDateConverter implements Converter<Object, Date> {
+    INSTANCE;
+
+    @Override
+    public Date convert(Object source) {
+      if (source == null) {
+        return null;
+      }
+      if (source instanceof Number) {
+        Date date = new Date();
+        date.setTime(((Number) source).longValue());
+        return date;
+      } else if (source instanceof String) {
+        return Date.from(Instant.parse((String) source).atZone(systemDefault()).toInstant());
+      } else {
+        //Unsupported serialized object
+        return null;
+      }
+    }
   }
 
   @WritingConverter
@@ -88,22 +133,6 @@ public final class DateConverters {
     @Override
     public Long convert(Calendar source) {
       return source == null ? null : source.getTimeInMillis() / 1000;
-    }
-  }
-
-  @ReadingConverter
-  public enum NumberToDateConverter implements Converter<Number, Date> {
-    INSTANCE;
-
-    @Override
-    public Date convert(Number source) {
-      if (source == null) {
-        return null;
-      }
-
-      Date date = new Date();
-      date.setTime(source.longValue());
-      return date;
     }
   }
 
