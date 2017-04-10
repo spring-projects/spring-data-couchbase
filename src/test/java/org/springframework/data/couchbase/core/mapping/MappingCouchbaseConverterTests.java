@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.joda.time.LocalDateTime;
+import java.time.LocalDateTime;
+import org.springframework.data.convert.Jsr310Converters.LocalDateTimeToDateConverter;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +55,7 @@ import com.couchbase.client.java.repository.annotation.Field;
 /**
  * @author Michael Nitschinger
  * @author Geoffrey Mina
+ * @author Subhashni Balakrishnan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = UnitTestApplicationConfig.class)
@@ -477,12 +480,13 @@ public class MappingCouchbaseConverterTests {
     converter.write(entity, converted);
     assertEquals(created.getTime(), converted.getPayload().get("created"));
     assertEquals(modified.getTimeInMillis() / 1000, converted.getPayload().get("modified"));
-    assertEquals(deleted.toDate().getTime(), converted.getPayload().get("deleted"));
+    LocalDateTimeToDateConverter localDateTimeToDateconverter = LocalDateTimeToDateConverter.INSTANCE;
+    assertEquals(localDateTimeToDateconverter.convert(deleted), converted.getPayload().get("deleted"));
 
     DateEntity read = converter.read(DateEntity.class, converted);
     assertEquals(created.getTime(), read.created.getTime());
     assertEquals(modified.getTimeInMillis() / 1000, read.modified.getTimeInMillis() / 1000);
-    assertEquals(deleted.toDate().getTime(), read.deleted.toDate().getTime());
+    assertTrue(deleted.isEqual(read.deleted));
   }
 
   @Test
