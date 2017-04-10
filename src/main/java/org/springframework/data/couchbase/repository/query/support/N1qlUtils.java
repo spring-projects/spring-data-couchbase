@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,16 @@ public class N1qlUtils {
     for (Sort.Order order : sort) {
       String orderProperty = order.getProperty();
       //FIXME the order property should be converted to its corresponding fieldName
-      Expression orderFieldName = i(orderProperty);
+      String[] orderPropertyParts = orderProperty.split("\\.");
+
+      StringBuilder sb = new StringBuilder();
+      for (String part:orderPropertyParts) {
+        if (sb.length() != 0) {
+          sb.append(".");
+        }
+        sb.append(i(part).toString());
+      }
+      Expression orderFieldName = x(sb.toString());
       if (order.isIgnoreCase()) {
         orderFieldName = lower(TypeFunctions.toString(orderFieldName));
       }
