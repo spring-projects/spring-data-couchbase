@@ -88,7 +88,7 @@ public final class CouchbaseJsr310Converters {
         @Override
         public LocalDateTime convert(Number source) {
             return source == null ? null : ofInstant(
-                    DateConverters.NumberToDateConverter.INSTANCE.convert(source)
+                    DateConverters.SerializedObjectToDateConverter.INSTANCE.convert(source)
                             .toInstant(), systemDefault());
         }
     }
@@ -114,7 +114,7 @@ public final class CouchbaseJsr310Converters {
         @Override
         public LocalDate convert(Number source) {
             return source == null ? null : ofInstant(ofEpochMilli(
-                    DateConverters.NumberToDateConverter.INSTANCE.convert(source).getTime()),
+                    DateConverters.SerializedObjectToDateConverter.INSTANCE.convert(source).getTime()),
                     systemDefault()).toLocalDate();
         }
     }
@@ -139,7 +139,7 @@ public final class CouchbaseJsr310Converters {
         @Override
         public LocalTime convert(Number source) {
             return source == null ? null : ofInstant(ofEpochMilli(
-                    DateConverters.NumberToDateConverter.INSTANCE.convert(source)
+                    DateConverters.SerializedObjectToDateConverter.INSTANCE.convert(source)
                             .getTime()), systemDefault()).toLocalTime();
         }
     }
@@ -163,7 +163,7 @@ public final class CouchbaseJsr310Converters {
 
         @Override
         public Instant convert(Number source) {
-            return source == null ? null : DateConverters.NumberToDateConverter.INSTANCE.convert(source).toInstant();
+            return source == null ? null : DateConverters.SerializedObjectToDateConverter.INSTANCE.convert(source).toInstant();
         }
     }
 
