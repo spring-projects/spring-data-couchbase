@@ -197,7 +197,16 @@ public class N1qlUtils {
     for (Sort.Order order : sort) {
       String orderProperty = order.getProperty();
       //FIXME the order property should be converted to its corresponding fieldName
-      Expression orderFieldName = i(orderProperty);
+      String[] orderPropertyParts = orderProperty.split("\\.");
+
+      StringBuilder sb = new StringBuilder();
+      for (String part:orderPropertyParts) {
+        if (sb.length() != 0) {
+          sb.append(".");
+        }
+        sb.append(i(part).toString());
+      }
+      Expression orderFieldName = x(sb.toString());
       if (order.isIgnoreCase()) {
         orderFieldName = lower(TypeFunctions.toString(orderFieldName));
       }
