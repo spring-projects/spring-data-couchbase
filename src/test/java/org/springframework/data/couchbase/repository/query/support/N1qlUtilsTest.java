@@ -148,4 +148,14 @@ public class N1qlUtilsTest {
 
     assertEquals(expected, real);
   }
+
+  @Test
+  public void testOrderByWithNestedField() throws Exception {
+    CouchbaseConverter converter = mock(CouchbaseConverter.class);
+    com.couchbase.client.java.query.dsl.Sort[] realSort =
+            N1qlUtils.createSort(new Sort("party.attendees"), converter);
+
+    assertEquals("`party`.`attendees` ASC", realSort[0].toString());
+    verifyZeroInteractions(converter);
+  }
 }
