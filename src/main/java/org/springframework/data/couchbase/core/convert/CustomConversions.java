@@ -36,7 +36,6 @@ import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
-import org.springframework.data.convert.Jsr310Converters;
 
 /**
  * Value object to capture custom conversion.
@@ -90,7 +89,7 @@ public class CustomConversions {
     this.converters = new ArrayList<Object>();
     this.converters.addAll(converters);
     this.converters.addAll(DateConverters.getConvertersToRegister());
-    this.converters.addAll(Jsr310Converters.getConvertersToRegister());
+    this.converters.addAll(CouchbaseJsr310Converters.getConvertersToRegister());
 
     for (Object converter : this.converters) {
       registerConversion(converter);
