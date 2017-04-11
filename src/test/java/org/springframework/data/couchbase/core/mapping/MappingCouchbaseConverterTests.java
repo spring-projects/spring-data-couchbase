@@ -34,7 +34,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import java.time.LocalDateTime;
-import org.springframework.data.convert.Jsr310Converters.LocalDateTimeToDateConverter;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +43,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
+import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.mapping.model.MappingException;
@@ -480,7 +480,7 @@ public class MappingCouchbaseConverterTests {
     converter.write(entity, converted);
     assertEquals(created.getTime(), converted.getPayload().get("created"));
     assertEquals(modified.getTimeInMillis() / 1000, converted.getPayload().get("modified"));
-    LocalDateTimeToDateConverter localDateTimeToDateconverter = LocalDateTimeToDateConverter.INSTANCE;
+    LocalDateTimeToLongConverter localDateTimeToDateconverter = LocalDateTimeToLongConverter.INSTANCE;
     assertEquals(localDateTimeToDateconverter.convert(deleted), converted.getPayload().get("deleted"));
 
     DateEntity read = converter.read(DateEntity.class, converted);
