@@ -20,6 +20,7 @@ include::preface.adoc[]
 :leveloffset: +1
 include::configuration.adoc[]
 include::entity.adoc[]
+include::autokeygeneration.adoc[]
 include::{spring-data-commons-docs}/repositories.adoc[]
 include::repository.adoc[]
 include::template.adoc[]
