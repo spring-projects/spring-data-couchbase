@@ -69,8 +69,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
      */
     public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
                                              final RxJavaCouchbaseOperations operations) {
-        Assert.notNull(operations);
-        Assert.notNull(metadata);
+        Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
+        Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
         this.entityInformation = metadata;
         this.operations = operations;
