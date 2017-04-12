@@ -41,6 +41,7 @@ import reactor.core.publisher.Mono;
  * Reactive repository base implementation for Couchbase.
  *
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
@@ -131,8 +132,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<T> findOne(Mono<ID> mono) {
         Assert.notNull(mono, "The given mono must not be null!");
-        return mono.then(
-                id -> findOne(id));
+        return mono.flatMap(
+                this::findOne);
     }
 
     @SuppressWarnings("unchecked")
@@ -145,8 +146,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Boolean> exists(Mono<ID> mono) {
-        return mono.then(
-                id -> exists(id));
+        return mono.flatMap(
+                this::exists);
     }
 
     @SuppressWarnings("unchecked")
