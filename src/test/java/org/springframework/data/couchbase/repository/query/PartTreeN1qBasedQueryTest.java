@@ -62,6 +62,7 @@ public class PartTreeN1qBasedQueryTest {
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
 		when(accessor.getSort()).thenReturn(Sort.unsorted());
+		when(accessor.getPageable()).thenReturn(Pageable.unpaged());
 		when(entityInformation.getJavaType()).thenReturn(Beer.class);
 		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
 		when(couchbaseBucket.name()).thenReturn("default");
@@ -104,6 +105,7 @@ public class PartTreeN1qBasedQueryTest {
 
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 
+		when(accessor.getPageable()).thenReturn(Pageable.unpaged());
 		when(entityInformation.getJavaType()).thenReturn(Beer.class);
 		when(couchbaseOperations.getCouchbaseBucket()).thenReturn(couchbaseBucket);
 		when(couchbaseBucket.name()).thenReturn("default");
