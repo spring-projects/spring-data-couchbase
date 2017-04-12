@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.UUID;
 
 import com.couchbase.client.java.repository.annotation.Field;
 
@@ -36,6 +39,10 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
+import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
+import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -206,7 +213,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     return read(entity, source, parent);
   }
 
-  /**
+  private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
+	  return property.isAnnotationPresent(IdPrefix.class) || property.isAnnotationPresent(IdSuffix.class);
+  }
+
+
+	/**
    * Read an incoming {@link CouchbaseDocument} into the target entity.
    *
    * @param entity the target entity.
@@ -226,10 +238,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     entity.getPersistentProperties().filter(prop -> {
 
-      if (!(prop.isIdProperty() || source.containsKey(prop.getFieldName())) || entity.isConstructorArgument(prop)) {
+      if (!(prop.isIdProperty() || source.containsKey(prop.getFieldName())) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)) {
         return false;
       }
-
       return true;
     }).forEach(prop -> {
 
@@ -366,7 +377,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     writeInternal(source, target, type);
     if (target.getId() == null) {
-      throw new MappingException("An ID property is needed, but not found on this entity.");
+      throw new MappingException("An ID property is needed, but not found/could not be generated on this entity.");
     }
   }
 
@@ -417,6 +428,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     target.setExpiration(source.getExpiration());
   }
 
+  private String convertToString(Object propertyObj) {
+    if (propertyObj instanceof String) {
+      return (String) propertyObj;
+    } else if (propertyObj instanceof Number) {
+      return new StringBuffer().append(propertyObj).toString();
+    } else {
+      return propertyObj.toString();
+    }
+  }
+
   /**
    * Internal helper method to write the source object into the target document.
    *
@@ -438,19 +459,17 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     final Optional<CouchbasePersistentProperty> idProperty = entity.getIdProperty();
     final Optional<CouchbasePersistentProperty> versionProperty = entity.getVersionProperty();
 
-    if (target.getId() == null) {
-      idProperty.ifPresent(id -> {
-        target.setId(accessor.getProperty(id, String.class).orElse(null));
-      });
-    }
-    target.setExpiration(entity.getExpiry());
 
+    final TreeMap<Integer, String> prefixes = new TreeMap<>();
+    final TreeMap<Integer, String> suffixes = new TreeMap<>();
+    final TreeMap<Integer, String> idAttributes = new TreeMap<>();
+
+    target.setExpiration(entity.getExpiry());
     entity.getPersistentProperties().filter(prop -> {
 
       if (idProperty.filter(prop::equals).isPresent()) {
         return false;
       }
-
       if (versionProperty.filter(prop::equals).isPresent()) {
         return false;
       }
@@ -462,14 +481,51 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }).forEach(prop -> {
       Optional<Object> propertyObj = accessor.getProperty(prop, (Class) prop.getType());
       propertyObj.ifPresent(o -> {
-        if (!conversions.isSimpleType(o.getClass())) {
-          writePropertyInternal(o, target, prop);
-        } else {
-          writeSimpleInternal(o, target, prop.getFieldName());
+        if (null != o) {
+          if (prop.isAnnotationPresent(IdPrefix.class)) {
+            prop.findAnnotation(IdPrefix.class).ifPresent(p -> {
+              int order = p.order();
+              prefixes.put(order, convertToString(o));
+            });
+            return;
+          }
+
+          if (prop.isAnnotationPresent(IdSuffix.class)) {
+            prop.findAnnotation(IdSuffix.class).ifPresent(p -> {
+              int order = p.order();
+              suffixes.put(order, convertToString(o));
+            });
+            return;
+          }
+
+          if (prop.isAnnotationPresent(IdAttribute.class)) {
+            prop.findAnnotation(IdAttribute.class).ifPresent(p -> {
+              int order = p.order();
+              idAttributes.put(order, convertToString(o));
+            });
+          }
+
+          if (!conversions.isSimpleType(o.getClass())) {
+            writePropertyInternal(o, target, prop);
+          } else {
+            writeSimpleInternal(o, target, prop.getFieldName());
+          }
         }
       });
     });
 
+    if (target.getId() == null) {
+      idProperty.ifPresent(prop -> {
+        String id = accessor.getProperty(prop, String.class).orElse(null);
+        if(prop.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
+            prop.findAnnotation(GeneratedValue.class).ifPresent(generatedValueInfo -> {
+                      target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
+            });
+        } else {
+          target.setId(id);
+        }
+      });
+    }
 
     entity.getAssociations().forEach(association -> {
       CouchbasePersistentProperty inverseProp = association.getInverse();
@@ -835,4 +891,49 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }
   }
 
+  private String generateId(GeneratedValue generatedValue, TreeMap<Integer, String> prefixes, TreeMap<Integer, String> suffixes,
+                            TreeMap<Integer, String> idAttributes) {
+    String delimiter = generatedValue.delimiter();
+    StringBuilder sb = new StringBuilder();
+    boolean isAppending = false;
+    if (prefixes.size() > 0) {
+        appendKeyParts(sb, prefixes.values(), delimiter);
+        isAppending = true;
+    }
+
+    if (generatedValue.strategy() == USE_ATTRIBUTES && idAttributes.size() > 0) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      appendKeyParts(sb, idAttributes.values(), delimiter);
+    }
+
+    if (generatedValue.strategy() == UNIQUE) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      sb.append(UUID.randomUUID());
+    }
+
+    if (suffixes.size() > 0) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      appendKeyParts(sb, suffixes.values(), delimiter);
+    }
+    return sb.toString();
+  }
+
+  private StringBuilder appendKeyParts(StringBuilder sb, Collection<String> values, String delimiter) {
+    boolean isAppending = false;
+    for(String value : values) {
+      if (isAppending) {
+        sb.append(delimiter);
+      } else {
+        isAppending = true;
+      }
+      sb.append(value);
+    }
+    return sb;
+  }
 }

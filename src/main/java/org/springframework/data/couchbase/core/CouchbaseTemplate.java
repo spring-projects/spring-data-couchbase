@@ -51,6 +51,12 @@ import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
+import org.springframework.data.couchbase.core.mapping.KeySettings;
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -63,11 +69,6 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.couchbase.core.mapping.event.AfterDeleteEvent;
 import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
@@ -107,6 +108,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   private final CouchbaseConverter converter;
   private final TranslationService translationService;
   private final ClusterInfo clusterInfo;
+  private KeySettings keySettings;
 
 
   private ApplicationEventPublisher eventPublisher;
@@ -126,7 +128,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     this(clusterInfo, client, null, translationService);
   }
 
-  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client,
+  public CouchbaseTemplate(final ClusterInfo clusterInfo,
+                           final Bucket client,
                            final CouchbaseConverter converter,
                            final TranslationService translationService) {
     this.clusterInfo = clusterInfo;
@@ -134,7 +137,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     this.converter = converter == null ? getDefaultConverter() : converter;
     this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
     this.mappingContext = this.converter.getMappingContext();
+
   }
+
 
   private TranslationService getDefaultTranslationService() {
     JacksonTranslationService t = new JacksonTranslationService();
@@ -587,12 +592,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        converted.setId(addCommonPrefixAndSuffix(converted.getId()));
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
         //We will check version only if required
         boolean versionPresent = versionProperty.isPresent();
         //If version is not set - assumption that document is new, otherwise updating
         boolean existingDocument = version != null && version > 0L;
+
         try {
           switch (persistType) {
             case SAVE:
@@ -646,8 +653,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
         @Override
         public Boolean doInBucket() throws InterruptedException, ExecutionException {
           try {
-            RawJsonDocument deletedDoc = client.remove((String) objectToRemove, persistTo, replicateTo,
-                RawJsonDocument.class);
+            RawJsonDocument deletedDoc = client.remove((String) objectToRemove , persistTo, replicateTo, RawJsonDocument.class);
             return deletedDoc != null;
           } catch (Exception e) {
             handleWriteResultError("Delete document failed: " + e.getMessage(), e);
@@ -666,7 +672,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       @Override
       public Boolean doInBucket() {
         try {
-          RawJsonDocument deletedDoc = client.remove(converted.getId(), persistTo, replicateTo
+          RawJsonDocument deletedDoc = client.remove(addCommonPrefixAndSuffix(converted.getId()), persistTo, replicateTo
               , RawJsonDocument.class);
           return deletedDoc != null;
         } catch (Exception e) {
@@ -751,5 +757,43 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     public String getSpringDataOperationName() {
       return springDataOperationName;
     }
+  }
+
+  @Override
+  public void keySettings(KeySettings settings) {
+    if (this.keySettings != null) {
+      throw new UnsupportedOperationException("Key settings is already set, it is no longer mutable");
+    }
+    this.keySettings = settings;
+  }
+
+  @Override
+  public KeySettings keySettings() {
+    return this.keySettings;
+  }
+
+  @Override
+  public String getGeneratedId(Object entity) {
+    ensureNotIterable(entity);
+    CouchbaseDocument converted = new CouchbaseDocument();
+    converter.write(entity, converted);
+    return addCommonPrefixAndSuffix(converted.getId());
+  }
+
+  private String addCommonPrefixAndSuffix(final String id) {
+    String convertedKey = id;
+    if (this.keySettings == null) {
+      return id;
+    }
+    String prefix = this.keySettings.prefix();
+    String delimiter = this.keySettings.delimiter();
+    String suffix = this.keySettings.suffix();
+    if (prefix != null && !prefix.equals("")) {
+      convertedKey = prefix + delimiter + convertedKey;
+    }
+    if (suffix != null && !suffix.equals("")) {
+      convertedKey = convertedKey + delimiter + suffix;
+    }
+    return convertedKey;
   }
 }

@@ -35,6 +35,7 @@ import com.couchbase.client.java.view.ViewResult;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.KeySettings;
 import org.springframework.data.couchbase.core.query.Consistency;
 
 
@@ -384,4 +385,31 @@ public interface CouchbaseOperations {
    * @return the consistency to use for generated repository queries.
    */
   Consistency getDefaultConsistency();
+
+  /**
+   * Add common key settings
+   *
+   * Throws {@link UnsupportedOperationException} if KeySettings is already set. It becomes immutable.
+   *
+   * @param settings {@link KeySettings}
+   */
+  void keySettings(final KeySettings settings);
+
+  /**
+   * Get key settings associated with the template
+   *
+   * @return {@link KeySettings}
+   */
+  KeySettings keySettings();
+
+  /**
+   * Get generated id - applies both using prefix and suffix through entity as well as template {@link KeySettings}
+   *
+   * ** NOTE: UNIQUE strategy will generate different ids each time ***
+   *
+   * @param entity the entity object.
+   * @return id the couchbase document key.
+   */
+  String getGeneratedId(Object entity);
+
 }
