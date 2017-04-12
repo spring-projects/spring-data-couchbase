@@ -75,7 +75,7 @@ public class RepositoryIndexUsageTest {
 
   @Test
   public void testFindAllUsesViewWithConfiguredConsistency() {
-    String expectedQueryParams = "reduce=false&stale=false";
+    String expectedQueryParams = "ViewQuery(string/all){params=\"reduce=false&stale=false\"}";
     repository.findAll();
 
     verify(couchbaseOperations, never()).queryView(any(ViewQuery.class));
@@ -89,7 +89,7 @@ public class RepositoryIndexUsageTest {
 
   @Test
   public void testFindAllKeysUsesViewWithConfiguredConsistency() {
-    String expectedQueryParams = "reduce=false&stale=false";
+    String expectedQueryParams = "ViewQuery(string/all){params=\"reduce=false&stale=false\", keys=\"[\"someKey\"]\"}";
     repository.findAll(Collections.singleton("someKey"));
 
     verify(couchbaseOperations, never()).queryView(any(ViewQuery.class));
@@ -103,7 +103,7 @@ public class RepositoryIndexUsageTest {
 
   @Test
   public void testCountUsesViewWithConfiguredConsistencyAndReduces() {
-    String expectedQueryParams = "reduce=true&stale=false";
+    String expectedQueryParams = "ViewQuery(string/all){params=\"reduce=true&stale=false\"}";
     repository.count();
 
     verify(couchbaseOperations, never()).findByView(any(ViewQuery.class), any(Class.class));
@@ -123,7 +123,7 @@ public class RepositoryIndexUsageTest {
 
   @Test
   public void testDeleteAllUsesViewWithConfiguredConsistency() {
-    String expectedQueryParams = "reduce=false&stale=false";
+    String expectedQueryParams = "ViewQuery(string/all){params=\"reduce=false&stale=false\"}";
     repository.deleteAll();
 
     verify(couchbaseOperations, never()).findByView(any(ViewQuery.class), any(Class.class));
