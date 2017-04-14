@@ -99,4 +99,23 @@ public class StringN1QlBasedQueryTest {
 
     assertEquals("SELECT COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM `B` WHERE true", parsed);
   }
+
+  @Test
+  public void testDeletePlaceholder() throws Exception {
+    String statement = spel(SPEL_DELETE) + " WHERE test = 1 AND " + spel(SPEL_FILTER);
+    String parsed = mockStringAtClass.parseSpel(statement, false, new Object[0]);
+
+    assertEquals("DELETE FROM `B` WHERE test = 1 AND `@class` = "
+            + "\"java.lang.String\"", parsed);
+  }
+
+  @Test
+  public void testReturningPlaceholder() throws Exception {
+    String statement = spel(SPEL_DELETE) + " WHERE test = 1 AND " + spel(SPEL_FILTER) + spel(SPEL_RETURNING) ;
+    String parsed = mockStringAtClass.parseSpel(statement, false, new Object[0]);
+
+    assertEquals("DELETE FROM `B` WHERE test = 1 AND `@class` = "
+            + "\"java.lang.String\" returning `B`.*, META(`B`).id AS _ID, META(`B`).cas AS _CAS", parsed);
+  }
+
 }

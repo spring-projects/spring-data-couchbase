@@ -1,15 +1,12 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.Assert.assertEquals;
-import static org.springframework.data.couchbase.repository.query.N1qlQueryCreator.createExpression;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
 import com.couchbase.client.java.query.dsl.Expression;
 import org.junit.Test;
-
+import org.springframework.data.couchbase.repository.query.support.N1qlQueryCreatorUtils;
 import org.springframework.data.repository.query.parser.Part;
 
 public class N1qlQueryCreatorTest {
@@ -24,9 +21,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field BETWEEN 1 AND 2";
     String expectedIgnoreCase = "LOWER(doc.field) BETWEEN LOWER(\"c\") AND LOWER(\"d\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -41,9 +38,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field IS NOT NULL";
     String expectedIgnoreCase = "LOWER(doc.field) IS NOT NULL";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -58,9 +55,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field IS NULL";
     String expectedIgnoreCase = "LOWER(doc.field) IS NULL";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -75,9 +72,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field < 1";
     String expectedIgnoreCase = "LOWER(doc.field) < LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -92,9 +89,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field <= 1";
     String expectedIgnoreCase = "LOWER(doc.field) <= LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -109,9 +106,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field > 1";
     String expectedIgnoreCase = "LOWER(doc.field) > LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -126,9 +123,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field >= 1";
     String expectedIgnoreCase = "LOWER(doc.field) >= LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -143,9 +140,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field < 1";
     String expectedIgnoreCase = "LOWER(doc.field) < LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -160,9 +157,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field > 1";
     String expectedIgnoreCase = "LOWER(doc.field) > LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -177,9 +174,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field NOT LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) NOT LIKE LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -194,9 +191,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -211,9 +208,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER(\"b%\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -228,9 +225,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER(\"%b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -245,9 +242,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field NOT LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) NOT LIKE LOWER(\"%b%\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -262,9 +259,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field LIKE 1";
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER(\"%b%\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -279,9 +276,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field NOT IN [1]";
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN [\"b\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -297,8 +294,8 @@ public class N1qlQueryCreatorTest {
     String expected = "doc.field NOT IN [\"av1\",\"av2\"]";
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN [\"bv1\",\"bv2\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -313,8 +310,8 @@ public class N1qlQueryCreatorTest {
     String expected = "doc.field NOT IN [\"av1\",\"av2\"]";
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN [\"bv1\",\"bv2\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -328,9 +325,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field IN [1]";
     String expectedIgnoreCase = "LOWER(doc.field) IN [\"b\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -346,8 +343,8 @@ public class N1qlQueryCreatorTest {
     String expected = "doc.field IN [\"av1\",\"av2\"]";
     String expectedIgnoreCase = "LOWER(doc.field) IN [\"bv1\",\"bv2\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -362,8 +359,8 @@ public class N1qlQueryCreatorTest {
     String expected = "doc.field IN [\"av1\",\"av2\"]";
     String expectedIgnoreCase = "LOWER(doc.field) IN [\"bv1\",\"bv2\"]";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -374,7 +371,7 @@ public class N1qlQueryCreatorTest {
     Part.Type keyword = Part.Type.NEAR;
     Iterator<Object> values = Arrays.<Object>asList("a", 1, "b").iterator();
 
-    Expression exp = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -382,7 +379,7 @@ public class N1qlQueryCreatorTest {
     Part.Type keyword = Part.Type.WITHIN;
     Iterator<Object> values = Arrays.<Object>asList("a", 1, "b").iterator();
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
   }
 
   @Test
@@ -393,9 +390,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "REGEXP_LIKE(doc.field, \"1\")";
     String expectedIgnoreCase = "REGEXP_LIKE(doc.field, \"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -410,9 +407,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field IS NOT MISSING";
     String expectedIgnoreCase = "LOWER(doc.field) IS NOT MISSING";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -427,9 +424,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field = TRUE";
     String expectedIgnoreCase = "LOWER(doc.field) = TRUE";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -444,9 +441,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field = FALSE";
     String expectedIgnoreCase = "LOWER(doc.field) = FALSE";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -461,9 +458,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field != 1";
     String expectedIgnoreCase = "LOWER(doc.field) != LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -478,9 +475,9 @@ public class N1qlQueryCreatorTest {
     String expectedNum = "doc.field = 1";
     String expectedIgnoreCase = "LOWER(doc.field) = LOWER(\"b\")";
 
-    Expression exp = createExpression(keyword, "doc.field", false, values);
-    Expression expNum = createExpression(keyword, "doc.field", false, values);
-    Expression expIgnoreCase = createExpression(keyword, "doc.field", true, values);
+    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
+    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());

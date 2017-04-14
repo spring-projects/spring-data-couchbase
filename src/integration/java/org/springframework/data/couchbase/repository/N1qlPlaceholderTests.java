@@ -120,4 +120,19 @@ public class N1qlPlaceholderTests {
           "one over the other in findAllWithMixedParamsInQuery", e.getMessage());
     }
   }
+
+  @Test
+  public void deleteQueryTest() {
+    String included = "90";
+    String excluded = "New Year";
+    int max = 200;
+    List<Party> result = partyRepository.removeWithPositionalParams(excluded, included, max);
+
+    assertEquals(10, result.size());
+    for (Party party : result) {
+      assertTrue(party.getDescription().contains(included));
+      assertFalse(party.getDescription().contains(excluded));
+      assertTrue(party.getAttendees() < max);
+    }
+  }
 }

@@ -111,6 +111,32 @@ public class N1qlUtils {
   }
 
   /**
+   * Creates the returning clause for N1ql deletes with all attributes of the entity and meta information
+   *
+   * @param bucketName the bucket that stores the entity documents (will be escaped).
+   * @return the needed returning clause of the statement.
+   */
+  public static Expression createReturningExpressionForDelete(String bucketName) {
+    Expression fullEntity = path(i(bucketName), "*");
+    Expression metaId = path(meta(i(bucketName)), "id").as(CouchbaseOperations.SELECT_ID);
+    Expression metaCas = path(meta(i(bucketName)), "cas").as(CouchbaseOperations.SELECT_CAS);
+    List<Expression> expList = new ArrayList<Expression>();
+    expList.add(fullEntity);
+    expList.add(metaId);
+    expList.add(metaCas);
+
+    StringBuilder sb = new StringBuilder();
+    for (Expression exp: expList) {
+      if (sb.length() != 0) {
+        sb.append(", ");
+      }
+      sb.append(exp.toString());
+    }
+
+    return x(sb.toString());
+  }
+
+  /**
    * Produce a {@link Statement} that corresponds to the SELECT clause for looking for Spring Data entities
    * stored in Couchbase. Notably it will select the content of the document AND its id and cas.
    *
