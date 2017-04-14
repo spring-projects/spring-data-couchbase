@@ -113,7 +113,8 @@ While the exposed methods provide you with a great variety of access patterns, v
 === N1QL based querying
 As of version `4.0`, Couchbase Server ships with a new query language called `N1QL`. In `Spring-Data-Couchbase 2.0`, N1QL is the default way of doing queries and will allow you to fully derive queries from a method name.
 
-Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored.
+Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored. DML queries
+are supported from Couchbase server version `4.1`.
 
 WARNING: If it is detected at configuration time that the cluster doesn't support N1QL while there are `@Query` annotated methods or non-annotated methods in your repository interface, a `UnsupportedCouchbaseFeatureException` will be thrown.
 
@@ -142,6 +143,8 @@ A few N1QL-specific values are provided through SpEL:
  - `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
  - `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
  - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
+ - `#n1ql.delete` will be replaced by the `delete from` statement.
+ - `#n1ql.returning` will be replaced by returning clause needed for reconstructing entity.
 
 IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE clause with a `filter` SpEL (since otherwise your query could be impacted by entities from other repositories).
 
@@ -206,6 +209,15 @@ This could be useful to craft a query according to the role of the connected use
 "role = '?#{hasRole('ROLE_ADMIN') ? 'public_admin' : 'admin'}'")
 List<UserInfo> findAllAdmins(); //only ROLE_ADMIN users will see hidden admins
 ----
+
+Delete query example:
+[source,java]
+----
+@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} AND " +
+"username = $1 #{#n1ql.returning}")
+UserInfo removeUser(String username);
+----
+
 ****
 
 The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...

@@ -16,6 +16,13 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.java.query.Delete.deleteFrom;
+import static com.couchbase.client.java.query.dsl.Expression.i;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;

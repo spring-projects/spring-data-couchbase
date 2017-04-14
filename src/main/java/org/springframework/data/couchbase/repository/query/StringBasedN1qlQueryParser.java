@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.java.query.Delete.deleteFrom;
+import static com.couchbase.client.java.query.dsl.Expression.i;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
@@ -70,6 +73,22 @@ public class StringBasedN1qlQueryParser {
 	 * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND #{{@value SPEL_FILTER}}"</code>.
 	 */
 	public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
+
+	/**
+	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * annotation's inline statement. This will be replaced by the correct <code>delete</code> expression needed
+	 * Eg. <code>"#{{@value SPEL_DELETE}} WHERE test = true"</code>.
+	 * Note this only makes sense once, as the beginning of the statement.
+	 */
+	public static final String SPEL_DELETE = "#" + SPEL_PREFIX + ".delete";
+
+	/**
+	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * annotation's inline statement. This will be replaced by the correct <code>returning</code> clause needed
+	 * for entity mapping. Eg. <code>"#{{@value SPEL_RETURNING}} WHERE test = true"</code>.
+	 * Note this only makes sense once, as the beginning of the statement.
+	 */
+	public static final String SPEL_RETURNING = "#" + SPEL_PREFIX + ".returning";
 
 	/** regexp that detect $named placeholder (starts with a letter, then alphanum chars) */
 	public static final Pattern NAMED_PLACEHOLDER_PATTERN = Pattern.compile("\\W(\\$\\p{Alpha}\\p{Alnum}*)\\b");
@@ -116,10 +135,12 @@ public class StringBasedN1qlQueryParser {
 		} else {
 			selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
 		}
-
 		String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
 
-		return new N1qlSpelValues(selectEntity, entity, b, typeSelection);
+		String delete = deleteFrom(i(bucketName)).toString();
+		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();
+
+		return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);
 	}
 
 	//this static method can be used to test the parsing behavior for Couchbase specific spel variables
@@ -265,17 +286,30 @@ public class StringBasedN1qlQueryParser {
 		public final String bucket;
 
 		/**
-		 * <code>#{{@value SPEL_FILTER}.
+		 * <code>#{{@value SPEL_FILTER}}.
 		 * filter</code> will be replaced by an expression allowing to select only entries matching the entity in a WHERE clause.
 		 */
 		public final String filter;
 
-		public N1qlSpelValues(String selectClause, String entityFields, String bucket, String filter) {
+		/**
+		 * <code>#{{@value SPEL_DELETE}}.
+		 * delete</code> will be replaced by a delete expression.
+		 */
+		public final String delete;
+
+		/**
+		 * <code>#{{@value SPEL_RETURNING}}.
+		 * returning</code> will be replaced by a returning expression allowing to return the entity and meta information on deletes.
+		 */
+		public final String returning;
+
+		public N1qlSpelValues(String selectClause, String entityFields, String bucket, String filter, String delete, String returning) {
 			this.selectEntity = selectClause;
 			this.fields = entityFields;
 			this.bucket = bucket;
 			this.filter = filter;
+			this.delete = delete;
+			this.returning = returning;
 		}
 	}
-
 }
