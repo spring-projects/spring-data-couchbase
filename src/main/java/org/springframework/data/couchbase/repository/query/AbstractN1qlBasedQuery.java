@@ -122,10 +122,6 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   protected Object executeDependingOnType(N1qlQuery query, N1qlQuery countQuery, QueryMethod queryMethod,
       Pageable pageable, Class<?> typeToRead) {
 
-    if (queryMethod.isModifyingQuery()) {
-      throw new UnsupportedOperationException("Modifying queries not yet supported");
-    }
-
     if (queryMethod.isPageQuery()) {
       return executePaged(query, countQuery, pageable, typeToRead);
     } else if (queryMethod.isSliceQuery()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import java.util.List;
  * This tests PaginAndSortingRepository features in the Couchbase connector.
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -151,4 +152,12 @@ public class N1qlCouchbaseRepositoryTests {
     List<Party> partyList = partyRepository.findByDescriptionOrName("MatchingDescription", "partyName");
     assertTrue(partyList.size() == 1);
   }
+
+  @Test
+  public void testDeleteQuery() {
+    partyRepository.save(new Party("testDeleteQuery", "delete", "delete", null, 0, null));
+    List<Party> partyList = partyRepository.removeByDescriptionOrName("delete", "delete");
+    assertTrue(partyList.size() == 1);
+  }
+
 }

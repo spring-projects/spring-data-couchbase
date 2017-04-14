@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.java.query.Delete.deleteFrom;
+import static com.couchbase.client.java.query.dsl.Expression.i;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -91,6 +95,22 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
    * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND #{{@value StringN1qlBasedQuery#SPEL_FILTER}}"</code>.
    */
   public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
+
+  /**
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+   * annotation's inline statement. This will be replaced by the correct <code>delete</code> expression needed
+   * Eg. <code>"#{{@value StringN1qlBasedQuery#SPEL_DELETE}} WHERE test = true"</code>.
+   * Note this only makes sense once, as the beginning of the statement.
+   */
+  public static final String SPEL_DELETE = "#" + SPEL_PREFIX + ".delete";
+
+  /**
+   * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+   * annotation's inline statement. This will be replaced by the correct <code>returning</code> clause needed
+   * for entity mapping. Eg. <code>"#{{@value StringN1qlBasedQuery#SPEL_RETURNING}} WHERE test = true"</code>.
+   * Note this only makes sense once, as the beginning of the statement.
+   */
+  public static final String SPEL_RETURNING = "#" + SPEL_PREFIX + ".returning";
 
   /** regexp that detect $named placeholder (starts with a letter, then alphanum chars) */
   private static final Pattern NAMED_PLACEHOLDER_PATTERN = Pattern.compile("\\W(\\$\\p{Alpha}\\p{Alnum}*)\\b");
@@ -199,7 +219,10 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
     }
     String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
 
-    return new N1qlSpelValues(selectEntity, entity, b, typeSelection);
+    String delete = deleteFrom(i(bucketName)).toString();
+    String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();
+
+    return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);
   }
 
   /**
@@ -312,11 +335,25 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
      */
     public final String filter;
 
-    public N1qlSpelValues(String selectClause, String entityFields, String bucket, String filter) {
+    /**
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * delete</code> will be replaced by a delete expression.
+     */
+    public final String delete;
+
+    /**
+     * <code>#{{@value org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery#SPEL_PREFIX}.
+     * returning</code> will be replaced by a returning expression allowing to return the entity and meta information on deletes.
+     */
+    public final String returning;
+
+    public N1qlSpelValues(String selectClause, String entityFields, String bucket, String filter, String delete, String returning) {
       this.selectEntity = selectClause;
       this.fields = entityFields;
       this.bucket = bucket;
       this.filter = filter;
+      this.delete = delete;
+      this.returning = returning;
     }
   }
 }
