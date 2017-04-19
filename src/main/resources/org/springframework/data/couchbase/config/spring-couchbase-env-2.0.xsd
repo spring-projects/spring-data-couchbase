@@ -54,7 +54,6 @@
                 <xsd:attribute name="bufferPoolingEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="tcpNodelayEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="mutationTokensEnabled" type="xsd:boolean"/>
-                <xsd:attribute name="analyticsTimeout" type="xsd:long"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

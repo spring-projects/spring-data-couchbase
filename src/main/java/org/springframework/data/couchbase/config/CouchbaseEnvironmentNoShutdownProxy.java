@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors
+ * Copyright 2012-2016 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,9 @@
 
 package org.springframework.data.couchbase.config;
 
-import java.security.KeyStore;
-import java.util.concurrent.TimeUnit;
-
-import com.couchbase.client.core.env.*;
 import com.couchbase.client.core.event.EventBus;
 import com.couchbase.client.core.metrics.MetricsCollector;
 import com.couchbase.client.core.metrics.NetworkLatencyMetricsCollector;
-import com.couchbase.client.core.node.MemcachedHashingStrategy;
 import com.couchbase.client.core.retry.RetryStrategy;
 import com.couchbase.client.core.time.Delay;
 import com.couchbase.client.deps.io.netty.channel.EventLoopGroup;
@@ -37,7 +32,6 @@ import rx.Scheduler;
  *
  * @author Simon Baslé
  * @author Jonathan Edwards
- * @author Subhashni Balakrishnan
  */
 public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment {
 
@@ -48,8 +42,8 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
-  public boolean shutdown() {
-    return false;
+  public Observable<Boolean> shutdown() {
+    return Observable.just(false);
   }
 
   //===== DELEGATION METHODS =====
@@ -87,6 +81,18 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public String sslKeystorePassword() {
     return delegate.sslKeystorePassword();
+  }
+
+  @Override
+  @Deprecated
+  public boolean queryEnabled() {
+    return delegate.queryEnabled();
+  }
+
+  @Override
+  @Deprecated
+  public int queryPort() {
+    return delegate.queryPort();
   }
 
   @Override
@@ -317,75 +323,5 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public long searchTimeout() {
     return delegate.searchTimeout();
-  }
-
-  @Override
-  public WaitStrategyFactory requestBufferWaitStrategy() {
-    return delegate.requestBufferWaitStrategy();
-  }
-
-  @Override
-  public EventLoopGroup kvIoPool() {
-    return delegate.kvIoPool();
-  }
-
-  @Override
-  public EventLoopGroup viewIoPool() {
-    return delegate.viewIoPool();
-  }
-
-  @Override
-  public EventLoopGroup searchIoPool() {
-    return delegate.searchIoPool();
-  }
-
-  @Override
-  public EventLoopGroup queryIoPool() {
-    return delegate.queryIoPool();
-  }
-
-  @Override
-  public KeyStore sslKeystore() {
-    return delegate.sslKeystore();
-  }
-
-  @Override
-  public boolean shutdown(long timeout, TimeUnit timeUnit) {
-    return delegate.shutdown(timeout, timeUnit);
-  }
-
-  @Override
-  public MemcachedHashingStrategy memcachedHashingStrategy() {
-    return delegate.memcachedHashingStrategy();
-  }
-
-  @Override
-  public long analyticsTimeout() {
-    return delegate.analyticsTimeout();
-  }
-
-  @Override
-  public long configPollInterval() {
-    return delegate.configPollInterval();
-  }
-
-  @Override
-  public KeyValueServiceConfig kvServiceConfig() {
-    return delegate.kvServiceConfig();
-  }
-
-  @Override
-  public QueryServiceConfig queryServiceConfig() {
-    return delegate.queryServiceConfig();
-  }
-
-  @Override
-  public SearchServiceConfig searchServiceConfig() {
-    return delegate.searchServiceConfig();
-  }
-
-  @Override
-  public ViewServiceConfig viewServiceConfig() {
-    return delegate.viewServiceConfig();
   }
 }

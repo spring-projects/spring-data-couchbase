@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors
+ * Copyright 2012-2016 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  *
  * @author Simon Baslé
  * @author Simon Bland
- * @author Subhashni Balakrishnan
  */
 /*package*/ class CouchbaseEnvironmentFactoryBean extends AbstractFactoryBean<CouchbaseEnvironment> {
 
@@ -52,17 +51,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     eventBus
     systemMetricsCollectorConfig
     networkLatencyMetricsCollectorConfig
-    requestBufferWaitStrategy
-    sslKeystore
-    memcachedHashingStrategy
-    kvIoPool
-    queryIoPool
-    searchIoPool
-    viewIoPool
-    kvServiceConfig
-    queryServiceConfig
-    searchServiceConfig
-    viewServiceConfig
    */
 
   @Override
@@ -133,6 +121,14 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setSslKeystorePassword(String sslKeystorePassword) {
     this.couchbaseEnvBuilder.sslKeystorePassword(sslKeystorePassword);
+  }
+
+  public void setQueryEnabled(boolean queryEnabled) {
+    this.couchbaseEnvBuilder.queryEnabled(queryEnabled);
+  }
+
+  public void setQueryPort(int queryPort) {
+    this.couchbaseEnvBuilder.queryPort(queryPort);
   }
 
   public void setBootstrapHttpEnabled(boolean bootstrapHttpEnabled) {
@@ -209,9 +205,5 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setMutationTokensEnabled(boolean mutationTokensEnabled) {
     this.couchbaseEnvBuilder.mutationTokensEnabled(mutationTokensEnabled);
-  }
-
-  public void setAnalyticsTimeout(long analyticsTimeout) {
-    this.couchbaseEnvBuilder.analyticsTimeout(analyticsTimeout);
   }
 }
