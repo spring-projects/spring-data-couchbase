@@ -21,9 +21,15 @@
 
         <dist.key>DATACOUCH</dist.key>
 
+<<<<<<< HEAD
+        <couchbase>2.4.4</couchbase>
+        <couchbase.osgi>2.4.4</couchbase.osgi>
+        <springdata.commons>1.12.10.BUILD-SNAPSHOT</springdata.commons>
+=======
         <couchbase>2.2.8</couchbase>
         <couchbase.osgi>2.2.8</couchbase.osgi>
-        <springdata.commons>1.12.10.BUILD-SNAPSHOT</springdata.commons>
+        <springdata.commons>1.12.9.BUILD-SNAPSHOT</springdata.commons>
+>>>>>>> DATACOUCH-299 - Roll back to Java driver version 2.2.8.
         <validation>1.0.0.GA</validation>
     </properties>
 
