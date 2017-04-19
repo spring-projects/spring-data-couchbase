@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.2.RELEASE (2017-04-19)
+---------------------------------------------
+* DATACOUCH-290 - Update to latest java client version 2.4.4.
+* DATACOUCH-283 - Release 2.2.2 (Ingalls SR2).
+* DATACOUCH-276 - Ordering by embeded field doesn't work.
+* DATACOUCH-275 - Auto generate values for document ids.
+* DATACOUCH-90 - Support for java.time for DateConverters.
+
+
 Changes in version 3.0.0.M2 (2017-04-04)
 ----------------------------------------
 * DATACOUCH-289 - Adapt to API changes in RepositoryConfigurationExtensionSupport.
