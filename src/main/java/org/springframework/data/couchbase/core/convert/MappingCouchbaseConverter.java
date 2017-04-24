@@ -368,7 +368,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return;
     }
 
-    boolean isCustom = conversions.getCustomWriteTarget(source.getClass(), CouchbaseDocument.class) != null;
+    boolean isCustom = conversions.getCustomWriteTarget(source.getClass(), CouchbaseDocument.class).isPresent();
     TypeInformation<?> type = ClassTypeInformation.from(source.getClass());
 
     if (!isCustom) {
@@ -394,8 +394,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return;
     }
 
-    Class<?> customTarget = conversions.getCustomWriteTarget(source.getClass(), CouchbaseDocument.class);
-    if (customTarget != null) {
+    Optional<Class<?>> customTarget = conversions.getCustomWriteTarget(source.getClass(), CouchbaseDocument.class);
+    if (customTarget.isPresent()) {
       copyCouchbaseDocument(conversionService.convert(source, CouchbaseDocument.class), target);
       return;
     }
@@ -568,9 +568,13 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return;
     }
 
-    Class<?> basicTargetType = conversions.getCustomWriteTarget(source.getClass(), null);
-    if (basicTargetType != null) {
-      target.put(name, conversionService.convert(source, basicTargetType));
+    Optional<Class<?>> basicTargetType = conversions.getCustomWriteTarget(source.getClass());
+    if (basicTargetType.isPresent()) {
+
+      basicTargetType.ifPresent(it -> {
+        target.put(name, conversionService.convert(source, it));
+      });
+
       return;
     }
 
@@ -756,12 +760,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       return null;
     }
 
-    Class<?> customTarget = conversions.getCustomWriteTarget(value.getClass(), null);
-    if (customTarget != null) {
-      return conversionService.convert(value, customTarget);
-    } else {
-      return Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value;
-    }
+    Optional<Class<?>> customTarget = conversions.getCustomWriteTarget(value.getClass());
+
+    return customTarget.map(it -> (Object) conversionService.convert(value, it))
+            .orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
   }
 
   /**

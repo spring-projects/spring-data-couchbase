@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.EntityInstantiators;
+import org.springframework.data.convert.CustomConversions;
+
+import java.util.Collections;
 
 /**
  * An abstract {@link CouchbaseConverter} that provides the basics for the {@link MappingCouchbaseConverter}.
  *
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, InitializingBean {
 
@@ -41,7 +45,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
   /**
    * Holds the custom conversions.
    */
-  protected CustomConversions conversions = new CustomConversions();
+  protected CustomConversions conversions = new CouchbaseCustomConversions(Collections.emptyList());
 
   /**
    * Create a new converter and hand it over the {@link ConversionService}
@@ -94,16 +98,13 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
       return null;
     }
 
-    Class<?> targetType = this.conversions.getCustomWriteTarget(value.getClass());
-    if (targetType != null) {
-      return this.conversionService.convert(value, targetType);
-    }
-    return value;
+    return this.conversions.getCustomWriteTarget(value.getClass()) //
+            .map(it -> (Object) this.conversionService.convert(value, it)) //
+            .orElse(value);
   }
 
   @Override
   public Class<?> getWriteClassFor(Class<?> clazz) {
-    Class<?> targetType = this.conversions.getCustomWriteTarget(clazz);
-    return targetType != null ? targetType : clazz;
+    return this.conversions.getCustomWriteTarget(clazz).orElse(clazz);
   }
 }

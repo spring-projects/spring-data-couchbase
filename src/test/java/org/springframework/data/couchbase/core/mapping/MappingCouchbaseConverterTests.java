@@ -43,8 +43,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
-import org.springframework.data.couchbase.core.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.mapping.model.MappingException;
 import org.springframework.test.context.ContextConfiguration;
@@ -56,6 +56,7 @@ import com.couchbase.client.java.repository.annotation.Field;
  * @author Michael Nitschinger
  * @author Geoffrey Mina
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = UnitTestApplicationConfig.class)
@@ -386,7 +387,7 @@ public class MappingCouchbaseConverterTests {
     List<Object> converters = new ArrayList<Object>();
     converters.add(BigDecimalToStringConverter.INSTANCE);
     converters.add(StringToBigDecimalConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     CouchbaseDocument converted = new CouchbaseDocument();
@@ -431,7 +432,7 @@ public class MappingCouchbaseConverterTests {
     List<Object> converters = new ArrayList<Object>();
     converters.add(BigDecimalToStringConverter.INSTANCE);
     converters.add(StringToBigDecimalConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     CouchbaseDocument converted = new CouchbaseDocument();

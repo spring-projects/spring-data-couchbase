@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
-import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -45,6 +45,7 @@ import com.couchbase.client.java.repository.annotation.Id;
  * Tests to verify custom mapping logic.
  *
  * @author Michael Nitschinger
+ * @author Mark Paluch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = UnitTestApplicationConfig.class)
@@ -55,14 +56,14 @@ public class CustomConvertersTests {
 
   @After
   public void cleanup() {
-    converter.setCustomConversions(new CustomConversions(Collections.emptyList()));
+    converter.setCustomConversions(new CouchbaseCustomConversions(Collections.emptyList()));
   }
 
   @Test
   public void shouldWriteWithCustomConverter() {
     List<Object> converters = new ArrayList<Object>();
     converters.add(DateToStringConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     Date date = new Date();
@@ -79,7 +80,7 @@ public class CustomConvertersTests {
   public void shouldReadWithCustomConverter() {
     List<Object> converters = new ArrayList<Object>();
     converters.add(IntegerToStringConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     CouchbaseDocument doc = new CouchbaseDocument();
@@ -92,7 +93,7 @@ public class CustomConvertersTests {
   public void shouldWriteConvertFullDocument() {
     List<Object> converters = new ArrayList<Object>();
     converters.add(BlogPostToCouchbaseDocumentConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     BlogPost post = new BlogPost();
@@ -110,7 +111,7 @@ public class CustomConvertersTests {
   public void shouldReadConvertFullDocument() {
     List<Object> converters = new ArrayList<Object>();
     converters.add(CouchbaseDocumentToBlogPostConverter.INSTANCE);
-    converter.setCustomConversions(new CustomConversions(converters));
+    converter.setCustomConversions(new CouchbaseCustomConversions(converters));
     converter.afterPropertiesSet();
 
     CouchbaseDocument doc = new CouchbaseDocument();

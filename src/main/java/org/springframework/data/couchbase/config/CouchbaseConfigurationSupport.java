@@ -26,7 +26,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Persistent;
-import org.springframework.data.couchbase.core.convert.CustomConversions;
+import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -49,6 +50,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  */
 public class CouchbaseConfigurationSupport {
     /**
@@ -130,7 +132,7 @@ public class CouchbaseConfigurationSupport {
      */
     @Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
     public CustomConversions customConversions() {
-        return new CustomConversions(Collections.emptyList());
+        return new CouchbaseCustomConversions(Collections.emptyList());
     }
 
     /**

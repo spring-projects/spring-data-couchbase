@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2017 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Anastasiia Smirnova
+ * @author Mark Paluch
  */
 public class JacksonTranslationService implements TranslationService, InitializingBean {
 
@@ -51,7 +52,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
   /**
    * Type holder to help easily identify simple types.
    */
-  private SimpleTypeHolder simpleTypeHolder = new SimpleTypeHolder();
+  private SimpleTypeHolder simpleTypeHolder = SimpleTypeHolder.DEFAULT;
 
   /**
    * JSON factory for Jackson.
