@@ -119,7 +119,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     public Mono<T> findOne(ID id) {
         Assert.notNull(id, "The given id must not be null!");
         return mapMono(operations.findById(id.toString(), entityInformation.getJavaType()).toSingle())
-                .otherwise(throwable -> {
+                .onErrorResume(throwable -> {
                     //reactive streams adapter doesn't work with null
                     if(throwable instanceof NullPointerException) {
                         return Mono.empty();
