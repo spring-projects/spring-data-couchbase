@@ -128,9 +128,9 @@ public class RepositoryTemplateWiringTests {
     assertNotNull(repositoryB);
     assertNotNull(repositoryC);
 
-    boolean existA = repositoryA.exists("testA");
-    boolean existB = repositoryB.exists("testB");
-    Optional<Misc> valueC = repositoryC.findOne("toto");
+    boolean existA = repositoryA.existsById("testA");
+    boolean existB = repositoryB.existsById("testB");
+    Optional<Misc> valueC = repositoryC.findById("toto");
 
     assertTrue(existA);
     assertFalse(existB);

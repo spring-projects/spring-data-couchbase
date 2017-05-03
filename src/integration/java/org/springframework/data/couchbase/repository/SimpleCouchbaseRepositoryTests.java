@@ -16,12 +16,14 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -35,7 +37,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.AsyncUtils;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
-import org.springframework.data.couchbase.core.CouchbaseTemplateTests;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -45,15 +46,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.Assert.*;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.error.CASMismatchException;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
 
 /**
  * @author Michael Nitschinger
@@ -99,19 +97,19 @@ public class SimpleCouchbaseRepositoryTests {
     User instance = new User(key, "foobar", 22);
     repository.save(instance);
 
-    Optional<User> found = repository.findOne(key);
+    Optional<User> found = repository.findById(key);
     assertTrue(found.isPresent());
 
     found.ifPresent(actual -> {
       assertEquals(instance.getKey(), actual.getKey());
       assertEquals(instance.getUsername(), actual.getUsername());
 
-      assertTrue(repository.exists(key));
+      assertTrue(repository.existsById(key));
       repository.delete(actual);
     });
 
-    assertFalse(repository.findOne(key).isPresent());
-    assertFalse(repository.exists(key));
+    assertFalse(repository.findById(key).isPresent());
+    assertFalse(repository.existsById(key));
   }
 
   @Test
@@ -220,7 +218,7 @@ public class SimpleCouchbaseRepositoryTests {
     versionedDataRepository.save(initial);
     assertNotEquals(0L, initial.version);
 
-    Optional<VersionedData> fetch1 = versionedDataRepository.findOne(key);
+    Optional<VersionedData> fetch1 = versionedDataRepository.findById(key);
 
     assertTrue(fetch1.isPresent());
     fetch1.ifPresent(actual -> {
@@ -267,7 +265,7 @@ public class SimpleCouchbaseRepositoryTests {
         boolean updated = false;
         while(!updated) {
           long counterValue = counter.incrementAndGet();
-          VersionedData messageData = versionedDataRepository.findOne(key).get();
+          VersionedData messageData = versionedDataRepository.findById(key).get();
           messageData.data = "value-" + counterValue;
           try {
             versionedDataRepository.save(messageData);
@@ -281,7 +279,7 @@ public class SimpleCouchbaseRepositoryTests {
     };
     AsyncUtils.executeConcurrently(5, task);
 
-    assertNotEquals(initial.data, versionedDataRepository.findOne(key).get().data);
+    assertNotEquals(initial.data, versionedDataRepository.findById(key).get().data);
     assertEquals(5, updatedCounter.intValue());
   }
 

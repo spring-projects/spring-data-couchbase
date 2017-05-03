@@ -85,13 +85,13 @@ public class RepositoryCustomMethodTest {
 
   @Before
   public void initData() {
-    try { repository.delete(KEY); } catch (Exception e) { }
+    try { repository.deleteById(KEY); } catch (Exception e) { }
     repository.save(new MyItem(KEY, "new item for custom count"));
   }
 
   @After
   public void clearData() {
-    repository.delete(KEY);
+    repository.deleteById(KEY);
   }
 
   @Test

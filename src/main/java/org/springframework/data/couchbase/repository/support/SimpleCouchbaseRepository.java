@@ -89,7 +89,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public <S extends T> Iterable<S> save(Iterable<S> entities) {
+  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
 
     List<S> result = new ArrayList<S>();
@@ -101,19 +101,19 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public Optional<T> findOne(ID id) {
+  public Optional<T> findById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
     return Optional.ofNullable(couchbaseOperations.findById(id.toString(), entityInformation.getJavaType()));
   }
 
   @Override
-  public boolean exists(ID id) {
+  public boolean existsById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
     return couchbaseOperations.exists(id.toString());
   }
 
   @Override
-  public void delete(ID id) {
+  public void deleteById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
     couchbaseOperations.remove(id.toString());
   }
@@ -125,7 +125,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public void delete(Iterable<? extends T> entities) {
+  public void deleteAll(Iterable<? extends T> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     for (T entity : entities) {
       couchbaseOperations.remove(entity);
@@ -142,7 +142,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public Iterable<T> findAll(final Iterable<ID> ids) {
+  public Iterable<T> findAllById(final Iterable<ID> ids) {
     final ResolvedView resolvedView = determineView();
     ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
     query.reduce(false);

@@ -88,9 +88,9 @@ public class CdiRepositoryTests {
 
 		repository.save(bean);
 
-		assertTrue(repository.exists(bean.getId()));
+		assertTrue(repository.existsById(bean.getId()));
 
-		Optional<Person> retrieved = repository.findOne(bean.getId());
+		Optional<Person> retrieved = repository.findById(bean.getId());
 		assertTrue(retrieved.isPresent());
 		retrieved.ifPresent(actual -> {
 			assertEquals(bean.getName(), actual.getName());
@@ -110,9 +110,9 @@ public class CdiRepositoryTests {
 
 		qualifiedPersonRepository.save(bean);
 
-		assertTrue(qualifiedPersonRepository.exists(bean.getId()));
+		assertTrue(qualifiedPersonRepository.existsById(bean.getId()));
 
-		Optional<Person> retrieved = qualifiedPersonRepository.findOne(bean.getId());
+		Optional<Person> retrieved = qualifiedPersonRepository.findById(bean.getId());
 		assertTrue(retrieved.isPresent());
 		retrieved.ifPresent(actual -> {
 			assertEquals(bean.getName(), actual.getName());

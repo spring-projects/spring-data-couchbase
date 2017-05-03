@@ -174,12 +174,12 @@ public class IndexedRepositoryTests {
     repository.save(foo2);
 
     int count = 0;
-    for (Object o : repository.findAll(Arrays.asList("foo1", "foo2"))) {
+    for (Object o : repository.findAllById(Arrays.asList("foo1", "foo2"))) {
       count++;
     }
     assertEquals(2L, count);
     count = 0;
-    for (Object o : repository.findAll(Arrays.asList("foo1", "foo3"))) {
+    for (Object o : repository.findAllById(Arrays.asList("foo1", "foo3"))) {
       count++;
     }
     assertEquals(1L, count);

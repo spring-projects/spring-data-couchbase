@@ -53,7 +53,7 @@ public class QueryDerivationConversionTests {
 
   @Test
   public void testConvertsDateParameterInN1qlQuery() {
-    Optional<Party> partyApril = repository.findOne("testparty-3");
+    Optional<Party> partyApril = repository.findById("testparty-3");
     assertTrue(partyApril.isPresent());
 
     Calendar cal = Calendar.getInstance();

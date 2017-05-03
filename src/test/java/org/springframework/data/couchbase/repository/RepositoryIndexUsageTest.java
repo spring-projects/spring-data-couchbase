@@ -88,7 +88,7 @@ public class RepositoryIndexUsageTest {
   @Test
   public void testFindAllKeysUsesViewWithConfiguredConsistency() {
     String expectedQueryParams = "ViewQuery(string/all){params=\"reduce=false&stale=false\", keys=\"[\"someKey\"]\"}";
-    repository.findAll(Collections.singleton("someKey"));
+    repository.findAllById(Collections.singleton("someKey"));
 
     verify(couchbaseOperations, never()).queryView(any(ViewQuery.class));
     verify(couchbaseOperations, never()).findByN1QL(any(N1qlQuery.class), any(Class.class));

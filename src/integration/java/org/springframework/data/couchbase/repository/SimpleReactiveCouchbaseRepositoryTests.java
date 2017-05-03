@@ -15,32 +15,31 @@
  */
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
-import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
+import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactory;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.Assert.*;
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
+import com.couchbase.client.java.view.Stale;
+import com.couchbase.client.java.view.ViewQuery;
 
 /**
  * @author Subhashni Balakrishnan
@@ -83,15 +82,15 @@ public class SimpleReactiveCouchbaseRepositoryTests {
 		ReactiveUser instance = new ReactiveUser(key, "foobar", 22);
 		repository.save(instance).block();
 
-		ReactiveUser found = repository.findOne(key).block();
+		ReactiveUser found = repository.findById(key).block();
 		assertEquals(instance.getKey(), found.getKey());
 		assertEquals(instance.getUsername(), found.getUsername());
 
-		assertTrue(repository.exists(key).block());
+		assertTrue(repository.existsById(key).block());
 		repository.delete(found).block();
 
-		assertNull(repository.findOne(key).block());
-		assertFalse(repository.exists(key).block());
+		assertNull(repository.findById(key).block());
+		assertFalse(repository.existsById(key).block());
 	}
 
 	@Test

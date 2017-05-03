@@ -1,5 +1,5 @@
 /*
- * Copyright 2013, 2014 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
-
-import java.io.Serializable;
 
 /**
  * Marker interface for the Couchbase Entity Information.
  *
  * @author Michael Nitschinger
+ * @author Oliver Gierke
  */
-public interface CouchbaseEntityInformation<T, ID extends Serializable> extends EntityInformation<T, ID> {
-
-}
+public interface CouchbaseEntityInformation<T, ID> extends EntityInformation<T, ID> {}

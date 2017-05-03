@@ -36,13 +36,13 @@ public class AuditingTests {
 
   @Test
   public void testCreationEventIsRegistered() {
-    assertFalse(repository.exists(KEY));
+    assertFalse(repository.existsById(KEY));
     Date start = new Date();
     AuditedItem item = new AuditedItem(KEY, "creation");
 
     auditorAware.setAuditor("auditor");
     repository.save(item);
-    Optional<AuditedItem> persisted = repository.findOne(KEY);
+    Optional<AuditedItem> persisted = repository.findById(KEY);
 
     assertTrue(persisted.isPresent());
 
@@ -64,7 +64,7 @@ public class AuditingTests {
 
   @Test
   public void testUpdateEventIsRegistered() {
-    assertFalse(repository.exists(KEY));
+    assertFalse(repository.existsById(KEY));
 
     String expectedCreator = "user1";
     String expectedUpdater = "user2";
@@ -72,11 +72,11 @@ public class AuditingTests {
     auditorAware.setAuditor(expectedCreator);
 
     repository.save(item);
-    AuditedItem created = repository.findOne(KEY).orElse(null);
+    AuditedItem created = repository.findById(KEY).orElse(null);
 
     auditorAware.setAuditor(expectedUpdater);
     repository.save(item);
-    AuditedItem updated = repository.findOne(KEY).orElse(null);
+    AuditedItem updated = repository.findById(KEY).orElse(null);
 
     assertNotNull("expected entity to be persisted", updated);
     assertNotNull("expected creation date audit trail", updated.getCreationDate());

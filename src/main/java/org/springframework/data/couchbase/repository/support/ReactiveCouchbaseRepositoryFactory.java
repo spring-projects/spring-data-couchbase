@@ -97,7 +97,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
      * @return entity information for that domain class.
      */
     @Override
-    public <T, ID extends Serializable> CouchbaseEntityInformation<T, ID> getEntityInformation(final Class<T> domainClass) {
+    public <T, ID> CouchbaseEntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
         CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(domainClass);
 
         return new MappingCouchbaseEntityInformation<T, ID>((CouchbasePersistentEntity<T>) entity);

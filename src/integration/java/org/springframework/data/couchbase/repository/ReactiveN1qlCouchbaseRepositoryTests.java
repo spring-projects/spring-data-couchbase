@@ -71,8 +71,8 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 
 	@After
 	public void cleanUp() {
-		try { itemRepository.delete(KEY_ITEM); } catch (DataRetrievalFailureException e) {}
-		try { partyRepository.delete(KEY_PARTY); } catch (DataRetrievalFailureException e) {}
+		try { itemRepository.deleteById(KEY_ITEM); } catch (DataRetrievalFailureException e) {}
+		try { partyRepository.deleteById(KEY_PARTY); } catch (DataRetrievalFailureException e) {}
 	}
 
 	@Test

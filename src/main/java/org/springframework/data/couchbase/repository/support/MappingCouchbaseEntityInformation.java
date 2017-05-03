@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.support;
-
-import java.io.Serializable;
 
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -26,18 +23,17 @@ import org.springframework.data.repository.core.support.PersistentEntityInformat
  * Entity Information container.
  *
  * @author Michael Nitschinger
- * @author Oliver Grieke
+ * @author Oliver Gierke
  */
-public class MappingCouchbaseEntityInformation<T, ID  extends Serializable>
-  extends PersistentEntityInformation<T, ID>
-  implements CouchbaseEntityInformation<T, ID> {
+public class MappingCouchbaseEntityInformation<T, ID> extends PersistentEntityInformation<T, ID>
+    implements CouchbaseEntityInformation<T, ID> {
 
   /**
    * Create a new Information container.
    *
    * @param entity the entity of the container.
    */
-  public MappingCouchbaseEntityInformation(final CouchbasePersistentEntity<T> entity) {
+  public MappingCouchbaseEntityInformation(CouchbasePersistentEntity<T> entity) {
     super(entity);
   }
 }

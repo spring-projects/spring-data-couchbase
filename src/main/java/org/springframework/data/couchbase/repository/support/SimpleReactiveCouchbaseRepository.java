@@ -101,14 +101,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends T> Flux<S> save(Iterable<S> entities) {
+    public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
         return mapFlux(operations.save(entities));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends T> Flux<S> save(Publisher<S> entityStream) {
+    public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
         Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
         return Flux.from(entityStream)
                 .flatMap(object -> save(object));
@@ -116,7 +116,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<T> findOne(ID id) {
+    public Mono<T> findById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
         return mapMono(operations.findById(id.toString(), entityInformation.getJavaType()).toSingle())
                 .onErrorResume(throwable -> {
@@ -130,24 +130,24 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<T> findOne(Mono<ID> mono) {
+    public Mono<T> findById(Mono<ID> mono) {
         Assert.notNull(mono, "The given mono must not be null!");
         return mono.flatMap(
-                this::findOne);
+                this::findById);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Boolean> exists(ID id) {
+    public Mono<Boolean> existsById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
         return mapMono(operations.exists(id.toString()).toSingle());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Boolean> exists(Mono<ID> mono) {
+    public Mono<Boolean> existsById(Mono<ID> mono) {
         return mono.flatMap(
-                this::exists);
+                this::existsById);
     }
 
     @SuppressWarnings("unchecked")
@@ -162,7 +162,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Flux<T> findAll(final Iterable<ID> ids) {
+    public Flux<T> findAllById(final Iterable<ID> ids) {
         final ResolvedView resolvedView = determineView();
         ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
         query.reduce(false);
@@ -177,15 +177,15 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Flux<T> findAll(Publisher<ID> entityStream) {
+    public Flux<T> findAllById(Publisher<ID> entityStream) {
         Assert.notNull(entityStream, "The given entityStream must not be null!");
         return Flux.from(entityStream)
-                .flatMap(entity -> findOne(entity));
+                .flatMap(entity -> findById(entity));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Void> delete(ID id) {
+    public Mono<Void> deleteById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
         return mapMono(operations.remove(id.toString()).map(res -> Observable.<Void>empty()).toSingle());
     }
@@ -199,7 +199,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Void> delete(Iterable<? extends T> entities) {
+    public Mono<Void> deleteAll(Iterable<? extends T> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
         return mapMono(operations
                 .remove(entities)
@@ -209,7 +209,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
 
     @Override
-    public Mono<Void> delete(Publisher<? extends T> entityStream) {
+    public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
         Assert.notNull(entityStream, "The given publisher of entities must not be null!");
         return Flux.from(entityStream)
                 .flatMap(entity -> delete(entity)).single();
