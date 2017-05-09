@@ -1,6 +1,20 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.0.M3 (2017-05-09)
+----------------------------------------
+* DATACOUCH-305 - Adapt to API changes in repository interfaces.
+* DATACOUCH-304 - Remove support for JodaTime's deprecated DateMidnight.
+* DATACOUCH-302 - Adapt to moved CustomConversions to Spring Data Commons.
+* DATACOUCH-293 - Adapt to API changes in Reactor 3.1.
+* DATACOUCH-292 - Release 3.0 M3 (Kay).
+* DATACOUCH-290 - Update to latest java client version 2.4.4.
+* DATACOUCH-276 - Ordering by embeded field doesn't work.
+* DATACOUCH-275 - Auto generate values for document ids.
+* DATACOUCH-263 - Unable to save objects with LocalDateTime fields.
+* DATACOUCH-90 - Support for java.time for DateConverters.
+
+
 Changes in version 2.1.10.RELEASE (2017-04-19)
 ----------------------------------------------
 * DATACOUCH-299 - Revert upgrades to 2.4 driver.
