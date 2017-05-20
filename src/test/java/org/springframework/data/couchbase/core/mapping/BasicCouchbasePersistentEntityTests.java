@@ -16,25 +16,43 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Rule;
 import org.junit.Test;
-
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.mock.env.MockPropertySource;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * Verifies the correct behavior of annotation at the class level on persistable objects.
  *
  * @author Simon Baslé
  */
+@RunWith(SpringJUnit4ClassRunner.class)
+@TestPropertySource(properties = {
+		"valid.document.expiry = 10",
+		"invalid.document.expiry = abc"
+})
+@ContextConfiguration(classes = BasicCouchbasePersistentEntityTests.class)
 public class BasicCouchbasePersistentEntityTests {
+
+  @Rule
+  public ExpectedException expectedException = ExpectedException.none();
+
+  @Autowired
+  ConfigurableEnvironment environment;
 
   @Test
   public void testNoExpiryByDefault() {
@@ -119,15 +137,58 @@ public class BasicCouchbasePersistentEntityTests {
   public void doesNotUseIsUpdateExpiryForRead() throws Exception {
     assertFalse(getBasicCouchbasePersistentEntity(SimpleDocument.class).isTouchOnRead());
     assertFalse(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class).isTouchOnRead());
-    }
+  }
 
   @Test
   public void usesTouchOnRead() throws Exception {
     assertTrue(getBasicCouchbasePersistentEntity(SimpleDocumentWithTouchOnRead.class).isTouchOnRead());
   }
 
+  @Test
+  public void usesGetExpiryExpression() throws Exception {
+    assertEquals(10, getBasicCouchbasePersistentEntity(ConstantExpiryExpression.class).getExpiry());
+  }
+
+  @Test
+  public void usesGetExpiryFromValidExpression() throws Exception {
+    assertEquals(10, getBasicCouchbasePersistentEntity(ExpiryWithValidExpression.class).getExpiry());
+  }
+
+  @Test
+  public void doesNotAllowUseExpiryFromInvalidExpression() throws Exception {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Invalid Integer value for expiry expression: abc");
+    assertEquals(10, getBasicCouchbasePersistentEntity(ExpiryWithInvalidExpression.class).getExpiry());
+  }
+
+  @Test
+  public void usesGetExpiryExpressionAndRespectsPropertyUpdates() throws Exception {
+    BasicCouchbasePersistentEntity entity = getBasicCouchbasePersistentEntity(ExpiryWithValidExpression.class);
+    assertEquals(10, entity.getExpiry());
+
+    environment.getPropertySources().addFirst(new MockPropertySource().withProperty("valid.document.expiry", "20"));
+    assertEquals(20, entity.getExpiry());
+  }
+
+  @Test
+  public void failsIfExpiryExpressionMissesRequiredProperty() {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("Could not resolve placeholder 'missing.expiry'");
+    getBasicCouchbasePersistentEntity(ExpiryWithMissingProperty.class).getExpiry();
+  }
+
+  @Test
+  public void doesNotAllowUseExpiryAndExpressionSimultaneously() throws Exception {
+    expectedException.expect(IllegalArgumentException.class);
+    expectedException.expectMessage("You cannot use 'expiry' and 'expiryExpression' at the same time");
+    expectedException.expectMessage(ExpiryAndExpression.class.getName());
+    getBasicCouchbasePersistentEntity(ExpiryAndExpression.class).getExpiry();
+  }
+
   private BasicCouchbasePersistentEntity getBasicCouchbasePersistentEntity(Class<?> clazz) {
-    return new BasicCouchbasePersistentEntity(ClassTypeInformation.from(clazz));
+    BasicCouchbasePersistentEntity basicCouchbasePersistentEntity = new BasicCouchbasePersistentEntity(ClassTypeInformation.from(clazz));
+    basicCouchbasePersistentEntity.setEnvironment(environment);
+    return basicCouchbasePersistentEntity;
   }
 
   public static class SimpleDocument {
@@ -175,4 +236,40 @@ public class BasicCouchbasePersistentEntityTests {
   @Document(expiry = 31 * 24 * 60 * 60)
   public class OverLimitSecondsExpiry {
   }
+
+  /**
+   * Simple POJO to test constant expiry expression
+   */
+  @Document(expiryExpression = "10")
+  private class ConstantExpiryExpression {
+  }
+
+  /**
+   * Simple POJO to test valid expiry expression by resolving simple property from environment
+   */
+  @Document(expiryExpression = "${valid.document.expiry}")
+  private class ExpiryWithValidExpression {
+  }
+
+  /**
+   * Simple POJO to test invalid expiry expression
+   */
+  @Document(expiryExpression = "${invalid.document.expiry}")
+  private class ExpiryWithInvalidExpression {
+  }
+
+  /**
+   * Simple POJO to test expiry expression logic failure to resolve property placeholder
+   */
+  @Document(expiryExpression = "${missing.expiry}")
+  private class ExpiryWithMissingProperty {
+  }
+
+  /**
+   * Simple POJO to test that expiry and expiry expression cannot be used simultaneously
+   */
+  @Document(expiry = 10, expiryExpression = "10")
+  private class ExpiryAndExpression {
+  }
+
 }

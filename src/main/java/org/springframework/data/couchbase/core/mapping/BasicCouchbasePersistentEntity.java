@@ -17,14 +17,12 @@
 package org.springframework.data.couchbase.core.mapping;
 
 import com.couchbase.client.java.repository.annotation.Id;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.expression.BeanFactoryAccessor;
-import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -36,12 +34,9 @@ import java.util.concurrent.TimeUnit;
  * @author Michael Nitschinger
  */
 public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
-    implements CouchbasePersistentEntity<T>, ApplicationContextAware {
+    implements CouchbasePersistentEntity<T>, EnvironmentAware {
 
-  /**
-   * Contains the evaluation context.
-   */
-  private final StandardEvaluationContext context;
+  private Environment environment;
 
   /**
    * Create a new entity.
@@ -50,20 +45,21 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
    */
   public BasicCouchbasePersistentEntity(final TypeInformation<T> typeInformation) {
     super(typeInformation);
-    context = new StandardEvaluationContext();
+    validateExpirationConfiguration();
   }
 
-  /**
-   * Sets the application context.
-   *
-   * @param applicationContext the application context.
-   * @throws BeansException if setting the application context did go wrong.
-   */
+  private void validateExpirationConfiguration() {
+    Document annotation = getType().getAnnotation(Document.class);
+    if (annotation != null && annotation.expiry() > 0 && StringUtils.hasLength(annotation.expiryExpression())) {
+      String msg = String.format("Incorrect expiry configuration on class %s using %s. " +
+              "You cannot use 'expiry' and 'expiryExpression' at the same time", getType().getName(), annotation);
+      throw new IllegalArgumentException(msg);
+    }
+  }
+
   @Override
-  public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-    context.addPropertyAccessor(new BeanFactoryAccessor());
-    context.setBeanResolver(new BeanFactoryResolver(applicationContext));
-    context.setRootObject(applicationContext);
+  public void setEnvironment(Environment environment) {
+    this.environment = environment;
   }
 
   // DATACOUCH-145: allows SDK's @Id annotation to be used
@@ -100,12 +96,13 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 
   @Override
   public int getExpiry() {
-    org.springframework.data.couchbase.core.mapping.Document annotation =
-        getType().getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
+    Document annotation = getType().getAnnotation(Document.class);
     if (annotation == null)
       return 0;
 
-    long secondsShift = annotation.expiryUnit().toSeconds(annotation.expiry());
+    int expiryValue = getExpiryValue(annotation);
+
+    long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
     if (secondsShift > TTL_IN_SECONDS_INCLUSIVE_END) {
       //we want it to be represented as a UNIX timestamp style, seconds since Epoch in UTC
       Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -122,11 +119,26 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     }
   }
 
+  private int getExpiryValue(Document annotation) {
+    int expiryValue = annotation.expiry();
+    String expiryExpressionString = annotation.expiryExpression();
+    if (StringUtils.hasLength(expiryExpressionString)) {
+      Assert.notNull(environment, "Environment must be set to use 'expiryExpression'");
+      String expiryWithReplacedPlaceholders = environment.resolveRequiredPlaceholders(expiryExpressionString);
+      try {
+        expiryValue = Integer.parseInt(expiryWithReplacedPlaceholders);
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Invalid Integer value for expiry expression: " + expiryWithReplacedPlaceholders);
+      }
+    }
+    return expiryValue;
+  }
+
   @Override
   public boolean isTouchOnRead() {
     org.springframework.data.couchbase.core.mapping.Document annotation = getType().getAnnotation(
         org.springframework.data.couchbase.core.mapping.Document.class);
-    return annotation == null ? false : getExpiry() > 0 && annotation.touchOnRead();
+    return annotation == null ? false : annotation.touchOnRead() && getExpiry() > 0;
   }
 
 }
