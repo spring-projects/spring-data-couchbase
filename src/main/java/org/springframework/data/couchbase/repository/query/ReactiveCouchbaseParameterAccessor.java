@@ -31,16 +31,15 @@ import reactor.core.publisher.MonoProcessor;
  * to reactive parameter wrapper types upon creation. This class performs synchronization when accessing parameters.
  *
  * @author Subhashni Balakrishnan
+ * @author Mark Paluch
  * @since 3.0
  */
 public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAccessor {
 
-	private final Object[] values;
 	private final List<MonoProcessor<?>> subscriptions;
 
 	public ReactiveCouchbaseParameterAccessor(CouchbaseQueryMethod method, Object[] values) {
 		super(method.getParameters(), values);
-		this.values = values;
 		this.subscriptions = new ArrayList<>(values.length);
 
 		for (int i = 0; i < values.length; i++) {
@@ -53,9 +52,9 @@ public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAcces
 			}
 
 			if (ReactiveWrappers.isSingleValueType(value.getClass())) {
-				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Mono.class).subscribe());
+				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Mono.class).toProcessor());
 			} else {
-				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Flux.class).collectList().subscribe());
+				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Flux.class).collectList().toProcessor());
 			}
 		}
 	}
