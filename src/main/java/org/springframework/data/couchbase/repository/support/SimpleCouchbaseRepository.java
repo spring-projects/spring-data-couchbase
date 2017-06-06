@@ -103,19 +103,19 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   @Override
   public Optional<T> findById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    return Optional.ofNullable(couchbaseOperations.findById(id.toString(), entityInformation.getJavaType()));
+    return Optional.ofNullable(couchbaseOperations.findById(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString(), entityInformation.getJavaType()));
   }
 
   @Override
   public boolean existsById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    return couchbaseOperations.exists(id.toString());
+    return couchbaseOperations.exists(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());
   }
 
   @Override
   public void deleteById(ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    couchbaseOperations.remove(id.toString());
+    couchbaseOperations.remove(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());
   }
 
   @Override
@@ -149,7 +149,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
     JsonArray keys = JsonArray.create();
     for (ID id : ids) {
-      keys.add(id);
+      keys.add(couchbaseOperations.getConverter().convertForWriteIfNeeded(id));
     }
     query.keys(keys);
 
