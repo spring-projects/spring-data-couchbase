@@ -19,6 +19,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
@@ -51,15 +53,20 @@ public class RepositoryTemplateWiringTests {
     mockOpsA = mock(CouchbaseOperations.class);
     when(mockOpsA.getCouchbaseClusterInfo()).thenReturn(info);
     when(mockOpsA.exists(any(String.class))).thenReturn(true);
+    when(mockOpsA.getConverter()).thenReturn(new MappingCouchbaseConverter(new CouchbaseMappingContext()));
+
 
     mockOpsB = mock(CouchbaseOperations.class);
     when(mockOpsB.getCouchbaseClusterInfo()).thenReturn(info);
     when(mockOpsB.exists(any(String.class))).thenReturn(false);
+    when(mockOpsB.getConverter()).thenReturn(new MappingCouchbaseConverter(new CouchbaseMappingContext()));
+
 
     mockOpsC = spy(new CouchbaseTemplate(info, null));
     Misc cValue = new Misc();
     cValue.id = "mock";
     cValue.random = true;
+    when(mockOpsC.getConverter()).thenReturn(new MappingCouchbaseConverter(new CouchbaseMappingContext()));
     doReturn(cValue).when(mockOpsC).findById(any(String.class), any(Class.class));
   }
 
