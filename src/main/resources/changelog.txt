@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.4.RELEASE (2017-06-08)
+---------------------------------------------
+* DATACOUCH-301 - Release 2.2.4 (Ingalls SR4).
+
+
 Changes in version 2.1.11.RELEASE (2017-06-07)
 ----------------------------------------------
 * DATACOUCH-300 - Release 2.1.11 (Hopper SR11).
