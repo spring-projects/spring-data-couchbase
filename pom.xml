@@ -5,7 +5,7 @@
 
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>3.0.0.BUILD-SNAPSHOT</version>
+    <version>3.0.0.DATACOUCH-314-SNAPSHOT</version>
 
     <name>Spring Data Couchbase</name>
     <description>Spring Data integration for Couchbase</description>
@@ -20,7 +20,7 @@
     <properties>
         <couchbase>2.4.6</couchbase>
         <couchbase.osgi>2.4.6</couchbase.osgi>
-        <springdata.commons>2.0.0.BUILD-SNAPSHOT</springdata.commons>
+        <springdata.commons>2.0.0.DATACMNS-1063-SNAPSHOT</springdata.commons>
     </properties>
 
     <dependencies>
