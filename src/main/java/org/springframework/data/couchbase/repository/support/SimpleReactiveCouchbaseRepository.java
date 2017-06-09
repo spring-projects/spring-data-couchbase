@@ -130,9 +130,9 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<T> findById(Mono<ID> mono) {
-        Assert.notNull(mono, "The given mono must not be null!");
-        return mono.flatMap(
+    public Mono<T> findById(Publisher<ID> publisher) {
+        Assert.notNull(publisher, "The given Publisher must not be null!");
+        return Mono.from(publisher).flatMap(
                 this::findById);
     }
 
@@ -145,8 +145,9 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Boolean> existsById(Mono<ID> mono) {
-        return mono.flatMap(
+    public Mono<Boolean> existsById(Publisher<ID> publisher) {
+        Assert.notNull(publisher, "The given Publisher must not be null!");
+        return Mono.from(publisher).flatMap(
                 this::existsById);
     }
 
@@ -180,7 +181,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     public Flux<T> findAllById(Publisher<ID> entityStream) {
         Assert.notNull(entityStream, "The given entityStream must not be null!");
         return Flux.from(entityStream)
-                .flatMap(entity -> findById(entity));
+                .flatMap(this::findById);
     }
 
     @SuppressWarnings("unchecked")
