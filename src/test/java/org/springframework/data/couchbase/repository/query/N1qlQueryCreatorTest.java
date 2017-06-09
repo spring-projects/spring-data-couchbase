@@ -473,20 +473,27 @@ public class N1qlQueryCreatorTest {
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
   }
 
+  enum TestEnum {
+    TEST
+  }
+
   @Test
   public void testSIMPLE_PROPERTY() throws Exception {
     Part.Type keyword = Part.Type.SIMPLE_PROPERTY;
-    Iterator<Object> values = Arrays.<Object>asList("a", 1, "b").iterator();
+    Iterator<Object> values = Arrays.<Object>asList("a", 1, "b", TestEnum.TEST).iterator();
     String expected = "doc.field = \"a\"";
     String expectedNum = "doc.field = 1";
     String expectedIgnoreCase = "LOWER(doc.field) = LOWER(\"b\")";
+    String expectedEnum = "doc.field = \"TEST\"";
 
     Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
     Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values);
+    Expression expEnum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
+    assertEquals(expectedEnum, expEnum.toString());
   }
 }

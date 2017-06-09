@@ -172,6 +172,8 @@ public class N1qlQueryCreatorUtils {
         Expression converted;
         if (next instanceof String) {
             converted = s((String) next);
+        } else if (next instanceof Enum) {
+            converted = s(String.valueOf(next));
         } else {
             converted = x(String.valueOf(next));
         }
