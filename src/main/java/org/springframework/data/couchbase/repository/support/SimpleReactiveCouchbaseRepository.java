@@ -42,6 +42,7 @@ import reactor.core.publisher.Mono;
  *
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Christoph Strobl
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
@@ -189,6 +190,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     public Mono<Void> deleteById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
         return mapMono(operations.remove(id.toString()).map(res -> Observable.<Void>empty()).toSingle());
+    }
+
+    @Override
+    public Mono<Void> deleteById(Publisher<ID> publisher) {
+        Assert.notNull(publisher, "The given id must not be null!");
+        return Mono.from(publisher).flatMap(
+                this::deleteById);
     }
 
     @SuppressWarnings("unchecked")
