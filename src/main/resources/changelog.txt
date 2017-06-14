@@ -1,6 +1,14 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.0.M4 (2017-06-14)
+----------------------------------------
+* DATACOUCH-315 - Upgrade to couchbase client 2.4.6.
+* DATACOUCH-314 - Adopt to ReactiveCrudRepository.findById(Publisher) and existsById(Publisher).
+* DATACOUCH-311 - Upgrade to Reactor 3.1 M2.
+* DATACOUCH-308 - Release 3.0 M4 (Kay).
+
+
 Changes in version 2.2.4.RELEASE (2017-06-08)
 ---------------------------------------------
 * DATACOUCH-301 - Release 2.2.4 (Ingalls SR4).
