@@ -29,7 +29,6 @@ import org.springframework.data.couchbase.core.query.*;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.*;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;

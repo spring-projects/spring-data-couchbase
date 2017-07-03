@@ -46,7 +46,7 @@ import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 

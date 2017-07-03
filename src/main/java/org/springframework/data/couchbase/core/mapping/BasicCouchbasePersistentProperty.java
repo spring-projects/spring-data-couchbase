@@ -19,9 +19,9 @@ package org.springframework.data.couchbase.core.mapping;
 import com.couchbase.client.java.repository.annotation.Field;
 import com.couchbase.client.java.repository.annotation.Id;
 import org.springframework.data.mapping.Association;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
-import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
@@ -75,20 +75,21 @@ public class BasicCouchbasePersistentProperty
    */
   @Override
   public String getFieldName() {
-    Optional<Field> annotation = findAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
+    com.couchbase.client.java.repository.annotation.Field annotation = getField().
+        getAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
 
-    return annotation.map(Field::value).filter(StringUtils::hasText).orElseGet(() -> {
+    if (annotation != null && StringUtils.hasText(annotation.value())) {
+      return annotation.value();
+    }
 
-      String fieldName = fieldNamingStrategy.getFieldName(this);
+    String fieldName = fieldNamingStrategy.getFieldName(this);
 
-      if (!StringUtils.hasText(fieldName)) {
-        throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
-                this, fieldNamingStrategy.getClass()));
-      }
+    if (!StringUtils.hasText(fieldName)) {
+      throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
+          this, fieldNamingStrategy.getClass()));
+    }
 
-      return fieldName;
-    });
-
+    return fieldName;
   }
 
   // DATACOUCH-145: allows SDK's @Id annotation to be used

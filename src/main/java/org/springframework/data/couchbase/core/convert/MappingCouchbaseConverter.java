@@ -45,13 +45,13 @@ import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PreferredConstructor.Parameter;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
-import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.mapping.model.ParameterValueProvider;
 import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
 import org.springframework.data.mapping.model.PropertyValueProvider;
@@ -236,23 +236,29 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     final R instance = instantiator.createInstance(entity, provider);
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(instance);
 
-    entity.getPersistentProperties().filter(prop -> {
-
-      if (!(prop.isIdProperty() || source.containsKey(prop.getFieldName())) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)) {
-        return false;
+    entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+      @Override
+      public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)) {
+          return;
+        }
+        Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, instance);
+        accessor.setProperty(prop, obj);
       }
-      return true;
-    }).forEach(prop -> {
 
-      Optional<Object> obj = prop.isIdProperty() ? Optional.ofNullable(source.getId()) : getValueInternal(prop, source, instance);
-      accessor.setProperty(prop, obj);
+      private boolean doesPropertyExistInSource(final CouchbasePersistentProperty property) {
+        return property.isIdProperty() || source.containsKey(property.getFieldName());
+      }
+
+      private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
+        return property.isAnnotationPresent(IdPrefix.class) || property.isAnnotationPresent(IdSuffix.class);
+      }
     });
 
-    entity.getAssociations().forEach(association -> {
+    entity.doWithAssociations((AssociationHandler<CouchbasePersistentProperty>) association -> {
       CouchbasePersistentProperty inverseProp = association.getInverse();
-      Optional<Object> obj = getValueInternal(inverseProp, source, instance);
+      Object obj = getValueInternal(inverseProp, source, instance);
       accessor.setProperty(inverseProp, obj);
-
     });
 
 
@@ -267,7 +273,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @param parent the optional parent.
    * @return the actual property value.
    */
-  protected Optional<Object> getValueInternal(final CouchbasePersistentProperty property, final CouchbaseDocument source,
+  protected Object getValueInternal(final CouchbasePersistentProperty property, final CouchbaseDocument source,
                                     final Object parent) {
     return new CouchbasePropertyValueProvider(source, spELContext, parent).getPropertyValue(property);
   }
@@ -286,7 +292,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       final DefaultSpELExpressionEvaluator evaluator, final Object parent) {
     CouchbasePropertyValueProvider provider = new CouchbasePropertyValueProvider(source, evaluator, parent);
     PersistentEntityParameterValueProvider<CouchbasePersistentProperty> parameterProvider =
-        new PersistentEntityParameterValueProvider<CouchbasePersistentProperty>(entity, provider, Optional.ofNullable(parent));
+        new PersistentEntityParameterValueProvider<>(entity, provider, parent);
 
     return new ConverterAwareSpELExpressionParameterValueProvider(evaluator, conversionService, parameterProvider,
         parent);
@@ -310,13 +316,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     Map<String, Object> sourceMap = source.getPayload();
 
     for (Map.Entry<String, Object> entry : sourceMap.entrySet()) {
+      Object key = entry.getKey();
       Object value = entry.getValue();
 
-      Object key = type.getComponentType().map(TypeInformation::getType) //
-              .map(keyType -> (Object) conversionService.convert(entry.getKey(), keyType)) //
-              .orElse(entry.getKey());
+      TypeInformation<?> keyTypeInformation = type.getComponentType();
+      if (keyTypeInformation != null) {
+        Class<?> keyType = keyTypeInformation.getType();
+        key = conversionService.convert(key, keyType);
+      }
 
-      TypeInformation<?> valueType = type.getMapValueType().orElse(null);
+      TypeInformation<?> valueType = type.getMapValueType();
       if (value instanceof CouchbaseDocument) {
         map.put(key, read(valueType, (CouchbaseDocument) value, parent));
       } else if (value instanceof CouchbaseList) {
@@ -409,7 +418,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       throw new IllegalArgumentException("Root Document must be either CouchbaseDocument or Map.");
     }
 
-    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass()).orElse(null);
+    CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
     writeInternal(source, target, entity);
     addCustomTypeKeyIfNecessary(typeHint, source, target);
   }
@@ -456,84 +465,76 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(source);
-    final Optional<CouchbasePersistentProperty> idProperty = entity.getIdProperty();
-    final Optional<CouchbasePersistentProperty> versionProperty = entity.getVersionProperty();
+    final CouchbasePersistentProperty idProperty = entity.getIdProperty();
+    final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
-
+	GeneratedValue generatedValueInfo = null;
     final TreeMap<Integer, String> prefixes = new TreeMap<>();
     final TreeMap<Integer, String> suffixes = new TreeMap<>();
     final TreeMap<Integer, String> idAttributes = new TreeMap<>();
 
     target.setExpiration(entity.getExpiry());
-    entity.getPersistentProperties().filter(prop -> {
 
-      if (idProperty.filter(prop::equals).isPresent()) {
-        return false;
-      }
-      if (versionProperty.filter(prop::equals).isPresent()) {
-        return false;
-      }
+    entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+      @Override
+      public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+        if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
+          return;
+        } else if (enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)) {
+          return;
+        }
 
-      if (enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)) {
-        return false;
-      }
-      return true;
-    }).forEach(prop -> {
-      Optional<Object> propertyObj = accessor.getProperty(prop, (Class) prop.getType());
-      propertyObj.ifPresent(o -> {
-        if (null != o) {
+        Object propertyObj = accessor.getProperty(prop, prop.getType());
+        if (null != propertyObj) {
           if (prop.isAnnotationPresent(IdPrefix.class)) {
-            prop.findAnnotation(IdPrefix.class).ifPresent(p -> {
-              int order = p.order();
-              prefixes.put(order, convertToString(o));
-            });
+            IdPrefix prefix = prop.findAnnotation(IdPrefix.class);
+            int order = prefix.order();
+            prefixes.put(order, convertToString(propertyObj));
             return;
           }
 
           if (prop.isAnnotationPresent(IdSuffix.class)) {
-            prop.findAnnotation(IdSuffix.class).ifPresent(p -> {
-              int order = p.order();
-              suffixes.put(order, convertToString(o));
-            });
+            IdSuffix suffix = prop.findAnnotation(IdSuffix.class);
+            int order = suffix.order();
+            suffixes.put(order, convertToString(propertyObj));
             return;
           }
 
           if (prop.isAnnotationPresent(IdAttribute.class)) {
-            prop.findAnnotation(IdAttribute.class).ifPresent(p -> {
-              int order = p.order();
-              idAttributes.put(order, convertToString(o));
-            });
+            IdAttribute idAttribute = prop.findAnnotation(IdAttribute.class);
+            int order = idAttribute.order();
+            idAttributes.put(order, convertToString(propertyObj));
           }
 
-          if (!conversions.isSimpleType(o.getClass())) {
-            writePropertyInternal(o, target, prop);
+          if (!conversions.isSimpleType(propertyObj.getClass())) {
+            writePropertyInternal(propertyObj, target, prop);
           } else {
-            writeSimpleInternal(o, target, prop.getFieldName());
+            writeSimpleInternal(propertyObj, target, prop.getFieldName());
           }
         }
-      });
+      }
     });
 
-    if (target.getId() == null) {
-      idProperty.ifPresent(prop -> {
-        String id = accessor.getProperty(prop, String.class).orElse(null);
-        if(prop.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
-            prop.findAnnotation(GeneratedValue.class).ifPresent(generatedValueInfo -> {
-                      target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
-            });
-        } else {
-          target.setId(id);
-        }
-      });
+    if (idProperty != null && target.getId() == null) {
+      String id = accessor.getProperty(idProperty, String.class);
+      if(idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
+        generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
+        target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
+      } else {
+        target.setId(id);
+      }
     }
 
-    entity.getAssociations().forEach(association -> {
-      CouchbasePersistentProperty inverseProp = association.getInverse();
-      Class<?> type = inverseProp.getType();
-      Optional<Object> propertyObj = accessor.getProperty(inverseProp, (Class) type);
-      propertyObj.ifPresent(o -> {
-        writePropertyInternal(o, target, inverseProp);
-      });
+    entity.doWithAssociations(new AssociationHandler<CouchbasePersistentProperty>() {
+      @Override
+      public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
+        CouchbasePersistentProperty inverseProp = association.getInverse();
+        Class<?> type = inverseProp.getType();
+        Object propertyObj = accessor.getProperty(inverseProp, type);
+        if (null != propertyObj) {
+          writePropertyInternal(propertyObj, target, inverseProp);
+        }
+      }
     });
 
   }
@@ -624,7 +625,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
           target.put(simpleKey, writeCollectionInternal(asCollection(val), new CouchbaseList(conversions.getSimpleTypeHolder()), type.getMapValueType()));
         } else {
           CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-          TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType().orElse(ClassTypeInformation.OBJECT) : ClassTypeInformation.OBJECT;
+          TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
           writeInternal(val, embeddedDoc, valueTypeInfo);
           target.put(simpleKey, embeddedDoc);
         }
@@ -644,7 +645,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the created couchbase list.
    */
   private CouchbaseList createCollection(final Collection<?> collection, final CouchbasePersistentProperty prop) {
-    return writeCollectionInternal(collection, new CouchbaseList(conversions.getSimpleTypeHolder()), Optional.of(prop.getTypeInformation()));
+    return writeCollectionInternal(collection, new CouchbaseList(conversions.getSimpleTypeHolder()), prop.getTypeInformation());
   }
 
   /**
@@ -656,9 +657,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * @return the created couchbase list.
    */
   private CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
-                                                final Optional<TypeInformation<?>> type) {
-
-    Optional<TypeInformation<?>> componentType = type.flatMap(TypeInformation::getComponentType);
+                                                final TypeInformation<?> type) {
+    TypeInformation<?> componentType = type == null ? null : type.getComponentType();
 
     for (Object element : source) {
       Class<?> elementType = element == null ? null : element.getClass();
@@ -669,9 +669,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
         target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(conversions.getSimpleTypeHolder()), componentType));
       } else {
 
-        TypeInformation<?> typeInformation = componentType.orElse(null);
         CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-        writeInternal(element, embeddedDoc, typeInformation);
+        writeInternal(element, embeddedDoc, componentType);
         target.put(embeddedDoc);
       }
 
@@ -700,7 +699,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     collectionType = Collection.class.isAssignableFrom(collectionType) ? collectionType : List.class;
     Collection<Object> items = targetType.getType().isArray() ? new ArrayList<Object>() : CollectionFactory
         .createCollection(collectionType, source.size(false));
-    TypeInformation<?> componentType = targetType.getComponentType().orElse(null);
+    TypeInformation<?> componentType = targetType.getComponentType();
     Class<?> rawComponentType = componentType == null ? null : componentType.getType();
 
     for (int i = 0; i < source.size(false); i++) {
@@ -856,18 +855,18 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     @Override
     @SuppressWarnings("unchecked")
-    public <R> Optional<R> getPropertyValue(final CouchbasePersistentProperty property) {
-
-      Object value = property.getSpelExpression().map(evaluator::evaluate).orElseGet(() -> source.get(property.getFieldName()));
+    public <R> R getPropertyValue(final CouchbasePersistentProperty property) {
+      String expression = property.getSpelExpression();
+      Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
 
       if (property.isIdProperty()) {
-        return Optional.ofNullable((R) source.getId());
+        return (R) source.getId();
       }
       if (value == null) {
-        return Optional.empty();
+        return null;
       }
 
-      return Optional.ofNullable(readValue(value, property.getTypeInformation(), parent));
+      return readValue(value, property.getTypeInformation(), parent);
     }
   }
 

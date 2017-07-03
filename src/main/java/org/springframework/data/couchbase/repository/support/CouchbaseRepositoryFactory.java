@@ -40,7 +40,6 @@ import org.springframework.data.couchbase.repository.query.SpatialViewBasedQuery
 import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.model.MappingException;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;

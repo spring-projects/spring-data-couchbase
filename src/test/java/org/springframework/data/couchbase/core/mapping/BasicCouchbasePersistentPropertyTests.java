@@ -88,11 +88,8 @@ public class BasicCouchbasePersistentPropertyTests {
     assertTrue(sdkIdProperty.isIdProperty());
     assertTrue(springIdProperty.isIdProperty());
 
-    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
-    assertTrue(property.isPresent());
-    property.ifPresent(actual -> {
-      assertEquals(springIdProperty, actual);
-    });
+    CouchbasePersistentProperty property = test.getIdProperty();
+    assertEquals(springIdProperty, property);
   }
 
   @Test
@@ -103,11 +100,8 @@ public class BasicCouchbasePersistentPropertyTests {
     CouchbasePersistentProperty idProperty = getPropertyFor(id);
     test.addPersistentProperty(idProperty);
 
-    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
-    assertTrue(property.isPresent());
-    property.ifPresent(actual -> {
-      assertEquals(idProperty, actual);
-    });
+    CouchbasePersistentProperty property = test.getIdProperty();
+    assertEquals(idProperty, property);
   }
 
   @Test
@@ -123,19 +117,10 @@ public class BasicCouchbasePersistentPropertyTests {
     // when "overriding" Spring @Id with SDK's @Id...
     test.addPersistentProperty(springIdProperty);
 
-    Optional<CouchbasePersistentProperty> property = test.getIdProperty();
-    assertTrue(property.isPresent());
-    property.ifPresent(actual -> {
-      assertEquals(springIdProperty, actual);
-    });
+    assertEquals(springIdProperty, test.getIdProperty());
 
     test.addPersistentProperty(sdkIdProperty);
-
-    property = test.getIdProperty();
-    assertTrue(property.isPresent());
-    property.ifPresent(actual -> {
-      assertEquals(springIdProperty, actual);
-    });
+    assertEquals(springIdProperty, test.getIdProperty());
   }
 
   /**

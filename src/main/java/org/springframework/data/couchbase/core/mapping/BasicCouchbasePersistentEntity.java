@@ -75,12 +75,8 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
     }
 
     //check existing ID vs new candidate
-    boolean currentCbId = this.getIdProperty()
-            .map(couchbasePersistentProperty -> couchbasePersistentProperty.isAnnotationPresent(Id.class))
-            .orElse(false);
-    boolean currentSpringId = this.getIdProperty()
-            .map(couchbasePersistentProperty -> couchbasePersistentProperty.isAnnotationPresent(org.springframework.data.annotation.Id.class))
-            .orElse(false);
+    boolean currentCbId = this.getIdProperty().isAnnotationPresent(Id.class);
+    boolean currentSpringId = this.getIdProperty().isAnnotationPresent(org.springframework.data.annotation.Id.class);
     boolean candidateCbId = property.isAnnotationPresent(Id.class);
     boolean candidateSpringId = property.isAnnotationPresent(org.springframework.data.annotation.Id.class);
 

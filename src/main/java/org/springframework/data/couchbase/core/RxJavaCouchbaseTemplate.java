@@ -18,8 +18,6 @@ package org.springframework.data.couchbase.core;
 
 import static org.springframework.data.couchbase.core.CouchbaseTemplate.ensureNotIterable;
 
-import java.util.Optional;
-
 import com.couchbase.client.java.AsyncBucket;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.PersistTo;
@@ -46,9 +44,7 @@ import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import rx.Observable;
-import rx.functions.Action4;
 import rx.functions.Func3;
-import rx.functions.Func4;
 
 /**
  * RxJavaCouchbaseTemplate implements operations using rxjava1 observables
@@ -58,7 +54,6 @@ import rx.functions.Func4;
  * @since 3.0
  */
 public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RxJavaCouchbaseTemplate.class);
 
     private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
 
@@ -208,14 +203,14 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
 
     private <T> Observable<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
         // If version is not set - assumption that document is new, otherwise updating
-        Optional<Long> version = getVersion(objectToPersist);
+        Long version = getVersion(objectToPersist);
         Func3<RawJsonDocument, PersistTo, ReplicateTo, Observable<RawJsonDocument>> persistFunction;
         switch (persistType) {
             case SAVE:
-                if (!version.isPresent()) {
+                if (version == null) {
                     //No version field - no cas
                     persistFunction = client::upsert;
-                } else if (version.get() > 0) {
+                } else if (version > 0) {
                     //Updating existing document with cas
                     persistFunction = client::replace;
                 } else {
@@ -241,11 +236,11 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
                 .onErrorResumeNext(e -> {
                     if (e instanceof DocumentAlreadyExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
-                                " document with version value failed: " + version.orElse(null), e);
+                                " document with version value failed: " + version, e);
                     }
                     if (e instanceof CASMismatchException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
-                                " document with version value failed: " + version.orElse(null), e);
+                                " document with version value failed: " + version, e);
                     }
                     return TemplateUtils.translateError(e);
                 });
@@ -256,23 +251,30 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
 
         final CouchbaseDocument converted = new CouchbaseDocument();
         converter.write(object, converted);
-        return encodeAndWrap(converted, getVersion(object).orElse(null));
+        return encodeAndWrap(converted, getVersion(object));
     }
 
-    private <T> Optional<CouchbasePersistentProperty> versionProperty(T object) {
-        final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(object.getClass());
-        return persistentEntity.getVersionProperty();
+    private <T> CouchbasePersistentProperty versionProperty(T object) {
+        return mappingContext.getRequiredPersistentEntity(object.getClass()).getVersionProperty();
     }
 
-    private <T> Optional<Long> getVersion(T object) {
+    private <T> Long getVersion(T object) {
         final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
-        Optional<CouchbasePersistentProperty> versionProperty = versionProperty(object);
-        return versionProperty.flatMap(p -> accessor.getProperty(p, Long.class));
+        CouchbasePersistentProperty versionProperty = versionProperty(object);
+
+        if (versionProperty != null) {
+            return accessor.getProperty(versionProperty, Long.class);
+        }
+        return null;
     }
 
     private <T> void setVersion(T object, long cas) {
         final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
-        versionProperty(object).ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(cas)));
+        CouchbasePersistentProperty versionProperty = versionProperty(object);
+
+        if (versionProperty != null) {
+            accessor.setProperty(versionProperty, cas);
+        }
     }
 
     private <T> Observable<T> doRemove(T objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
@@ -432,7 +434,10 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
 
         final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
         CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
-        persistentEntity.getVersionProperty().ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(data.cas())));
+        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+        if (versionProperty != null) {
+            accessor.setProperty(versionProperty, data.cas());
+        }
 
         return (T) readEntity;
     }

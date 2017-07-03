@@ -31,7 +31,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
-import org.springframework.data.mapping.model.MappingException;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**

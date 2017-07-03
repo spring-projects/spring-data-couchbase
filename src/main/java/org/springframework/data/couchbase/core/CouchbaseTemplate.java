@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -581,8 +580,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
     final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(objectToPersist.getClass());
-    final Optional<CouchbasePersistentProperty> versionProperty = persistentEntity.getVersionProperty();
-    final Long version = versionProperty.flatMap(p -> accessor.getProperty(p, Long.class)).orElse(null);
+    final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+    final Long version = versionProperty != null ? accessor.getProperty(versionProperty, Long.class) : null;
 
     maybeEmitEvent(new BeforeConvertEvent<Object>(objectToPersist));
     final CouchbaseDocument converted = new CouchbaseDocument();
@@ -596,7 +595,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
         //We will check version only if required
-        boolean versionPresent = versionProperty.isPresent();
+        boolean versionPresent = versionProperty != null;
         //If version is not set - assumption that document is new, otherwise updating
         boolean existingDocument = version != null && version > 0L;
 
@@ -625,7 +624,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
           if (storedDoc != null && storedDoc.cas() != 0) {
             //inject new cas into the bean
-            versionProperty.ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(storedDoc.cas())));
+            if (versionProperty != null) {
+              accessor.setProperty(versionProperty, storedDoc.cas());
+            }
             return true;
           }
           return false;
@@ -694,7 +695,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
-    persistentEntity.getVersionProperty().ifPresent(p -> accessor.setProperty(p, Optional.ofNullable(data.cas())));
+
+    if (persistentEntity.getVersionProperty() != null) {
+      accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
+	}
 
     return (T) readEntity;
   }
