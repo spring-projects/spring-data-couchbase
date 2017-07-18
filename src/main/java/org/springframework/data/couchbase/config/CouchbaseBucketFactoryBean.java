@@ -35,22 +35,28 @@ public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> impl
 
 	private final Cluster cluster;
 	private final String bucketName;
-	private final String bucketPassword;
+	private final String userName;
+	private final String password;
 
 	private final PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 	public CouchbaseBucketFactoryBean(Cluster cluster) {
-		this(cluster, null, null);
+		this(cluster, null, null, null);
 	}
 
 	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName) {
-		this(cluster, bucketName, null);
+		this(cluster, bucketName, bucketName, null);
 	}
 
-	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName, String bucketPassword) {
+	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName, String password) {
+		this(cluster, bucketName, bucketName, password);
+	}
+
+	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName, String userName, String password) {
 		this.cluster = cluster;
 		this.bucketName = bucketName;
-		this.bucketPassword = bucketPassword;
+		this.userName = userName;
+		this.password = password;
 	}
 
 	@Override
@@ -63,11 +69,14 @@ public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> impl
 		if (bucketName == null) {
 			return cluster.openBucket();
 		}
-		else if (bucketPassword == null) {
+		else if (password == null) {
 			return cluster.openBucket(bucketName);
 		}
-		else {
-			return cluster.openBucket(bucketName, bucketPassword);
+		else if (userName.compareTo(bucketName) == 0) {
+			return cluster.openBucket(bucketName, password);
+		} else {
+			cluster.authenticate(userName, password);
+			return cluster.openBucket(bucketName);
 		}
 	}
 

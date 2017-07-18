@@ -65,7 +65,7 @@ public class RepositoryCustomMethodTest {
     }
 
     @Override
-    protected String getBucketPassword() {
+    protected String getPassword() {
       return "";
     }
 

@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
  * The parser for XML definition of a {@link Bucket}, to be constructed from a {@link Cluster} reference.
  * If no reference is given, the default reference <code>{@value BeanNames#COUCHBASE_CLUSTER}</code> is used.
  *
- * See attributes {@link #CLUSTER_REF_ATTR}, {@link #BUCKETNAME_ATTR} and {@link #BUCKETPASSWORD_ATTR}.
+ * See attributes {@link #CLUSTER_REF_ATTR}, {@link #BUCKETNAME_ATTR}, {@link #USERNAME_ATTR} and {@link #PASSWORD_ATTR}.
  *
  * @author Simon Baslé
  */
@@ -47,9 +47,15 @@ public class CouchbaseBucketParser extends AbstractSingleBeanDefinitionParser {
 	public static final String BUCKETNAME_ATTR = "bucketName";
 
 	/**
-	 * The <code>bucketPassword</code> attribute in a bucket definition defines the password of the bucket to open.
+	 * The <code>userName</code> attribute in a bucket definition defines the user authorized for the bucket access. In couchbase
+	 * server versions older than 5.0, the user name is the bucket name.
 	 */
-	public static final String BUCKETPASSWORD_ATTR = "bucketPassword";
+	public static final String USERNAME_ATTR = "userName";
+
+	/**
+	 * The <code>password</code> attribute in a bucket definition defines the password of the bucket to open.
+	 */
+	public static final String PASSWORD_ATTR = "password";
 
 	/**
 	 * Resolve the bean ID and assign a default if not set.
@@ -95,9 +101,14 @@ public class CouchbaseBucketParser extends AbstractSingleBeanDefinitionParser {
 			builder.addConstructorArgValue(bucketName);
 		}
 
-		String bucketPassword = element.getAttribute(BUCKETPASSWORD_ATTR);
-		if (StringUtils.hasText(bucketPassword)) {
-			builder.addConstructorArgValue(bucketPassword);
+		String userName = element.getAttribute(USERNAME_ATTR);
+		if (StringUtils.hasText(userName) && userName.compareTo(bucketName) != 0) {
+			builder.addConstructorArgValue(userName);
+		}
+
+		String password = element.getAttribute(PASSWORD_ATTR);
+		if (StringUtils.hasText(password)) {
+			builder.addConstructorArgValue(password);
 		}
 	}
 }

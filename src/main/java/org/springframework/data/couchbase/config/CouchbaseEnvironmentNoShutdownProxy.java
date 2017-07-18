@@ -215,6 +215,21 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
+  public boolean continuousKeepAliveEnabled() {
+    return delegate.continuousKeepAliveEnabled();
+  }
+
+  @Override
+  public long keepAliveErrorThreshold() {
+    return delegate.keepAliveErrorThreshold();
+  }
+
+  @Override
+  public long keepAliveTimeout() {
+    return delegate.keepAliveTimeout();
+  }
+
+  @Override
   public EventBus eventBus() {
     return delegate.eventBus();
   }
@@ -387,5 +402,10 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public ViewServiceConfig viewServiceConfig() {
     return delegate.viewServiceConfig();
+  }
+
+  @Override
+  public boolean certAuthEnabled() {
+    return delegate.certAuthEnabled();
   }
 }

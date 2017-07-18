@@ -85,8 +85,13 @@ class ApplicationConfig extends AbstractReactiveCouchbaseConfiguration {
   }
 
   @Override
-  protected String getBucketPassword() {
- 	return "";
+  protected String getUser() {
+        return "user";
+  }
+
+  @Override
+  protected String getPassword() {
+	return "password";
  }
 }
 ----

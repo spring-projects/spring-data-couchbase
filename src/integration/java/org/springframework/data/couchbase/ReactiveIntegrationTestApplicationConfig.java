@@ -43,7 +43,7 @@ public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCo
 	}
 
 	@Override
-	protected String getBucketPassword() {
+	protected String getPassword() {
 		return springEnv.getProperty("couchbase.password", "");
 	}
 

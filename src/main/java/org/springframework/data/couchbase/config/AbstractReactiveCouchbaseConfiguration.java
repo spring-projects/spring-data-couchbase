@@ -53,11 +53,20 @@ public abstract class AbstractReactiveCouchbaseConfiguration
     protected abstract String getBucketName();
 
     /**
-     * The password of the bucket (can be an empty string).
+     * The user of the bucket, it is the bucket name in server versions prior to 5.0
      *
-     * @return the password of the bucket.
+     * @return the name of the user authorized for the bucket
      */
-    protected abstract String getBucketPassword();
+    protected String getBucketUser() {
+        return getBucketName();
+    }
+
+    /**
+     * The password of the bucket (can be an empty string) /user.
+     *
+     * @return the password of the bucket/user.
+     */
+    protected abstract String getPassword();
 
     /**
      * Is the {@link #getEnvironment()} to be destroyed by Spring?
@@ -109,7 +118,7 @@ public abstract class AbstractReactiveCouchbaseConfiguration
     @Override
     @Bean(name = BeanNames.COUCHBASE_CLUSTER_INFO)
     public ClusterInfo couchbaseClusterInfo() throws Exception {
-        return couchbaseCluster().clusterManager(getBucketName(), getBucketPassword()).info();
+        return couchbaseCluster().clusterManager(getBucketUser(), getPassword()).info();
     }
 
     /**
@@ -121,6 +130,11 @@ public abstract class AbstractReactiveCouchbaseConfiguration
     @Bean(destroyMethod = "close", name = BeanNames.COUCHBASE_BUCKET)
     public Bucket couchbaseClient() throws Exception {
         //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
-        return couchbaseCluster().openBucket(getBucketName(), getBucketPassword());
+        if (getBucketUser().compareTo(getBucketName()) == 0) {
+            return couchbaseCluster().openBucket(getBucketName());
+        } else {
+            couchbaseCluster().authenticate(getBucketUser(), getPassword());
+            return couchbaseCluster().openBucket(getBucketName(), getPassword());
+        }
     }
 }
