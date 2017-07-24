@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.5.RELEASE (2017-07-24)
+---------------------------------------------
+* DATACOUCH-313 - Release 2.2.5 (Ingalls SR5).
+* DATACOUCH-310 - N1qlQueryCreator should consider making enums String values when building n1ql expressions.
+
+
 Changes in version 3.0.0.M4 (2017-06-14)
 ----------------------------------------
 * DATACOUCH-315 - Upgrade to couchbase client 2.4.6.
