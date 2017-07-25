@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.0.RC2 (2017-07-25)
+-----------------------------------------
+* DATACOUCH-325 - Release 3.0 RC2 (Kay).
+
+
 Changes in version 3.0.0.RC1 (2017-07-25)
 -----------------------------------------
 * DATACOUCH-323 - Inherit Project Reactor version from dependency management.
