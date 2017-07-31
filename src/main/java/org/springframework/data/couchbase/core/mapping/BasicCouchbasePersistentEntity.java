@@ -111,7 +111,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
       Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
       if (annotation.expiryUnit() == TimeUnit.DAYS) {
         //makes sure we won't lose resolution
-        cal.add(Calendar.DAY_OF_MONTH, annotation.expiry());
+        cal.add(Calendar.DAY_OF_MONTH, expiryValue);
       } else {
         //use the shift in seconds since resolution should be smaller
         cal.add(Calendar.SECOND, (int) secondsShift);

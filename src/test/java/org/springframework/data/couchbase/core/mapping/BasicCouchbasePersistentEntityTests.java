@@ -81,6 +81,30 @@ public class BasicCouchbasePersistentEntityTests {
     assertEquals(expected.get(Calendar.MINUTE), calendar.get(Calendar.MINUTE));
     assertEquals(expected.get(Calendar.SECOND), calendar.get(Calendar.SECOND));
   }
+  
+  @Test
+  public void testLargeExpiryExpression31DaysIsConvertedToUnixUtcTime() {
+	BasicCouchbasePersistentEntity<OverLimitDaysExpiryExpression> entityOver = new BasicCouchbasePersistentEntity<OverLimitDaysExpiryExpression>(
+        ClassTypeInformation.from(OverLimitDaysExpiryExpression.class));
+    entityOver.setEnvironment(environment);
+
+    int expiryOver = entityOver.getExpiry();
+    Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    expected.add(Calendar.DAY_OF_YEAR, 31);
+
+    Date dateOver = new Date(expiryOver * 1000L);
+    System.out.println(entityOver + " => " + dateOver);
+
+    Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    calendar.clear();
+    calendar.add(Calendar.SECOND, expiryOver);
+    assertEquals(expected.get(Calendar.YEAR), calendar.get(Calendar.YEAR));
+    assertEquals(expected.get(Calendar.MONTH), calendar.get(Calendar.MONTH));
+    assertEquals(expected.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+    assertEquals(expected.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.HOUR_OF_DAY));
+    assertEquals(expected.get(Calendar.MINUTE), calendar.get(Calendar.MINUTE));
+    assertEquals(expected.get(Calendar.SECOND), calendar.get(Calendar.SECOND));
+  }
 
   @Test
   public void testLargeExpiry31DaysInSecondsIsConvertedToUnixUtcTime() {
@@ -167,6 +191,13 @@ public class BasicCouchbasePersistentEntityTests {
    */
   @Document(expiry = 31, expiryUnit = TimeUnit.DAYS)
   public class OverLimitDaysExpiry {
+  }
+  
+  /**
+   * Simple POJO to test larger than 30 days expiry defined as an expression
+   */
+  @Document(expiryExpression = "${document.expiry.larger.than.30days:31}", expiryUnit = TimeUnit.DAYS)
+  public class OverLimitDaysExpiryExpression {
   }
 
   /**
