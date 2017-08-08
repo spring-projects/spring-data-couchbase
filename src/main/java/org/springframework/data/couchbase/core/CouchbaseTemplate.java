@@ -583,7 +583,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     execute(new BucketCallback<Boolean>() {
       @Override
       public Boolean doInBucket() throws InterruptedException, ExecutionException {
-        converted.setId(addCommonPrefixAndSuffix(converted.getId()));
+        String generatedId = addCommonPrefixAndSuffix(converted.getId());
+        converted.setId(generatedId);
         Document<String> doc = encodeAndWrap(converted, version);
         Document<String> storedDoc;
         //We will check version only if required
@@ -614,6 +615,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
               break;
           }
 
+          CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+          Object entityId = accessor.getProperty(idProperty);
+          if (!generatedId.equals(entityId)) {
+            accessor.setProperty(idProperty, generatedId);
+          }
           if (persistentEntity.hasVersionProperty() && storedDoc != null && storedDoc.cas() != 0) {
             //inject new cas into the bean
             accessor.setProperty(versionProperty, storedDoc.cas());
