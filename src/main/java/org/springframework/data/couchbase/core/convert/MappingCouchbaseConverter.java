@@ -16,12 +16,15 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.UUID;
 
 import com.couchbase.client.java.repository.annotation.Field;
 
@@ -35,6 +38,10 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
+import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
+import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -229,7 +236,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
       @Override
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop)) {
+        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)) {
           return;
         }
         Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, instance);
@@ -238,6 +245,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
       private boolean doesPropertyExistInSource(final CouchbasePersistentProperty property) {
         return property.isIdProperty() || source.containsKey(property.getFieldName());
+      }
+
+      private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
+        return property.isAnnotationPresent(IdPrefix.class) || property.isAnnotationPresent(IdSuffix.class);
       }
     });
 
@@ -374,7 +385,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
     writeInternal(source, target, type);
     if (target.getId() == null) {
-      throw new MappingException("An ID property is needed, but not found on this entity.");
+      throw new MappingException("An ID property is needed, but not found/could not be generated on this entity.");
     }
   }
 
@@ -446,10 +457,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     final CouchbasePersistentProperty idProperty = entity.getIdProperty();
     final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
-    if (idProperty != null && target.getId() == null) {
-      String id = accessor.getProperty(idProperty, String.class);
-      target.setId(id);
-    }
+    GeneratedValue generatedValueInfo = null;
+    final TreeMap<Integer, String> prefixes = new TreeMap<Integer, String>();
+    final TreeMap<Integer, String> suffixes = new TreeMap<Integer, String>();
+    final TreeMap<Integer, String> idAttributes = new TreeMap<Integer, String>();
+
     target.setExpiration(entity.getExpiry());
 
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
@@ -463,6 +475,26 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
 
         Object propertyObj = accessor.getProperty(prop, prop.getType());
         if (null != propertyObj) {
+          if (prop.isAnnotationPresent(IdPrefix.class)) {
+            IdPrefix prefix = prop.findAnnotation(IdPrefix.class);
+            int order = prefix.order();
+            prefixes.put(order, convertToString(propertyObj));
+            return;
+          }
+
+          if (prop.isAnnotationPresent(IdSuffix.class)) {
+            IdSuffix suffix = prop.findAnnotation(IdSuffix.class);
+            int order = suffix.order();
+            suffixes.put(order, convertToString(propertyObj));
+            return;
+          }
+
+          if (prop.isAnnotationPresent(IdAttribute.class)) {
+            IdAttribute idAttribute = prop.findAnnotation(IdAttribute.class);
+            int order = idAttribute.order();
+            idAttributes.put(order, convertToString(propertyObj));
+          }
+
           if (!conversions.isSimpleType(propertyObj.getClass())) {
             writePropertyInternal(propertyObj, target, prop);
           } else {
@@ -470,7 +502,28 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
           }
         }
       }
+
+      private String convertToString(Object propertyObj) {
+        if (propertyObj instanceof String) {
+          return (String) propertyObj;
+        } else if (propertyObj instanceof Number) {
+          return new StringBuffer().append(propertyObj).toString();
+        } else {
+          return propertyObj.toString();
+        }
+      }
+
     });
+
+    if (idProperty != null && target.getId() == null) {
+      String id = accessor.getProperty(idProperty, String.class);
+      if(idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
+        generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
+        target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
+      } else {
+        target.setId(id);
+      }
+    }
 
     entity.doWithAssociations(new AssociationHandler<CouchbasePersistentProperty>() {
       @Override
@@ -836,4 +889,49 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }
   }
 
+  private String generateId(GeneratedValue generatedValue, TreeMap<Integer, String> prefixes, TreeMap<Integer, String> suffixes,
+                            TreeMap<Integer, String> idAttributes) {
+    String delimiter = generatedValue.delimiter();
+    StringBuilder sb = new StringBuilder();
+    boolean isAppending = false;
+    if (prefixes.size() > 0) {
+      appendKeyParts(sb, prefixes.values(), delimiter);
+      isAppending = true;
+    }
+
+    if (generatedValue.strategy() == USE_ATTRIBUTES && idAttributes.size() > 0) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      appendKeyParts(sb, idAttributes.values(), delimiter);
+    }
+
+    if (generatedValue.strategy() == UNIQUE) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      sb.append(UUID.randomUUID());
+    }
+
+    if (suffixes.size() > 0) {
+      if(isAppending) {
+        sb.append(delimiter);
+      }
+      appendKeyParts(sb, suffixes.values(), delimiter);
+    }
+    return sb.toString();
+  }
+
+  private StringBuilder appendKeyParts(StringBuilder sb, Collection<String> values, String delimiter) {
+    boolean isAppending = false;
+    for(String value : values) {
+      if (isAppending) {
+        sb.append(delimiter);
+      } else {
+        isAppending = true;
+      }
+      sb.append(value);
+    }
+    return sb;
+  }
 }
