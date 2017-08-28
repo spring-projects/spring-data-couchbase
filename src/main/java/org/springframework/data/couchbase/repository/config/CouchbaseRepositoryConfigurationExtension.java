@@ -16,18 +16,24 @@
 
 package org.springframework.data.couchbase.repository.config;
 
-import org.w3c.dom.Element;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 import org.springframework.data.repository.config.XmlRepositoryConfigurationSource;
+import org.w3c.dom.Element;
 
 /**
  * @author Michael Nitschinger
+ * @author Oliver Gierke
  */
 public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
@@ -59,5 +65,23 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
     builder.addDependsOn(BeanNames.COUCHBASE_INDEX_MANAGER);
     builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.COUCHBASE_OPERATIONS_MAPPING);
     builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingAnnotations()
+   */
+  @Override
+  protected Collection<Class<? extends Annotation>> getIdentifyingAnnotations() {
+    return Collections.<Class<? extends Annotation>> singleton(Document.class);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingTypes()
+   */
+  @Override
+  protected Collection<Class<?>> getIdentifyingTypes() {
+    return Collections.<Class<?>> singleton(CouchbaseRepository.class);
   }
 }
