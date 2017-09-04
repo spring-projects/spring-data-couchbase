@@ -43,6 +43,7 @@ import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.core.RepositoryInformation;
 
 /**
@@ -188,8 +189,8 @@ public class IndexManager {
   private Observable<Void> buildN1qlSecondary(N1qlSecondaryIndexed config, final RepositoryInformation metadata, CouchbaseOperations couchbaseOperations) {
     final String bucketName = couchbaseOperations.getCouchbaseBucket().name();
     final String indexName = config.indexName();
-    String typeKey = couchbaseOperations.getConverter().getTypeKey();
-    final String type = metadata.getDomainType().getName();
+    final String typeKey = couchbaseOperations.getConverter().getTypeKey();
+    final String type = N1qlUtils.getTypeValue(metadata.getDomainType());
 
     Statement createIndex = Index.createIndex(indexName)
         .on(bucketName, x(typeKey))

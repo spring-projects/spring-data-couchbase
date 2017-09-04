@@ -17,8 +17,14 @@
 package org.springframework.data.couchbase.core.convert;
 
 import org.springframework.data.convert.DefaultTypeMapper;
+import org.springframework.data.convert.SimpleTypeInformationMapper;
 import org.springframework.data.convert.TypeAliasAccessor;
+import org.springframework.data.convert.TypeInformationMapper;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.context.MappingContext;
+
+import java.util.Collections;
 
 /**
  * The Couchbase Type Mapper.
@@ -39,8 +45,9 @@ public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocum
    *
    * @param typeKey the typeKey to use.
    */
-  public DefaultCouchbaseTypeMapper(final String typeKey) {
-    super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
+  public DefaultCouchbaseTypeMapper(final String typeKey, MappingContext<? extends PersistentEntity<?, ?>, ?> mappingContext) {
+    super(new CouchbaseDocumentTypeAliasAccessor(typeKey), mappingContext,
+        Collections.singletonList(new SimpleTypeInformationMapper()));
     this.typeKey = typeKey;
   }
 

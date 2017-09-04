@@ -157,12 +157,18 @@ public class N1qlUtils {
   }
 
   public static String getTypeValue(EntityMetadata<?> entityInformation) {
-    final TypeAlias typeAliasAnnotation = entityInformation.getJavaType().getAnnotation(TypeAlias.class);
+    final Class<?> javaType = entityInformation.getJavaType();
+    return getTypeValue(javaType);
+  }
+
+  public static String getTypeValue(Class<?> entityType) {
+    final TypeAlias typeAliasAnnotation = entityType.getAnnotation(TypeAlias.class);
     if(typeAliasAnnotation != null) {
       return typeAliasAnnotation.value();
     }
-    return entityInformation.getJavaType().getName();
+    return entityType.getName();
   }
+
   /**
    * Given a common {@link PropertyPath}, returns the corresponding {@link PersistentPropertyPath}
    * of {@link CouchbasePersistentProperty} which will allow to discover alternative naming for fields.
