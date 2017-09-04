@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -176,7 +177,7 @@ public class N1qlUtils {
                                                       EntityMetadata<?> entityInformation) {
     //add part that filters on type key
     String typeKey = converter.getTypeKey();
-    String typeValue = entityInformation.getJavaType().getName();
+    String typeValue = getTypeValue(entityInformation.getJavaType());
     Expression typeSelector = i(typeKey).eq(s(typeValue));
     if (baseWhereCriteria == null) {
       baseWhereCriteria = typeSelector;
@@ -184,6 +185,14 @@ public class N1qlUtils {
       baseWhereCriteria = x("(" + baseWhereCriteria.toString() + ")").and(typeSelector);
     }
     return baseWhereCriteria;
+  }
+
+  public static String getTypeValue(Class<?> entityInformation) {
+    final TypeAlias typeAliasAnnotation = entityInformation.getAnnotation(TypeAlias.class);
+    if (typeAliasAnnotation != null) {
+      return typeAliasAnnotation.value();
+    }
+    return entityInformation.getName();
   }
 
   /**

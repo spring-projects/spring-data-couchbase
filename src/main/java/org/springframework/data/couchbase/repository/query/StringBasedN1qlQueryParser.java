@@ -115,16 +115,17 @@ public class StringBasedN1qlQueryParser {
 									  QueryMethod queryMethod,
 									  String bucketName,
 									  String typeField,
-									  Class<?> typeValue) {
+									  Class<?> type) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.placeHolderType = checkPlaceholders(statement);
+		String typeValue = N1qlUtils.getTypeValue(type);
 		this.statementContext = createN1qlSpelValues(bucketName, typeField, typeValue, false);
 		this.countContext = createN1qlSpelValues(bucketName, typeField, typeValue, true);
 
 	}
 
-	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, Class<?> typeValue, boolean isCount) {
+	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue, boolean isCount) {
 		String b = "`" + bucketName + "`";
 		String entity = "META(" + b + ").id AS " + SELECT_ID +
 				", META(" + b + ").cas AS " + SELECT_CAS;
@@ -135,7 +136,7 @@ public class StringBasedN1qlQueryParser {
 		} else {
 			selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
 		}
-		String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
+		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
 		String delete = deleteFrom(i(bucketName)).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();

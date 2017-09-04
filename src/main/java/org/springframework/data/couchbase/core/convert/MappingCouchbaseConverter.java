@@ -138,7 +138,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     super(new DefaultConversionService());
 
     this.mappingContext = mappingContext;
-    typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT);
+    typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT, mappingContext);
     spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
   }
 
