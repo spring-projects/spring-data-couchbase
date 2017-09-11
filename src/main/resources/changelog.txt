@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.0.RC3 (2017-09-11)
+-----------------------------------------
+* DATACOUCH-330 - Multiple Spring Data modules clash with one another.
+* DATACOUCH-326 - Release 3.0 RC3 (Kay).
+
+
 Changes in version 2.2.7.RELEASE (2017-09-11)
 ---------------------------------------------
 * DATACOUCH-330 - Multiple Spring Data modules clash with one another.
