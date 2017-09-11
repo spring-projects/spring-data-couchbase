@@ -40,7 +40,6 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#disconnectTimeout(long) disconnectTimeout}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#dnsSrvEnabled(boolean) dnsSrvEnabled}</li>
  *
- * <li>{@link DefaultCouchbaseEnvironment.Builder#dcpEnabled(boolean) dcpEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslEnabled(boolean) sslEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystoreFile(String) sslKeystoreFile}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystorePassword(String) sslKeystorePassword}</li>
@@ -65,6 +64,10 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#tcpNodelayEnabled(boolean) tcpNodelayEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#mutationTokensEnabled(boolean) mutationTokensEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#analyticsTimeout(long) analyticsTimeout}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#certAuthEnabled(boolean) certAuthEnabled}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#keepAliveErrorThreshold(long) keepAliveErrorThreshold}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#keepAliveTimeout(long) keepAliveTimeout}</li>
+ * <li>{@link DefaultCouchbaseEnvironment.Builder#continuousKeepAliveEnabled(boolean) continuousKeepAliveEnabled}</li>
  * </ul>
  *
  * @author Simon Baslé
@@ -113,7 +116,6 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "disconnectTimeout", "disconnectTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "dnsSrvEnabled", "dnsSrvEnabled");
 
-		setPropertyValue(envDefinitionBuilder, envElement, "dcpEnabled", "dcpEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslEnabled", "sslEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystoreFile", "sslKeystoreFile");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystorePassword", "sslKeystorePassword");
@@ -137,6 +139,10 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "tcpNodelayEnabled", "tcpNodelayEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "mutationTokensEnabled", "mutationTokensEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "analyticsTimeout", "analyticsTimeout");
+		setPropertyValue(envDefinitionBuilder, envElement, "certAuthEnabled", "certAuthEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "keepAliveTimeout", "keepAliveTimeout");
+		setPropertyValue(envDefinitionBuilder, envElement, "continuousKeepAliveEnabled", "continuousKeepAliveEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "keepAliveErrorThreshold", "keepAliveErrorThreshold");
 
 		//retry strategy is particular, in the xsd this is an enum (FailFast, BestEffort)
 		setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");

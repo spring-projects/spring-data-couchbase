@@ -19,7 +19,6 @@
                    disconnectTimeout="6"
                    dnsSrvEnabled="true"
 
-                   dcpEnabled="true"
                    sslEnabled="true"
                    sslKeystoreFile="test"
                    sslKeystorePassword="test"
@@ -43,7 +42,11 @@
                    bufferPoolingEnabled="false"
                    tcpNodelayEnabled="false"
                    mutationTokensEnabled="true"
-                   analyticsTimeout = "30"
+                   analyticsTimeout="30"
+                   certAuthEnabled="true"
+                   keepAliveTimeout="30"
+                   continuousKeepAliveEnabled="false"
+                   keepAliveErrorThreshold="10"
                    />
 
 </beans>
