@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.couchbase.client.core.env.*;
 import com.couchbase.client.core.event.EventBus;
+import com.couchbase.client.core.hooks.CouchbaseCoreSendHook;
 import com.couchbase.client.core.metrics.MetricsCollector;
 import com.couchbase.client.core.metrics.NetworkLatencyMetricsCollector;
 import com.couchbase.client.core.node.MemcachedHashingStrategy;
@@ -72,11 +73,6 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public Scheduler scheduler() {
     return delegate.scheduler();
-  }
-
-  @Override
-  public boolean dcpEnabled() {
-    return delegate.dcpEnabled();
   }
 
   @Override
@@ -160,16 +156,6 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
-  public int dcpConnectionBufferSize() {
-    return delegate.dcpConnectionBufferSize();
-  }
-
-  @Override
-  public double dcpConnectionBufferAckThreshold() {
-    return delegate.dcpConnectionBufferAckThreshold();
-  }
-
-  @Override
   public int kvEndpoints() {
     return delegate.kvEndpoints();
   }
@@ -212,21 +198,6 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   @Override
   public long keepAliveInterval() {
     return delegate.keepAliveInterval();
-  }
-
-  @Override
-  public boolean continuousKeepAliveEnabled() {
-    return delegate.continuousKeepAliveEnabled();
-  }
-
-  @Override
-  public long keepAliveErrorThreshold() {
-    return delegate.keepAliveErrorThreshold();
-  }
-
-  @Override
-  public long keepAliveTimeout() {
-    return delegate.keepAliveTimeout();
   }
 
   @Override
@@ -315,11 +286,6 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
-  public String dcpConnectionName() {
-    return delegate.dcpConnectionName();
-  }
-
-  @Override
   public int searchEndpoints() {
     return delegate.searchEndpoints();
   }
@@ -405,7 +371,27 @@ public class CouchbaseEnvironmentNoShutdownProxy implements CouchbaseEnvironment
   }
 
   @Override
+  public boolean continuousKeepAliveEnabled() {
+    return delegate.continuousKeepAliveEnabled();
+  }
+
+  @Override
+  public long keepAliveErrorThreshold() {
+    return delegate.keepAliveErrorThreshold();
+  }
+
+  @Override
   public boolean certAuthEnabled() {
     return delegate.certAuthEnabled();
+  }
+
+  @Override
+  public CouchbaseCoreSendHook couchbaseCoreSendHook() {
+    return delegate.couchbaseCoreSendHook();
+  }
+
+  @Override
+  public long keepAliveTimeout() {
+    return delegate.keepAliveTimeout();
   }
 }

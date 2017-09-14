@@ -119,10 +119,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     this.couchbaseEnvBuilder.dnsSrvEnabled(dnsSrvEnabled);
   }
 
-  public void setDcpEnabled(boolean dcpEnabled) {
-    this.couchbaseEnvBuilder.dcpEnabled(dcpEnabled);
-  }
-
   public void setSslEnabled(boolean sslEnabled) {
     this.couchbaseEnvBuilder.sslEnabled(sslEnabled);
   }
@@ -213,5 +209,21 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setAnalyticsTimeout(long analyticsTimeout) {
     this.couchbaseEnvBuilder.analyticsTimeout(analyticsTimeout);
+  }
+
+  public void setContinuousKeepAliveEnabled(boolean continuousKeepAliveEnabled) {
+    this.couchbaseEnvBuilder.continuousKeepAliveEnabled(continuousKeepAliveEnabled);
+  }
+
+  public void setKeepAliveErrorThreshold(long keepAliveErrorThreshold) {
+    this.couchbaseEnvBuilder.keepAliveErrorThreshold(keepAliveErrorThreshold);
+  }
+
+  public void setCertAuthEnabled(boolean certAuthEnabled) {
+    this.couchbaseEnvBuilder.certAuthEnabled(certAuthEnabled);
+  }
+
+  public void setKeepAliveTimeout(long keepAliveTimeout) {
+    this.couchbaseEnvBuilder.keepAliveTimeout(keepAliveTimeout);
   }
 }

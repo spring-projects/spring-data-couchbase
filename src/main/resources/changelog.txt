@@ -1,6 +1,29 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.6.RELEASE (2017-07-26)
+---------------------------------------------
+* DATACOUCH-324 - Release 2.2.6 (Ingalls SR6).
+
+
+Changes in version 3.0.0.RC2 (2017-07-25)
+-----------------------------------------
+* DATACOUCH-325 - Release 3.0 RC2 (Kay).
+
+
+Changes in version 3.0.0.RC1 (2017-07-25)
+-----------------------------------------
+* DATACOUCH-323 - Inherit Project Reactor version from dependency management.
+* DATACOUCH-320 - Adopt to Optional changes in Spring Data Commons.
+* DATACOUCH-316 - Release 3.0 RC1 (Kay).
+
+
+Changes in version 2.2.5.RELEASE (2017-07-24)
+---------------------------------------------
+* DATACOUCH-313 - Release 2.2.5 (Ingalls SR5).
+* DATACOUCH-310 - N1qlQueryCreator should consider making enums String values when building n1ql expressions.
+
+
 Changes in version 3.0.0.M4 (2017-06-14)
 ----------------------------------------
 * DATACOUCH-315 - Upgrade to couchbase client 2.4.6.
