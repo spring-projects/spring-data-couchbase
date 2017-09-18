@@ -26,39 +26,42 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.view.DefaultView;
 import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
-import org.apache.webbeans.cditest.CdiTestContainer;
-import org.apache.webbeans.cditest.CdiTestContainerLoader;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
 
 /**
  * @author Mark Paluch
  */
 public class CdiRepositoryTests {
 
-	private static CdiTestContainer cdiContainer;
+	private static SeContainer cdiContainer;
 	private CdiPersonRepository repository;
 	private QualifiedPersonRepository qualifiedPersonRepository;
 	private Bucket couchbaseClient;
 
 	@BeforeClass
-	public static void init() throws Exception {
-		cdiContainer = CdiTestContainerLoader.getCdiContainer();
-		cdiContainer.startApplicationScope();
-		cdiContainer.bootContainer();
+	public static void init() {
+
+		cdiContainer = SeContainerInitializer.newInstance() //
+						.disableDiscovery() //
+						.addPackages(CdiRepositoryClient.class) //
+						.initialize();
 	}
 
 	@AfterClass
-	public static void shutdown() throws Exception {
-		cdiContainer.stopContexts();
-		cdiContainer.shutdownContainer();
+	public static void shutdown() {
+		cdiContainer.close();
 	}
 
 	@Before
 	public void setUp() {
-		CdiRepositoryClient repositoryClient = cdiContainer.getInstance(CdiRepositoryClient.class);
+
+		CdiRepositoryClient repositoryClient = cdiContainer.select(CdiRepositoryClient.class).get();
 		repository = repositoryClient.getCdiPersonRepository();
 		qualifiedPersonRepository = repositoryClient.getQualifiedPersonRepository();
 
@@ -97,7 +100,7 @@ public class CdiRepositoryTests {
 			assertEquals(bean.getId(), actual.getId());
 		});
 	}
-	
+
 	/**
 	 * @see DATACOUCH-203
 	 */
