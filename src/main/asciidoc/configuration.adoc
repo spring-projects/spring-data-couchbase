@@ -70,8 +70,13 @@ public class Config extends AbstractCouchbaseConfiguration {
     }
 
     @Override
-    protected String getBucketPassword() {
-        return "";
+    protected String getBucketUser() {
+        return "user";
+    }
+
+    @Override
+    protected String getPassword() {
+        return "password";
     }
 }
 ----

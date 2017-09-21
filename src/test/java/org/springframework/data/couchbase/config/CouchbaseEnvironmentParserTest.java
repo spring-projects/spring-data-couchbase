@@ -75,7 +75,6 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.disconnectTimeout(), is(equalTo(6L)));
     assertThat(env.dnsSrvEnabled(), allOf(equalTo(true), not(defaultEnv.dnsSrvEnabled())));
 
-    assertThat(env.dcpEnabled(), allOf(equalTo(true), not(defaultEnv.dcpEnabled())));
     assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
     assertThat(env.sslKeystoreFile(), is(equalTo("test")));
     assertThat(env.sslKeystorePassword(), is(equalTo("test")));
@@ -100,6 +99,10 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
     assertThat(env.mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.mutationTokensEnabled())));
     assertThat(env.analyticsTimeout(), is(equalTo(30L)));
+    assertThat(env.certAuthEnabled(), allOf(equalTo(true), not(defaultEnv.certAuthEnabled())));
+    assertThat(env.keepAliveErrorThreshold(), is(equalTo(10L)));
+    assertThat(env.keepAliveTimeout(), is(equalTo(30L)));
+    assertThat(env.continuousKeepAliveEnabled(), allOf(equalTo(false), not(defaultEnv.continuousKeepAliveEnabled())));
   }
 
   @AfterClass

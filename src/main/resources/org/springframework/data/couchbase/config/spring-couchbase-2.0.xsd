@@ -36,7 +36,8 @@
                 <xsd:extension base="beans:identifiedType">
                     <xsd:attribute name="cluster-ref" type="xsd:string" use="optional"/>
                     <xsd:attribute name="bucketName" type="xsd:string" use="optional"/>
-                    <xsd:attribute name="bucketPassword" type="xsd:string" use="optional"/>
+                    <xsd:attribute name="userName" type="xsd:string" use="optional"/>
+                    <xsd:attribute name="password" type="xsd:string" use="optional"/>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

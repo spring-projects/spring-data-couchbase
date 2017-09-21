@@ -47,7 +47,7 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
   }
 
   @Override
-  protected String getBucketPassword() {
+  protected String getPassword() {
     return "someBucketPassword";
   }
 

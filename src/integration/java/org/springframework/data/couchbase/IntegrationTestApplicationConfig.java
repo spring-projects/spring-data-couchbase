@@ -44,7 +44,7 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
   }
 
   @Override
-  protected String getBucketPassword() {
+  protected String getPassword() {
     return springEnv.getProperty("couchbase.password", "");
   }
 

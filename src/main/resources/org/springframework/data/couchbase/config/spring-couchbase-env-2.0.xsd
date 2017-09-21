@@ -29,7 +29,6 @@
                 <xsd:attribute name="disconnectTimeout" type="xsd:long"/>
                 <xsd:attribute name="dnsSrvEnabled" type="xsd:boolean"/>
 
-                <xsd:attribute name="dcpEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="sslEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="sslKeystoreFile" type="xsd:string"/>
                 <xsd:attribute name="sslKeystorePassword" type="xsd:string"/>
@@ -55,6 +54,10 @@
                 <xsd:attribute name="tcpNodelayEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="mutationTokensEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="analyticsTimeout" type="xsd:long"/>
+                <xsd:attribute name="certAuthEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="keepAliveErrorThreshold" type="xsd:long"/>
+                <xsd:attribute name="keepAliveTimeout" type="xsd:long"/>
+                <xsd:attribute name="continuousKeepAliveEnabled" type="xsd:boolean"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

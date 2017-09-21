@@ -96,7 +96,7 @@ public class RepositoryTemplateWiringTests {
     }
 
     @Override
-    protected String getBucketPassword() {
+    protected String getPassword() {
       return "";
     }
 

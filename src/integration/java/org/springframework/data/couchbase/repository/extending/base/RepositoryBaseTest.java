@@ -97,7 +97,7 @@ public class RepositoryBaseTest {
     }
 
     @Override
-    protected String getBucketPassword() {
+    protected String getPassword() {
       return "";
     }
 
