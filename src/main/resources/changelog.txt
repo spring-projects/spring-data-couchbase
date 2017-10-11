@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.8.RELEASE (2017-10-11)
+---------------------------------------------
+* DATACOUCH-332 - Release 2.2.8 (Ingalls SR8).
+
+
 Changes in version 3.0.0.RELEASE (2017-10-02)
 ---------------------------------------------
 * DATACOUCH-338 - Add explicit automatic module name for Java 9.
