@@ -130,8 +130,11 @@ public class BasicCouchbasePersistentPropertyTests {
    * @return the actual BasicCouchbasePersistentProperty instance.
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
-    return new BasicCouchbasePersistentProperty(Property.of(field), entity, SimpleTypeHolder.DEFAULT,
-            PropertyNameFieldNamingStrategy.INSTANCE);
+  	
+		ClassTypeInformation<?> type = ClassTypeInformation.from(field.getDeclaringClass());
+		
+		return new BasicCouchbasePersistentProperty(Property.of(type, field), entity, SimpleTypeHolder.DEFAULT,
+				PropertyNameFieldNamingStrategy.INSTANCE);
   }
 
   /**
