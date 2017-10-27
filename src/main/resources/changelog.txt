@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.1.RELEASE (2017-10-27)
+---------------------------------------------
+* DATACOUCH-346 - Adapt API changes in Property in test cases.
+* DATACOUCH-339 - Release 3.0.1 (Kay SR1).
+
+
 Changes in version 2.2.8.RELEASE (2017-10-11)
 ---------------------------------------------
 * DATACOUCH-332 - Release 2.2.8 (Ingalls SR8).
