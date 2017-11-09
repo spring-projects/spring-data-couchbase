@@ -1,5 +1,8 @@
-# Spring Data Couchbase 2.0.x
-`Spring-Data Couchbase 2.0.x` is the Spring Data connector for the `Couchbase Java SDK 2.x` generation.
+[![Spring Data Couchbase](https://spring.io/badges/spring-data-couchbase/ga.svg)](http://projects.spring.io/spring-data-couchbase#quick-start)
+[![Spring Data Couchbase](https://spring.io/badges/spring-data-couchbase/snapshot.svg)](http://projects.spring.io/spring-data-couchbase#quick-start)
+
+# Spring Data Couchbase 3.0.x
+`Spring-Data Couchbase 3.0.x` is the Spring Data connector for the `Couchbase Java SDK 2.x` generation.
 
 Both the SDK and this Spring Data community project are major version changes with lots of differences from their
 respective previous versions.
@@ -41,7 +44,7 @@ Add the Maven dependency:
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>2.0.0.RELEASE</version>
+  <version>${version}.RELEASE</version>
 </dependency>
 ```
 
@@ -52,7 +55,7 @@ the appropriate dependency version.
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version>
+  <version>${version}.BUILD-SNAPSHOT</version>
 </dependency>
 
 <repository>
