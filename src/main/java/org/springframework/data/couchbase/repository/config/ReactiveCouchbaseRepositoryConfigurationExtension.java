@@ -15,9 +15,16 @@
  */
 package org.springframework.data.couchbase.repository.config;
 
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.Collections;
+
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 import org.springframework.data.repository.config.XmlRepositoryConfigurationSource;
+import org.springframework.data.repository.core.RepositoryMetadata;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -62,4 +69,25 @@ public class ReactiveCouchbaseRepositoryConfigurationExtension extends Repositor
 		builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingAnnotations()
+	 */
+	@Override
+	protected Collection<Class<? extends Annotation>> getIdentifyingAnnotations() {
+		return Collections.singleton(Document.class);
+	}
+
+	/*
+     * (non-Javadoc)
+     * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingTypes()
+     */
+	@Override
+	protected Collection<Class<?>> getIdentifyingTypes() {
+		return Collections.singleton(ReactiveCouchbaseRepository.class);
+	}
+
+	protected boolean useRepositoryConfiguration(RepositoryMetadata metadata) {
+		return metadata.isReactiveRepository();
+	}
 }

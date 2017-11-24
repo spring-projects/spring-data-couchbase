@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.repository.support.CouchbaseRepository
 import org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 import org.springframework.data.repository.config.XmlRepositoryConfigurationSource;
+import org.springframework.data.repository.core.RepositoryMetadata;
 import org.w3c.dom.Element;
 
 /**
@@ -83,5 +84,9 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
   @Override
   protected Collection<Class<?>> getIdentifyingTypes() {
     return Collections.singleton(CouchbaseRepository.class);
+  }
+
+  protected boolean useRepositoryConfiguration(RepositoryMetadata metadata) {
+    return !metadata.isReactiveRepository();
   }
 }
