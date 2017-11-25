@@ -35,6 +35,7 @@ import org.w3c.dom.Element;
  * @author Michael Nitschinger
  * @author Mark Paluch
  * @author Oliver Gierke
+ * @author Alexander Derkach
  */
 public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigurationExtensionSupport {
 
@@ -44,28 +45,30 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
   /** The reference property to use in xml configuration to specify the index manager bean to use with a repository. */
   private static final String COUCHBASE_INDEX_MANAGER_REF = "couchbase-index-manager-ref";
 
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getModuleName()
+   */
+  @Override
+  public String getModuleName() {
+    return "Couchbase";
+}
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getModulePrefix()
+   */
   @Override
   protected String getModulePrefix() {
     return "couchbase";
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtension#getRepositoryFactoryBeanClassName()
+   */
   public String getRepositoryFactoryBeanClassName() {
     return CouchbaseRepositoryFactoryBean.class.getName();
-  }
-
-  @Override
-  public void postProcess(final BeanDefinitionBuilder builder, final XmlRepositoryConfigurationSource config) {
-    Element element = config.getElement();
-    ParsingUtils.setPropertyReference(builder, element, COUCHBASE_TEMPLATE_REF, "couchbaseOperations");
-    ParsingUtils.setPropertyReference(builder, element, COUCHBASE_INDEX_MANAGER_REF, "indexManager");
-  }
-
-  @Override
-  public void postProcess(final BeanDefinitionBuilder builder, final AnnotationRepositoryConfigurationSource config) {
-    builder.addDependsOn(BeanNames.COUCHBASE_OPERATIONS_MAPPING);
-    builder.addDependsOn(BeanNames.COUCHBASE_INDEX_MANAGER);
-    builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.COUCHBASE_OPERATIONS_MAPPING);
-    builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
   }
 
   /*
@@ -86,6 +89,36 @@ public class CouchbaseRepositoryConfigurationExtension extends RepositoryConfigu
     return Collections.singleton(CouchbaseRepository.class);
   }
 
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#postProcess(org.springframework.beans.factory.support.BeanDefinitionBuilder, org.springframework.data.repository.config.XmlRepositoryConfigurationSource)
+   */
+  @Override
+  public void postProcess(BeanDefinitionBuilder builder, XmlRepositoryConfigurationSource config) {
+
+    Element element = config.getElement();
+
+    ParsingUtils.setPropertyReference(builder, element, COUCHBASE_TEMPLATE_REF, "couchbaseOperations");
+    ParsingUtils.setPropertyReference(builder, element, COUCHBASE_INDEX_MANAGER_REF, "indexManager");
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#postProcess(org.springframework.beans.factory.support.BeanDefinitionBuilder, org.springframework.data.repository.config.AnnotationRepositoryConfigurationSource)
+   */
+  @Override
+  public void postProcess(BeanDefinitionBuilder builder, AnnotationRepositoryConfigurationSource config) {
+
+    builder.addDependsOn(BeanNames.COUCHBASE_OPERATIONS_MAPPING);
+    builder.addDependsOn(BeanNames.COUCHBASE_INDEX_MANAGER);
+    builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.COUCHBASE_OPERATIONS_MAPPING);
+    builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#useRepositoryConfiguration(org.springframework.data.repository.core.RepositoryMetadata)
+   */
   protected boolean useRepositoryConfiguration(RepositoryMetadata metadata) {
     return !metadata.isReactiveRepository();
   }
