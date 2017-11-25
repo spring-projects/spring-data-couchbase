@@ -105,6 +105,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>${rxjava2}</version>
+            <optional>true</optional>
+        </dependency>
+
         <!-- JSR 303 Validation -->
         <dependency>
             <groupId>javax.validation</groupId>
@@ -121,7 +128,7 @@
             <version>1.0.1</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>javax.interceptor</groupId>
             <artifactId>javax.interceptor-api</artifactId>
