@@ -19,6 +19,12 @@ import com.couchbase.client.java.view.ViewQuery;
 import rx.Observable;
 import rx.Observable.OnSubscribe;
 
+/**
+ * JUnit test for SimpleReactiveCouchbaseRepository
+ *
+ * @author Rafael Moreti Santana
+ * @since 3.1.0
+ */
 public class SimpleReactiveCouchbaseRepositoryTest {
 
 	private static final org.springframework.data.couchbase.core.query.Consistency CONSISTENCY = Consistency.STRONGLY_CONSISTENT;
