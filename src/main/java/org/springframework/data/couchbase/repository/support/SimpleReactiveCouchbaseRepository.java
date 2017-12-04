@@ -43,6 +43,7 @@ import reactor.core.publisher.Mono;
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  * @author Christoph Strobl
+ * @author Rafael Moreti Santana
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
@@ -251,7 +252,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
         return mapMono(operations.queryView(query)
                 .map(AsyncViewResult::rows)
                 .flatMap(row -> {
-                    AsyncViewRow asyncViewRow = (AsyncViewRow) row;
+                    AsyncViewRow asyncViewRow = row.toBlocking().single();
                     return operations.remove(asyncViewRow.id())
                             .onErrorResumeNext(throwable -> {
                                 if (throwable instanceof DocumentDoesNotExistException) {
