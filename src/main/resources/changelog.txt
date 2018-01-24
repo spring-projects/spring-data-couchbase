@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.10.RELEASE (2018-01-24)
+----------------------------------------------
+* DATACOUCH-352 - Release 2.2.10 (Ingalls SR10).
+
+
 Changes in version 3.0.2.RELEASE (2017-11-27)
 ---------------------------------------------
 * DATACOUCH-350 - [Reactive]CouchbaseRepositoryConfigurationExtension does not filter reactive repositories.
