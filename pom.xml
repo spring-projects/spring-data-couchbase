@@ -14,7 +14,7 @@
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>1.9.10.BUILD-SNAPSHOT</version>
+        <version>1.9.10.RELEASE</version>
     </parent>
 
     <properties>
@@ -23,7 +23,7 @@
 
         <couchbase>2.2.8</couchbase>
         <couchbase.osgi>2.2.8</couchbase.osgi>
-        <springdata.commons>1.13.10.BUILD-SNAPSHOT</springdata.commons>
+        <springdata.commons>1.13.10.RELEASE</springdata.commons>
         <validation>1.0.0.GA</validation>
     </properties>
 
@@ -123,8 +123,8 @@
 
     <repositories>
         <repository>
-            <id>spring-libs-snapshot</id>
-            <url>https://repo.spring.io/libs-snapshot</url>
+            <id>spring-libs-release</id>
+            <url>https://repo.spring.io/libs-release</url>
         </repository>
     </repositories>
 
