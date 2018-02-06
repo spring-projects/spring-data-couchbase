@@ -1,6 +1,14 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.0.M1 (2018-02-06)
+----------------------------------------
+* DATACOUCH-350 - [Reactive]CouchbaseRepositoryConfigurationExtension does not filter reactive repositories.
+* DATACOUCH-348 - Adapt readme to changes in Spring Data Couchbase 3.0.
+* DATACOUCH-346 - Adapt API changes in Property in test cases.
+* DATACOUCH-340 - Release 3.1 M1 (Lovelace).
+
+
 Changes in version 3.0.3.RELEASE (2018-01-24)
 ---------------------------------------------
 * DATACOUCH-353 - Release 3.0.3 (Kay SR3).
