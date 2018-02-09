@@ -107,10 +107,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     this.couchbaseEnvBuilder.dnsSrvEnabled(dnsSrvEnabled);
   }
 
-  public void setDcpEnabled(boolean dcpEnabled) {
-    this.couchbaseEnvBuilder.dcpEnabled(dcpEnabled);
-  }
-
   public void setSslEnabled(boolean sslEnabled) {
     this.couchbaseEnvBuilder.sslEnabled(sslEnabled);
   }
@@ -121,14 +117,6 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setSslKeystorePassword(String sslKeystorePassword) {
     this.couchbaseEnvBuilder.sslKeystorePassword(sslKeystorePassword);
-  }
-
-  public void setQueryEnabled(boolean queryEnabled) {
-    this.couchbaseEnvBuilder.queryEnabled(queryEnabled);
-  }
-
-  public void setQueryPort(int queryPort) {
-    this.couchbaseEnvBuilder.queryPort(queryPort);
   }
 
   public void setBootstrapHttpEnabled(boolean bootstrapHttpEnabled) {

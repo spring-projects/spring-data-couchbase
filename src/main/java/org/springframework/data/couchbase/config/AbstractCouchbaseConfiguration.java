@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2015 the original author or authors
+ * Copyright 2012-2018 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.config;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
@@ -86,15 +87,18 @@ public abstract class AbstractCouchbaseConfiguration
     return this;
   }
 
-  @Override
-  @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
-  public CouchbaseEnvironment couchbaseEnvironment() {
-    CouchbaseEnvironment env = getEnvironment();
-    if (isEnvironmentManagedBySpring()) {
-      return env;
+    @Override
+    @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
+    public CouchbaseEnvironment couchbaseEnvironment() {
+        if (isEnvironmentManagedBySpring()) {
+            return getEnvironment();
+        } else {
+            CouchbaseEnvironment proxy = (CouchbaseEnvironment) Proxy.newProxyInstance(CouchbaseEnvironment.class.getClassLoader(),
+                    new Class[]{CouchbaseEnvironment.class},
+                    new CouchbaseEnvironmentNoShutdownInvocationHandler(getEnvironment()));
+            return proxy;
+        }
     }
-    return new CouchbaseEnvironmentNoShutdownProxy(env);
-  }
 
   /**
    * Returns the {@link Cluster} instance to connect to.
