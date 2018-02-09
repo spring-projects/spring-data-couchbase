@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.config;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
@@ -90,11 +91,14 @@ public abstract class AbstractCouchbaseConfiguration
     @Override
     @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
     public CouchbaseEnvironment couchbaseEnvironment() {
-        CouchbaseEnvironment env = getEnvironment();
         if (isEnvironmentManagedBySpring()) {
-            return env;
+            return getEnvironment();
+        } else {
+            CouchbaseEnvironment proxy = (CouchbaseEnvironment) Proxy.newProxyInstance(CouchbaseEnvironment.class.getClassLoader(),
+                    new Class[]{CouchbaseEnvironment.class},
+                    new CouchbaseEnvironmentNoShutdownInvocationHandler(getEnvironment()));
+            return proxy;
         }
-        return new CouchbaseEnvironmentNoShutdownProxy(env);
     }
 
     /**
