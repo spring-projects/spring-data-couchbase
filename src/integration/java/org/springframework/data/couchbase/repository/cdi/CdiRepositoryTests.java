@@ -30,6 +30,9 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.data.couchbase.ContainerResourceRunner;
+import org.springframework.test.context.ContextConfiguration;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
@@ -37,6 +40,9 @@ import javax.enterprise.inject.se.SeContainerInitializer;
 /**
  * @author Mark Paluch
  */
+@SuppressWarnings("SpringJavaAutowiringInspection")
+@RunWith(ContainerResourceRunner.class)
+@ContextConfiguration(classes = CdiRepositoryTests.class)
 public class CdiRepositoryTests {
 
 	private static SeContainer cdiContainer;
@@ -46,7 +52,6 @@ public class CdiRepositoryTests {
 
 	@BeforeClass
 	public static void init() {
-
 		cdiContainer = SeContainerInitializer.newInstance() //
 						.disableDiscovery() //
 						.addPackages(CdiRepositoryClient.class) //

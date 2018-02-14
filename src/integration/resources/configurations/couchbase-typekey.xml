@@ -7,8 +7,8 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
-    <couchbase:clusterInfo/>
-    <couchbase:bucket/>
+    <couchbase:clusterInfo login="protected" password="password"/>
+    <couchbase:bucket username="protected" bucketName="protected" bucketPassword="password"/>
 
     <!--note that the template needs both converter and translation service if you want to customize converter-->
     <couchbase:template translation-service-ref="myCustomTranslationService" converter-ref="myCustomConverter"/>

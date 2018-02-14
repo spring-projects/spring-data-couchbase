@@ -17,6 +17,10 @@ Server as a document database and cache while retaining store-specific features 
 of Spring Data Couchbase are a POJO centric model for interacting with a Couchbase Server Bucket and easily writing a
 repository style data access layer.
 
+Integration tests require a couchbase server with a bucket name "protected" with "password" as the password set.
+If the server allows users, then an user with username "protected" with "password" as the password should also be set.
+The recommended way to run tests is to install docker and use container in server.properties.
+
 ## Getting Help
 
 For a comprehensive treatment of all the Spring Data Couchbase features, please refer to:

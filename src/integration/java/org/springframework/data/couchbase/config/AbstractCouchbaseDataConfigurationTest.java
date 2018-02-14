@@ -2,6 +2,8 @@ package org.springframework.data.couchbase.config;
 
 import static org.junit.Assert.*;
 
+import javax.swing.*;
+
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
@@ -16,11 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * This test case demonstrates that the {@link AbstractCouchbaseDataConfiguration} can take its SDK beans
@@ -31,7 +33,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Simon Baslé
  */
 @SuppressWarnings("SpringJavaAutowiringInspection")
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration
 public class AbstractCouchbaseDataConfigurationTest {
 
@@ -45,8 +47,8 @@ public class AbstractCouchbaseDataConfigurationTest {
   static class SdkConfig {
 
     private static final String IP = "127.0.0.1";
-    private static final String BUCKET_NAME = "default";
-    private static final String BUCKET_PASSWORD = "";
+    private static final String BUCKET_NAME = "protected";
+    private static final String BUCKET_PASSWORD = "password";
 
     public static Bucket bucket;
 
