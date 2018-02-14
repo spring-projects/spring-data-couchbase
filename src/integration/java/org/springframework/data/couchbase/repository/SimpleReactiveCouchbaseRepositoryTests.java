@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
@@ -34,7 +35,6 @@ import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRe
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
@@ -44,7 +44,7 @@ import com.couchbase.client.java.view.ViewQuery;
 /**
  * @author Subhashni Balakrishnan
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
 @TestExecutionListeners(SimpleReactiveCouchbaseRepositoryListener.class)
 public class SimpleReactiveCouchbaseRepositoryTests {

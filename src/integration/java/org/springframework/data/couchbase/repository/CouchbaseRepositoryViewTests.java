@@ -156,7 +156,9 @@ public class CouchbaseRepositoryViewTests {
     assertEquals(expected, in);
     assertEquals(expected, gteLte);
     assertEquals(expected, between);
-    assertEquals(expected, gteLimited);
+    assertTrue(gteLimited.contains(u1));
+    assertTrue(gteLimited.contains(u2));
+    assertTrue(gteLimited.contains(u3));
   }
 
   @Test

@@ -49,19 +49,19 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import rx.observers.TestSubscriber;
 
 /**
  * @author Subhashni Balakrishnan
  * @author Alex Derkach
  **/
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
 @TestExecutionListeners(RxCouchbaseTemplateQueryListener.class)
 public class RxJavaCouchbaseTemplateTests {

@@ -24,16 +24,15 @@ import com.couchbase.client.java.Bucket;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 public class ClientInfoTests {
 

@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.IndexManager;
@@ -33,14 +34,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * This tests ReactiveSortingRepository features in the Couchbase connector.
  *
  * @author Subhashni Balakrishnan
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
 @TestExecutionListeners(PartyPopulatorListener.class)
 public class ReactiveN1qlCouchbaseRepositoryTests {
