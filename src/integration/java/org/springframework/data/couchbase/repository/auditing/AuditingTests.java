@@ -6,10 +6,14 @@ import java.util.Date;
 import java.util.Optional;
 
 import org.junit.After;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+;
+import org.springframework.data.couchbase.ContainerResourceRunner;
+import org.springframework.data.couchbase.TestContainerResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -17,7 +21,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author Simon Baslé
  * @author Mark Paluch
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = AuditedApplicationConfig.class)
 public class AuditingTests {
 

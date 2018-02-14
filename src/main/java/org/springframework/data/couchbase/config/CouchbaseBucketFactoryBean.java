@@ -30,27 +30,30 @@ import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
  * {@link Cluster} reference.
  *
  * @author Simon Baslé
+ * @author Subhashni Balakrishnan
  */
 public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> implements PersistenceExceptionTranslator {
 
 	private final Cluster cluster;
 	private final String bucketName;
-	private final String bucketPassword;
+	private final String username;
+	private final String password;
 
 	private final PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 	public CouchbaseBucketFactoryBean(Cluster cluster) {
-		this(cluster, null, null);
+		this(cluster, null, null, null);
 	}
 
 	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName) {
-		this(cluster, bucketName, null);
+		this(cluster, bucketName, bucketName, null);
 	}
 
-	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName, String bucketPassword) {
+	public CouchbaseBucketFactoryBean(Cluster cluster, String bucketName, String username, String password) {
 		this.cluster = cluster;
 		this.bucketName = bucketName;
-		this.bucketPassword = bucketPassword;
+		this.username = username;
+		this.password = password;
 	}
 
 	@Override
@@ -63,11 +66,15 @@ public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> impl
 		if (bucketName == null) {
 			return cluster.openBucket();
 		}
-		else if (bucketPassword == null) {
+		else if (password == null) {
 			return cluster.openBucket(bucketName);
 		}
+		else if (bucketName.contentEquals(username)) {
+			return cluster.openBucket(bucketName, password);
+		}
 		else {
-			return cluster.openBucket(bucketName, bucketPassword);
+			cluster.authenticate(username, password);
+			return cluster.openBucket(bucketName);
 		}
 	}
 

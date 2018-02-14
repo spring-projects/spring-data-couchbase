@@ -23,20 +23,25 @@ import com.couchbase.client.java.document.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.User;
+import org.springframework.test.context.ContextConfiguration;
 
 /**
  * @author Michael Nitschinger
  * @author Simon Baslé
  */
+@RunWith(ContainerResourceRunner.class)
+@ContextConfiguration(classes=CouchbaseTemplateParserIntegrationTests.class)
 public class CouchbaseTemplateParserIntegrationTests {
 
   DefaultListableBeanFactory factory;

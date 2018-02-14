@@ -112,6 +112,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- JSR 303 Validation -->
         <dependency>
             <groupId>javax.validation</groupId>
