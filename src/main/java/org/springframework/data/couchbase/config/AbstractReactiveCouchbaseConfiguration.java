@@ -25,6 +25,7 @@ import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
+import java.lang.reflect.Proxy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -88,11 +89,14 @@ public abstract class AbstractReactiveCouchbaseConfiguration
     @Override
     @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
     public CouchbaseEnvironment couchbaseEnvironment() {
-        CouchbaseEnvironment env = getEnvironment();
         if (isEnvironmentManagedBySpring()) {
-            return env;
+            return getEnvironment();
+        } else {
+            CouchbaseEnvironment proxy = (CouchbaseEnvironment) java.lang.reflect.Proxy.newProxyInstance(CouchbaseEnvironment.class.getClassLoader(),
+                    new Class[]{CouchbaseEnvironment.class},
+                    new CouchbaseEnvironmentNoShutdownInvocationHandler(getEnvironment()));
+            return proxy;
         }
-        return new CouchbaseEnvironmentNoShutdownProxy(env);
     }
 
     /**
