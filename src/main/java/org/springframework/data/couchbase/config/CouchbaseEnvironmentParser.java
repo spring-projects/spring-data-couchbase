@@ -40,7 +40,6 @@ import org.springframework.util.StringUtils;
  * <li>{@link DefaultCouchbaseEnvironment.Builder#disconnectTimeout(long) disconnectTimeout}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#dnsSrvEnabled(boolean) dnsSrvEnabled}</li>
  *
- * <li>{@link DefaultCouchbaseEnvironment.Builder#dcpEnabled(boolean) dcpEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslEnabled(boolean) sslEnabled}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystoreFile(String) sslKeystoreFile}</li>
  * <li>{@link DefaultCouchbaseEnvironment.Builder#sslKeystorePassword(String) sslKeystorePassword}</li>
@@ -113,7 +112,6 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "disconnectTimeout", "disconnectTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "dnsSrvEnabled", "dnsSrvEnabled");
 
-		setPropertyValue(envDefinitionBuilder, envElement, "dcpEnabled", "dcpEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslEnabled", "sslEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystoreFile", "sslKeystoreFile");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystorePassword", "sslKeystorePassword");

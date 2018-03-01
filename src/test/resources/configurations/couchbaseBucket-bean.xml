@@ -14,6 +14,6 @@
 
     <couchbase:bucket id="bucketWithName" cluster-ref="clusterDefault" bucketName="toto" />
 
-    <couchbase:bucket id="bucketWithNameAndPassword" cluster-ref="clusterDefault" bucketName="test" bucketPassword="123" />
+    <couchbase:bucket id="bucketWithNameAndPassword" cluster-ref="clusterDefault" bucketName="test" username="testuser" bucketPassword="123" />
 
 </beans>

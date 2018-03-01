@@ -43,7 +43,7 @@ class CouchbaseClientProducer {
 
 	@Produces
 	public Bucket createCouchbaseClient(Cluster cluster) throws Exception {
-		CouchbaseBucketFactoryBean couchbaseFactoryBean = new CouchbaseBucketFactoryBean(cluster, "default");
+		CouchbaseBucketFactoryBean couchbaseFactoryBean = new CouchbaseBucketFactoryBean(cluster, "protected", "protected", "password");
 		couchbaseFactoryBean.afterPropertiesSet();
 		return couchbaseFactoryBean.getObject();
 	}

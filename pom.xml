@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>2.4.6</couchbase>
-        <couchbase.osgi>2.4.6</couchbase.osgi>
+        <couchbase>2.5.5</couchbase>
+        <couchbase.osgi>2.5.5</couchbase.osgi>
         <springdata.commons>2.1.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -110,6 +110,13 @@
             <artifactId>rxjava</artifactId>
             <version>${rxjava2}</version>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- JSR 303 Validation -->

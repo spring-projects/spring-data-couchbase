@@ -17,17 +17,12 @@
 package org.springframework.data.couchbase.repository.extending.method;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -61,12 +56,12 @@ public class RepositoryCustomMethodTest {
 
     @Override
     protected String getBucketName() {
-      return "default";
+      return "protected";
     }
 
     @Override
     protected String getBucketPassword() {
-      return "";
+      return "password";
     }
 
     //this is for dev so it is ok to auto-create indexes
