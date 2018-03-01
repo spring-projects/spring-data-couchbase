@@ -165,6 +165,20 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Kotlin extension -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <repositories>
