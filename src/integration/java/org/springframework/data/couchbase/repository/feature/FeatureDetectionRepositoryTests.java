@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.repository.User;
@@ -39,14 +41,13 @@ import org.springframework.data.couchbase.repository.support.CouchbaseRepository
 import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * An integration test that validates feature checking with Java Config.
  *
  * @author Simon Baslé
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = FeatureDetectionTestApplicationConfig.class)
 public class FeatureDetectionRepositoryTests {
 

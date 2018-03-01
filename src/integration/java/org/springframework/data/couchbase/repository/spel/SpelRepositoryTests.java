@@ -23,28 +23,23 @@ import static org.junit.Assert.*;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
-import org.hamcrest.Matchers;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.repository.SimpleCouchbaseRepositoryListener;
 import org.springframework.data.couchbase.repository.User;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
-import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
-import org.springframework.data.repository.core.support.RepositoryFactorySupport;
-import org.springframework.data.repository.query.EvaluationContextProvider;
-import org.springframework.data.repository.query.spi.EvaluationContextExtension;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Simon Baslé
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = SpelConfig.class)
 @TestExecutionListeners(SimpleCouchbaseRepositoryListener.class)
 public class SpelRepositoryTests {

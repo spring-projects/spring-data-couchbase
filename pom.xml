@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>2.4.6</couchbase>
-        <couchbase.osgi>2.4.6</couchbase.osgi>
+        <couchbase>2.5.5</couchbase>
+        <couchbase.osgi>2.5.5</couchbase.osgi>
         <springdata.commons>2.1.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -112,6 +112,13 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.6.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- JSR 303 Validation -->
         <dependency>
             <groupId>javax.validation</groupId>
@@ -155,6 +162,20 @@
             <groupId>org.apache.openwebbeans</groupId>
             <artifactId>openwebbeans-se</artifactId>
             <version>${webbeans}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Kotlin extension -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-test</artifactId>
+            <version>${kotlin}</version>
             <scope>test</scope>
         </dependency>
 
