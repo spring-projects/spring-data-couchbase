@@ -52,9 +52,17 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
   List<User> findByUsernameContains(String contains);
 
+  List<AgesOnly> findDistinctBy();
+
+  List<AgesOnly> findDistinctByUsernameContains(String contains);
+
   User findByUsernameNear(String place);//this is to check that there's a N1QL derivation AND it fails
 
   Page<User> findByAgeGreaterThan(int minAge, Pageable pageable);
 
   Slice<User> findByAgeLessThan(int maxAge, Pageable pageable);
+}
+
+interface AgesOnly {
+  int getAge();
 }

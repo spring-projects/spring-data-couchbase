@@ -31,6 +31,13 @@ public class User {
 
   private final int age;
 
+  // Default constructor provided for findByN1QLProjection (and findDistinctBy, which uses it) to work
+  private User() {
+    this.key = "";
+    this.username = "";
+    this.age = 0;
+  }
+
   public User(String key, String username, int age) {
     this.key = key;
     this.username = username;

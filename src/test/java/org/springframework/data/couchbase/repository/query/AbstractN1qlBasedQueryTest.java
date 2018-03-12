@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
@@ -121,10 +122,10 @@ public class AbstractN1qlBasedQueryTest {
     N1qlQuery query = Mockito.mock(N1qlQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
+    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class), any(Optional.class)))
         .thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Object.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Object.class, Optional.empty());
     verify(mock).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
@@ -143,10 +144,10 @@ public class AbstractN1qlBasedQueryTest {
     N1qlQuery query = Mockito.mock(N1qlQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
+    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class), any(Optional.class)))
         .thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock).executeEntity(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
@@ -165,10 +166,10 @@ public class AbstractN1qlBasedQueryTest {
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
     when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class)))
+        any(Class.class), any(Optional.class)))
         .thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
     verify(mock).executeStream(any(N1qlQuery.class), any(Class.class));
@@ -187,10 +188,10 @@ public class AbstractN1qlBasedQueryTest {
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
     when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class)))
+        any(Class.class), any(Optional.class)))
         .thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
 
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
@@ -210,9 +211,9 @@ public class AbstractN1qlBasedQueryTest {
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
     when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class))).thenCallRealMethod();
+        any(Class.class), any(Optional.class))).thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
 
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
@@ -232,9 +233,9 @@ public class AbstractN1qlBasedQueryTest {
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
     when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class))).thenCallRealMethod();
+        any(Class.class), any(Optional.class))).thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
 
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
@@ -254,9 +255,9 @@ public class AbstractN1qlBasedQueryTest {
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
     when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class))).thenCallRealMethod();
+        any(Class.class), any(Optional.class))).thenCallRealMethod();
 
-    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
+    mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class, Optional.empty());
 
     verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
     verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Ignore;
@@ -196,6 +197,59 @@ public class SimpleCouchbaseRepositoryTests {
     assertFalse(users.isEmpty());
     for (User user : users) {
       assertTrue(user.getUsername().startsWith("uname-9"));
+    }
+  }
+
+  @Test
+  public void shouldFindByDistinctAge() {
+    List<AgesOnly> users = repository.findDistinctBy();
+    assertNotNull(users);
+    // The user bucket has no duplicate users so this is just a sanity check
+    assertEquals(repository.count(), users.size());
+  }
+
+  @Test
+  public void shouldFindByDistinctAgeAfterInsertingDuplicates() {
+    int uniqueAge = 9999;
+    User newUser1 = new User("distinctuser-1", "distinctuser-1", uniqueAge);
+    User newUser2 = new User("distinctuser-2", "distinctuser-2", uniqueAge);
+
+    repository.save(newUser1);
+    repository.save(newUser2);
+
+    try {
+      List<AgesOnly> results = repository.findDistinctBy();
+
+      List<Integer> ages = results.stream()
+              .map(v -> v.getAge())
+              .distinct()
+              .collect(Collectors.toList());
+      assertEquals(repository.count() - 1, results.size());
+      assertEquals(ages.size(), results.size());
+    }
+    finally {
+      repository.delete(newUser1);
+      repository.delete(newUser2);
+    }
+  }
+
+  @Test
+  public void shouldFindByDistinctAgeAfterInsertingDuplicatesWithExtraParams() {
+    int uniqueAge = 9999;
+    User newUser1 = new User("distinctuser-1", "distinctuser-1", uniqueAge);
+    User newUser2 = new User("distinctuser-2", "distinctuser-2", uniqueAge);
+
+    repository.save(newUser1);
+    repository.save(newUser2);
+
+    try {
+      List<AgesOnly> results = repository.findDistinctByUsernameContains("distinct");
+      assertEquals(1, results.size());
+      assertEquals(uniqueAge, results.get(0).getAge());
+    }
+    finally {
+      repository.delete(newUser1);
+      repository.delete(newUser2);
     }
   }
 

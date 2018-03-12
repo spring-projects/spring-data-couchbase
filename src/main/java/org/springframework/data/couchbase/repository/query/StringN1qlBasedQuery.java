@@ -90,7 +90,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+  public StatementWithInfo getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
     String parsedStatement = this.queryParser.doParse(parser, evaluationContext, false);
     String orderByPart = "";
@@ -112,7 +112,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
       limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize() + 1)
 			  .offset(Math.toIntExact(pageable.getOffset())).toString();
     }
-    return N1qlQuery.simple(parsedStatement + orderByPart + limitByPart).statement();
+    return StatementWithInfo.simple(N1qlQuery.simple(parsedStatement + orderByPart + limitByPart).statement());
   }
 
   @Override

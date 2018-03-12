@@ -177,7 +177,7 @@ public class PartTreeN1qBasedQueryTest {
 		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+		Statement statement = query.getStatement(accessor, null, processor.getReturnedType()).getStatement();
 
 		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`desc` FROM `B` WHERE "
 				+ "`_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
@@ -209,7 +209,7 @@ public class PartTreeN1qBasedQueryTest {
 		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+		Statement statement = query.getStatement(accessor, null, processor.getReturnedType()).getStatement();
 
 		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`name`, `B`.`desc` FROM `B` "
 				+ "WHERE `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());

@@ -39,6 +39,8 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.util.Assert;
 
+import java.util.Optional;
+
 /**
  * A {@link RepositoryQuery} for Couchbase, based on query derivation
  *
@@ -69,8 +71,9 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
         getCouchbaseOperations().getConverter(), getQueryMethod());
     return queryCreator.createQuery();
   }
+
   @Override
-  protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+  protected StatementWithInfo getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
     Expression bucket = N1qlUtils.escapedBucket(bucketName);
 
@@ -79,14 +82,18 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       N1qlMutateQueryCreator queryCreator = new N1qlMutateQueryCreator(partTree, accessor, deleteUsePath, getCouchbaseOperations().getConverter(), getQueryMethod());
       MutateLimitPath mutateFromWhereOrderBy = queryCreator.createQuery();
       if (partTree.isLimiting()) {
-        return mutateFromWhereOrderBy.limit(partTree.getMaxResults());
+        return StatementWithInfo.simple(mutateFromWhereOrderBy.limit(partTree.getMaxResults()));
       } else {
-        return mutateFromWhereOrderBy.returning(createReturningExpressionForDelete(bucketName));
+        return StatementWithInfo.simple(mutateFromWhereOrderBy.returning(createReturningExpressionForDelete(bucketName)));
       }
     } else {
       FromPath select;
+      Optional<StatementInfo> info = Optional.empty();
       if (partTree.isCountProjection()) {
         select = select(count("*"));
+      } else if (partTree.isDistinct()) {
+        select = N1qlUtils.createSelectDistinctClauseForEntity(bucketName, returnedType, this.getCouchbaseOperations().getConverter());
+        info = Optional.of(new StatementInfo(true));
       } else {
         select = N1qlUtils.createSelectClauseForEntity(bucketName, returnedType, this.getCouchbaseOperations().getConverter());
       }
@@ -98,15 +105,15 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       if (queryMethod.isPageQuery()) {
         Pageable pageable = accessor.getPageable();
         Assert.notNull(pageable, "Pageable must not be null!");
-        return selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
+        return StatementWithInfo.simple(selectFromWhereOrderBy.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset())));
       } else if (queryMethod.isSliceQuery() && accessor.getPageable().isPaged()) {
         Pageable pageable = accessor.getPageable();
         Assert.notNull(pageable, "Pageable must not be null!");
-        return selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
+        return StatementWithInfo.simple(selectFromWhereOrderBy.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset())));
       } else if (partTree.isLimiting()) {
-        return selectFromWhereOrderBy.limit(partTree.getMaxResults());
+        return StatementWithInfo.simple(selectFromWhereOrderBy.limit(partTree.getMaxResults()));
       } else {
-        return selectFromWhereOrderBy;
+        return new StatementWithInfo(selectFromWhereOrderBy, info);
       }
     }
   }

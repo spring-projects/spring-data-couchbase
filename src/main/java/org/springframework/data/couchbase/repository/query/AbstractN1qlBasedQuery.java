@@ -78,7 +78,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
    */
   protected abstract boolean useGeneratedCountQuery();
 
-  protected abstract Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
+  protected abstract StatementWithInfo getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
 
   protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
@@ -92,7 +92,8 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     Class<?> typeToRead = returnedType.getTypeToRead();
     typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
-    Statement statement = getStatement(accessor, parameters, returnedType);
+    StatementWithInfo statementWithInfo = getStatement(accessor, parameters, returnedType);
+    Statement statement = statementWithInfo.statement;
     JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
     //prepare the final query
@@ -103,7 +104,8 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     Statement countStatement = getCount(accessor, parameters);
     N1qlQuery countQuery = buildQuery(countStatement, queryPlaceholderValues,
         getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
-    return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(), typeToRead));
+    return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(),
+            typeToRead, statementWithInfo.info));
   }
 
   protected static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
@@ -121,9 +123,11 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   }
 
   protected Object executeDependingOnType(N1qlQuery query, N1qlQuery countQuery, QueryMethod queryMethod,
-      Pageable pageable, Class<?> typeToRead) {
+      Pageable pageable, Class<?> typeToRead, Optional<StatementInfo> info) {
 
-    if (queryMethod.isPageQuery()) {
+    if (info.isPresent() && info.get().getRequiresProjection()) {
+      return executeProjection(query, typeToRead);
+    } else if (queryMethod.isPageQuery()) {
       return executePaged(query, countQuery, pageable, typeToRead);
     } else if (queryMethod.isSliceQuery()) {
       return executeSliced(query, countQuery, pageable, typeToRead);
@@ -217,6 +221,12 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     return rowValues.iterator().next();
   }
 
+  protected List<?> executeProjection(N1qlQuery query, Class<?> typeToRead) {
+    logIfNecessary(query);
+    List<?> result = couchbaseOperations.findByN1QLProjection(query, typeToRead);
+    return result;
+  }
+
   @Override
   public CouchbaseQueryMethod getQueryMethod() {
     return this.queryMethod;
@@ -224,5 +234,35 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
   protected CouchbaseOperations getCouchbaseOperations() {
     return this.couchbaseOperations;
+  }
+
+  /**
+   * Allows additional parameters to be passed back by sub-classes along with the generated {@link Statement}.
+   */
+  protected static class StatementWithInfo {
+    private final Statement statement;
+    private final Optional<StatementInfo> info;
+
+    public StatementWithInfo(Statement statement, Optional<StatementInfo> info) {
+      this.statement = statement;
+      this.info = info;
+    }
+
+    public Statement getStatement() { return statement; }
+    public Optional<StatementInfo> getInfo() { return info; }
+
+    public static StatementWithInfo simple(Statement statement) {
+      return new StatementWithInfo(statement, Optional.empty());
+    }
+  }
+
+  protected static class StatementInfo {
+    private final boolean requiresProjection;
+
+    public StatementInfo(boolean requiresProjection) {
+      this.requiresProjection = requiresProjection;
+    }
+
+    public boolean getRequiresProjection() { return requiresProjection; }
   }
 }

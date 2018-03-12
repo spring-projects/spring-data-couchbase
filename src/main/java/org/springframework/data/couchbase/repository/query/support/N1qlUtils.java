@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository.query.support;
 
 import static com.couchbase.client.java.query.Select.select;
+import static com.couchbase.client.java.query.Select.selectDistinct;
 import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.Expression.path;
 import static com.couchbase.client.java.query.dsl.Expression.s;
@@ -28,7 +29,6 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
@@ -43,21 +43,16 @@ import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 import com.couchbase.client.java.repository.annotation.Field;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
-import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ReturnedType;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.common.TemplateParserContext;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * Utility class to deal with constructing well formed N1QL queries around Spring Data entities, so that
@@ -106,6 +101,12 @@ public class N1qlUtils {
     expList.add(metaId);
     expList.add(metaCas);
 
+    Expression[] propertiesExp = addRequiredSelectExpressions(returnedType, converter, bucket, expList);
+
+    return select(propertiesExp);
+  }
+
+  private static Expression[] addRequiredSelectExpressions(ReturnedType returnedType, CouchbaseConverter converter, Expression bucket, List<Expression> expList) {
     if (returnedType != null && returnedType.needsCustomConstruction()) {
       List<String> properties = returnedType.getInputProperties();
       CouchbasePersistentEntity<?> entity = converter.getMappingContext().getRequiredPersistentEntity(returnedType.getDomainType());
@@ -118,9 +119,26 @@ public class N1qlUtils {
     }
 
     Expression[] propertiesExp = new Expression[expList.size()];
-    propertiesExp = expList.toArray(propertiesExp);
+    return expList.toArray(propertiesExp);
+  }
 
-    return select(propertiesExp);
+  /**
+   * Produce a {@link Statement}, mapping a findDistinctBy Spring Data repository request to a SELECT DISTINCT.  Note
+   * that it won't require the return of the metadata (id and cas), as this is expected to be used together with a
+   * projection.  Only the field(s) required by the projection will be included in the {@link Statement}.
+   *
+   * @param bucketName the bucket that stores the entity documents (will be escaped).
+   * @param returnedType Returned type projection information from result processor.
+   * @param converter couchbase converter
+   * @return the needed SELECT DISTINCT clause of the statement.
+   */
+  public static FromPath createSelectDistinctClauseForEntity(String bucketName, ReturnedType returnedType, CouchbaseConverter converter) {
+    Expression bucket = escapedBucket(bucketName);
+    List<Expression> expList = new ArrayList<Expression>();
+
+    Expression[] propertiesExp = addRequiredSelectExpressions(returnedType, converter, bucket, expList);
+
+    return selectDistinct(propertiesExp);
   }
 
   /**
