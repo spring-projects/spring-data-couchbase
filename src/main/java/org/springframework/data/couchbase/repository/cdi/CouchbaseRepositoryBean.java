@@ -1,5 +1,5 @@
 /*
- * Copyright 2014-2017 the original author or authors.
+ * Copyright 2014-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.cdi;
+
+import java.lang.annotation.Annotation;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
-import java.lang.annotation.Annotation;
-import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
@@ -33,50 +33,48 @@ import org.springframework.util.Assert;
 
 /**
  * A bean which represents a Couchbase repository.
+ *
  * @author Mark Paluch
  */
 public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 
-    private final Bean<CouchbaseOperations> couchbaseOperationsBean;
+	private final Bean<CouchbaseOperations> couchbaseOperationsBean;
 
-    /**
-     * Creates a new {@link CouchbaseRepositoryBean}.
-     *
-     * @param operations must not be {@literal null}.
-     * @param qualifiers must not be {@literal null}.
-     * @param repositoryType must not be {@literal null}.
-     * @param beanManager must not be {@literal null}.
-     * @param detector detector for the custom {@link org.springframework.data.repository.Repository} implementations
-     *          {@link org.springframework.data.repository.config.CustomRepositoryImplementationDetector}, can be {@literal null}.
-     */
-    public CouchbaseRepositoryBean(Bean<CouchbaseOperations> operations, Set<Annotation> qualifiers, Class<T> repositoryType,
-            BeanManager beanManager, CustomRepositoryImplementationDetector detector) {
-        super(qualifiers, repositoryType, beanManager, Optional.of(detector));
+	/**
+	 * Creates a new {@link CouchbaseRepositoryBean}.
+	 *
+	 * @param operations must not be {@literal null}.
+	 * @param qualifiers must not be {@literal null}.
+	 * @param repositoryType must not be {@literal null}.
+	 * @param beanManager must not be {@literal null}.
+	 * @param detector detector for the custom {@link org.springframework.data.repository.Repository} implementations
+	 *          {@link org.springframework.data.repository.config.CustomRepositoryImplementationDetector}, can be
+	 *          {@literal null}.
+	 */
+	public CouchbaseRepositoryBean(Bean<CouchbaseOperations> operations, Set<Annotation> qualifiers,
+			Class<T> repositoryType, BeanManager beanManager, CustomRepositoryImplementationDetector detector) {
+		super(qualifiers, repositoryType, beanManager, Optional.of(detector));
 
-        Assert.notNull(operations, "Cannot create repository with 'null' for CouchbaseOperations.");
-        this.couchbaseOperationsBean = operations;
-    }
+		Assert.notNull(operations, "Cannot create repository with 'null' for CouchbaseOperations.");
+		this.couchbaseOperationsBean = operations;
+	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.cdi.CdiRepositoryBean#create(javax.enterprise.context.spi.CreationalContext, java.lang.Class, java.lang.Object)
-	 */
-    @Override
-    protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Optional<Object> customImplementation) {
+	 * @see org.springframework.data.repository.cdi.CdiRepositoryBean#create(javax.enterprise.context.spi.CreationalContext, java.lang.Class)
+	*/
+	@Override
+	protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType) {
 
-        CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
-        RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
-        IndexManager indexManager = new IndexManager();
+		CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
+		RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
+		IndexManager indexManager = new IndexManager();
 
-        CouchbaseRepositoryFactory factory =
-                new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager);
+		return create(() -> new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager), repositoryType);
+	}
 
-        return customImplementation.map(o -> factory.getRepository(repositoryType, o))
-                .orElseGet(() -> factory.getRepository(repositoryType));
-    }
-
-    @Override
-    public Class<? extends Annotation> getScope() {
-        return couchbaseOperationsBean.getScope();
-    }
+	@Override
+	public Class<? extends Annotation> getScope() {
+		return couchbaseOperationsBean.getScope();
+	}
 }
