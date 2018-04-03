@@ -9,8 +9,10 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
@@ -19,29 +21,32 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 @Configuration
 public class FeatureDetectionTestApplicationConfig extends AbstractCouchbaseConfiguration {
 
+  @Autowired
+  private Environment springEnv;
+
   @Bean
   public String couchbaseAdminUser() {
-    return "Administrator";
+    return springEnv.getProperty("couchbase.adminUser", "Administrator");
   }
 
   @Bean
   public String couchbaseAdminPassword() {
-    return "password";
+    return springEnv.getProperty("couchbase.adminUser", "password");
   }
 
   @Override
   protected List<String> getBootstrapHosts() {
-    return Collections.singletonList("127.0.0.1");
+    return Collections.singletonList(springEnv.getProperty("couchbase.host", "127.0.0.1"));
   }
 
   @Override
   protected String getBucketName() {
-    return "protected";
+    return springEnv.getProperty("couchbase.bucket", "default");
   }
 
   @Override
   protected String getBucketPassword() {
-    return "password";
+    return springEnv.getProperty("couchbase.password", "");
   }
 
 

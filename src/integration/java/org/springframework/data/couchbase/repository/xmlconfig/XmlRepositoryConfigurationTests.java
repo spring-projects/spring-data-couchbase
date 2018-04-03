@@ -6,21 +6,15 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.data.couchbase.ContainerResourceRunner;
-import org.springframework.test.context.ContextConfiguration;
 
 /**
  * @author Simon Baslé
  */
-@SuppressWarnings("SpringJavaAutowiringInspection")
-@RunWith(ContainerResourceRunner.class)
-@ContextConfiguration(classes = XmlRepositoryConfigurationTests.class)
 public class XmlRepositoryConfigurationTests {
 
   DefaultListableBeanFactory factory;

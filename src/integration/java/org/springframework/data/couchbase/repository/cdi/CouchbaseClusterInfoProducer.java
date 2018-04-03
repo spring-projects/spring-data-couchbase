@@ -36,7 +36,7 @@ class CouchbaseClusterInfoProducer {
 
   @Produces
   public ClusterInfo createClusterInfo(Cluster cluster) throws Exception {
-    return cluster.clusterManager("protected", "password").info();
+    return cluster.clusterManager("default", "").info();
   }
 
 }

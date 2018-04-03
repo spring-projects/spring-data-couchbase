@@ -44,7 +44,7 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
   @Query("SELECT * FROM #{#n1ql.bucket} WHERE username = $1 and #{#n1ql.filter} ")
   User findByUsernameBadSelect(String username);
 
-  @Query("#{#n1ql.selectEntity} WHERE username LIKE '%-4' and #{#n1ql.filter}")
+  @Query("#{#n1ql.selectEntity} WHERE username LIKE '%-#{3 + 1}' and #{#n1ql.filter}'")
   User findByUsernameWithSpelAndPlaceholder();
 
   @Query

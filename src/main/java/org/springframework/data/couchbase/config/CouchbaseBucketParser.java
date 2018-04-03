@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
  * The parser for XML definition of a {@link Bucket}, to be constructed from a {@link Cluster} reference.
  * If no reference is given, the default reference <code>{@value BeanNames#COUCHBASE_CLUSTER}</code> is used.
  *
- * See attributes {@link #CLUSTER_REF_ATTR}, {@link #BUCKETNAME_ATTR}, {@link #USERNAME_ATTR} and {@link #BUCKETPASSWORD_ATTR}.
+ * See attributes {@link #CLUSTER_REF_ATTR}, {@link #BUCKETNAME_ATTR} and {@link #BUCKETPASSWORD_ATTR}.
  *
  * @author Simon Baslé
  */
@@ -46,13 +46,8 @@ public class CouchbaseBucketParser extends AbstractSingleBeanDefinitionParser {
 	 */
 	public static final String BUCKETNAME_ATTR = "bucketName";
 
-	/*
-	 * The <code>username</code> attribute in a bucket definition defines the user of the bucket to open.
-	 */
-	public static final String USERNAME_ATTR = "username";
-
 	/**
-	 * The <code>bucketPassword</code> attribute in a bucket definition defines the password of the bucket/user of the bucket to open.
+	 * The <code>bucketPassword</code> attribute in a bucket definition defines the password of the bucket to open.
 	 */
 	public static final String BUCKETPASSWORD_ATTR = "bucketPassword";
 
@@ -100,14 +95,9 @@ public class CouchbaseBucketParser extends AbstractSingleBeanDefinitionParser {
 			builder.addConstructorArgValue(bucketName);
 		}
 
-		String username = element.getAttribute(USERNAME_ATTR);
-		if (StringUtils.hasText(username)) {
-			builder.addConstructorArgValue(username);
-		}
-
-		String password = element.getAttribute(BUCKETPASSWORD_ATTR);
-		if (StringUtils.hasText(password)) {
-			builder.addConstructorArgValue(password);
+		String bucketPassword = element.getAttribute(BUCKETPASSWORD_ATTR);
+		if (StringUtils.hasText(bucketPassword)) {
+			builder.addConstructorArgValue(bucketPassword);
 		}
 	}
 }

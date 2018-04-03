@@ -2,7 +2,9 @@ package org.springframework.data.couchbase;
 
 import java.util.Collections;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.config.CouchbaseConfigurer;
 
@@ -13,38 +15,41 @@ import org.springframework.data.couchbase.config.CouchbaseConfigurer;
  */
 public class IntegrationTestNoShutdownApplicationConfig extends AbstractCouchbaseConfiguration {
 
-	@Bean
-	public String couchbaseAdminUser() {
-		return "Administrator";
-	}
+    @Autowired
+    private Environment springEnv;
 
-	@Bean
-	public String couchbaseAdminPassword() {
-		return "password";
-	}
+    @Bean
+    public String couchbaseAdminUser() {
+        return springEnv.getProperty("couchbase.adminUser", "Administrator");
+    }
 
-	@Override
-	protected List<String> getBootstrapHosts() {
-		return Collections.singletonList("127.0.0.1");
-	}
+    @Bean
+    public String couchbaseAdminPassword() {
+        return springEnv.getProperty("couchbase.adminUser", "password");
+    }
 
-	@Override
-	protected String getBucketName() {
-		return "protected";
-	}
+    @Override
+    protected List<String> getBootstrapHosts() {
+        return Collections.singletonList(springEnv.getProperty("couchbase.host", "127.0.0.1"));
+    }
 
-	@Override
-	protected String getBucketPassword() {
-		return "password";
-	}
+    @Override
+    protected String getBucketName() {
+        return springEnv.getProperty("couchbase.bucket", "default");
+    }
 
-	@Override
-	protected boolean isEnvironmentManagedBySpring() {
-		return false;
-	}
+    @Override
+    protected String getBucketPassword() {
+        return springEnv.getProperty("couchbase.password", "");
+    }
 
-	@Override
-	protected CouchbaseConfigurer couchbaseConfigurer() {
-		return this;
-	}
+    @Override
+    protected boolean isEnvironmentManagedBySpring() {
+        return false;
+    }
+
+    @Override
+    protected CouchbaseConfigurer couchbaseConfigurer() {
+        return this;
+    }
 }

@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.repository;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
@@ -34,7 +33,6 @@ import org.springframework.data.repository.query.Param;
  * @author Subhashni Balakrishnan
  */
 @ViewIndexed(designDoc = "party", viewName = "all")
-@N1qlPrimaryIndexed
 @N1qlSecondaryIndexed(indexName = "party")
 public interface PartyRepository extends CouchbaseRepository<Party, String> {
 

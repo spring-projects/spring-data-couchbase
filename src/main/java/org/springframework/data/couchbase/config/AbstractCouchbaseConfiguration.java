@@ -56,13 +56,6 @@ public abstract class AbstractCouchbaseConfiguration
     protected abstract String getBucketName();
 
     /**
-     * The user of the bucket. Override the method for users in Couchbase Server 5.0+.
-     *
-     * @return user name.
-     */
-    protected String getUsername() { return getBucketName(); }
-
-    /**
      * The password of the bucket (can be an empty string).
      *
      * @return the password of the bucket.
@@ -122,7 +115,7 @@ public abstract class AbstractCouchbaseConfiguration
     @Override
     @Bean(name = BeanNames.COUCHBASE_CLUSTER_INFO)
     public ClusterInfo couchbaseClusterInfo() throws Exception {
-        return couchbaseCluster().clusterManager(getUsername(), getBucketPassword()).info();
+        return couchbaseCluster().clusterManager(getBucketName(), getBucketPassword()).info();
     }
 
     /**
@@ -134,13 +127,6 @@ public abstract class AbstractCouchbaseConfiguration
     @Bean(destroyMethod = "close", name = BeanNames.COUCHBASE_BUCKET)
     public Bucket couchbaseClient() throws Exception {
         //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
-        Cluster cluster = couchbaseCluster();
-
-        if(!getUsername().contentEquals(getBucketName())){
-            cluster.authenticate(getUsername(), getBucketPassword());
-        } else if (!getBucketPassword().isEmpty()) {
-            return cluster.openBucket(getBucketName(), getBucketPassword());
-        }
-        return cluster.openBucket(getBucketName());
+        return couchbaseCluster().openBucket(getBucketName(), getBucketPassword());
     }
 }

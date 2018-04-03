@@ -17,8 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.Id;
-;
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -30,6 +28,7 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * This test case demonstrates (with a bit of mocking) that the framework will take the
@@ -40,7 +39,7 @@ import org.springframework.test.context.ContextConfiguration;
  * @author Mark Paluch
  */
 @SuppressWarnings("SpringJavaAutowiringInspection")
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class RepositoryTemplateWiringTests {
 
@@ -93,12 +92,12 @@ public class RepositoryTemplateWiringTests {
 
     @Override
     protected String getBucketName() {
-      return "protected";
+      return "default";
     }
 
     @Override
     protected String getBucketPassword() {
-      return "password";
+      return "";
     }
 
     @Bean

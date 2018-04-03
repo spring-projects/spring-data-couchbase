@@ -25,8 +25,6 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
-;
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -39,6 +37,7 @@ import org.springframework.data.mapping.model.MappingInstantiationException;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
@@ -48,7 +47,7 @@ import java.util.List;
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
  */
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(PartyPopulatorListener.class)
 public class N1qlCouchbaseRepositoryTests {

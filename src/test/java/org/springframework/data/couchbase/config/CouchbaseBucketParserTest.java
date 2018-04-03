@@ -108,7 +108,7 @@ public class CouchbaseBucketParserTest {
 		BeanDefinition def = factory.getBeanDefinition("bucketWithNameAndPassword");
 
 		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(4)));
+		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(3)));
 		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
@@ -123,15 +123,8 @@ public class CouchbaseBucketParserTest {
 		assertThat(nameHolder.getValue(), is(instanceOf(String.class)));
 		assertThat(nameHolder.getValue().toString(), is((equalTo("test"))));
 
-
-		ConstructorArgumentValues.ValueHolder usernameHolder = def.getConstructorArgumentValues()
-				.getArgumentValue(2, Object.class);
-		assertThat(usernameHolder.getValue(), is(instanceOf(String.class)));
-		assertThat(usernameHolder.getValue().toString(), is((equalTo("testuser"))));
-
-
 		ConstructorArgumentValues.ValueHolder passwordHolder = def.getConstructorArgumentValues()
-				.getArgumentValue(3, Object.class);
+				.getArgumentValue(2, Object.class);
 		assertThat(passwordHolder.getValue(), is(instanceOf(String.class)));
 		assertThat(passwordHolder.getValue().toString(), is((equalTo("123"))));
 	}

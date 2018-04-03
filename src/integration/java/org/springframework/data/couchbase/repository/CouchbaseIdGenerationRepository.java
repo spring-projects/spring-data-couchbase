@@ -20,8 +20,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.Id;
-
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
@@ -31,6 +29,7 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE;
@@ -38,13 +37,11 @@ import static org.springframework.data.couchbase.core.mapping.id.GenerationStrat
 /**
  * @author Maxence Labusquiere
  */
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
-public class CouchbaseIdGenerationTests {
-
+public class CouchbaseIdGenerationRepository {
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
-
   @Autowired
   private IndexManager indexManager;
   private CrudRepository<SimpleClassWithGeneratedIdValueUsingUUID, String> entityRepository;

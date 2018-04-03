@@ -54,22 +54,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-;
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Anastasiia Smirnova */
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseTemplateQueryListener.class)
 public class CouchbaseTemplateTests {
+
 	@Rule
 	public TestName testName = new TestName();
 
@@ -485,9 +485,9 @@ public class CouchbaseTemplateTests {
 		String id = "simple-doc-with-update-expiry-for-read";
 		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
 		template.save(doc);
-		Thread.sleep(1000);
+		Thread.sleep(1500);
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
-		Thread.sleep(1000);
+		Thread.sleep(1500);
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
 		Thread.sleep(3000);
 		assertNull(template.findById(id, DocumentWithTouchOnRead.class));

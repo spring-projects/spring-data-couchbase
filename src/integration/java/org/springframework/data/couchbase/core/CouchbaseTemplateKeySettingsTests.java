@@ -1,6 +1,9 @@
 package org.springframework.data.couchbase.core;
 
 import static org.junit.Assert.*;
+
+import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.repository.annotation.Id;
 import org.junit.Before;
 import org.junit.Rule;
@@ -8,18 +11,17 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestCustomKeySettings;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author Subhashni Balakrishnan
  */
 
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestCustomKeySettings.class)
 public class CouchbaseTemplateKeySettingsTests {
 

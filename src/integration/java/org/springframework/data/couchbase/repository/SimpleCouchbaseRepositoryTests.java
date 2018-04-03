@@ -34,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.AsyncUtils;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
@@ -45,6 +44,7 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.JsonDocument;
@@ -57,7 +57,7 @@ import com.couchbase.client.java.view.ViewQuery;
  * @author Michael Nitschinger
  * @author Mark Paluch
  */
-@RunWith(ContainerResourceRunner.class)
+@RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(SimpleCouchbaseRepositoryListener.class)
 public class SimpleCouchbaseRepositoryTests {
