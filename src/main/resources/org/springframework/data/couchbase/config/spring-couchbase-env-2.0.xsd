@@ -29,6 +29,7 @@
                 <xsd:attribute name="disconnectTimeout" type="xsd:long"/>
                 <xsd:attribute name="dnsSrvEnabled" type="xsd:boolean"/>
 
+                <xsd:attribute name="dcpEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="sslEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="sslKeystoreFile" type="xsd:string"/>
                 <xsd:attribute name="sslKeystorePassword" type="xsd:string"/>

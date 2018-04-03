@@ -119,6 +119,10 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     this.couchbaseEnvBuilder.dnsSrvEnabled(dnsSrvEnabled);
   }
 
+  public void setDcpEnabled(boolean dcpEnabled) {
+    this.couchbaseEnvBuilder.dcpEnabled(dcpEnabled);
+  }
+
   public void setSslEnabled(boolean sslEnabled) {
     this.couchbaseEnvBuilder.sslEnabled(sslEnabled);
   }
