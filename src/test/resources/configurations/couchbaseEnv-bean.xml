@@ -19,9 +19,12 @@
                    disconnectTimeout="6"
                    dnsSrvEnabled="true"
 
+                   dcpEnabled="true"
                    sslEnabled="true"
                    sslKeystoreFile="test"
                    sslKeystorePassword="test"
+                   queryEnabled="true"
+                   queryPort="7"
                    bootstrapHttpEnabled="false"
                    bootstrapCarrierEnabled="false"
                    bootstrapHttpDirectPort="8"
