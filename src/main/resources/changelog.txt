@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.6.RELEASE (2018-04-04)
+---------------------------------------------
+* DATACOUCH-370 - Remove explicit declaration of Jackson library versions.
+* DATACOUCH-367 - Update to 2.5.6 client.
+* DATACOUCH-366 - Release 3.0.6 (Kay SR6).
+* DATACOUCH-362 - Use dynamic proxy instead of couchbase environment no shutdown proxy.
+* DATACOUCH-322 - Add username for rbac support.
+
+
 Changes in version 2.2.11.RELEASE (2018-04-04)
 ----------------------------------------------
 * DATACOUCH-370 - Remove explicit declaration of Jackson library versions.
