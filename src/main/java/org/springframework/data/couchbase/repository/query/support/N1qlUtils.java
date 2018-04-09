@@ -16,19 +16,27 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import static com.couchbase.client.java.query.Select.select;
-import static com.couchbase.client.java.query.dsl.Expression.i;
-import static com.couchbase.client.java.query.dsl.Expression.path;
-import static com.couchbase.client.java.query.dsl.Expression.s;
-import static com.couchbase.client.java.query.dsl.Expression.x;
-import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
-import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.meta;
-import static com.couchbase.client.java.query.dsl.functions.StringFunctions.lower;
+import static com.couchbase.client.java.query.Select.*;
+import static com.couchbase.client.java.query.dsl.Expression.*;
+import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.*;
+import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.*;
+import static com.couchbase.client.java.query.dsl.functions.StringFunctions.*;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CountFragment;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.PersistentPropertyPath;
+import org.springframework.data.mapping.PropertyPath;
+import org.springframework.data.repository.core.EntityMetadata;
+import org.springframework.data.repository.query.ReturnedType;
 
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
@@ -42,22 +50,6 @@ import com.couchbase.client.java.query.dsl.functions.TypeFunctions;
 import com.couchbase.client.java.query.dsl.path.FromPath;
 import com.couchbase.client.java.query.dsl.path.WherePath;
 import com.couchbase.client.java.repository.annotation.Field;
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.CountFragment;
-import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mapping.PropertyPath;
-import org.springframework.data.mapping.context.PersistentPropertyPath;
-import org.springframework.data.repository.core.EntityMetadata;
-import org.springframework.data.repository.query.ReturnedType;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.common.TemplateParserContext;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * Utility class to deal with constructing well formed N1QL queries around Spring Data entities, so that

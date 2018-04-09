@@ -21,15 +21,16 @@ import static com.couchbase.client.java.query.dsl.Expression.*;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.repository.query.ConvertingIterator;
+import org.springframework.data.mapping.PersistentPropertyPath;
+import org.springframework.data.repository.query.parser.Part;
+
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.functions.PatternMatchingFunctions;
 import com.couchbase.client.java.query.dsl.functions.StringFunctions;
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.repository.query.ConvertingIterator;
-import org.springframework.data.mapping.context.PersistentPropertyPath;
-import org.springframework.data.repository.query.parser.Part;
 
 /**
  * Utils for creating part tree expressions
