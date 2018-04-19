@@ -249,10 +249,9 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
 
         return mapMono(operations.queryView(query)
-                .map(AsyncViewResult::rows)
-                .flatMap(row -> {
-                    AsyncViewRow asyncViewRow = (AsyncViewRow) row;
-                    return operations.remove(asyncViewRow.id())
+                .flatMap(AsyncViewResult::rows)
+                .map(row -> {
+                    return operations.remove(row.id())
                             .onErrorResumeNext(throwable -> {
                                 if (throwable instanceof DocumentDoesNotExistException) {
                                     return Observable.empty();
