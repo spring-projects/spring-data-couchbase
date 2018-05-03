@@ -664,7 +664,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       Class<?> elementType = element == null ? null : element.getClass();
 
       if (elementType == null || conversions.isSimpleType(elementType)) {
-        target.put(element);
+        target.put(getPotentiallyConvertedSimpleWrite(element));
       } else if (element instanceof Collection || elementType.isArray()) {
         target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(conversions.getSimpleTypeHolder()), componentType));
       } else {
