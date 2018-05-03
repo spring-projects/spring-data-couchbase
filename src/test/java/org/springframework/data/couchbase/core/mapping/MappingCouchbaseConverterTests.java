@@ -413,6 +413,9 @@ public class MappingCouchbaseConverterTests {
     mapOfValuesDoc.put("val1", valueStr);
     mapOfValuesDoc.put("val2", value2Str);
     source.put("mapOfValues", mapOfValuesDoc);
+
+    assertEquals(((CouchbaseList)converted.getPayload().get("listOfValues")).get(0), valueStr);
+    assertEquals(((CouchbaseList)converted.getPayload().get("listOfValues")).get(1), value2Str);
     assertEquals(source.export().toString(), converted.export().toString());
 
     CustomEntity readConverted = converter.read(CustomEntity.class, source);
