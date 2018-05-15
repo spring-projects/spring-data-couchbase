@@ -20,8 +20,6 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import com.couchbase.client.java.util.features.CouchbaseFeature;
-
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
@@ -45,11 +43,13 @@ import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
-import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.QueryLookupStrategy;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
+
+import com.couchbase.client.java.util.features.CouchbaseFeature;
 
 /**
  * Factory to create {@link SimpleCouchbaseRepository} instances.
@@ -202,7 +202,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   @Override
-  protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
+  protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key, QueryMethodEvaluationContextProvider contextProvider) {
     return Optional.of(new CouchbaseQueryLookupStrategy(contextProvider));
   }
 
@@ -211,9 +211,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
 
-    private final EvaluationContextProvider evaluationContextProvider;
+    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
-    public CouchbaseQueryLookupStrategy(EvaluationContextProvider evaluationContextProvider) {
+    public CouchbaseQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider) {
       this.evaluationContextProvider = evaluationContextProvider;
     }
 

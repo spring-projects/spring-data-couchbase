@@ -19,26 +19,36 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import com.couchbase.client.java.util.features.CouchbaseFeature;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.query.*;
+import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
+import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.View;
+import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
-import org.springframework.data.couchbase.repository.query.*;
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.ReactivePartTreeN1qlBasedQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveSpatialViewBasedQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveStringN1qlBasedQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
-import org.springframework.data.repository.query.EvaluationContextProvider;
 import org.springframework.data.repository.query.QueryLookupStrategy;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
+
+import com.couchbase.client.java.util.features.CouchbaseFeature;
 
 /**
  * @author Subhashni Balakrishnan
@@ -189,7 +199,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
     }
 
     @Override
-    protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key, EvaluationContextProvider contextProvider) {
+    protected Optional<QueryLookupStrategy> getQueryLookupStrategy(QueryLookupStrategy.Key key, QueryMethodEvaluationContextProvider contextProvider) {
         return Optional.of(new ReactiveCouchbaseRepositoryFactory.CouchbaseQueryLookupStrategy(contextProvider));
     }
 
@@ -198,9 +208,9 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
      */
     private class CouchbaseQueryLookupStrategy implements QueryLookupStrategy {
 
-        private final EvaluationContextProvider evaluationContextProvider;
+        private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
-        public CouchbaseQueryLookupStrategy(EvaluationContextProvider evaluationContextProvider) {
+        public CouchbaseQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider) {
             this.evaluationContextProvider = evaluationContextProvider;
         }
 

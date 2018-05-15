@@ -15,17 +15,18 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import org.springframework.data.repository.query.EvaluationContextProvider;
-import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.RepositoryQuery;
-import org.springframework.data.repository.query.ReturnedType;
+import com.couchbase.client.java.document.json.JsonValue;
+import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.Statement;
+
 
 /**
  * A reactive StringN1qlBasedQuery {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
@@ -43,7 +44,7 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
 
     private final StringBasedN1qlQueryParser queryParser;
     private final SpelExpressionParser parser;
-    private final EvaluationContextProvider evaluationContextProvider;
+    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
     protected String getTypeField() {
         return getCouchbaseOperations().getConverter().getTypeKey();
@@ -57,7 +58,7 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
                                         CouchbaseQueryMethod queryMethod,
                                         RxJavaCouchbaseOperations couchbaseOperations,
                                         SpelExpressionParser spelParser,
-                                        final EvaluationContextProvider evaluationContextProvider) {
+                                        QueryMethodEvaluationContextProvider evaluationContextProvider) {
         super(queryMethod, couchbaseOperations);
 
         this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod,

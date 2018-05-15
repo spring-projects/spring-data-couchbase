@@ -16,34 +16,23 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.Delete.deleteFrom;
-import static com.couchbase.client.java.query.dsl.Expression.i;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ReturnedType;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.path.DefaultLimitPath;
 import com.couchbase.client.java.query.dsl.path.DefaultOrderByPath;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.query.EvaluationContextProvider;
-import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.RepositoryQuery;
-import org.springframework.data.repository.query.ReturnedType;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.util.Assert;
 
 /**
  * A {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
@@ -64,7 +53,7 @@ import org.springframework.util.Assert;
  */
 public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   private final SpelExpressionParser parser;
-  private final EvaluationContextProvider evaluationContextProvider;
+  private final QueryMethodEvaluationContextProvider evaluationContextProvider;
   private final StringBasedN1qlQueryParser queryParser;
 
   protected String getTypeField() {
@@ -76,7 +65,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   public StringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations,
-                              SpelExpressionParser spelParser, final EvaluationContextProvider evaluationContextProvider) {
+                              SpelExpressionParser spelParser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
     super(queryMethod, couchbaseOperations);
     this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod,
             getCouchbaseOperations().getCouchbaseBucket().name(), getTypeField(), getTypeValue());
