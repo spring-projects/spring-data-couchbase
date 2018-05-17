@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.0.M3 (2018-05-17)
+----------------------------------------
+* DATACOUCH-379 - Adapt to SpEL extension API changes in Spring Data Commons.
+* DATACOUCH-374 - Release 3.1 M3 (Lovelace).
+
+
 Changes in version 3.0.7.RELEASE (2018-05-08)
 ---------------------------------------------
 * DATACOUCH-372 - Release 3.0.7 (Kay SR7).
