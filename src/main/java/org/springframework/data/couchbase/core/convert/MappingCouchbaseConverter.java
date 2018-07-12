@@ -464,7 +464,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       throw new MappingException("No mapping metadata found for entity of type " + source.getClass().getName());
     }
 
-    final ConvertingPropertyAccessor accessor = getPropertyAccessor(source);
+    final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(source);
     final CouchbasePersistentProperty idProperty = entity.getIdProperty();
     final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
@@ -811,11 +811,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     }
   }
 
-  private ConvertingPropertyAccessor getPropertyAccessor(Object source) {
+  private ConvertingPropertyAccessor<Object> getPropertyAccessor(Object source) {
+  	
     CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
-    PersistentPropertyAccessor accessor = entity.getPropertyAccessor(source);
+    PersistentPropertyAccessor<Object> accessor = entity.getPropertyAccessor(source);
 
-    return new ConvertingPropertyAccessor(accessor, conversionService);
+    return new ConvertingPropertyAccessor<>(accessor, conversionService);
   }
 
   /**

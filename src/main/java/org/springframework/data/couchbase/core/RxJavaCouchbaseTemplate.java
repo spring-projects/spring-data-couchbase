@@ -194,11 +194,12 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return c;
     }
 
-    private final ConvertingPropertyAccessor getPropertyAccessor(Object source) {
-        CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
-        PersistentPropertyAccessor accessor = entity.getPropertyAccessor(source);
+    private final <T> ConvertingPropertyAccessor<T> getPropertyAccessor(T source) {
 
-        return new ConvertingPropertyAccessor(accessor, converter.getConversionService());
+        CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
+        PersistentPropertyAccessor<T> accessor = entity.getPropertyAccessor(source);
+
+        return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
     }
 
     private <T> Observable<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
@@ -227,12 +228,9 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
                 break;
         }
         return persistFunction.call(toJsonDocument(objectToPersist), persistTo, replicateTo)
-                .flatMap(storedDoc -> {
-                    if (storedDoc != null && storedDoc.cas() != 0) {
-                        setVersion(objectToPersist, storedDoc.cas());
-                    }
-                    return Observable.just(objectToPersist);
-                })
+                .flatMap(storedDoc ->  Observable.just(storedDoc != null && storedDoc.cas() != 0
+                        ? setVersion(objectToPersist, storedDoc.cas())
+                        : objectToPersist))
                 .onErrorResumeNext(e -> {
                     if (e instanceof DocumentAlreadyExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
@@ -259,22 +257,25 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     }
 
     private <T> Long getVersion(T object) {
-        final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
+
         CouchbasePersistentProperty versionProperty = versionProperty(object);
 
-        if (versionProperty != null) {
-            return accessor.getProperty(versionProperty, Long.class);
-        }
-        return null;
+        return versionProperty == null //
+            ? null // 
+            : getPropertyAccessor(object).getProperty(versionProperty, Long.class);
     }
 
-    private <T> void setVersion(T object, long cas) {
-        final ConvertingPropertyAccessor accessor = getPropertyAccessor(object);
+    private <T> T setVersion(T object, long version) {
+    	
         CouchbasePersistentProperty versionProperty = versionProperty(object);
 
-        if (versionProperty != null) {
-            accessor.setProperty(versionProperty, cas);
+        if (versionProperty == null) {
+        	return object;
         }
+        
+        final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(object);
+        accessor.setProperty(versionProperty, version);
+        return accessor.getBean();
     }
 
     private <T> Observable<T> doRemove(T objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {

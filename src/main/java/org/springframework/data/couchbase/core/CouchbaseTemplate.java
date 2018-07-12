@@ -578,7 +578,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
                          final PersistType persistType) {
     ensureNotIterable(objectToPersist);
 
-    final ConvertingPropertyAccessor accessor = getPropertyAccessor(objectToPersist);
+    final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(objectToPersist);
     final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(objectToPersist.getClass());
     final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
     final Long version = versionProperty != null ? accessor.getProperty(versionProperty, Long.class) : null;
@@ -692,28 +692,30 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   private <T> T mapToEntity(String id, Document<String> data, Class<T> entityClass) {
+
     if (data == null) {
       return null;
     }
 
     final CouchbaseDocument converted = new CouchbaseDocument(id);
-    Object readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
+    T readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
 
-    final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
+    final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
 
     if (persistentEntity.getVersionProperty() != null) {
       accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
-	}
+    }
 
-    return (T) readEntity;
+    return accessor.getBean();
   }
 
-  private final ConvertingPropertyAccessor getPropertyAccessor(Object source) {
-    CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
-    PersistentPropertyAccessor accessor = entity.getPropertyAccessor(source);
+  private final <T> ConvertingPropertyAccessor<T> getPropertyAccessor(T source) {
 
-    return new ConvertingPropertyAccessor(accessor, converter.getConversionService());
+    CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
+    PersistentPropertyAccessor<T> accessor = entity.getPropertyAccessor(source);
+
+    return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
   }
 
   private void checkN1ql() {
