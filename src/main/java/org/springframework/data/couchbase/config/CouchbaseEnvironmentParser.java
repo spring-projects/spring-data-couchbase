@@ -135,6 +135,14 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "tcpNodelayEnabled", "tcpNodelayEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "mutationTokensEnabled", "mutationTokensEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "analyticsTimeout", "analyticsTimeout");
+		setPropertyValue(envDefinitionBuilder, envElement, "configPollInterval", "configPollInterval");
+		setPropertyValue(envDefinitionBuilder, envElement, "configPollFloorInterval", "configPollFloorInterval");
+		setPropertyValue(envDefinitionBuilder, envElement, "certAuthEnabled", "certAuthEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "operationTracingEnabled", "operationTracingEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "operationTracingServerDurationEnabled", "operationTracingServerDurationEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "orphanResponseReportingEnabled", "orphanResponseReportingEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "compressionMinSize", "compressionMinSize");
+		setPropertyValue(envDefinitionBuilder, envElement, "compressionMinRatio", "compressionMinRatio");
 
 		//retry strategy is particular, in the xsd this is an enum (FailFast, BestEffort)
 		setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");

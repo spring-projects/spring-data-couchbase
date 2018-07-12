@@ -99,6 +99,13 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
     assertThat(env.mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.mutationTokensEnabled())));
     assertThat(env.analyticsTimeout(), is(equalTo(30L)));
+    assertThat(env.configPollInterval(), is(equalTo(50L)));
+    assertThat(env.configPollFloorInterval(), is(equalTo(30L)));
+    assertThat(env.operationTracingEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingEnabled())));
+    assertThat(env.operationTracingServerDurationEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingServerDurationEnabled())));
+    assertThat(env.orphanResponseReportingEnabled(), allOf(equalTo(false), not(defaultEnv.orphanResponseReportingEnabled())));
+    assertThat(env.compressionMinSize(), is(equalTo(100)));
+    assertThat(env.compressionMinRatio(), is(equalTo(0.90)));
   }
 
   @AfterClass

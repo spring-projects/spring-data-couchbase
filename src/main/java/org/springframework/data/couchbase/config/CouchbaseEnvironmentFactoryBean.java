@@ -63,6 +63,9 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
     queryServiceConfig
     searchServiceConfig
     viewServiceConfig
+    cryptoManager
+    tracer
+    orphanResponseReporter
    */
 
   @Override
@@ -209,5 +212,37 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   public void setAnalyticsTimeout(long analyticsTimeout) {
     this.couchbaseEnvBuilder.analyticsTimeout(analyticsTimeout);
+  }
+
+  public void setConfigPollInterval(long configPollInterval) {
+    this.couchbaseEnvBuilder.configPollInterval(configPollInterval);
+  }
+
+  public void setConfigPollFloorInterval(long configPollFloorInterval) {
+    this.couchbaseEnvBuilder.configPollFloorInterval(configPollFloorInterval);
+  }
+
+  public void setCertAuthEnabled(boolean certAuthEnabled) {
+    this.couchbaseEnvBuilder.certAuthEnabled(certAuthEnabled);
+  }
+
+  public void setOperationTracingEnabled(boolean operationTracingEnabled) {
+    this.couchbaseEnvBuilder.operationTracingEnabled(operationTracingEnabled);
+  }
+
+  public void setOperationTracingServerDurationEnabled(boolean operationTracingServerDurationEnabled) {
+    this.couchbaseEnvBuilder.operationTracingServerDurationEnabled(operationTracingServerDurationEnabled);
+  }
+
+  public void setOrphanResponseReportingEnabled(boolean orphanResponseReportingEnabled) {
+    this.couchbaseEnvBuilder.orphanResponseReportingEnabled(orphanResponseReportingEnabled);
+  }
+
+  public void setCompressionMinSize(int compressionMinSize) {
+    this.couchbaseEnvBuilder.compressionMinSize(compressionMinSize);
+  }
+
+  public void setCompressionMinRatio(double compressionMinRatio) {
+    this.couchbaseEnvBuilder.compressionMinRatio(compressionMinRatio);
   }
 }
