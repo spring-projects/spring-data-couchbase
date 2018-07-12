@@ -43,6 +43,13 @@
                    tcpNodelayEnabled="false"
                    mutationTokensEnabled="true"
                    analyticsTimeout = "30"
+                   configPollInterval="50"
+                   configPollFloorInterval="30"
+                   operationTracingServerDurationEnabled="false"
+                   operationTracingEnabled="false"
+                   orphanResponseReportingEnabled="false"
+                   compressionMinSize="100"
+                   compressionMinRatio="0.90"
                    />
 
 </beans>

@@ -54,6 +54,14 @@
                 <xsd:attribute name="tcpNodelayEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="mutationTokensEnabled" type="xsd:boolean"/>
                 <xsd:attribute name="analyticsTimeout" type="xsd:long"/>
+                <xsd:attribute name="configPollInterval" type="xsd:long"/>
+                <xsd:attribute name="configPollFloorInterval" type="xsd:long"/>
+                <xsd:attribute name="certAuthEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="operationTracingEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="operationTracingServerDurationEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="orphanResponseReportingEnabled" type="xsd:boolean"/>
+                <xsd:attribute name="compressionMinSize" type="xsd:int"/>
+                <xsd:attribute name="compressionMinRatio" type="xsd:double"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
