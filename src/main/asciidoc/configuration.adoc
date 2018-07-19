@@ -21,6 +21,7 @@ All versions intended for production use are distributed across Maven Central an
 ====
 
 This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson as the JSON mapping infrastructure.
+The underlying Java SDK is set on version 2.4.6. It can be overridden and is forward compatible with SDK version 2.5.x.
 
 You can also grab snapshots from the http://repo.spring.io/libs-snapshot[spring snapshot repository] and milestone releases from the http://repo.spring.io/libs-milestone[milestone repository]. Here is an example on how to use the current SNAPSHOT dependency:
 
