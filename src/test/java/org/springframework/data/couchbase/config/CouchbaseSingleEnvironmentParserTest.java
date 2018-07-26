@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.config;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.Test;
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -42,7 +44,8 @@ public class CouchbaseSingleEnvironmentParserTest {
   @Test
   public void testSingleCouchbaseEnvironment() throws Exception {
     
-    Integer instanceCounterBefore = (Integer) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "instanceCounter");
+    AtomicInteger instanceCounterBefore = (AtomicInteger) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "INSTANCE_COUNT");
+    int instanceCountBefore = instanceCounterBefore.get();
     
     DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
     BeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
@@ -50,11 +53,12 @@ public class CouchbaseSingleEnvironmentParserTest {
     GenericApplicationContext context = new GenericApplicationContext(factory);
     context.refresh();
     CouchbaseEnvironment env = context.getBean("singleEnv", CouchbaseEnvironment.class);
+
     context.close();
     
-    Integer instanceCounterAfter = (Integer) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "instanceCounter");
+    AtomicInteger instanceCounterAfter = (AtomicInteger) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "INSTANCE_COUNT");
     
     assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
-    assertThat(instanceCounterAfter, is(instanceCounterBefore + 1));
+    assertThat(instanceCounterAfter.get(), is(instanceCountBefore + 1));
   }
 }
