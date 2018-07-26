@@ -1,6 +1,14 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.0.RC1 (2018-07-26)
+-----------------------------------------
+* DATACOUCH-395 - Update to Couchbase SDK 2.6.1.
+* DATACOUCH-391 - Remove EvaluationContextProvider & ExtensionAwareEvaluationContextProvider imports.
+* DATACOUCH-390 - Adapt to API changes for immutable entity support.
+* DATACOUCH-380 - Release 3.1 RC1 (Lovelace).
+
+
 Changes in version 3.0.8.RELEASE (2018-06-13)
 ---------------------------------------------
 * DATACOUCH-378 - Release 3.0.8 (Kay SR8).
