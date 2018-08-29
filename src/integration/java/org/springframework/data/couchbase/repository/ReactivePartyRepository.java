@@ -37,7 +37,7 @@ public interface ReactivePartyRepository extends ReactiveCouchbaseRepository<Par
 	@Query("SELECT count(*) + 5 FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
 	Mono<Long> countCustomPlusFive();
 
-	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
+	@Query("SELECT count(*) FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
 	Mono<Long> countCustom();
 
 	@Query("SELECT 1 = 1")

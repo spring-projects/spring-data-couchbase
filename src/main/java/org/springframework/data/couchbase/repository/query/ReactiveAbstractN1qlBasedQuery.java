@@ -16,13 +16,12 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.util.Map;
-import java.util.Optional;
-
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.*;
@@ -80,7 +79,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         if (queryMethod.isQueryForEntity()) {
             return execute(query, typeToRead);
         } else {
-            return executeSingleProjection(query);
+            return executeSingleProjection(query, typeToRead);
         }
     }
 
@@ -95,9 +94,17 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         return couchbaseOperations.findByN1QL(query, typeToRead);
     }
 
-    protected Object executeSingleProjection(N1qlQuery query) {
+    protected Object executeSingleProjection(N1qlQuery query, final Class<?> typeToRead) {
         logIfNecessary(query);
-        return couchbaseOperations.findByN1QLProjection(query, Map.class);
+        return couchbaseOperations.findByN1QLProjection(query, Map.class)
+                .map(m -> {
+                        if (m.size() > 1) {
+                            throw new CouchbaseQueryExecutionException("Query returning primitive got more values than expected: "
+                                    + m.size());
+                        }
+                        Object v = m.values().iterator().next();
+                        return this.couchbaseOperations.getConverter().getConversionService().convert(v, typeToRead);
+                    });
     }
 
     @Override
