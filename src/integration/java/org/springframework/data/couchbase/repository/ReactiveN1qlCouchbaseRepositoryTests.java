@@ -111,4 +111,16 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 		}
 		assertNotNull("Expected to find several parties", previousDesc);
 	}
+
+    @Test
+    public void testCustomSpelCountQuery() {
+        long count = partyRepository.countCustom().block();
+        assertEquals("Test N1QL Spel based query", 15, count);
+    }
+
+    @Test
+    public void testPartTreeQuery() {
+        long count = partyRepository.countAllByDescriptionNotNull().block();
+        assertEquals("Test N1QL part tree based query", 15, count);
+    }
 }
