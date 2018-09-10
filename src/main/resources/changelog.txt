@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.10.RELEASE (2018-09-10)
+----------------------------------------------
+* DATACOUCH-397 - Release 3.0.10 (Kay SR10).
+
+
 Changes in version 2.2.15.RELEASE (2018-09-10)
 ----------------------------------------------
 * DATACOUCH-398 - Release 2.2.15 (Ingalls SR15).
