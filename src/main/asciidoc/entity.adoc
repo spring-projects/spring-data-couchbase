@@ -3,6 +3,8 @@
 
 This chapter describes how to model Entities and explains their counterpart representation in Couchbase Server itself.
 
+include::{spring-data-commons-docs}/object-mapping.adoc[leveloffset=+1]
+
 [[basics]]
 == Documents and Fields
 
