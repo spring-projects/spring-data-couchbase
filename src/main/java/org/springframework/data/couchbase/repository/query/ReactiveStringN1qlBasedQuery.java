@@ -61,7 +61,7 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
         super(queryMethod, couchbaseOperations);
 
         this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod,
-                getCouchbaseOperations().getCouchbaseBucket().name(), getTypeField(), getTypeValue());
+                getCouchbaseOperations().getCouchbaseBucket().name(), getCouchbaseOperations().getConverter(), getTypeField(), getTypeValue());
         this.parser = spelParser;
         this.evaluationContextProvider = evaluationContextProvider;
     }
