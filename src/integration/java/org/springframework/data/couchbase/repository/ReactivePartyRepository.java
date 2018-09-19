@@ -57,4 +57,6 @@ public interface ReactivePartyRepository extends ReactiveCouchbaseRepository<Par
 
 	Flux<Party> findByDescriptionOrName(String description, String name);
 
+	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and eventDate = $1")
+	Flux<Party> getByEventDate(Date eventDate);
 }

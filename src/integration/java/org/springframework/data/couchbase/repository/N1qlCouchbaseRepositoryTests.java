@@ -40,6 +40,8 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -127,7 +129,7 @@ public class N1qlCouchbaseRepositoryTests {
     Pageable pageable = new PageRequest(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(16, page1.getTotalElements()); //12 generated parties + 4 specifically crafted party
+    assertEquals(17, page1.getTotalElements()); //12 generated parties + 5 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
   }
 
@@ -136,7 +138,7 @@ public class N1qlCouchbaseRepositoryTests {
     Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertEquals(16, page1.getTotalElements()); //12 generated parties + 4 specifically crafted party
+    assertEquals(17, page1.getTotalElements()); //12 generated parties + 5 specifically crafted party
     assertEquals(8, page1.getNumberOfElements());
 
     List<Party> parties = page1.getContent();
@@ -195,4 +197,16 @@ public class N1qlCouchbaseRepositoryTests {
     assertTrue(partyList.size() == 1);
   }
 
+  @Test
+  public void testSpelDateConvertion() {
+    final String key = "testSpelDateConvertion";
+    Calendar cal = Calendar.getInstance();
+    cal.clear();
+    cal.set(2018, Calendar.SEPTEMBER, 10);
+    Date date = cal.getTime();
+    partyRepository.save(new Party(key, "", "", date, 0, null));
+    List<Party> partyList = partyRepository.getByEventDate(date);
+    assertTrue(partyList.size() == 1);
+    assertEquals("Key mismatch", partyList.get(0).getKey(), key);
+  }
 }
