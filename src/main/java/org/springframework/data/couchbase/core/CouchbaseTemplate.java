@@ -207,6 +207,13 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
   }
 
+  /**
+   * Configures the WriteResultChecking to be used with the template. Setting null will reset
+   * the default of DEFAULT_WRITE_RESULT_CHECKING. This can be configured to capture couchbase
+   * specific exceptions like Temporary failure, Authentication failure..
+   *
+   * @param writeResultChecking the setting to use.
+   */
   public void setWriteResultChecking(WriteResultChecking writeResultChecking) {
     this.writeResultChecking = writeResultChecking == null ? DEFAULT_WRITE_RESULT_CHECKING : writeResultChecking;
   }
