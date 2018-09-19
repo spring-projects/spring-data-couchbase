@@ -18,6 +18,10 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -110,5 +114,18 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 			previousDesc = party.getDescription();
 		}
 		assertNotNull("Expected to find several parties", previousDesc);
+	}
+
+	@Test
+	public void testSpelDateConvertion() {
+		final String key = "testReactiveSpelDateConvertion";
+		Calendar cal = Calendar.getInstance();
+		cal.clear();
+		cal.set(2018, Calendar.SEPTEMBER, 15);
+		Date date = cal.getTime();
+		partyRepository.save(new Party(key, "", "", date, 0, null)).block();
+		List<Party> partyList = partyRepository.getByEventDate(date).collectList().block();
+		assertTrue(partyList.size() == 1);
+		assertEquals("Key mismatch", partyList.get(0).getKey(), key);
 	}
 }

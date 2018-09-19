@@ -29,6 +29,7 @@ import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -110,10 +111,12 @@ public class StringBasedN1qlQueryParser {
 	private final PlaceholderType placeHolderType;
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
+	private final CouchbaseConverter couchbaseConverter;
 
 	public StringBasedN1qlQueryParser(String statement,
 									  QueryMethod queryMethod,
 									  String bucketName,
+									  CouchbaseConverter couchbaseConverter,
 									  String typeField,
 									  Class<?> typeValue) {
 		this.statement = statement;
@@ -121,7 +124,7 @@ public class StringBasedN1qlQueryParser {
 		this.placeHolderType = checkPlaceholders(statement);
 		this.statementContext = createN1qlSpelValues(bucketName, typeField, typeValue, false);
 		this.countContext = createN1qlSpelValues(bucketName, typeField, typeValue, true);
-
+		this.couchbaseConverter = couchbaseConverter;
 	}
 
 	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, Class<?> typeValue, boolean isCount) {
@@ -211,7 +214,7 @@ public class StringBasedN1qlQueryParser {
 	private JsonValue getPositionalPlaceholderValues(ParameterAccessor accessor) {
 		JsonArray posValues = JsonArray.create();
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
-			posValues.add(accessor.getBindableValue(parameter.getIndex()));
+			posValues.add(this.couchbaseConverter.convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex())));
 		}
 		return posValues;
 	}
@@ -221,7 +224,7 @@ public class StringBasedN1qlQueryParser {
 
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
 			String placeholder = parameter.getPlaceholder();
-			Object value = accessor.getBindableValue(parameter.getIndex());
+			Object value = this.couchbaseConverter.convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex()));
 
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
