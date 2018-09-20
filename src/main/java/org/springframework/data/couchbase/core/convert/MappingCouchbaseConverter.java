@@ -43,6 +43,7 @@ import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
+import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.MappingException;
@@ -239,7 +240,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
     entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
       @Override
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)) {
+        if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop) || prop.isAnnotationPresent(N1qlJoin.class)) {
           return;
         }
         Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, instance);
@@ -481,6 +482,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
           return;
         } else if (enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)) {
+          return;
+        } else if (prop.isAnnotationPresent(N1qlJoin.class)) {
           return;
         }
 
