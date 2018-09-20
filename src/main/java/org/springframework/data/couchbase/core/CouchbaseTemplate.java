@@ -50,12 +50,16 @@ import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
+import org.springframework.data.couchbase.core.query.N1qlJoin;
+import org.springframework.data.mapping.PropertyHandler;
+import org.springframework.data.util.TypeInformation;
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -713,6 +717,22 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     if (persistentEntity.getVersionProperty() != null) {
       accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
     }
+
+    persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
+      if (prop.isAnnotationPresent(N1qlJoin.class)) {
+        N1qlJoin definition = prop.findAnnotation(N1qlJoin.class);
+        TypeInformation type = prop.getTypeInformation().getComponentType();
+        Class clazz = type.getType();
+        N1qlJoinResolver.N1qlJoinResolverParameters parameters = new N1qlJoinResolver.N1qlJoinResolverParameters(definition, id, persistentEntity.getTypeInformation(), type);
+        if (N1qlJoinResolver.isLazyJoin(definition)) {
+          N1qlJoinResolver.N1qlJoinProxy proxy = new N1qlJoinResolver.N1qlJoinProxy(this, parameters);
+          accessor.setProperty(prop, java.lang.reflect.Proxy.newProxyInstance(List.class.getClassLoader(),
+                  new Class[]{List.class}, proxy));
+        } else {
+          accessor.setProperty(prop, N1qlJoinResolver.doResolve(this, parameters, clazz));
+        }
+      }
+    });
 
     return accessor.getBean();
   }
