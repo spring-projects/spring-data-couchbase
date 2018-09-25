@@ -57,4 +57,5 @@ public interface ReactivePartyRepository extends ReactiveCouchbaseRepository<Par
 
 	Flux<Party> findByDescriptionOrName(String description, String name);
 
+	Flux<Party> findByKeyLike(String key);
 }

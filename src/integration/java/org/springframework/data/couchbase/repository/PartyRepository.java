@@ -89,4 +89,6 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
   List<Party> findByDescriptionOrName(String description, String name);
 
   List<Party> removeByDescriptionOrName(String description, String name);
+
+  List<Party> findByKeyLike(String key);
 }

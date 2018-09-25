@@ -43,6 +43,8 @@ public class BasicCouchbasePersistentProperty
         implements CouchbasePersistentProperty {
 
   private final FieldNamingStrategy fieldNamingStrategy;
+  private final String ID_FIELD_NAME = "id";
+  private final String VERSION_FIELD_NAME = "cas";
 
   /**
    * Create a new instance of the BasicCouchbasePersistentProperty class.
@@ -75,6 +77,10 @@ public class BasicCouchbasePersistentProperty
    */
   @Override
   public String getFieldName() {
+
+    if (isIdProperty() && getOwner().getIdProperty().equals(this)) return ID_FIELD_NAME;
+    if (isVersionProperty()) return VERSION_FIELD_NAME;
+
     com.couchbase.client.java.repository.annotation.Field annotation = getField().
         getAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
 

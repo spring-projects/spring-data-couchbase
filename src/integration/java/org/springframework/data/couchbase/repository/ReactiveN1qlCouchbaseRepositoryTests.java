@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
 
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,4 +124,11 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
         long count = partyRepository.countAllByDescriptionNotNull().block();
         assertEquals("Test N1QL part tree based query", 15, count);
     }
+
+	@Test
+	public void testN1qlMetaPropertyConstructionInPartTree() {
+		partyRepository.save(new Party("reactiveTestN1qlMetaPropertyConstructionInPartTree", "", "", null, 0, null)).block();
+		List<Party> parties = partyRepository.findByKeyLike("%Meta%").collectList().block();
+		assertTrue("Party ids contain substring party", parties.size() >= 1);
+	}
 }

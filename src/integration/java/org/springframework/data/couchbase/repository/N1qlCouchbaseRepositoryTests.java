@@ -195,4 +195,10 @@ public class N1qlCouchbaseRepositoryTests {
     assertTrue(partyList.size() == 1);
   }
 
+  @Test
+  public void testN1qlMetaPropertyConstructionInPartTree() {
+    partyRepository.save(new Party("testN1qlMetaPropertyConstructionInPartTree", "", "", null, 0, null));
+    List<Party> parties = partyRepository.findByKeyLike("%Meta%");
+    assertTrue("Party ids contain substring party", parties.size() >= 1);
+  }
 }

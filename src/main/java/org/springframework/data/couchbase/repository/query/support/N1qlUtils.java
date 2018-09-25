@@ -24,7 +24,10 @@ import static com.couchbase.client.java.query.dsl.functions.StringFunctions.*;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -60,18 +63,15 @@ import com.couchbase.client.java.repository.annotation.Field;
  * @author Mark Paluch
  */
 public class N1qlUtils {
+  //As per https://docs.couchbase.com/server/5.5/n1ql/n1ql-language-reference/indexing-meta-info.html
+  final static Set<String> META_PROPERTIES = new HashSet<>(Arrays.asList("id", "expiration", "cas"));
 
   /**
    * A converter that can be used to extract the {@link CouchbasePersistentProperty#getFieldName() fieldName},
    * eg. when one wants a path from {@link PersistentPropertyPath#toDotPath(Converter)} made of escaped field names.
    */
   public static final Converter<? super CouchbasePersistentProperty,String> FIELD_NAME_ESCAPED =
-      new Converter<CouchbasePersistentProperty, String>() {
-        @Override
-        public String convert(CouchbasePersistentProperty source) {
-          return "`" + source.getFieldName() + "`";
-        }
-      };
+   (source) -> META_PROPERTIES.contains(source.getFieldName()) ? "META()." + source.getFieldName() : "`" + source.getFieldName() + "`";
 
   /**
    * Escape the given bucketName and produce an {@link Expression}.
