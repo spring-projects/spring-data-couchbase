@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.1.RELEASE (2018-10-15)
+---------------------------------------------
+* DATACOUCH-406 - Release 3.1.1 (Lovelace SR1).
+
+
 Changes in version 3.1.0.RELEASE (2018-09-21)
 ---------------------------------------------
 * DATACOUCH-405 - Include documentation about Object Mapping Fundamentals.
