@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.2.RELEASE (2018-10-29)
+---------------------------------------------
+* DATACOUCH-409 - Release 3.1.2 (Lovelace SR2).
+
+
 Changes in version 2.2.16.RELEASE (2018-10-15)
 ----------------------------------------------
 * DATACOUCH-403 - Release 2.2.16 (Ingalls SR16).
