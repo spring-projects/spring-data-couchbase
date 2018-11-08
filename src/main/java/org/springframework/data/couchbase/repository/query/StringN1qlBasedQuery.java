@@ -266,7 +266,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   private JsonValue getPositionalPlaceholderValues(ParameterAccessor accessor) {
     JsonArray posValues = JsonArray.create();
     for (Parameter parameter : getQueryMethod().getParameters().getBindableParameters()) {
-      posValues.add(accessor.getBindableValue(parameter.getIndex()));
+      posValues.add(getCouchbaseOperations().getConverter().convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex())));
     }
     return posValues;
   }
@@ -276,7 +276,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
     for (Parameter parameter : getQueryMethod().getParameters().getBindableParameters()) {
       String placeholder = parameter.getPlaceholder();
-      Object value = accessor.getBindableValue(parameter.getIndex());
+      Object value = getCouchbaseOperations().getConverter().convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex()));
 
       if (placeholder != null && placeholder.charAt(0) == ':') {
         placeholder = placeholder.replaceFirst(":", "");

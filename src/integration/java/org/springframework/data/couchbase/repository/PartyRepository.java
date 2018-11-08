@@ -78,4 +78,7 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
   List<Party> findByDescriptionOrName(String description, String name);
 
   List<Party> removeByDescriptionOrName(String description, String name);
+
+  @Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and eventDate = $1")
+  List<Party> getByEventDate(Date eventDate);
 }
