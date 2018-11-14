@@ -17,11 +17,7 @@
 package org.springframework.data.couchbase.core.mapping;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
-import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
@@ -59,11 +55,6 @@ public class CouchbaseDocument implements CouchbaseStorable {
   private int expiration;
 
   /**
-   * Holds types considered simple and allowed to be stored.
-   */
-  private SimpleTypeHolder simpleTypeHolder;
-
-  /**
    * Creates a completely empty {@link CouchbaseDocument}.
    */
   public CouchbaseDocument() {
@@ -89,11 +80,6 @@ public class CouchbaseDocument implements CouchbaseStorable {
     this.id = id;
     this.expiration = expiration;
     payload = new HashMap<String, Object>();
-
-    Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
-    additionalTypes.add(CouchbaseDocument.class);
-    additionalTypes.add(CouchbaseList.class);
-    simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
   }
 
   /**
@@ -271,7 +257,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
       return;
     }
     final Class<?> clazz = value.getClass();
-    if (simpleTypeHolder.isSimpleType(clazz)) {
+    if (CouchbaseDocumentSimpleTypes.HOLDER.isSimpleType(clazz)) {
       return;
     }
     throw new IllegalArgumentException("Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
