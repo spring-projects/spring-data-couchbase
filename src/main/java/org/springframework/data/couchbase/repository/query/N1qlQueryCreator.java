@@ -17,8 +17,10 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.path.LimitPath;
 import com.couchbase.client.java.query.dsl.path.OrderByPath;
@@ -82,12 +84,13 @@ import org.springframework.data.repository.query.parser.PartTree;
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
  */
-public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression> {
-
+public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression> implements PartTreeN1qlQueryCreator {
   private final WherePath selectFrom;
   private final CouchbaseConverter converter;
   private final CouchbaseQueryMethod queryMethod;
   private final ParameterAccessor accessor;
+  private final JsonArray placeHolderValues;
+  private final AtomicInteger position;
 
   public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
                           CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
@@ -96,11 +99,13 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     this.converter = converter;
     this.queryMethod = queryMethod;
     this.accessor = parameters;
+    this.placeHolderValues = JsonArray.create();
+    this.position = new AtomicInteger(1);
   }
 
   @Override
   protected Expression create(Part part, Iterator<Object> iterator) {
-    return N1qlQueryCreatorUtils.prepareExpression(converter, part, iterator);
+    return N1qlQueryCreatorUtils.prepareExpression(converter, part, iterator, this.position, this.placeHolderValues);
   }
 
   @Override
@@ -138,4 +143,8 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     return selectFromWhere;
   }
 
+  @Override
+  public JsonValue getPlaceHolderValues() {
+    return this.placeHolderValues;
+  }
 }

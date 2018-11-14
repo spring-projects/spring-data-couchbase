@@ -17,6 +17,10 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.dsl.Expression;
 import com.couchbase.client.java.query.dsl.path.*;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -35,11 +39,13 @@ import org.springframework.data.repository.query.parser.PartTree;
  *
  * @author Subhashni Balakrishnan
  */
-public class N1qlMutateQueryCreator extends AbstractQueryCreator<MutateLimitPath, Expression> {
+public class N1qlMutateQueryCreator extends AbstractQueryCreator<MutateLimitPath, Expression> implements PartTreeN1qlQueryCreator {
     private final MutateWherePath mutateFrom;
     private final CouchbaseConverter converter;
     private final CouchbaseQueryMethod queryMethod;
     private final ParameterAccessor accessor;
+    private final JsonArray placeHolderValues;
+    private final AtomicInteger position;
 
     public N1qlMutateQueryCreator(PartTree tree, ParameterAccessor parameters, MutateWherePath mutateFrom,
                                 CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
@@ -48,11 +54,13 @@ public class N1qlMutateQueryCreator extends AbstractQueryCreator<MutateLimitPath
         this.converter = converter;
         this.queryMethod = queryMethod;
         this.accessor = parameters;
+        this.placeHolderValues = JsonArray.create();
+        this.position = new AtomicInteger(1);
     }
 
     @Override
     protected Expression create(Part part, Iterator<Object> iterator) {
-        return N1qlQueryCreatorUtils.prepareExpression(this.converter, part, iterator);
+        return N1qlQueryCreatorUtils.prepareExpression(this.converter, part, iterator, this.position, this.placeHolderValues);
     }
 
     @Override
@@ -73,5 +81,10 @@ public class N1qlMutateQueryCreator extends AbstractQueryCreator<MutateLimitPath
     protected MutateLimitPath complete(Expression criteria, Sort sort) {
         Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter, this.queryMethod.getEntityInformation());
         return mutateFrom.where(whereCriteria);
+    }
+
+    @Override
+    public JsonValue getPlaceHolderValues() {
+        return this.placeHolderValues;
     }
 }

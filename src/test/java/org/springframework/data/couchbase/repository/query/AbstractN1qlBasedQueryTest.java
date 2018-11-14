@@ -221,28 +221,6 @@ public class AbstractN1qlBasedQueryTest {
   }
 
   @Test
-  public void shouldThrowWhenModifyingType() throws Exception {
-
-    Method method = SampleRepository.class.getMethod("modifyingMethod");
-    CouchbaseQueryMethod queryMethod = spy(new CouchbaseQueryMethod(method, metadata, projectionFactory, context));
-    when(queryMethod.isModifyingQuery()).thenReturn(true);
-
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
-    Pageable pageable = Mockito.mock(Pageable.class);
-    AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
-        any(Class.class))).thenCallRealMethod();
-
-    try { mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class); fail(); } catch (UnsupportedOperationException e) { }
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
-  }
-
-  @Test
   public void shouldExecuteSingleProjectionWhenRandomObjectReturnType() throws Exception {
 
     Method method = SampleRepository.class.getMethod("countDown");

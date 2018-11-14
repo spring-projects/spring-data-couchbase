@@ -20,16 +20,16 @@ import static com.couchbase.client.java.query.dsl.Expression.*;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.functions.PatternMatchingFunctions;
-import com.couchbase.client.java.query.dsl.functions.StringFunctions;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.query.ConvertingIterator;
 import org.springframework.data.mapping.context.PersistentPropertyPath;
 import org.springframework.data.repository.query.parser.Part;
+import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.query.dsl.Expression;
+import com.couchbase.client.java.query.dsl.functions.StringFunctions;
 
 /**
  * Utils for creating part tree expressions
@@ -37,7 +37,7 @@ import org.springframework.data.repository.query.parser.Part;
  * @author Subhashni Balakrishnan
  */
 public class N1qlQueryCreatorUtils {
-    public static Expression prepareExpression(CouchbaseConverter converter, Part part, Iterator<Object> iterator) {
+    public static Expression prepareExpression(CouchbaseConverter converter, Part part, Iterator<Object> iterator, AtomicInteger position, JsonArray placeHolderValues) {
         PersistentPropertyPath<CouchbasePersistentProperty> path = N1qlUtils.getPathWithAlternativeFieldNames(
                 converter, part.getProperty());
         ConvertingIterator parameterValues = new ConvertingIterator(iterator, converter);
@@ -58,68 +58,116 @@ public class N1qlQueryCreatorUtils {
             ignoreCase = true;
         }
 
-        return createExpression(part.getType(), fieldNamePath, ignoreCase, parameterValues);
+        return createExpression(part.getType(), fieldNamePath, ignoreCase, parameterValues, position, placeHolderValues);
     }
 
 
-    public static Expression createExpression(Part.Type partType, String fieldNamePath, boolean ignoreCase, Iterator<Object> parameterValues) {
+    public static Expression createExpression(Part.Type partType, String fieldNamePath, boolean ignoreCase,
+                                              Iterator<Object> parameterValues, AtomicInteger position, JsonArray placeHolderValues) {
         //create the left hand side of the expression, taking ignoreCase into account
-        Expression left = ignoreCase ? StringFunctions.lower(x(fieldNamePath)) : x(fieldNamePath);
 
+        Expression left = ignoreCase ? StringFunctions.lower(x(fieldNamePath)) : x(fieldNamePath);
+        Expression exp;
         switch (partType) {
             case BETWEEN:
-                return left.between(leftAndRight(parameterValues, ignoreCase));
+                exp = left.between(x(getPlaceHolder(position, ignoreCase)).and(x(getPlaceHolder(position, ignoreCase))));
+                placeHolderValues.add(getValue(parameterValues));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case IS_NOT_NULL:
-                return left.isNotNull();
+                exp = left.isNotNull();
+                break;
             case IS_NULL:
-                return left.isNull();
+                exp = left.isNull();
+                break;
             case NEGATING_SIMPLE_PROPERTY:
-                return left.ne(right(parameterValues, ignoreCase));
+                exp = left.ne(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case SIMPLE_PROPERTY:
-                return left.eq(right(parameterValues, ignoreCase));
+                exp = left.eq(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case BEFORE:
             case LESS_THAN:
-                return left.lt(right(parameterValues, ignoreCase));
+                exp = left.lt(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case LESS_THAN_EQUAL:
-                return left.lte(right(parameterValues, ignoreCase));
+                exp = left.lte(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case GREATER_THAN_EQUAL:
-                return left.gte(right(parameterValues, ignoreCase));
+                exp = left.gte(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case AFTER:
             case GREATER_THAN:
-                return left.gt(right(parameterValues, ignoreCase));
+                exp = left.gt(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case NOT_LIKE:
-                return left.notLike(right(parameterValues, ignoreCase));
+                exp = left.notLike(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case LIKE:
-                return left.like(right(parameterValues, ignoreCase));
+                exp = left.like(getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case STARTING_WITH:
-                return left.like(like(parameterValues, ignoreCase, false, true));
+                exp = left.like(getPlaceHolder(position, ignoreCase) + " || '%'");
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case ENDING_WITH:
-                return left.like(like(parameterValues, ignoreCase, true, false));
+                exp = left.like("'%' || " + getPlaceHolder(position, ignoreCase));
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case NOT_CONTAINING:
-                return left.notLike(like(parameterValues, ignoreCase, true, true));
+                exp = left.notLike("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'");
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case CONTAINING:
-                return left.like(like(parameterValues, ignoreCase, true, true));
+                exp = left.like("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'");
+                placeHolderValues.add(getValue(parameterValues));
+                break;
             case NOT_IN:
-                return left.notIn(rightArray(parameterValues));
+                exp = left.notIn(getPlaceHolder(position, false));
+                placeHolderValues.add(getArray(parameterValues));
+                break;
             case IN:
-                return left.in(rightArray(parameterValues));
+                exp = left.in(getPlaceHolder(position, false));
+                placeHolderValues.add(getArray(parameterValues));
+                break;
             case TRUE:
-                return left.eq(true);
+                exp = left.eq(true);
+                break;
             case FALSE:
-                return left.eq(false);
+                exp = left.eq(false);
+                break;
             case REGEX:
-                return regexp(fieldNamePath, parameterValues);
+                exp = x("REGEXP_LIKE(" + left.toString() + ", " + getPlaceHolder(position, false) + ")");
+                placeHolderValues.add(getValueAsString(parameterValues));
+                break;
             case EXISTS:
-                return left.isNotMissing();
+                exp = left.isNotMissing();
+                break;
             case WITHIN:
             case NEAR:
             default:
                 throw new IllegalArgumentException("Unsupported keyword in N1QL query derivation");
         }
+        return exp;
     }
 
+    protected static String getPlaceHolder(AtomicInteger position, boolean ignoreCase) {
+        String placeHolder = "$" + position.getAndIncrement();
+        if (ignoreCase) {
+            placeHolder = StringFunctions.lower(x(placeHolder)).toString();
+        }
+        return placeHolder;
+    }
 
-    protected static Expression regexp(String left, Iterator<Object> parameterValues) {
+    protected static String getValueAsString(Iterator<Object> parameterValues) {
         Object next = parameterValues.next();
 
         String pattern;
@@ -128,11 +176,7 @@ public class N1qlQueryCreatorUtils {
         } else {
             pattern = String.valueOf(next);
         }
-        return PatternMatchingFunctions.regexpLike(left, pattern);
-    }
-
-    protected static Expression leftAndRight(Iterator<Object> parameterValues, boolean ignoreCase) {
-        return right(parameterValues, ignoreCase).and(right(parameterValues, ignoreCase));
+        return pattern;
     }
 
     protected static Expression like(Iterator<Object> parameterValues, boolean ignoreCase,
@@ -163,28 +207,15 @@ public class N1qlQueryCreatorUtils {
         return converted;
     }
 
-    protected static Expression right(Iterator<Object> parameterValues, boolean ignoreCase) {
+    protected static Object getValue(Iterator<Object> parameterValues) {
         Object next = parameterValues.next();
-        if (next == null) {
-            return Expression.NULL();
+        if (next instanceof Enum) {
+            next = String.valueOf(next);
         }
-
-        Expression converted;
-        if (next instanceof String) {
-            converted = s((String) next);
-        } else if (next instanceof Enum) {
-            converted = s(String.valueOf(next));
-        } else {
-            converted = x(String.valueOf(next));
-        }
-
-        if (ignoreCase) {
-            return StringFunctions.lower(converted);
-        }
-        return converted;
+        return next;
     }
 
-    protected static JsonArray rightArray(Iterator<Object> parameterValues) {
+    protected static JsonArray getArray(Iterator<Object> parameterValues) {
         Object next = parameterValues.next();
 
         Object[] values;
