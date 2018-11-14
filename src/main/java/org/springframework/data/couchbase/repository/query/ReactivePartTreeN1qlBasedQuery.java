@@ -19,6 +19,7 @@ import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 
 import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
@@ -41,6 +42,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
     private final PartTree partTree;
+    private JsonValue placeHolderValues;
 
     public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, RxJavaCouchbaseOperations operations) {
         super(queryMethod, operations);
@@ -49,7 +51,7 @@ public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQue
 
     @Override
     protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
-        return JsonArray.empty();
+        return this.placeHolderValues;
     }
 
     @Override
@@ -68,6 +70,7 @@ public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQue
         N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
                 getCouchbaseOperations().getConverter(), getQueryMethod());
         LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
+        this.placeHolderValues = queryCreator.getPlaceHolderValues();
         if (partTree.isLimiting()) {
             return selectFromWhereOrderBy.limit(partTree.getMaxResults());
         } else {

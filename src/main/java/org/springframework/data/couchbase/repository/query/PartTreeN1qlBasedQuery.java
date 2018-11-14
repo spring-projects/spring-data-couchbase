@@ -22,6 +22,7 @@ import static com.couchbase.client.java.query.dsl.Expression.i;
 import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
 import static org.springframework.data.couchbase.repository.query.support.N1qlUtils.createReturningExpressionForDelete;
 import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.dsl.Expression;
@@ -49,6 +50,7 @@ import org.springframework.util.Assert;
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   private final PartTree partTree;
+  private JsonValue placeHolderValues;
 
   public PartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
     super(queryMethod, couchbaseOperations);
@@ -57,7 +59,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   @Override
   protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
-    return JsonArray.empty();
+    return this.placeHolderValues;
   }
 
   @Override
@@ -65,10 +67,13 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     Expression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
     WherePath countFrom = select(count("*").as(CountFragment.COUNT_ALIAS)).from(bucket);
 
-    N1qlQueryCreator queryCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
+    N1qlCountQueryCreator queryCountCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
         getCouchbaseOperations().getConverter(), getQueryMethod());
-    return queryCreator.createQuery();
+    Statement statement = queryCountCreator.createQuery();
+    this.placeHolderValues = queryCountCreator.getPlaceHolderValues();
+    return statement;
   }
+
   @Override
   protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
@@ -76,8 +81,10 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
     if (partTree.isDelete()) {
       DeleteUsePath deleteUsePath = deleteFrom(bucket);
-      N1qlMutateQueryCreator queryCreator = new N1qlMutateQueryCreator(partTree, accessor, deleteUsePath, getCouchbaseOperations().getConverter(), getQueryMethod());
-      MutateLimitPath mutateFromWhereOrderBy = queryCreator.createQuery();
+      N1qlMutateQueryCreator  mutateQueryCreator = new N1qlMutateQueryCreator(partTree, accessor, deleteUsePath, getCouchbaseOperations().getConverter(), getQueryMethod());
+      MutateLimitPath mutateFromWhereOrderBy = mutateQueryCreator.createQuery();
+      this.placeHolderValues = mutateQueryCreator.getPlaceHolderValues();
+
       if (partTree.isLimiting()) {
         return mutateFromWhereOrderBy.limit(partTree.getMaxResults());
       } else {
@@ -94,6 +101,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
               getCouchbaseOperations().getConverter(), getQueryMethod());
       LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
+      this.placeHolderValues = queryCreator.getPlaceHolderValues();
 
       if (queryMethod.isPageQuery()) {
         Pageable pageable = accessor.getPageable();
