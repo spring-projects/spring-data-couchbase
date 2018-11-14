@@ -92,4 +92,6 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   @Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and eventDate = $1")
   List<Party> getByEventDate(Date eventDate);
+
+  List<Party> findByDescriptionStartingWith(String description);
 }
