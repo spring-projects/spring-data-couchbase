@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import com.couchbase.client.java.document.json.JsonObject;
 import org.junit.Test;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.Beer;
@@ -99,7 +100,7 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = \"value\") "
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
 
 	}
@@ -144,7 +145,7 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = \"value\") "
+		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
 
 	}

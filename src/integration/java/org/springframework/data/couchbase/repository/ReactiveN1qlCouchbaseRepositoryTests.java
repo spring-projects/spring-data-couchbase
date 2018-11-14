@@ -128,4 +128,12 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 		assertTrue(partyList.size() == 1);
 		assertEquals("Key mismatch", partyList.get(0).getKey(), key);
 	}
+
+    @Test
+    public void testN1qlQueryWithInvalidValue() {
+        partyRepository.save(new Party("testReactiveN1qlQueryWithInvalidValue", "", "testReactiveN1qlQueryWithInvalidValue", null, 0, null));
+        final String description = "testReactiveN1qlQueryWithInvalidValue* OR `description` LIKE \"\"";
+        List<Party> partyList = partyRepository.findByDescriptionStartingWith(description).collectList().block();
+        assertTrue(partyList.size() == 0);
+    }
 }

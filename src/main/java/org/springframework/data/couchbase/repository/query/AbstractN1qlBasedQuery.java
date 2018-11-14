@@ -101,6 +101,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
     //prepare a count query
     Statement countStatement = getCount(accessor, parameters);
+    //the place holder values are the same for the count query as well
     N1qlQuery countQuery = buildQuery(countStatement, queryPlaceholderValues,
         getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
     return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(), typeToRead));
