@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.12.RELEASE (2018-11-27)
+----------------------------------------------
+* DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
+* DATACOUCH-410 - Release 3.0.12 (Kay SR12).
+* DATACOUCH-384 - Date parameters are not converted for N1ql Query.
+
+
 Changes in version 2.2.17.RELEASE (2018-11-27)
 ----------------------------------------------
 * DATACOUCH-413 - Annotated repository query method arguments are not escaped properly.
