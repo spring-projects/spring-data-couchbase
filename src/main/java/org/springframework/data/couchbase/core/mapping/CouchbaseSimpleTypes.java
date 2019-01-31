@@ -17,9 +17,9 @@
 package org.springframework.data.couchbase.core.mapping;
 
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import static java.util.stream.Collectors.toSet;
+
+import java.util.stream.Stream;
 
 import com.couchbase.client.java.document.RawJsonDocument;
 import com.couchbase.client.java.document.json.JsonArray;
@@ -28,16 +28,16 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 public abstract class CouchbaseSimpleTypes {
 
-  static {
-    Set<Class<?>> simpleTypes = new HashSet<Class<?>>();
-    simpleTypes.add(RawJsonDocument.class);
-    simpleTypes.add(JsonArray.class);
-    simpleTypes.add(Number.class);
-    COUCHBASE_SIMPLE_TYPES = Collections.unmodifiableSet(simpleTypes);
-  }
+  public static final SimpleTypeHolder JSON_TYPES = new SimpleTypeHolder(
+    Stream.of(RawJsonDocument.class,
+              JsonArray.class,
+              Number.class).collect(toSet()),
+    true);
 
-  private static final Set<Class<?>> COUCHBASE_SIMPLE_TYPES;
-  public static final SimpleTypeHolder HOLDER = new SimpleTypeHolder(COUCHBASE_SIMPLE_TYPES, true);
+  public static final SimpleTypeHolder DOCUMENT_TYPES = new SimpleTypeHolder(
+    Stream.of(CouchbaseDocument.class,
+              CouchbaseList.class).collect(toSet()),
+    true);
 
   private CouchbaseSimpleTypes() {
   }

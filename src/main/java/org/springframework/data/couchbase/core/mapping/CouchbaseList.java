@@ -81,7 +81,7 @@ public class CouchbaseList implements CouchbaseStorable {
       this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
     }
     else {
-      this.simpleTypeHolder = CouchbaseDocumentSimpleTypes.HOLDER;
+      this.simpleTypeHolder = CouchbaseSimpleTypes.DOCUMENT_TYPES;
     }
   }
 

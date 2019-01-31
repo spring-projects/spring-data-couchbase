@@ -257,7 +257,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
       return;
     }
     final Class<?> clazz = value.getClass();
-    if (CouchbaseDocumentSimpleTypes.HOLDER.isSimpleType(clazz)) {
+    if (CouchbaseSimpleTypes.DOCUMENT_TYPES.isSimpleType(clazz)) {
       return;
     }
     throw new IllegalArgumentException("Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
