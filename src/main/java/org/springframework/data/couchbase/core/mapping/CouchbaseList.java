@@ -74,14 +74,13 @@ public class CouchbaseList implements CouchbaseStorable {
    */
   public CouchbaseList(final List<Object> initialPayload, final SimpleTypeHolder simpleTypeHolder) {
     this.payload = initialPayload;
-    Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
-    additionalTypes.add(CouchbaseDocument.class);
-    additionalTypes.add(CouchbaseList.class);
     if (simpleTypeHolder != null) {
+      Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
+      additionalTypes.add(CouchbaseDocument.class);
+      additionalTypes.add(CouchbaseList.class);
       this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
-    }
-    else {
-      this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, true);
+    } else {
+      this.simpleTypeHolder = CouchbaseSimpleTypes.DOCUMENT_TYPES;
     }
   }
 
