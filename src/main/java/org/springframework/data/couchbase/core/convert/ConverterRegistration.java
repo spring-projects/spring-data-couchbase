@@ -111,6 +111,6 @@ class ConverterRegistration {
    * @return
    */
   private static boolean isCouchbaseBasicType(Class<?> type) {
-    return CouchbaseSimpleTypes.HOLDER.isSimpleType(type);
+    return CouchbaseSimpleTypes.JSON_TYPES.isSimpleType(type);
   }
 }
