@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.join;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,10 +28,13 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
+import static org.junit.Assert.*;
+
 /**
  * N1ql Join tests
  *
  * @author Subhashni Balakrishnan
+ * @author Tayeb Chlyah
  */
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
@@ -50,11 +51,14 @@ public class N1qlJoinTests {
 
     private AuthorRepository authorRepository;
 
+    private AddressRepository addressRepository;
+
     @Before
     public void setup() throws Exception {
         RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
         bookRepository = factory.getRepository(BookRepository.class);
         authorRepository = factory.getRepository(AuthorRepository.class);
+        addressRepository = factory.getRepository(AddressRepository.class);
     }
 
     @Test
@@ -62,8 +66,10 @@ public class N1qlJoinTests {
         Author a = authorRepository.findById("Author" + 1).get();
         assertTrue(a.books.size() == 5);
         for(Book b:a.books) {
-            assertEquals("Join on author name mismatch", a.name, b.authorName);
+            assertEquals("Book Join on author name mismatch", a.name, b.authorName);
         }
+        assertNotNull(a.address);
+        assertEquals("Address Join on author name mismatch", a.name, a.address.name);
     }
 
     @Test
@@ -74,5 +80,6 @@ public class N1qlJoinTests {
 
         Author saveda = authorRepository.findById(name).get();
         assertTrue(saveda.books.isEmpty());
+        assertNull(saveda.address);
     }
 }
