@@ -18,31 +18,32 @@ package org.springframework.data.couchbase.repository.join;
 import org.springframework.data.annotation.Id;
 
 /**
- * Book test class for N1QL Join tests
+ * @author Tayeb Chlyah
  */
-public class Book {
+public class Address {
+
     @Id
+    String id;
+
     String name;
 
-    String authorName;
+    String country;
 
-    String description;
-
-    public Book(String name, String authorName, String description) {
+    public Address(String id, String name, String country) {
+        this.id = id;
         this.name = name;
-        this.authorName = authorName;
-        this.description = description;
+        this.country = country;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
-    public String getAuthorName() {
-        return this.authorName;
-    }
-
-    public String getDescription() {
-        return this.description;
+    public String getCountry() {
+        return country;
     }
 }

@@ -15,34 +15,12 @@
  */
 package org.springframework.data.couchbase.repository.join;
 
-import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
 /**
- * Book test class for N1QL Join tests
+ * @author Tayeb Chlyah
  */
-public class Book {
-    @Id
-    String name;
-
-    String authorName;
-
-    String description;
-
-    public Book(String name, String authorName, String description) {
-        this.name = name;
-        this.authorName = authorName;
-        this.description = description;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getAuthorName() {
-        return this.authorName;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
+@N1qlSecondaryIndexed(indexName = "addressIndex")
+interface AddressRepository extends CouchbaseRepository<Address, String> {
 }
