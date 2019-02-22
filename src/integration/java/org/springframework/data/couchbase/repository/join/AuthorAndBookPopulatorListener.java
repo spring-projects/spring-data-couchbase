@@ -25,6 +25,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 /**
  * Populates author and book documents for N1ql Join tests
  *
+ * @author Tayeb Chlyah
  */
 public class AuthorAndBookPopulatorListener extends DependencyInjectionTestExecutionListener {
 
@@ -44,6 +45,8 @@ public class AuthorAndBookPopulatorListener extends DependencyInjectionTestExecu
                 Book book = new Book("Book" + i+j, "foo"+i, "");
                 template.save(book);
             }
+            Address address = new Address("Address" + i, "foo" + i, "bar");
+            template.save(address);
         }
     }
 

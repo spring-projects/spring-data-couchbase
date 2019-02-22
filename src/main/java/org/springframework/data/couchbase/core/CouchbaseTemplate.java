@@ -92,6 +92,7 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
  * @author Simon Baslé
  * @author Young-Gu Chae
  * @author Mark Paluch
+ * @author Tayeb Chlyah
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
@@ -721,7 +722,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
       if (prop.isAnnotationPresent(N1qlJoin.class)) {
         N1qlJoin definition = prop.findAnnotation(N1qlJoin.class);
-        TypeInformation type = prop.getTypeInformation().getComponentType();
+        TypeInformation<?> typeInformation = prop.getTypeInformation();
+        TypeInformation type = typeInformation.isCollectionLike() ? typeInformation.getComponentType() : typeInformation.getActualType();
         Class clazz = type.getType();
         N1qlJoinResolver.N1qlJoinResolverParameters parameters = new N1qlJoinResolver.N1qlJoinResolverParameters(definition, id, persistentEntity.getTypeInformation(), type);
         if (N1qlJoinResolver.isLazyJoin(definition)) {

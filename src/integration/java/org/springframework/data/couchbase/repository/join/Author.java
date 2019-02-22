@@ -24,6 +24,8 @@ import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 
 /**
  * Author test class for N1QL Join tests
+ *
+ * @author Tayeb Chlyah
  */
 @N1qlPrimaryIndexed
 public class Author {
@@ -35,6 +37,9 @@ public class Author {
 
     @N1qlJoin(on = "lks.name=rks.authorName", fetchType = FetchType.IMMEDIATE)
     List<Book> books;
+
+    @N1qlJoin(on = "lks.name=rks.name", fetchType = FetchType.IMMEDIATE)
+    Address address;
 
     public Author(String id, String name) {
         this.id = id;
@@ -55,5 +60,13 @@ public class Author {
 
     public List<Book> getBooks() {
         return books;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
     }
 }
