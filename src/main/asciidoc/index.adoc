@@ -22,6 +22,7 @@ include::autokeygeneration.adoc[]
 include::{spring-data-commons-docs}/repositories.adoc[]
 include::repository.adoc[]
 include::template.adoc[]
+include::reactiverepository.adoc[]
 :leveloffset: -1
 
 
