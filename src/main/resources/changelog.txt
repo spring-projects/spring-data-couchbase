@@ -1,6 +1,18 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.M2 (2019-03-07)
+----------------------------------------
+* DATACOUCH-435 - Upgrade to Couchbase Driver 2.7.4.
+* DATACOUCH-434 - Add reactive repository asciidoc on index link.
+* DATACOUCH-432 - Fix ANSI Joins OneToOne relationship.
+* DATACOUCH-426 - Introduce Concourse CI.
+* DATACOUCH-425 - Update copyright years to 2019.
+* DATACOUCH-422 - Release 3.2 M2 (Moore).
+* DATACOUCH-415 - Performance issue when creating instances of CouchbaseDocument.
+* DATACOUCH-388 - Add support for ANSI Joins.
+
+
 Changes in version 3.1.5.RELEASE (2019-02-13)
 ---------------------------------------------
 * DATACOUCH-429 - Release 3.1.5 (Lovelace SR5).
