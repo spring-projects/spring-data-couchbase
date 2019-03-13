@@ -89,7 +89,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldFindAllWithSort() {
-    Iterable<Party> allByAttendanceDesc = repository.findAll(new Sort(Sort.Direction.DESC, "attendees"));
+    Iterable<Party> allByAttendanceDesc = repository.findAll(Sort.by(Sort.Direction.DESC, "attendees"));
     long previousAttendance = Long.MAX_VALUE;
     for (Party party : allByAttendanceDesc) {
       assertTrue(party.getAttendees() <= previousAttendance);
@@ -100,7 +100,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldSortOnRenamedFieldIfJsonNameIsProvidedInSort() {
-    Iterable<Party> parties = repository.findAll(new Sort(Sort.Direction.DESC, "desc"));
+    Iterable<Party> parties = repository.findAll(Sort.by(Sort.Direction.DESC, "desc"));
     String previousDesc = null;
     for (Party party : parties) {
       if (previousDesc != null) {
@@ -113,7 +113,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldSortWithoutCaseSensitivity() {
-    Iterable<Party> parties = repository.findAll(new Sort(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase()));
+    Iterable<Party> parties = repository.findAll(Sort.by(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase()));
     String previousDesc = null;
     for (Party party : parties) {
       if (previousDesc != null) {
@@ -126,7 +126,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldPageThroughEntities() {
-    Pageable pageable = new PageRequest(0, 8);
+    Pageable pageable = PageRequest.of(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
     assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
@@ -135,7 +135,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldPageThroughSortedEntities() {
-    Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
+    Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
 
     Page<Party> page1 = repository.findAll(pageable);
     assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
@@ -159,7 +159,7 @@ public class N1qlCouchbaseRepositoryTests {
 
   @Test
   public void shouldPageWithStringBasedQuery() {
-    Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
+    Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
     Page<Party> page1 = partyRepository.findPartiesWithAttendee(1, pageable);
     assertTrue("Query for parties with attendees should be atleast 12", page1.getTotalElements() >= 12);
     assertEquals(8, page1.getNumberOfElements());
@@ -186,7 +186,7 @@ public class N1qlCouchbaseRepositoryTests {
   //Fails on deserialization as a different entity item is also present
   @Test(expected = MappingInstantiationException.class)
   public void shouldFailWithMissingFilterStringBasedQuery() {
-    Sort sort = new Sort(Sort.Direction.DESC, "attendees");
+    Sort sort = Sort.by(Sort.Direction.DESC, "attendees");
     partyRepository.findParties(sort);
   }
 

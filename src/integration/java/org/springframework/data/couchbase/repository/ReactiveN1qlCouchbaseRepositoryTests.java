@@ -81,7 +81,7 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 
 	@Test
 	public void shouldFindAllWithSort() {
-		Iterable<Party> allByAttendanceDesc = repository.findAll(new Sort(Sort.Direction.DESC, "attendees")).collectList().block();
+		Iterable<Party> allByAttendanceDesc = repository.findAll(Sort.by(Sort.Direction.DESC, "attendees")).collectList().block();
 		long previousAttendance = Long.MAX_VALUE;
 		for (Party party : allByAttendanceDesc) {
 			assertTrue(party.getAttendees() <= previousAttendance);
@@ -92,7 +92,7 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 
 	@Test
 	public void shouldSortOnRenamedFieldIfJsonNameIsProvidedInSort() {
-		Iterable<Party> parties = repository.findAll(new Sort(Sort.Direction.DESC, "desc")).collectList().block();
+		Iterable<Party> parties = repository.findAll(Sort.by(Sort.Direction.DESC, "desc")).collectList().block();
 		String previousDesc = null;
 		for (Party party : parties) {
 			if (previousDesc != null) {
@@ -105,7 +105,7 @@ public class ReactiveN1qlCouchbaseRepositoryTests {
 
 	@Test
 	public void shouldSortWithoutCaseSensitivity() {
-		Iterable<Party> parties = repository.findAll(new Sort(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase())).collectList().block();
+		Iterable<Party> parties = repository.findAll(Sort.by(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase())).collectList().block();
 		String previousDesc = null;
 		for(Party party : parties) {
 			if (previousDesc != null) {

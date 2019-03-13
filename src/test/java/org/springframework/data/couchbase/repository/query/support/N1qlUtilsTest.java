@@ -105,7 +105,10 @@ public class N1qlUtilsTest {
   @Test
   public void testCreateSortIgnoresCaseWhenSpecified() throws Exception {
     CouchbaseConverter converter = mock(CouchbaseConverter.class);
-    Sort sortDescription = Sort.by(Order.asc("description").ignoreCase(), Order.asc("attendees"));
+    Sort sortDescription = Sort.by(
+              new Sort.Order(Sort.Direction.ASC, "description").ignoreCase(),
+              new Sort.Order(Sort.Direction.ASC, "attendees")
+    );
     com.couchbase.client.java.query.dsl.Sort[] realSort = N1qlUtils.createSort(sortDescription, converter);
 
     assertEquals(2, realSort.length);
