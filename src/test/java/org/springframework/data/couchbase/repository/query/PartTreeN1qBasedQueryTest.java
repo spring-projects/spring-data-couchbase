@@ -64,7 +64,7 @@ public class PartTreeN1qBasedQueryTest {
 	@Test
 	public void testGetCountExcludesStaticSortClause() throws Exception {
 
-		PageRequest pr = new PageRequest(0, 10);
+		PageRequest pr = PageRequest.of(0, 10);
 
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
 		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
@@ -108,8 +108,8 @@ public class PartTreeN1qBasedQueryTest {
 	@Test
 	public void testGetCountExcludesDynamicSortClause() throws Exception {
 
-		Sort sort = new Sort(Direction.ASC, "name");
-		PageRequest pr = new PageRequest(0, 10, sort);
+		Sort sort = Sort.by(Direction.ASC, "name");
+		PageRequest pr = PageRequest.of(0, 10, sort);
 
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
 		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);

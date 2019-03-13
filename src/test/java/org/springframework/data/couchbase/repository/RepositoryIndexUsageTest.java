@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.repository;
 
+import static org.springframework.data.domain.Sort.Direction;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -136,7 +137,7 @@ public class RepositoryIndexUsageTest {
   @Test
   public void testFindAllSortedUsesN1qlWithConfiguredConsistencyAndOrderBy() {
     String expectedOrderClause = "ORDER BY `length` ASC";
-    Sort sort = new Sort(Sort.Direction.ASC, "length");
+    Sort sort = Sort.by(Direction.ASC, "length");
     repository.findAll(sort);
 
     verify(couchbaseOperations, never()).findByView(any(ViewQuery.class), any(Class.class));
@@ -154,7 +155,7 @@ public class RepositoryIndexUsageTest {
   @Test
   public void testFindAllPagedUsesUsesN1qlConfiguredConsistencyAndLimitOffset() {
     String expectedLimitClause = "LIMIT 10 OFFSET 0";
-    repository.findAll(new PageRequest(0, 10));
+    repository.findAll(PageRequest.of(0, 10));
 
     verify(couchbaseOperations, never()).findByView(any(ViewQuery.class), any(Class.class));
     verify(couchbaseOperations, never()).queryView(any(ViewQuery.class));

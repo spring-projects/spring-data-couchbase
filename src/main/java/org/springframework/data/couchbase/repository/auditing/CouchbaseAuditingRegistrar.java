@@ -31,12 +31,11 @@ import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.event.AuditingEventListener;
-import org.springframework.data.support.IsNewStrategyFactory;
 import org.springframework.util.Assert;
 
 /**
- * A support registrar that allows to set up auditing for Couchbase (including {@link AuditingHandler}
- * and {@link IsNewStrategyFactory} set up). See {@link EnableCouchbaseAuditing} for the associated annotation.
+ * A support registrar that allows to set up auditing for Couchbase ({@link AuditingHandler} set up).
+ * See {@link EnableCouchbaseAuditing} for the associated annotation.
  *
  * @author Thomas Darimont
  * @author Oliver Gierke
