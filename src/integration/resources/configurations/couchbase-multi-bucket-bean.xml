@@ -3,8 +3,8 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
        xmlns:data-repository="http://www.springframework.org/schema/data/repository"
-       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
-		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/data/repository http://www.springframework.org/schema/data/repository/spring-repository.xsd">
+       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/data/repository https://www.springframework.org/schema/data/repository/spring-repository.xsd">
 
     <couchbase:env/>
     <couchbase:cluster/>
