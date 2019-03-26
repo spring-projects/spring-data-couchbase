@@ -242,7 +242,7 @@ public class MyService {
 
   private final UserRepository userRepository;
 
-    @Autowired
+  @Autowired
   public MyService(UserRepository userRepository) {
     this.userRepository = userRepository;
   }
