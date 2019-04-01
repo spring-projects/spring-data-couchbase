@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.0.14.RELEASE (2019-04-01)
+----------------------------------------------
+* DATACOUCH-434 - Add reactive repository asciidoc on index link.
+* DATACOUCH-428 - Release 3.0.14 (Kay SR14).
+* DATACOUCH-415 - Performance issue when creating instances of CouchbaseDocument.
+
+
 Changes in version 2.2.20.RELEASE (2019-04-01)
 ----------------------------------------------
 * DATACOUCH-440 - Release 2.2.20 (Ingalls SR20).
