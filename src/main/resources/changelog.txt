@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.19.RELEASE (2019-04-01)
+----------------------------------------------
+* DATACOUCH-427 - Release 2.2.19 (Ingalls SR19).
+
+
 Changes in version 3.2.0.M2 (2019-03-07)
 ----------------------------------------
 * DATACOUCH-435 - Upgrade to Couchbase Driver 2.7.4.
