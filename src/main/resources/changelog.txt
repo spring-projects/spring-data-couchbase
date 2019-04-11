@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.M3 (2019-04-11)
+----------------------------------------
+* DATACOUCH-438 - Move off deprecations in Spring Data Commons.
+* DATACOUCH-436 - Release 3.2 M3 (Moore).
+
+
 Changes in version 3.1.6.RELEASE (2019-04-01)
 ---------------------------------------------
 * DATACOUCH-434 - Add reactive repository asciidoc on index link.
