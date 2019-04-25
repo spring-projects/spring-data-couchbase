@@ -269,7 +269,7 @@ Here are some ways for you to get involved in the community:
   [`spring-data`](https://stackoverflow.com/questions/tagged/spring-data) and
   [`spring-data-couchbase`](https://stackoverflow.com/questions/tagged/spring-data-couchbase) tags by responding to
   questions.
-* Create [JIRA](jira.spring.io/browse/DATACOUCH) `DATACOUCH` tickets for bugs and new features and comment and
+* Create [JIRA](https://jira.spring.io/browse/DATACOUCH) `DATACOUCH` tickets for bugs and new features and comment and
   vote on the ones that you are interested in.
 * Github is for social coding: if you want to write code, we encourage contributions through pull requests from
   [forks of this repository](https://help.github.com/forking/). If you want to contribute code this way, please reference
