@@ -22,19 +22,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
@@ -42,13 +46,12 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
  * @author David Harrigan
  * @author Simon Baslé
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseRepositoryViewListener.class)
 public class CouchbaseRepositoryViewTests {
@@ -73,11 +76,7 @@ public class CouchbaseRepositoryViewTests {
   public void shouldFindAllWithCustomView() {
     client.query(ViewQuery.from("user", "customFindAllView").stale(Stale.FALSE));
     Iterable<User> allUsers = repository.findAll();
-    int i = 0;
-    for (final User allUser : allUsers) {
-      i++;
-    }
-    assertThat(i, is(100));
+    assertThat(allUsers, Matchers.iterableWithSize(100));
   }
 
   @Test
@@ -138,27 +137,21 @@ public class CouchbaseRepositoryViewTests {
     User u2 = repository.findByUsernameIs(middleKey).get(0);
     User u3 = repository.findByUsernameIs(highKey).get(0);
 
+    assertEquals(lowKey, u1.getUsername());
+    assertEquals(middleKey, u2.getUsername());
+    assertEquals(highKey, u3.getUsername());
 
     List<User> in = repository.findAllByUsernameIn(keys);
     List<User> gteLte = repository.findByUsernameGreaterThanEqualAndUsernameLessThanEqual(lowKey, highKey);
     List<User> between = repository.findByUsernameBetween(lowKey, highKey);
     List<User> gteLimited = repository.findTop3ByUsernameGreaterThanEqual(lowKey);
 
-    assertNotNull(u1);
-    assertNotNull(u2);
-    assertNotNull(u3);
-
-    assertEquals(lowKey, u1.getUsername());
-    assertEquals(middleKey, u2.getUsername());
-    assertEquals(highKey, u3.getUsername());
-
-    List<User> expected = Arrays.asList(u1, u2, u3);
-    assertEquals(expected, in);
-    assertEquals(expected, gteLte);
-    assertEquals(expected, between);
-    assertTrue(gteLimited.contains(u1));
-    assertTrue(gteLimited.contains(u2));
-    assertTrue(gteLimited.contains(u3));
+    // the results are unordered, so compare using Set
+    Set<User> expected = new HashSet<>(Arrays.asList(u1, u2, u3));
+    assertEquals(expected, new HashSet<>(in));
+    assertEquals(expected, new HashSet<>(gteLte));
+    assertEquals(expected, new HashSet<>(between));
+    assertEquals(expected, new HashSet<>(gteLimited));
   }
 
   @Test

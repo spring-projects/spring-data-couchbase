@@ -48,7 +48,7 @@ public class PageAndSliceTests {
   }
   @Test
   public void shouldPageThroughResults() {
-    Page<User> page1 = repository.findByAgeGreaterThan(9, new PageRequest(0, 40)); //there are 90 matching users
+    Page<User> page1 = repository.findByAgeGreaterThan(9, PageRequest.of(0, 40)); //there are 90 matching users
     Page<User> page2 = repository.findByAgeGreaterThan(9, page1.nextPageable());
     Page<User> page3 = repository.findByAgeGreaterThan(9, page2.nextPageable());
 
@@ -76,7 +76,7 @@ public class PageAndSliceTests {
   public void shouldSliceThroughResults() {
     int count = 0;
     List<User> allMatching = new ArrayList<User>(10);
-    Slice<User> slice = repository.findByAgeLessThan(9, new PageRequest(0, 3)); //9 matching users (ages 0-8)
+    Slice<User> slice = repository.findByAgeLessThan(9, PageRequest.of(0, 3)); //9 matching users (ages 0-8)
     allMatching.addAll(slice.getContent());
     while(slice.hasNext()) {
       slice = repository.findByAgeLessThan(9, slice.nextPageable());

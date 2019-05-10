@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase;
 
+import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.rules.ExternalResource;
@@ -25,11 +26,11 @@ public class TestContainerResource extends ExternalResource {
                 Properties properties = new Properties();
                 properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("server.properties"));
                 serverVersion = properties.getProperty("server.version");
-                if(!properties.getProperty("server.resource").contentEquals("container")) {
+                if(!"container".equals(properties.getProperty("server.resource"))) {
                     return null;
                 }
-            } catch (Exception ex) {
-                serverVersion = "5.0.1";
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
             couchbaseContainer = new FixedHostPortGenericContainer("couchbase:" + serverVersion)
                     .withFixedExposedPort(8091, 8091)

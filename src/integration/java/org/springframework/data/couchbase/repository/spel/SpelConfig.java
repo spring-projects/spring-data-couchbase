@@ -7,8 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.repository.query.spi.EvaluationContextExtension;
-import org.springframework.data.repository.query.spi.EvaluationContextExtensionSupport;
+import org.springframework.data.spel.spi.EvaluationContextExtension;
 
 @Configuration
 @EnableCouchbaseRepositories
@@ -19,7 +18,7 @@ public class SpelConfig  extends IntegrationTestApplicationConfig {
     return new CustomSpelExtension();
   }
 
-  public static class CustomSpelExtension extends EvaluationContextExtensionSupport {
+  public static class CustomSpelExtension implements EvaluationContextExtension {
 
     /**
      * Returns the identifier of the extension. The id can be leveraged by users to fully qualify property lookups and

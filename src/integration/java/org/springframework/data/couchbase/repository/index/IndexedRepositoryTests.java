@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.index;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
@@ -29,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
 ;
 import org.springframework.data.couchbase.ContainerResourceRunner;
@@ -80,7 +82,9 @@ public class IndexedRepositoryTests {
 
   @Test
   public void shouldFindN1qlPrimaryIndex() {
-    IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
+    // Retry here because concurrent index creation throws exception.
+    // See https://issues.couchbase.com/browse/MB-32238
+    IndexedUserRepository repository = Unreliables.retryUntilSuccess(10, SECONDS, () -> factory.getRepository(IndexedUserRepository.class));
 
     String bucket = template.getCouchbaseBucket().name();
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"`");
