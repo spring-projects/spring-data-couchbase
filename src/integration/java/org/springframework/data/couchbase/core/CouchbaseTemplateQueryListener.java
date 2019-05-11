@@ -27,7 +27,6 @@ import com.couchbase.client.java.view.DesignDocument;
 import com.couchbase.client.java.view.View;
 
 import org.springframework.data.couchbase.config.BeanNames;
-import org.springframework.data.couchbase.repository.index.IndexedRepositoryTests;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
