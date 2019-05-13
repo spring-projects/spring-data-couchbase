@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
 import java.util.List;
@@ -66,7 +67,7 @@ public class SimpleReactiveCouchbaseRepositoryIT {
 	@Before
 	public void setup() throws Exception {
 		ReactiveRepositoryFactorySupport factory = new ReactiveCouchbaseRepositoryFactory(operationsMapping, indexManager);
-		repository = factory.getRepository(ReactiveUserRepository.class);
+		repository = getRepositoryWithRetry(factory, ReactiveUserRepository.class);
 	}
 
 	private void remove(String key) {

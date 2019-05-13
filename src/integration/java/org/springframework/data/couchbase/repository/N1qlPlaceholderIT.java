@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.List;
 
@@ -56,7 +57,7 @@ public class N1qlPlaceholderIT {
   @Before
   public void setup() throws Exception {
     factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-    partyRepository = factory.getRepository(PartyRepository.class);
+    partyRepository = getRepositoryWithRetry(factory, PartyRepository.class);
   }
 
   @Test

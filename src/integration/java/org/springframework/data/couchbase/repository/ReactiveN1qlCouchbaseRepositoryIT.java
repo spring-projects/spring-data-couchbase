@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -68,9 +69,9 @@ public class ReactiveN1qlCouchbaseRepositoryIT {
 	@Before
 	public void setup() throws Exception {
 		ReactiveRepositoryFactorySupport factory = new ReactiveCouchbaseRepositoryFactory(operationsMapping, indexManager);
-		repository = factory.getRepository(ReactivePartySortingRepository.class);
-		partyRepository = factory.getRepository(ReactivePartyRepository.class);
-		itemRepository = factory.getRepository(ItemRepository.class);
+		repository = getRepositoryWithRetry(factory, ReactivePartySortingRepository.class);
+		partyRepository = getRepositoryWithRetry(factory, ReactivePartyRepository.class);
+		itemRepository = getRepositoryWithRetry(factory, ItemRepository.class);
 	}
 
 	@After

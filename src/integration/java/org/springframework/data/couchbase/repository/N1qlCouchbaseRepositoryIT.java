@@ -17,13 +17,13 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
 ;
@@ -76,12 +76,9 @@ public class N1qlCouchbaseRepositoryIT {
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-    repository = factory.getRepository(PartyPagingRepository.class);
-
-    // Retry here because concurrent index creation throws exception.
-    // See https://issues.couchbase.com/browse/MB-32238
-    partyRepository = Unreliables.retryUntilSuccess(10, TimeUnit.SECONDS, () -> factory.getRepository(PartyRepository.class));
-    itemRepository = Unreliables.retryUntilSuccess(10, TimeUnit.SECONDS, () -> factory.getRepository(ItemRepository.class));
+    repository = getRepositoryWithRetry(factory, PartyPagingRepository.class);
+    partyRepository = getRepositoryWithRetry(factory, PartyRepository.class);
+    itemRepository = getRepositoryWithRetry(factory, ItemRepository.class);
 
     partyRepository.save(new Party(KEY_PARTY, "partyName", "MatchingDescription", null, 1, null));
     itemRepository.save(new Item(KEY_ITEM, "MatchingDescription"));

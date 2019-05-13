@@ -3,6 +3,7 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public class PageAndSliceIT {
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-    repository = factory.getRepository(UserRepository.class);
+    repository = getRepositoryWithRetry(factory, UserRepository.class);
   }
   @Test
   public void shouldPageThroughResults() {

@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
 import java.util.List;
@@ -80,8 +81,8 @@ public class SimpleCouchbaseRepositoryIT {
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-    repository = factory.getRepository(UserRepository.class);
-    versionedDataRepository = factory.getRepository(VersionedDataRepository.class);
+    repository = getRepositoryWithRetry(factory, UserRepository.class);
+    versionedDataRepository = getRepositoryWithRetry(factory, VersionedDataRepository.class);
   }
 
   private void remove(String key) {

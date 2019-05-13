@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.feature;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import com.couchbase.client.java.cluster.ClusterInfo;
 import com.couchbase.client.java.query.N1qlQuery;
@@ -79,7 +80,7 @@ public class FeatureDetectionRepositoryIT {
   @Test
   public void testN1qlIncompatibleClusterDoesntFailForViewBasedRepository() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-    ViewOnlyUserRepository repository = factory.getRepository(ViewOnlyUserRepository.class);
+    ViewOnlyUserRepository repository = getRepositoryWithRetry(factory, ViewOnlyUserRepository.class);
     assertNotNull(repository);
   }
 

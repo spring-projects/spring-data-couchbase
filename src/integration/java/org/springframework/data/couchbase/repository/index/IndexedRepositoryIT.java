@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.repository.index;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
 
@@ -30,9 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
-;
 import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -82,9 +80,7 @@ public class IndexedRepositoryIT {
 
   @Test
   public void shouldFindN1qlPrimaryIndex() {
-    // Retry here because concurrent index creation throws exception.
-    // See https://issues.couchbase.com/browse/MB-32238
-    IndexedUserRepository repository = Unreliables.retryUntilSuccess(10, SECONDS, () -> factory.getRepository(IndexedUserRepository.class));
+    IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"`");
@@ -95,7 +91,7 @@ public class IndexedRepositoryIT {
 
   @Test
   public void shouldFindN1qlSecondaryIndex() {
-    IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
+    IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  SECONDARY +")");
@@ -106,7 +102,7 @@ public class IndexedRepositoryIT {
 
   @Test
   public void shouldFindViewIndex() {
-    IndexedUserRepository repository = factory.getRepository(IndexedUserRepository.class);
+    IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
 
     DesignDocument designDoc = null;
     try {
@@ -125,7 +121,7 @@ public class IndexedRepositoryIT {
   }
   @Test
   public void shouldNotFindN1qlSecondaryIndexWithIgnoringIndexManager() {
-    AnotherIndexedUserRepository repository = ignoringIndexFactory.getRepository(AnotherIndexedUserRepository.class);
+    AnotherIndexedUserRepository repository = getRepositoryWithRetry(ignoringIndexFactory, AnotherIndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  IGNORED_SECONDARY +")");
@@ -136,7 +132,7 @@ public class IndexedRepositoryIT {
 
   @Test
   public void shouldNotFindViewIndexWithIgnoringIndexManager() {
-    AnotherIndexedUserRepository repository = ignoringIndexFactory.getRepository(AnotherIndexedUserRepository.class);
+    AnotherIndexedUserRepository repository = getRepositoryWithRetry(ignoringIndexFactory, AnotherIndexedUserRepository.class);
 
     DesignDocument designDoc = null;
     try {
@@ -159,7 +155,7 @@ public class IndexedRepositoryIT {
     IndexedFooRepository.Foo foo1 = new IndexedFooRepository.Foo("foo1", "foo", 1);
     IndexedFooRepository.Foo foo2 = new IndexedFooRepository.Foo("foo2", "bar", 2);
 
-    IndexedFooRepository repository = factory.getRepository(IndexedFooRepository.class);
+    IndexedFooRepository repository = getRepositoryWithRetry(factory, IndexedFooRepository.class);
 
     DesignDocument designDoc = template.getCouchbaseBucket()
         .bucketManager()

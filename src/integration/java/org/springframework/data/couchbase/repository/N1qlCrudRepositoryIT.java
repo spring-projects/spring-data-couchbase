@@ -17,10 +17,10 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.couchbase.client.java.Bucket;
 import org.junit.After;
@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.rnorth.ducttape.unreliables.Unreliables;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
 ;
@@ -71,10 +70,8 @@ public class N1qlCrudRepositoryIT {
   public void setup() throws Exception {
     CouchbaseRepositoryFactory factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
 
-    // Retry here because concurrent index creation throws exception.
-    // See https://issues.couchbase.com/browse/MB-32238
-    partyRepository = Unreliables.retryUntilSuccess(10, TimeUnit.SECONDS, () -> factory.getRepository(PartyRepository.class));
-    itemRepository = Unreliables.retryUntilSuccess(10, TimeUnit.SECONDS, () -> factory.getRepository(ItemRepository.class));
+    partyRepository = getRepositoryWithRetry(factory, PartyRepository.class);
+    itemRepository = getRepositoryWithRetry(factory, ItemRepository.class);
 
     itemRepository.save(item);
     partyRepository.save(party);

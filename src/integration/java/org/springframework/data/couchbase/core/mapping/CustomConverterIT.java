@@ -39,6 +39,8 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
+
 /**
  * @author Subhashni Balakrishnan
  */
@@ -83,7 +85,7 @@ public class CustomConverterIT {
 		converter.setCustomConversions(new CouchbaseCustomConversions(Arrays.asList(UUIDToStringConverter.INSTANCE, StringToUUIDConverter.INSTANCE)));
 		converter.afterPropertiesSet();
 		RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-		repository = factory.getRepository(TestUUIDRepository.class);
+		repository = getRepositoryWithRetry(factory, TestUUIDRepository.class);
 	}
 
 	@Test

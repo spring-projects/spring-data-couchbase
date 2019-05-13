@@ -29,6 +29,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 /**
  * N1ql Join tests
@@ -56,9 +57,9 @@ public class N1qlJoinIT {
     @Before
     public void setup() throws Exception {
         RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-        bookRepository = factory.getRepository(BookRepository.class);
-        authorRepository = factory.getRepository(AuthorRepository.class);
-        addressRepository = factory.getRepository(AddressRepository.class);
+        bookRepository = getRepositoryWithRetry(factory, BookRepository.class);
+        authorRepository = getRepositoryWithRetry(factory, AuthorRepository.class);
+        addressRepository = getRepositoryWithRetry(factory, AddressRepository.class);
     }
 
     @Test

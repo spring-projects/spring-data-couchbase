@@ -1,6 +1,7 @@
 package org.springframework.data.couchbase.repository;
 
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +48,7 @@ public class DimensionalQueryIT {
   @Before
   public void setup() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(templateMapping, indexManager);
-    repository = factory.getRepository(DimensionalPartyRepository.class);
+    repository = getRepositoryWithRetry(factory, DimensionalPartyRepository.class);
   }
 
   @Test
