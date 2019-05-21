@@ -227,9 +227,13 @@
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <useFile>false</useFile>
                     <includes>
-                        <include>**/*Tests.java</include>
                         <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                        <exclude>**/*IntegrationTests.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -267,6 +271,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*IntegrationTest.java</include>
+                        <include>**/*IntegrationTests.java</include>
+                    </includes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

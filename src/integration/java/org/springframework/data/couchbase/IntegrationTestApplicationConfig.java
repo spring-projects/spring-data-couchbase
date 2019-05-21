@@ -50,8 +50,8 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
     return DefaultCouchbaseEnvironment.builder()
         .connectTimeout(10000)
         .kvTimeout(10000)
-        .queryTimeout(10000)
-        .viewTimeout(10000)
+        .queryTimeout(20000)
+        .viewTimeout(20000)
         .build();
   }
 

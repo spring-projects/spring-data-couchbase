@@ -10,7 +10,7 @@ import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 /**
- * A test listener that will remove the indexes created in {@link IndexedRepositoryIT} before test case is run.
+ * A test listener that will remove the indexes created in {@link IndexedRepositoryIntegrationTests} before test case is run.
  *
  * @author Simon Baslé
  */
@@ -20,12 +20,12 @@ public class IndexedRepositoryTestListener extends DependencyInjectionTestExecut
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
     try {
-      client.bucketManager().removeDesignDocument(IndexedRepositoryIT.VIEW_DOC);
+      client.bucketManager().removeDesignDocument(IndexedRepositoryIntegrationTests.VIEW_DOC);
       client.bucketManager().removeDesignDocument("foo");
     } catch (DesignDocumentDoesNotExistException ex) {
       //ignore
     }
     client.query(N1qlQuery.simple(Index.dropPrimaryIndex(client.name())));
-    client.query(N1qlQuery.simple(Index.dropIndex(client.name(), IndexedRepositoryIT.SECONDARY)));
+    client.query(N1qlQuery.simple(Index.dropIndex(client.name(), IndexedRepositoryIntegrationTests.SECONDARY)));
   }
 }

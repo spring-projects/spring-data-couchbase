@@ -7,7 +7,7 @@ import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.User;
 
 @N1qlPrimaryIndexed
-@N1qlSecondaryIndexed(indexName = IndexedRepositoryIT.SECONDARY)
-@ViewIndexed(designDoc = IndexedRepositoryIT.VIEW_DOC, viewName = IndexedRepositoryIT.VIEW_NAME)
+@N1qlSecondaryIndexed(indexName = IndexedRepositoryIntegrationTests.SECONDARY)
+@ViewIndexed(designDoc = IndexedRepositoryIntegrationTests.VIEW_DOC, viewName = IndexedRepositoryIntegrationTests.VIEW_NAME)
 public interface IndexedUserRepository extends CouchbaseRepository<User, String> {
 }
