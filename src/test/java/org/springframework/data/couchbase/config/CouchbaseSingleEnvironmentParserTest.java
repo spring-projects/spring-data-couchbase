@@ -25,7 +25,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.couchbase.client.core.env.DefaultCoreEnvironment;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
@@ -35,15 +34,15 @@ import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
  * @author Simon Bland
  */
 public class CouchbaseSingleEnvironmentParserTest {
-  
+
   /**
-   * @see DATACOUCH-235
+   * See DATACOUCH-235
    */
   @Test
   public void testSingleCouchbaseEnvironment() throws Exception {
-    
-    Integer instanceCounterBefore = (Integer) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "instanceCounter");
-    
+
+    int instanceCounterBefore = DefaultCoreEnvironment.instanceCounter();
+
     DefaultListableBeanFactory factory = new DefaultListableBeanFactory();
     BeanDefinitionReader reader = new XmlBeanDefinitionReader(factory);
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbaseSingleEnv-bean.xml"));
@@ -51,9 +50,9 @@ public class CouchbaseSingleEnvironmentParserTest {
     context.refresh();
     CouchbaseEnvironment env = context.getBean("singleEnv", CouchbaseEnvironment.class);
     context.close();
-    
-    Integer instanceCounterAfter = (Integer) ReflectionTestUtils.getField(DefaultCoreEnvironment.class, "instanceCounter");
-    
+
+    int instanceCounterAfter = DefaultCoreEnvironment.instanceCounter();
+
     assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
     assertThat(instanceCounterAfter, is(instanceCounterBefore + 1));
   }

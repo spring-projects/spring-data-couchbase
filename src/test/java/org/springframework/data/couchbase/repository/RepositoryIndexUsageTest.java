@@ -55,6 +55,8 @@ public class RepositoryIndexUsageTest {
 
     CouchbaseConverter mockConverter = mock(CouchbaseConverter.class);
     when(mockConverter.getTypeKey()).thenReturn("mockType");
+    when(mockConverter.convertForWriteIfNeeded(any(Object.class))).thenAnswer(
+      invocation -> invocation.getArgument(0));
 
     couchbaseOperations = mock(CouchbaseOperations.class);
     when(couchbaseOperations.getDefaultConsistency()).thenReturn(CONSISTENCY);
