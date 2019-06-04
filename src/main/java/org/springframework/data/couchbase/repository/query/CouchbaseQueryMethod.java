@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -142,6 +143,14 @@ public class CouchbaseQueryMethod extends QueryMethod {
    */
   public boolean hasInlineN1qlQuery() {
     return getInlineN1qlQuery() != null;
+  }
+
+  public boolean hasConsistencyAnnotation() {
+    return getConsistencyAnnotation() != null;
+  }
+
+  public WithConsistency getConsistencyAnnotation() {
+    return method.getAnnotation(WithConsistency.class);
   }
 
   /**

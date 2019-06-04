@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.util.Map;
 import com.couchbase.client.java.document.json.JsonValue;
 import com.couchbase.client.java.query.N1qlQuery;
@@ -31,6 +32,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Johannes Jasper
  * @since 3.0
  */
 public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery {
@@ -61,8 +63,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
         //prepare the final query
-        N1qlQuery query = N1qlUtils.buildQuery(statement, queryPlaceholderValues,
-                getCouchbaseOperations().getDefaultConsistency().n1qlConsistency());
+        N1qlQuery query = N1qlUtils.buildQuery(statement, queryPlaceholderValues, getScanConsistency());
         return ReactiveWrapperConverters.toWrapper(
                 processor.processResult(executeDependingOnType(query, queryMethod, typeToRead)), Flux.class);
     }
@@ -114,5 +115,14 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 
     protected RxJavaCouchbaseOperations getCouchbaseOperations() {
         return this.couchbaseOperations;
+    }
+
+    protected ScanConsistency getScanConsistency() {
+
+      if (queryMethod.hasConsistencyAnnotation()) {
+        return queryMethod.getConsistencyAnnotation().value();
+      }
+
+      return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
     }
 }
