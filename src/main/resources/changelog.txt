@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.9.RELEASE (2019-06-14)
+---------------------------------------------
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-449 - Release 3.1.9 (Lovelace SR9).
+
+
 Changes in version 2.2.22.RELEASE (2019-05-13)
 ----------------------------------------------
 * DATACOUCH-448 - Release 2.2.22 (Ingalls SR22).
