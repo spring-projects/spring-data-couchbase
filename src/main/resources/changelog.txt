@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.RC1 (2019-06-14)
+-----------------------------------------
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-454 - Create security policy readme.
+* DATACOUCH-444 - Release 3.2 RC1 (Moore).
+
+
 Changes in version 3.1.9.RELEASE (2019-06-14)
 ---------------------------------------------
 * DATACOUCH-456 - Introduce Jenkins CI.
