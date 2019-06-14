@@ -14,13 +14,13 @@
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>2.1.9.RELEASE</version>
+        <version>2.1.10.BUILD-SNAPSHOT</version>
     </parent>
 
     <properties>
         <couchbase>2.6.1</couchbase>
         <couchbase.osgi>2.6.1</couchbase.osgi>
-        <springdata.commons>2.1.9.RELEASE</springdata.commons>
+        <springdata.commons>2.1.10.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
 
@@ -194,8 +194,8 @@
 
     <repositories>
         <repository>
-            <id>spring-libs-release</id>
-            <url>https://repo.spring.io/libs-release</url>
+            <id>spring-libs-snapshot</id>
+            <url>https://repo.spring.io/libs-snapshot</url>
         </repository>
     </repositories>
 
