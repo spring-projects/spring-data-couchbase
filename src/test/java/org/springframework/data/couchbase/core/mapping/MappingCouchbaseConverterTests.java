@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core.mapping;
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -490,7 +491,7 @@ public class MappingCouchbaseConverterTests {
     DateEntity read = converter.read(DateEntity.class, converted);
     assertEquals(created.getTime(), read.created.getTime());
     assertEquals(modified.getTimeInMillis() / 1000, read.modified.getTimeInMillis() / 1000);
-    assertTrue(deleted.isEqual(read.deleted));
+    assertEquals(deleted.truncatedTo(ChronoUnit.MILLIS), read.deleted.truncatedTo(ChronoUnit.MILLIS));
   }
 
   @Test
