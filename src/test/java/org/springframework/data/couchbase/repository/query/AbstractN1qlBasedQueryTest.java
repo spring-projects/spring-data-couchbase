@@ -27,9 +27,14 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
+import com.couchbase.client.java.document.json.JsonValue;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -38,6 +43,7 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
+import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 
 import com.couchbase.client.java.document.json.JsonArray;
@@ -48,6 +54,7 @@ import com.couchbase.client.java.query.ParameterizedN1qlQuery;
 import com.couchbase.client.java.query.SimpleN1qlQuery;
 import com.couchbase.client.java.query.Statement;
 import com.couchbase.client.java.query.consistency.ScanConsistency;
+import org.springframework.data.repository.query.ReturnedType;
 
 /**
  * Unit tests for {@link AbstractN1qlBasedQuery}.
@@ -266,6 +273,32 @@ public class AbstractN1qlBasedQueryTest {
     verify(mock).executeSingleProjection(any(N1qlQuery.class));
   }
 
+  @Test // DATACOUCH-206
+  public void shouldPickConsistencyFromAnnotation() throws NoSuchMethodException {
+    Class<SampleRepository> repositoryClass = SampleRepository.class;
+
+    CouchbaseQueryMethod defaultQueryMethod = new CouchbaseQueryMethod(repositoryClass.getMethod("findAll"),
+                                                                       metadata,
+                                                                       projectionFactory,
+                                                                       context);
+
+
+    CouchbaseQueryMethod unboundedQueryMethod = new CouchbaseQueryMethod(repositoryClass.getMethod("streamAll"),
+                                                                         metadata,
+                                                                         projectionFactory,
+                                                                         context);
+
+    CouchbaseTemplate template = mock(CouchbaseTemplate.class);
+    when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
+
+    ScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
+    assertEquals(defaultConsistency, Consistency.STRONGLY_CONSISTENT.n1qlConsistency());
+
+    ScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
+    assertEquals(unboundedConsistency, ScanConsistency.NOT_BOUNDED);
+
+  }
+
   static class Sample {
   		Integer id;
   }
@@ -276,6 +309,7 @@ public class AbstractN1qlBasedQueryTest {
 
     Sample findById(Integer id);
 
+    @WithConsistency(ScanConsistency.NOT_BOUNDED)
     Stream<Sample> streamAll();
 
     Page<Sample> findAllPaged(Pageable pageable);
@@ -287,5 +321,33 @@ public class AbstractN1qlBasedQueryTest {
     CountDownLatch countDown();
 
     long longMethod();
+  }
+
+  class SampleQuery extends AbstractN1qlBasedQuery {
+
+    protected SampleQuery(CouchbaseQueryMethod queryMethod,
+                          CouchbaseOperations couchbaseOperations) {
+      super(queryMethod, couchbaseOperations);
+    }
+
+    @Override
+    protected Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
+      return null;
+    }
+
+    @Override
+    protected boolean useGeneratedCountQuery() {
+      return false;
+    }
+
+    @Override
+    protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+      return null;
+    }
+
+    @Override
+    protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
+      return null;
+    }
   }
 }

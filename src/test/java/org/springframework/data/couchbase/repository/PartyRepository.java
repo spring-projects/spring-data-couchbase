@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.util.Date;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -49,6 +51,7 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   long countAllByDescriptionNotNull();
 
+  @WithConsistency(ScanConsistency.NOT_BOUNDED)
   @Query("SELECT MAX(attendees) FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
   long findMaxAttendees();
 

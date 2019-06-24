@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
+import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.util.List;
 
 import com.couchbase.client.java.view.ViewQuery;
@@ -24,6 +25,7 @@ import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import reactor.core.publisher.Flux;
 
 /**
