@@ -20,8 +20,10 @@ pipeline {
                             args '-u root -v /var/run/docker.sock:/var/run/docker.sock' // root but with no maven caching
                         }
                     }
+                    options { timeout(time: 30, unit: 'MINUTES') }
                     steps {
-                        sh "./mvnw -Pci clean dependency:list test -Dsort -Dbundlor.enabled=false -B"
+                        sh 'rm -rf ?'
+                        sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/spring-data-maven-repository" ./mvnw -Pci clean dependency:list test -Dsort -Dbundlor.enabled=false -B'
                         sh "chown -R 1001:1001 target"
                     }
                 }
@@ -35,16 +37,18 @@ pipeline {
             agent {
                 docker {
                     image 'adoptopenjdk/openjdk8:latest'
-                    args '-v $HOME/.m2:/root/.m2'
+                    args '-v $HOME/.m2:/tmp/spring-data-maven-repository'
                 }
             }
+            options { timeout(time: 20, unit: 'MINUTES') }
 
             environment {
                 ARTIFACTORY = credentials('02bd1690-b54f-4c9f-819d-a77cb7a9822c')
             }
 
             steps {
-                sh "./mvnw -Pci,snapshot deploy -Dmaven.test.skip=true -B"
+                sh 'rm -rf ?'
+                sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/spring-data-maven-repository" ./mvnw -Pci,snapshot deploy -Dmaven.test.skip=true -B'
             }
         }
         
@@ -55,16 +59,18 @@ pipeline {
             agent {
                 docker {
                     image 'adoptopenjdk/openjdk8:latest'
-                    args '-v $HOME/.m2:/root/.m2'
+                    args '-v $HOME/.m2:/tmp/spring-data-maven-repository'
                 }
             }
+            options { timeout(time: 20, unit: 'MINUTES') }
 
             environment {
                 ARTIFACTORY = credentials('02bd1690-b54f-4c9f-819d-a77cb7a9822c')
             }
 
             steps {
-                sh "./mvnw -Pci,snapshot deploy -Dmaven.test.skip=true -B"
+                sh 'rm -rf ?'
+                sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/spring-data-maven-repository" ./mvnw -Pci,snapshot deploy -Dmaven.test.skip=true -B'
             }
         }
     }
