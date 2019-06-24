@@ -477,7 +477,7 @@ data, because the latest version hasn't been indexed yet. This gives the best pe
 Note that weaker consistencies can lead to data being returned that doesn't match the criteria of a derived query.
 One trickier case is when documents are deleted from Couchbase but views have not yet caught up to the deletion. With weak consistency this can mean that a view would return IDs that are not in the database anymore, leading to null entities. The `CouchbaseTemplate`s `findByView` and `findBySpatialView` methods will remove such stale deleted entities from their result in order to avoid having nulls in the returned collections. Similarly, `CouchbaseRepository`'s `deleteAll` method will ignore documents that the backing view provided but the SDK remove operation couldn't find.
 
-If one wants to have stronger consistency, there are two possibilities described in the next sections.
+If one wants to have stronger consistency, there are three possibilities described in the next sections.
 
 ==== Configure it on a global level
 A global consistency can be defined using the `Consistency` enumeration (eg. `Consistency.READ_YOUR_OWN_WRITE`):
@@ -488,6 +488,35 @@ A global consistency can be defined using the `Consistency` enumeration (eg. `Co
 By default it is `Consistency.READ_YOUR_OWN_WRITES` (which means consistency is prioritized over speed, especially when a large number of documents has been created recently).
 
 IMPORTANT: This is **only used in repositories**, either for index-backed methods automatically provided by the repository interface (`findAll()`, `findAll(keys)`, `count()`, `deleteAll()`...) or methods you define in your specific interface using query derivation.
+
+==== Set consistency for N1QL queries
+For N1QL queries, the `ScanConsistency` can be set using the `@WithConsistency` annotation.
+This is independent of whether the query is derived from the method name or specified using `@Query`.
+If the annotation is omitted, the global default consistency is used.
+Consider the three queries in the following example:
+
+.Setting the scan consistency on repository methods
+====
+[source,java]
+----
+public interface UserRepository extends CrudRepository<UserInfo, String> {
+
+    List<UserInfo> findByLastname(String name); <1>
+
+    @WithConsistency(ScanConsistency.NOT_BOUNDED)
+    List<UserInfo> findByFirstname(String name); <2>
+
+    @WithConsistency(ScanConsistency.NOT_BOUNDED)
+    @Query("#{#n1ql.selectEntity} WHERE role = 'admin' AND #{#n1ql.filter}")
+    List<UserInfo> findAllAdmins(); <3>
+}
+----
+====
+<1> Since neither `@Query` nor `@WithConsistency` is specified, a N1QL query is derived from the method name and executed with default consistency.
+<2> The N1QL query is derived automatically but executed with the given consistency, i.e. `NOT_BOUNDED`.
+<3> The N1QL query is specified using `@Query` and is being executed with the given consistency.
+
+IMPORTANT: The `@WithConsistency` annotation is currently only evaluated **for N1QL queries**. View queries use the global default consistency.
 
 ==== Provide an implementation
 Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency
