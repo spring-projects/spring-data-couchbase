@@ -22,7 +22,7 @@ All versions intended for production use are distributed across Maven Central an
 
 This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson as the JSON mapping infrastructure.
 
-You can also grab snapshots from the http://repo.spring.io/libs-snapshot[spring snapshot repository] and milestone releases from the http://repo.spring.io/libs-milestone[milestone repository]. Here is an example on how to use the current SNAPSHOT dependency:
+You can also grab snapshots from the https://repo.spring.io/libs-snapshot[spring snapshot repository] and milestone releases from the https://repo.spring.io/libs-milestone[milestone repository]. Here is an example on how to use the current SNAPSHOT dependency:
 
 .Using a snapshot version
 ====
@@ -105,9 +105,9 @@ The library provides a custom namespace that you can use in your XML configurati
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://www.springframework.org/schema/data/couchbase
   xsi:schemaLocation="http://www.springframework.org/schema/beans
-    http://www.springframework.org/schema/beans/spring-beans.xsd
+    https://www.springframework.org/schema/beans/spring-beans.xsd
     http://www.springframework.org/schema/data/couchbase
-    http://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
+    https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
 
     <couchbase:cluster>
       <couchbase:node>127.0.0.1</couchbase:node>

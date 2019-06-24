@@ -10,7 +10,7 @@
     <xsd:import namespace="http://www.springframework.org/schema/beans"/>
     <xsd:import namespace="http://www.springframework.org/schema/tool"/>
     <xsd:import namespace="http://www.springframework.org/schema/context"/>
-    <xsd:import namespace="http://www.springframework.org/schema/data/repository" schemaLocation="http://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd"/>
+    <xsd:import namespace="http://www.springframework.org/schema/data/repository" schemaLocation="https://www.springframework.org/schema/data/repository/spring-repository-1.0.xsd"/>
 
     <xsd:include schemaLocation="spring-couchbase-env-2.0.xsd"/>
 
