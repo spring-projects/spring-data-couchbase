@@ -21,7 +21,6 @@ import java.io.Serializable;
 import com.couchbase.client.java.document.json.JsonArray;
 import com.couchbase.client.java.error.DocumentDoesNotExistException;
 import com.couchbase.client.java.view.AsyncViewResult;
-import com.couchbase.client.java.view.AsyncViewRow;
 import com.couchbase.client.java.view.ViewQuery;
 
 import org.reactivestreams.Publisher;
@@ -238,7 +237,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
                 .queryView(query)
                 .flatMap(AsyncViewResult::rows)
                 .map(asyncViewRow ->
-                        Long.valueOf(asyncViewRow.value().toString())).toSingle());
+                        Long.valueOf(asyncViewRow.value().toString()))
+                .switchIfEmpty(Observable.just(0L)).toSingle());
     }
 
     @SuppressWarnings("unchecked")

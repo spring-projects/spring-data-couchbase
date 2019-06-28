@@ -30,11 +30,7 @@ import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRe
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import reactor.core.publisher.Mono;
 
-import java.util.NoSuchElementException;
-
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
@@ -76,19 +72,19 @@ public class SimpleReactiveCouchbaseRepositoryDeleteAllIntegrationTests {
     @Test
     public void simpleDeleteAll() {
         String key = "my_unique_user_key";
+
+        // in case there are other tests later, lets insure there is at least one
+        // User in the repository
         ReactiveUser instance = new ReactiveUser(key, "foobar", 22);
         repository.save(instance).block();
 
-        // we put a doc in, lets be sure the count reflects that there is
-        // at least one doc in there...
+        // we put a user in, lets be sure the count reflects that.
         assertTrue(getCount() > 0L);
 
         repository.deleteAll().block();
 
-        try {
-            getCount();
-            fail("count returned documents!");
-        } catch (NoSuchElementException e) {
-        }
+        // after deleteAll, we should have a count of 0
+        assertEquals(0L, getCount());
+
      }
 }
