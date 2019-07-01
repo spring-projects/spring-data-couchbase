@@ -228,9 +228,20 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
                 break;
         }
         return persistFunction.call(toJsonDocument(objectToPersist), persistTo, replicateTo)
-                .flatMap(storedDoc ->  Observable.just(storedDoc != null && storedDoc.cas() != 0
-                        ? setVersion(objectToPersist, storedDoc.cas())
-                        : objectToPersist))
+                .flatMap(storedDoc -> {
+                    if (storedDoc != null) {
+                        if (storedDoc.cas() != 0) {
+                            setVersion(objectToPersist, storedDoc.cas());
+                        }
+                        // Only set the id if the objectToPersist doesn't have it.  That only
+                        // happens when you have generated ids, and you are first persisting the
+                        // document.
+                        if (storedDoc.id() != null && getId(objectToPersist) == null) {
+                            setId(objectToPersist, storedDoc.id());
+                        }
+                    }
+                return Observable.just(objectToPersist);
+                })
                 .onErrorResumeNext(e -> {
                     if (e instanceof DocumentAlreadyExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
@@ -256,6 +267,10 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return mappingContext.getRequiredPersistentEntity(object.getClass()).getVersionProperty();
     }
 
+    private<T> CouchbasePersistentProperty idProperty(T object) {
+        return mappingContext.getRequiredPersistentEntity(object.getClass()).getIdProperty();
+    }
+
     private <T> Long getVersion(T object) {
 
         CouchbasePersistentProperty versionProperty = versionProperty(object);
@@ -275,6 +290,24 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         
         final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(object);
         accessor.setProperty(versionProperty, version);
+        return accessor.getBean();
+    }
+
+    private<T> String getId(T object) {
+        CouchbasePersistentProperty idProperty = idProperty(object);
+        return idProperty == null
+                ? null //
+                : getPropertyAccessor(object).getProperty(idProperty, String.class);
+    }
+
+    private<T> T setId(T object, String id) {
+
+        CouchbasePersistentProperty idProperty = idProperty(object);
+        if (idProperty == null) {
+            return object;
+        }
+        final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(object);
+        accessor.setProperty(idProperty, id);
         return accessor.getBean();
     }
 
