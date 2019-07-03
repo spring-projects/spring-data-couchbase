@@ -24,6 +24,7 @@ pipeline {
                     agent {
                         docker {
                             image 'adoptopenjdk/openjdk8:latest'
+                            label 'data'
                             args '-u root -v /var/run/docker.sock:/var/run/docker.sock' // root but with no maven caching
                         }
                     }
@@ -45,6 +46,7 @@ pipeline {
             agent {
                 docker {
                     image 'adoptopenjdk/openjdk8:latest'
+                    label 'data'
                     args '-v $HOME:/tmp/jenkins-home'
                 }
             }
@@ -74,6 +76,7 @@ pipeline {
             agent {
                 docker {
                     image 'adoptopenjdk/openjdk8:latest'
+                    label 'data'
                     args '-v $HOME:/tmp/jenkins-home'
                 }
             }
