@@ -66,6 +66,11 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 			return delegate.getDynamicProjection();
 		}
 
+		@Override
+		public Class<?> findDynamicProjection() {
+			return delegate.findDynamicProjection();
+		}
+
 		public Object getBindableValue(int index) {
 			return delegate.getBindableValue(index);
 		}
