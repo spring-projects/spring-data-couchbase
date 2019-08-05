@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 2.2.23.RELEASE (2019-08-05)
+----------------------------------------------
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-450 - Release 2.2.23 (Ingalls SR23).
+
+
 Changes in version 3.2.0.RC1 (2019-06-14)
 -----------------------------------------
 * DATACOUCH-456 - Introduce Jenkins CI.
