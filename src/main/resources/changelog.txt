@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.10.RELEASE (2019-08-05)
+----------------------------------------------
+* DATACOUCH-467 - Upgrade to Couchbase Driver 2.6.2.
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-460 - Fix NoHTTP errors.
+* DATACOUCH-457 - Release 3.1.10 (Lovelace SR10).
+* DATACOUCH-456 - Introduce Jenkins CI.
+
+
 Changes in version 2.2.23.RELEASE (2019-08-05)
 ----------------------------------------------
 * DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
