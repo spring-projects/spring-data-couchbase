@@ -1,6 +1,17 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.RC2 (2019-08-05)
+-----------------------------------------
+* DATACOUCH-466 - Upgrade to Couchbase Driver 2.7.7.
+* DATACOUCH-465 - Adapt to changed API in Commons.
+* DATACOUCH-463 - Revise readme for a consistent structure.
+* DATACOUCH-461 - Upgrade to Apache HTTP client 4.3.6.
+* DATACOUCH-458 - Release 3.2 RC2 (Moore).
+* DATACOUCH-456 - Introduce Jenkins CI.
+* DATACOUCH-206 - Provides a way to set distinct concistency on repository methods.
+
+
 Changes in version 3.1.10.RELEASE (2019-08-05)
 ----------------------------------------------
 * DATACOUCH-467 - Upgrade to Couchbase Driver 2.6.2.
