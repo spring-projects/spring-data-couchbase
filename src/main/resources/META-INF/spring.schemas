@@ -1,3 +1,7 @@
+http\://www.springframework.org/schema/data/couchbase/spring-couchbase-1.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-1.0.xsd
+http\://www.springframework.org/schema/data/couchbase/spring-couchbase-2.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-2.0.xsd
+http\://www.springframework.org/schema/data/couchbase/spring-couchbase-env-2.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-env-2.0.xsd
+http\://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd=org/springframework/data/couchbase/config/spring-couchbase-2.0.xsd
 https\://www.springframework.org/schema/data/couchbase/spring-couchbase-1.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-1.0.xsd
 https\://www.springframework.org/schema/data/couchbase/spring-couchbase-2.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-2.0.xsd
 https\://www.springframework.org/schema/data/couchbase/spring-couchbase-env-2.0.xsd=org/springframework/data/couchbase/config/spring-couchbase-env-2.0.xsd
