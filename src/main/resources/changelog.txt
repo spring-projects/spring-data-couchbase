@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.RC3 (2019-09-06)
+-----------------------------------------
+* DATACOUCH-471 - Add HTTPS entries into spring.schemas.
+* DATACOUCH-470 - Release 3.2 RC3 (Moore).
+
+
 Changes in version 3.2.0.RC2 (2019-08-05)
 -----------------------------------------
 * DATACOUCH-466 - Upgrade to Couchbase Driver 2.7.7.
