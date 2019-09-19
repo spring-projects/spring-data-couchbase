@@ -1,20 +1,28 @@
 [[couchbase.template]]
 = Template & direct operations
 
-The template provides lower level access to the underlying database and also serves as the foundation for repositories. Any time a repository is too high-level for you needs chances are good that the templates will serve you well.
+The template provides lower level access to the underlying database and also serves as the foundation for repositories.
+Any time a repository is too high-level for you needs chances are good that the templates will serve you well.
 
 [[template.ops]]
 == Supported operations
 
-The template can be accessed through the `couchbaseTemplate` bean out of your context. Once you've got a reference to it, you can run all kinds of operations against it. Other than through a repository, in a template you need to always specify the target entity type which you want to get converted.
+The template can be accessed through the `couchbaseTemplate` bean out of your context.
+Once you've got a reference to it, you can run all kinds of operations against it.
+Other than through a repository, in a template you need to always specify the target entity type which you want to get converted.
 
-To mutate documents, you'll find `save`, `insert` and `update` methods exposed. Saving will insert or update the document, insert will fail if it has been created already and update only works against documents that have already been created.
+To mutate documents, you'll find `save`, `insert` and `update` methods exposed.
+Saving will insert or update the document, insert will fail if it has been created already and update only works against documents that have already been created.
 
-Since Couchbase Server has different levels of persistence (by default you'll get a positive response if it has been acknowledged in the managed cache), you can provide higher durability options through the overloaded `PersistTo` and/or `ReplicateTo` options. The behaviour is part of the Couchbase Java SDK, please refer to the official documentation for more details.
+Since Couchbase Server has different levels of persistence (by default you'll get a positive response if it has been acknowledged in the managed cache), you can provide higher durability options through the overloaded `PersistTo` and/or `ReplicateTo` options.
+The behaviour is part of the Couchbase Java SDK, please refer to the official documentation for more details.
 
 Removing documents through the `remove` methods works exactly the same.
 
-If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice. The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics. Similarly, find methods using N1QL are provided in `findByN1QL` and `queryN1QL`. Additionally, since N1QL allows you to select specific fields in documents (or even across documents using joins), `findByN1QLProjection` will allow you to skip full `Document` conversion and map these fields to an ad-hoc class.
+If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice.
+The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics.
+Similarly, find methods using N1QL are provided in `findByN1QL` and `queryN1QL`.
+Additionally, since N1QL allows you to select specific fields in documents (or even across documents using joins), `findByN1QLProjection` will allow you to skip full `Document` conversion and map these fields to an ad-hoc class.
 
 WARNING: If it is detected at runtime that the cluster doesn't support N1QL, these methods will throw a `UnsupportedCouchbaseFeatureException`.
 
@@ -22,6 +30,7 @@ If you really need low-level semantics, the `couchbaseBucket` is also always in 
 
 [[couchbase.template.xml]]
 == Xml Configuration
+
 The template can be configured via xml, including setting a custom `TranslationService`.
 
 .XML Based Template Declaration
@@ -48,5 +57,6 @@ The template can be configured via xml, including setting a custom `TranslationS
 ----
 ====
 
-NOTE: In the example above most tags assume their default values, that is a localhost cluster and bucket "default". In production you would have to also provide specifics to these tags.
+NOTE: In the example above most tags assume their default values, that is a localhost cluster and bucket "default".
+In production you would have to also provide specifics to these tags.
 

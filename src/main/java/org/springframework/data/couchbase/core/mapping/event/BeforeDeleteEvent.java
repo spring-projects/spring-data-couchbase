@@ -21,8 +21,8 @@ package org.springframework.data.couchbase.core.mapping.event;
  */
 public class BeforeDeleteEvent<E> extends CouchbaseMappingEvent<E> {
 
-  public BeforeDeleteEvent(E source) {
-    super(source, null);
-  }
+	public BeforeDeleteEvent(E source) {
+		super(source, null);
+	}
 
 }

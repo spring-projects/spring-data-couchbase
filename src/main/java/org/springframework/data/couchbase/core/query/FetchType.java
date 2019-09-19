@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.query;
 
 /**
  * Setting for specify when to fetch the associated entities
+ * 
  * @author Subhashni Balakrishnan
  */
 public enum FetchType {
@@ -27,8 +28,7 @@ public enum FetchType {
 	IMMEDIATE,
 
 	/**
-	 * Lazily fetch the associated entities on access, the
-	 * fetch happens only once
+	 * Lazily fetch the associated entities on access, the fetch happens only once
 	 */
 	LAZY
 }

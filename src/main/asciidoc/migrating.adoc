@@ -5,9 +5,11 @@ This chapter is a quick reference of what major changes have been introduced in 
 
 [[couchbase.migrating.configuration]]
 == Configuration
+
 The configuration, xml schema, etc... has changed to take the evolution of the 2.x SDK API into account.
 
-Where a single `CouchbaseClient` bean was previously the only bean declarable, you can now declare a `Cluster` bean (`<couchbase:cluster>`), one or more `Bucket` beans (`<couchbase:bucket>`) and even tune the SDK via a `CouchbaseEnvironment` bean (`<couchbase:env>`). All of these can also be created via Java Config method by extending `AbstractCouchbaseConfig`.
+Where a single `CouchbaseClient` bean was previously the only bean declarable, you can now declare a `Cluster` bean (`<couchbase:cluster>`), one or more `Bucket` beans (`<couchbase:bucket>`) and even tune the SDK via a `CouchbaseEnvironment` bean (`<couchbase:env>`).
+All of these can also be created via Java Config method by extending `AbstractCouchbaseConfig`.
 
 The cluster bean lists the nodes to connect through (and references the environment bean if tuning is necessary) while the bucket beans map to bucket names and passwords and actually opens the connections internally.
 
@@ -17,12 +19,14 @@ For more information, see <<couchbase.configuration>>.
 
 [[couchbase.migrating.repository-queries]]
 == Repository queries
-The view-backed query method has evolved and support for N1QL has been introduced. As a result, there are now 4 ways of doing repository queries:
 
- * Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
- * Intermediate View query by query derivation (to provide some criteria for the view) @View annotated with `viewName`
- * N1QL with explicit statements inline - `@Query` annotated with value
- * N1QL query derivation - `@Query` annotated without value / no annotation (default)
+The view-backed query method has evolved and support for N1QL has been introduced.
+As a result, there are now 4 ways of doing repository queries:
+
+* Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
+* Intermediate View query by query derivation (to provide some criteria for the view) @View annotated with `viewName`
+* N1QL with explicit statements inline - `@Query` annotated with value
+* N1QL query derivation - `@Query` annotated without value / no annotation (default)
 
 View backed queries are associated with the `@View` annotation, while N1QL backed queries are associated with the `@Query` annotation.
 
@@ -32,6 +36,7 @@ See <<couchbase.repository.n1ql>> and <<couchbase.repository.views>> for more in
 
 [[couchbase.migrating.backing-views]]
 == Backing views and view query changes
+
 IMPORTANT: The `all` view is still backing most CRUD operations, but custom repository methods are now by default backed by N1QL.
 
 To instead back them with views, use the `@View` annotation explicitly.
@@ -41,6 +46,7 @@ Otherwise, query derivation will be used to parameterize the view query from the
 
 [[couchbase.migrating.view-query]]
 === Passing a ViewQuery object as a parameter to a custom repository method
+
 This behavior has been removed and the recommended approach is now to either use query derivation (if the query parameters are simple enough) or <<repositories.single-repository-behaviour>>.
 
 For instance, for a view emitting user lastNames, the following:
@@ -61,6 +67,7 @@ List<User> findFirst3ByLastnameEquals(String lastName);
 
 [[couchbase.migrating.reduce-in-views]]
 === Reduce in views
+
 Reduce is now supported in view-based querying.
 
 It can be triggered by prefixing the method name with `count` instead of `find`.
@@ -70,6 +77,6 @@ Alternatively, it can be explicitly be activated by setting `reduce = true` on t
 
 Be sure to construct your view correctly:
 
- * specify a reduce function that matches the method return type, which can be anything, eg. long or JSON object
- * emit a simple key (not `null` nor a compound key).
- * emit a value suitable for the reduce to work (typically `_count` doesn't need any particular value, but `_stats` will need a numerical value, in addition to the key).
+* specify a reduce function that matches the method return type, which can be anything, eg. long or JSON object
+* emit a simple key (not `null` nor a compound key).
+* emit a value suitable for the reduce to work (typically `_count` doesn't need any particular value, but `_stats` will need a numerical value, in addition to the key).

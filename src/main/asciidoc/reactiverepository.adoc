@@ -4,7 +4,8 @@
 [[couchbase.reactiverepository.intro]]
 == Introduction
 
-This chapter describes the reactive repository support for couchbase. This builds on the core repository support explained in <<couchbase.repository>>.
+This chapter describes the reactive repository support for couchbase.
+This builds on the core repository support explained in <<couchbase.repository>>.
 So make sure you’ve got a sound understanding of the basic concepts explained there.
 
 [[couchbase.reactiverepository.libraries]]
@@ -20,11 +21,13 @@ Reactive Couchbase repositories provide project Reactor wrapper types and can be
 * ReactiveSortingRepository
 
 Spring-data-couchbase converts RxJava 1 observables to reactor types by using reactive-streams adapters from https://github.com/ReactiveX/[RxJavaReactiveStreams]
-for convenience since these conversions can easily clutter application code. This transformation happens on same thread. It also provides direct access to RxJava1 observable
-sequence API from SDK through RxJavaCouchbaseOperations methods.
+for convenience since these conversions can easily clutter application code.
+This transformation happens on same thread.
+It also provides direct access to RxJava1 observable sequence API from SDK through RxJavaCouchbaseOperations methods.
 
 [[couchbase.reactiverepository.usage]]
 == Usage
+
 To access domain entities stored in a Couchbase bucket you can leverage our sophisticated repository support that eases implementing those quite significantly.
 To do so, simply create an interface for your repository:
 
@@ -64,7 +67,9 @@ public interface ReactivePersonRepository extends ReactiveSortingRepository<Pers
 ----
 ====
 
-For JavaConfig use the `@EnableReactiveCouchbaseRepositories` annotation. The annotation carries the very same attributes like the namespace element. If no base package is configured the infrastructure will scan the package of the annotated configuration class.
+For JavaConfig use the `@EnableReactiveCouchbaseRepositories` annotation.
+The annotation carries the very same attributes like the namespace element.
+If no base package is configured the infrastructure will scan the package of the annotated configuration class.
 
 .JavaConfig for repositories
 ====
@@ -85,14 +90,15 @@ class ApplicationConfig extends AbstractReactiveCouchbaseConfiguration {
   }
 
   @Override
-  protected String getBucketPassword() {
+  protected String getPassword() {
  	return "";
  }
 }
 ----
 ====
 
-As our domain repository extends `ReactiveSortingRepository` it provides you with CRUD operations as well as methods for sorted access to the entities. Working with the repository instance is just a matter of dependency injecting it into a client.
+As our domain repository extends `ReactiveSortingRepository` it provides you with CRUD operations as well as methods for sorted access to the entities.
+Working with the repository instance is just a matter of dependency injecting it into a client.
 
 .Sorted access to Person entities
 ====

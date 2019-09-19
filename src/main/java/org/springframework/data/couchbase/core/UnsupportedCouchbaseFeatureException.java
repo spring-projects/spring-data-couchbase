@@ -16,34 +16,34 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.util.features.CouchbaseFeature;
-
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.NonTransientDataAccessException;
 
+import com.couchbase.client.core.service.ServiceType;
+
 /**
- * A {@link NonTransientDataAccessException} that denotes that a particular feature is expected
- * on the server side but is not available.
+ * A {@link NonTransientDataAccessException} that denotes that a particular feature is expected on the server side but
+ * is not available.
  */
 public class UnsupportedCouchbaseFeatureException extends InvalidDataAccessApiUsageException {
 
-  private final CouchbaseFeature feature;
+	private final ServiceType feature;
 
-  public UnsupportedCouchbaseFeatureException(String msg, CouchbaseFeature feature) {
-    super(msg);
-    this.feature = feature;
-  }
+	public UnsupportedCouchbaseFeatureException(String msg, ServiceType feature) {
+		super(msg);
+		this.feature = feature;
+	}
 
-  public UnsupportedCouchbaseFeatureException(String msg, CouchbaseFeature feature, Throwable cause) {
-    super(msg, cause);
-    this.feature = feature;
-  }
+	public UnsupportedCouchbaseFeatureException(String msg, ServiceType feature, Throwable cause) {
+		super(msg, cause);
+		this.feature = feature;
+	}
 
-  /**
-   * @return the {@link CouchbaseFeature} that was missing (could be null if not
-   * a registered CouchbaseFeature, in which case see {@link #getMessage()}).
-   */
-  public CouchbaseFeature getFeature() {
-    return feature;
-  }
+	/**
+	 * @return the {@link ServiceType} that was missing (could be null if not a registered CouchbaseFeature, in which case
+	 *         see {@link #getMessage()}).
+	 */
+	public ServiceType getFeature() {
+		return feature;
+	}
 }

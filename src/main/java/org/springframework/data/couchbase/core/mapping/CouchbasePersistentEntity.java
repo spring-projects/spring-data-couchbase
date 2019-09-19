@@ -23,31 +23,29 @@ import org.springframework.data.mapping.PersistentEntity;
  *
  * @author Michael Nitschinger
  */
-public interface CouchbasePersistentEntity<T> extends
-    PersistentEntity<T, CouchbasePersistentProperty> {
+public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, CouchbasePersistentProperty> {
 
-  /**
-   * The threshold (inclusive) after which expiry should be expressed as a Unix UTC time.
-   */
-  long TTL_IN_SECONDS_INCLUSIVE_END = 30 * 24 * 60 * 60;
+	/**
+	 * The threshold (inclusive) after which expiry should be expressed as a Unix UTC time.
+	 */
+	long TTL_IN_SECONDS_INCLUSIVE_END = 30 * 24 * 60 * 60;
 
-  /**
-   * Returns the expiration time of the entity.
-   * <p/>
-   * The Couchbase format for expiration time is:
-   *  - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in seconds
-   *  - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
-   *
-   * @return the expiration time in correct Couchbase format.
-   */
-  int getExpiry();
+	/**
+	 * Returns the expiration time of the entity.
+	 * <p/>
+	 * The Couchbase format for expiration time is: - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in
+	 * seconds - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
+	 *
+	 * @return the expiration time in correct Couchbase format.
+	 */
+	int getExpiry();
 
-  /**
-   * Flag for using getAndTouch operations for reads, resetting the expiration (if one was set) when the
-   * entity is directly read (eg. findOne, findById).
-   *
-   * @return true if a direct read of the document should trigger a touch, resetting its expiration timer.
-   */
-   boolean isTouchOnRead();
+	/**
+	 * Flag for using getAndTouch operations for reads, resetting the expiration (if one was set) when the entity is
+	 * directly read (eg. findOne, findById).
+	 *
+	 * @return true if a direct read of the document should trigger a touch, resetting its expiration timer.
+	 */
+	boolean isTouchOnRead();
 
 }

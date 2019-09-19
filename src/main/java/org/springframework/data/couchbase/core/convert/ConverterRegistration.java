@@ -28,89 +28,89 @@ import org.springframework.util.Assert;
  */
 class ConverterRegistration {
 
-  private final ConvertiblePair convertiblePair;
-  private final boolean reading;
-  private final boolean writing;
+	private final ConvertiblePair convertiblePair;
+	private final boolean reading;
+	private final boolean writing;
 
-  /**
-   * Creates a new {@link ConverterRegistration}.
-   *
-   * @param convertiblePair must not be {@literal null}.
-   * @param isReading whether to force to consider the converter for reading.
-   * @param isWriting whether to force to consider the converter for reading.
-   */
-  public ConverterRegistration(ConvertiblePair convertiblePair, boolean isReading, boolean isWriting) {
-    Assert.notNull(convertiblePair, "ConvertiblePair must not be null!");
+	/**
+	 * Creates a new {@link ConverterRegistration}.
+	 *
+	 * @param convertiblePair must not be {@literal null}.
+	 * @param isReading whether to force to consider the converter for reading.
+	 * @param isWriting whether to force to consider the converter for reading.
+	 */
+	public ConverterRegistration(ConvertiblePair convertiblePair, boolean isReading, boolean isWriting) {
+		Assert.notNull(convertiblePair, "ConvertiblePair must not be null!");
 
-    this.convertiblePair = convertiblePair;
-    reading = isReading;
-    writing = isWriting;
-  }
+		this.convertiblePair = convertiblePair;
+		reading = isReading;
+		writing = isWriting;
+	}
 
-  /**
-   * Creates a new {@link ConverterRegistration} from the given source and target type and read/write flags.
-   *
-   * @param source the source type to be converted from, must not be {@literal null}.
-   * @param target the target type to be converted to, must not be {@literal null}.
-   * @param isReading whether to force to consider the converter for reading.
-   * @param isWriting whether to force to consider the converter for writing.
-   */
-  public ConverterRegistration(Class<?> source, Class<?> target, boolean isReading, boolean isWriting) {
-    this(new ConvertiblePair(source, target), isReading, isWriting);
-  }
+	/**
+	 * Creates a new {@link ConverterRegistration} from the given source and target type and read/write flags.
+	 *
+	 * @param source the source type to be converted from, must not be {@literal null}.
+	 * @param target the target type to be converted to, must not be {@literal null}.
+	 * @param isReading whether to force to consider the converter for reading.
+	 * @param isWriting whether to force to consider the converter for writing.
+	 */
+	public ConverterRegistration(Class<?> source, Class<?> target, boolean isReading, boolean isWriting) {
+		this(new ConvertiblePair(source, target), isReading, isWriting);
+	}
 
-  /**
-   * Returns whether the converter shall be used for writing.
-   *
-   * @return
-   */
-  public boolean isWriting() {
-    return writing == true || (!reading && isSimpleTargetType());
-  }
+	/**
+	 * Returns whether the given type is a type that Couchbase can handle basically.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private static boolean isCouchbaseBasicType(Class<?> type) {
+		return CouchbaseSimpleTypes.JSON_TYPES.isSimpleType(type);
+	}
 
-  /**
-   * Returns whether the converter shall be used for reading.
-   *
-   * @return
-   */
-  public boolean isReading() {
-    return reading == true || (!writing && isSimpleSourceType());
-  }
+	/**
+	 * Returns whether the converter shall be used for writing.
+	 *
+	 * @return
+	 */
+	public boolean isWriting() {
+		return writing == true || (!reading && isSimpleTargetType());
+	}
 
-  /**
-   * Returns the actual conversion pair.
-   *
-   * @return
-   */
-  public ConvertiblePair getConvertiblePair() {
-    return convertiblePair;
-  }
+	/**
+	 * Returns whether the converter shall be used for reading.
+	 *
+	 * @return
+	 */
+	public boolean isReading() {
+		return reading == true || (!writing && isSimpleSourceType());
+	}
 
-  /**
-   * Returns whether the source type is a Couchbase simple one.
-   *
-   * @return
-   */
-  public boolean isSimpleSourceType() {
-    return isCouchbaseBasicType(convertiblePair.getSourceType());
-  }
+	/**
+	 * Returns the actual conversion pair.
+	 *
+	 * @return
+	 */
+	public ConvertiblePair getConvertiblePair() {
+		return convertiblePair;
+	}
 
-  /**
-   * Returns whether the target type is a Couchbase simple one.
-   *
-   * @return
-   */
-  public boolean isSimpleTargetType() {
-    return isCouchbaseBasicType(convertiblePair.getTargetType());
-  }
+	/**
+	 * Returns whether the source type is a Couchbase simple one.
+	 *
+	 * @return
+	 */
+	public boolean isSimpleSourceType() {
+		return isCouchbaseBasicType(convertiblePair.getSourceType());
+	}
 
-  /**
-   * Returns whether the given type is a type that Couchbase can handle basically.
-   *
-   * @param type
-   * @return
-   */
-  private static boolean isCouchbaseBasicType(Class<?> type) {
-    return CouchbaseSimpleTypes.JSON_TYPES.isSimpleType(type);
-  }
+	/**
+	 * Returns whether the target type is a Couchbase simple one.
+	 *
+	 * @return
+	 */
+	public boolean isSimpleTargetType() {
+		return isCouchbaseBasicType(convertiblePair.getTargetType());
+	}
 }

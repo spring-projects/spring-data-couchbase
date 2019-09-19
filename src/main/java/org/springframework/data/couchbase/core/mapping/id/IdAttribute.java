@@ -17,10 +17,10 @@
 package org.springframework.data.couchbase.core.mapping.id;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.Inherited;
 
 /**
  * This annotation is targeted at building the document id using the attribute value.
@@ -28,7 +28,7 @@ import java.lang.annotation.Inherited;
  * @author Subhashni Balakrishnan
  */
 @Inherited
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IdAttribute {
 	int order() default 0;

@@ -33,74 +33,72 @@ import org.springframework.data.util.TypeInformation;
  * @author Michael Nitschinger
  */
 public class CouchbaseMappingContext
-    extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
-    implements ApplicationContextAware {
+		extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
+		implements ApplicationContextAware {
 
-  /**
-   * Contains the application context to configure the application.
-   */
-  private ApplicationContext context;
+	/**
+	 * The default field naming strategy.
+	 */
+	private static final FieldNamingStrategy DEFAULT_NAMING_STRATEGY = PropertyNameFieldNamingStrategy.INSTANCE;
+	/**
+	 * Contains the application context to configure the application.
+	 */
+	private ApplicationContext context;
+	/**
+	 * The field naming strategy to use.
+	 */
+	private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
 
-  /**
-   * The default field naming strategy.
-   */
-  private static final FieldNamingStrategy DEFAULT_NAMING_STRATEGY = PropertyNameFieldNamingStrategy.INSTANCE;
+	/**
+	 * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
+	 * Defaults to a strategy using the plain property name.
+	 *
+	 * @param fieldNamingStrategy the {@link FieldNamingStrategy} to be used to determine the field name if no manual
+	 *          mapping is applied.
+	 */
+	public void setFieldNamingStrategy(final FieldNamingStrategy fieldNamingStrategy) {
+		this.fieldNamingStrategy = fieldNamingStrategy == null ? DEFAULT_NAMING_STRATEGY : fieldNamingStrategy;
+	}
 
-  /**
-   * The field naming strategy to use.
-   */
-  private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
+	/**
+	 * Creates a concrete entity based out of the type information passed.
+	 *
+	 * @param typeInformation type information of the entity to create.
+	 * @param <T> the type for the corresponding type information.
+	 * @return the constructed entity.
+	 */
+	@Override
+	protected <T> BasicCouchbasePersistentEntity<?> createPersistentEntity(final TypeInformation<T> typeInformation) {
+		BasicCouchbasePersistentEntity<T> entity = new BasicCouchbasePersistentEntity<T>(typeInformation);
+		if (context != null) {
+			entity.setEnvironment(context.getEnvironment());
+		}
+		return entity;
+	}
 
-  /**
-   * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
-   * Defaults to a strategy using the plain property name.
-   *
-   * @param fieldNamingStrategy the {@link FieldNamingStrategy} to be used to determine the field name if no manual
-   * mapping is applied.
-   */
-  public void setFieldNamingStrategy(final FieldNamingStrategy fieldNamingStrategy) {
-    this.fieldNamingStrategy = fieldNamingStrategy == null ? DEFAULT_NAMING_STRATEGY : fieldNamingStrategy;
-  }
+	/**
+	 * Creates a concrete property based on the field information and entity.
+	 *
+	 * @param property the property descriptor.
+	 * @param owner the entity which owns the property.
+	 * @param simpleTypeHolder the type holder.
+	 * @return the constructed property.
+	 */
+	@Override
+	protected CouchbasePersistentProperty createPersistentProperty(Property property,
+			final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
+		return new BasicCouchbasePersistentProperty(property, owner, simpleTypeHolder, fieldNamingStrategy);
+	}
 
-  /**
-   * Creates a concrete entity based out of the type information passed.
-   *
-   * @param typeInformation type information of the entity to create.
-   * @param <T> the type for the corresponding type information.
-   * @return the constructed entity.
-   */
-  @Override
-  protected <T> BasicCouchbasePersistentEntity<?> createPersistentEntity(final TypeInformation<T> typeInformation) {
-    BasicCouchbasePersistentEntity<T> entity = new BasicCouchbasePersistentEntity<T>(typeInformation);
-    if (context != null) {
-      entity.setEnvironment(context.getEnvironment());
-    }
-    return entity;
-  }
-
-  /**
-   * Creates a concrete property based on the field information and entity.
-   *
-   * @param property the property descriptor.
-   * @param owner the entity which owns the property.
-   * @param simpleTypeHolder the type holder.
-   * @return the constructed property.
-   */
-  @Override
-  protected CouchbasePersistentProperty createPersistentProperty(Property property,
-                                                                 final BasicCouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder) {
-    return new BasicCouchbasePersistentProperty(property, owner, simpleTypeHolder, fieldNamingStrategy);
-  }
-
-  /**
-   * Sets (or overrides) the current application context.
-   *
-   * @param applicationContext the application context to be assigned.
-   * @throws BeansException if the context can not be set properly.
-   */
-  @Override
-  public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-    context = applicationContext;
-  }
+	/**
+	 * Sets (or overrides) the current application context.
+	 *
+	 * @param applicationContext the application context to be assigned.
+	 * @throws BeansException if the context can not be set properly.
+	 */
+	@Override
+	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+		context = applicationContext;
+	}
 
 }

@@ -15,23 +15,17 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.Select.select;
-import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.count;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.path.FromPath;
-import com.couchbase.client.java.query.dsl.path.LimitPath;
-import com.couchbase.client.java.query.dsl.path.WherePath;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.query.parser.PartTree;
+
+import com.couchbase.client.java.json.JsonValue;
 
 /**
  * A reactive {@link RepositoryQuery} for Couchbase, based on query derivation
@@ -41,40 +35,42 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
-    private final PartTree partTree;
-    private JsonValue placeHolderValues;
+	private final PartTree partTree;
+	private JsonValue placeHolderValues;
 
-    public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, RxJavaCouchbaseOperations operations) {
-        super(queryMethod, operations);
-        this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
-    }
+	public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations operations) {
+		super(queryMethod, operations);
+		this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
+	}
 
-    @Override
-    protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
-        return this.placeHolderValues;
-    }
+	@Override
+	protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
+		return this.placeHolderValues;
+	}
 
-    @Override
-    protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
-        String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
-        Expression bucket = N1qlUtils.escapedBucket(bucketName);
+	@Override
+	protected N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+			ReturnedType returnedType) {
+		String bucketName = getCouchbaseOperations().getBucketName();
+		N1QLExpression bucket = N1qlUtils.escapedBucket(bucketName);
 
-        FromPath select;
-        if (partTree.isCountProjection()) {
-            select = select(count("*"));
-        } else {
-            select = N1qlUtils.createSelectClauseForEntity(bucketName, returnedType, this.getCouchbaseOperations().getConverter());
-        }
-        WherePath selectFrom = select.from(bucket);
+		N1QLExpression select;
+		if (partTree.isCountProjection()) {
+			select = select(count(x("*")));
+		} else {
+			select = N1qlUtils.createSelectClauseForEntity(bucketName, returnedType,
+					this.getCouchbaseOperations().getConverter());
+		}
+		N1QLExpression selectFrom = select.from(bucket);
 
-        N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
-                getCouchbaseOperations().getConverter(), getQueryMethod());
-        LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
-        this.placeHolderValues = queryCreator.getPlaceHolderValues();
-        if (partTree.isLimiting()) {
-            return selectFromWhereOrderBy.limit(partTree.getMaxResults());
-        } else {
-            return selectFromWhereOrderBy;
-        }
-    }
+		OldN1qlQueryCreator queryCreator = new OldN1qlQueryCreator(partTree, accessor, selectFrom,
+				getCouchbaseOperations().getConverter(), getQueryMethod());
+		N1QLExpression selectFromWhereOrderBy = queryCreator.createQuery();
+		this.placeHolderValues = queryCreator.getPlaceHolderValues();
+		if (partTree.isLimiting()) {
+			return selectFromWhereOrderBy.limit(partTree.getMaxResults());
+		} else {
+			return selectFromWhereOrderBy;
+		}
+	}
 }

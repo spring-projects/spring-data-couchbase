@@ -17,4 +17,4 @@ Import-Template:
  org.springframework.*;version="${spring:[=.=.=.=,+1.0.0)}",
  org.springframework.data.*;version="${springdata.commons:[=.=.=.=,+1.0.0)}",
  org.w3c.*;version="0.0.0",
- rx.*;version="${rxjava:[=.=.=,+1.0.0)}"
+

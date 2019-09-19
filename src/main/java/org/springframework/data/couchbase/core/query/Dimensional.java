@@ -25,19 +25,21 @@ import java.lang.annotation.Target;
 import org.springframework.data.annotation.QueryAnnotation;
 
 /**
- * An annotation to mark a repository method as querying using a Couchbase Spatial View.
- * The attributes will be used to resolve the actual Spatial View to be used and to determine
- * the expected number of dimensions in the Spatial View keys. It can also be used as meta-annotation.
+ * An annotation to mark a repository method as querying using a Couchbase Spatial View. The attributes will be used to
+ * resolve the actual Spatial View to be used and to determine the expected number of dimensions in the Spatial View
+ * keys. It can also be used as meta-annotation.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @QueryAnnotation
 public @interface Dimensional {
-  /** The name of the design document to be queried */
-  String designDocument();
-  /** The name of the spatial view to be queried */
-  String spatialViewName();
-  /** The number of dimensions in the spatial view, defaults to 2 */
-  int dimensions() default 2;
+	/** The name of the design document to be queried */
+	String designDocument();
+
+	/** The name of the spatial view to be queried */
+	String spatialViewName();
+
+	/** The number of dimensions in the spatial view, defaults to 2 */
+	int dimensions() default 2;
 }
