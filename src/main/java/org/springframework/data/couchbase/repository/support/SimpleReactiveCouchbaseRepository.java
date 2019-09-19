@@ -16,25 +16,22 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import java.io.Serializable;
-
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.AsyncViewResult;
-import com.couchbase.client.java.view.ViewQuery;
-
-import org.reactivestreams.Publisher;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.View;
-import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
-import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-import rx.Single;
-import rx.Observable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.reactivestreams.Publisher;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.util.Streamable;
+import org.springframework.util.Assert;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -46,282 +43,165 @@ import reactor.core.publisher.Mono;
  * @author Douglas Six
  * @since 3.0
  */
-public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
+public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {
 
-    /**
-     * Holds the reference to the {@link org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate}.
-     */
-    private final RxJavaCouchbaseOperations operations;
+	/**
+	 * Holds the reference to the {@link CouchbaseOperations}.
+	 */
+	private final ReactiveCouchbaseOperations operations;
 
-    /**
-     * Contains information about the entity being used in this repository.
-     */
-    private final CouchbaseEntityInformation<T, String> entityInformation;
+	/**
+	 * Contains information about the entity being used in this repository.
+	 */
+	private final CouchbaseEntityInformation<T, String> entityInformation;
 
-    /**
-     * Custom ViewMetadataProvider.
-     */
-    private ViewMetadataProvider viewMetadataProvider;
+	/**
+	 * Create a new Repository.
+	 *
+	 * @param metadata the Metadata for the entity.
+	 * @param operations the reference to the reactive template used.
+	 */
+	public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
+			final ReactiveCouchbaseOperations operations) {
+		Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
+		Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
-    /**
-     * Create a new Repository.
-     *
-     * @param metadata the Metadata for the entity.
-     * @param operations the reference to the reactive template used.
-     */
-    public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-                                             final RxJavaCouchbaseOperations operations) {
-        Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
-        Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
+		this.entityInformation = metadata;
+		this.operations = operations;
+	}
 
-        this.entityInformation = metadata;
-        this.operations = operations;
-    }
+	@SuppressWarnings("unchecked")
+	public <S extends T> Mono<S> save(final S entity) {
+		Assert.notNull(entity, "Entity must not be null!");
+		return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
+	}
 
-    /**
-     * Configures a custom {@link ViewMetadataProvider} to be used to detect {@link View}s to be applied to queries.
-     *
-     * @param viewMetadataProvider that is used to lookup any annotated View on a query method.
-     */
-    public void setViewMetadataProvider(final ViewMetadataProvider viewMetadataProvider) {
-        this.viewMetadataProvider = viewMetadataProvider;
-    }
+	@Override
+	public Flux<T> findAll(final Sort sort) {
+		return findAll(new Query().with(sort));
+	}
 
-    protected Mono mapMono(Single single) {
-        return ReactiveWrapperConverters.toWrapper(single , Mono.class);
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public <S extends T> Flux<S> saveAll(final Iterable<S> entities) {
+		Assert.notNull(entities, "The given Iterable of entities must not be null!");
+		return (Flux<S>) operations.upsertById(entityInformation.getJavaType()).all(Streamable.of(entities).toList());
+	}
 
-    protected Flux mapFlux(Observable observable) {
-        return ReactiveWrapperConverters.toWrapper(observable, Flux.class);
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public <S extends T> Flux<S> saveAll(final Publisher<S> entityStream) {
+		Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
+		return Flux.from(entityStream).flatMap(this::save);
+	}
 
-    @SuppressWarnings("unchecked")
-    public <S extends T> Mono<S> save(S entity) {
-        Assert.notNull(entity, "Entity must not be null!");
-        return mapMono(operations.save(entity).toSingle());
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<T> findById(final ID id) {
+		return operations.findById(entityInformation.getJavaType()).one(id.toString());
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-        Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return mapFlux(operations.save(entities));
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<T> findById(final Publisher<ID> publisher) {
+		Assert.notNull(publisher, "The given Publisher must not be null!");
+		return Mono.from(publisher).flatMap(this::findById);
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
-        Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(object -> save(object));
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Boolean> existsById(final ID id) {
+		Assert.notNull(id, "The given id must not be null!");
+		return operations.existsById().one(id.toString());
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<T> findById(ID id) {
-        Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.findById(id.toString(), entityInformation.getJavaType()).toSingle())
-                .onErrorResume(throwable -> {
-                    //reactive streams adapter doesn't work with null
-                    if(throwable instanceof NullPointerException) {
-                        return Mono.empty();
-                    }
-                    return Mono.just(throwable);
-                });
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Boolean> existsById(final Publisher<ID> publisher) {
+		Assert.notNull(publisher, "The given Publisher must not be null!");
+		return Mono.from(publisher).flatMap(this::existsById);
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<T> findById(Publisher<ID> publisher) {
-        Assert.notNull(publisher, "The given Publisher must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::findById);
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Flux<T> findAll() {
+		return findAll(new Query());
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Boolean> existsById(ID id) {
-        Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.exists(id.toString()).toSingle());
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Flux<T> findAllById(final Iterable<ID> ids) {
+		Assert.notNull(ids, "The given Iterable of ids must not be null!");
+		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
+		return (Flux<T>) operations.findById(entityInformation.getJavaType()).all(convertedIds);
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Boolean> existsById(Publisher<ID> publisher) {
-        Assert.notNull(publisher, "The given Publisher must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::existsById);
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Flux<T> findAllById(final Publisher<ID> entityStream) {
+		Assert.notNull(entityStream, "The given entityStream must not be null!");
+		return Flux.from(entityStream).flatMap(this::findById);
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Flux<T> findAll() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-        return mapFlux(operations.findByView(query, entityInformation.getJavaType()));
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Void> deleteById(final ID id) {
+		return operations.removeById().one(id.toString()).then();
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Flux<T> findAllById(final Iterable<ID> ids) {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-        JsonArray keys = JsonArray.create();
-        for (ID id : ids) {
-            keys.add(id);
-        }
-        query.keys(keys);
-        return mapFlux(operations.findByView(query, entityInformation.getJavaType()));
-    }
+	@Override
+	public Mono<Void> deleteById(final Publisher<ID> publisher) {
+		Assert.notNull(publisher, "The given id must not be null!");
+		return Mono.from(publisher).flatMap(this::deleteById);
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Flux<T> findAllById(Publisher<ID> entityStream) {
-        Assert.notNull(entityStream, "The given entityStream must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(this::findById);
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Void> delete(final T entity) {
+		Assert.notNull(entity, "Entity must not be null!");
+		return operations.removeById().one(entityInformation.getId(entity)).then();
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Void> deleteById(ID id) {
-        Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.remove(id.toString()).map(res -> Observable.<Void>empty()).toSingle());
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Void> deleteAll(final Iterable<? extends T> entities) {
+		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
+	}
 
-    @Override
-    public Mono<Void> deleteById(Publisher<ID> publisher) {
-        Assert.notNull(publisher, "The given id must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::deleteById);
-    }
+	@Override
+	public Mono<Void> deleteAll(final Publisher<? extends T> entityStream) {
+		Assert.notNull(entityStream, "The given publisher of entities must not be null!");
+		return Flux.from(entityStream).flatMap(this::delete).single();
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Void>  delete(T entity) {
-        Assert.notNull(entity, "The given id must not be null!");
-        return mapMono(operations.remove(entity).map(res -> Observable.<Void>empty()).toSingle());
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Long> count() {
+		return operations.findByQuery(entityInformation.getJavaType()).count();
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Void> deleteAll(Iterable<? extends T> entities) {
-        Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return mapMono(operations
-                .remove(entities)
-                .last()
-                .map(res -> Observable.<Void>empty()).toSingle());
-    }
+	@SuppressWarnings("unchecked")
+	@Override
+	public Mono<Void> deleteAll() {
+		return operations.removeByQuery(entityInformation.getJavaType()).all().then();
+	}
 
+	/**
+	 * Returns the information for the underlying template.
+	 *
+	 * @return the underlying entity information.
+	 */
+	protected CouchbaseEntityInformation<T, String> getEntityInformation() {
+		return entityInformation;
+	}
 
-    @Override
-    public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
-        Assert.notNull(entityStream, "The given publisher of entities must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(entity -> delete(entity)).single();
-    }
+	@Override
+	public ReactiveCouchbaseOperations getReactiveCouchbaseOperations() {
+		return operations;
+	}
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Long> count() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(true);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-
-        return mapMono(operations
-                .queryView(query)
-                .flatMap(AsyncViewResult::rows)
-                .map(asyncViewRow ->
-                        Long.valueOf(asyncViewRow.value().toString()))
-                .switchIfEmpty(Observable.just(0L)).toSingle());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Mono<Void> deleteAll() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-
-
-        return mapMono(operations.queryView(query)
-                .flatMap(AsyncViewResult::rows)
-                .flatMap(row -> {
-                    return operations.remove(row.id())
-                            .onErrorResumeNext(throwable -> {
-                                if (throwable instanceof DocumentDoesNotExistException) {
-                                    return Observable.empty();
-                                }
-                                return Observable.error(throwable);
-                            });
-                })
-                .toList()
-                .map(list -> Observable.<Void>empty())
-                .toSingle());
-    }
-
-    /**
-     * Returns the information for the underlying template.
-     *
-     * @return the underlying entity information.
-     */
-    protected CouchbaseEntityInformation<T, String> getEntityInformation() {
-        return entityInformation;
-    }
-
-    /**
-     * Resolve a View based upon:
-     * <p/>
-     * 1. Any @View annotation that is present
-     * 2. If none are found, default designDocument to be the entity name (lowercase) and viewName to be "all".
-     *
-     * @return ResolvedView containing the designDocument and viewName.
-     */
-    private ResolvedView determineView() {
-        String designDocument = StringUtils.uncapitalize(entityInformation.getJavaType().getSimpleName());
-        String viewName = "all";
-
-        final View view = viewMetadataProvider.getView();
-
-        if (view != null) {
-            designDocument = view.designDocument();
-            viewName = view.viewName();
-        }
-
-        return new ResolvedView(designDocument, viewName);
-    }
-
-    @Override
-    public RxJavaCouchbaseOperations getCouchbaseOperations(){
-        return operations;
-    }
-
-    /**
-     * Simple holder to allow an easier exchange of information.
-     */
-    private final class ResolvedView {
-
-        private final String designDocument;
-        private final String viewName;
-
-        public ResolvedView(final String designDocument, final String viewName) {
-            this.designDocument = designDocument;
-            this.viewName = viewName;
-        }
-
-        private String getDesignDocument() {
-            return designDocument;
-        }
-
-        private String getViewName() {
-            return viewName;
-        }
-    }
+	private Flux<T> findAll(final Query query) {
+		return operations.findByQuery(entityInformation.getJavaType()).matching(query).all();
+	}
 
 }

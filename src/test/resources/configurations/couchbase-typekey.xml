@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
 		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 
@@ -13,19 +13,20 @@
     <!--note that the template needs both converter and translation service if you want to customize converter-->
     <couchbase:template translation-service-ref="myCustomTranslationService" converter-ref="myCustomConverter"/>
 
-    <bean id="myCustomTranslationService" class="org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService"/>
+    <bean id="myCustomTranslationService"
+          class="org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService"/>
 
     <bean id="myCustomConverter" class="org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter">
-            <!--this is a consequence of having to customize the converter-->
-            <!--WARNING this example is incomplete, look at couchbaseMappingContext() in AbstractCouchbaseConfiguration -->
-            <constructor-arg index="0" type="org.springframework.data.mapping.context.MappingContext">
-                    <ref bean="myCustomMappingContext"/>
-            </constructor-arg>
-            <!--this is where you customize the class field in JSON -->
-            <constructor-arg index="1" type="java.lang.String" value="javaXmlClass"/>
+        <!--this is a consequence of having to customize the converter-->
+        <!--WARNING this example is incomplete, look at couchbaseMappingContext() in AbstractCouchbaseConfiguration -->
+        <constructor-arg index="0" type="org.springframework.data.mapping.context.MappingContext">
+            <ref bean="myCustomMappingContext"/>
+        </constructor-arg>
+        <!--this is where you customize the class field in JSON -->
+        <constructor-arg index="1" type="java.lang.String" value="javaXmlClass"/>
     </bean>
 
     <!--WARNING this example is incomplete, look at couchbaseMappingContext() in AbstractCouchbaseConfiguration -->
-    <bean id="myCustomMappingContext" class="org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext" />
+    <bean id="myCustomMappingContext" class="org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext"/>
 
 </beans>

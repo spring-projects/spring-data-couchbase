@@ -16,18 +16,39 @@
 
 package org.springframework.data.couchbase.config;
 
-import java.lang.reflect.Proxy;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
-
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.data.annotation.Persistent;
+import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
+import org.springframework.data.mapping.model.FieldNamingStrategy;
+import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
+
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.couchbase.client.core.env.Authenticator;
+import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.json.JacksonTransformers;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -38,109 +59,191 @@ import org.springframework.context.annotation.Configuration;
  * @author Subhashni Balakrishnan
  */
 @Configuration
-public abstract class AbstractCouchbaseConfiguration
-        extends AbstractCouchbaseDataConfiguration implements CouchbaseConfigurer {
+public abstract class AbstractCouchbaseConfiguration {
 
-    /**
-     * The list of hostnames (or IP addresses) to bootstrap from.
-     *
-     * @return the list of bootstrap hosts.
-     */
-    protected abstract List<String> getBootstrapHosts();
+	public abstract String getConnectionString();
 
-    /**
-     * The name of the bucket to connect to.
-     *
-     * @return the name of the bucket.
-     */
-    protected abstract String getBucketName();
+	public abstract String getUserName();
 
-    /**
-     * The user of the bucket. Override the method for users in Couchbase Server 5.0+.
-     *
-     * @return user name.
-     */
-    protected String getUsername() { return getBucketName(); }
+	public abstract String getPassword();
 
-    /**
-     * The password of the bucket (can be an empty string).
-     *
-     * @return the password of the bucket.
-     */
-    protected abstract String getBucketPassword();
+	public abstract String getBucketName();
 
-    /**
-     * Is the {@link #getEnvironment()} to be destroyed by Spring?
-     *
-     * @return true if Spring should destroy the environment with the context, false otherwise.
-     */
-    protected boolean isEnvironmentManagedBySpring() {
-        return true;
-    }
+	protected String getScopeName() {
+		return null;
+	}
 
-    /**
-     * Override this method if you want a customized {@link CouchbaseEnvironment}.
-     * This environment will be managed by Spring, which will call its shutdown()
-     * method upon bean destruction, unless you override {@link #isEnvironmentManagedBySpring()}
-     * as well to return false.
-     *
-     * @return a customized environment, defaults to a {@link DefaultCouchbaseEnvironment}.
-     */
-    protected CouchbaseEnvironment getEnvironment() {
-        return DefaultCouchbaseEnvironment.create();
-    }
+	protected Authenticator authenticator() {
+		return PasswordAuthenticator.create(getUserName(), getPassword());
+	}
 
-    @Override
-    protected CouchbaseConfigurer couchbaseConfigurer() {
-        return this;
-    }
+	@Bean
+	public CouchbaseClientFactory couchbaseClientFactory(ClusterEnvironment clusterEnvironment) {
+		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName(),
+				getScopeName(), clusterEnvironment);
+	}
 
-    @Override
-    @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
-    public CouchbaseEnvironment couchbaseEnvironment() {
-        if (isEnvironmentManagedBySpring()) {
-            return getEnvironment();
-        } else {
-            CouchbaseEnvironment proxy = (CouchbaseEnvironment) Proxy.newProxyInstance(CouchbaseEnvironment.class.getClassLoader(),
-                    new Class[]{CouchbaseEnvironment.class},
-                    new CouchbaseEnvironmentNoShutdownInvocationHandler(getEnvironment()));
-            return proxy;
-        }
-    }
+	@Bean(destroyMethod = "shutdown")
+	protected ClusterEnvironment clusterEnvironment() {
+		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
+		configureEnvironment(builder);
+		return builder.build();
+	}
 
-    /**
-     * Returns the {@link Cluster} instance to connect to.
-     *
-     * @throws Exception on Bean construction failure.
-     */
-    @Override
-    @Bean(destroyMethod = "disconnect", name = BeanNames.COUCHBASE_CLUSTER)
-    public Cluster couchbaseCluster() throws Exception {
-        return CouchbaseCluster.create(couchbaseEnvironment(), getBootstrapHosts());
-    }
+	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
 
-    @Override
-    @Bean(name = BeanNames.COUCHBASE_CLUSTER_INFO)
-    public ClusterInfo couchbaseClusterInfo() throws Exception {
-        return couchbaseCluster().clusterManager(getUsername(), getBucketPassword()).info();
-    }
+	}
 
-    /**
-     * Return the {@link Bucket} instance to connect to.
-     *
-     * @throws Exception on Bean construction failure.
-     */
-    @Override
-    @Bean(destroyMethod = "close", name = BeanNames.COUCHBASE_BUCKET)
-    public Bucket couchbaseClient() throws Exception {
-        //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
-        Cluster cluster = couchbaseCluster();
+	@Bean
+	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+	}
 
-        if(!getUsername().contentEquals(getBucketName())){
-            cluster.authenticate(getUsername(), getBucketPassword());
-        } else if (!getBucketPassword().isEmpty()) {
-            return cluster.openBucket(getBucketName(), getBucketPassword());
-        }
-        return cluster.openBucket(getBucketName());
-    }
+	@Bean
+	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+																														 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+	}
+
+	@Bean
+	public RepositoryOperationsMapping couchbaseRepositoryOperationsMapping(CouchbaseTemplate couchbaseTemplate) {
+		// create a base mapping that associates all repositories to the default template
+		RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate);
+		// let the user tune it
+		configureRepositoryOperationsMapping(baseMapping);
+		return baseMapping;
+	}
+
+	/**
+	 * In order to customize the mapping between repositories/entity types to couchbase templates, use the provided
+	 * mapping's api (eg. in order to have different buckets backing different repositories).
+	 *
+	 * @param mapping the default mapping (will associate all repositories to the default template).
+	 */
+	protected void configureRepositoryOperationsMapping(RepositoryOperationsMapping mapping) {
+		// NO_OP
+	}
+
+	/**
+	 * Scans the mapping base package for classes annotated with {@link Document}.
+	 *
+	 * @throws ClassNotFoundException if initial entity sets could not be loaded.
+	 */
+	protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
+		String basePackage = getMappingBasePackage();
+		Set<Class<?>> initialEntitySet = new HashSet<Class<?>>();
+
+		if (StringUtils.hasText(basePackage)) {
+			ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(
+					false);
+			componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
+			componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
+			for (BeanDefinition candidate : componentProvider.findCandidateComponents(basePackage)) {
+				initialEntitySet.add(
+						ClassUtils.forName(candidate.getBeanClassName(), AbstractCouchbaseConfiguration.class.getClassLoader()));
+			}
+		}
+		return initialEntitySet;
+	}
+
+	/**
+	 * Determines the name of the field that will store the type information for complex types when using the
+	 * {@link #mappingCouchbaseConverter()}. Defaults to {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
+	 *
+	 * @see MappingCouchbaseConverter#TYPEKEY_DEFAULT
+	 * @see MappingCouchbaseConverter#TYPEKEY_SYNCGATEWAY_COMPATIBLE
+	 */
+	public String typeKey() {
+		return MappingCouchbaseConverter.TYPEKEY_DEFAULT;
+	}
+
+	/**
+	 * Creates a {@link MappingCouchbaseConverter} using the configured {@link #couchbaseMappingContext}.
+	 *
+	 * @throws Exception on Bean construction failure.
+	 */
+	@Bean
+	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
+																														 CouchbaseCustomConversions couchbaseCustomConversions) {
+		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
+		converter.setCustomConversions(couchbaseCustomConversions);
+		return converter;
+	}
+
+	/**
+	 * Creates a {@link TranslationService}.
+	 *
+	 * @return TranslationService, defaulting to JacksonTranslationService.
+	 */
+	@Bean
+	public TranslationService couchbaseTranslationService() {
+		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+		jacksonTranslationService.afterPropertiesSet();
+
+		// for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
+		JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		return jacksonTranslationService;
+	}
+
+	/**
+	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
+	 *
+	 * @throws Exception on Bean construction failure.
+	 */
+	@Bean
+	public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
+		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
+		mappingContext.setInitialEntitySet(getInitialEntitySet());
+		mappingContext.setSimpleTypeHolder(couchbaseCustomConversions().getSimpleTypeHolder());
+		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
+		return mappingContext;
+	}
+
+	/**
+	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
+	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext)} )} and
+	 * {@link #couchbaseMappingContext()}. Returns an empty {@link CustomConversions} instance by default.
+	 *
+	 * @return must not be {@literal null}.
+	 */
+	@Bean
+	public CustomConversions couchbaseCustomConversions() {
+		return new CouchbaseCustomConversions(Collections.emptyList());
+	}
+
+	/**
+	 * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
+	 * class (the concrete class, not this one here) by default.
+	 * <p/>
+	 * <p>
+	 * So if you have a {@code com.acme.AppConfig} extending {@link AbstractCouchbaseConfiguration} the base package will
+	 * be considered {@code com.acme} unless the method is overridden to implement alternate behavior.
+	 * </p>
+	 *
+	 * @return the base package to scan for mapped {@link Document} classes or {@literal null} to not enable scanning for
+	 *         entities.
+	 */
+	protected String getMappingBasePackage() {
+		return getClass().getPackage().getName();
+	}
+
+	/**
+	 * Set to true if field names should be abbreviated with the {@link CamelCaseAbbreviatingFieldNamingStrategy}.
+	 *
+	 * @return true if field names should be abbreviated, default is false.
+	 */
+	protected boolean abbreviateFieldNames() {
+		return false;
+	}
+
+	/**
+	 * Configures a {@link FieldNamingStrategy} on the {@link CouchbaseMappingContext} instance created.
+	 *
+	 * @return the naming strategy.
+	 */
+	protected FieldNamingStrategy fieldNamingStrategy() {
+		return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy()
+				: PropertyNameFieldNamingStrategy.INSTANCE;
+	}
 }

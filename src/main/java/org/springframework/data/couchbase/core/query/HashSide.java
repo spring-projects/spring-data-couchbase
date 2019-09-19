@@ -17,9 +17,8 @@
 package org.springframework.data.couchbase.core.query;
 
 /**
- * Hash side to specify hash join. Here based on probe or build, the
- * entity will be used to query or build the hash table.
- * The smaller data set side should be used to build to fit in memory.
+ * Hash side to specify hash join. Here based on probe or build, the entity will be used to query or build the hash
+ * table. The smaller data set side should be used to build to fit in memory.
  *
  * @author Subhashni Balakrishnan
  */
@@ -42,7 +41,7 @@ public enum HashSide {
 	private final String value;
 
 	HashSide(String value) {
-		this.value=value;
+		this.value = value;
 	}
 
 	public String getValue() {

@@ -23,8 +23,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
  */
 public class AfterSaveEvent<E> extends CouchbaseMappingEvent<E> {
 
-  public AfterSaveEvent(E source, CouchbaseDocument document) {
-    super(source, document);
-  }
+	public AfterSaveEvent(E source, CouchbaseDocument document) {
+		super(source, document);
+	}
 
 }

@@ -16,21 +16,33 @@
 
 package org.springframework.data.couchbase.repository;
 
-import java.io.Serializable;
+import java.util.List;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 /**
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface.
  *
  * @author Michael Nitschinger
  */
-public interface CouchbaseRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
+@NoRepositoryBean
+public interface CouchbaseRepository<T, ID> extends PagingAndSortingRepository<T, ID> {
 
-  /**
-   * @return a reference to the underlying {@link CouchbaseOperations operation template}.
-   */
-  CouchbaseOperations getCouchbaseOperations();
+	/**
+	 * @return a reference to the underlying {@link CouchbaseOperations operation template}.
+	 */
+	CouchbaseOperations getCouchbaseOperations();
+
+	@Override
+	List<T> findAll(Sort sort);
+
+	@Override
+	List<T> findAll();
+
+	@Override
+	List<T> findAllById(Iterable<ID> iterable);
 
 }

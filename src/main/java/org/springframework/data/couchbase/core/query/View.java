@@ -31,25 +31,26 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-//don't set @QueryAnnotation, as it causes problems with reduce and replacing count() method, the reduce detection needs to be improved
+// don't set @QueryAnnotation, as it causes problems with reduce and replacing count() method, the reduce detection
+// needs to be improved
 public @interface View {
 
-  /**
-   * The name of the Design Document to use. If omitted, defaults to one derived from the entity class name.
-   *
-   * @return name of the Design Document.
-   */
-  String designDocument() default "";
+	/**
+	 * The name of the Design Document to use. If omitted, defaults to one derived from the entity class name.
+	 *
+	 * @return name of the Design Document.
+	 */
+	String designDocument() default "";
 
-  /**
-   * The name of the View to use. If omitted, defaults to one derived from the method name (stripped of prefix "find" or
-   * "count"). This is mandatory to trigger a query derivation from the method name (ie. a View query with parameters
-   * like limit, startkey, etc...).
-   *
-   * @return name of the View
-   */
-  String viewName() default "";
+	/**
+	 * The name of the View to use. If omitted, defaults to one derived from the method name (stripped of prefix "find" or
+	 * "count"). This is mandatory to trigger a query derivation from the method name (ie. a View query with parameters
+	 * like limit, startkey, etc...).
+	 *
+	 * @return name of the View
+	 */
+	String viewName() default "";
 
-  boolean reduce() default false;
+	boolean reduce() default false;
 
 }

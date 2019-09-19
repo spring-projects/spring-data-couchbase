@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
-                           http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
-                           http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+                           http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 
-    <couchbase:env id="envWithFailFast" retryStrategy="FailFast" />
+    <couchbase:env id="envWithFailFast" retryStrategy="FailFast"/>
 
-    <couchbase:env id="envWithBestEffort" retryStrategy="BestEffort" />
+    <couchbase:env id="envWithBestEffort" retryStrategy="BestEffort"/>
 
     <couchbase:env id="envWithNoDefault"
                    managementTimeout="1"
@@ -19,37 +18,17 @@
                    disconnectTimeout="6"
                    dnsSrvEnabled="true"
 
-                   sslEnabled="true"
-                   sslKeystoreFile="test"
-                   sslKeystorePassword="test"
-                   bootstrapHttpEnabled="false"
-                   bootstrapCarrierEnabled="false"
-                   bootstrapHttpDirectPort="8"
-                   bootstrapHttpSslPort="9"
-                   bootstrapCarrierDirectPort="10"
-                   bootstrapCarrierSslPort="11"
-                   ioPoolSize="12"
-                   computationPoolSize="13"
-                   responseBufferSize="14"
-                   requestBufferSize="15"
+
                    kvEndpoints="16"
-                   viewEndpoints="17"
                    queryEndpoints="18"
                    retryStrategy="FailFast"
-                   maxRequestLifetime="19"
-                   keepAliveInterval="20"
-                   autoreleaseAfter="21"
-                   bufferPoolingEnabled="false"
-                   tcpNodelayEnabled="false"
-                   mutationTokensEnabled="true"
-                   analyticsTimeout = "30"
+
+                   mutationTokensEnabled="false"
+                   analyticsTimeout="30"
                    configPollInterval="50"
-                   configPollFloorInterval="30"
-                   operationTracingServerDurationEnabled="false"
-                   operationTracingEnabled="false"
-                   orphanResponseReportingEnabled="false"
+
                    compressionMinSize="100"
                    compressionMinRatio="0.90"
-                   />
+    />
 
 </beans>

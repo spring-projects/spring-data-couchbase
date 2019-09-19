@@ -21,8 +21,8 @@ package org.springframework.data.couchbase.core.mapping.event;
  */
 public class AfterDeleteEvent<E> extends CouchbaseMappingEvent<E> {
 
-  public AfterDeleteEvent(E source) {
-    super(source, null);
-  }
+	public AfterDeleteEvent(E source) {
+		super(source, null);
+	}
 
 }

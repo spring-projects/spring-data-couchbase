@@ -15,18 +15,25 @@
  */
 package org.springframework.data.couchbase.repository.config;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 
 /**
- * Annotation to activate reactive couchbase repositories. If no base package is configured through either {@link #value()},
- * {@link #basePackages()} or {@link #basePackageClasses()} it will trigger scanning of the package of annotated class.
+ * Annotation to activate reactive couchbase repositories. If no base package is configured through either
+ * {@link #value()}, {@link #basePackages()} or {@link #basePackageClasses()} it will trigger scanning of the package of
+ * annotated class.
  *
  * @author Subhashni Balakrishnan
  * @since 3.0
@@ -36,11 +43,12 @@ import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 @Documented
 @Inherited
 @Import(ReactiveCouchbaseRepositoriesRegistrar.class)
-public @interface  EnableReactiveCouchbaseRepositories {
+public @interface EnableReactiveCouchbaseRepositories {
 
 	/**
 	 * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
-	 * {@code @EnableCouchbaseRepositories("org.my.pkg")} instead of {@code @EnableCouchbaseRepositories(basePackages="org.my.pkg")}.
+	 * {@code @EnableCouchbaseRepositories("org.my.pkg")} instead of
+	 * {@code @EnableCouchbaseRepositories(basePackages="org.my.pkg")}.
 	 */
 	String[] value() default {};
 
@@ -92,7 +100,6 @@ public @interface  EnableReactiveCouchbaseRepositories {
 	 */
 	Class<?> repositoryBaseClass() default DefaultRepositoryBaseClass.class;
 
-
 	/**
 	 * Returns the {@link FactoryBean} class to be used for each repository instance. Defaults to
 	 * {@link ReactiveCouchbaseRepositoryFactoryBean}.
@@ -108,10 +115,10 @@ public @interface  EnableReactiveCouchbaseRepositories {
 	boolean considerNestedRepositories() default false;
 
 	/**
-	 * Configures the name of the {@link ReactiveCouchbaseTemplate} bean to be used by default with the repositories detected.
+	 * Configures the name of the {@link CouchbaseTemplate} bean to be used by default with the repositories detected.
 	 *
 	 * @return
 	 */
-	String couchbaseTemplateRef() default BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
+	String couchbaseTemplateRef() default BeanNames.COUCHBASE_TEMPLATE;
 
 }

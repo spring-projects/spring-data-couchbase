@@ -16,8 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
@@ -27,74 +26,72 @@ import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
 
-import java.util.Optional;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Implements annotated property representations of a given {@link com.couchbase.client.java.repository.annotation.Field} instance.
+ * Implements annotated property representations of a given {@link Field} instance.
  * <p/>
- * <p>This object is used to gather information out of properties on objects that need to be persisted. For example, it
- * supports overriding of the actual property name by providing custom annotations.</p>
+ * <p>
+ * This object is used to gather information out of properties on objects that need to be persisted. For example, it
+ * supports overriding of the actual property name by providing custom annotations.
+ * </p>
  *
  * @author Michael Nitschinger
  * @author Mark Paluch
  */
-public class BasicCouchbasePersistentProperty
-        extends AnnotationBasedPersistentProperty<CouchbasePersistentProperty>
-        implements CouchbasePersistentProperty {
+public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentProperty<CouchbasePersistentProperty>
+		implements CouchbasePersistentProperty {
 
-  private final FieldNamingStrategy fieldNamingStrategy;
+	private final FieldNamingStrategy fieldNamingStrategy;
 
-  /**
-   * Create a new instance of the BasicCouchbasePersistentProperty class.
-   *
-   * @param property         the PropertyDescriptor.
-   * @param owner            the original owner of the property.
-   * @param simpleTypeHolder the type holder.
-   */
-  public BasicCouchbasePersistentProperty(Property property,
-                                          final CouchbasePersistentEntity<?> owner, final SimpleTypeHolder simpleTypeHolder,
-                                          final FieldNamingStrategy fieldNamingStrategy) {
-    super(property, owner, simpleTypeHolder);
-    this.fieldNamingStrategy = fieldNamingStrategy == null ? PropertyNameFieldNamingStrategy.INSTANCE
-            : fieldNamingStrategy;
-  }
+	/**
+	 * Create a new instance of the BasicCouchbasePersistentProperty class.
+	 *
+	 * @param property the PropertyDescriptor.
+	 * @param owner the original owner of the property.
+	 * @param simpleTypeHolder the type holder.
+	 */
+	public BasicCouchbasePersistentProperty(Property property, final CouchbasePersistentEntity<?> owner,
+			final SimpleTypeHolder simpleTypeHolder, final FieldNamingStrategy fieldNamingStrategy) {
+		super(property, owner, simpleTypeHolder);
+		this.fieldNamingStrategy = fieldNamingStrategy == null ? PropertyNameFieldNamingStrategy.INSTANCE
+				: fieldNamingStrategy;
+	}
 
-  /**
-   * Creates a new Association.
-   */
-  @Override
-  protected Association<CouchbasePersistentProperty> createAssociation() {
-    return new Association<CouchbasePersistentProperty>(this, null);
-  }
+	/**
+	 * Creates a new Association.
+	 */
+	@Override
+	protected Association<CouchbasePersistentProperty> createAssociation() {
+		return new Association<CouchbasePersistentProperty>(this, null);
+	}
 
-  /**
-   * Returns the field name of the property.
-   * <p/>
-   * The field name can be different from the actual property name by using a
-   * custom annotation.
-   */
-  @Override
-  public String getFieldName() {
-    com.couchbase.client.java.repository.annotation.Field annotation = getField().
-        getAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
+	/**
+	 * Returns the field name of the property.
+	 * <p/>
+	 * The field name can be different from the actual property name by using a custom annotation.
+	 */
+	@Override
+	public String getFieldName() {
+		JsonProperty annotation = getField().getAnnotation(JsonProperty.class);
 
-    if (annotation != null && StringUtils.hasText(annotation.value())) {
-      return annotation.value();
-    }
+		if (annotation != null && StringUtils.hasText(annotation.value())) {
+			return annotation.value();
+		}
 
-    String fieldName = fieldNamingStrategy.getFieldName(this);
+		String fieldName = fieldNamingStrategy.getFieldName(this);
 
-    if (!StringUtils.hasText(fieldName)) {
-      throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
-          this, fieldNamingStrategy.getClass()));
-    }
+		if (!StringUtils.hasText(fieldName)) {
+			throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
+					this, fieldNamingStrategy.getClass()));
+		}
 
-    return fieldName;
-  }
+		return fieldName;
+	}
 
-  // DATACOUCH-145: allows SDK's @Id annotation to be used
-  @Override
-  public boolean isIdProperty() {
-    return isAnnotationPresent(Id.class) || super.isIdProperty();
-  }
+	// DATACOUCH-145: allows SDK's @Id annotation to be used
+	@Override
+	public boolean isIdProperty() {
+		return isAnnotationPresent(Id.class) || super.isIdProperty();
+	}
 }

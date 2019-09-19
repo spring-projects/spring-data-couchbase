@@ -16,24 +16,24 @@
 
 package org.springframework.data.couchbase.repository.config;
 
+import java.lang.annotation.Annotation;
+
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
-
-import java.lang.annotation.Annotation;
 
 /**
  * @author Michael Nitschinger
  */
 public class CouchbaseRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
 
-  @Override
-  protected Class<? extends Annotation> getAnnotation() {
-    return EnableCouchbaseRepositories.class;
-  }
+	@Override
+	protected Class<? extends Annotation> getAnnotation() {
+		return EnableCouchbaseRepositories.class;
+	}
 
-  @Override
-  protected RepositoryConfigurationExtension getExtension() {
-    return new CouchbaseRepositoryConfigurationExtension();
-  }
+	@Override
+	protected RepositoryConfigurationExtension getExtension() {
+		return new CouchbaseRepositoryConfigurationExtension();
+	}
 
 }

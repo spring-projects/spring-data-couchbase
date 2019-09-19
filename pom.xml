@@ -5,7 +5,7 @@
 
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>4.0.0.BUILD-SNAPSHOT</version>
+    <version>4.0.0-BUILD-SNAPSHOT</version>
 
     <name>Spring Data Couchbase</name>
     <description>Spring Data integration for Couchbase</description>
@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>2.7.13</couchbase>
-        <couchbase.osgi>2.7.13</couchbase.osgi>
+        <couchbase>3.0.1</couchbase>
+        <couchbase.osgi>3.0.1</couchbase.osgi>
         <springdata.commons>2.3.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -37,7 +37,6 @@
 	</dependencyManagement>
 
     <dependencies>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
@@ -99,35 +98,7 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>io.reactivex</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>${rxjava}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>io.reactivex</groupId>
-            <artifactId>rxjava-reactive-streams</artifactId>
-            <version>${rxjava-reactive-streams}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>io.reactivex.rxjava2</groupId>
-            <artifactId>rxjava</artifactId>
-            <version>${rxjava2}</version>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Couchbase field level encryption library -->
-        <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>encryption</artifactId>
-            <version>1.0.0</version>
+            <version>3.2.12.RELEASE</version>
         </dependency>
 
         <dependency>
@@ -182,6 +153,20 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.Couchbase</groupId>
+            <artifactId>CouchbaseMock</artifactId>
+            <version>73e493d259</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Kotlin extension -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -207,6 +192,16 @@
         <repository>
             <id>spring-libs-snapshot</id>
             <url>https://repo.spring.io/libs-snapshot</url>
+        </repository>
+        <repository>
+            <id>sonatype-snapshot</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <snapshots><enabled>true</enabled></snapshots>
+            <releases><enabled>false</enabled></releases>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 

@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.io.Serializable;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
@@ -29,79 +29,63 @@ import org.springframework.util.Assert;
  * @since 3.0
  */
 public class ReactiveCouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
-        extends RepositoryFactoryBeanSupport<T, S, ID> {
+		extends RepositoryFactoryBeanSupport<T, S, ID> {
 
-    /**
-     * Contains the reference to the template.
-     */
-    private ReactiveRepositoryOperationsMapping couchbaseOperationsMapping;
+	/**
+	 * Contains the reference to the template.
+	 */
+	private ReactiveRepositoryOperationsMapping couchbaseOperationsMapping;
 
-    /**
-     * Contains the reference to the IndexManager.
-     */
-    private IndexManager indexManager;
+	/**
+	 * Creates a new {@link CouchbaseRepositoryFactoryBean} for the given repository interface.
+	 *
+	 * @param repositoryInterface must not be {@literal null}.
+	 */
+	public ReactiveCouchbaseRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
+		super(repositoryInterface);
+	}
 
-    /**
-     * Creates a new {@link CouchbaseRepositoryFactoryBean} for the given repository interface.
-     *
-     * @param repositoryInterface must not be {@literal null}.
-     */
-    public ReactiveCouchbaseRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
-        super(repositoryInterface);
-    }
+	/**
+	 * Set the template reference.
+	 *
+	 * @param couchbaseOperationsMapping the reference to the operations template.
+	 */
+	public void setCouchbaseOperations(final CouchbaseOperations couchbaseOperationsMapping) {
+		setCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(couchbaseOperationsMapping));
+	}
 
-    /**
-     * Set the template reference.
-     *
-     * @param couchbaseOperationsMapping the reference to the operations template.
-     */
-    public void setCouchbaseOperations(final RxJavaCouchbaseOperations couchbaseOperationsMapping) {
-        setCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(couchbaseOperationsMapping));
-    }
+	public void setCouchbaseOperationsMapping(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
+		this.couchbaseOperationsMapping = couchbaseOperationsMapping;
+		setMappingContext(couchbaseOperationsMapping.getMappingContext());
+	}
 
-    public void setCouchbaseOperationsMapping(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
-        this.couchbaseOperationsMapping = couchbaseOperationsMapping;
-        setMappingContext(couchbaseOperationsMapping.getMappingContext());
-    }
+	/**
+	 * Returns a factory instance.
+	 *
+	 * @return the factory instance.
+	 */
+	@Override
+	protected RepositoryFactorySupport createRepositoryFactory() {
+		return getFactoryInstance(couchbaseOperationsMapping);
+	}
 
-    /**
-     * Set the IndexManager reference.
-     *
-     * @param indexManager the IndexManager to use.
-     */
-    public void setIndexManager(final IndexManager indexManager) {
-        this.indexManager = indexManager;
-    }
+	/**
+	 * Get the factory instance for the operations.
+	 *
+	 * @param couchbaseOperationsMapping the reference to the template.
+	 * @return the factory instance.
+	 */
+	protected ReactiveCouchbaseRepositoryFactory getFactoryInstance(
+			final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
+		return new ReactiveCouchbaseRepositoryFactory(couchbaseOperationsMapping);
+	}
 
-    /**
-     * Returns a factory instance.
-     *
-     * @return the factory instance.
-     */
-    @Override
-    protected RepositoryFactorySupport createRepositoryFactory() {
-        return getFactoryInstance(couchbaseOperationsMapping, indexManager);
-    }
-
-    /**
-     * Get the factory instance for the operations.
-     *
-     * @param couchbaseOperationsMapping the reference to the template.
-     * @param indexManager the reference to the {@link IndexManager}.
-     * @return the factory instance.
-     */
-    protected ReactiveCouchbaseRepositoryFactory getFactoryInstance(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping,
-                                                            IndexManager indexManager) {
-        return new ReactiveCouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager);
-    }
-
-    /**
-     * Make sure that the dependencies are set and not null.
-     */
-    @Override
-    public void afterPropertiesSet() {
-        super.afterPropertiesSet();
-        Assert.notNull(couchbaseOperationsMapping, "operationsMapping must not be null!");
-        Assert.notNull(indexManager, "indexManager must not be null!");
-    }
+	/**
+	 * Make sure that the dependencies are set and not null.
+	 */
+	@Override
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
+		Assert.notNull(couchbaseOperationsMapping, "operationsMapping must not be null!");
+	}
 }

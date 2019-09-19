@@ -1,149 +1,80 @@
-/*
- * Copyright 2012-2020 the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *        https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.springframework.data.couchbase.repository.query;
 
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.path.LimitPath;
-import com.couchbase.client.java.query.dsl.path.OrderByPath;
-import com.couchbase.client.java.query.dsl.path.WherePath;
-
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.repository.query.support.N1qlQueryCreatorUtils;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.PersistentPropertyPath;
+import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
-/**
- * This {@link AbstractQueryCreator Query Creator} is responsible for parsing a {@link PartTree} (representing
- * a method name) into the WHERE clause of a N1QL query.
- * <p>
- * In the following, "field" represents the path in JSON deduced from the part of the method name. "a" and "b" represent
- * the values of next consumed method parameters. "array" represent a {@link JsonArray} constructed from the next method
- * parameter value (if a collection or array, contained values are used to fill the array, otherwise it's a single item
- * array).
- * <br/>
- * Here are the {@link Part.Type} supported (<code>field</code>:
- * <ul>
- *   <li><b>BETWEEN:</b> field BETWEEN a AND b</li>
- *   <li><b>IS_NOT_NULL:</b> field IS NOT NULL</li>
- *   <li><b>IS_NULL:</b> field IS NULL</li>
- *   <li><b>NEGATING_SIMPLE_PROPERTY:</b> - field != a</li>
- *   <li><b>SIMPLE_PROPERTY:</b> - field = a</li>
- *   <li><b>LESS_THAN:</b> field &lt; a</li>
- *   <li><b>LESS_THAN_EQUAL:</b> field &lt;= a</li>
- *   <li><b>GREATER_THAN_EQUAL:</b> field &gt;= a</li>
- *   <li><b>GREATER_THAN:</b> field &gt; a</li>
- *   <li><b>BEFORE:</b> field &lt; a</li>
- *   <li><b>AFTER:</b> field &gt; a</li>
- *   <li><b>NOT_LIKE:</b> field NOT LIKE "a" - a should be a String containing % and _ (matching n and 1 characters)</li>
- *   <li><b>LIKE:</b> field LIKE "a" - a should be a String containing % and _ (matching n and 1 characters)</li>
- *   <li><b>STARTING_WITH:</b> field LIKE "a%" - a should be a String prefix</li>
- *   <li><b>ENDING_WITH:</b> field LIKE "%a" - a should be a String suffix</li>
- *   <li><b>NOT_CONTAINING:</b> field NOT LIKE "%a%" - a should be a String</li>
- *   <li><b>CONTAINING:</b> field LIKE "%a%" - a should be a String</li>
- *   <li><b>NOT_IN:</b> field NOT IN array - note that the next parameter value (or its children if a collection/array)
- *   should be compatible for storage in a {@link JsonArray})</li>
- *   <li><b>IN:</b> field IN array - note that the next parameter value (or its children if a collection/array) should
- *    be compatible for storage in a {@link JsonArray})</li>
- *   <li><b>TRUE:</b> field = TRUE</li>
- *   <li><b>FALSE:</b> field = FALSE</li>
- *   <li><b>REGEX:</b> REGEXP_LIKE(field, "a") - note that the ignoreCase is ignored here, a is a regular expression
- *   in String form</li>
- *   <li><b>EXISTS:</b> field IS NOT MISSING - used to verify that the JSON contains this attribute</li>
- * </ul>
- * <br/>
- * The following are not supported and will throw an {@link IllegalArgumentException} if encountered:
- * <ul>
- *   <li><b>NEAR, WITHIN:</b> geospatial is not supported in N1QL as of now</li>
- * </ul>
- * </p>
- *
- * @author Simon Baslé
- * @author Subhashni Balakrishnan
- * @author Mark Paluch
- */
-public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression> implements PartTreeN1qlQueryCreator {
-  private final WherePath selectFrom;
-  private final CouchbaseConverter converter;
-  private final CouchbaseQueryMethod queryMethod;
-  private final ParameterAccessor accessor;
-  private final JsonArray placeHolderValues;
-  private final AtomicInteger position;
+import java.util.Iterator;
 
-  public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
-                          CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
-    super(tree, parameters);
-    this.selectFrom = selectFrom;
-    this.converter = converter;
-    this.queryMethod = queryMethod;
-    this.accessor = parameters;
-    this.placeHolderValues = JsonArray.create();
-    this.position = new AtomicInteger(1);
-  }
+import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
-  @Override
-  protected Expression create(Part part, Iterator<Object> iterator) {
-    return N1qlQueryCreatorUtils.prepareExpression(converter, part, iterator, this.position, this.placeHolderValues);
-  }
+public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
-  @Override
-  protected Expression and(Part part, Expression base, Iterator<Object> iterator) {
-    if (base == null) {
-      return create(part, iterator);
-    }
+	private final ParameterAccessor accessor;
+	private final MappingContext<?, CouchbasePersistentProperty> context;
 
-    return base.and(create(part, iterator));
-  }
+	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor,
+													final MappingContext<?, CouchbasePersistentProperty> context) {
+		super(tree, accessor);
+		this.accessor = accessor;
+		this.context = context;
+	}
 
-  @Override
-  protected Expression or(Expression base, Expression criteria) {
-    return base.or(criteria);
-  }
+	@Override
+	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
+		CouchbasePersistentProperty property = path.getLeafProperty();
+		return from(part, property, where(path.toDotPath()), iterator);
+	}
 
-  @Override
-  protected LimitPath complete(Expression criteria, Sort sort) {
-    Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter, this.queryMethod.getEntityInformation());
+	@Override
+	protected QueryCriteria and(final Part part, final QueryCriteria base, final Iterator<Object> iterator) {
+		if (base == null) {
+			return create(part, iterator);
+		}
 
-    OrderByPath selectFromWhere = selectFrom.where(whereCriteria);
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
+		CouchbasePersistentProperty property = path.getLeafProperty();
 
-    //sort of the Pageable takes precedence over the sort in the query name
-    if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && accessor.getPageable().isPaged()) {
-      Pageable pageable = accessor.getPageable();
-        sort = pageable.getSort();
-    }
+		return from(part, property, base.and(path.toDotPath()), iterator);
+	}
 
-    if (sort.isSorted()) {
-      com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, converter);
-      return selectFromWhere.orderBy(cbSorts);
-    }
-    return selectFromWhere;
-  }
+	@Override
+	protected QueryCriteria or(QueryCriteria base, QueryCriteria criteria) {
+		return base.or(criteria);
+	}
 
-  @Override
-  public JsonValue getPlaceHolderValues() {
-    return this.placeHolderValues;
-  }
+	@Override
+	protected Query complete(QueryCriteria criteria, Sort sort) {
+		return (criteria == null ? new Query() : new Query().addCriteria(criteria)).with(sort);
+	}
+
+	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
+														 final Iterator<Object> parameters) {
+
+		final Part.Type type = part.getType();
+
+		switch (type) {
+			case GREATER_THAN:
+				return criteria.gt(parameters.next());
+			case GREATER_THAN_EQUAL:
+				return criteria.gte(parameters.next());
+			case LESS_THAN:
+				return criteria.lt(parameters.next());
+			case LESS_THAN_EQUAL:
+				return criteria.lte(parameters.next());
+			case SIMPLE_PROPERTY:
+				return criteria.eq(parameters.next());
+			default:
+				throw new IllegalArgumentException("Unsupported keyword!");
+		}
+	}
+
 }

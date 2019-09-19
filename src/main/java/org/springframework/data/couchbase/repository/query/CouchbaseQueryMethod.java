@@ -22,9 +22,9 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Dimensional;
-import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -32,8 +32,8 @@ import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.util.StringUtils;
 
 /**
- * Represents a query method with couchbase extensions, allowing to discover
- * if View-based query or N1QL-based query must be used.
+ * Represents a query method with couchbase extensions, allowing to discover if View-based query or N1QL-based query
+ * must be used.
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
@@ -41,131 +41,130 @@ import org.springframework.util.StringUtils;
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
-  private final Method method;
+	private final Method method;
 
-  public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
-    MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
-    super(method, metadata, factory);
+	public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
+			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
+		super(method, metadata, factory);
 
-    this.method = method;
-  }
+		this.method = method;
+	}
 
-  /**
-   * If the method has a @View annotation.
-   *
-   * @return true if it has the annotation, false otherwise.
-   */
-  public boolean hasViewAnnotation() {
-    return getViewAnnotation() != null;
-  }
+	/**
+	 * If the method has a @View annotation.
+	 *
+	 * @return true if it has the annotation, false otherwise.
+	 */
+	public boolean hasViewAnnotation() {
+		return getViewAnnotation() != null;
+	}
 
-  /**
-   * If the method has a @View annotation with the designDocument and viewName specified.
-   *
-   * @return true if it has the annotation and full view specified.
-   */
-  public boolean hasViewSpecification() {
-    return hasDesignDoc() && hasViewName();
-  }
+	/**
+	 * If the method has a @View annotation with the designDocument and viewName specified.
+	 *
+	 * @return true if it has the annotation and full view specified.
+	 */
+	public boolean hasViewSpecification() {
+		return hasDesignDoc() && hasViewName();
+	}
 
-  /**
-   * If the method has a @View annotation with the designDocument specified.
-   *
-   * @return true if it has the design document specified.
-   */
-  public boolean hasDesignDoc() {
-    View annotation = getViewAnnotation();
-    if (annotation == null) {
-      return false;
-    }
-    return StringUtils.hasText(annotation.designDocument());
-  }
+	/**
+	 * If the method has a @View annotation with the designDocument specified.
+	 *
+	 * @return true if it has the design document specified.
+	 */
+	public boolean hasDesignDoc() {
+		View annotation = getViewAnnotation();
+		if (annotation == null) {
+			return false;
+		}
+		return StringUtils.hasText(annotation.designDocument());
+	}
 
-  /**
-   * If the method has a @View annotation with the viewName specified.
-   *
-   * @return true if it has the view name specified.
-   */
-  public boolean hasViewName() {
-    View annotation = getViewAnnotation();
-    if (annotation == null) {
-      return false;
-    }
-    return StringUtils.hasText(annotation.viewName());
-  }
+	/**
+	 * If the method has a @View annotation with the viewName specified.
+	 *
+	 * @return true if it has the view name specified.
+	 */
+	public boolean hasViewName() {
+		View annotation = getViewAnnotation();
+		if (annotation == null) {
+			return false;
+		}
+		return StringUtils.hasText(annotation.viewName());
+	}
 
-  /**
-   * Returns the @View annotation if set, null otherwise.
-   *
-   * @return the view annotation of present.
-   */
-  public View getViewAnnotation() {
-    return method.getAnnotation(View.class);
-  }
+	/**
+	 * Returns the @View annotation if set, null otherwise.
+	 *
+	 * @return the view annotation of present.
+	 */
+	public View getViewAnnotation() {
+		return method.getAnnotation(View.class);
+	}
 
+	/**
+	 * @return true if the method has a @Dimensional annotation, false otherwise.
+	 */
+	public boolean hasDimensionalAnnotation() {
+		return getDimensionalAnnotation() != null;
+	}
 
-  /**
-   * @return true if the method has a @Dimensional annotation, false otherwise.
-   */
-  public boolean hasDimensionalAnnotation() {
-    return getDimensionalAnnotation() != null;
-  }
+	/**
+	 * @return the @Dimensional annotation if set, null otherwise.
+	 */
+	public Dimensional getDimensionalAnnotation() {
+		return AnnotationUtils.findAnnotation(method, Dimensional.class);
+	}
 
-  /**
-   * @return the @Dimensional annotation if set, null otherwise.
-   */
-  public Dimensional getDimensionalAnnotation() {
-    return AnnotationUtils.findAnnotation(method, Dimensional.class);
-  }
+	/**
+	 * If the method has a @Query annotation.
+	 *
+	 * @return true if it has the annotation, false otherwise.
+	 */
+	public boolean hasN1qlAnnotation() {
+		return getN1qlAnnotation() != null;
+	}
 
-  /**
-   * If the method has a @Query annotation.
-   *
-   * @return true if it has the annotation, false otherwise.
-   */
-  public boolean hasN1qlAnnotation() {
-    return getN1qlAnnotation() != null;
-  }
+	/**
+	 * Returns the @Query annotation if set, null otherwise.
+	 *
+	 * @return the n1ql annotation if present.
+	 */
+	public Query getN1qlAnnotation() {
+		return method.getAnnotation(Query.class);
+	}
 
-  /**
-   * Returns the @Query annotation if set, null otherwise.
-   *
-   * @return the n1ql annotation if present.
-   */
-  public Query getN1qlAnnotation() {
-    return method.getAnnotation(Query.class);
-  }
+	/**
+	 * If the method has a @Query annotation with an inline Query statement inside.
+	 *
+	 * @return true if this has the annotation and N1QL inline statement, false otherwise.
+	 */
+	public boolean hasInlineN1qlQuery() {
+		return getInlineN1qlQuery() != null;
+	}
 
-  /**
-   * If the method has a @Query annotation with an inline Query statement inside.
-   *
-   * @return true if this has the annotation and N1QL inline statement, false otherwise.
-   */
-  public boolean hasInlineN1qlQuery() {
-    return getInlineN1qlQuery() != null;
-  }
+	public boolean hasConsistencyAnnotation() {
+		return getConsistencyAnnotation() != null;
+	}
 
-  public boolean hasConsistencyAnnotation() {
-    return getConsistencyAnnotation() != null;
-  }
+	public WithConsistency getConsistencyAnnotation() {
+		return method.getAnnotation(WithConsistency.class);
+	}
 
-  public WithConsistency getConsistencyAnnotation() {
-    return method.getAnnotation(WithConsistency.class);
-  }
+	/**
+	 * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation
+	 * found nor the attribute was specified.
+	 *
+	 * @return the query statement if present.
+	 */
+	public String getInlineN1qlQuery() {
+		String query = (String) AnnotationUtils.getValue(getN1qlAnnotation());
+		return StringUtils.hasText(query) ? query : null;
+	}
 
-  /**
-   * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation found
-   * nor the attribute was specified.
-   *
-   * @return the query statement if present.
-   */
-  public String getInlineN1qlQuery() {
-    String query = (String) AnnotationUtils.getValue(getN1qlAnnotation());
-    return StringUtils.hasText(query) ? query : null;
-  }
-
-  @Override
-  public String toString() {
-    return super.toString();
-  }
+	@Override
+	public String toString() {
+		return super.toString();
+	}
 }

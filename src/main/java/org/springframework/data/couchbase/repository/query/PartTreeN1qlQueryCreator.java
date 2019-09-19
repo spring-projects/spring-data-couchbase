@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.document.json.JsonValue;
+import com.couchbase.client.java.json.JsonValue;
 
 /**
  * A Part Tree Query creator for Couchbase
@@ -25,6 +25,6 @@ import com.couchbase.client.java.document.json.JsonValue;
  */
 public interface PartTreeN1qlQueryCreator {
 
-    /** Get the named placeholder values */
-    JsonValue getPlaceHolderValues();
+	/** Get the named placeholder values */
+	JsonValue getPlaceHolderValues();
 }

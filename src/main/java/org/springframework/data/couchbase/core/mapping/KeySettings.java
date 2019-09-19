@@ -17,10 +17,7 @@
 package org.springframework.data.couchbase.core.mapping;
 
 /**
- * Common settings for Couchbase key
- *  - prefix
- *  - suffix
- *  - delimiter
+ * Common settings for Couchbase key - prefix - suffix - delimiter
  *
  * @author Subhashni Balakrishnan
  */
@@ -34,12 +31,12 @@ public class KeySettings {
 
 	private String delimiter;
 
-	public static KeySettings build() {
-		return new KeySettings();
-	}
-
 	protected KeySettings() {
 		this.delimiter = DEFAULT_DELIMITER;
+	}
+
+	public static KeySettings build() {
+		return new KeySettings();
 	}
 
 	/**

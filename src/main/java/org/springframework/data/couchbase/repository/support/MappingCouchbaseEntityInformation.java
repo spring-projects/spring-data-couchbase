@@ -26,14 +26,14 @@ import org.springframework.data.repository.core.support.PersistentEntityInformat
  * @author Oliver Gierke
  */
 public class MappingCouchbaseEntityInformation<T, ID> extends PersistentEntityInformation<T, ID>
-    implements CouchbaseEntityInformation<T, ID> {
+		implements CouchbaseEntityInformation<T, ID> {
 
-  /**
-   * Create a new Information container.
-   *
-   * @param entity the entity of the container.
-   */
-  public MappingCouchbaseEntityInformation(CouchbasePersistentEntity<T> entity) {
-    super(entity);
-  }
+	/**
+	 * Create a new Information container.
+	 *
+	 * @param entity the entity of the container.
+	 */
+	public MappingCouchbaseEntityInformation(CouchbasePersistentEntity<T> entity) {
+		super(entity);
+	}
 }

@@ -21,8 +21,8 @@ package org.springframework.data.couchbase.core.mapping.event;
  */
 public class BeforeConvertEvent<E> extends CouchbaseMappingEvent<E> {
 
-  public BeforeConvertEvent(E source) {
-    super(source, null);
-  }
+	public BeforeConvertEvent(E source) {
+		super(source, null);
+	}
 
 }

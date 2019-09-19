@@ -25,23 +25,23 @@ import org.springframework.dao.TransientDataAccessException;
  */
 public class OperationCancellationException extends TransientDataAccessException {
 
-  /**
-   * Constructor for OperationCancellationException.
-   *
-   * @param msg the detail message
-   */
-  public OperationCancellationException(final String msg) {
-    super(msg);
-  }
+	/**
+	 * Constructor for OperationCancellationException.
+	 *
+	 * @param msg the detail message
+	 */
+	public OperationCancellationException(final String msg) {
+		super(msg);
+	}
 
-  /**
-   * Constructor for OperationCancellationException.
-   *
-   * @param msg the detail message
-   * @param cause the root cause from the data access API in use
-   */
-  public OperationCancellationException(final String msg, final Throwable cause) {
-    super(msg, cause);
-  }
+	/**
+	 * Constructor for OperationCancellationException.
+	 *
+	 * @param msg the detail message
+	 * @param cause the root cause from the data access API in use
+	 */
+	public OperationCancellationException(final String msg, final Throwable cause) {
+		super(msg, cause);
+	}
 
 }

@@ -28,27 +28,27 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
  * @author Subhashni Balakrishnan
  */
 public class ConvertingIterator implements Iterator<Object> {
-  private final Iterator<Object> delegate;
-  private final CouchbaseConverter converter;
+	private final Iterator<Object> delegate;
+	private final CouchbaseConverter converter;
 
-  public ConvertingIterator(Iterator<Object> delegate, CouchbaseConverter converter) {
-    this.delegate = delegate;
-    this.converter = converter;
-  }
+	public ConvertingIterator(Iterator<Object> delegate, CouchbaseConverter converter) {
+		this.delegate = delegate;
+		this.converter = converter;
+	}
 
-  @Override
-  public boolean hasNext() {
-    return delegate.hasNext();
-  }
+	@Override
+	public boolean hasNext() {
+		return delegate.hasNext();
+	}
 
-  @Override
-  public void remove() {
-    delegate.remove();
-  }
+	@Override
+	public void remove() {
+		delegate.remove();
+	}
 
-  @Override
-  public Object next() {
-    Object next = delegate.next();
-    return converter.convertForWriteIfNeeded(next);
-  }
+	@Override
+	public Object next() {
+		Object next = delegate.next();
+		return converter.convertForWriteIfNeeded(next);
+	}
 }

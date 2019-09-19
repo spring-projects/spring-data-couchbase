@@ -5,9 +5,9 @@ The goal of Spring Data repository abstraction is to significantly reduce the am
 
 There are three backing mechanisms in Couchbase for repositories, described in the sections of this chapter:
 
- - <<couchbase.repository.n1ql>>
- - <<couchbase.repository.views.querying>>
- - <<couchbase.repository.spatial>>
+- <<couchbase.repository.n1ql>>
+- <<couchbase.repository.views.querying>>
+- <<couchbase.repository.spatial>>
 
 CRUD operations are still mostly backed by Couchbase views (see <<couchbase.repository.views>>).
 Such views (and, for N1QL, equivalent indexes) can be automatically built, but note this is **discouraged in production** and can be an **expensive operation** (see <<couchbase.repository.indexing>>).
@@ -17,7 +17,9 @@ Note that you can tune the consistency you want for your queries (see <<couchbas
 [[couchbase.repository.configuration]]
 == Configuration
 
-While support for repositories is always present, you need to enable them in general or for a specific namespace. If you extend `AbstractCouchbaseConfiguration`, just use the `@EnableCouchbaseRepositories` annotation. It provides lots of possible options to narrow or customize the search path, one of the most common ones is `basePackages`.
+While support for repositories is always present, you need to enable them in general or for a specific namespace.
+If you extend `AbstractCouchbaseConfiguration`, just use the `@EnableCouchbaseRepositories` annotation.
+It provides lots of possible options to narrow or customize the search path, one of the most common ones is `basePackages`.
 
 .Annotation-Based Repository Setup
 ====
@@ -30,6 +32,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 }
 ----
 ====
+
 An advanced usage is described in <<couchbase.repository.multibucket>>.
 
 XML-based configuration is also available:
@@ -45,7 +48,8 @@ XML-based configuration is also available:
 [[couchbase.repository.usage]]
 == Usage
 
-In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose. Let's look at a repository for a UserInfo:
+In the simplest case, your repository will extend the `CrudRepository<T, String>`, where T is the entity that you want to expose.
+Let's look at a repository for a UserInfo:
 
 .A UserInfo repository
 ====
@@ -58,11 +62,14 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 ----
 ====
 
-Please note that this is just an interface and not an actual class. In the background, when your context gets initialized, actual implementations for your repository descriptions get created and you can access them through regular beans. This means you will save lots of boilerplate code while still exposing full CRUD semantics to your service layer and application.
+Please note that this is just an interface and not an actual class.
+In the background, when your context gets initialized, actual implementations for your repository descriptions get created and you can access them through regular beans.
+This means you will save lots of boilerplate code while still exposing full CRUD semantics to your service layer and application.
 
-Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use of it. What methods do we have available?
+Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use of it.
+What methods do we have available?
 
-[cols="2", options="header"]
+[cols="2",options="header"]
 .Exposed methods on the UserRepository
 |===
 | Method
@@ -102,19 +109,24 @@ Now, let's imagine we `@Autowire` the `UserRepository` to a class that makes use
 | Delete all entities by type in the bucket.
 |===
 
-Now that's awesome! Just by defining an interface we get full CRUD functionality on top of our managed entity. All methods suffixed with (*) in the table are backed by Views, which is explained later.
+Now that's awesome!
+Just by defining an interface we get full CRUD functionality on top of our managed entity.
+All methods suffixed with (*) in the table are backed by Views, which is explained later.
 
-While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones. You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next sections.
+While the exposed methods provide you with a great variety of access patterns, very often you need to define custom ones.
+You can do this by adding method declarations to your interface, which will be automatically resolved to requests in the background, as we'll see in the next sections.
 
 [[couchbase.repository.querying]]
 == Repositories and Querying
 
 [[couchbase.repository.n1ql]]
 === N1QL based querying
-As of version `4.0`, Couchbase Server ships with a new query language called `N1QL`. In `Spring-Data-Couchbase 2.0`, N1QL is the default way of doing queries and will allow you to fully derive queries from a method name.
 
-Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored. DML queries
-are supported from Couchbase server version `4.1`.
+As of version `4.0`, Couchbase Server ships with a new query language called `N1QL`.
+In `Spring-Data-Couchbase 2.0`, N1QL is the default way of doing queries and will allow you to fully derive queries from a method name.
+
+Prerequisite is to have a N1QL-compatible cluster and to have created a PRIMARY INDEX on the bucket where the entities will be stored.
+DML queries are supported from Couchbase server version `4.1`.
 
 WARNING: If it is detected at configuration time that the cluster doesn't support N1QL while there are `@Query` annotated methods or non-annotated methods in your repository interface, a `UnsupportedCouchbaseFeatureException` will be thrown.
 
@@ -136,19 +148,23 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 
 Here we see two N1QL-backed ways of querying.
 
-The first method uses the `Query` annotation to provide a N1QL statement inline. SpEL (Spring Expression Language) is supported by surrounding SpEL expression blocks between `#{` and `}`.
+The first method uses the `Query` annotation to provide a N1QL statement inline.
+SpEL (Spring Expression Language) is supported by surrounding SpEL expression blocks between `#{` and `}`.
 A few N1QL-specific values are provided through SpEL:
 
- - `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
- - `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
- - `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
- - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
- - `#n1ql.delete` will be replaced by the `delete from` statement.
- - `#n1ql.returning` will be replaced by returning clause needed for reconstructing entity.
+- `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
+- `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
+- `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
+- `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
+- `#n1ql.delete` will be replaced by the `delete from` statement.
+- `#n1ql.returning` will be replaced by returning clause needed for reconstructing entity.
 
 IMPORTANT: We recommend that you always use the `selectEntity` SpEL and a WHERE clause with a `filter` SpEL (since otherwise your query could be impacted by entities from other repositories).
 
-String-based queries support parametrized queries. You can either use positional placeholders like "`$1`", in which case each of the method parameters will map, in order, to `$1`, `$2`, `$3`... Alternatively, you can use named placeholders using the "`$someString`" syntax. Method parameters will be matched with their corresponding placeholder using the parameter's name, which can be overridden by annotating each parameter (except a `Pageable` or `Sort`) with `@Param` (eg. `@Param("someString")`). You cannot mix the two approaches in your query and will get an `IllegalArgumentException` if you do.
+String-based queries support parametrized queries.
+You can either use positional placeholders like "`$1`", in which case each of the method parameters will map, in order, to `$1`, `$2`, `$3`... Alternatively, you can use named placeholders using the "`$someString`" syntax.
+Method parameters will be matched with their corresponding placeholder using the parameter's name, which can be overridden by annotating each parameter (except a `Pageable` or `Sort`) with `@Param` (eg. `@Param("someString")`).
+You cannot mix the two approaches in your query and will get an `IllegalArgumentException` if you do.
 
 Note that you can mix N1QL placeholders and SpEL. N1QL placeholders will still consider all method parameters, so be sure to use the correct index like in the example below:
 
@@ -163,7 +179,9 @@ public List<User> findUsersByDynamicCriteria(String criteriaField, Object criter
 
 This allows you to generate queries that would work similarly to eg. `AND name = "someName"` or `AND age = 3`, with a single method declaration.
 
-You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...). Such projection would have a simple return type like `long`, `boolean` or `String`. This is *NOT* intended for projections to DTOs.
+You can also do single projections in your N1QL queries (provided it selects only one field and returns only one result, usually an aggregation like `COUNT`, `AVG`, `MAX`...).
+Such projection would have a simple return type like `long`, `boolean` or `String`.
+This is *NOT* intended for projections to DTOs.
 
 Another example: +
 `#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1` +
@@ -176,6 +194,7 @@ SpEL can be useful when you want to do a query depending on data injected by oth
 Here is what you need to do to extend the SpEL context to get access to such external data.
 
 First, you need to implement an `EvaluationContextExtension` (use the support class as below):
+
 [source,java]
 ----
 class SecurityEvaluationContextExtension extends EvaluationContextExtensionSupport {
@@ -194,6 +213,7 @@ class SecurityEvaluationContextExtension extends EvaluationContextExtensionSuppo
 ----
 
 Then all you need to do for Spring Data Couchbase to be able to access associated SpEL values is to declare a corresponding bean in your configuration:
+
 [source,java]
 ----
 @Bean
@@ -203,6 +223,7 @@ EvaluationContextExtension securityExtension() {
 ----
 
 This could be useful to craft a query according to the role of the connected user for instance:
+
 [source,java]
 ----
 @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND " +
@@ -211,6 +232,7 @@ List<UserInfo> findAllAdmins(); //only ROLE_ADMIN users will see hidden admins
 ----
 
 Delete query example:
+
 [source,java]
 ----
 @Query("#{#n1ql.delete} WHERE #{#n1ql.filter} AND " +
@@ -220,13 +242,16 @@ UserInfo removeUser(String username);
 
 ****
 
-The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters. This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`. You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
+The second method uses Spring-Data's query derivation mechanism to build a N1QL query from the method name and parameters.
+This will produce a query looking like this: `SELECT ... FROM ... WHERE firstName = "valueOfFnameAtRuntime"`.
+You can combine these criteria, even do a count with a name like `countByFirstname` or a limit with a name like `findFirst3ByLastname`...
 
 NOTE: Actually the generated N1QL query will also contain an additional N1QL criteria in order to only select documents that match the repository's entity class.
 
 Most Spring-Data keywords are supported:
 .Supported keywords inside @Query (N1QL) method names
-[options = "header, autowidth"]
+
+[options = "header,autowidth"]
 |===============
 |Keyword|Sample|N1QL WHERE clause snippet
 |`And`|`findByLastnameAndFirstname`|`lastName = a AND firstName = b`
@@ -260,7 +285,8 @@ You can use both counting queries and <<repositories.limit-query-result>> featur
 
 With N1QL, another possible interface for the repository is the `PagingAndSortingRepository` one (which extends CRUDRepository).
 It adds two methods:
-[cols="2", options="header"]
+
+[cols="2",options="header"]
 .Exposed methods on the PagingAndSortingRepository
 |===
 | Method
@@ -281,7 +307,9 @@ The second way of querying, supported also in older versions of Couchbase Server
 
 [[couchbase.repository.views]]
 === Backing Views
-This is the historical way of secondary indexing in Couchbase. Views are much more limited in terms of querying flexibility, and each custom method may very well need its own backing view, to be prepared in the cluster beforehand.
+
+This is the historical way of secondary indexing in Couchbase.
+Views are much more limited in terms of querying flexibility, and each custom method may very well need its own backing view, to be prepared in the cluster beforehand.
 
 We'll only cover views to the extent to which they are needed, if you need in-depth information about them please refer to the official Couchbase Server manual and the Couchbase Java SDK manual.
 
@@ -289,9 +317,12 @@ As a rule of thumb, all repository CRUD access methods which are not "by a speci
 
 IMPORTANT: This is only true for the methods directly defined by the `CrudRepository` interface (the one marked with a `*` in `Table 3.` above), since your additional methods can now be backed by N1QL.
 
-To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server. It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
+To cover the basic CRUD methods from the `CrudRepository`, one view needs to be implemented in Couchbase Server.
+It basically returns all documents for the specific entity and also adds the optional reduce function `_count`.
 
-Since every view has a design document and view name, by convention we default to `all` as the view name and the uncapitalized (lowercase first letter) entity name as the design document name. So if your entity is named `UserInfo`, then the code expects the `all` view in the `userInfo` design document. It needs to look like this:
+Since every view has a design document and view name, by convention we default to `all` as the view name and the uncapitalized (lowercase first letter) entity name as the design document name.
+So if your entity is named `UserInfo`, then the code expects the `all` view in the `userInfo` design document.
+It needs to look like this:
 
 .The all view map function
 ====
@@ -306,22 +337,32 @@ function (doc, meta) {
 ----
 ====
 
-Note that the important part in this map function is to only include the document IDs which correspond to our entity. Because the library always adds the `_class` property, this is a quick and easy way to do it. If you have another property in your JSON which does the same job (like a explicit `type` field), then you can use that as well - you don't have to stick to `_class` all the time.
+Note that the important part in this map function is to only include the document IDs which correspond to our entity.
+Because the library always adds the `_class` property, this is a quick and easy way to do it.
+If you have another property in your JSON which does the same job (like a explicit `type` field), then you can use that as well - you don't have to stick to `_class` all the time.
 
-Also make sure to publish your design documents into production so that they can be picked up by the library! Also, if you are curious why we use `emit(meta.id, null)` in the view despite the document id being always sent over to the client implicitly, it is so the view can be queried with a list of ids, eg. in the `findAll(Iterable<ID> ids)` CRUD method.
+Also make sure to publish your design documents into production so that they can be picked up by the library!
+Also, if you are curious why we use `emit(meta.id, null)` in the view despite the document id being always sent over to the client implicitly, it is so the view can be queried with a list of ids, eg. in the `findAll(Iterable<ID> ids)` CRUD method.
 
 [[couchbase.repository.indexing]]
 === Automatic Index Management
+
 We've seen that the repositories default methods can be backed by two broad kind of features: views and N1QL (in the case of paging and sorting).
-In order for the CRUD operations to work, the adequate view must have been created beforehand, and this is usually left for the user to do. First because view creation (and index creation) is an expensive operation that can take quite some time if the quantity of documents is high. Second, because in production it is considered best practice to avoid administration of the cluster elements like buckets, indexes and view by an application code.
+In order for the CRUD operations to work, the adequate view must have been created beforehand, and this is usually left for the user to do.
+First because view creation (and index creation) is an expensive operation that can take quite some time if the quantity of documents is high.
+Second, because in production it is considered best practice to avoid administration of the cluster elements like buckets, indexes and view by an application code.
 
-In the case where the index creation cost isn't considered too high and you are not in a production environment, it can be triggered automatically instead, in two steps. You will first need to annotate the repositories you want managed with the relevant annotation(s):
+In the case where the index creation cost isn't considered too high and you are not in a production environment, it can be triggered automatically instead, in two steps.
+You will first need to annotate the repositories you want managed with the relevant annotation(s):
 
- - `@ViewIndexed` will create a view like the "all" view previously seen, to list all entities in the bucket.
- - `@N1qlPrimaryIndexed` can be used to ensure a general-purpose PRIMARY INDEX is available in N1QL.
- - `@N1qlSecondaryIndexed` will create a more specific N1QL index that does the same kind of filtering on entity type that the view does. It'll allow for efficient listing of all documents that correspond to a Repository's associated domain object.
+- `@ViewIndexed` will create a view like the "all" view previously seen, to list all entities in the bucket.
+- `@N1qlPrimaryIndexed` can be used to ensure a general-purpose PRIMARY INDEX is available in N1QL.
+- `@N1qlSecondaryIndexed` will create a more specific N1QL index that does the same kind of filtering on entity type that the view does.
+It'll allow for efficient listing of all documents that correspond to a Repository's associated domain object.
 
-Secondly, you'll need to opt-in to this feature by customizing the `indexManager()` bean of your env-specific `AbstractCouchbaseConfiguration` to take certain types of annotations into account. This is done through the `IndexManager(boolean processViews, boolean processN1qlPrimary, boolean processN1qlSecondary)` constructor. Set the flags for the category of annotations you want processed to true, or false to deactivate the automatic creation feature.
+Secondly, you'll need to opt-in to this feature by customizing the `indexManager()` bean of your env-specific `AbstractCouchbaseConfiguration` to take certain types of annotations into account.
+This is done through the `IndexManager(boolean processViews, boolean processN1qlPrimary, boolean processN1qlSecondary)` constructor.
+Set the flags for the category of annotations you want processed to true, or false to deactivate the automatic creation feature.
 
 The `@Profile` annotation is one possible Spring annotation to be used to differentiate configurations (or individual beans) per environment.
 
@@ -348,11 +389,12 @@ public class ExampleDevApplicationConfig extends AbstractCouchbaseConfiguration 
 
 In `2.0`, since N1QL has been introduced as a more powerful concept, view-backed queries have changed a bit outside of the CRUD methods:
 
- - the `@View` annotation is mandatory.
- - if you just want all the results from the view, you can let the framework guess the view name to use by just using the plain annotation `@View`. **You won't be able to customize** the `ViewQuery` (eg. adding limits and specifying a `startkey`) using this method anymore.
- - if you want your view query to have restrictions, those can be derived from the method name but in this case you **must** explicitly provide the `viewName` attribute in the annotation.
- - View based query derivation is limited to a few keywords and only works on simple keys (not compound keys like `[ age, fname ]`).
- - View based query derivation still needs you to include *one* valid property before keywords in the method name.
+- the `@View` annotation is mandatory.
+- if you just want all the results from the view, you can let the framework guess the view name to use by just using the plain annotation `@View`.
+**You won't be able to customize** the `ViewQuery` (eg. adding limits and specifying a `startkey`) using this method anymore.
+- if you want your view query to have restrictions, those can be derived from the method name but in this case you **must** explicitly provide the `viewName` attribute in the annotation.
+- View based query derivation is limited to a few keywords and only works on simple keys (not compound keys like `[ age, fname ]`).
+- View based query derivation still needs you to include *one* valid property before keywords in the method name.
 
 .An extended UserInfo repository with View queries
 ====
@@ -369,7 +411,10 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 ----
 ====
 
-Implementing your custom repository finder methods also needs backing views. The `findAllAdmins` guesses to use the `allAdmins` view in the `userInfo` design document, by convention. Imagine we have a field on our entity which looks like `boolean isAdmin`. We can write a view like this to expose them (we don't need a reduce function for this one, unless you plan to call one by prefixing your method with `count` instead of `find`!):
+Implementing your custom repository finder methods also needs backing views.
+The `findAllAdmins` guesses to use the `allAdmins` view in the `userInfo` design document, by convention.
+Imagine we have a field on our entity which looks like `boolean isAdmin`.
+We can write a view like this to expose them (we don't need a reduce function for this one, unless you plan to call one by prefixing your method with `count` instead of `find`!):
 
 .The allAdmins map function
 ====
@@ -383,7 +428,8 @@ function (doc, meta) {
 ----
 ====
 
-By now, we've never actually customized our view at query time. This is where the alternative, query derivation, comes along - like in our `findByFirstnameStartingWith(String fnamePrefix)` method.
+By now, we've never actually customized our view at query time.
+This is where the alternative, query derivation, comes along - like in our `findByFirstnameStartingWith(String fnamePrefix)` method.
 
 .The firstNames view map function
 ====
@@ -397,7 +443,8 @@ function (doc, meta) {
 ----
 ====
 
-This view not only emits the document id, but also the firstname of every UserInfo as the key. We can now run a `ViewQuery` which returns us all users with a firstname of "Michael" or "Michele".
+This view not only emits the document id, but also the firstname of every UserInfo as the key.
+We can now run a `ViewQuery` which returns us all users with a firstname of "Michael" or "Michele".
 
 .Query a repository method with custom params.
 ====
@@ -419,7 +466,7 @@ For more details on behavior, please consult the Couchbase Server and Java SDK d
 For view-based query derivation, here are the supported keywords (A and B are method parameters in this table):
 
 .Supported keywords inside @View method names
-[options = "header, autowidth"]
+[options = "header,autowidth"]
 |===============
 |`Is,Equals`|`findAllByUsername`,`findByFieldEquals`|`key=A` - if only keyword, the method can have no parameter (return all items from the view)
 |`Between`|`findByFieldBetween`|`startkey=A&endkey=B`
@@ -432,29 +479,38 @@ For view-based query derivation, here are the supported keywords (A and B are me
 
 Note that both `reduce functions` and <<repositories.limit-query-result>> are also supported.
 
-TIP: In order to trigger a `reduce`, you can use the `count` prefix instead of `find`. But sometimes is doesn't make much sense (eg. because you actually use the `_stats` built in function, which returns a JSON object). So alternatively you can also explicitly ask for reduce to be executed by setting `reduce = true` in the `@View` annotation. Be sure to specify a return type that make sense for the reduce function of your view.
+TIP: In order to trigger a `reduce`, you can use the `count` prefix instead of `find`.
+But sometimes is doesn't make much sense (eg. because you actually use the `_stats` built in function, which returns a JSON object).
+So alternatively you can also explicitly ask for reduce to be executed by setting `reduce = true` in the `@View` annotation.
+Be sure to specify a return type that make sense for the reduce function of your view.
 
-WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By. You have to include a valid entity property in the naming of your method.
-
+WARNING: Compound keys are not supported, and neither are Or composition, Ignore Case and Order By.
+You have to include a valid entity property in the naming of your method.
 
 Last method of querying in Couchbase (from Couchbase Server 4.0, like for N1QL) is querying for dimensional data through *Spatial Views*, as we'll see in the next section.
 
 [[couchbase.repository.spatial]]
 === Spatial View based querying
-Couchbase can accommodate multi-dimensional data and query it with the use of special views, the Spatial Views. Such views allows to perform multi-dimensional queries, not only limited to geographical data.
 
-Integration of these views in `Spring Data Couchbase` repositories is done through the `@Dimensional` annotation. Like `@View`, the annotation allows to indicate usage of a Spatial View as the backing mechanism for the annotated method. The annotation requires you to give the name of the `designDocument` and the `spatialViewName` to use. Additionally, you should specify the number of `dimensions` the view works with (unless it is the default classical 2).
+Couchbase can accommodate multi-dimensional data and query it with the use of special views, the Spatial Views.
+Such views allows to perform multi-dimensional queries, not only limited to geographical data.
+
+Integration of these views in `Spring Data Couchbase` repositories is done through the `@Dimensional` annotation.
+Like `@View`, the annotation allows to indicate usage of a Spatial View as the backing mechanism for the annotated method.
+The annotation requires you to give the name of the `designDocument` and the `spatialViewName` to use.
+Additionally, you should specify the number of `dimensions` the view works with (unless it is the default classical 2).
 
 Multi-dimensionality concept is interesting, it means you can craft views that allows you to answer questions like "find all shops that are within Manhattan and open between 14:00 and 23:00" (the third dimension of the view being the opening hours).
 
 Couchbase's Spatial View support querying through ranges that represent "lowest" and "highest" values in each dimension, so for 2D it represents a bounding box, with the southwest-most point [x,y] as `startRange` and northeast-most point [x,y] as `endRange`.
 
-TIP: Even though Couchbase Spatial View engine only support Bounding Box querying, the Spring Data Couchbase framework will attempt to remove false positives for you when querying with a `Polygon` or a `Circle` (in TRACE log level each false positive elimination will be logged). Note that a point on the edge of a `Polygon` is *not* considered within (whereas it is when dealing with a `Circle`).
+TIP: Even though Couchbase Spatial View engine only support Bounding Box querying, the Spring Data Couchbase framework will attempt to remove false positives for you when querying with a `Polygon` or a `Circle` (in TRACE log level each false positive elimination will be logged).
+Note that a point on the edge of a `Polygon` is *not* considered within (whereas it is when dealing with a `Circle`).
 
 The following query derivation keywords and parameters relative to geographical data in Spring Data are supported for Spatial Views:
 
 .Supported keywords inside @Dimensional method names
-[options = "header, autowidth"]
+[options = "header,autowidth"]
 |===============
 |Keyword|Sample|Remarks
 |`Within,IsWithin`|`findByLocationWithin`|
@@ -464,32 +520,40 @@ The following query derivation keywords and parameters relative to geographical 
 |`LessThan,LessThanEqual,Before`|`findByLocationWithinAndOpeningHoursBefore`|useful for dimensions beyond 2, adds a numerical value to the endRange
 |===============
 
-IMPORTANT: For "within" types of queries, the expected parameters map to geographical 2D data. Classes from the `org.springframework.data.geo` package are usually expected, but Polygon and Boxes can also be expressed as arrays of `Point`s.
+IMPORTANT: For "within" types of queries, the expected parameters map to geographical 2D data.
+Classes from the `org.springframework.data.geo` package are usually expected, but Polygon and Boxes can also be expressed as arrays of `Point`s.
 
 Further dimensions are supported through keywords other than Within and Near and require numerical input.
 
 [[couchbase.repository.consistency]]
 === Querying with consistency
+
 One aspect that is often needed and doesn't have a direct equivalent in the Spring Data query derivation mechanism is
-`query consistency`. In both view-based queries and N1QL, you have this concept that the secondary index can return stale
-data, because the latest version hasn't been indexed yet. This gives the best performance at the expense of consistency.
+`query consistency`.
+In both view-based queries and N1QL, you have this concept that the secondary index can return stale data, because the latest version hasn't been indexed yet.
+This gives the best performance at the expense of consistency.
 
 Note that weaker consistencies can lead to data being returned that doesn't match the criteria of a derived query.
-One trickier case is when documents are deleted from Couchbase but views have not yet caught up to the deletion. With weak consistency this can mean that a view would return IDs that are not in the database anymore, leading to null entities. The `CouchbaseTemplate`s `findByView` and `findBySpatialView` methods will remove such stale deleted entities from their result in order to avoid having nulls in the returned collections. Similarly, `CouchbaseRepository`'s `deleteAll` method will ignore documents that the backing view provided but the SDK remove operation couldn't find.
+One trickier case is when documents are deleted from Couchbase but views have not yet caught up to the deletion.
+With weak consistency this can mean that a view would return IDs that are not in the database anymore, leading to null entities.
+The `CouchbaseTemplate`s `findByView` and `findBySpatialView` methods will remove such stale deleted entities from their result in order to avoid having nulls in the returned collections.
+Similarly, `CouchbaseRepository`'s `deleteAll` method will ignore documents that the backing view provided but the SDK remove operation couldn't find.
 
 If one wants to have stronger consistency, there are three possibilities described in the next sections.
 
 ==== Configure it on a global level
+
 A global consistency can be defined using the `Consistency` enumeration (eg. `Consistency.READ_YOUR_OWN_WRITE`):
 
- - in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
- - in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
+- in xml, this is done via the `consistency` attribute on `<couchbase:template>`.
+- in javaConfig, this is done by overriding the `getDefaultConsistency()` method.
 
 By default it is `Consistency.READ_YOUR_OWN_WRITES` (which means consistency is prioritized over speed, especially when a large number of documents has been created recently).
 
 IMPORTANT: This is **only used in repositories**, either for index-backed methods automatically provided by the repository interface (`findAll()`, `findAll(keys)`, `count()`, `deleteAll()`...) or methods you define in your specific interface using query derivation.
 
 ==== Set consistency for N1QL queries
+
 For N1QL queries, the `ScanConsistency` can be set using the `@WithConsistency` annotation.
 This is independent of whether the query is derived from the method name or specified using `@Query`.
 If the annotation is omitted, the global default consistency is used.
@@ -516,31 +580,33 @@ public interface UserRepository extends CrudRepository<UserInfo, String> {
 <2> The N1QL query is derived automatically but executed with the given consistency, i.e. `NOT_BOUNDED`.
 <3> The N1QL query is specified using `@Query` and is being executed with the given consistency.
 
-IMPORTANT: The `@WithConsistency` annotation is currently only evaluated **for N1QL queries**. View queries use the global default consistency.
+IMPORTANT: The `@WithConsistency` annotation is currently only evaluated **for N1QL queries**.
+View queries use the global default consistency.
 
 ==== Provide an implementation
-Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency
-(see <<couchbase.repository.changing-repository-behaviour>>).
 
- - one can specify the consistency on those via their respective query classes, according to the Couchbase Java SDK documentation.
- - for example for views `ViewQuery.stale(Stale.FALSE)`
- - for example for N1QL `Query.simple("SELECT * FROM default", QueryParams.build().consistency(ScanConsistency.REQUEST_PLUS));`
+Provide the implementation and directly use `queryView` and `queryN1QL` methods on the template with a specific consistency (see <<couchbase.repository.changing-repository-behaviour>>).
+
+- one can specify the consistency on those via their respective query classes, according to the Couchbase Java SDK documentation.
+- for example for views `ViewQuery.stale(Stale.FALSE)`
+- for example for N1QL `Query.simple("SELECT * FROM default", QueryParams.build().consistency(ScanConsistency.REQUEST_PLUS));`
 
 [[couchbase.repository.multibucket]]
 == Working with multiple buckets
-The Java Config version allows you to define multiple `Bucket` and `CouchbaseTemplate`, but in order to have different
-repositories use different underlying buckets/templates, you need to follow these steps:
 
- * in your `AbstractCouchbaseConfiguration` implementation, override the `configureRepositoryOperationsMapping` method.
- * mutate the provided `RepositoryOperationsMapping` as needed (it defaults to mapping everything to the default template).
- * configure the mapping by chaining calls to `map`, `mapEntity` and `setDefault`.
-   ** `map` maps a specific repository interface to the `CouchbaseOperations` it should use
-   ** `mapEntity` maps all unmapped repositories of a domain type / entity class to a common `CouchbaseOperations`
-   ** `setDefault` maps all remaining unmapped repositories to a default
+The Java Config version allows you to define multiple `Bucket` and `CouchbaseTemplate`, but in order to have different repositories use different underlying buckets/templates, you need to follow these steps:
+
+* in your `AbstractCouchbaseConfiguration` implementation, override the `configureRepositoryOperationsMapping` method.
+* mutate the provided `RepositoryOperationsMapping` as needed (it defaults to mapping everything to the default template).
+* configure the mapping by chaining calls to `map`, `mapEntity` and `setDefault`.
+** `map` maps a specific repository interface to the `CouchbaseOperations` it should use
+** `mapEntity` maps all unmapped repositories of a domain type / entity class to a common `CouchbaseOperations`
+** `setDefault` maps all remaining unmapped repositories to a default
    `CouchaseOperations` (the default, using `couchbaseTemplate` bean unless modified).
 
 The idea is that the framework will look for an entry corresponding to the repository's interface when instantiating it.
-If none is found it will look at the mapping for the repository's domain type. Eventually it will fallback to the default setting.
+If none is found it will look at the mapping for the repository's domain type.
+Eventually it will fallback to the default setting.
 Here is an example:
 
 .Example of configuring multiple templates and repositories.
@@ -584,13 +650,18 @@ public class ConcreteCouchbaseConfig extends AbstractCouchbaseConfig {
 
 [[couchbase.repository.changing-repository-behaviour]]
 == Changing repository behaviour
-Sometimes you don't simply want the repository to create methods for you, but instead you want to tune the base repository's behaviour. You can either do that for *all* repositories - by changing the _base class_ for them - or just for a single repository - by adding custom implementations for either new or existing methods - (see <<repositories.custom-implementations>> for a generic introduction to these concepts).
+
+Sometimes you don't simply want the repository to create methods for you, but instead you want to tune the base repository's behaviour.
+You can either do that for *all* repositories - by changing the _base class_ for them - or just for a single repository - by adding custom implementations for either new or existing methods - (see <<repositories.custom-implementations>> for a generic introduction to these concepts).
 
 === Couchbase specifics about changing the base class
+
 This follows the standard procedure for changing all repositories' base class:
 
-. Create an generic interface for your base that extends `CouchbaseRepository` (CRUD) or `CouchbasePagingAndSortingRepository`. Declare any method you want to add to all repositories there.
-. Create an implementation (eg. `MyRepositoryImpl`). This should extend one the concrete base classes (`SimpleCouchbaseRepository` or `N1qlCouchbaseRepository`) and you can also override existing methods from the Spring Data interfaces.
+. Create an generic interface for your base that extends `CouchbaseRepository` (CRUD) or `CouchbasePagingAndSortingRepository`.
+Declare any method you want to add to all repositories there.
+. Create an implementation (eg. `MyRepositoryImpl`).
+This should extend one the concrete base classes (`SimpleCouchbaseRepository` or `N1qlCouchbaseRepository`) and you can also override existing methods from the Spring Data interfaces.
 . Declare your repository interfaces as extending `MyRepository` instead of eg. `CRUDRepository` or `CouchbaseRepository`.
 . In the `@EnableCouchbaseRepositories` annotation of your configuration, use the `repositoryBaseClass` parameter.
 
@@ -632,6 +703,7 @@ public class MyConfig extends AbstractCouchbaseConfiguration { /** ... */ }
 <8> Weaving it all in by changing the repository base class.
 
 === Couchbase specifics about adding methods to a single repository
+
 Again following the standard procedure for custom repository methods, here is a complete example that you can find in `RepositoryCustomMethodTest` in the integration tests:
 
 .Adding and overriding methods in a single repository
@@ -688,7 +760,8 @@ public class MyRepositoryImpl implements MyRepositoryCustom { <3>
 <3> This is the implementation of the custom interface.
 <4> The custom implementation doesn't have access to the original base implementation, so use dependency injection to get access to necessary resources.
 <5> Here is a couchbase specificity: if you need to use the `CouchbaseTemplate`, be sure to use the one that would be associated with the customized repository or associated entity type.
-<6> We use `N1QLUtils` to prepare a complete `N1QL` statement for counting. It relies on the information above that we got from the correct template.
+<6> We use `N1QLUtils` to prepare a complete `N1QL` statement for counting.
+It relies on the information above that we got from the correct template.
 <7> We want to make sure that the default consistency configured in the associated template is used for this query.
 <8> Using `CouchbaseTemplate.findByN1qlProjection`, we execute the count query and store the single aggregation result into a `CountFragment`.
 <9> Now we return this count result with a twist: it is negated.
@@ -702,7 +775,10 @@ By storing 3 items using a `MyRepository` instance and calling `count()` then `c
 ----
 
 === DTO Projections
-Spring Data Repositories usually return the domain model when using query methods. However, sometimes, you may need to alter the view of that model for various reasons. In this section, you will learn how to define projections to serve up simplified and reduced views of resources.
+
+Spring Data Repositories usually return the domain model when using query methods.
+However, sometimes, you may need to alter the view of that model for various reasons.
+In this section, you will learn how to define projections to serve up simplified and reduced views of resources.
 
 Look at the following domain model:
 
@@ -747,16 +823,20 @@ interface PersonRepository extends CrudRepository<Person, Long> {
 }
 ----
 
-Spring Data will return the domain object including all of its attributes. There are two options just to retrieve the `address` attribute. One option is to define a repository for `Address` objects like this:
+Spring Data will return the domain object including all of its attributes.
+There are two options just to retrieve the `address` attribute.
+One option is to define a repository for `Address` objects like this:
 
 [source,java]
 ----
 interface AddressRepository extends CrudRepository<Address, Long> {}
 ----
 
-In this situation, using `PersonRepository` will still return the whole `Person` object. Using `AddressRepository` will return just the `Address`.
+In this situation, using `PersonRepository` will still return the whole `Person` object.
+Using `AddressRepository` will return just the `Address`.
 
-However, what if you do not want to expose `address` details at all? You can offer the consumer of your repository service an alternative by defining one or more projections.
+However, what if you do not want to expose `address` details at all?
+You can offer the consumer of your repository service an alternative by defining one or more projections.
 
 .Simple Projection
 ====
@@ -769,6 +849,7 @@ interface NoAddresses {  <1>
   String getLastName();  <3>
 }
 ----
+
 This projection has the following details:
 
 <1> A plain Java interface making it declarative.
@@ -776,7 +857,8 @@ This projection has the following details:
 <3> Export the `lastName`.
 ====
 
-The `NoAddresses` projection only has getters for `firstName` and `lastName` meaning that it will not serve up any address information. The query method definition returns in this case `NoAdresses` instead of `Person`.
+The `NoAddresses` projection only has getters for `firstName` and `lastName` meaning that it will not serve up any address information.
+The query method definition returns in this case `NoAdresses` instead of `Person`.
 
 [source,java]
 ----
@@ -786,4 +868,6 @@ interface PersonRepository extends CrudRepository<Person, Long> {
 }
 ----
 
-Projections declare a contract between the underlying type and the method signatures related to the exposed properties. Hence it is required to name getter methods according to the property name of the underlying type. If the underlying property is named `firstName`, then the getter method must be named `getFirstName` otherwise Spring Data is not able to look up the source property.
+Projections declare a contract between the underlying type and the method signatures related to the exposed properties.
+Hence it is required to name getter methods according to the property name of the underlying type.
+If the underlying property is named `firstName`, then the getter method must be named `getFirstName` otherwise Spring Data is not able to look up the source property.

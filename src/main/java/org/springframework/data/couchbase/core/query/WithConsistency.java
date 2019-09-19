@@ -16,19 +16,20 @@
 
 package org.springframework.data.couchbase.core.query;
 
-import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import org.springframework.data.annotation.QueryAnnotation;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
- * Annotation to set the scan consistency of N1QL queries with Couchbase.
- * This controls whether couchbase waits for all changes to be processed by an index
- * or whether stale results are acceptable.
+ * Annotation to set the scan consistency of N1QL queries with Couchbase. This controls whether couchbase waits for all
+ * changes to be processed by an index or whether stale results are acceptable.
  * <p/>
  * If not set, the default consistency set in {@link AbstractCouchbaseConfiguration#getDefaultConsistency()} is used.
  *
@@ -40,6 +41,6 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 @QueryAnnotation
 public @interface WithConsistency {
 
-  ScanConsistency value();
+	QueryScanConsistency value();
 
 }

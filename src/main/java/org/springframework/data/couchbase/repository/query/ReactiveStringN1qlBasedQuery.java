@@ -15,7 +15,10 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -23,16 +26,13 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
-
+import com.couchbase.client.java.json.JsonValue;
 
 /**
  * A reactive StringN1qlBasedQuery {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
  * <p/>
- * The statement can contain positional placeholders (eg. <code>name = $1</code>) that will map to the
- * method's parameters, in the same order.
+ * The statement can contain positional placeholders (eg. <code>name = $1</code>) that will map to the method's
+ * parameters, in the same order.
  * <p/>
  * The statement can also contain SpEL expressions enclosed in <code>#{</code> and <code>}</code>.
  * <p/>
@@ -42,41 +42,40 @@ import com.couchbase.client.java.query.Statement;
  */
 public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
-    private final StringBasedN1qlQueryParser queryParser;
-    private final SpelExpressionParser parser;
-    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final StringBasedN1qlQueryParser queryParser;
+	private final SpelExpressionParser parser;
+	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
-    protected String getTypeField() {
-        return getCouchbaseOperations().getConverter().getTypeKey();
-    }
+	public ReactiveStringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod,
+			CouchbaseOperations couchbaseOperations, SpelExpressionParser spelParser,
+			QueryMethodEvaluationContextProvider evaluationContextProvider) {
+		super(queryMethod, couchbaseOperations);
 
-    protected Class<?> getTypeValue() {
-        return getQueryMethod().getEntityInformation().getJavaType();
-    }
+		this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod, getCouchbaseOperations().getBucketName(),
+				getCouchbaseOperations().getConverter(), getTypeField(), getTypeValue());
+		this.parser = spelParser;
+		this.evaluationContextProvider = evaluationContextProvider;
+	}
 
-    public ReactiveStringN1qlBasedQuery(String statement,
-                                        CouchbaseQueryMethod queryMethod,
-                                        RxJavaCouchbaseOperations couchbaseOperations,
-                                        SpelExpressionParser spelParser,
-                                        QueryMethodEvaluationContextProvider evaluationContextProvider) {
-        super(queryMethod, couchbaseOperations);
+	protected String getTypeField() {
+		return getCouchbaseOperations().getConverter().getTypeKey();
+	}
 
-        this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod,
-                getCouchbaseOperations().getCouchbaseBucket().name(), getCouchbaseOperations().getConverter(), getTypeField(), getTypeValue());
-        this.parser = spelParser;
-        this.evaluationContextProvider = evaluationContextProvider;
-    }
+	protected Class<?> getTypeValue() {
+		return getQueryMethod().getEntityInformation().getJavaType();
+	}
 
-    @Override
-    protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
-        return this.queryParser.getPlaceholderValues(accessor);
-    }
+	@Override
+	protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
+		return this.queryParser.getPlaceholderValues(accessor);
+	}
 
-    @Override
-    public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
-        EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
-        String parsedStatement = queryParser.doParse(parser, evaluationContext, false);
-        return N1qlQuery.simple(parsedStatement).statement();
-    }
+	@Override
+	public N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+			ReturnedType returnedType) {
+		EvaluationContext evaluationContext = evaluationContextProvider
+				.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
+		return x(queryParser.doParse(parser, evaluationContext, false));
+	}
 
 }

@@ -15,21 +15,23 @@
  */
 
 package org.springframework.data.couchbase.core.mapping.id;
+
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
- * This annotation is targeted at {@link Document} interfaces, indicating that
- * the framework should generate the document key value using the specified generator
+ * This annotation is targeted at {@link Document} interfaces, indicating that the framework should generate the
+ * document key value using the specified generator
  *
  * @author Subhashni Balakrishnan
  */
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GeneratedValue {
 
