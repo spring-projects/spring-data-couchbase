@@ -15,8 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.Delete.deleteFrom;
-import static com.couchbase.client.java.query.dsl.Expression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
@@ -25,11 +24,12 @@ import org.slf4j.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.document.json.JsonValue;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -140,7 +140,7 @@ public class StringBasedN1qlQueryParser {
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
 
-		String delete = deleteFrom(i(bucketName)).toString();
+		String delete = N1QLExpression.delete().from(i(bucketName)).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();
 
 		return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);

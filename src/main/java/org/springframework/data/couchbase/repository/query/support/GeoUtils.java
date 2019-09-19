@@ -16,9 +16,7 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.couchbase.client.java.json.JsonArray;
 
 import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;

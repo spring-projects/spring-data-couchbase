@@ -5,7 +5,7 @@
 
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>3.2.0.BUILD-SNAPSHOT</version>
+    <version>4.0.0.BUILD-SNAPSHOT</version>
 
     <name>Spring Data Couchbase</name>
     <description>Spring Data integration for Couchbase</description>
@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>2.7.7</couchbase>
-        <couchbase.osgi>2.7.7</couchbase.osgi>
+        <couchbase>3.0.0-beta.1</couchbase>
+        <couchbase.osgi>3.0.0-beta.1</couchbase.osgi>
         <springdata.commons>2.2.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -87,7 +87,7 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <optional>true</optional>
+            <version>3.2.12.RELEASE</version>
         </dependency>
 
         <dependency>
@@ -109,13 +109,6 @@
             <artifactId>rxjava</artifactId>
             <version>${rxjava2}</version>
             <optional>true</optional>
-        </dependency>
-
-        <!-- Couchbase field level encryption library -->
-        <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>encryption</artifactId>
-            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -196,6 +189,11 @@
         <repository>
             <id>spring-libs-snapshot</id>
             <url>https://repo.spring.io/libs-snapshot</url>
+        </repository>
+        <repository>
+            <id>couchbase</id>
+            <name>Couchbase Preview Repository</name>
+            <url>http://files.couchbase.com/maven2</url>
         </repository>
     </repositories>
 

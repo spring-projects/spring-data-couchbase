@@ -20,23 +20,18 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 import java.util.List;
 
+import com.couchbase.client.core.config.ClusterConfig;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.PersistTo;
-import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.view.SpatialViewQuery;
-import com.couchbase.client.java.view.SpatialViewResult;
-import com.couchbase.client.java.view.ViewQuery;
-import com.couchbase.client.java.view.ViewResult;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryResult;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
 import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 
 
 /**
@@ -187,118 +182,47 @@ public interface CouchbaseOperations {
   <T> T findById(String id, Class<T> entityClass);
 
   /**
-   * Query a View for a list of documents of type T.
-   * <p/>
-   * <p>There is no need to {@link ViewQuery#includeDocs(boolean) set includeDocs} explicitly, since this method will
-   * manage the retrieval of documents internally. It is valid to pass in a empty constructed {@link ViewQuery} object.</p>
-   * <p/>
-   * <p>Weak consistency in the query (<code>stale(Stale.TRUE)</code>) can lead to some documents being unreachable due
-   * to their deletion not having been indexed. These deleted null documents are eliminated from the result of this
-   * method.</p>
-   * </p>
-   * <p>This method does not work with reduced views, because they by design do not contain references to original
-   * objects. Use the provided {@link #queryView} method for more flexibility and direct access.</p>
-   *
-   * @param query the Query object (also specifying view design document and view name).
-   * @param entityClass the entity to map to.
-   * @return the converted collection
-   */
-  <T> List<T> findByView(ViewQuery query, Class<T> entityClass);
-
-
-  /**
-   * Query a View with direct access to the {@link ViewResult}.
-   * <p>This method is available to ease the working with views by still wrapping exceptions into the Spring
-   * infrastructure.</p>
-   * <p>It is especially needed if you want to run reduced viewName queries, because they can't be mapped onto entities
-   * directly.</p>
-   *
-   * @param query the Query object (also specifying view design document and view name).
-   * @return ViewResult containing the results of the query.
-   */
-  ViewResult queryView(ViewQuery query);
-
-  /**
-   * Query a Spatial View for a list of documents of type T.
-   * </p>
-   * <p>There is no need to {@link SpatialViewQuery#includeDocs(boolean) set includeDocs} explicitly, since this method
-   * will manage the retrieval of documents internally. It is valid to pass in a empty constructed {@link SpatialViewQuery} object.</p>
-   * <p/>
-   * <p>Weak consistency in the query (<code>stale(Stale.TRUE)</code>) can lead to some documents being unreachable due
-   * to their deletion not having been indexed. These deleted null documents are eliminated from the result of this
-   * method.</p>
-   *
-   * @param query the SpatialViewQuery object (also specifying view design document and view name).
-   * @param entityClass the entity to map to.
-   * @return the converted collection
-   */
-  <T> List<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass);
-
-  /**
-   * Query a Spatial View with direct access to the {@link SpatialViewResult}.
-   * <p>This method is available to ease the working with spatial views by still wrapping exceptions into the Spring
-   * infrastructure.</p>
-   *
-   * @param query the SpatialViewQuery object (also specifying view design document and view name).
-   * @return SpatialViewResult containing the results of the query.
-   */
-  SpatialViewResult querySpatialView(SpatialViewQuery query);
-
-  /**
    * Query the N1QL Service for JSON data of type T. Enough data to construct the full
    * entity is expected to be selected, including the metadata (document id and cas), obtained through N1QL's query.
-   * <p>This is done via a {@link N1qlQuery} that contains a {@link Statement} and possibly
-   * additional query parameters ({@link N1qlParams}) and placeholder values if the
-   * statement contains placeholders.
+   * <p>This is done via a {@link String} that contains the final query to execute.
    * <br/>
-   * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
-   * <p/>
-   * <p>Weak consistency in the query (eg. <code>ScanConsistency.NOT_BOUND</code>) can lead to some documents being
-   * unreachable due to their deletion not having been indexed. These deleted null documents are eliminated from the
-   * result of this method.</p>
    *
-   * @param n1ql the N1QL query.
+   * @param n1ql the N1QL query string.
    * @param entityClass the target class for the returned entities.
    * @param <T> the entity class
    * @return the list of entities matching this query.
    * @throws CouchbaseQueryExecutionException if the id and cas are not selected.
    */
-  <T> List<T> findByN1QL(N1qlQuery n1ql, Class<T> entityClass);
+  <T> List<T> findByN1QL(N1QLQuery n1ql, Class<T> entityClass);
 
   /**
    * Query the N1QL Service for partial JSON data of type T. The selected field will be
    * used in a {@link TranslationService#decodeFragment(String, Class) straightforward decoding}
    * (no document, metadata like id nor cas) to map to a "fragment class".
-   * <p>This is done via a {@link N1qlQuery} that contains a {@link Statement} and possibly
-   * additional query parameters ({@link N1qlParams}) and placeholder values if the
-   * statement contains placeholders.
+   * <p>This is done via a {@link String} that contains represents a n1ql query.
    * <br/>
-   * Use {@link N1qlQuery}'s factory methods to construct such a Query.</p>
-   * <p/>
    * <p>Weak consistency in the query (eg. <code>ScanConsistency.NOT_BOUND</code>) can lead to some documents being
    * unreachable due to their deletion not having been indexed. These deleted null documents are eliminated from the
    * result of this method.</p>
    *
-   * @param n1ql the N1QL query.
+   * @param n1ql the N1QL query string
    * @param fragmentClass the target class for the returned fragments.
    * @param <T> the fragment class
    * @return the list of entities matching this query.
    */
-  <T> List<T> findByN1QLProjection(N1qlQuery n1ql, Class<T> fragmentClass);
+  <T> List<T> findByN1QLProjection(N1QLQuery n1ql, Class<T> fragmentClass);
 
   /**
-   * Query the N1QL Service with direct access to the {@link N1qlQueryResult}.
+   * Query the N1QL Service with direct access to the {@link QueryResult}.
    * <p>
-   * This is done via a {@link N1qlQuery} that can
-   * contain a {@link Statement}, additional query parameters ({@link N1qlParams})
-   * and placeholder values if the statement contains placeholders.</p>
+   * This is done via a {@link String} that can
+   * contains the final query to execute</p>
    * <p>
-   * Use {@link N1qlQuery}'s factory methods to construct this.</p>
    *
-   * @param n1ql the N1QL query.
-   * @return {@link N1qlQueryResult} containing the results of the n1ql query.
+   * @param query the N1QL query string.
+   * @return {@link QueryResult} containing the results of the n1ql query.
    */
-  N1qlQueryResult queryN1QL(N1qlQuery n1ql);
+  QueryResult queryN1QL(N1QLQuery query);
 
   /**
    * Checks if the given document exists.
@@ -347,7 +271,7 @@ public interface CouchbaseOperations {
   void remove(Collection<?> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo);
 
   /**
-   * Executes a BucketCallback translating any exceptions as necessary.
+   * Executes a CollectionCallback translating any exceptions as necessary.
    * <p/>
    * Allows for returning a result object, that is a domain object or a collection of domain objects.
    *
@@ -355,22 +279,35 @@ public interface CouchbaseOperations {
    * @param <T> the return type.
    * @return the return type.
    */
-  <T> T execute(BucketCallback<T> action);
+  <T> T execute(CollectionCallback<T> action);
 
   /**
-   * Returns the linked {@link Bucket} to this template.
+   * Returns the linked {@link com.couchbase.client.java.Collection} to this template.
    *
-   * @return the client used for the template.
+   * @return the {@link com.couchbase.client.java.Collection} linked to this template.
+   */
+  com.couchbase.client.java.Collection getCouchbaseCollection();
+
+  /**
+   * Returns the linked {@link Bucket} for this template.
+   *
+   * @return the {@link Bucket} for this template
    */
   Bucket getCouchbaseBucket();
 
   /**
-   * Returns the {@link ClusterInfo} about the cluster linked to this template.
+   * Returns the {@link ClusterConfig} about the cluster linked to this template.
    *
    * @return the info about the cluster the template connects to.
    */
-  ClusterInfo getCouchbaseClusterInfo();
+  ClusterConfig getCouchbaseClusterConfig();
 
+  /**
+   * Returns the {@link Cluster} for this template.
+   *
+   * @return the {@link Cluster} this template connects to.
+   */
+  Cluster getCouchbaseCluster();
   /**
    * Returns the underlying {@link CouchbaseConverter}.
    *

@@ -17,9 +17,9 @@
 package org.springframework.data.couchbase.core;
 
 
+import java.time.Duration;
+
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -27,27 +27,27 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import com.couchbase.client.core.config.ClusterConfig;
+import com.couchbase.client.core.error.ErrorCodeAndMessage;
+import com.couchbase.client.core.error.KeyExistsException;
+import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.core.error.QueryException;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.PersistTo;
-import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.document.Document;
-import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.couchbase.client.java.error.TranscodingException;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
-import com.couchbase.client.java.query.N1qlQueryRow;
-import com.couchbase.client.java.util.features.CouchbaseFeature;
-import com.couchbase.client.java.view.AsyncViewResult;
-import com.couchbase.client.java.view.AsyncViewRow;
-import com.couchbase.client.java.view.SpatialViewQuery;
-import com.couchbase.client.java.view.SpatialViewResult;
-import com.couchbase.client.java.view.SpatialViewRow;
-import com.couchbase.client.java.view.ViewQuery;
-import com.couchbase.client.java.view.ViewResult;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.codec.JsonTranscoder;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.GetOptions;
+import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.RemoveOptions;
+import com.couchbase.client.java.kv.ReplaceOptions;
+import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.core.error.CASMismatchException;
+import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.query.QueryResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
@@ -55,8 +55,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.util.TypeInformation;
@@ -83,8 +83,8 @@ import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 
-import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 
 /**
  * @author Michael Nitschinger
@@ -93,25 +93,26 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
  * @author Young-Gu Chae
  * @author Mark Paluch
  * @author Tayeb Chlyah
+ * @author David Kelly
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventPublisherAware {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTemplate.class);
   private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
-  private static final Collection<String> ITERABLE_CLASSES;
+  private static final java.util.Collection<String> ITERABLE_CLASSES;
 
   static {
     final Set<String> iterableClasses = new HashSet<String>();
     iterableClasses.add(List.class.getName());
-    iterableClasses.add(Collection.class.getName());
+    iterableClasses.add(java.util.Collection.class.getName());
     iterableClasses.add(Iterator.class.getName());
-    ITERABLE_CLASSES = Collections.unmodifiableCollection(iterableClasses);
+    ITERABLE_CLASSES = java.util.Collections.unmodifiableCollection(iterableClasses);
   }
 
-  private final Bucket client;
+  private final Collection client;
   private final CouchbaseConverter converter;
   private final TranslationService translationService;
-  private final ClusterInfo clusterInfo;
+  private final Cluster cluster;
   private KeySettings keySettings;
 
 
@@ -124,24 +125,23 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   //default value is in case the template isn't constructed through configuration mechanisms that use the setter.
   private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
 
-  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client) {
-    this(clusterInfo, client, null, null);
+  public CouchbaseTemplate(final Cluster cluster, final Collection client) {
+    this(cluster, client, null, null);
   }
 
-  public CouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client, final TranslationService translationService) {
-    this(clusterInfo, client, null, translationService);
+  public CouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
+    this(cluster, client, null, translationService);
   }
 
-  public CouchbaseTemplate(final ClusterInfo clusterInfo,
-                           final Bucket client,
+  public CouchbaseTemplate(final Cluster cluster,
+                           final Collection client,
                            final CouchbaseConverter converter,
                            final TranslationService translationService) {
-    this.clusterInfo = clusterInfo;
+    this.cluster = cluster;
     this.client = client;
     this.converter = converter == null ? getDefaultConverter() : converter;
     this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
     this.mappingContext = this.converter.getMappingContext();
-
   }
 
 
@@ -155,30 +155,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     MappingCouchbaseConverter c = new MappingCouchbaseConverter(new CouchbaseMappingContext());
     c.afterPropertiesSet();
     return c;
-  }
-
-  /**
-   * Encode a {@link CouchbaseDocument} into a storable representation (JSON) then prepare
-   * it for storage as a {@link Document}.
-   */
-  private Document<String> encodeAndWrap(final CouchbaseDocument source, Long version) {
-    String encodedContent = translationService.encode(source);
-    if (version == null) {
-      return RawJsonDocument.create(source.getId(), source.getExpiration(), encodedContent);
-    }
-    else {
-      return RawJsonDocument.create(source.getId(), source.getExpiration(), encodedContent, version);
-    }
-  }
-
-
-  /**
-   * Decode a {@link Document Document&lt;String&gt;} containing a JSON string
-   * into a {@link CouchbaseStorable}
-   */
-  private CouchbaseStorable decodeAndUnwrap(final Document<String> source, final CouchbaseStorable target) {
-    //TODO at some point the necessity of CouchbaseStorable should be re-evaluated
-    return translationService.decode(source.content(), target);
   }
 
   /**
@@ -228,6 +204,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     this.eventPublisher = eventPublisher;
   }
 
+
   /**
    * Helper method to publish an event if the event publisher is set.
    *
@@ -251,12 +228,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public void save(Collection<?> batchToSave) {
+  public void save(java.util.Collection<?> batchToSave) {
     save(batchToSave, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
-  public void save(Collection<?> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+  public void save(java.util.Collection<?> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToSave) {
       doPersist(o, persistTo, replicateTo, PersistType.SAVE);
     }
@@ -273,12 +250,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public void insert(Collection<?> batchToInsert) {
+  public void insert(java.util.Collection<?> batchToInsert) {
     insert(batchToInsert, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
-  public void insert(Collection<?> batchToInsert, PersistTo persistTo, ReplicateTo replicateTo) {
+  public void insert(java.util.Collection<?> batchToInsert, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToInsert) {
       doPersist(o, persistTo, replicateTo, PersistType.INSERT);
     }
@@ -295,12 +272,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public void update(Collection<?> batchToUpdate) {
+  public void update(java.util.Collection<?> batchToUpdate) {
     update(batchToUpdate, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
-  public void update(Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo) {
+  public void update(java.util.Collection<?> batchToUpdate, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToUpdate) {
       doPersist(o, persistTo, replicateTo, PersistType.UPDATE);
     }
@@ -309,218 +286,96 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   @Override
   public <T> T findById(final String id, Class<T> entityClass) {
     final CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
-    RawJsonDocument result = execute(new BucketCallback<RawJsonDocument>() {
+    return execute(new CollectionCallback<T>() {
       @Override
-      public RawJsonDocument doInBucket() {
+      public T doInCollection() {
+        GetResult res;
         if (entity.isTouchOnRead()) {
-          return client.getAndTouch(id, entity.getExpiry(), RawJsonDocument.class);
+          Duration exp = Duration.ofSeconds((long)entity.getExpiry());
+          res = client.getAndTouch(id, exp);
         } else {
-          return client.get(id, RawJsonDocument.class);
+          res = client.get(id);
         }
-      }
-    });
-
-    return mapToEntity(id, result, entityClass);
-  }
-
-  @Override
-  public <T> List<T> findByView(ViewQuery query, final Class<T> entityClass) {
-    //we'll always need to get documents, as a RawJsonDocument, so we should force that target class
-    //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
-    if (!query.isIncludeDocs() || !query.includeDocsTarget().equals(RawJsonDocument.class)) {
-      if (query.isOrderRetained()) {
-        query.includeDocsOrdered(RawJsonDocument.class);
-      } else {
-        query.includeDocs(RawJsonDocument.class);
-      }
-    }
-    //we'll always map the document to the entity, hence reduce never makes sense.
-    query.reduce(false);
-
-    return executeAsync(client.async().query(query))
-        .flatMap(new Func1<AsyncViewResult, Observable<AsyncViewRow>>() {
-          @Override
-          public Observable<AsyncViewRow> call(AsyncViewResult asyncViewResult) {
-            return asyncViewResult
-                .error()
-                .flatMap(new Func1<JsonObject, Observable<AsyncViewRow>>() {
-                  @Override
-                  public Observable<AsyncViewRow> call(JsonObject error) {
-                    return Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query due to the following view error: " + error.toString()));
-                  }})
-                .switchIfEmpty(asyncViewResult.rows());
-          }
-        })
-        .flatMap(new Func1<AsyncViewRow, Observable<T>>() {
-          @Override
-          public Observable<T> call(AsyncViewRow row) {
-            final String id = row.id();
-            return row
-                .document(RawJsonDocument.class)
-                .map(new Func1<RawJsonDocument, T>() {
-                  @Override
-                  public T call(RawJsonDocument rawJsonDocument) {
-                    //cope with potential weak consistency and deletions
-                    T entity = mapToEntity(id, rawJsonDocument, entityClass);
-                    return entity;
-                  }
-                });
-          }})
-        .filter(new Func1<T, Boolean>() {
-          @Override
-          public Boolean call(T t) {
-            return t != null;
-          }
-        })
-        .onErrorResumeNext(new Func1<Throwable, Observable<T>>() {
-          @Override
-          public Observable<T> call(Throwable throwable) {
-            if (throwable instanceof TranscodingException) {
-              return Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query", throwable));
-            } else {
-              return Observable.error(throwable);
-            }
-          }
-        })
-        .toList()
-        .toBlocking()
-        .single();
-  }
-
-  @Override
-  public ViewResult queryView(final ViewQuery query) {
-    return execute(new BucketCallback<ViewResult>() {
-      @Override
-      public ViewResult doInBucket() {
-        return client.query(query);
+        return mapToEntity(id, res.contentAs(entityClass), res.cas());
       }
     });
   }
 
+
   @Override
-  public <T> List<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass) {
-    //we'll always need to get documents, as a RawJsonDocument, so we should force includeDocs(false)
-    //so that the caller doesn't set a bad target class unintentionally, pre-loading with a bad type.
-    query.includeDocs(false);
+  public <T> List<T> findByN1QL(N1QLQuery n1ql, Class<T> entityClass) {
 
     try {
-      final SpatialViewResult response = querySpatialView(query);
-      if (response.error() != null) {
-        throw new CouchbaseQueryExecutionException("Unable to execute spatial view query due to the following view error: " +
-            response.error().toString());
+      // TODO: we need to write a custom Serializer.  For now we will convert to json
+      //       and grab the cas and id fields from that, then mapToEntity.  This has
+      //       efficiency issues (right now mostly space) which we should eliminate
+      QueryResult result = queryN1QL(n1ql);
+
+      // mapped entities end up in this list
+      List<T> returnVal = new ArrayList<>();
+
+      // for now lets get 2 lists and use the json to get the cas and id, then
+      // we can feed the T into mapToEntity for now.
+      List<JsonObject> jsonRows = result.rowsAs(JsonObject.class);
+      List<T> objRows = result.rowsAs(entityClass);
+
+      Iterator<JsonObject> jsonIt = jsonRows.iterator();
+      Iterator<T> objIt = objRows.iterator();
+      while (jsonIt.hasNext() && objIt.hasNext()) {
+        String id = jsonIt.next().getString(SELECT_ID);
+        Long cas = jsonIt.next().getLong(SELECT_CAS);
+        T obj = objIt.next();
+
+        // append to end of return value list (maintaining order that way)
+        returnVal.add(mapToEntity(id, obj, cas));
       }
+      return returnVal;
 
-      List<SpatialViewRow> allRows = response.allRows();
-
-      final List<T> result = new ArrayList<T>(allRows.size());
-      for (final SpatialViewRow row : allRows) {
-        //cope with potential weak consistency and deletions
-        T entity = mapToEntity(row.id(), row.document(RawJsonDocument.class), entityClass);
-        if (entity != null) {
-          result.add(entity);
-        }
+    } catch (QueryException e) {
+      StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
+      for ( ErrorCodeAndMessage error : e.errors()) {
+        // nice to have the code in there, so lets just toString it
+        message.append('\n').append(error);
       }
-
-      return result;
-    }
-    catch (TranscodingException e) {
-      throw new CouchbaseQueryExecutionException("Unable to execute view query", e);
+      throw new CouchbaseQueryExecutionException(message.toString());
     }
   }
 
   @Override
-  public SpatialViewResult querySpatialView(final SpatialViewQuery query) {
-    return execute(new BucketCallback<SpatialViewResult>() {
+  public <T> List<T> findByN1QLProjection(N1QLQuery n1ql, Class<T> entityClass) {
+    try {
+      return queryN1QL(n1ql).rowsAs(entityClass);
+    }
+    catch (QueryException e) {
+      StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
+      for (ErrorCodeAndMessage error : e.errors()) {
+        message.append('\n').append(error);
+      }
+      throw new CouchbaseQueryExecutionException(message.toString());
+    }
+  }
+
+  @Override
+  public QueryResult queryN1QL(final N1QLQuery query) {
+    return execute(new CollectionCallback<QueryResult>() {
       @Override
-      public SpatialViewResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
-        return client.query(query);
-      }
-    });
-  }
-
-  @Override
-  public <T> List<T> findByN1QL(N1qlQuery n1ql, Class<T> entityClass) {
-    checkN1ql();
-    try {
-      N1qlQueryResult queryResult = queryN1QL(n1ql);
-
-      if (queryResult.finalSuccess()) {
-        List<N1qlQueryRow> allRows = queryResult.allRows();
-        List<T> result = new ArrayList<T>(allRows.size());
-        for (N1qlQueryRow row : allRows) {
-          JsonObject json = row.value();
-          String id = json.getString(SELECT_ID);
-          Long cas = json.getLong(SELECT_CAS);
-          if (id == null || cas == null) {
-            throw new CouchbaseQueryExecutionException("Unable to retrieve enough metadata for N1QL to entity mapping, " +
-                "have you selected " + SELECT_ID + " and " + SELECT_CAS + "?");
-          }
-          json = json.removeKey(SELECT_ID).removeKey(SELECT_CAS);
-          RawJsonDocument entityDoc = RawJsonDocument.create(id, json.toString(), cas);
-          T decoded = mapToEntity(id, entityDoc, entityClass);
-          result.add(decoded);
-        }
-        return result;
-      }
-      else {
-        StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
-        for (JsonObject error : queryResult.errors()) {
-          message.append('\n').append(error);
-        }
-        throw new CouchbaseQueryExecutionException(message.toString());
-      }
-    }
-    catch (TranscodingException e) {
-      throw new CouchbaseQueryExecutionException("Unable to execute query", e);
-    }
-  }
-
-  @Override
-  public <T> List<T> findByN1QLProjection(N1qlQuery n1ql, Class<T> entityClass) {
-    checkN1ql();
-    try {
-      N1qlQueryResult queryResult = queryN1QL(n1ql);
-
-      if (queryResult.finalSuccess()) {
-        List<N1qlQueryRow> allRows = queryResult.allRows();
-        List<T> result = new ArrayList<T>(allRows.size());
-        for (N1qlQueryRow row : allRows) {
-          JsonObject json = row.value();
-          T decoded = translationService.decodeFragment(json.toString(), entityClass);
-          result.add(decoded);
-        }
-        return result;
-      }
-      else {
-        StringBuilder message = new StringBuilder("Unable to execute query due to the following n1ql errors: ");
-        for (JsonObject error : queryResult.errors()) {
-          message.append('\n').append(error);
-        }
-        throw new CouchbaseQueryExecutionException(message.toString());
-      }
-    }
-    catch (TranscodingException e) {
-      throw new CouchbaseQueryExecutionException("Unable to execute query", e);
-    }
-  }
-
-  @Override
-  public N1qlQueryResult queryN1QL(final N1qlQuery query) {
-    checkN1ql();
-    return execute(new BucketCallback<N1qlQueryResult>() {
-      @Override
-      public N1qlQueryResult doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
-        return client.query(query);
+      public QueryResult doInCollection() {
+        return cluster.query(query.getExpression(), query.getOptions());
       }
     });
   }
 
   @Override
   public boolean exists(final String id) {
-    return execute(new BucketCallback<Boolean>() {
+    return execute(new CollectionCallback<Boolean>() {
       @Override
-      public Boolean doInBucket() throws TimeoutException, ExecutionException, InterruptedException {
-        return client.exists(id);
+      public Boolean doInCollection() throws TimeoutException, ExecutionException, InterruptedException {
+        try {
+          client.exists(id);
+          return true;
+        } catch (KeyNotFoundException e) {
+          return false;
+        }
       }
     });
   }
@@ -536,21 +391,21 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
   }
 
   @Override
-  public void remove(Collection<?> batchToRemove) {
+  public void remove(java.util.Collection<?> batchToRemove) {
     remove(batchToRemove, PersistTo.NONE, ReplicateTo.NONE);
   }
 
   @Override
-  public void remove(Collection<?> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
+  public void remove(java.util.Collection<?> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
     for (Object o : batchToRemove) {
       doRemove(o, persistTo, replicateTo);
     }
   }
 
   @Override
-  public <T> T execute(BucketCallback<T> action) {
+  public <T> T execute(CollectionCallback<T> action) {
     try {
-      return action.doInBucket();
+      return action.doInCollection();
     }
     catch (RuntimeException e) {
       throw exceptionTranslator.translateExceptionIfPossible(e);
@@ -600,38 +455,37 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     converter.write(objectToPersist, converted);
 
     maybeEmitEvent(new BeforeSaveEvent<Object>(objectToPersist, converted));
-    execute(new BucketCallback<Boolean>() {
+    execute(new CollectionCallback<Boolean>() {
       @Override
-      public Boolean doInBucket() throws InterruptedException, ExecutionException {
+      public Boolean doInCollection() throws InterruptedException, ExecutionException {
         String generatedId = addCommonPrefixAndSuffix(converted.getId());
         converted.setId(generatedId);
-        Document<String> doc = encodeAndWrap(converted, version);
-        Document<String> storedDoc;
         //We will check version only if required
         boolean versionPresent = versionProperty != null;
         //If version is not set - assumption that document is new, otherwise updating
         boolean existingDocument = version != null && version > 0L;
 
+        long cas = 0;
         try {
           switch (persistType) {
             case SAVE:
               if (!versionPresent) {
                 //No version field - no cas
-                storedDoc = client.upsert(doc, persistTo, replicateTo);
+                cas = client.upsert(converted.getId(), converted.getPayload(), UpsertOptions.upsertOptions().durability(persistTo, replicateTo)).cas();
               } else if (existingDocument) {
                 //Updating existing document with cas
-                storedDoc = client.replace(doc, persistTo, replicateTo);
+                cas = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().durability(persistTo, replicateTo)).cas();
               } else {
                 //Creating new document
-                storedDoc = client.insert(doc, persistTo, replicateTo);
+                cas = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo)).cas();
               }
               break;
             case UPDATE:
-              storedDoc = client.replace(doc, persistTo, replicateTo);
+              cas = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().durability(persistTo, replicateTo)).cas();
               break;
             case INSERT:
             default:
-              storedDoc = client.insert(doc, persistTo, replicateTo);
+              cas = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo)).cas();
               break;
           }
           CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
@@ -640,15 +494,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
                 accessor.setProperty(idProperty, generatedId);
           }
 
-          if (storedDoc != null && storedDoc.cas() != 0) {
+          if (cas != 0) {
             //inject new cas into the bean
             if (versionProperty != null) {
-              accessor.setProperty(versionProperty, storedDoc.cas());
+              accessor.setProperty(versionProperty, cas);
             }
             return true;
           }
           return false;
-        } catch (DocumentAlreadyExistsException e) {
+        } catch (KeyExistsException e) {
           throw new OptimisticLockingFailureException(persistType.getSpringDataOperationName() +
                   " document with version value failed: " + version, e);
         } catch (CASMismatchException e) {
@@ -668,12 +522,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     maybeEmitEvent(new BeforeDeleteEvent<Object>(objectToRemove));
     if (objectToRemove instanceof String) {
-      execute(new BucketCallback<Boolean>() {
+      execute(new CollectionCallback<Boolean>() {
         @Override
-        public Boolean doInBucket() throws InterruptedException, ExecutionException {
+        public Boolean doInCollection() throws InterruptedException, ExecutionException {
           try {
-            RawJsonDocument deletedDoc = client.remove((String) objectToRemove , persistTo, replicateTo, RawJsonDocument.class);
-            return deletedDoc != null;
+            client.remove((String) objectToRemove , RemoveOptions.removeOptions().durability(persistTo, replicateTo));
+            return true;
           } catch (Exception e) {
             handleWriteResultError("Delete document failed: " + e.getMessage(), e);
             return false; //this could be skipped if WriteResultChecking.EXCEPTION
@@ -687,13 +541,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     final CouchbaseDocument converted = new CouchbaseDocument();
     converter.write(objectToRemove, converted);
 
-    execute(new BucketCallback<Boolean>() {
+    execute(new CollectionCallback<Boolean>() {
       @Override
-      public Boolean doInBucket() {
+      public Boolean doInCollection() {
         try {
-          RawJsonDocument deletedDoc = client.remove(addCommonPrefixAndSuffix(converted.getId()), persistTo, replicateTo
-              , RawJsonDocument.class);
-          return deletedDoc != null;
+          client.remove(addCommonPrefixAndSuffix(converted.getId()), RemoveOptions.removeOptions().durability(persistTo, replicateTo));
+          return true;
         } catch (Exception e) {
           handleWriteResultError("Delete document failed: " + e.getMessage(), e);
           return false; //this could be skipped if WriteResultChecking.EXCEPTION
@@ -703,20 +556,17 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     maybeEmitEvent(new AfterDeleteEvent<Object>(objectToRemove));
   }
 
-  private <T> T mapToEntity(String id, Document<String> data, Class<T> entityClass) {
+  private <T> T mapToEntity(String id, T readEntity, long cas) {
 
-    if (data == null) {
+    if (readEntity == null) {
       return null;
     }
-
-    final CouchbaseDocument converted = new CouchbaseDocument(id);
-    T readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
 
     final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
     CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
 
     if (persistentEntity.getVersionProperty() != null) {
-      accessor.setProperty(persistentEntity.getVersionProperty(), data.cas());
+      accessor.setProperty(persistentEntity.getVersionProperty(), cas);
     }
 
     persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
@@ -746,27 +596,32 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
   }
 
+/*  I believe this isn't necessary - we wont be supporting servers from before n1ql
   private void checkN1ql() {
-    if (!getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL)) {
+    if (!getCouchbaseClusterConfig().clusterCapabilities(CouchbaseFeature.N1QL)) {
       throw new UnsupportedCouchbaseFeatureException("Detected usage of N1QL in template, which is unsupported on this cluster",
           CouchbaseFeature.N1QL);
     }
-  }
+  } */
 
   @Override
   public Bucket getCouchbaseBucket() {
-    return this.client;
-  }
-
-  @Override
-  public ClusterInfo getCouchbaseClusterInfo() {
-    return this.clusterInfo;
+    return cluster.bucket(client.bucketName());
   }
 
   @Override
   public CouchbaseConverter getConverter() {
     return this.converter;
   }
+
+  @Override
+  public ClusterConfig getCouchbaseClusterConfig() { return cluster.core().clusterConfig(); }
+
+  @Override
+  public Collection getCouchbaseCollection() { return client; }
+
+  @Override
+  public Cluster getCouchbaseCluster() { return cluster; }
 
   @Override
   public Consistency getDefaultConsistency() {

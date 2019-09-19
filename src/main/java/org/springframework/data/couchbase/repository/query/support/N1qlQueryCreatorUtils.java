@@ -16,33 +16,26 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import static com.couchbase.client.java.query.dsl.Expression.*;
-
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.json.JsonArray;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.ConvertingIterator;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.repository.query.parser.Part;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.functions.PatternMatchingFunctions;
-import com.couchbase.client.java.query.dsl.functions.StringFunctions;
-
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 /**
  * Utils for creating part tree expressions
  *
  * @author Subhashni Balakrishnan
  */
 public class N1qlQueryCreatorUtils {
-    public static Expression prepareExpression(CouchbaseConverter converter, Part part, Iterator<Object> iterator, AtomicInteger position, JsonArray placeHolderValues) {
+    public static N1QLExpression prepareExpression(CouchbaseConverter converter, Part part, Iterator<Object> iterator, AtomicInteger position, JsonArray placeHolderValues) {
         PersistentPropertyPath<CouchbasePersistentProperty> path = N1qlUtils.getPathWithAlternativeFieldNames(
                 converter, part.getProperty());
         ConvertingIterator parameterValues = new ConvertingIterator(iterator, converter);
@@ -67,15 +60,15 @@ public class N1qlQueryCreatorUtils {
     }
 
 
-    public static Expression createExpression(Part.Type partType, String fieldNamePath, boolean ignoreCase,
+    public static N1QLExpression createExpression(Part.Type partType, String fieldNamePath, boolean ignoreCase,
                                               Iterator<Object> parameterValues, AtomicInteger position, JsonArray placeHolderValues) {
         //create the left hand side of the expression, taking ignoreCase into account
 
-        Expression left = ignoreCase ? StringFunctions.lower(x(fieldNamePath)) : x(fieldNamePath);
-        Expression exp;
+        N1QLExpression left = ignoreCase ? (x(fieldNamePath).lower()) : x(fieldNamePath);
+        N1QLExpression exp;
         switch (partType) {
             case BETWEEN:
-                exp = left.between(x(getPlaceHolder(position, ignoreCase)).and(x(getPlaceHolder(position, ignoreCase))));
+                exp = left.between(getPlaceHolder(position, ignoreCase).and(getPlaceHolder(position, ignoreCase)));
                 placeHolderValues.add(getValue(parameterValues));
                 placeHolderValues.add(getValue(parameterValues));
                 break;
@@ -120,19 +113,19 @@ public class N1qlQueryCreatorUtils {
                 placeHolderValues.add(getValue(parameterValues));
                 break;
             case STARTING_WITH:
-                exp = left.like(getPlaceHolder(position, ignoreCase) + " || '%'");
+                exp = left.like(x(getPlaceHolder(position, ignoreCase) + " || '%'"));
                 placeHolderValues.add(getValue(parameterValues));
                 break;
             case ENDING_WITH:
-                exp = left.like("'%' || " + getPlaceHolder(position, ignoreCase));
+                exp = left.like(x("'%' || " + getPlaceHolder(position, ignoreCase)));
                 placeHolderValues.add(getValue(parameterValues));
                 break;
             case NOT_CONTAINING:
-                exp = left.notLike("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'");
+                exp = left.notLike(x("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'"));
                 placeHolderValues.add(getValue(parameterValues));
                 break;
             case CONTAINING:
-                exp = left.like("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'");
+                exp = left.like(x("'%' || " + getPlaceHolder(position, ignoreCase) + " || '%'"));
                 placeHolderValues.add(getValue(parameterValues));
                 break;
             case NOT_IN:
@@ -164,10 +157,10 @@ public class N1qlQueryCreatorUtils {
         return exp;
     }
 
-    protected static String getPlaceHolder(AtomicInteger position, boolean ignoreCase) {
-        String placeHolder = "$" + position.getAndIncrement();
+    protected static N1QLExpression getPlaceHolder(AtomicInteger position, boolean ignoreCase) {
+        N1QLExpression placeHolder = x("$" + position.getAndIncrement());
         if (ignoreCase) {
-            placeHolder = StringFunctions.lower(x(placeHolder)).toString();
+            placeHolder = placeHolder.lower();
         }
         return placeHolder;
     }
@@ -184,14 +177,14 @@ public class N1qlQueryCreatorUtils {
         return pattern;
     }
 
-    protected static Expression like(Iterator<Object> parameterValues, boolean ignoreCase,
+    protected static N1QLExpression like(Iterator<Object> parameterValues, boolean ignoreCase,
                                      boolean anyPrefix, boolean anySuffix) {
         Object next = parameterValues.next();
         if (next == null) {
-            return Expression.NULL();
+            return N1QLExpression.NULL();
         }
 
-        Expression converted;
+        N1QLExpression converted;
         if (next instanceof String) {
             String pattern = (String) next;
             if (anyPrefix) {
@@ -207,7 +200,7 @@ public class N1qlQueryCreatorUtils {
         }
 
         if (ignoreCase) {
-            return StringFunctions.lower(converted);
+            return converted.lower();
         }
         return converted;
     }

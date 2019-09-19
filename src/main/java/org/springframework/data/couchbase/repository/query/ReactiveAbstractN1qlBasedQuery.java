@@ -15,15 +15,15 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.util.Map;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.json.JsonValue;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
@@ -46,7 +46,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         this.couchbaseOperations = operations;
     }
 
-    protected abstract Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
+    protected abstract N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
 
     protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
@@ -59,17 +59,17 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         Class<?> typeToRead = returnedType.getTypeToRead();
         typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
-        Statement statement = getStatement(accessor, parameters, returnedType);
+        N1QLExpression expression = getExpression(accessor, parameters, returnedType);
         JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
         //prepare the final query
-        N1qlQuery query = N1qlUtils.buildQuery(statement, queryPlaceholderValues, getScanConsistency());
+        N1QLQuery query = N1qlUtils.buildQuery(expression, queryPlaceholderValues, getScanConsistency());
         return ReactiveWrapperConverters.toWrapper(
                 processor.processResult(executeDependingOnType(query, queryMethod, typeToRead)), Flux.class);
     }
 
 
-    protected Object executeDependingOnType(N1qlQuery query,
+    protected Object executeDependingOnType(N1QLQuery query,
                                             QueryMethod queryMethod,
                                             Class<?> typeToRead) {
 
@@ -84,18 +84,18 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         }
     }
 
-    private void logIfNecessary(N1qlQuery query) {
+    private void logIfNecessary(N1QLQuery query) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Executing N1QL query: " + query.n1ql());
         }
     }
 
-    protected Object execute(N1qlQuery query, Class<?> typeToRead) {
+    protected Object execute(N1QLQuery query, Class<?> typeToRead) {
         logIfNecessary(query);
         return couchbaseOperations.findByN1QL(query, typeToRead);
     }
 
-    protected Object executeSingleProjection(N1qlQuery query, final Class<?> typeToRead) {
+    protected Object executeSingleProjection(N1QLQuery query, final Class<?> typeToRead) {
         logIfNecessary(query);
         return couchbaseOperations.findByN1QLProjection(query, Map.class)
                 .map(m -> {
@@ -117,7 +117,8 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         return this.couchbaseOperations;
     }
 
-    protected ScanConsistency getScanConsistency() {
+
+    protected QueryScanConsistency getScanConsistency() {
 
       if (queryMethod.hasConsistencyAnnotation()) {
         return queryMethod.getConsistencyAnnotation().value();

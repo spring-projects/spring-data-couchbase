@@ -21,6 +21,8 @@ import static org.springframework.data.couchbase.CouchbaseTestHelper.getReposito
 import java.util.Arrays;
 import java.util.List;
 
+import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.java.Collection;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,11 +39,6 @@ import org.springframework.data.repository.core.support.ReactiveRepositoryFactor
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
-
 /**
  * @author Subhashni Balakrishnan
  */
@@ -54,7 +51,7 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	public TestName testName = new TestName();
 
 	@Autowired
-	private Bucket client;
+	private Collection client;
 
 	@Autowired
 	private ReactiveRepositoryOperationsMapping operationsMapping;
@@ -73,7 +70,7 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	private void remove(String key) {
 		try {
 			client.remove(key);
-		} catch (DocumentDoesNotExistException e) {
+		} catch (KeyNotFoundException e) {
 		}
 	}
 
@@ -95,13 +92,7 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	}
 
 	@Test
-	/**
-	 * This test uses/assumes a default viewName called "all" that is configured on Couchbase.
-	 */
 	public void shouldFindAll() {
-		// do a non-stale query to populate data for testing.
-		client.query(ViewQuery.from("reactiveUser", "all").stale(Stale.FALSE));
-
 		List<ReactiveUser> allUsers = repository.findAll().collectList().block();
 		int size = 0;
 		for (ReactiveUser u : allUsers) {
@@ -114,9 +105,6 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldCount() {
-		// do a non-stale query to populate data for testing.
-		client.query(ViewQuery.from("reactiveUser", "all").stale(Stale.FALSE));
-
 		assertEquals("100", repository.count().block().toString());
 	}
 

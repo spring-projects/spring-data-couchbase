@@ -17,7 +17,8 @@
 package org.springframework.data.couchbase.core.mapping;
 
 import java.util.UUID;
-import com.couchbase.client.java.repository.annotation.Id;
+
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
 
 /**

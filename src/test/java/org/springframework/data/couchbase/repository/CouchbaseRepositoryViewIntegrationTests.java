@@ -27,11 +27,8 @@ import java.util.List;
 import java.util.Set;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
-import com.couchbase.client.java.view.ViewResult;
-import org.hamcrest.Matchers;
+import com.couchbase.client.java.json.JsonObject;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,24 +67,6 @@ public class CouchbaseRepositoryViewIntegrationTests {
   @Before
   public void setup() throws Exception {
     repository = new CouchbaseRepositoryFactory(operationsMapping, indexManager).getRepository(CustomUserRepository.class);
-  }
-
-  @Test
-  public void shouldFindAllWithCustomView() {
-    client.query(ViewQuery.from("user", "customFindAllView").stale(Stale.FALSE));
-    Iterable<User> allUsers = repository.findAll();
-    assertThat(allUsers, Matchers.iterableWithSize(100));
-  }
-
-  @Test
-  public void shouldCountWithCustomView() {
-    ViewResult clientResult = client.query(ViewQuery.from("userCustom", "customCountView")
-        .reduce().stale(Stale.FALSE));
-    final Object clientRowValue = clientResult.allRows().get(0).value();
-    final long value = repository.count();
-    assertThat(value, is(100L));
-    assertThat(clientRowValue, instanceOf(Number.class));
-    assertThat(((Number) clientRowValue).longValue(), is(value));
   }
 
   @Test

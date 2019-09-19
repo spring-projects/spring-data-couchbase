@@ -16,11 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
-import static com.couchbase.client.java.query.Select.select;
-import static com.couchbase.client.java.query.dsl.Expression.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,17 +32,13 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,6 +54,9 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
@@ -74,7 +72,7 @@ public class CouchbaseTemplateIntegrationTests {
 	public TestName testName = new TestName();
 
 	@Autowired
-	private Bucket client;
+	private Collection client;
 
 	@Autowired
 	private CouchbaseTemplate template;
@@ -85,7 +83,7 @@ public class CouchbaseTemplateIntegrationTests {
 		try {
 			template.remove(key);
 		}
-		catch (DocumentDoesNotExistException e) {
+		catch (KeyNotFoundException e) {
 			//ignore
 		}
 	}
@@ -100,17 +98,14 @@ public class CouchbaseTemplateIntegrationTests {
 		Beer beer = new Beer(id, name, active, "");
 
 		template.save(beer);
-		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		String result = resultDoc.content();
+		JsonObject result = client.get(id).contentAs(JsonObject.class);
 		assertNotNull(result);
-		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertNull(resultConv.get("javaClass"));
-		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertEquals(false, resultConv.get("is_active"));
-		assertEquals("The Awesome Stout", resultConv.get("name"));
+		assertNotNull(result.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertNull(result.get("javaClass"));
+		assertEquals("org.springframework.data.couchbase.core.Beer", result.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
+		assertEquals(false, result.get("is_active"));
+		assertEquals("The Awesome Stout", result.get("name"));
 	}
 
 	@Test
@@ -130,12 +125,9 @@ public class CouchbaseTemplateIntegrationTests {
 
 		SimplePerson doc = new SimplePerson(id, "Mr. A");
 		template.insert(doc);
-		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		String result = resultDoc.content();
-
-		Map<String, String> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
+		JsonObject result = client.get(id).contentAs(JsonObject.class);
+		assertNotNull(result);
+		assertEquals("Mr. A", result.get("name"));
 
 		doc = new SimplePerson(id, "Mr. B");
 		try {
@@ -144,12 +136,9 @@ public class CouchbaseTemplateIntegrationTests {
 			//ignore, since this insert should fail
 		}
 
-		resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
-		result = resultDoc.content();
-
-		resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
+		result = client.get(id).contentAs(JsonObject.class);
+		assertNotNull(result);
+		assertEquals("Mr. A", result.get("name"));
 	}
 
 
@@ -222,29 +211,13 @@ public class CouchbaseTemplateIntegrationTests {
 	}
 
 	@Test
-	public void shouldLoadAndMapViewDocs() {
-		ViewQuery query = ViewQuery.from("test_beers", "by_name");
-		query.stale(Stale.FALSE);
-
-		final List<Beer> beers = template.findByView(query, Beer.class);
-		assertTrue(beers.size() > 0);
-
-		for (Beer beer : beers) {
-			assertNotNull(beer.getId());
-			assertNotNull(beer.getName());
-			assertNotNull(beer.getActive());
-		}
-	}
-
-	@Test
 	public void shouldQueryRaw() {
-		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name()))
-				.where(x("name").isNotMissing()));
+		N1QLExpression statement = select(x("name")).from(i(client.bucketName())).where(x("name")).isNotMissing();
+		N1QLQuery query = new N1QLQuery(statement);
 
-		N1qlQueryResult queryResult = template.queryN1QL(query);
+		QueryResult queryResult = template.queryN1QL(query);
 		assertNotNull(queryResult);
-		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess());
-		assertFalse(queryResult.allRows().isEmpty());
+		assertFalse(queryResult.rowsAsObject().isEmpty());
 	}
 
 	@Test
@@ -253,12 +226,13 @@ public class CouchbaseTemplateIntegrationTests {
 		FullFragment ff2 = new FullFragment("fullFragment2", 2, "fullFragment", "test2");
 		template.save(Arrays.asList(ff1, ff2));
 
-		N1qlQuery query = N1qlQuery.simple(select(i("value")) //"value" is a n1ql keyword apparently
-						.from(i(client.name()))
-						.where(x("type").eq(s("fullFragment"))
-								.and(x("criteria").gt(1))),
+		N1QLExpression expression = select(i("value"))
+				.from(i(client.bucketName()))
+				.where(x("type"))
+				.eq(s("fullFragment"))
+				.and(x("criteria")).gt(x("1"));
 
-				N1qlParams.build().consistency(ScanConsistency.REQUEST_PLUS));
+		N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS));
 
 		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class);
 		assertNotNull(fragments);
@@ -314,8 +288,8 @@ public class CouchbaseTemplateIntegrationTests {
 		VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
 		assertEquals(0, versionedClass.getVersion());
 		template.insert(versionedClass);
-		RawJsonDocument rawStored = client.get("versionedClass:1", RawJsonDocument.class);
-		assertEquals(rawStored.cas(), versionedClass.getVersion());
+		GetResult result = client.get("versionedClass:1");
+		assertEquals(result.cas(), versionedClass.getVersion());
 	}
 
 	@Test
@@ -363,16 +337,20 @@ public class CouchbaseTemplateIntegrationTests {
 		VersionedClass versionedClass = new VersionedClass("versionedClass:4", "foobar");
 		template.insert(versionedClass);
 
-		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:4", "different");
-		assertNotNull(client.upsert(toCompare));
+		// now a json object without verisoned field, the upsert should not throw, replacing
+		// the class above.
+		JsonObject toCompare = JsonObject.create();
+		toCompare.put("id", "versionedClass:4");
+		toCompare.put("field", "different");
+		assertNotNull(client.upsert("versionedClass:4", toCompare));
 
 		versionedClass.setField("foobar2");
-		//save (aka upsert) won't error in case of CAS mismatch anymore
-		template.update(versionedClass);
+
+		template.save(versionedClass);
 	}
 
 	@Test
-	public void shouldUpdateDocumentOnMatchingVersion() throws Exception {
+	public void shouldUpdateDocumentOnMatchingVersion()  {
 		removeIfExist("versionedClass:5");
 
 		VersionedClass versionedClass = new VersionedClass("versionedClass:5", "foobar");
@@ -397,10 +375,15 @@ public class CouchbaseTemplateIntegrationTests {
 		VersionedClass versionedClass = new VersionedClass("versionedClass:6", "foobar");
 		template.insert(versionedClass);
 
-		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:6", "different");
-		assertNotNull(client.upsert(toCompare));
+		// now a json object without verisoned field, the upsert should not throw, replacing
+		// the class above.
+		JsonObject toCompare = JsonObject.create();
+		toCompare.put("id", "versionedClass:6");
+		toCompare.put("field", "different");
+		assertNotNull(client.upsert("versionedClass:6", toCompare));
 
 		versionedClass.setField("foobar2");
+		// update should fail now, as versionedClass has wrong version.
 		template.update(versionedClass);
 	}
 
@@ -491,27 +474,6 @@ public class CouchbaseTemplateIntegrationTests {
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
 		Thread.sleep(3000);
 		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
-	}
-
-	/**
-	 * @see DATACOUCH-227
-	 */
-	@Test
-	public void shouldRetainOrderWhenQueryingViewOrdered() {
-		ViewQuery q = ViewQuery.from("test_beers", "by_name");
-		q.descending().includeDocsOrdered(true);
-
-		String prev = null;
-		List<Beer> beers = template.findByView(q, Beer.class);
-		assertTrue(q.isIncludeDocs());
-		assertTrue(q.isOrderRetained());
-		assertEquals(RawJsonDocument.class, q.includeDocsTarget());
-		for (Beer beer : beers) {
-			if (prev != null) {
-				assertThat(beer.getName() + " not alphabetically < to " + prev, beer.getName().compareTo(prev) < 0);
-			}
-			prev = beer.getName();
-		}
 	}
 
 	/**

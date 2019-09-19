@@ -47,11 +47,10 @@ import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import com.couchbase.client.java.repository.annotation.Field;
 
 /**
  * @author Michael Nitschinger
@@ -741,7 +740,7 @@ public class MappingCouchbaseConverterTests {
   }
 
   static class SdkIdentified {
-    @com.couchbase.client.java.repository.annotation.Id
+    @org.springframework.data.couchbase.core.mapping.annotation.Id
     public String id = "id";
   }
 
@@ -754,7 +753,7 @@ public class MappingCouchbaseConverterTests {
     @org.springframework.data.annotation.Id
     public String springId = "springId";
 
-    @com.couchbase.client.java.repository.annotation.Id
+    @org.springframework.data.couchbase.core.mapping.annotation.Id
     public String sdkId = "sdkId";
   }
 }

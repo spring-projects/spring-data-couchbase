@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.config;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseBucket;
 
 import org.springframework.beans.factory.config.AbstractFactoryBean;
 import org.springframework.dao.DataAccessException;
@@ -58,24 +57,15 @@ public class CouchbaseBucketFactoryBean extends AbstractFactoryBean<Bucket> impl
 
 	@Override
 	public Class<?> getObjectType() {
-		return CouchbaseBucket.class;
+		return Bucket.class;
 	}
 
 	@Override
 	protected Bucket createInstance() throws Exception {
 		if (bucketName == null) {
-			return cluster.openBucket();
+			return cluster.bucket("default");
 		}
-		else if (password == null) {
-			return cluster.openBucket(bucketName);
-		}
-		else if (bucketName.contentEquals(username)) {
-			return cluster.openBucket(bucketName, password);
-		}
-		else {
-			cluster.authenticate(username, password);
-			return cluster.openBucket(bucketName);
-		}
+		return cluster.bucket(bucketName);
 	}
 
 	@Override

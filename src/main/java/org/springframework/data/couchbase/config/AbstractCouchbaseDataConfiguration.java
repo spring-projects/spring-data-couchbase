@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.cluster.ClusterInfo;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -45,7 +45,7 @@ public abstract class AbstractCouchbaseDataConfiguration extends CouchbaseConfig
    * This uses {@link #mappingCouchbaseConverter()}, {@link #translationService()} and {@link #getDefaultConsistency()}
    * for construction.
    *
-   * Additionally, it will expect injection of a {@link ClusterInfo} and a {@link Bucket} beans from the context (most
+   * Additionally, it will expect injection of a {@link ClusterEnvironment} and a {@link Collection} beans from the context (most
    * probably from another configuration). For a self-sufficient configuration that defines such beans, see
    * {@link AbstractCouchbaseConfiguration}.
    *
@@ -53,7 +53,7 @@ public abstract class AbstractCouchbaseDataConfiguration extends CouchbaseConfig
    */
   @Bean(name = BeanNames.COUCHBASE_TEMPLATE)
   public CouchbaseTemplate couchbaseTemplate() throws Exception {
-    CouchbaseTemplate template = new CouchbaseTemplate(couchbaseConfigurer().couchbaseClusterInfo(),
+    CouchbaseTemplate template = new CouchbaseTemplate(couchbaseConfigurer().couchbaseCluster(),
             couchbaseConfigurer().couchbaseClient(), mappingCouchbaseConverter(), translationService());
     template.setDefaultConsistency(getDefaultConsistency());
     return template;

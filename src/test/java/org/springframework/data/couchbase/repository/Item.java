@@ -1,8 +1,8 @@
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.repository.annotation.Field;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 public class Item {
 

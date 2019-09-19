@@ -142,13 +142,13 @@ public class BasicCouchbasePersistentPropertyTests {
    */
   public class Beer {
 
-    @com.couchbase.client.java.repository.annotation.Id
+    @org.springframework.data.couchbase.core.mapping.annotation.Id
     private String sdkId;
 
     @Id
     private String springId;
 
-    @com.couchbase.client.java.repository.annotation.Field("foobar")
+    @org.springframework.data.couchbase.core.mapping.annotation.Field("foobar")
     String name;
 
     String description;
@@ -162,7 +162,7 @@ public class BasicCouchbasePersistentPropertyTests {
    * Simple POJO to test that a single ID property from the SDK is taken into account.
    */
   public class SdkIdentified {
-    @com.couchbase.client.java.repository.annotation.Id
+    @org.springframework.data.couchbase.core.mapping.annotation.Id
     private String id;
 
     String value;

@@ -6,10 +6,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.query.dsl.Expression;
+import com.couchbase.client.java.json.JsonArray;
 
 import org.junit.Test;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlQueryCreatorUtils;
 import org.springframework.data.repository.query.parser.Part;
 
@@ -26,11 +26,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) BETWEEN LOWER($0) AND LOWER($1)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -49,11 +49,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IS NOT NULL";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -72,11 +72,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IS NULL";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -95,11 +95,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) < LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -118,11 +118,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) <= LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -141,11 +141,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) > LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -164,11 +164,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) >= LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -187,11 +187,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) < LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -210,11 +210,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) > LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -233,11 +233,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) NOT LIKE LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -256,11 +256,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -279,11 +279,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) LIKE LOWER($0) || '%'";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -302,11 +302,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) LIKE '%' || LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -325,11 +325,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) NOT LIKE '%' || LOWER($0) || '%'";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -348,11 +348,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) LIKE '%' || LOWER($0) || '%'";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -371,11 +371,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -395,9 +395,9 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -415,9 +415,9 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) NOT IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -434,11 +434,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -458,9 +458,9 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -478,9 +478,9 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IN $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
@@ -493,7 +493,7 @@ public class N1qlQueryCreatorTest {
     Part.Type keyword = Part.Type.NEAR;
     Iterator<Object> values = Arrays.<Object>asList("a", 1, "b").iterator();
 
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), JsonArray.create());;
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), JsonArray.create());;
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -501,7 +501,7 @@ public class N1qlQueryCreatorTest {
     Part.Type keyword = Part.Type.WITHIN;
     Iterator<Object> values = Arrays.<Object>asList("a", 1, "b").iterator();
 
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), JsonArray.create());;
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), JsonArray.create());;
   }
 
   @Test
@@ -513,11 +513,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "REGEXP_LIKE(LOWER(doc.field), $0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -536,11 +536,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) IS NOT MISSING";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -559,11 +559,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) = TRUE";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -582,11 +582,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) = FALSE";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -605,11 +605,11 @@ public class N1qlQueryCreatorTest {
     String expectedIgnoreCase = "LOWER(doc.field) != LOWER($0)";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());
@@ -633,13 +633,13 @@ public class N1qlQueryCreatorTest {
     String expectedEnum = "doc.field = $0";
 
     JsonArray phexp = JsonArray.create();
-    Expression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
+    N1QLExpression exp = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexp);
     JsonArray phexpNum = JsonArray.create();
-    Expression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
+    N1QLExpression expNum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpNum);
     JsonArray phexpIgnoreCase = JsonArray.create();
-    Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
+    N1QLExpression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
     JsonArray phexpEnum = JsonArray.create();
-    Expression expEnum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpEnum);
+    N1QLExpression expEnum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpEnum);
 
     assertEquals(expected, exp.toString());
     assertEquals(expectedNum, expNum.toString());

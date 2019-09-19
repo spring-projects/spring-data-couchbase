@@ -67,7 +67,7 @@ public class ReactiveCouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Optional<Object> customImplementation) {
 		RxJavaCouchbaseOperations reactiveCouchbaseOperations = getDependencyInstance(reactiveCouchbaseOperationsBean, RxJavaCouchbaseOperations.class);
 		ReactiveRepositoryOperationsMapping reactiveCouchbaseOperationsMapping = new ReactiveRepositoryOperationsMapping(reactiveCouchbaseOperations);
-		IndexManager indexManager = new IndexManager();
+		IndexManager indexManager = new IndexManager(reactiveCouchbaseOperations.getCouchbaseCluster());
 
 		ReactiveCouchbaseRepositoryFactory factory = new ReactiveCouchbaseRepositoryFactory(reactiveCouchbaseOperationsMapping, indexManager);
 		

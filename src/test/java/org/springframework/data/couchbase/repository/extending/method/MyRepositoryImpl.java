@@ -2,14 +2,14 @@ package org.springframework.data.couchbase.repository.extending.method;
 
 import java.util.List;
 
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.Item;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -34,14 +34,13 @@ public class MyRepositoryImpl implements MyRepositoryCustom {
     CouchbaseEntityInformation<? extends Object, String> itemEntityInformation =
         new MappingCouchbaseEntityInformation<Object, String>(itemPersistenceEntity);
 
-    Statement countStatement = N1qlUtils.createCountQueryForEntity(
+    N1QLExpression countStatement = N1qlUtils.createCountQueryForEntity(
         template.getCouchbaseBucket().name(),
         template.getConverter(),
         itemEntityInformation);
 
-    ScanConsistency consistency = template.getDefaultConsistency().n1qlConsistency();
-    N1qlParams queryParams = N1qlParams.build().consistency(consistency);
-    N1qlQuery query = N1qlQuery.simple(countStatement, queryParams);
+    QueryScanConsistency consistency = template.getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(countStatement, QueryOptions.queryOptions().scanConsistency(consistency));
 
     List<CountFragment> countFragments = template.findByN1QLProjection(query, CountFragment.class);
 

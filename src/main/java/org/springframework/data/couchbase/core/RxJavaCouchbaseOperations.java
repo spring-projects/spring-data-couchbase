@@ -15,19 +15,19 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.config.ClusterConfig;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.PersistTo;
-import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.query.AsyncN1qlQueryResult;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.AsyncSpatialViewResult;
-import com.couchbase.client.java.view.AsyncViewResult;
-import com.couchbase.client.java.view.SpatialViewQuery;
-import com.couchbase.client.java.view.ViewQuery;
+
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.ReactiveQueryResult;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Consistency;
-import rx.Observable;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Subhashni Balakrishnan
@@ -36,55 +36,47 @@ import rx.Observable;
  */
 public interface RxJavaCouchbaseOperations {
 
-    <T>Observable<T> save(T objectToSave);
+    <T> Mono<T> save(T objectToSave);
 
-    <T>Observable<T> save(Iterable<T> batchToSave);
+    <T> Flux<T> save(Iterable<T> batchToSave);
 
-    <T>Observable<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Mono<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Flux<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> insert(T objectToSave);
+    <T> Mono<T> insert(T objectToSave);
 
-    <T>Observable<T> insert(Iterable<T> batchToSave);
+    <T> Flux<T> insert(Iterable<T> batchToSave);
 
-    <T>Observable<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Mono<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Flux<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> update(T objectToSave);
+    <T> Mono<T> update(T objectToSave);
 
-    <T>Observable<T> update(Iterable<T> batchToSave);
+    <T> Flux<T> update(Iterable<T> batchToSave);
 
-    <T>Observable<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Mono<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Flux<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> remove(T objectToRemove);
+    <T> Mono<T> remove(T objectToRemove);
 
-    <T>Observable<T> remove(T objectToRemove, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Mono<T> remove(T objectToRemove, PersistTo persistTo, ReplicateTo replicateTo);
 
-    <T>Observable<T> remove(Iterable<T> batchToRemove);
+    <T> Flux<T> remove(Iterable<T> batchToRemove);
 
-    <T>Observable<T> remove(Iterable<T> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo);
+    <T> Flux<T> remove(Iterable<T> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo);
 
-    Observable<Boolean> exists(String id);
+    Mono<Boolean> exists(String id);
 
-    <T>Observable<T> findById(String id, Class<T> entityClass);
+    <T> Mono<T> findById(String id, Class<T> entityClass);
 
-    Observable<AsyncN1qlQueryResult> queryN1QL(N1qlQuery n1ql);
+    Mono<ReactiveQueryResult> queryN1QL(N1QLQuery n1ql);
 
-    Observable<AsyncViewResult> queryView(ViewQuery query);
+    <T> Flux<T> findByN1QL(N1QLQuery n1ql, Class<T> entityClass);
 
-    Observable<AsyncSpatialViewResult> querySpatialView(SpatialViewQuery query);
-
-    <T>Observable<T> findByView(ViewQuery query, Class<T> entityClass);
-
-    <T>Observable<T> findByN1QL(N1qlQuery n1ql, Class<T> entityClass);
-
-    <T>Observable<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass);
-
-    <T>Observable<T> findByN1QLProjection(N1qlQuery n1ql, Class<T> fragmentClass);
+    <T> Flux<T> findByN1QLProjection(N1QLQuery n1ql, Class<T> fragmentClass);
 
     Consistency getDefaultConsistency();
 
@@ -97,6 +89,13 @@ public interface RxJavaCouchbaseOperations {
 
     CouchbaseConverter getConverter();
 
-    ClusterInfo getCouchbaseClusterInfo();
+    /**
+     * Returns the {@link ClusterConfig} about the cluster linked to this template.
+     *
+     * @return the info about the cluster the template connects to.
+     */
+    ClusterConfig getCouchbaseClusterConfig();
+
+    Cluster getCouchbaseCluster();
 
 }

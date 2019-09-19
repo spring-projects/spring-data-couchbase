@@ -22,12 +22,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.query.QueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.FetchType;
 import org.springframework.data.couchbase.core.query.HashSide;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
@@ -100,7 +102,7 @@ public class N1qlJoinResolver {
             LOGGER.debug("Join query executed " + statement);
         }
 
-        N1qlQuery query = N1qlQuery.simple(statement);
+        N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
         return template.findByN1QL(query, associatedEntityClass);
     }
 

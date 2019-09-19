@@ -19,14 +19,11 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.path.LimitPath;
-import com.couchbase.client.java.query.dsl.path.OrderByPath;
-import com.couchbase.client.java.query.dsl.path.WherePath;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonValue;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlQueryCreatorUtils;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
@@ -85,15 +82,15 @@ import org.springframework.data.repository.query.parser.PartTree;
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  */
-public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression> implements PartTreeN1qlQueryCreator {
-  private final WherePath selectFrom;
+public class N1qlQueryCreator extends AbstractQueryCreator<N1QLExpression, N1QLExpression> implements PartTreeN1qlQueryCreator {
+  private final N1QLExpression selectFrom;
   private final CouchbaseConverter converter;
   private final CouchbaseQueryMethod queryMethod;
   private final ParameterAccessor accessor;
   private final JsonArray placeHolderValues;
   private final AtomicInteger position;
 
-  public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, WherePath selectFrom,
+  public N1qlQueryCreator(PartTree tree, ParameterAccessor parameters, N1QLExpression selectFrom,
                           CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
     super(tree, parameters);
     this.selectFrom = selectFrom;
@@ -105,12 +102,12 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
   }
 
   @Override
-  protected Expression create(Part part, Iterator<Object> iterator) {
+  protected N1QLExpression create(Part part, Iterator<Object> iterator) {
     return N1qlQueryCreatorUtils.prepareExpression(converter, part, iterator, this.position, this.placeHolderValues);
   }
 
   @Override
-  protected Expression and(Part part, Expression base, Iterator<Object> iterator) {
+  protected N1QLExpression and(Part part, N1QLExpression base, Iterator<Object> iterator) {
     if (base == null) {
       return create(part, iterator);
     }
@@ -119,15 +116,15 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
   }
 
   @Override
-  protected Expression or(Expression base, Expression criteria) {
+  protected N1QLExpression or(N1QLExpression base, N1QLExpression criteria) {
     return base.or(criteria);
   }
 
   @Override
-  protected LimitPath complete(Expression criteria, Sort sort) {
-    Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter, this.queryMethod.getEntityInformation());
+  protected N1QLExpression complete(N1QLExpression criteria, Sort sort) {
+    N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter, this.queryMethod.getEntityInformation());
 
-    OrderByPath selectFromWhere = selectFrom.where(whereCriteria);
+    N1QLExpression selectFromWhere = selectFrom.where(whereCriteria);
 
     //sort of the Pageable takes precedence over the sort in the query name
     if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && accessor.getPageable().isPaged()) {
@@ -136,7 +133,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<LimitPath, Expression
     }
 
     if (sort.isSorted()) {
-      com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, converter);
+      N1QLExpression[] cbSorts = N1qlUtils.createSort(sort);
       return selectFromWhere.orderBy(cbSorts);
     }
     return selectFromWhere;

@@ -18,23 +18,24 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.io.Serializable;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.AsyncViewResult;
-import com.couchbase.client.java.view.ViewQuery;
 
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 import rx.Single;
 import rx.Observable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -98,14 +99,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     public <S extends T> Mono<S> save(S entity) {
         Assert.notNull(entity, "Entity must not be null!");
-        return mapMono(operations.save(entity).toSingle());
+        return operations.save(entity);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return mapFlux(operations.save(entities));
+        return operations.save(entities);
     }
 
     @SuppressWarnings("unchecked")
@@ -120,13 +121,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<T> findById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.findById(id.toString(), entityInformation.getJavaType()).toSingle())
+        return operations.findById(id.toString(), entityInformation.getJavaType())
                 .onErrorResume(throwable -> {
                     //reactive streams adapter doesn't work with null
                     if(throwable instanceof NullPointerException) {
                         return Mono.empty();
                     }
-                    return Mono.just(throwable);
+                    return Mono.error(throwable);
                 });
     }
 
@@ -142,7 +143,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<Boolean> existsById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.exists(id.toString()).toSingle());
+        return operations.exists(id.toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -156,26 +157,25 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAll() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-        return mapFlux(operations.findByView(query, entityInformation.getJavaType()));
+        // TODO: figure out a cleaner way
+        N1QLExpression expression = select(x("*"))
+                .from(i(operations.getCouchbaseBucket().name()))
+                .where(x("_class").eq(s(entityInformation.getJavaType().getCanonicalName())));
+        QueryScanConsistency consisistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consisistency));
+        return operations.findByN1QL(query, entityInformation.getJavaType());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAllById(final Iterable<ID> ids) {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-        JsonArray keys = JsonArray.create();
-        for (ID id : ids) {
-            keys.add(id);
-        }
-        query.keys(keys);
-        return mapFlux(operations.findByView(query, entityInformation.getJavaType()));
+        // TODO: figure out a cleaner way
+        N1QLExpression expression = select(x("*"))
+                .from(i(operations.getCouchbaseBucket().name()))
+                .keys(ids);
+        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+        return operations.findByN1QL(query, entityInformation.getJavaType());
     }
 
     @SuppressWarnings("unchecked")
@@ -189,12 +189,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteById(ID id) {
+        // TODO: why does this not match the operations (Mono<T> vs Mono<Void>)
         Assert.notNull(id, "The given id must not be null!");
-        return mapMono(operations.remove(id.toString()).map(res -> Observable.<Void>empty()).toSingle());
+        return operations.remove(id.toString()).flatMap(res-> Mono.empty());
     }
 
     @Override
     public Mono<Void> deleteById(Publisher<ID> publisher) {
+        // TODO: why does this not match the operations (Mono<T> vs Mono<Void>)
         Assert.notNull(publisher, "The given id must not be null!");
         return Mono.from(publisher).flatMap(
                 this::deleteById);
@@ -204,17 +206,17 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<Void>  delete(T entity) {
         Assert.notNull(entity, "The given id must not be null!");
-        return mapMono(operations.remove(entity).map(res -> Observable.<Void>empty()).toSingle());
+        return operations.remove(entity).flatMap(res -> Mono.empty());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll(Iterable<? extends T> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return mapMono(operations
+        return operations
                 .remove(entities)
                 .last()
-                .map(res -> Observable.<Void>empty()).toSingle());
+                .then(Mono.empty());
     }
 
 
@@ -228,42 +230,21 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Long> count() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(true);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-
-        return mapMono(operations
-                .queryView(query)
-                .flatMap(AsyncViewResult::rows)
-                .map(asyncViewRow ->
-                        Long.valueOf(asyncViewRow.value().toString()))
-                .switchIfEmpty(Observable.just(0L)).toSingle());
+        N1QLExpression expression = select(x("COUNT(*)")).from(i(operations.getCouchbaseBucket().name()));
+        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        expression = addClassWhereClause(expression);
+        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+        return operations.queryN1QL(query)
+                .flatMapMany(res -> res.rowsAsObject()).single().map(row -> row.getLong("$1"));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll() {
-        final ResolvedView resolvedView = determineView();
-        ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-        query.reduce(false);
-        query.stale(operations.getDefaultConsistency().viewConsistency());
-
-
-        return mapMono(operations.queryView(query)
-                .flatMap(AsyncViewResult::rows)
-                .flatMap(row -> {
-                    return operations.remove(row.id())
-                            .onErrorResumeNext(throwable -> {
-                                if (throwable instanceof DocumentDoesNotExistException) {
-                                    return Observable.empty();
-                                }
-                                return Observable.error(throwable);
-                            });
-                })
-                .toList()
-                .map(list -> Observable.<Void>empty())
-                .toSingle());
+        N1QLExpression expression = x("DELETE").from(i(operations.getCouchbaseBucket().name()));
+        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+        return operations.queryN1QL(query).then(Mono.empty());
     }
 
     /**
@@ -275,31 +256,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
         return entityInformation;
     }
 
-    /**
-     * Resolve a View based upon:
-     * <p/>
-     * 1. Any @View annotation that is present
-     * 2. If none are found, default designDocument to be the entity name (lowercase) and viewName to be "all".
-     *
-     * @return ResolvedView containing the designDocument and viewName.
-     */
-    private ResolvedView determineView() {
-        String designDocument = StringUtils.uncapitalize(entityInformation.getJavaType().getSimpleName());
-        String viewName = "all";
-
-        final View view = viewMetadataProvider.getView();
-
-        if (view != null) {
-            designDocument = view.designDocument();
-            viewName = view.viewName();
-        }
-
-        return new ResolvedView(designDocument, viewName);
-    }
-
     @Override
     public RxJavaCouchbaseOperations getCouchbaseOperations(){
         return operations;
+    }
+
+    private final N1QLExpression addClassWhereClause(N1QLExpression exp) {
+        String classString = entityInformation.getJavaType().getCanonicalName();
+        return exp.where(x("_class").eq(s(classString)));
     }
 
     /**

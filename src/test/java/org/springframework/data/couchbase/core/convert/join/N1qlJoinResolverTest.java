@@ -5,7 +5,7 @@ import static org.mockito.Mockito.*;
 
 import java.lang.annotation.Annotation;
 
-import com.couchbase.client.java.CouchbaseBucket;
+import com.couchbase.client.java.Bucket;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -28,7 +28,7 @@ public class N1qlJoinResolverTest {
     @BeforeClass
     public static void setup() {
         template = mock(CouchbaseTemplate.class);
-        CouchbaseBucket bucket = mock(CouchbaseBucket.class);
+        Bucket bucket = mock(Bucket.class);
         when(bucket.name()).thenReturn("B");
         when(template.getCouchbaseBucket()).thenReturn(bucket);
         CouchbaseConverter converter = mock(CouchbaseConverter.class);

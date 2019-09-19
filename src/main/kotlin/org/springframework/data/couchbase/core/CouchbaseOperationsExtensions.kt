@@ -16,9 +16,7 @@
 
 package org.springframework.data.couchbase.core
 
-import com.couchbase.client.java.query.N1qlQuery
-import com.couchbase.client.java.view.SpatialViewQuery
-import com.couchbase.client.java.view.ViewQuery
+import org.springframework.data.couchbase.core.query.N1QLQuery
 
 /**
  * Kotlin extensions for [CouchbaseOperations]
@@ -35,27 +33,11 @@ inline fun <reified T: Any> CouchbaseOperations.findById(id: String) : T =
     findById(id, T::class.java)
 
 /**
- * Extension for [CouchbaseOperations.findByView] leveraging reified type.
- * @param query a [ViewQuery] instance that defines the query.
- * @return list of entities satisfying the view query.
- */
-inline fun <reified T: Any> CouchbaseOperations.findByView(query: ViewQuery) : List<T> =
-    findByView(query, T::class.java)
-
-/**
- * Extension for [CouchbaseOperations.findBySpatialView] leveraging reified type.
- * @param query a [SpatialViewQuery] instance that defines the query.
- * @return list of entities satisfying the spatial view query.
- */
-inline fun <reified T: Any> CouchbaseOperations.findBySpatialView(query: SpatialViewQuery) : List<T> =
-    findBySpatialView(query, T::class.java)
-
-/**
  * Extension for [CouchbaseOperations.findByN1QL] leveraging reified type.
  * @param query a [N1qlQuery] instance that defines the query.
  * @return list of entities satisfying the N1ql query.
  */
-inline fun <reified T: Any> CouchbaseOperations.findByN1QL(query: N1qlQuery) : List<T> =
+inline fun <reified T: Any> CouchbaseOperations.findByN1QL(query: N1QLQuery) : List<T> =
     findByN1QL(query, T::class.java)
 
 /**
@@ -63,5 +45,5 @@ inline fun <reified T: Any> CouchbaseOperations.findByN1QL(query: N1qlQuery) : L
  * @param query a [N1qlQuery] instance that defines the query.
  * @return list of entities satisfying the N1ql query projection.
  */
-inline fun <reified T: Any> CouchbaseOperations.findByN1QLProjection(query: N1qlQuery) : List<T> =
+inline fun <reified T: Any> CouchbaseOperations.findByN1QLProjection(query: N1QLQuery) : List<T> =
     findByN1QLProjection(query, T::class.java)

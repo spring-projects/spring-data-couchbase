@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -92,7 +90,7 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 	 */
 	@Override
 	protected Class getBeanClass(final Element element) {
-		return CouchbaseCluster.class;
+		return Cluster.class;
 	}
 
 	/**

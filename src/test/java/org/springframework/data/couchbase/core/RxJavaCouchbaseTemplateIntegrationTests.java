@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import static com.couchbase.client.java.query.Select.select;
-import static com.couchbase.client.java.query.dsl.Expression.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
@@ -25,17 +23,8 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.*;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.PersistTo;
-import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.query.AsyncN1qlQueryResult;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Before;
@@ -53,6 +42,7 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import rx.observers.TestSubscriber;
@@ -70,7 +60,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 	public TestName testName = new TestName();
 
 	@Autowired
-	private Bucket client;
+	private Collection client;
 
 	@Autowired
 	private RxJavaCouchbaseOperations template;
@@ -81,7 +71,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 	private static final boolean DEFAULT_ACTIVE = false;
 	private static final String DEFAULT_DESCRIPTION = "";
 
-	@Before
+/*	@Before
 	public void setUp() throws Exception {
 		removeIfExist(DEFAULT_ID);
 	}
@@ -95,7 +85,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 	private void removeCollectionIfExist(Collection<ReactiveBeer> beers) {
 		TestSubscriber<Object> subscriber = TestSubscriber.create();
-		template.remove(beers, PersistTo.MASTER, ReplicateTo.NONE)
+		template.remove(beers, PersistTo.ACTIVE, ReplicateTo.NONE)
 				.subscribe(subscriber);
 		subscriber.awaitTerminalEvent();
 	}
@@ -122,10 +112,10 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		VersionedReactiveBeer firstBeer = new VersionedReactiveBeer(DEFAULT_ID, DEFAULT_NAME, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 
-		long version = template.save(firstBeer).toBlocking().single().getVersion();
+		long version = template.save(firstBeer).block().getVersion();
 		assertTrue(version > 0);
 		secondBeer.setVersion(version);
-		long newVersion = template.save(secondBeer).toBlocking().single().getVersion();
+		long newVersion = template.save(secondBeer).block().getVersion();
 		assertTrue(newVersion > 0);
 		assertNotEquals(version, newVersion);
 
@@ -139,7 +129,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 		TestSubscriber<VersionedReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
 
-		long version = template.save(firstBeer).toBlocking().single().getVersion();
+		long version = template.save(firstBeer).block().getVersion();
 		assertTrue(version > 0);
 		secondBeer.setVersion(version + 1234);
 		template.save(secondBeer).subscribe(secondSaveSubscriber);

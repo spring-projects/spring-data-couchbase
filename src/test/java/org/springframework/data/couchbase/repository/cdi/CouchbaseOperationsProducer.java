@@ -18,9 +18,8 @@ package org.springframework.data.couchbase.repository.cdi;
 
 import javax.enterprise.inject.Produces;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.cluster.ClusterInfo;
-
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 
@@ -32,15 +31,15 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 class CouchbaseOperationsProducer {
 
   @Produces
-  public CouchbaseOperations createCouchbaseOperations(Bucket couchbaseClient, ClusterInfo clusterInfo) throws Exception {
-	return new CouchbaseTemplate(clusterInfo, couchbaseClient);
+  public CouchbaseOperations createCouchbaseOperations(Cluster cluster, Collection collection) throws Exception {
+	return new CouchbaseTemplate(cluster, collection);
   }
 	
   @Produces
   @OtherQualifier
   @PersonDB
-  public CouchbaseOperations createQualifiedCouchbaseOperations(Bucket couchbaseClient, ClusterInfo clusterInfo) throws Exception {
-    return new CouchbaseTemplate(clusterInfo, couchbaseClient);
+  public CouchbaseOperations createQualifiedCouchbaseOperations(Cluster cluster, Collection collection) throws Exception {
+    return new CouchbaseTemplate(cluster, collection);
   }
 
 }

@@ -15,10 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static com.couchbase.client.java.query.Select.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,13 +28,17 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.document.json.JsonValue;
+import com.couchbase.client.java.json.JsonValue;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,14 +51,9 @@ import org.springframework.data.repository.core.support.DefaultRepositoryMetadat
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.ParameterizedN1qlQuery;
-import com.couchbase.client.java.query.SimpleN1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+
 import org.springframework.data.repository.query.ReturnedType;
 
 /**
@@ -71,28 +71,26 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void testEmptyArgumentsShouldProduceSimpleN1qlQuery() throws Exception {
-    Statement st = select("*");
-    N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty(), ScanConsistency.NOT_BOUNDED);
+    N1QLExpression st = select(x("*"));
+    N1QLQuery query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty(), QueryScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof SimpleN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
+    assertEquals(st.toString(), query.getExpression());
+    assertEquals(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED), query.getOptions());
     assertFalse(queryObject.containsKey("args"));
   }
 
   @Test
   public void testSimpleArgumentShouldProduceParametrizedQuery() throws Exception {
-    Statement st = select("*");
+    N1QLExpression st = select(x("*"));
     List<Object> params = new ArrayList<Object>(2);
     params.add("test");
     JsonArray placeholderValues = JsonArray.from(params);
-    N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
+    N1QLQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, QueryScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParameterizedN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
+    assertEquals(st.toString(), query.getExpression());
+    assertEquals(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED), query.getOptions());
     assertTrue(queryObject.containsKey("args"));
     JsonArray args = queryObject.getArray("args");
     assertEquals(1, args.size());
@@ -101,17 +99,16 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void testMultipleArgumentsShouldProduceParametrizedQuery() throws Exception {
-    Statement st = select("*");
+    N1QLExpression st = select(x("*"));
     List<Object> params = new ArrayList<Object>(2);
     params.add(123L);
     params.add("test");
     JsonArray placeholderValues = JsonArray.from(params);
-    N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
+    N1QLQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, QueryScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParameterizedN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
+    assertEquals(st.toString(), query.getExpression());
+    assertEquals(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED), query.getOptions());
     assertTrue(queryObject.containsKey("args"));
     JsonArray args = queryObject.getArray("args");
     assertEquals(2, args.size());
@@ -125,19 +122,19 @@ public class AbstractN1qlBasedQueryTest {
     Method method = SampleRepository.class.getMethod("findAll");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
         .thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Object.class);
-    verify(mock).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -146,20 +143,20 @@ public class AbstractN1qlBasedQueryTest {
     Method method = SampleRepository.class.getMethod("findById", Integer.class);
   	
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class), any(Class.class)))
         .thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -167,21 +164,21 @@ public class AbstractN1qlBasedQueryTest {
   	
     Method method = SampleRepository.class.getMethod("streamAll");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class),
         any(Class.class)))
         .thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -189,22 +186,22 @@ public class AbstractN1qlBasedQueryTest {
   	
     Method method = SampleRepository.class.getMethod("findAllPaged", Pageable.class);
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class),
         any(Class.class)))
         .thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
 
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -213,20 +210,20 @@ public class AbstractN1qlBasedQueryTest {
     Method method = SampleRepository.class.getMethod("findAllSliced", Pageable.class);
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class),
         any(Class.class))).thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
 
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -235,20 +232,20 @@ public class AbstractN1qlBasedQueryTest {
     Method method = SampleRepository.class.getMethod("countDown");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class),
         any(Class.class))).thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
 
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test
@@ -257,20 +254,20 @@ public class AbstractN1qlBasedQueryTest {
     Method method = SampleRepository.class.getMethod("longMethod");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
-    N1qlQuery query = Mockito.mock(N1qlQuery.class);
+    N1QLQuery query = Mockito.mock(N1QLQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
-    when(mock.executeDependingOnType(any(N1qlQuery.class), any(N1qlQuery.class), any(QueryMethod.class), any(Pageable.class),
+    when(mock.executeDependingOnType(any(N1QLQuery.class), any(N1QLQuery.class), any(QueryMethod.class), any(Pageable.class),
         any(Class.class))).thenCallRealMethod();
 
     mock.executeDependingOnType(query, query, queryMethod, pageable, Sample.class);
 
-    verify(mock, never()).executeCollection(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeEntity(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executeStream(any(N1qlQuery.class), any(Class.class));
-    verify(mock, never()).executePaged(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock, never()).executeSliced(any(N1qlQuery.class), any(N1qlQuery.class), any(Pageable.class), any(Class.class));
-    verify(mock).executeSingleProjection(any(N1qlQuery.class));
+    verify(mock, never()).executeCollection(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeEntity(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executeStream(any(N1QLQuery.class), any(Class.class));
+    verify(mock, never()).executePaged(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock, never()).executeSliced(any(N1QLQuery.class), any(N1QLQuery.class), any(Pageable.class), any(Class.class));
+    verify(mock).executeSingleProjection(any(N1QLQuery.class));
   }
 
   @Test // DATACOUCH-206
@@ -291,11 +288,11 @@ public class AbstractN1qlBasedQueryTest {
     CouchbaseTemplate template = mock(CouchbaseTemplate.class);
     when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
 
-    ScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
+    QueryScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
     assertEquals(defaultConsistency, Consistency.STRONGLY_CONSISTENT.n1qlConsistency());
 
-    ScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
-    assertEquals(unboundedConsistency, ScanConsistency.NOT_BOUNDED);
+    QueryScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
+    assertEquals(unboundedConsistency, QueryScanConsistency.NOT_BOUNDED);
 
   }
 
@@ -309,7 +306,7 @@ public class AbstractN1qlBasedQueryTest {
 
     Sample findById(Integer id);
 
-    @WithConsistency(ScanConsistency.NOT_BOUNDED)
+    @WithConsistency(QueryScanConsistency.NOT_BOUNDED)
     Stream<Sample> streamAll();
 
     Page<Sample> findAllPaged(Pageable pageable);
@@ -331,7 +328,7 @@ public class AbstractN1qlBasedQueryTest {
     }
 
     @Override
-    protected Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
+    protected N1QLExpression getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
       return null;
     }
 
@@ -341,7 +338,7 @@ public class AbstractN1qlBasedQueryTest {
     }
 
     @Override
-    protected Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+    protected N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
       return null;
     }
 

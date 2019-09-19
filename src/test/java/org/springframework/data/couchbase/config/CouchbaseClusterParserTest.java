@@ -22,6 +22,7 @@ import static org.hamcrest.core.Is.is;
 
 import java.util.List;
 
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -33,8 +34,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
-
-import com.couchbase.client.java.env.CouchbaseEnvironment;
 
 public class CouchbaseClusterParserTest {
 
@@ -63,7 +62,7 @@ public class CouchbaseClusterParserTest {
 		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
-				.getArgumentValue(0, CouchbaseEnvironment.class);
+				.getArgumentValue(0, ClusterEnvironment.class);
 
 		assertThat(holder.getValue(), instanceOf(RuntimeBeanReference.class));
 		RuntimeBeanReference envRef = (RuntimeBeanReference) holder.getValue();
@@ -99,7 +98,7 @@ public class CouchbaseClusterParserTest {
 		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
-				.getArgumentValue(0, CouchbaseEnvironment.class);
+				.getArgumentValue(0, ClusterEnvironment.class);
 		GenericBeanDefinition envDef = (GenericBeanDefinition) holder.getValue();
 
 		assertThat(envDef.getBeanClassName(), is(equalTo(CouchbaseEnvironmentFactoryBean.class.getName())));
@@ -115,7 +114,7 @@ public class CouchbaseClusterParserTest {
 		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
-				.getArgumentValue(0, CouchbaseEnvironment.class);
+				.getArgumentValue(0, ClusterEnvironment.class);
 
 		assertThat(holder.getValue(), instanceOf(RuntimeBeanReference.class));
 		RuntimeBeanReference envRef = (RuntimeBeanReference) holder.getValue();
@@ -137,7 +136,7 @@ public class CouchbaseClusterParserTest {
 				instanceOf(List.class));
 
 		ConstructorArgumentValues.ValueHolder holderEnv = def.getConstructorArgumentValues()
-				.getArgumentValue(0, CouchbaseEnvironment.class);
+				.getArgumentValue(0, ClusterEnvironment.class);
 		GenericBeanDefinition envDef = (GenericBeanDefinition) holderEnv.getValue();
 
 		assertThat(envDef.getBeanClassName(), is(equalTo(CouchbaseEnvironmentFactoryBean.class.getName())));

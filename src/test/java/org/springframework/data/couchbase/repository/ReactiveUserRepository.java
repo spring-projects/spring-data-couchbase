@@ -16,16 +16,11 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.query.consistency.ScanConsistency;
 import java.util.List;
-
-import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.ViewIndexed;
-import org.springframework.data.couchbase.core.query.WithConsistency;
 import reactor.core.publisher.Flux;
 
 /**
@@ -34,9 +29,6 @@ import reactor.core.publisher.Flux;
 @ViewIndexed(designDoc = "reactiveUser", viewName = "all")
 @N1qlSecondaryIndexed(indexName = "reactiveUser")
 public interface ReactiveUserRepository extends ReactiveCouchbaseRepository<ReactiveUser, String> {
-
-	@View(designDocument = "user", viewName = "all")
-	Flux<ReactiveUser> customViewQuery(ViewQuery query);
 
 	@Query("#{#n1ql.selectEntity} WHERE username = $1 and #{#n1ql.filter}")
 	Flux<ReactiveUser> findByUsername(String username);

@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import com.couchbase.client.java.repository.annotation.Field;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -68,7 +67,7 @@ import org.springframework.util.CollectionUtils;
  * A mapping converter for Couchbase.
  *
  * The converter is responsible for reading from and writing to entities and converting it into a
- * consumable database represenation.
+ * consumable database representation.
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
@@ -154,7 +153,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   }
 
   /**
-   * Toggles strict checking of the couchbase {@link Field} annotation. If enabled,
+   * Toggles strict checking of the {@link Field} annotation. If enabled,
    * strict checking will prevent non-annotated properties to be serialized. This only
    * applies to the Couchbase datastore, allowing other Spring Data datastores to still
    * deal with the property.
@@ -481,8 +480,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
           return;
+          /* TODO: consider how to do strict field checking, or remove it
         } else if (enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)) {
-          return;
+          return;*/
         } else if (prop.isAnnotationPresent(N1qlJoin.class)) {
           return;
         }

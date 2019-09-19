@@ -25,8 +25,6 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.util.features.CouchbaseFeature;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,11 +57,7 @@ public class RepositoryBaseIntegrationTests {
 
   @BeforeClass
   public static void initMocks() {
-    ClusterInfo info = mock(ClusterInfo.class);
-    when(info.checkAvailable(any(CouchbaseFeature.class))).thenReturn(true);
-
     mockOpsA = mock(CouchbaseOperations.class);
-    when(mockOpsA.getCouchbaseClusterInfo()).thenReturn(info);
     when(mockOpsA.exists(any(String.class))).thenReturn(true);
   }
 
@@ -105,11 +99,6 @@ public class RepositoryBaseIntegrationTests {
       return mockOpsA;
     }
 
-    //this is for dev so it is ok to auto-create indexes
-    @Override
-    public IndexManager indexManager() {
-      return new IndexManager();
-    }
   }
 
   @Test

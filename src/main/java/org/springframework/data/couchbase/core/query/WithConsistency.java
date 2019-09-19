@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core.query;
 
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -40,6 +40,6 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 @QueryAnnotation
 public @interface WithConsistency {
 
-  ScanConsistency value();
+  QueryScanConsistency value();
 
 }

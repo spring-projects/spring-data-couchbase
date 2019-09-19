@@ -19,17 +19,12 @@ package org.springframework.data.couchbase.repository.support;
 import java.io.Serializable;
 import java.util.List;
 
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.SimpleN1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.path.GroupByPath;
-import com.couchbase.client.java.query.dsl.path.LimitPath;
-import com.couchbase.client.java.query.dsl.path.WherePath;
+import com.couchbase.client.java.query.QueryOptions;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
@@ -66,59 +61,58 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     Assert.notNull(sort, "Sort must not be null!");
 
     //prepare elements of the query
-    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
-    Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
+    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
         getEntityInformation());
 
     //apply the sort
-    com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(sort, getCouchbaseOperations().getConverter());
-    Statement st = selectFrom.where(whereCriteria).orderBy(orderings);
+    N1QLExpression[] orderings = N1qlUtils.createSort(sort);
+    N1QLExpression st = selectFrom.where(whereCriteria).orderBy(orderings);
 
     //fire the query
-    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-    N1qlQuery query = N1qlQuery.simple(st, N1qlParams.build().consistency(consistency));
+    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(st, QueryOptions.queryOptions().scanConsistency(consistency));
     return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
   }
 
   @Override
   public Page<T> findAll(Pageable pageable) {
     Assert.notNull(pageable, "Pageable must not be null");
-    ScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
 
     //prepare the count total query
-    Statement countStatement = N1qlUtils.createCountQueryForEntity(getCouchbaseOperations().getCouchbaseBucket().name(),
+    N1QLExpression countStatement = N1qlUtils.createCountQueryForEntity(getCouchbaseOperations().getCouchbaseBucket().name(),
         getCouchbaseOperations().getConverter(), getEntityInformation());
-    SimpleN1qlQuery countQuery = N1qlQuery.simple(countStatement, N1qlParams.build().consistency(consistency));
+    N1QLQuery countQuery = new N1QLQuery(countStatement, QueryOptions.queryOptions().scanConsistency(consistency));
 
-        //TODO how to avoid to do that more than once?
-        //fire the count query and get total count
-        List < CountFragment > countResult = getCouchbaseOperations().findByN1QLProjection(countQuery, CountFragment.class);
+    // TODO how to avoid to do that more than once?
+    //fire the count query and get total count
+    List < CountFragment > countResult = getCouchbaseOperations().findByN1QLProjection(countQuery, CountFragment.class);
     long totalCount = countResult == null || countResult.isEmpty() ? 0 : countResult.get(0).count;
 
     //prepare elements of the data query
-    WherePath selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
 
     //add where criteria
-    Expression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
+    N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
         getEntityInformation());
-    GroupByPath groupBy = selectFrom.where(whereCriteria);
+    N1QLExpression groupBy = selectFrom.where(whereCriteria);
 
     //apply the sort if available
-    LimitPath limitPath = groupBy;
+    N1QLExpression limitPath = groupBy;
     if (pageable.getSort().isSorted()) {
-      com.couchbase.client.java.query.dsl.Sort[] orderings = N1qlUtils.createSort(pageable.getSort(),
-          getCouchbaseOperations().getConverter());
+      N1QLExpression[] orderings = N1qlUtils.createSort(pageable.getSort());
       limitPath = groupBy.orderBy(orderings);
     }
 
     //apply the paging
-    Statement pageStatement = limitPath.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
+    N1QLExpression pageStatement = limitPath.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
 
     //fire the query
-    N1qlQuery query = N1qlQuery.simple(pageStatement, N1qlParams.build().consistency(consistency));
+    N1QLQuery query = new N1QLQuery(pageStatement, QueryOptions.queryOptions().scanConsistency(consistency));
     List<T> pageContent = getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
 
     //return the list as a Page
-    return new PageImpl<T>(pageContent, pageable, totalCount);
+    return new PageImpl<>(pageContent, pageable, totalCount);
   }
 }

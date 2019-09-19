@@ -16,17 +16,20 @@
 
 package org.springframework.data.couchbase.repository.cdi;
 
-import org.springframework.data.annotation.Id;
-import com.couchbase.client.java.repository.annotation.Field;
+
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 
 /**
  * @author Mark Paluch
  */
 public class Person {
 
-	@Id private String id;
+	@Id
+	private String id;
 
-	@Field private String name;
+	@Field
+	private String name;
 
 	public Person() {}
 

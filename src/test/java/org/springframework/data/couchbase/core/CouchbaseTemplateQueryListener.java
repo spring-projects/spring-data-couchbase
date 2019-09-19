@@ -19,12 +19,8 @@ package org.springframework.data.couchbase.core;
 import java.util.Collections;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.query.Index;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.DefaultView;
-import com.couchbase.client.java.view.DesignDocument;
-import com.couchbase.client.java.view.View;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
 
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.test.context.TestContext;
@@ -37,15 +33,15 @@ public class CouchbaseTemplateQueryListener extends DependencyInjectionTestExecu
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
-    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
-    populateTestData(client, clusterInfo);
-    createAndWaitForDesignDocs(client);
-    client.query(N1qlQuery.simple(Index.createPrimaryIndex().on(client.name())));
+    Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+    Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
+    Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
+    populateTestData(cluster, collection);
+    cluster.queryIndexes().createPrimaryIndex(bucket.name());
   }
 
-  private void populateTestData(Bucket client, ClusterInfo clusterInfo) {
-    CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
+  private void populateTestData(Cluster cluster, Collection collection) {
+    CouchbaseTemplate template = new CouchbaseTemplate(cluster, collection);
 
     for (int i = 0; i < 100; i++) {
       Beer b = new Beer("testbeer-" + i, "MyBeer" + i, true, "");
@@ -53,19 +49,11 @@ public class CouchbaseTemplateQueryListener extends DependencyInjectionTestExecu
     }
   }
 
-  private void createAndWaitForDesignDocs(Bucket client) {
-    String mapFunction = "function (doc, meta) { if(doc._class == "
-        + "\"org.springframework.data.couchbase.core.Beer\") { emit(doc.name, null); } }";
-    View view = DefaultView.create("by_name", mapFunction);
-    DesignDocument designDoc = DesignDocument.create("test_beers", Collections.singletonList(view));
-    client.bucketManager().upsertDesignDocument(designDoc);
-  }
-
   @Override
   public void afterTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
-    ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
-    CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
+    Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+    Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
+    CouchbaseTemplate template = new CouchbaseTemplate(cluster, bucket.defaultCollection());
 
     for (int i = 0; i < 100; i++) {
       Beer b = new Beer("testbeer-" + i, "MyBeer" + i, true, "");

@@ -1,10 +1,9 @@
 package org.springframework.data.couchbase;
 
-import static org.mockito.Mockito.*;
-
 import java.util.Collections;
 import java.util.List;
 
+import com.couchbase.client.java.Collection;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,14 +13,7 @@ import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.support.IndexManager;
 
-import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseBucket;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.cluster.DefaultClusterInfo;
-import com.couchbase.client.java.util.features.CouchbaseFeature;
-import com.couchbase.client.java.util.features.Version;
 
 @Configuration
 public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
@@ -53,20 +45,12 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
 
   @Override
   public Cluster couchbaseCluster() throws Exception {
-    return Mockito.mock(CouchbaseCluster.class);
+    return Mockito.mock(Cluster.class);
   }
 
   @Override
-  public ClusterInfo couchbaseClusterInfo() {
-    DefaultClusterInfo mock = Mockito.mock(DefaultClusterInfo.class);
-    when(mock.checkAvailable(CouchbaseFeature.N1QL)).thenReturn(true);
-    when(mock.getMinVersion()).thenReturn(new Version(4, 0, 0));
-    return mock;
-  }
-
-  @Override
-  public Bucket couchbaseClient() throws Exception {
-    return Mockito.mock(CouchbaseBucket.class);
+  public Collection couchbaseClient() throws Exception {
+    return Mockito.mock(Collection.class);
   }
 
   @Override
@@ -78,8 +62,8 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
 
   //this is for dev so it is ok to auto-create indexes
   @Override
-  public IndexManager indexManager() {
-    return new IndexManager();
+  public IndexManager indexManager(Cluster cluster) {
+    return new IndexManager(cluster);
   }
 
   @Override

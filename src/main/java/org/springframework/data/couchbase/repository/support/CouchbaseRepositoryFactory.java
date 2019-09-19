@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
+import com.couchbase.client.core.service.ServiceType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
@@ -34,9 +35,7 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
-import org.springframework.data.couchbase.repository.query.SpatialViewBasedQuery;
 import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
-import org.springframework.data.couchbase.repository.query.ViewBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -48,8 +47,6 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
-
-import com.couchbase.client.java.util.features.CouchbaseFeature;
 
 /**
  * Factory to create {@link SimpleCouchbaseRepository} instances.
@@ -130,19 +127,17 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   @Override
   protected final Object getTargetRepository(final RepositoryInformation metadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
-    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
+    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
 
-    ViewIndexed viewIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), ViewIndexed.class);
     N1qlPrimaryIndexed n1qlPrimaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlPrimaryIndexed.class);
     N1qlSecondaryIndexed n1qlSecondaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlSecondaryIndexed.class);
 
     checkFeatures(metadata, isN1qlAvailable, n1qlPrimaryIndexed, n1qlSecondaryIndexed);
 
-    indexManager.buildIndexes(metadata, viewIndexed, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
+    indexManager.buildIndexes(metadata, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
     SimpleCouchbaseRepository repo = getTargetRepositoryViaReflection(metadata, entityInformation, couchbaseOperations);
-    repo.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
     return repo;
   }
 
@@ -166,7 +161,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     }
 
     if (needsN1ql && !isN1qlAvailable) {
-      throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", CouchbaseFeature.N1QL);
+      throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", ServiceType.QUERY);
     }
   }
 
@@ -186,7 +181,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(repositoryMetadata.getRepositoryInterface(),
         repositoryMetadata.getDomainType());
-    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterInfo().checkAvailable(CouchbaseFeature.N1QL);
+    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
     if (isN1qlAvailable) {
       return getN1qlBaseClass(repositoryMetadata);
     }
@@ -225,11 +220,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
       String namedQueryName = queryMethod.getNamedQueryName();
 
-      if (queryMethod.hasDimensionalAnnotation()) {
-        return new SpatialViewBasedQuery(queryMethod, couchbaseOperations);
-      } else if (queryMethod.hasViewAnnotation()) {
-        return new ViewBasedCouchbaseQuery(queryMethod, couchbaseOperations);
-      } else if (queryMethod.hasN1qlAnnotation()) {
+      if (queryMethod.hasN1qlAnnotation()) {
         if (queryMethod.hasInlineN1qlQuery()) {
           return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations,
               SPEL_PARSER, evaluationContextProvider);

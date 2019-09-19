@@ -1,9 +1,8 @@
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.env.ClusterEnvironment;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 
@@ -18,11 +17,11 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 public interface CouchbaseConfigurer {
 
   /**
-   * Set up the underlying main {@link CouchbaseEnvironment}, allowing tuning of the Couchbase SDK.
+   * Set up the underlying main {@link ClusterEnvironment}, allowing tuning of the Couchbase SDK.
    *
    * @throws Exception in case of error during the CouchbaseEnvironment instantiation.
    */
-  CouchbaseEnvironment couchbaseEnvironment() throws Exception;
+  //ClusterEnvironment couchbaseEnvironment() throws Exception;
 
   /**
    * Set up the underlying main Couchbase {@link Cluster} reference to be used by the Spring Data framework
@@ -33,18 +32,11 @@ public interface CouchbaseConfigurer {
   Cluster couchbaseCluster() throws Exception;
 
   /**
-   * Set up the underlying main {@link ClusterInfo}, allowing to check feature availability and cluster configuration.
-   *
-   * @throws Exception in case of error during the ClusterInfo instantiation.
-   */
-  ClusterInfo couchbaseClusterInfo() throws Exception;
-
-  /**
-   * Set up the underlying main {@link Bucket}, the primary Couchbase SDK entry point to be used by the Spring Data
+   * Set up the underlying main {@link Collection}, the primary Couchbase SDK entry point to be used by the Spring Data
    * framework for the {@link CouchbaseOperations}.
    *
    * @throws Exception in case of error during the bucket instantiation.
    */
-  Bucket couchbaseClient() throws Exception;
+  Collection couchbaseClient() throws Exception;
 
 }

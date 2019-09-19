@@ -33,20 +33,20 @@ public class TemplateUtils {
 	private static PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 
-	public static Observable translateError(Throwable e) {
+	public static Throwable translateError(Throwable e) {
 		if (e instanceof RuntimeException) {
-			return Observable.error(exceptionTranslator.translateExceptionIfPossible((RuntimeException) e));
+			return exceptionTranslator.translateExceptionIfPossible((RuntimeException) e);
 		}
 		else if(e instanceof TimeoutException) {
-			return Observable.error(new QueryTimeoutException(e.getMessage(), e));
+			return new QueryTimeoutException(e.getMessage(), e);
 		}
 		else if(e instanceof InterruptedException) {
-			return Observable.error(new OperationInterruptedException(e.getMessage(), e));
+			return new OperationInterruptedException(e.getMessage(), e);
 		}
 		else if(e instanceof ExecutionException) {
-			return Observable.error(new OperationInterruptedException(e.getMessage(), e));
+			return new OperationInterruptedException(e.getMessage(), e);
 		} else {
-			return Observable.error(e);
+			return e;
 		}
 	}
 }

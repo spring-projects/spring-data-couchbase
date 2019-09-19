@@ -10,7 +10,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.geo.Polygon;
 import org.springframework.data.geo.Shape;
 
-import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.json.JsonArray;
 
 /**
  * Unit tests for the {@link GeoUtils} utility class.

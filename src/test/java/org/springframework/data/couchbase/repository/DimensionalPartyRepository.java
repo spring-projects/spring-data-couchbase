@@ -4,7 +4,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 
-import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.json.JsonArray;
 
 import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.geo.Box;

@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.JsonDocument;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,7 +36,7 @@ import org.springframework.test.context.TestExecutionListeners;
 public class QueryDerivationConversionIntegrationTests {
 
   @Autowired
-  private Bucket client;
+  private Collection client;
 
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
@@ -66,8 +67,8 @@ public class QueryDerivationConversionIntegrationTests {
     assertEquals(1, parties.size());
     assertEquals(find, parties.get(0).getEventDate());
 
-    JsonDocument doc = client.get(parties.get(0).getKey());
-    assertEquals(find.getTime(), doc.content().get("eventDate"));
+    JsonObject doc = client.get(parties.get(0).getKey()).contentAsObject();
+    assertEquals(find.getTime(), doc.get("eventDate"));
   }
 
   @Test

@@ -64,12 +64,6 @@ public class RepositoryCustomMethodIntegrationTests {
       return "password";
     }
 
-    //this is for dev so it is ok to auto-create indexes
-    @Override
-    public IndexManager indexManager() {
-      return new IndexManager();
-    }
-
     @Override
     protected Consistency getDefaultConsistency() {
       return Consistency.STRONGLY_CONSISTENT;

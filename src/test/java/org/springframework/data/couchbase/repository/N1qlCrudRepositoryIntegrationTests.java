@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Collection;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +49,7 @@ import org.springframework.test.context.ContextConfiguration;
 public class N1qlCrudRepositoryIntegrationTests {
 
   @Autowired
-  private Bucket client;
+  private Collection client;
 
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
@@ -102,7 +103,7 @@ public class N1qlCrudRepositoryIntegrationTests {
     partyRepository.save(partyHasKeyword);
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
-    assertTrue(client.exists(KEY_PARTY_KEYWORD));
+    assertTrue(client.exists(KEY_PARTY_KEYWORD).exists());
     assertTrue(parties.contains(partyHasKeyword));
     for (Object o : parties) {
       if (!(o instanceof Party)) {

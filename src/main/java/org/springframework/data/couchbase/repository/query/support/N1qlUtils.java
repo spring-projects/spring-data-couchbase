@@ -16,20 +16,21 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import static com.couchbase.client.java.query.Select.*;
-import static com.couchbase.client.java.query.dsl.Expression.*;
-import static com.couchbase.client.java.query.dsl.functions.AggregateFunctions.*;
-import static com.couchbase.client.java.query.dsl.functions.MetaFunctions.*;
-import static com.couchbase.client.java.query.dsl.functions.StringFunctions.*;
+
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.domain.Sort;
@@ -38,18 +39,11 @@ import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ReturnedType;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
-import com.couchbase.client.java.query.dsl.Expression;
-import com.couchbase.client.java.query.dsl.functions.TypeFunctions;
-import com.couchbase.client.java.query.dsl.path.FromPath;
-import com.couchbase.client.java.query.dsl.path.WherePath;
-import com.couchbase.client.java.repository.annotation.Field;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
+
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 /**
  * Utility class to deal with constructing well formed N1QL queries around Spring Data entities, so that
@@ -74,14 +68,14 @@ public class N1qlUtils {
       };
 
   /**
-   * Escape the given bucketName and produce an {@link Expression}.
+   * Escape the given bucketName and produce an {@link N1QLExpression}.
    */
-  public static Expression escapedBucket(String bucketName) {
+  public static N1QLExpression escapedBucket(String bucketName) {
     return i(bucketName);
   }
 
   /**
-   * Produce a {@link Statement} that corresponds to the SELECT clause for looking for Spring Data entities
+   * Produce a {@link N1QLExpression} that corresponds to the SELECT clause for looking for Spring Data entities
    * stored in Couchbase. Notably it will select the content of the document AND its id and cas and use custom
    * construction of query if required.
    *
@@ -90,11 +84,11 @@ public class N1qlUtils {
    * @param converter couchbase converter
    * @return the needed SELECT clause of the statement.
    */
-  public static FromPath createSelectClauseForEntity(String bucketName, ReturnedType returnedType, CouchbaseConverter converter) {
-    Expression bucket = escapedBucket(bucketName);
-    Expression metaId = path(meta(bucket), "id").as(SELECT_ID);
-    Expression metaCas = path(meta(bucket), "cas").as(SELECT_CAS);
-    List<Expression> expList = new ArrayList<Expression>();
+  public static N1QLExpression createSelectClauseForEntity(String bucketName, ReturnedType returnedType, CouchbaseConverter converter) {
+    N1QLExpression bucket = escapedBucket(bucketName);
+    N1QLExpression metaId = path(meta(bucket), "id").as(x(SELECT_ID));
+    N1QLExpression metaCas = path(meta(bucket), "cas").as(x(SELECT_CAS));
+    List<N1QLExpression> expList = new ArrayList<>();
     expList.add(metaId);
     expList.add(metaCas);
 
@@ -109,7 +103,7 @@ public class N1qlUtils {
       expList.add(path(bucket, "*"));
     }
 
-    Expression[] propertiesExp = new Expression[expList.size()];
+    N1QLExpression[] propertiesExp = new N1QLExpression[expList.size()];
     propertiesExp = expList.toArray(propertiesExp);
 
     return select(propertiesExp);
@@ -121,17 +115,17 @@ public class N1qlUtils {
    * @param bucketName the bucket that stores the entity documents (will be escaped).
    * @return the needed returning clause of the statement.
    */
-  public static Expression createReturningExpressionForDelete(String bucketName) {
-    Expression fullEntity = path(i(bucketName), "*");
-    Expression metaId = path(meta(i(bucketName)), "id").as(SELECT_ID);
-    Expression metaCas = path(meta(i(bucketName)), "cas").as(SELECT_CAS);
-    List<Expression> expList = new ArrayList<Expression>();
+  public static N1QLExpression createReturningExpressionForDelete(String bucketName) {
+    N1QLExpression fullEntity = path(i(bucketName), "*");
+    N1QLExpression metaId = path(meta(i(bucketName)), "id").as(x(SELECT_ID));
+    N1QLExpression metaCas = path(meta(i(bucketName)), "cas").as(x(SELECT_CAS));
+    List<N1QLExpression> expList = new ArrayList<>();
     expList.add(fullEntity);
     expList.add(metaId);
     expList.add(metaCas);
 
     StringBuilder sb = new StringBuilder();
-    for (Expression exp: expList) {
+    for (N1QLExpression exp: expList) {
       if (sb.length() != 0) {
         sb.append(", ");
       }
@@ -142,42 +136,42 @@ public class N1qlUtils {
   }
 
   /**
-   * Produce a {@link Statement} that corresponds to the SELECT clause for looking for Spring Data entities
+   * Produce a {@link N1QLExpression} that corresponds to the SELECT clause for looking for Spring Data entities
    * stored in Couchbase. Notably it will select the content of the document AND its id and cas.
    *
    * @param bucketName the bucket that stores the entity documents (will be escaped).
    * @return the needed SELECT clause of the statement.
    */
-  public static FromPath createSelectClauseForEntity(String bucketName) {
+  public static N1QLExpression createSelectClauseForEntity(String bucketName) {
     return createSelectClauseForEntity(bucketName, null, null);
   }
 
   /**
-   * Produce a {@link Statement} that corresponds to the SELECT...FROM clauses for looking for Spring Data entities
+   * Produce a {@link N1QLExpression} that corresponds to the SELECT...FROM clauses for looking for Spring Data entities
    * stored in Couchbase. Notably it will select the content of the document AND its id and cas FROM the given bucket.
    *
    * @param bucketName the bucket that stores the entity documents (will be escaped).
    * @return the needed SELECT...FROM clauses of the statement.
    */
-  public static WherePath createSelectFromForEntity(String bucketName) {
-    return createSelectClauseForEntity(bucketName).from(escapedBucket(bucketName));
+  public static N1QLExpression createSelectFromForEntity(String bucketName) {
+    return createSelectClauseForEntity(bucketName);
   }
 
   /**
-   * Produces an {@link Expression} that can serve as a WHERE clause criteria to only select documents in a bucket
+   * Produces an {@link N1QLExpression} that can serve as a WHERE clause criteria to only select documents in a bucket
    * that matches a particular Spring Data entity (as given by the {@link EntityMetadata} parameter).
    *
    * @param baseWhereCriteria the other criteria of the WHERE clause, or null if none.
    * @param converter the {@link CouchbaseConverter} giving the attribute storing the type information can be extracted.
    * @param entityInformation the expected type information.
-   * @return an {@link Expression} to be used as a WHERE clause, that additionally restricts on the given type.
+   * @return an {@link N1QLExpression} to be used as a WHERE clause, that additionally restricts on the given type.
    */
-  public static Expression createWhereFilterForEntity(Expression baseWhereCriteria, CouchbaseConverter converter,
+  public static N1QLExpression createWhereFilterForEntity(N1QLExpression baseWhereCriteria, CouchbaseConverter converter,
                                                       EntityMetadata<?> entityInformation) {
     //add part that filters on type key
     String typeKey = converter.getTypeKey();
     String typeValue = entityInformation.getJavaType().getName();
-    Expression typeSelector = i(typeKey).eq(s(typeValue));
+    N1QLExpression typeSelector = i(typeKey).eq(s(typeValue));
     if (baseWhereCriteria == null) {
       baseWhereCriteria = typeSelector;
     } else {
@@ -207,11 +201,11 @@ public class N1qlUtils {
   }
 
   /**
-   * Create a N1QL {@link com.couchbase.client.java.query.dsl.Sort} out of a Spring Data {@link Sort}. Note that the later
+   * Create a N1QL {@link N1QLExpression} out of a Spring Data {@link Sort}. Note that the later
    * must use alternative field names as declared by the {@link Field} annotation on the entity, if any.
    */
-  public static com.couchbase.client.java.query.dsl.Sort[] createSort(Sort sort, CouchbaseConverter converter) {
-    List<com.couchbase.client.java.query.dsl.Sort> cbSortList = new ArrayList<com.couchbase.client.java.query.dsl.Sort>();
+  public static N1QLExpression[] createSort(Sort sort) {
+    List<N1QLExpression> cbSortList = new ArrayList<>();
     for (Sort.Order order : sort) {
       String orderProperty = order.getProperty();
       //FIXME the order property should be converted to its corresponding fieldName
@@ -224,17 +218,17 @@ public class N1qlUtils {
         }
         sb.append(i(part).toString());
       }
-      Expression orderFieldName = x(sb.toString());
+      N1QLExpression orderFieldName = x(sb.toString());
       if (order.isIgnoreCase()) {
-        orderFieldName = lower(TypeFunctions.toString(orderFieldName));
+        orderFieldName = orderFieldName.lower();
       }
       if (order.isAscending()) {
-        cbSortList.add(com.couchbase.client.java.query.dsl.Sort.asc(orderFieldName));
+        cbSortList.add(orderFieldName.asc());
       } else {
-        cbSortList.add(com.couchbase.client.java.query.dsl.Sort.desc(orderFieldName));
+        cbSortList.add(orderFieldName.desc());
       }
     }
-    return cbSortList.toArray(new com.couchbase.client.java.query.dsl.Sort[cbSortList.size()]);
+    return cbSortList.toArray(new N1QLExpression[cbSortList.size()]);
   }
 
   /**
@@ -245,30 +239,28 @@ public class N1qlUtils {
    * @param entityInformation the counted entity type.
    * @return the N1QL query that counts number of documents matching this entity type.
    */
-  public static <T> Statement createCountQueryForEntity(String bucketName, CouchbaseConverter converter, CouchbaseEntityInformation<T, String> entityInformation) {
-    return select(count("*").as(CountFragment.COUNT_ALIAS)).from(escapedBucket(bucketName)).where(createWhereFilterForEntity(null, converter, entityInformation));
+  public static <T> N1QLExpression createCountQueryForEntity(String bucketName, CouchbaseConverter converter, CouchbaseEntityInformation<T, String> entityInformation) {
+    return select(count(x("*")).as(x(CountFragment.COUNT_ALIAS))).from(escapedBucket(bucketName)).where(createWhereFilterForEntity(null, converter, entityInformation));
   }
 
   /**
    * Creates N1QLQuery object from the statement, query placeholder values and scan consistency
    *
-   * @param statement
-   * @param queryPlaceholderValues
-   * @param scanConsistency
-   * @return
+   * @param expression A {@link N1QLExpression} representing the query to execute
+   * @param queryPlaceholderValues The positional or named parameters needed for the query
+   * @param scanConsistency The {@link QueryScanConsistency} to be used.
+   * @return A {@link N1QLQuery} to be executed.
    */
-  public static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
-    N1qlParams n1qlParams = N1qlParams.build().consistency(scanConsistency);
-    N1qlQuery query;
+  public static N1QLQuery buildQuery(N1QLExpression expression, JsonValue queryPlaceholderValues, QueryScanConsistency scanConsistency) {
+    QueryOptions opts = QueryOptions.queryOptions().scanConsistency(scanConsistency);
 
+    // put the placeholders in the options
     if (queryPlaceholderValues instanceof JsonObject && !((JsonObject) queryPlaceholderValues).isEmpty()) {
-      query = N1qlQuery.parameterized(statement, (JsonObject) queryPlaceholderValues, n1qlParams);
+      opts.parameters((JsonObject)queryPlaceholderValues);
     } else if (queryPlaceholderValues instanceof JsonArray && !((JsonArray) queryPlaceholderValues).isEmpty()) {
-      query = N1qlQuery.parameterized(statement, (JsonArray) queryPlaceholderValues, n1qlParams);
-    } else {
-      query = N1qlQuery.simple(statement, n1qlParams);
+      opts.parameters((JsonArray) queryPlaceholderValues);
     }
-    return query;
+    return new N1QLQuery(expression, opts);
   }
 
 

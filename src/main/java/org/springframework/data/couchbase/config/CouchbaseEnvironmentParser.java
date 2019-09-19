@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.config;
 import static org.springframework.data.config.ParsingUtils.setPropertyValue;
 
 import com.couchbase.client.core.retry.RetryStrategy;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
 import org.w3c.dom.Element;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;

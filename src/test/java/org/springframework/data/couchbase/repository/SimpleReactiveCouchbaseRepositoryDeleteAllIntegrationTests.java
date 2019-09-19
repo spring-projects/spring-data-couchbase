@@ -30,6 +30,9 @@ import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRe
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+import reactor.core.publisher.Flux;
+
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

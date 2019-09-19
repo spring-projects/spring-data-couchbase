@@ -1,14 +1,16 @@
 package org.springframework.data.couchbase.repository.query.support;
 
-import static com.couchbase.client.java.query.dsl.Expression.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.data.couchbase.core.Beer;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.domain.Sort;
@@ -91,28 +93,23 @@ public class N1qlUtilsTest {
 
   @Test
   public void testCreateSortUsesPropertiesAsIsWithEscaping() throws Exception {
-    CouchbaseConverter converter = mock(CouchbaseConverter.class);
-    com.couchbase.client.java.query.dsl.Sort[] realSort =
-        N1qlUtils.createSort(Sort.by("description", "attendees"), converter);
+    N1QLExpression[] realSort =
+        N1qlUtils.createSort(Sort.by("description", "attendees"));
 
     assertEquals(2, realSort.length);
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`description`").toString(), realSort[0].toString());
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`").toString(), realSort[1].toString());
-
-    verifyZeroInteractions(converter);
+    assertEquals("`description` ASC", realSort[0].toString());
+    assertEquals("`attendees` ASC", realSort[1].toString());
   }
 
   @Test
   public void testCreateSortIgnoresCaseWhenSpecified() throws Exception {
-    CouchbaseConverter converter = mock(CouchbaseConverter.class);
     Sort sortDescription = Sort.by(Order.asc("description").ignoreCase(), Order.asc("attendees"));
-    com.couchbase.client.java.query.dsl.Sort[] realSort = N1qlUtils.createSort(sortDescription, converter);
+    N1QLExpression[] realSort = N1qlUtils.createSort(sortDescription);
 
     assertEquals(2, realSort.length);
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("LOWER(TOSTRING(`description`))").toString(), realSort[0].toString());
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`").toString(), realSort[1].toString());
+    assertEquals("LOWER(TOSTRING(`description`)) ASC", realSort[0].toString());
+    assertEquals("`attendees` ASC", realSort[1].toString());
 
-    verifyZeroInteractions(converter);
   }
 
   @Test
@@ -140,7 +137,7 @@ public class N1qlUtilsTest {
     when(metadata.getJavaType()).thenReturn(String.class);
 
     String real = N1qlUtils.createWhereFilterForEntity(
-            x("field1").gte(30).or(x("field2").eq(s("foo"))),
+            x("field1").gte(x("30")).or(x("field2").eq(s("foo"))),
             converter, metadata).toString();
 
     assertEquals(expected, real);
@@ -148,11 +145,9 @@ public class N1qlUtilsTest {
 
   @Test
   public void testOrderByWithNestedField() throws Exception {
-    CouchbaseConverter converter = mock(CouchbaseConverter.class);
-    com.couchbase.client.java.query.dsl.Sort[] realSort =
-            N1qlUtils.createSort(Sort.by("party.attendees"), converter);
+    N1QLExpression[] realSort =
+            N1qlUtils.createSort(Sort.by("party.attendees"));
 
     assertEquals("`party`.`attendees` ASC", realSort[0].toString());
-    verifyZeroInteractions(converter);
   }
 }

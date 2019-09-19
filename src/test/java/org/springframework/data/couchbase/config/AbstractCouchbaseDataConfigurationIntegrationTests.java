@@ -4,11 +4,11 @@ import static org.junit.Assert.*;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import com.couchbase.client.java.ClusterOptions;
+import com.couchbase.client.java.Collection;
+
+import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,7 +39,7 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
   ItemRepository repository;
 
   @Autowired
-  Bucket client;
+  Collection client;
 
   @Configuration
   static class SdkConfig {
@@ -49,27 +49,30 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
     private static final String BUCKET_PASSWORD = "password";
 
     public static Bucket bucket;
+    public static Collection collection;
 
     @Bean
     public Cluster couchbaseCluster() {
-      return CouchbaseCluster.create(couchbaseEnv(), IP);
+      return Cluster.connect(IP, getOptions());
     }
 
-    @Bean
-    public ClusterInfo couchbaseClusterInfo() {
-      return couchbaseCluster().clusterManager(BUCKET_NAME, BUCKET_PASSWORD).info();
+    @Bean Collection couchbaseCollection() {
+      collection = couchbaseBucket().defaultCollection();
+      return collection;
     }
 
     @Bean
     public Bucket couchbaseBucket() {
-      Bucket b = couchbaseCluster().openBucket(BUCKET_NAME, BUCKET_PASSWORD);
-      bucket = b;
-      return b;
+      bucket = couchbaseCluster().bucket(BUCKET_NAME);
+      return bucket;
     }
 
     @Bean
-    public CouchbaseEnvironment couchbaseEnv() {
-      return DefaultCouchbaseEnvironment.create();
+    public ClusterOptions getOptions() { return ClusterOptions.clusterOptions(BUCKET_NAME, BUCKET_PASSWORD).environment(couchbaseEnv()); }
+
+    @Bean
+    public ClusterEnvironment couchbaseEnv() {
+      return ClusterEnvironment.builder().build();
     }
   }
 
@@ -78,26 +81,23 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
   static class Config extends AbstractCouchbaseDataConfiguration {
 
     @Autowired
-    Cluster c;
+    Cluster cluster;
 
     @Autowired
-    ClusterInfo ci;
+    Collection collection;
 
     @Autowired
-    Bucket b;
-
-    @Autowired
-    CouchbaseEnvironment e;
+    ClusterEnvironment env;
 
     @Override
     protected CouchbaseConfigurer couchbaseConfigurer() {
-      return new TestCouchbaseConfigurer(e, c, ci, b);
+      return new TestCouchbaseConfigurer(cluster, collection);
     }
   }
 
   @Test
   public void testInjectedBucketIsFromAdditionalConfig() {
-    assertSame(client, SdkConfig.bucket);
+    assertSame(client, SdkConfig.collection);
   }
 
   @Test
@@ -110,11 +110,13 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
     item.value = "Test if the SimpleCouchbaseConfiguration can correctly get Bucket/Cluster/etc... beans injected";
 
     repository.save(item);
-    JsonDocument testDoc = client.get(key);
+    Item repoItem = repository.findById(key).get();
+    System.out.println("XXXXXXXX " + repoItem.value);
+    JsonObject testItem = client.get(key).contentAsObject();
 
-    assertNotNull(testDoc);
-    assertNotNull(testDoc.content());
-    assertEquals(item.value, testDoc.content().getString("value"));
+    assertNotNull(testItem);
+    System.out.println("XXXXXXXXXX " + testItem.toString() + "XXXXXXX " + item.value);
+    assertEquals(item.value, testItem.getString("value"));
   }
 
   private static class Item {
@@ -126,21 +128,12 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
 
   private static class TestCouchbaseConfigurer implements CouchbaseConfigurer {
 
-    private CouchbaseEnvironment env;
     private Cluster cluster;
-    private ClusterInfo info;
-    private Bucket bucket;
+    private Collection collection;
 
-    public TestCouchbaseConfigurer(CouchbaseEnvironment env, Cluster cluster, ClusterInfo info, Bucket bucket) {
-      this.env = env;
+    public TestCouchbaseConfigurer(Cluster cluster, Collection collection) {
       this.cluster = cluster;
-      this.info = info;
-      this.bucket = bucket;
-    }
-
-    @Override
-    public CouchbaseEnvironment couchbaseEnvironment() throws Exception {
-      return this.env;
+      this.collection = collection;
     }
 
     @Override
@@ -149,14 +142,10 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
     }
 
     @Override
-    public ClusterInfo couchbaseClusterInfo() throws Exception {
-      return this.info;
+    public Collection couchbaseClient() throws Exception {
+      return this.collection;
     }
 
-    @Override
-    public Bucket couchbaseClient() throws Exception {
-      return this.bucket;
-    }
   }
 
   @Repository

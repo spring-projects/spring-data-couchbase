@@ -72,12 +72,12 @@ public class CouchbaseTemplateParser extends AbstractSingleBeanDefinitionParser 
    */
   @Override
   protected void doParse(final Element element, final BeanDefinitionBuilder bean) {
-    String clusterInfoRef = element.getAttribute("clusterInfo-ref");
+    String clusterRef = element.getAttribute("cluster-ref");
     String bucketRef = element.getAttribute("bucket-ref");
     String converterRef = element.getAttribute("converter-ref");
     String translationServiceRef = element.getAttribute("translation-service-ref");
 
-    bean.addConstructorArgReference(StringUtils.hasText(clusterInfoRef) ? clusterInfoRef : BeanNames.COUCHBASE_CLUSTER_INFO);
+    bean.addConstructorArgReference(StringUtils.hasText(clusterRef) ? clusterRef : BeanNames.COUCHBASE_CLUSTER);
     bean.addConstructorArgReference(StringUtils.hasText(bucketRef) ? bucketRef : BeanNames.COUCHBASE_BUCKET);
 
     if (StringUtils.hasText(converterRef)) {

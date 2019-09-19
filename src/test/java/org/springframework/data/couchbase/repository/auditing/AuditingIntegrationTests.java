@@ -35,7 +35,7 @@ public class AuditingIntegrationTests {
 
   @After
   public void cleanupAuditedEntity() {
-    repository.getCouchbaseOperations().getCouchbaseBucket().remove(KEY);
+    repository.getCouchbaseOperations().getCouchbaseCollection().remove(KEY);
   }
 
   @Test

@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.util.features.CouchbaseFeature;
+import com.couchbase.client.core.service.ServiceType;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.dao.NonTransientDataAccessException;
@@ -27,23 +27,23 @@ import org.springframework.dao.NonTransientDataAccessException;
  */
 public class UnsupportedCouchbaseFeatureException extends InvalidDataAccessApiUsageException {
 
-  private final CouchbaseFeature feature;
+  private final ServiceType feature;
 
-  public UnsupportedCouchbaseFeatureException(String msg, CouchbaseFeature feature) {
+  public UnsupportedCouchbaseFeatureException(String msg, ServiceType feature) {
     super(msg);
     this.feature = feature;
   }
 
-  public UnsupportedCouchbaseFeatureException(String msg, CouchbaseFeature feature, Throwable cause) {
+  public UnsupportedCouchbaseFeatureException(String msg, ServiceType feature, Throwable cause) {
     super(msg, cause);
     this.feature = feature;
   }
 
   /**
-   * @return the {@link CouchbaseFeature} that was missing (could be null if not
+   * @return the {@link ServiceType} that was missing (could be null if not
    * a registered CouchbaseFeature, in which case see {@link #getMessage()}).
    */
-  public CouchbaseFeature getFeature() {
+  public ServiceType getFeature() {
     return feature;
   }
 }

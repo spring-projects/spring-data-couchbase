@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import java.net.InetAddress;
+import java.util.List;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.bucket.BucketInfo;
+import com.couchbase.client.core.config.NodeInfo;
+import com.couchbase.client.java.Collection;
 
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -33,18 +33,17 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 @ManagedResource(description = "Client Information")
 public class ClientInfo {
 
-  private final Bucket bucket;
-  private final BucketInfo info;
+  private final Collection collection;
 
-  public ClientInfo(final Bucket bucket) {
-    this.bucket = bucket;
-    this.info = bucket.bucketManager().info();
+  public ClientInfo(final Collection collection) {
+    this.collection = collection;
   }
 
   @ManagedAttribute(description = "Hostnames of connected nodes")
   public String getHostNames() {
+    List<NodeInfo> nodes = collection.core().clusterConfig().bucketConfig(collection.bucketName()).nodes();
     StringBuilder result = new StringBuilder();
-    for (InetAddress node : info.nodeList()) {
+    for (NodeInfo node : nodes) {
       result.append(node.toString()).append(",");
     }
     return result.toString();
@@ -52,7 +51,7 @@ public class ClientInfo {
 
   @ManagedAttribute(description = "Number of connected nodes")
   public int getNumberOfNodes() {
-    return info.nodeCount();
+    return collection.core().clusterConfig().bucketConfig(collection.bucketName()).nodes().size();
   }
 
   //TODO obtain count of available nodes vs unavailable ones and expose it

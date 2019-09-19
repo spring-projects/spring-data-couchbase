@@ -22,12 +22,15 @@ import javax.enterprise.inject.Produces;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
 
+import com.couchbase.client.java.Collection;
 import org.springframework.data.couchbase.config.CouchbaseBucketFactoryBean;
+import org.springframework.data.couchbase.config.CouchbaseCollectionFactoryBean;
+
+import static org.mockito.Mockito.mock;
 
 /**
- * Producer for {@link Bucket}. A default {@link CouchbaseCluster} with defaults
+ * Producer for {@link Bucket}. A default {@link Cluster} with defaults
  * from {@link CouchbaseBucketFactoryBean} are sufficient for our test.
  * 
  * @author Mark Paluch
@@ -38,19 +41,22 @@ class CouchbaseClientProducer {
 	@Produces
 	@ApplicationScoped
 	public Cluster cluster() {
-		return CouchbaseCluster.create();
+		// in SDK3, the Cluster object is returned by actually _connecting_, so
+		// lets just mock it...
+		return mock(Cluster.class);
 	}
 
 	@Produces
-	public Bucket createCouchbaseClient(Cluster cluster) throws Exception {
-		CouchbaseBucketFactoryBean couchbaseFactoryBean = new CouchbaseBucketFactoryBean(cluster, "protected", "protected", "password");
+	public Collection createCouchbaseClient(Cluster cluster) throws Exception {
+		// we return the defaultCollection from the "default" bucket.
+		CouchbaseCollectionFactoryBean couchbaseFactoryBean = new CouchbaseCollectionFactoryBean(cluster);
 		couchbaseFactoryBean.afterPropertiesSet();
 		return couchbaseFactoryBean.getObject();
 	}
 
-	public void close(@Disposes Bucket couchbaseClient) {
-		couchbaseClient.close();
-	}
+	// TODO: I doubt we need this at all, but maybe?
+	public void close(@Disposes Collection couchbaseClient) { }
+
 
 	public void close(@Disposes Cluster cluster) {
 		cluster.disconnect();

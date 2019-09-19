@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.json.JsonArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

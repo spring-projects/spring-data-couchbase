@@ -21,19 +21,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.ViewQuery;
-import com.couchbase.client.java.view.ViewResult;
-import com.couchbase.client.java.view.ViewRow;
-
-import org.springframework.dao.DataRetrievalFailureException;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.query.View;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
+
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
+
+
+
 
 /**
  * Repository base implementation for Couchbase.
@@ -69,16 +74,9 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     Assert.notNull(couchbaseOperations, "CouchbaseOperations must not be null!");
 
     entityInformation = metadata;
-    this.couchbaseOperations = couchbaseOperations;
-  }
 
-  /**
-   * Configures a custom {@link ViewMetadataProvider} to be used to detect {@link View}s to be applied to queries.
-   *
-   * @param viewMetadataProvider that is used to lookup any annotated View on a query method.
-   */
-  public void setViewMetadataProvider(final ViewMetadataProvider viewMetadataProvider) {
-    this.viewMetadataProvider = viewMetadataProvider;
+    // the base query gets all the items by their
+    this.couchbaseOperations = couchbaseOperations;
   }
 
   @Override
@@ -134,62 +132,47 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public Iterable<T> findAll() {
-    final ResolvedView resolvedView = determineView();
-    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-    query.reduce(false);
-    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
-    return couchbaseOperations.findByView(query, entityInformation.getJavaType());
+    // TODO: figure out a cleaner way
+    N1QLExpression expression = select(x("*"))
+            .from(i(couchbaseOperations.getCouchbaseBucket().name()))
+            .where(x("_class").eq(s(entityInformation.getJavaType().getCanonicalName())));
+    QueryScanConsistency consisistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consisistency));
+
+    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());
   }
 
   @Override
   public Iterable<T> findAllById(final Iterable<ID> ids) {
-    final ResolvedView resolvedView = determineView();
-    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-    query.reduce(false);
-    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
-    JsonArray keys = JsonArray.create();
-    for (ID id : ids) {
-      keys.add(couchbaseOperations.getConverter().convertForWriteIfNeeded(id));
-    }
-    query.keys(keys);
+    // TODO: figure out a cleaner way
+    N1QLExpression expression = select(x("*"))
+            .from(i(couchbaseOperations.getCouchbaseBucket().name()))
+            .keys(ids);
+    expression = addClassWhereClause(expression);
+    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
-    return couchbaseOperations.findByView(query, entityInformation.getJavaType());
+    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());
   }
 
   @Override
   public long count() {
-    final ResolvedView resolvedView = determineView();
-    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-    query.reduce(true);
-    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
-
-    ViewResult response = couchbaseOperations.queryView(query);
-
-    long count = 0;
-    for (ViewRow row : response) {
-      count += Long.parseLong(String.valueOf(row.value()));
-    }
-
-    return count;
+    N1QLExpression expression = select(x("COUNT(*)")).from(i(couchbaseOperations.getCouchbaseBucket().name()));
+    expression = addClassWhereClause(expression);
+    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+    QueryResult res = couchbaseOperations.queryN1QL(query);
+    List<JsonObject> obj = res.rowsAsObject();
+    return couchbaseOperations.queryN1QL(query).rowsAsObject().get(0).getLong("$1");
   }
 
   @Override
   public void deleteAll() {
-    final ResolvedView resolvedView = determineView();
-    ViewQuery query = ViewQuery.from(resolvedView.getDesignDocument(), resolvedView.getViewName());
-    query.reduce(false);
-    query.stale(getCouchbaseOperations().getDefaultConsistency().viewConsistency());
-
-
-    ViewResult response = couchbaseOperations.queryView(query);
-    for (ViewRow row : response) {
-      try {
-        couchbaseOperations.remove(row.id());
-      } catch (DataRetrievalFailureException e) {
-        //ignore stale deletions
-        if (!(e.getCause() instanceof DocumentDoesNotExistException)) throw e;
-      }
-    }
+    N1QLExpression expression = x("DELETE").from(i(couchbaseOperations.getCouchbaseBucket().name()));
+    expression = addClassWhereClause(expression);
+    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+    couchbaseOperations.queryN1QL(query);
   }
 
   @Override
@@ -206,48 +189,8 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     return entityInformation;
   }
 
-  /**
-   * Resolve a View based upon:
-   * <p/>
-   * 1. Any @View annotation that is present
-   * 2. If none are found, default designDocument to be the entity name (lowercase) and viewName to be "all".
-   *
-   * @return ResolvedView containing the designDocument and viewName.
-   */
-  private ResolvedView determineView() {
-    String designDocument = StringUtils.uncapitalize(entityInformation.getJavaType().getSimpleName());
-    String viewName = "all";
-
-    final View view = viewMetadataProvider.getView();
-
-    if (view != null) {
-      designDocument = view.designDocument();
-      viewName = view.viewName();
-    }
-
-    return new ResolvedView(designDocument, viewName);
+  private final N1QLExpression addClassWhereClause(N1QLExpression exp) {
+    String classString = entityInformation.getJavaType().getCanonicalName();
+    return exp.where(x("_class").eq(s(classString)));
   }
-
-  /**
-   * Simple holder to allow an easier exchange of information.
-   */
-  private final class ResolvedView {
-
-    private final String designDocument;
-    private final String viewName;
-
-    public ResolvedView(final String designDocument, final String viewName) {
-      this.designDocument = designDocument;
-      this.viewName = viewName;
-    }
-
-    private String getDesignDocument() {
-      return designDocument;
-    }
-
-    private String getViewName() {
-      return viewName;
-    }
-  }
-
 }

@@ -19,11 +19,12 @@ package org.springframework.data.couchbase.config;
 import com.couchbase.client.core.retry.BestEffortRetryStrategy;
 import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.core.retry.RetryStrategy;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment.Builder;
+import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.env.ClusterEnvironment.Builder;
 
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+
+import java.time.Duration;
 
 /**
  * Factory Bean to help create a CouchbaseEnvironment (by offering setters for supported tuning methods).
@@ -32,13 +33,12 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
  * @author Simon Bland
  * @author Subhashni Balakrishnan
  */
-/*package*/ class CouchbaseEnvironmentFactoryBean extends AbstractFactoryBean<CouchbaseEnvironment> {
+/*package*/ class CouchbaseEnvironmentFactoryBean extends AbstractFactoryBean<ClusterEnvironment> {
 
   public static final String RETRYSTRATEGY_FAILFAST = "FailFast";
   public static final String RETRYSTRATEGY_BESTEFFORT = "BestEffort";
   
-  private final Builder couchbaseEnvBuilder = DefaultCouchbaseEnvironment.builder();
-
+  private final Builder couchbaseEnvBuilder = ClusterEnvironment.builder();
   /*
   These are tunings that are not practical to be exposed in a xml configuration
   or not supposed to be modified that easily:
@@ -70,11 +70,11 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
 
   @Override
   public Class<?> getObjectType() {
-    return DefaultCouchbaseEnvironment.class;
+    return ClusterEnvironment.class;
   }
 
   @Override
-  protected CouchbaseEnvironment createInstance() throws Exception {
+  protected ClusterEnvironment createInstance() throws Exception {
     return couchbaseEnvBuilder.build();
   }
 
@@ -95,34 +95,34 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
   //==== SETTERS for the factory bean ====
 
   public void setManagementTimeout(long managementTimeout) {
-    this.couchbaseEnvBuilder.managementTimeout(managementTimeout);
+    couchbaseEnvBuilder.timeoutConfig().managementTimeout(Duration.ofSeconds(managementTimeout));
   }
 
   public void setQueryTimeout(long queryTimeout) {
-    this.couchbaseEnvBuilder.queryTimeout(queryTimeout);
+    this.couchbaseEnvBuilder.timeoutConfig().queryTimeout(Duration.ofSeconds(queryTimeout));
   }
 
   public void setViewTimeout(long viewTimeout) {
-    this.couchbaseEnvBuilder.viewTimeout(viewTimeout);
+    this.couchbaseEnvBuilder.timeoutConfig().viewTimeout(Duration.ofSeconds(viewTimeout));
   }
 
   public void setKvTimeout(long kvTimeout) {
-    this.couchbaseEnvBuilder.kvTimeout(kvTimeout);
+    this.couchbaseEnvBuilder.timeoutConfig().kvTimeout(Duration.ofSeconds(kvTimeout));
   }
 
   public void setConnectTimeout(long connectTimeout) {
-    this.couchbaseEnvBuilder.connectTimeout(connectTimeout);
+    this.couchbaseEnvBuilder.timeoutConfig().connectTimeout(Duration.ofSeconds(connectTimeout));
   }
 
   public void setDisconnectTimeout(long disconnectTimeout) {
-    this.couchbaseEnvBuilder.disconnectTimeout(disconnectTimeout);
+    this.couchbaseEnvBuilder.timeoutConfig().disconnectTimeout(Duration.ofSeconds(disconnectTimeout));
   }
 
   public void setDnsSrvEnabled(boolean dnsSrvEnabled) {
-    this.couchbaseEnvBuilder.dnsSrvEnabled(dnsSrvEnabled);
+    this.couchbaseEnvBuilder.ioConfig().dnsSrvEnabled(dnsSrvEnabled);
   }
 
-  public void setSslEnabled(boolean sslEnabled) {
+  /*public void setSslEnabled(boolean sslEnabled) {
     this.couchbaseEnvBuilder.sslEnabled(sslEnabled);
   }
 
@@ -173,19 +173,23 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
   public void setRequestBufferSize(int requestBufferSize) {
     this.couchbaseEnvBuilder.requestBufferSize(requestBufferSize);
   }
-
+ */
   public void setKvEndpoints(int kvEndpoints) {
-    this.couchbaseEnvBuilder.kvEndpoints(kvEndpoints);
+    this.couchbaseEnvBuilder.serviceConfig().keyValueServiceConfig().endpoints(kvEndpoints);
   }
 
-  public void setViewEndpoints(int viewEndpoints) {
-    this.couchbaseEnvBuilder.viewEndpoints(viewEndpoints);
+  public void setViewMinEndpoints(int minViewEndpoints) {
+    this.couchbaseEnvBuilder.serviceConfig().viewServiceConfig().minEndpoints(minViewEndpoints);
+  }
+
+  public void setViewMaxEndpoints(int maxViewEndpoints) {
+    this.couchbaseEnvBuilder.serviceConfig().viewServiceConfig().maxEndpoints(maxViewEndpoints);
   }
 
   public void setQueryEndpoints(int queryEndpoints) {
-    this.couchbaseEnvBuilder.queryEndpoints(queryEndpoints);
+    this.couchbaseEnvBuilder.serviceConfig().queryServiceConfig().minEndpoints(queryEndpoints);
   }
-
+  /*
   public void setMaxRequestLifetime(long maxRequestLifetime) {
     this.couchbaseEnvBuilder.maxRequestLifetime(maxRequestLifetime);
   }
@@ -205,21 +209,21 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
   public void setTcpNodelayEnabled(boolean tcpNodelayEnabled) {
     this.couchbaseEnvBuilder.tcpNodelayEnabled(tcpNodelayEnabled);
   }
-
+  */
   public void setMutationTokensEnabled(boolean mutationTokensEnabled) {
-    this.couchbaseEnvBuilder.mutationTokensEnabled(mutationTokensEnabled);
+    this.couchbaseEnvBuilder.ioConfig().mutationTokensEnabled(mutationTokensEnabled);
   }
 
   public void setAnalyticsTimeout(long analyticsTimeout) {
-    this.couchbaseEnvBuilder.analyticsTimeout(analyticsTimeout);
+    this.couchbaseEnvBuilder.serviceConfig().analyticsServiceConfig().idleTime(Duration.ofSeconds(analyticsTimeout));
   }
 
   public void setConfigPollInterval(long configPollInterval) {
-    this.couchbaseEnvBuilder.configPollInterval(configPollInterval);
+    this.couchbaseEnvBuilder.ioConfig().configPollInterval(Duration.ofSeconds(configPollInterval));
   }
-
+  /*
   public void setConfigPollFloorInterval(long configPollFloorInterval) {
-    this.couchbaseEnvBuilder.configPollFloorInterval(configPollFloorInterval);
+    this.couchbaseEnvBuilder.ioConfig().configPollFloorInterval(configPollFloorInterval);
   }
 
   public void setCertAuthEnabled(boolean certAuthEnabled) {
@@ -237,12 +241,12 @@ import org.springframework.beans.factory.config.AbstractFactoryBean;
   public void setOrphanResponseReportingEnabled(boolean orphanResponseReportingEnabled) {
     this.couchbaseEnvBuilder.orphanResponseReportingEnabled(orphanResponseReportingEnabled);
   }
-
+  */
   public void setCompressionMinSize(int compressionMinSize) {
-    this.couchbaseEnvBuilder.compressionMinSize(compressionMinSize);
+    this.couchbaseEnvBuilder.compressionConfig().minSize(compressionMinSize);
   }
 
   public void setCompressionMinRatio(double compressionMinRatio) {
-    this.couchbaseEnvBuilder.compressionMinRatio(compressionMinRatio);
+    this.couchbaseEnvBuilder.compressionConfig().minRatio(compressionMinRatio);
   }
 }

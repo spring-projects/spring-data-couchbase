@@ -16,7 +16,9 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.java.json.JsonValue;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,11 +30,7 @@ import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.dsl.path.DefaultLimitPath;
-import com.couchbase.client.java.query.dsl.path.DefaultOrderByPath;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 /**
  * A {@link RepositoryQuery} for Couchbase, based on N1QL and a String statement.
@@ -79,36 +77,34 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
   }
 
   @Override
-  public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+  public N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
     EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
-    String parsedStatement = this.queryParser.doParse(parser, evaluationContext, false);
-    String orderByPart = "";
-    String limitByPart = "";
+    N1QLExpression parsedStatement = x(this.queryParser.doParse(parser, evaluationContext, false));
+
 
     Sort sort = accessor.getSort();
     if (sort.isSorted()) {
-      com.couchbase.client.java.query.dsl.Sort[] cbSorts = N1qlUtils.createSort(sort, getCouchbaseOperations().getConverter());
-      orderByPart = " " + new DefaultOrderByPath(null).orderBy(cbSorts).toString();
+      N1QLExpression[] cbSorts = N1qlUtils.createSort(sort);
+      parsedStatement = parsedStatement.orderBy(cbSorts);
     }
     if (queryMethod.isPageQuery()) {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
-      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize())
-			  .offset(Math.toIntExact(pageable.getOffset())).toString();
+      parsedStatement = parsedStatement.limit(pageable.getPageSize())
+			  .offset(Math.toIntExact(pageable.getOffset()));
     } else if (queryMethod.isSliceQuery()) {
       Pageable pageable = accessor.getPageable();
       Assert.notNull(pageable, "Pageable must not be null!");
-      limitByPart = " " + new DefaultLimitPath(null).limit(pageable.getPageSize() + 1)
-			  .offset(Math.toIntExact(pageable.getOffset())).toString();
+      parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1)
+              .offset(Math.toIntExact(pageable.getOffset()));
     }
-    return N1qlQuery.simple(parsedStatement + orderByPart + limitByPart).statement();
+    return parsedStatement;
   }
 
   @Override
-  protected Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
+  protected N1QLExpression getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
     EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
-    String parsedStatement = this.queryParser.doParse(parser, evaluationContext, true);
-    return N1qlQuery.simple(parsedStatement).statement();
+    return x(this.queryParser.doParse(parser, evaluationContext, true));
   }
 
   @Override

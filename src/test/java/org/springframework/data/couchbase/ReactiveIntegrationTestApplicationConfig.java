@@ -1,10 +1,11 @@
 package org.springframework.data.couchbase;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import com.couchbase.client.core.env.TimeoutConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +13,6 @@ import org.springframework.data.couchbase.config.AbstractReactiveCouchbaseConfig
 import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.core.query.Consistency;
-import org.springframework.data.couchbase.repository.support.IndexManager;
 
 @Configuration
 public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCouchbaseConfiguration {
@@ -43,13 +43,14 @@ public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCo
 	}
 
 	@Override
-	protected CouchbaseEnvironment getEnvironment() {
-		return DefaultCouchbaseEnvironment.builder()
-				.connectTimeout(10000)
-				.kvTimeout(10000)
-				.queryTimeout(10000)
-				.viewTimeout(10000)
-				.build();
+	protected ClusterEnvironment getEnvironment() {
+		return ClusterEnvironment.builder().timeoutConfig(
+				TimeoutConfig.builder()
+					.connectTimeout(Duration.ofMillis(10000))
+					.kvTimeout(Duration.ofMillis(10000))
+					.queryTimeout(Duration.ofMillis(10000))
+					.viewTimeout(Duration.ofMillis(10000))
+		).build();
 	}
 
 	@Override
@@ -57,12 +58,6 @@ public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCo
 		RxJavaCouchbaseTemplate template = super.reactiveCouchbaseTemplate();
 		template.setWriteResultChecking(WriteResultChecking.LOG);
 		return template;
-	}
-
-	//this is for dev so it is ok to auto-create indexes
-	@Override
-	public IndexManager indexManager() {
-		return new IndexManager();
 	}
 
 	@Override

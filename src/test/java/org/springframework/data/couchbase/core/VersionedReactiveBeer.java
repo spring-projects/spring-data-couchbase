@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.repository.annotation.Field;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 
 /**

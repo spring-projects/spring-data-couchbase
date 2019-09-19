@@ -1,9 +1,7 @@
 package org.springframework.data.couchbase.repository.index;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
-import com.couchbase.client.java.query.Index;
-import com.couchbase.client.java.query.N1qlQuery;
+import com.couchbase.client.java.Cluster;
 
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.test.context.TestContext;
@@ -18,14 +16,9 @@ public class IndexedRepositoryTestListener extends DependencyInjectionTestExecut
 
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
-    Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
-    try {
-      client.bucketManager().removeDesignDocument(IndexedRepositoryIntegrationTests.VIEW_DOC);
-      client.bucketManager().removeDesignDocument("foo");
-    } catch (DesignDocumentDoesNotExistException ex) {
-      //ignore
-    }
-    client.query(N1qlQuery.simple(Index.dropPrimaryIndex(client.name())));
-    client.query(N1qlQuery.simple(Index.dropIndex(client.name(), IndexedRepositoryIntegrationTests.SECONDARY)));
+    Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
+    Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+    cluster.queryIndexes().dropPrimaryIndex(bucket.name());
+    cluster.queryIndexes().dropIndex(bucket.name(), IndexedRepositoryIntegrationTests.SECONDARY);
   }
 }

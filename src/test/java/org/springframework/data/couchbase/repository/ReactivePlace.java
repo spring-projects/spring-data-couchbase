@@ -1,7 +1,7 @@
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
 

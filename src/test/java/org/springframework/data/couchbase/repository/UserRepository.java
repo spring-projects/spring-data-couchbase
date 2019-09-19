@@ -18,12 +18,9 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.List;
 
-import com.couchbase.client.java.view.ViewQuery;
 
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.View;
-import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -31,13 +28,8 @@ import org.springframework.data.domain.Slice;
 /**
  * @author Michael Nitschinger
  */
-@ViewIndexed(designDoc = "user", viewName = "all")
 @N1qlSecondaryIndexed(indexName = "User")
 public interface UserRepository extends CouchbaseRepository<User, String> {
-
-  @View(designDocument = "user", viewName = "all")
-  Iterable<User> customViewQuery(ViewQuery query);
-
   @Query("#{#n1ql.selectEntity} WHERE username = $1 and #{#n1ql.filter}")
   User findByUsername(String username);
 

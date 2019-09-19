@@ -20,8 +20,8 @@ import static org.junit.Assert.*;
 
 import java.util.Map;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.RawJsonDocument;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.json.JsonObject;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
@@ -44,7 +44,7 @@ import org.springframework.test.context.ContextConfiguration;
 public class TypeKeyIntegrationTests {
 
   @Autowired
-  private Bucket client;
+  private Collection client;
 
   @Autowired
   private CouchbaseTemplate template;
@@ -62,9 +62,9 @@ public class TypeKeyIntegrationTests {
     Beer beer = new Beer(id, name, active, "");
 
     template.save(beer);
-    RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
+    JsonObject resultDoc = client.get(id).contentAsObject();
     assertNotNull(resultDoc);
-    String result = resultDoc.content();
+    String result = resultDoc.toString();
     assertNotNull(result);
     Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 

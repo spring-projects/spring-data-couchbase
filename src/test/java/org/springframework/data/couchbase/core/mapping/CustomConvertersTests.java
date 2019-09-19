@@ -35,11 +35,11 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
 
 /**
  * Tests to verify custom mapping logic.

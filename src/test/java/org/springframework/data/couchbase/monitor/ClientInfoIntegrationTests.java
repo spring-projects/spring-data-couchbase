@@ -21,6 +21,7 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.core.IsNot.not;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Collection;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,7 +41,7 @@ public class ClientInfoIntegrationTests {
 	 * Contains a reference to the actual CouchbaseClient.
 	 */
 	@Autowired
-	private Bucket client;
+	private Collection client;
 
 	private ClientInfo ci;
 

@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.List;
 
-import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.json.JsonObject;
 
 import org.springframework.data.couchbase.core.query.View;
 

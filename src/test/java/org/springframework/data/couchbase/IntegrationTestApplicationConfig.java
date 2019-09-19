@@ -1,10 +1,12 @@
 package org.springframework.data.couchbase;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import com.couchbase.client.core.env.TimeoutConfig;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.env.ClusterEnvironment;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,13 +48,14 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
   //TODO maybe create the bucket if doesn't exist
 
   @Override
-  protected CouchbaseEnvironment getEnvironment() {
-    return DefaultCouchbaseEnvironment.builder()
-        .connectTimeout(10000)
-        .kvTimeout(10000)
-        .queryTimeout(20000)
-        .viewTimeout(20000)
-        .build();
+  protected ClusterEnvironment getEnvironment() {
+    return ClusterEnvironment.builder().timeoutConfig(
+      TimeoutConfig.builder()
+        .connectTimeout(Duration.ofSeconds(10000))
+        .kvTimeout(Duration.ofSeconds(10000))
+        .queryTimeout(Duration.ofSeconds(20000))
+        .viewTimeout(Duration.ofSeconds(20000))
+    ).build();
   }
 
   @Override
@@ -62,10 +65,9 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
     return template;
   }
 
-  //this is for dev so it is ok to auto-create indexes
   @Override
-  public IndexManager indexManager() {
-    return new IndexManager();
+  public IndexManager indexManager(Cluster cluster) {
+    return new IndexManager(cluster);
   }
 
   @Override

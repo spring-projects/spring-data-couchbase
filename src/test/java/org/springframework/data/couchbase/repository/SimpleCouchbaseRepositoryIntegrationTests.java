@@ -25,6 +25,10 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.couchbase.client.core.error.CASMismatchException;
+import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -47,13 +51,6 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentDoesNotExistException;
-import com.couchbase.client.java.view.Stale;
-import com.couchbase.client.java.view.ViewQuery;
-
 /**
  * @author Michael Nitschinger
  * @author Mark Paluch
@@ -67,7 +64,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   public TestName testName = new TestName();
 
   @Autowired
-  private Bucket client;
+  private Collection client;
 
   @Autowired
   private RepositoryOperationsMapping operationsMapping;
@@ -88,7 +85,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   private void remove(String key) {
     try {
       client.remove(key);
-    } catch (DocumentDoesNotExistException e) {
+    } catch (KeyNotFoundException e) {
     }
   }
 
@@ -119,7 +116,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
    */
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
-    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
+    //client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
 
     Iterable<User> allUsers = repository.findAll();
     int size = 0;
@@ -134,23 +131,9 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   @Test
   public void shouldCount() {
     // do a non-stale query to populate data for testing.
-    client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
+    //client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
 
     assertEquals(100, repository.count());
-  }
-
-  @Test
-  @Ignore("View based query with copy of params from a ViewQuery in the method parameter not implemented")
-  //TODO re-enable test once ViewQuery parameters other than designDoc/viewName can be copied
-  public void shouldFindCustom() {
-    Iterable<User> users = repository.customViewQuery(ViewQuery.from("", "").limit(2).stale(Stale.FALSE));
-    int size = 0;
-    for (User u : users) {
-      size++;
-      assertNotNull(u.getKey());
-      assertNotNull(u.getUsername());
-    }
-    assertEquals(2, size);
   }
 
   @Test
@@ -229,12 +212,12 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
 
     VersionedData versionedData = fetch1.get();
 
-    JsonDocument bypass = client.get(key);
-    bypass.content().put("data", "BBBB");
-    JsonDocument bypassed = client.upsert(bypass);
+    JsonObject bypass = client.get(key).contentAsObject();
+    bypass.put("data", "BBBB");
+    long bypassedCas = client.upsert(key, bypass).cas();
 
-    assertNotEquals(bypassed.cas(), versionedData.version);
-    System.out.println(bypassed.cas());
+    assertNotEquals(bypassedCas, versionedData.version);
+    System.out.println(bypassedCas);
 
     try {
       versionedData.setData("ZZZZ");

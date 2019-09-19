@@ -18,14 +18,13 @@ package org.springframework.data.couchbase.repository.index;
 
 import static org.junit.Assert.*;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import java.util.Arrays;
 
-import com.couchbase.client.java.error.DesignDocumentDoesNotExistException;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.N1qlQueryResult;
-import com.couchbase.client.java.view.DesignDocument;
-import com.couchbase.client.java.view.View;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.query.QueryResult;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
@@ -63,13 +63,16 @@ public class IndexedRepositoryIntegrationTests {
   private RepositoryOperationsMapping operationsMapping;
 
   @Autowired
+  private Cluster cluster;
+
+  @Autowired
   private IndexManager indexManager;
 
   private CouchbaseOperations template;
   private RepositoryFactorySupport factory;
 
   private RepositoryFactorySupport ignoringIndexFactory;
-  private IndexManager ignoringIndexManager = new IndexManager(false, false, false);
+  private IndexManager ignoringIndexManager = new IndexManager(cluster, false, false);
 
   @Before
   public void setup() throws Exception {
@@ -83,10 +86,9 @@ public class IndexedRepositoryIntegrationTests {
     IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"`");
-    N1qlQueryResult exist = template.queryN1QL(existQuery);
-
-    assertTrue(exist.finalSuccess());
+    N1QLQuery existQuery = new N1QLQuery(x("SELECT 1 FROM `"+ bucket +"`"));
+    QueryResult result = template.queryN1QL(existQuery);
+    assertNotNull(result);
   }
 
   @Test
@@ -94,95 +96,20 @@ public class IndexedRepositoryIntegrationTests {
     IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  SECONDARY +")");
-    N1qlQueryResult exist = template.queryN1QL(existQuery);
+    N1QLQuery existQuery = new N1QLQuery(x("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  SECONDARY +")"));
+    QueryResult exist = template.queryN1QL(existQuery);
 
-    assertTrue(exist.finalSuccess());
+    assertNotNull(exist);
   }
 
-  @Test
-  public void shouldFindViewIndex() {
-    IndexedUserRepository repository = getRepositoryWithRetry(factory, IndexedUserRepository.class);
-
-    DesignDocument designDoc = null;
-    try {
-      designDoc = template.getCouchbaseBucket()
-              .bucketManager()
-              .getDesignDocument(VIEW_DOC);
-    } catch(DesignDocumentDoesNotExistException ex) {
-
-    }
-
-    assertNotNull(designDoc);
-    for (View view : designDoc.views()) {
-      if (view.name().equals(VIEW_NAME)) return;
-    }
-    fail("View not found");
-  }
   @Test
   public void shouldNotFindN1qlSecondaryIndexWithIgnoringIndexManager() {
     AnotherIndexedUserRepository repository = getRepositoryWithRetry(ignoringIndexFactory, AnotherIndexedUserRepository.class);
 
     String bucket = template.getCouchbaseBucket().name();
-    N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  IGNORED_SECONDARY +")");
-    N1qlQueryResult exist = template.queryN1QL(existQuery);
+    N1QLQuery existQuery = new N1QLQuery(x("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  IGNORED_SECONDARY +")"));
+    QueryResult exist = template.queryN1QL(existQuery);
 
-    assertFalse(exist.finalSuccess());
-  }
-
-  @Test
-  public void shouldNotFindViewIndexWithIgnoringIndexManager() {
-    AnotherIndexedUserRepository repository = getRepositoryWithRetry(ignoringIndexFactory, AnotherIndexedUserRepository.class);
-
-    DesignDocument designDoc = null;
-    try {
-      designDoc = template.getCouchbaseBucket()
-              .bucketManager()
-              .getDesignDocument(VIEW_DOC);
-    } catch(DesignDocumentDoesNotExistException ex) {
-      //ignored
-    }
-
-    if (designDoc != null) {
-      for (View view : designDoc.views()) {
-        if (view.name().equals(IGNORED_VIEW_NAME)) fail("Found unexpected " + IGNORED_VIEW_NAME);
-      }
-    }
-  }
-
-  @Test
-  public void shouldFindListOfIdsThroughDefaulViewIndexed() {
-    IndexedFooRepository.Foo foo1 = new IndexedFooRepository.Foo("foo1", "foo", 1);
-    IndexedFooRepository.Foo foo2 = new IndexedFooRepository.Foo("foo2", "bar", 2);
-
-    IndexedFooRepository repository = getRepositoryWithRetry(factory, IndexedFooRepository.class);
-
-    DesignDocument designDoc = template.getCouchbaseBucket()
-        .bucketManager()
-        .getDesignDocument("foo");
-
-    assertNotNull(designDoc);
-    boolean foundView = false;
-    for (View view : designDoc.views()) {
-      if (view.name().equals("all")) {
-        foundView = true;
-        break;
-      }
-    }
-    assertTrue("Expected to find view \"all\" on design document \"foo\"", foundView);
-
-    repository.save(foo1);
-    repository.save(foo2);
-
-    int count = 0;
-    for (Object o : repository.findAllById(Arrays.asList("foo1", "foo2"))) {
-      count++;
-    }
-    assertEquals(2L, count);
-    count = 0;
-    for (Object o : repository.findAllById(Arrays.asList("foo1", "foo3"))) {
-      count++;
-    }
-    assertEquals(1L, count);
+    assertNotNull(exist);
   }
 }

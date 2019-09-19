@@ -68,7 +68,7 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 
 		CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
 		RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
-		IndexManager indexManager = new IndexManager();
+		IndexManager indexManager = new IndexManager(couchbaseOperations.getCouchbaseCluster());
 
 		return create(() -> new CouchbaseRepositoryFactory(couchbaseOperationsMapping, indexManager), repositoryType);
 	}

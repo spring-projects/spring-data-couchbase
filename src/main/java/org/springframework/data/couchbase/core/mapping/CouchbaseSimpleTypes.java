@@ -21,15 +21,15 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.document.json.JsonArray;
+import com.couchbase.client.java.json.JsonArray;
 
+import com.couchbase.client.java.json.JsonObject;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 public abstract class CouchbaseSimpleTypes {
 
   public static final SimpleTypeHolder JSON_TYPES = new SimpleTypeHolder(
-    Stream.of(RawJsonDocument.class,
+    Stream.of(JsonObject.class,
               JsonArray.class,
               Number.class).collect(toSet()),
     true);

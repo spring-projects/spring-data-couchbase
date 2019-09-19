@@ -16,10 +16,9 @@
 
 package org.springframework.data.couchbase.config;
 
+import com.couchbase.client.core.config.ClusterConfig;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -38,9 +37,9 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 public class BeanNames {
 
   /**
-   * The name for the default {@link CouchbaseEnvironment} bean.
+   * The name for the default {@link ClusterConfig} bean.
    *
-   * See {@link AbstractCouchbaseConfiguration#couchbaseEnvironment()} for java config, and
+   * See {@link AbstractCouchbaseConfiguration#get()} for java config, and
    * the "&lt;couchbase:env /&gt;" element for xml config.
    */
   public static final String COUCHBASE_ENV = "couchbaseEnv";
@@ -62,6 +61,16 @@ public class BeanNames {
   public static final String COUCHBASE_BUCKET = "couchbaseBucket";
 
   /**
+   * The name for the default {@link Collection}  bean;
+   */
+  public static final String COUCHBASE_COLLECTION = "couchbaseCollection";
+
+  /**
+   * The name for the default {@link Colletion} bean.
+   *
+   */
+
+  /**
    * The name for the default {@link CouchbaseOperations} bean.
    *
    * See {@link AbstractCouchbaseConfiguration#couchbaseTemplate()} for java config, and
@@ -76,14 +85,6 @@ public class BeanNames {
    * the "&lt;couchbase:translation-service /&gt;" element for xml config.
    */
   public static final String COUCHBASE_TRANSLATION_SERVICE = "couchbaseTranslationService";
-
-  /**
-   * The name for the default {@link ClusterInfo} bean.
-   *
-   * See {@link AbstractCouchbaseConfiguration#couchbaseClusterInfo()} for java config, and
-   * the "&lt;couchbase:clusterInfo /&gt;" element for xml config.
-   */
-  public static final String COUCHBASE_CLUSTER_INFO = "couchbaseClusterInfo";
 
   /**
    * The name for the bean that stores custom mapping between repositories and their backing couchbaseOperations.
@@ -132,6 +133,7 @@ public class BeanNames {
    * the "&lt;couchbase:template /&gt;" element for xml config.
    */
   public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
+
 
   /**
    * The name for the default {@link RxJavaCouchbaseOperations} bean.

@@ -18,8 +18,7 @@ package org.springframework.data.couchbase.config;
 
 import static org.junit.Assert.*;
 
-import com.couchbase.client.java.document.JsonDocument;
-import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -99,10 +98,9 @@ public class CouchbaseTemplateParserIntegrationTests {
 
     User u = new User("specialSaveUser", "John Locke", 46);
     template.save(u);
-    JsonDocument uJsonDoc = template.getCouchbaseBucket().get("specialSaveUser");
-    template.getCouchbaseBucket().remove("specialSaveUser");
-    assertNotNull(uJsonDoc);
-    JsonObject uJson = uJsonDoc.content();
+    JsonObject uJson = template.getCouchbaseCollection().get("specialSaveUser").contentAsObject();
+    template.getCouchbaseCollection().remove("specialSaveUser");
+    assertNotNull(uJson);
     assertNull(uJson.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
     assertEquals("org.springframework.data.couchbase.repository.User", uJson.getString("javaXmlClass"));
     assertEquals("John Locke", uJson.getString("username"));

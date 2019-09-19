@@ -1,6 +1,7 @@
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.repository.annotation.Field;
+
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 /**
  * Test DTO for projecting from {@link CouchbaseTemplate}.

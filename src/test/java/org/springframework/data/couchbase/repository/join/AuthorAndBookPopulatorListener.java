@@ -16,7 +16,7 @@
 package org.springframework.data.couchbase.repository.join;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.cluster.ClusterInfo;
+import com.couchbase.client.java.Cluster;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.TestContext;
@@ -32,12 +32,12 @@ public class AuthorAndBookPopulatorListener extends DependencyInjectionTestExecu
     @Override
     public void beforeTestClass(final TestContext testContext) throws Exception {
         Bucket client = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
-        ClusterInfo clusterInfo = (ClusterInfo) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER_INFO);
-        populateTestData(client, clusterInfo);
+        Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
+        populateTestData(client, cluster);
     }
 
-    void populateTestData(Bucket client, ClusterInfo clusterInfo) {
-        CouchbaseTemplate template = new CouchbaseTemplate(clusterInfo, client);
+    void populateTestData(Bucket client, Cluster cluster) {
+        CouchbaseTemplate template = new CouchbaseTemplate(cluster, client.defaultCollection());
         for(int i=0;i<5;i++) {
             Author author = new Author("Author" + i,"foo"+ i);
             template.save(author);

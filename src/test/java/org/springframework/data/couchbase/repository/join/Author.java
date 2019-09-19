@@ -16,8 +16,8 @@
 package org.springframework.data.couchbase.repository.join;
 import java.util.List;
 
-import com.couchbase.client.java.repository.annotation.Field;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.query.FetchType;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;

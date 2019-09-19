@@ -16,10 +16,9 @@
 
 package org.springframework.data.couchbase.core
 
-import com.couchbase.client.java.query.N1qlQuery
-import com.couchbase.client.java.view.SpatialViewQuery
-import com.couchbase.client.java.view.ViewQuery
-import rx.Observable
+import org.springframework.data.couchbase.core.query.N1QLQuery
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 /**
  * Kotlin extensions for [RxJavaCouchbaseOperations]
@@ -32,31 +31,15 @@ import rx.Observable
  * @param id the identifier of the document.
  * @return the document fetched from couchbase.
  */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findById(id: String) : Observable<T> =
+inline fun <reified T: Any> RxJavaCouchbaseOperations.findById(id: String) : Mono<T> =
         findById(id, T::class.java)
-
-/**
- * Extension for [RxJavaCouchbaseOperations.findByView] leveraging reified type.
- * @param query a [ViewQuery] instance that defines the query.
- * @return list of entities satisfying the view query.
- */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findByView(query: ViewQuery) : Observable<T> =
-        findByView(query, T::class.java)
-
-/**
- * Extension for [RxJavaCouchbaseOperations.findBySpatialView] leveraging reified type.
- * @param query a [SpatialViewQuery] instance that defines the query.
- * @return list of entities satisfying the spatial view query.
- */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findBySpatialView(query: SpatialViewQuery) : Observable<T> =
-        findBySpatialView(query, T::class.java)
 
 /**
  * Extension for [RxJavaCouchbaseOperations.findByN1QL] leveraging reified type.
  * @param query a [N1qlQuery] instance that defines the query.
  * @return list of entities satisfying the n1ql query.
  */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QL(query: N1qlQuery) : Observable<T> =
+inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QL(query: N1QLQuery) : Flux<T> =
         findByN1QL(query, T::class.java)
 
 /**
@@ -64,5 +47,5 @@ inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QL(query: N1qlQuer
  * @param query a [N1qlQuery] instance that defines the query.
  * @return list of entities satisfying the n1ql query projection.
  */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QLProjection(query: N1qlQuery) : Observable<T> =
+inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QLProjection(query: N1QLQuery) : Flux<T> =
         findByN1QLProjection(query, T::class.java)

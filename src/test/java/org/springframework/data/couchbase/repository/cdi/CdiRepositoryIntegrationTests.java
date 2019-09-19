@@ -18,14 +18,10 @@ package org.springframework.data.couchbase.repository.cdi;
 
 import static org.junit.Assert.*;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.view.DefaultView;
-import com.couchbase.client.java.view.DesignDocument;
-import com.couchbase.client.java.view.View;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -71,17 +67,6 @@ public class CdiRepositoryIntegrationTests {
 		qualifiedPersonRepository = repositoryClient.getQualifiedPersonRepository();
 
 		couchbaseClient = repositoryClient.getCouchbaseClient();
-		createAndWaitForDesignDocs(couchbaseClient);
-
-	}
-
-	private void createAndWaitForDesignDocs(Bucket client) {
-		String mapFunction = "function (doc, meta) { if(doc._class == \"" + Person.class.getName()
-				+ "\") { emit(null, null); } }";
-		View view = DefaultView.create("all", mapFunction, "_count");
-		List<View> views = Collections.singletonList(view);
-		DesignDocument designDoc = DesignDocument.create("person", views);
-		client.bucketManager().upsertDesignDocument(designDoc);
 	}
 
 	/**

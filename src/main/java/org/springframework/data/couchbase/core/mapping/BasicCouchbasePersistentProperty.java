@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import com.couchbase.client.java.repository.annotation.Field;
-import com.couchbase.client.java.repository.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
 import java.util.Optional;
 
 /**
- * Implements annotated property representations of a given {@link com.couchbase.client.java.repository.annotation.Field} instance.
+ * Implements annotated property representations of a given {@link Field} instance.
  * <p/>
  * <p>This object is used to gather information out of properties on objects that need to be persisted. For example, it
  * supports overriding of the actual property name by providing custom annotations.</p>
@@ -75,8 +75,8 @@ public class BasicCouchbasePersistentProperty
    */
   @Override
   public String getFieldName() {
-    com.couchbase.client.java.repository.annotation.Field annotation = getField().
-        getAnnotation(com.couchbase.client.java.repository.annotation.Field.class);
+    Field annotation = getField().
+        getAnnotation(Field.class);
 
     if (annotation != null && StringUtils.hasText(annotation.value())) {
       return annotation.value();

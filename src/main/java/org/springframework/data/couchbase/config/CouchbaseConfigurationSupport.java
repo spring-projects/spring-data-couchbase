@@ -19,8 +19,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.view.ViewQuery;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.json.JacksonTransformers;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -106,6 +107,9 @@ public class CouchbaseConfigurationSupport {
     public TranslationService translationService() {
         final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
         jacksonTranslationService.afterPropertiesSet();
+
+        // for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
+        JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return jacksonTranslationService;
     }
 
@@ -148,8 +152,8 @@ public class CouchbaseConfigurationSupport {
      * activate).
      */
     @Bean(name = BeanNames.COUCHBASE_INDEX_MANAGER)
-    public IndexManager indexManager() {
-        return new IndexManager(false, false, false); //this ignores view, N1QL primary and secondary annotations
+    public IndexManager indexManager(Cluster cluster) {
+        return new IndexManager(cluster, false, false); //this ignores, N1QL primary and secondary annotations
     }
 
     /**

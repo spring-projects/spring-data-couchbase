@@ -1,7 +1,6 @@
 package org.springframework.data.couchbase.core;
 
 import static org.junit.Assert.*;
-import com.couchbase.client.java.repository.annotation.Id;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -13,6 +12,7 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestCustomKeySettings;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 
 /**

@@ -16,20 +16,21 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.document.json.JsonArray;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlParams;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
@@ -44,7 +45,7 @@ import org.springframework.util.Assert;
 
 /**
  * Abstract base for all Couchbase {@link RepositoryQuery}. It is in charge of inspecting the parameters
- * and choosing the correct {@link N1qlQuery} implementation to use.
+ * and choosing the correct {@link N1QLQuery} implementation to use.
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
@@ -68,7 +69,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
    *
    * @see CountFragment
    */
-  protected abstract Statement getCount(ParameterAccessor accessor, Object[] runtimeParameters);
+  protected abstract N1QLExpression getCount(ParameterAccessor accessor, Object[] runtimeParameters);
 
   /**
    * @return true if the {@link #getCount(ParameterAccessor, Object[]) count statement} should also be used when
@@ -76,11 +77,11 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
    */
   protected abstract boolean useGeneratedCountQuery();
 
-  protected abstract Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
+  protected abstract N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
 
   protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
-  protected ScanConsistency getScanConsistency() {
+  protected QueryScanConsistency getScanConsistency() {
 
     if (queryMethod.hasConsistencyAnnotation()) {
       return queryMethod.getConsistencyAnnotation().value();
@@ -99,34 +100,32 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     Class<?> typeToRead = returnedType.getTypeToRead();
     typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
-    Statement statement = getStatement(accessor, parameters, returnedType);
+    N1QLExpression statement = getExpression(accessor, parameters, returnedType);
     JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
     //prepare the final query
-    N1qlQuery query = buildQuery(statement, queryPlaceholderValues, getScanConsistency());
+    N1QLQuery query = buildQuery(statement, queryPlaceholderValues, getScanConsistency());
 
     //prepare a count query
-    Statement countStatement = getCount(accessor, parameters);
+    N1QLExpression countStatement = getCount(accessor, parameters);
     //the place holder values are the same for the count query as well
-    N1qlQuery countQuery = buildQuery(countStatement, queryPlaceholderValues, getScanConsistency());
+    N1QLQuery countQuery = buildQuery(countStatement, queryPlaceholderValues, getScanConsistency());
     return processor.processResult(executeDependingOnType(query, countQuery, queryMethod, accessor.getPageable(), typeToRead));
   }
 
-  protected static N1qlQuery buildQuery(Statement statement, JsonValue queryPlaceholderValues, ScanConsistency scanConsistency) {
-    N1qlParams n1qlParams = N1qlParams.build().consistency(scanConsistency);
-    N1qlQuery query;
+  protected static N1QLQuery buildQuery(N1QLExpression expression, JsonValue queryPlaceholderValues, QueryScanConsistency scanConsistency) {
+    QueryOptions opts = QueryOptions.queryOptions().scanConsistency(scanConsistency);
 
     if (queryPlaceholderValues instanceof JsonObject && !((JsonObject) queryPlaceholderValues).isEmpty()) {
-      query = N1qlQuery.parameterized(statement, (JsonObject) queryPlaceholderValues, n1qlParams);
+      opts.parameters((JsonObject) queryPlaceholderValues);
     } else if (queryPlaceholderValues instanceof JsonArray && !((JsonArray) queryPlaceholderValues).isEmpty()) {
-      query = N1qlQuery.parameterized(statement, (JsonArray) queryPlaceholderValues, n1qlParams);
-    } else {
-      query = N1qlQuery.simple(statement, n1qlParams);
+      opts.parameters((JsonArray) queryPlaceholderValues);
     }
-    return query;
+
+    return new N1QLQuery(expression, opts);
   }
 
-  protected Object executeDependingOnType(N1qlQuery query, N1qlQuery countQuery, QueryMethod queryMethod,
+  protected Object executeDependingOnType(N1QLQuery query, N1QLQuery countQuery, QueryMethod queryMethod,
       Pageable pageable, Class<?> typeToRead) {
 
     if (queryMethod.isPageQuery()) {
@@ -151,30 +150,30 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     //more complex projections could be added in the future, like DTO direct mapping with a SELECT a,b,c FROM something
   }
 
-  private void logIfNecessary(N1qlQuery query) {
+  private void logIfNecessary(N1QLQuery query) {
     if (LOG.isDebugEnabled()) {
       LOG.debug("Executing N1QL query: " + query.n1ql());
     }
   }
 
-  protected List<?> executeCollection(N1qlQuery query, Class<?> typeToRead) {
+  protected List<?> executeCollection(N1QLQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
     return result;
   }
 
-  protected Object executeEntity(N1qlQuery query, Class<?> typeToRead) {
+  protected Object executeEntity(N1QLQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
     List<?> result = executeCollection(query, typeToRead);
     return result.isEmpty() ? null : result.get(0);
   }
 
-  protected Object executeStream(N1qlQuery query, Class<?> typeToRead) {
+  protected Object executeStream(N1QLQuery query, Class<?> typeToRead) {
     logIfNecessary(query);
     return StreamUtils.createStreamFromIterator(executeCollection(query, typeToRead).iterator());
   }
 
-  protected Object executePaged(N1qlQuery query, N1qlQuery countQuery, Pageable pageable, Class<?> typeToRead) {
+  protected Object executePaged(N1QLQuery query, N1QLQuery countQuery, Pageable pageable, Class<?> typeToRead) {
     Assert.notNull(pageable, "Pageable must not be null!");
 
     long total = 0L;
@@ -189,7 +188,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     return new PageImpl(result, pageable, total);
   }
 
-  protected Object executeSliced(N1qlQuery query, N1qlQuery countQuery, Pageable pageable, Class<?> typeToRead) {
+  protected Object executeSliced(N1QLQuery query, N1QLQuery countQuery, Pageable pageable, Class<?> typeToRead) {
     Assert.notNull(pageable, "Pageable must not be null!");
     logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
@@ -199,7 +198,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
     return new SliceImpl(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);
   }
 
-  protected Object executeSingleProjection(N1qlQuery query) {
+  protected Object executeSingleProjection(N1QLQuery query) {
     logIfNecessary(query);
     //the structure of the response from N1QL gives us a JSON object even when selecting a single aggregation
     List<Map> resultAsMap = couchbaseOperations.findByN1QLProjection(query, Map.class);

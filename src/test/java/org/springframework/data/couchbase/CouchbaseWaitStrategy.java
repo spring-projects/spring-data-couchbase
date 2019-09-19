@@ -6,8 +6,6 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import com.couchbase.client.java.util.features.Version;
-import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
@@ -20,11 +18,9 @@ import org.testcontainers.containers.wait.WaitStrategy;
 public class CouchbaseWaitStrategy implements WaitStrategy {
 
     private Duration startupTimeout = Duration.of(60, SECONDS);
-    private final Boolean rbacEnabled;
 
-    public CouchbaseWaitStrategy(String serverVersion) {
-        Version version = Version.parseVersion(serverVersion);
-        rbacEnabled = version.major() >= 5;
+    public CouchbaseWaitStrategy() {
+
     }
 
     private void checkResult(Container.ExecResult result, String command) throws Exception {
@@ -45,68 +41,39 @@ public class CouchbaseWaitStrategy implements WaitStrategy {
             checkService(8091, "/pools");
             Container.ExecResult result;
 
-            if (rbacEnabled) {
-                result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
-                        "cluster-init",
-                        "--cluster=127.0.0.1:8091",
-                        "--services=data,index,query",
-                        "--cluster-name=localcontainer",
-                        "--cluster-username=Administrator",
-                        "--cluster-password=password",
-                        "--cluster-ramsize=512",
-                        "--cluster-index-ramsize=512",
-                        "--index-storage-setting=default");
-                checkResult(result, "Cluster init");
-                result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
-                        "user-manage",
-                        "--cluster=127.0.0.1:8091",
-                        "--username=Administrator",
-                        "--password=password",
-                        "--set",
-                        "--rbac-username=protected",
-                        "--rbac-password=password",
-                        "--rbac-name=default",
-                        "--roles=admin",
-                        "--auth-domain=local");
-                checkResult(result, "User manage");
-                result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
-                        "bucket-create",
-                        "--cluster=127.0.0.1:8091",
-                        "--username=Administrator",
-                        "--password=password",
-                        "--bucket=protected",
-                        "--bucket-type=couchbase",
-                        "--bucket-ramsize=200",
-                        "--enable-flush=1",
-                        "--wait");
-            } else {
-                result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
-                        "cluster-init",
-                        "--cluster=127.0.0.1:8091",
-                        "--services=data,index,query",
-                        "-u",
-                        "Administrator",
-                        "-p",
-                        "password",
-                        "--cluster-ramsize=512",
-                        "--cluster-index-ramsize=512",
-                        "--index-storage-setting=default");
-                checkResult(result, "Cluster init");
-                result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
-                        "bucket-create",
-                        "--cluster=127.0.0.1:8091",
-                        "-u",
-                        "Administrator",
-                        "-p",
-                        "password",
-                        "--bucket=protected",
-                        "--bucket-password=password",
-                        "--bucket-type=couchbase",
-                        "--bucket-ramsize=200",
-                        "--enable-flush=1",
-                        "--wait");
-            }
-
+            result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
+                    "cluster-init",
+                    "--cluster=127.0.0.1:8091",
+                    "--services=data,index,query",
+                    "--cluster-name=localcontainer",
+                    "--cluster-username=Administrator",
+                    "--cluster-password=password",
+                    "--cluster-ramsize=512",
+                    "--cluster-index-ramsize=512",
+                    "--index-storage-setting=default");
+            checkResult(result, "Cluster init");
+            result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
+                    "user-manage",
+                    "--cluster=127.0.0.1:8091",
+                    "--username=Administrator",
+                    "--password=password",
+                    "--set",
+                    "--rbac-username=protected",
+                    "--rbac-password=password",
+                    "--rbac-name=default",
+                    "--roles=admin",
+                    "--auth-domain=local");
+            checkResult(result, "User manage");
+            result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
+                    "bucket-create",
+                    "--cluster=127.0.0.1:8091",
+                    "--username=Administrator",
+                    "--password=password",
+                    "--bucket=protected",
+                    "--bucket-type=couchbase",
+                    "--bucket-ramsize=200",
+                    "--enable-flush=1",
+                    "--wait");
             checkResult(result, "Bucket create");
             checkService(8093, "/query/ping");
         } catch (Exception ex) {

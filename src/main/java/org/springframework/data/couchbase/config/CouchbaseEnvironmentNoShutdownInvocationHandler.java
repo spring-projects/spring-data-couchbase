@@ -18,10 +18,11 @@ package org.springframework.data.couchbase.config;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
+
+import com.couchbase.client.java.env.ClusterEnvironment;
 
 /**
- * A dynamic proxy around a {@link CouchbaseEnvironment} that prevents its {@link CouchbaseEnvironment#shutdown()} method
+ * A dynamic proxy around a {@link ClusterEnvironment} that prevents its {@link ClusterEnvironment#shutdown()} method
  * to be invoked. Useful when the delegate is not to be lifecycle-managed by Spring.
  *
  * @author Simon Baslé
@@ -30,9 +31,9 @@ import com.couchbase.client.java.env.CouchbaseEnvironment;
  */
 public class CouchbaseEnvironmentNoShutdownInvocationHandler implements InvocationHandler {
 
-  private final CouchbaseEnvironment environment;
+  private final ClusterEnvironment environment;
 
-  public CouchbaseEnvironmentNoShutdownInvocationHandler(CouchbaseEnvironment environment) {
+  public CouchbaseEnvironmentNoShutdownInvocationHandler(ClusterEnvironment environment) {
     this.environment = environment;
   }
 

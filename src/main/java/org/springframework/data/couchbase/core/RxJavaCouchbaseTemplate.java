@@ -16,35 +16,47 @@
 
 package org.springframework.data.couchbase.core;
 
-import static org.springframework.data.couchbase.core.CouchbaseTemplate.ensureNotIterable;
 
-import com.couchbase.client.java.AsyncBucket;
+import com.couchbase.client.core.config.ClusterConfig;
+import com.couchbase.client.core.error.CASMismatchException;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.PersistTo;
-import com.couchbase.client.java.ReplicateTo;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.document.Document;
-import com.couchbase.client.java.document.RawJsonDocument;
-import com.couchbase.client.java.document.json.JsonObject;
-import com.couchbase.client.java.error.CASMismatchException;
-import com.couchbase.client.java.error.DocumentAlreadyExistsException;
-import com.couchbase.client.java.query.*;
-import com.couchbase.client.java.view.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.ReactiveCollection;
+
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.MutationResult;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.RemoveOptions;
+import com.couchbase.client.java.kv.ReplaceOptions;
+import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.query.ReactiveQueryResult;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.*;
 import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
+import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
+import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
+import org.springframework.data.util.TypeInformation;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import rx.Observable;
-import rx.functions.Func3;
+
+import javax.management.openmbean.KeyAlreadyExistsException;
+import java.time.Duration;
+import java.util.List;
+
 
 /**
  * RxJavaCouchbaseTemplate implements operations using rxjava1 observables
@@ -59,100 +71,100 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
 
     protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
-    private Bucket syncClient;
-    private AsyncBucket client;
-    private final ClusterInfo clusterInfo;
+    private Collection syncClient;
+    private ReactiveCollection client;
+    private Cluster cluster;
     private final CouchbaseConverter converter;
     private final TranslationService translationService;
     private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
     private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;
 
-    public <T> Observable<T> save(T objectToSave) {
+    public <T> Mono<T> save(T objectToSave) {
         return save(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
     }
 
-    public <T> Observable<T> save(Iterable<T> batchToSave) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> save(Iterable<T> batchToSave) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(this::save);
     }
 
-    public <T> Observable<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+    public <T> Mono<T> save(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
         return doPersist(objectToSave, PersistType.SAVE, persistTo, replicateTo);
     }
 
-    public <T> Observable<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> save(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(object -> save(object, persistTo, replicateTo));
     }
 
     @Override
-    public <T> Observable<T> insert(T objectToSave) {
+    public <T> Mono<T> insert(T objectToSave) {
         return insert(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
     }
 
     @Override
-    public <T> Observable<T> insert(Iterable<T> batchToSave) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> insert(Iterable<T> batchToSave) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(this::insert);
     }
 
     @Override
-    public <T> Observable<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+    public <T> Mono<T> insert(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
         return doPersist(objectToSave, PersistType.INSERT, persistTo, replicateTo);
     }
 
     @Override
-    public <T> Observable<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> insert(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(objectToSave -> insert(objectToSave, persistTo, replicateTo));
     }
 
     @Override
-    public <T> Observable<T> update(T objectToSave) {
+    public <T> Mono<T> update(T objectToSave) {
         return update(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
     }
 
     @Override
-    public <T> Observable<T> update(Iterable<T> batchToSave) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> update(Iterable<T> batchToSave) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(this::update);
     }
 
     @Override
-    public <T> Observable<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+    public <T> Mono<T> update(T objectToSave, PersistTo persistTo, ReplicateTo replicateTo) {
         return doPersist(objectToSave, PersistType.UPDATE, persistTo, replicateTo);
     }
 
     @Override
-    public <T> Observable<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
-        return Observable.from(batchToSave)
+    public <T> Flux<T> update(Iterable<T> batchToSave, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Flux.fromIterable(batchToSave)
                 .flatMap(objectToSave -> update(objectToSave, persistTo, replicateTo));
     }
 
-    public <T> Observable<T> remove(T objectToRemove) {
+    public <T> Mono<T> remove(T objectToRemove) {
         return doRemove(objectToRemove, PersistTo.NONE, ReplicateTo.NONE);
     }
 
-    public <T> Observable<T> remove(Iterable<T> batchToRemove) {
-        return Observable.from(batchToRemove)
+    public <T> Flux<T> remove(Iterable<T> batchToRemove) {
+        return Flux.fromIterable(batchToRemove)
                 .flatMap(this::remove);
     }
 
-    public <T> Observable<T> remove(T objectToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
+    public <T> Mono<T> remove(T objectToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
         return doRemove(objectToRemove, persistTo, replicateTo);
     }
 
-    public <T> Observable<T> remove(Iterable<T> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
-        return Observable.from(batchToRemove)
+    public <T> Flux<T> remove(Iterable<T> batchToRemove, PersistTo persistTo, ReplicateTo replicateTo) {
+        return Flux.fromIterable(batchToRemove)
                 .flatMap(object -> remove(object, persistTo, replicateTo));
     }
 
-    public RxJavaCouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client) {
-        this(clusterInfo, client, null, null);
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client) {
+        this(cluster, client, null, null);
     }
 
-    public RxJavaCouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client, final TranslationService translationService) {
-        this(clusterInfo, client, null, translationService);
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
+        this(cluster, client, null, translationService);
     }
 
 
@@ -160,26 +172,16 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         this.writeResultChecking = writeResultChecking == null ? DEFAULT_WRITE_RESULT_CHECKING : writeResultChecking;
     }
 
-    public RxJavaCouchbaseTemplate(final ClusterInfo clusterInfo, final Bucket client,
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client,
                                    final CouchbaseConverter converter,
                                    final TranslationService translationService) {
         this.syncClient = client;
-        this.clusterInfo = clusterInfo;
-        this.client = client.async();
+        this.cluster = cluster;
+        this.client = client.reactive();
         this.converter = converter == null ? getDefaultConverter() : converter;
         this.translationService = translationService == null ? getDefaultTranslationService() : translationService;
         this.mappingContext = this.converter.getMappingContext();
     }
-
-    private RawJsonDocument encodeAndWrap(final CouchbaseDocument source, Long version) {
-        String encodedContent = translationService.encode(source);
-        if (version == null) {
-            return RawJsonDocument.create(source.getId(), source.getExpiration(), encodedContent);
-        } else {
-            return RawJsonDocument.create(source.getId(), source.getExpiration(), encodedContent, version);
-        }
-    }
-
 
     private TranslationService getDefaultTranslationService() {
         JacksonTranslationService t = new JacksonTranslationService();
@@ -202,48 +204,40 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
     }
 
-    private <T> Observable<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
+    private <T> Mono<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
         // If version is not set - assumption that document is new, otherwise updating
         Long version = getVersion(objectToPersist);
-        Func3<RawJsonDocument, PersistTo, ReplicateTo, Observable<RawJsonDocument>> persistFunction;
+        String id = getId(objectToPersist);
+        Mono<MutationResult> result;
         switch (persistType) {
+
             case SAVE:
                 if (version == null) {
+
                     //No version field - no cas
-                    persistFunction = client::upsert;
+                    result = client.upsert(id, objectToPersist, UpsertOptions.upsertOptions().durability(persistTo, replicateTo));
                 } else if (version > 0) {
                     //Updating existing document with cas
-                    persistFunction = client::replace;
+                    result = client.replace(id, objectToPersist, ReplaceOptions.replaceOptions().durability(persistTo, replicateTo));
                 } else {
                     //Creating new document
-                    persistFunction = client::insert;
+                    result = client.insert(id, objectToPersist, InsertOptions.insertOptions().durability(persistTo, replicateTo));
                 }
                 break;
             case UPDATE:
-                persistFunction = client::replace;
+                result = client.replace(id, objectToPersist, ReplaceOptions.replaceOptions().durability(persistTo, replicateTo));
                 break;
             case INSERT:
             default:
-                persistFunction = client::insert;
+                result = client.insert(id, objectToPersist, InsertOptions.insertOptions().durability(persistTo, replicateTo));
                 break;
         }
-        return persistFunction.call(toJsonDocument(objectToPersist), persistTo, replicateTo)
-                .flatMap(storedDoc -> {
-                    if (storedDoc != null) {
-                        if (storedDoc.cas() != 0) {
-                            setVersion(objectToPersist, storedDoc.cas());
-                        }
-                        // Only set the id if the objectToPersist doesn't have it.  That only
-                        // happens when you have generated ids, and you are first persisting the
-                        // document.
-                        if (storedDoc.id() != null && getId(objectToPersist) == null) {
-                            setId(objectToPersist, storedDoc.id());
-                        }
-                    }
-                return Observable.just(objectToPersist);
-                })
-                .onErrorResumeNext(e -> {
-                    if (e instanceof DocumentAlreadyExistsException) {
+        return result
+                .flatMap(mutationResult -> {
+                    setVersion(objectToPersist, mutationResult.cas());
+                    return Mono.just(objectToPersist);
+                }).onErrorResume(e -> {
+                    if (e instanceof KeyAlreadyExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
                                 " document with version value failed: " + version, e);
                     }
@@ -251,16 +245,8 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
                                 " document with version value failed: " + version, e);
                     }
-                    return TemplateUtils.translateError(e);
+                    return Mono.error(TemplateUtils.translateError(e));
                 });
-    }
-
-    private <T> RawJsonDocument toJsonDocument(T object) {
-        ensureNotIterable(object);
-
-        final CouchbaseDocument converted = new CouchbaseDocument();
-        converter.write(object, converted);
-        return encodeAndWrap(converted, getVersion(object));
     }
 
     private <T> CouchbasePersistentProperty versionProperty(T object) {
@@ -311,133 +297,74 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         return accessor.getBean();
     }
 
-    private <T> Observable<T> doRemove(T objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
+    private <T> Mono<T> doRemove(T objectToRemove, final PersistTo persistTo, final ReplicateTo replicateTo) {
         if(objectToRemove instanceof String) {
-            return client.remove((String) objectToRemove, persistTo, replicateTo)
-                    .flatMap(rawJsonDocument -> Observable.just(objectToRemove))
+            return client.remove((String)objectToRemove)
+                    .flatMap(result -> Mono.just(objectToRemove))
                     .doOnError(e -> TemplateUtils.translateError(e));
         } else {
-            RawJsonDocument doc = toJsonDocument(objectToRemove);
-            return client.remove(doc, persistTo, replicateTo)
-                    .flatMap(rawJsonDocument -> Observable.just(objectToRemove))
-                    .doOnError(e -> TemplateUtils.translateError(e));
+            String id = getId(objectToRemove);
+            return client.remove(id, RemoveOptions.removeOptions().durability(persistTo, replicateTo))
+                    .flatMap(res -> Mono.just(objectToRemove))
+                    .doOnError(e -> Mono.error(TemplateUtils.translateError(e)));
         }
     }
 
 
     @Override
-    public Observable<Boolean> exists(String id) {
-        return client.exists(id)
+    public Mono<Boolean> exists(String id) {
+        return client.exists(id).flatMap(result -> Mono.just(result.exists()))
                         .doOnError(e -> TemplateUtils.translateError(e));
     }
 
     @Override
-    public Observable<AsyncN1qlQueryResult> queryN1QL(N1qlQuery query) {
-        return client.query(query)
+    public Mono<ReactiveQueryResult> queryN1QL(N1QLQuery query) {
+        return cluster.reactive().query(query.getExpression(), query.getOptions())
                         .doOnError(e -> TemplateUtils.translateError(e));
     }
 
-    @Override
-    public Observable<AsyncViewResult> queryView(ViewQuery query) {
-        return client.query(query)
-                        .doOnError(e -> TemplateUtils.translateError(e));
-    }
-
-    @Override
-    public Observable<AsyncSpatialViewResult> querySpatialView(SpatialViewQuery query){
-        return client.query(query)
-                .doOnError(e -> TemplateUtils.translateError(e));
-    }
-
-    @Override
-    public <T> Observable<T> findById(String id, Class<T> entityClass) {
+     @Override
+    public <T> Mono<T> findById(String id, Class<T> entityClass) {
         final CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(entityClass);
         if (entity.isTouchOnRead()) {
-            return client.getAndTouch(id, entity.getExpiry(), RawJsonDocument.class)
-                            .switchIfEmpty(Observable.just(null))
-                            .map(doc -> mapToEntity(id, doc, entityClass))
-                            .doOnError(e -> TemplateUtils.translateError(e));
+            // TODO: get expiry correct
+            Duration duration = Duration.ofSeconds(entity.getExpiry());
+            return client.getAndTouch(id, duration)
+                    .flatMap(res -> {
+                        T doc = res.contentAs(entityClass);
+                        return Mono.just(mapToEntity(id, doc, res.cas()));
+                    })
+                    .switchIfEmpty(Mono.just(null))
+                    .doOnError(e -> TemplateUtils.translateError(e));
         } else {
-            return client.get(id, RawJsonDocument.class)
-                            .switchIfEmpty(Observable.just(null))
-                            .map(doc -> mapToEntity(id, doc, entityClass))
-                            .doOnError(e -> TemplateUtils.translateError(e));
+            return client.get(id)
+                    .flatMap(res -> {
+                        T doc = res.contentAs(entityClass);
+                        return Mono.just(mapToEntity(id, doc, res.cas()));
+                    })
+                    .switchIfEmpty(Mono.just(null))
+                    .doOnError(e -> Mono.error(TemplateUtils.translateError(e)));
         }
     }
 
     @Override
-    public <T>Observable<T> findByView(ViewQuery query, Class<T> entityClass) {
-        if (!query.isIncludeDocs() || !query.includeDocsTarget().equals(RawJsonDocument.class)) {
-            if (query.isOrderRetained()) {
-                query.includeDocsOrdered(RawJsonDocument.class);
-            } else {
-                query.includeDocs(RawJsonDocument.class);
-            }
-        }
-        //we'll always map the document to the entity, hence reduce never makes sense.
-        query.reduce(false);
-
-        return queryView(query)
-                .flatMap(asyncViewResult -> asyncViewResult.error()
-                        .flatMap(error -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query due to error:" + error.toString())))
-                        .switchIfEmpty(asyncViewResult.rows()))
-                .map(row -> {
-                    AsyncViewRow asyncViewRow = (AsyncViewRow) row;
-                    return asyncViewRow.document(RawJsonDocument.class)
-                            .map(doc ->  mapToEntity(doc.id(), doc, entityClass)).toBlocking().single();
-                })
-                .doOnError(throwable -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute view query", throwable)));
+    public <T> Flux<T> findByN1QL(N1QLQuery query, Class<T> entityClass) {
+        return queryN1QL(query).flatMapMany(res -> {
+                        return res.rowsAs(entityClass).zipWith(res.rowsAsObject())
+                                .flatMap(tuple -> {
+                                    String id = tuple.getT2().getString(TemplateUtils.SELECT_ID);
+                                    long cas = tuple.getT2().getLong(TemplateUtils.SELECT_CAS);
+                                    return Flux.just(mapToEntity(id, tuple.getT1(), cas));
+                                });
+                    }).doOnError(throwable -> {
+            Flux.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable));
+        });
     }
 
-
     @Override
-    public <T>Observable<T> findByN1QL(N1qlQuery query, Class<T> entityClass) {
+    public <T>Flux<T> findByN1QLProjection(N1QLQuery query, Class<T> entityClass) {
         return queryN1QL(query)
-                .flatMap(asyncN1qlQueryResult -> asyncN1qlQueryResult.errors()
-                        .flatMap(error -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query due to error:" + error.toString())))
-                        .switchIfEmpty(asyncN1qlQueryResult.rows()))
-                .map(row -> {
-                    JsonObject json = ((AsyncN1qlQueryRow)row).value();
-                    String id = json.getString(TemplateUtils.SELECT_ID);
-                    Long cas = json.getLong(TemplateUtils.SELECT_CAS);
-                    if (id == null || cas == null) {
-                        throw new CouchbaseQueryExecutionException("Unable to retrieve enough metadata for N1QL to entity mapping, " +
-                                "have you selected " + TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + "?");
-                    }
-                    json = json.removeKey(TemplateUtils.SELECT_ID).removeKey(TemplateUtils.SELECT_CAS);
-                    RawJsonDocument entityDoc = RawJsonDocument.create(id, json.toString(), cas);
-                    T decoded = mapToEntity(id, entityDoc, entityClass);
-                    return decoded;
-                })
-                .doOnError(throwable -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable)));
-    }
-
-    @Override
-    public <T>Observable<T> findBySpatialView(SpatialViewQuery query, Class<T> entityClass) {
-        return querySpatialView(query)
-                .flatMap(spatialViewResult -> spatialViewResult.error()
-                        .flatMap(error -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute spatial view query due to error:" + error.toString())))
-                        .switchIfEmpty(spatialViewResult.rows()))
-                .map(row -> {
-                    AsyncSpatialViewRow asyncSpatialViewRow = (AsyncSpatialViewRow) row;
-                    return asyncSpatialViewRow.document(RawJsonDocument.class)
-                            .map(doc ->  mapToEntity(doc.id(), doc, entityClass))
-                            .toBlocking().single();
-                })
-                .doOnError(throwable -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute spatial view query", throwable)));
-    }
-
-    @Override
-    public <T>Observable<T> findByN1QLProjection(N1qlQuery query, Class<T> entityClass) {
-        return queryN1QL(query)
-                .flatMap(asyncN1qlQueryResult -> asyncN1qlQueryResult.errors()
-                        .flatMap(error -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query due to error:" + error.toString())))
-                        .switchIfEmpty(asyncN1qlQueryResult.rows()))
-                .map(row -> {
-                    JsonObject json = ((AsyncN1qlQueryRow)row).value();
-                    T decoded = translationService.decodeFragment(json.toString(), entityClass);
-                    return decoded;
-                })
+                .flatMapMany(res ->  Flux.from(res.rowsAs(entityClass)))
                 .doOnError(throwable -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable)));
     }
 
@@ -458,42 +385,53 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     }
 
 
-    private <T> T mapToEntity(String id, Document<String> data, Class<T> entityClass) {
-        if (data == null) {
+    private <T> T mapToEntity(String id, T readEntity, long cas) {
+
+        if (readEntity == null) {
             return null;
         }
 
-        final CouchbaseDocument converted = new CouchbaseDocument(id);
-        Object readEntity = converter.read(entityClass, (CouchbaseDocument) decodeAndUnwrap(data, converted));
-
-        final ConvertingPropertyAccessor accessor = getPropertyAccessor(readEntity);
+        final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
         CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
-        CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-        if (versionProperty != null) {
-            accessor.setProperty(versionProperty, data.cas());
+
+        if (persistentEntity.getVersionProperty() != null) {
+            accessor.setProperty(persistentEntity.getVersionProperty(), cas);
         }
 
-        return (T) readEntity;
-    }
+        persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
+            /* TODO: need a N1QLJoinResolver that works with RxJavaCouchbaseTemplate.  Commenting
+                out for now
 
-    /**
-     * Decode a {@link Document Document&lt;String&gt;} containing a JSON string
-     * into a {@link CouchbaseStorable}
-     */
-    private CouchbaseStorable decodeAndUnwrap(final Document<String> source, final CouchbaseStorable target) {
-        //TODO at some point the necessity of CouchbaseStorable should be re-evaluated
-        return translationService.decode(source.content(), target);
+                if (prop.isAnnotationPresent(N1qlJoin.class)) {
+                N1qlJoin definition = prop.findAnnotation(N1qlJoin.class);
+                TypeInformation type =  prop.getTypeInformation().getActualType();
+                Class clazz = type.getType();
+                N1qlJoinResolver.N1qlJoinResolverParameters parameters = new N1qlJoinResolver.N1qlJoinResolverParameters(definition, id, persistentEntity.getTypeInformation(), type);
+                if (N1qlJoinResolver.isLazyJoin(definition)) {
+                    N1qlJoinResolver.N1qlJoinProxy proxy = new N1qlJoinResolver.N1qlJoinProxy(this, parameters);
+                    accessor.setProperty(prop, java.lang.reflect.Proxy.newProxyInstance(List.class.getClassLoader(),
+                            new Class[]{List.class}, proxy));
+                } else {
+                    accessor.setProperty(prop, N1qlJoinResolver.doResolve(this, parameters, clazz));
+                }
+            }*/
+        });
+
+        return accessor.getBean();
     }
 
     @Override
     public Bucket getCouchbaseBucket() {
-        return this.syncClient;
+        return cluster.bucket(client.bucketName());
     }
 
     @Override
-    public ClusterInfo getCouchbaseClusterInfo() {
-        return this.clusterInfo;
+    public ClusterConfig getCouchbaseClusterConfig() {
+        return cluster.core().clusterConfig();
     }
+
+    @Override
+    public Cluster getCouchbaseCluster() { return cluster; }
 
     private enum PersistType {
         SAVE("Save", "Upsert"),

@@ -16,13 +16,13 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import com.couchbase.client.core.config.BucketConfig;
+import com.couchbase.client.core.config.NodeInfo;
 import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.bucket.BucketInfo;
 
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedMetric;
@@ -40,12 +40,12 @@ public class ClusterInfo {
 
   private final RestTemplate template;
   private final Bucket bucket;
-  private final BucketInfo info;
+  private final BucketConfig info;
 
   public ClusterInfo(final Bucket bucket) {
     this.template = new RestTemplate();
     this.bucket = bucket;
-    this.info = bucket.bucketManager().info();
+    this.info = bucket.core().clusterConfig().bucketConfig(bucket.name());
   }
 
   @ManagedMetric(description = "Total RAM assigned")
@@ -108,9 +108,9 @@ public class ClusterInfo {
   }
 
   protected String randomAvailableHostname() {
-    List<InetAddress> available = info.nodeList();
+    List<NodeInfo> available = info.nodes();
     Collections.shuffle(available);
-    return available.get(0).getHostName();
+    return available.get(0).hostname();
   }
 
   private HashMap<String, Object> fetchPoolInfo() {

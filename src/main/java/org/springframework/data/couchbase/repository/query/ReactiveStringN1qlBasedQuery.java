@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -23,9 +24,9 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.N1qlQuery;
-import com.couchbase.client.java.query.Statement;
+import com.couchbase.client.java.json.JsonValue;
+
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 
 /**
@@ -73,10 +74,9 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
     }
 
     @Override
-    public Statement getStatement(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
+    public N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
         EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
-        String parsedStatement = queryParser.doParse(parser, evaluationContext, false);
-        return N1qlQuery.simple(parsedStatement).statement();
+        return x(queryParser.doParse(parser, evaluationContext, false));
     }
 
 }

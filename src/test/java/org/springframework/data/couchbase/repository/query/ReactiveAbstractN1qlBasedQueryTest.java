@@ -18,14 +18,15 @@ package org.springframework.data.couchbase.repository.query;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import com.couchbase.client.java.document.json.JsonValue;
-import com.couchbase.client.java.query.Statement;
-import com.couchbase.client.java.query.consistency.ScanConsistency;
+import com.couchbase.client.java.json.JsonValue;
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 import org.junit.*;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.query.Consistency;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.projection.ProjectionFactory;
@@ -66,11 +67,11 @@ public class ReactiveAbstractN1qlBasedQueryTest {
     RxJavaCouchbaseTemplate template = mock(RxJavaCouchbaseTemplate.class);
     when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
 
-    ScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
+    QueryScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
     assertEquals(defaultConsistency, Consistency.STRONGLY_CONSISTENT.n1qlConsistency());
 
-    ScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
-    assertEquals(unboundedConsistency, ScanConsistency.NOT_BOUNDED);
+    QueryScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
+    assertEquals(unboundedConsistency, QueryScanConsistency.NOT_BOUNDED);
 
   }
 
@@ -82,7 +83,7 @@ public class ReactiveAbstractN1qlBasedQueryTest {
 
     Flux<Sample> findAll();
 
-    @WithConsistency(ScanConsistency.NOT_BOUNDED)
+    @WithConsistency(QueryScanConsistency.NOT_BOUNDED)
     Flux<Sample> findByName();
   }
 
@@ -94,9 +95,9 @@ public class ReactiveAbstractN1qlBasedQueryTest {
     }
 
     @Override
-    protected Statement getStatement(ParameterAccessor accessor,
-                                     Object[] runtimeParameters,
-                                     ReturnedType returnedType) {
+    protected N1QLExpression getExpression(ParameterAccessor accessor,
+                                          Object[] runtimeParameters,
+                                          ReturnedType returnedType) {
       return null;
     }
 

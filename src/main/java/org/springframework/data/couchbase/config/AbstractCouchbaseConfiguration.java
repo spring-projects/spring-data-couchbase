@@ -16,16 +16,15 @@
 
 package org.springframework.data.couchbase.config;
 
-import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.ListIterator;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
-import com.couchbase.client.java.env.CouchbaseEnvironment;
-import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+import com.couchbase.client.java.ClusterOptions;
+import com.couchbase.client.java.Collection;
 
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -41,6 +40,7 @@ import org.springframework.context.annotation.Configuration;
 public abstract class AbstractCouchbaseConfiguration
         extends AbstractCouchbaseDataConfiguration implements CouchbaseConfigurer {
 
+    private Cluster cluster;
     /**
      * The list of hostnames (or IP addresses) to bootstrap from.
      *
@@ -54,6 +54,12 @@ public abstract class AbstractCouchbaseConfiguration
      * @return the name of the bucket.
      */
     protected abstract String getBucketName();
+
+    /**
+     * The name of the collection within the bucket to use.  Will
+     * use defaultCollection if this is an empty string.
+     */
+    protected String getCollectionName() { return ""; }
 
     /**
      * The user of the bucket. Override the method for users in Couchbase Server 5.0+.
@@ -70,7 +76,7 @@ public abstract class AbstractCouchbaseConfiguration
     protected abstract String getBucketPassword();
 
     /**
-     * Is the {@link #getEnvironment()} to be destroyed by Spring?
+     * Is the {@link #getOptions()} to be destroyed by Spring?
      *
      * @return true if Spring should destroy the environment with the context, false otherwise.
      */
@@ -78,69 +84,37 @@ public abstract class AbstractCouchbaseConfiguration
         return true;
     }
 
-    /**
-     * Override this method if you want a customized {@link CouchbaseEnvironment}.
-     * This environment will be managed by Spring, which will call its shutdown()
-     * method upon bean destruction, unless you override {@link #isEnvironmentManagedBySpring()}
-     * as well to return false.
-     *
-     * @return a customized environment, defaults to a {@link DefaultCouchbaseEnvironment}.
-     */
-    protected CouchbaseEnvironment getEnvironment() {
-        return DefaultCouchbaseEnvironment.create();
+
+    protected ClusterOptions getOptions() {
+        return ClusterOptions.clusterOptions(getUsername(), getBucketPassword()).environment(getEnvironment());
     }
 
+    protected ClusterEnvironment getEnvironment() {
+        // TODO: reasonable default?
+        return ClusterEnvironment.create();
+    }
     @Override
     protected CouchbaseConfigurer couchbaseConfigurer() {
         return this;
-    }
-
-    @Override
-    @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
-    public CouchbaseEnvironment couchbaseEnvironment() {
-        if (isEnvironmentManagedBySpring()) {
-            return getEnvironment();
-        } else {
-            CouchbaseEnvironment proxy = (CouchbaseEnvironment) Proxy.newProxyInstance(CouchbaseEnvironment.class.getClassLoader(),
-                    new Class[]{CouchbaseEnvironment.class},
-                    new CouchbaseEnvironmentNoShutdownInvocationHandler(getEnvironment()));
-            return proxy;
-        }
     }
 
     /**
      * Returns the {@link Cluster} instance to connect to.
      *
      * @throws Exception on Bean construction failure.
-     */
-    @Override
+     * */
     @Bean(destroyMethod = "disconnect", name = BeanNames.COUCHBASE_CLUSTER)
     public Cluster couchbaseCluster() throws Exception {
-        return CouchbaseCluster.create(couchbaseEnvironment(), getBootstrapHosts());
+        return Cluster.connect(String.join(",", getBootstrapHosts()), getOptions());
     }
 
     @Override
-    @Bean(name = BeanNames.COUCHBASE_CLUSTER_INFO)
-    public ClusterInfo couchbaseClusterInfo() throws Exception {
-        return couchbaseCluster().clusterManager(getUsername(), getBucketPassword()).info();
-    }
-
-    /**
-     * Return the {@link Bucket} instance to connect to.
-     *
-     * @throws Exception on Bean construction failure.
-     */
-    @Override
-    @Bean(destroyMethod = "close", name = BeanNames.COUCHBASE_BUCKET)
-    public Bucket couchbaseClient() throws Exception {
-        //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
-        Cluster cluster = couchbaseCluster();
-
-        if(!getUsername().contentEquals(getBucketName())){
-            cluster.authenticate(getUsername(), getBucketPassword());
-        } else if (!getBucketPassword().isEmpty()) {
-            return cluster.openBucket(getBucketName(), getBucketPassword());
+    @Bean(name = BeanNames.COUCHBASE_COLLECTION)
+    public Collection couchbaseClient() throws Exception {
+        Bucket bucket = couchbaseCluster().bucket(getBucketName());
+        if (getCollectionName().isEmpty()) {
+            return bucket.defaultCollection();
         }
-        return cluster.openBucket(getBucketName());
+        return bucket.collection(getCollectionName());
     }
 }

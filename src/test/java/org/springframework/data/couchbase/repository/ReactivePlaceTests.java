@@ -1,6 +1,7 @@
 package org.springframework.data.couchbase.repository;
 
 import com.couchbase.client.java.Bucket;
+import com.couchbase.client.java.Collection;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,7 +32,7 @@ public class ReactivePlaceTests {
     public TestName testName = new TestName();
 
     @Autowired
-    private Bucket client;
+    private Collection client;
 
     @Autowired
     private ReactiveRepositoryOperationsMapping operationsMapping;

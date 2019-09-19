@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import com.couchbase.client.java.document.json.JsonObject;
+import com.couchbase.client.java.Bucket;
 import org.junit.Test;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.Beer;
@@ -36,6 +36,7 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,8 +54,6 @@ import org.springframework.data.repository.core.support.DefaultRepositoryMetadat
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ResultProcessor;
 
-import com.couchbase.client.java.CouchbaseBucket;
-import com.couchbase.client.java.query.Statement;
 
 /**
  * @author Mark Paluch
@@ -67,7 +66,7 @@ public class PartTreeN1qBasedQueryTest {
 		PageRequest pr = PageRequest.of(0, 10);
 
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		Bucket couchbaseBucket = mock(Bucket.class);
 		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
 		MappingContext mappingContext = mock(MappingContext.class);
 		PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
@@ -98,7 +97,7 @@ public class PartTreeN1qBasedQueryTest {
 		when(accessor.getPageable()).thenReturn(pr);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
+		N1QLExpression statement = query.getCount(accessor, new Object[] { "value", pr });
 
 		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
@@ -112,7 +111,7 @@ public class PartTreeN1qBasedQueryTest {
 		PageRequest pr = PageRequest.of(0, 10, sort);
 
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		Bucket couchbaseBucket = mock(Bucket.class);
 		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
 		MappingContext mappingContext = mock(MappingContext.class);
 		PersistentPropertyPath persistentPropertyPath = mock(PersistentPropertyPath.class);
@@ -143,7 +142,7 @@ public class PartTreeN1qBasedQueryTest {
 		when(accessor.getPageable()).thenReturn(pr);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
+		N1QLExpression statement = query.getCount(accessor, new Object[] { "value", pr });
 
 		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
 				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
@@ -154,7 +153,7 @@ public class PartTreeN1qBasedQueryTest {
 	public void testProjectionInterface() throws Exception {
 
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		Bucket couchbaseBucket = mock(Bucket.class);
 		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
 		EntityMetadata entityInformation = mock(EntityMetadata.class);
 		ParameterAccessor accessor = mock(ParameterAccessor.class);
@@ -178,7 +177,7 @@ public class PartTreeN1qBasedQueryTest {
 		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+		N1QLExpression statement = query.getExpression(accessor, null, processor.getReturnedType());
 
 		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`desc` FROM `B` WHERE "
 				+ "`_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
@@ -188,7 +187,7 @@ public class PartTreeN1qBasedQueryTest {
 	@Test
 	public void testProjectionDTO() throws Exception {
 		CouchbaseOperations couchbaseOperations = mock(CouchbaseOperations.class);
-		CouchbaseBucket couchbaseBucket = mock(CouchbaseBucket.class);
+		Bucket couchbaseBucket = mock(Bucket.class);
 		CouchbaseConverter couchbaseConverter = mock(CouchbaseConverter.class);
 		EntityMetadata entityInformation = mock(EntityMetadata.class);
 		ProjectionFactory factory = new SpelAwareProxyProjectionFactory();
@@ -210,7 +209,7 @@ public class PartTreeN1qBasedQueryTest {
 		ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
-		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
+		N1QLExpression statement = query.getExpression(accessor, null, processor.getReturnedType());
 
 		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`name`, `B`.`desc` FROM `B` "
 				+ "WHERE `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());

@@ -18,13 +18,8 @@ package org.springframework.data.couchbase.repository.cdi;
 
 import javax.enterprise.inject.Produces;
 
-import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.CouchbaseCluster;
-import com.couchbase.client.java.cluster.ClusterInfo;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 
 /**
  * Produces a {@link ClusterInfo} instance for test usage.
@@ -34,9 +29,10 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
  */
 class CouchbaseClusterInfoProducer {
 
+/* TODO - lets remove this - but holding off till I get things compiling and running a bit
   @Produces
   public ClusterInfo createClusterInfo(Cluster cluster) throws Exception {
     return cluster.clusterManager("protected", "password").info();
   }
-
+*/
 }
