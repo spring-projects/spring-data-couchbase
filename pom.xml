@@ -24,6 +24,18 @@
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
 
+    <dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-bom</artifactId>
+				<version>${testcontainers}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
     <dependencies>
 
         <dependency>
@@ -121,7 +133,6 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
-            <version>1.6.0</version>
             <scope>test</scope>
         </dependency>
 
