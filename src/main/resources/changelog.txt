@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.11.RELEASE (2019-09-30)
+----------------------------------------------
+* DATACOUCH-471 - Add HTTPS entries into spring.schemas.
+* DATACOUCH-468 - Release 3.1.11 (Lovelace SR11).
+
+
 Changes in version 3.2.0.RC3 (2019-09-06)
 -----------------------------------------
 * DATACOUCH-471 - Add HTTPS entries into spring.schemas.
