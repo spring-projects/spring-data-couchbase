@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.0.RELEASE (2019-09-30)
+---------------------------------------------
+* DATACOUCH-479 - Use version property for testcontainers in pom.xml.
+* DATACOUCH-478 - Upgrade to Couchbase Driver 2.7.9.
+* DATACOUCH-469 - Release 3.2 GA (Moore).
+
+
 Changes in version 3.1.11.RELEASE (2019-09-30)
 ----------------------------------------------
 * DATACOUCH-471 - Add HTTPS entries into spring.schemas.
