@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.repository.extending.method;
 
-import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
@@ -31,6 +30,8 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * This tests custom repository methods.
@@ -92,13 +93,13 @@ public class RepositoryCustomMethodIntegrationTests {
   @Test
   public void testRepositoryCustomMethodIsWeavedIn() {
     long customCount = repository.customCountItems();
-    assertEquals(-1L, customCount);
+    assertThat(customCount).isEqualTo(-1L);
   }
 
   @Test
   public void testRepositoryCrudMethodIsReplaced() {
     long count = repository.count();
-    assertEquals(100L, count);
+    assertThat(count).isEqualTo(100L);
   }
 
 }

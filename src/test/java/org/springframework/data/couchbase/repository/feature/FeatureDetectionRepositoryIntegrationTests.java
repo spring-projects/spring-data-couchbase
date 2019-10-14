@@ -16,9 +16,8 @@
 
 package org.springframework.data.couchbase.repository.feature;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import com.couchbase.client.java.cluster.ClusterInfo;
@@ -73,7 +72,7 @@ public class FeatureDetectionRepositoryIntegrationTests {
       factory.getRepository(UserRepository.class);
       fail("expected UnsupportedCouchbaseFeatureException");
     } catch (UnsupportedCouchbaseFeatureException e) {
-      assertEquals(CouchbaseFeature.N1QL, e.getFeature());
+      assertThat(e.getFeature()).isEqualTo(CouchbaseFeature.N1QL);
     }
   }
 
@@ -81,7 +80,7 @@ public class FeatureDetectionRepositoryIntegrationTests {
   public void testN1qlIncompatibleClusterDoesntFailForViewBasedRepository() throws Exception {
     RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     ViewOnlyUserRepository repository = getRepositoryWithRetry(factory, ViewOnlyUserRepository.class);
-    assertNotNull(repository);
+    assertThat(repository).isNotNull();
   }
 
   @Test
@@ -93,21 +92,21 @@ public class FeatureDetectionRepositoryIntegrationTests {
       template.findByN1QL(query, User.class);
       fail("expected findByN1QL to fail with UnsupportedCouchbaseFeatureException");
     } catch (UnsupportedCouchbaseFeatureException e) {
-      assertEquals(CouchbaseFeature.N1QL, e.getFeature());
+      assertThat(e.getFeature()).isEqualTo(CouchbaseFeature.N1QL);
     }
 
     try {
       template.findByN1QLProjection(query, User.class);
       fail("expected findByN1QLProjection to fail with UnsupportedCouchbaseFeatureException");
     } catch (UnsupportedCouchbaseFeatureException e) {
-      assertEquals(CouchbaseFeature.N1QL, e.getFeature());
+      assertThat(e.getFeature()).isEqualTo(CouchbaseFeature.N1QL);
     }
 
     try {
       template.queryN1QL(query);
       fail("expected queryN1QL to fail with UnsupportedCouchbaseFeatureException");
     } catch (UnsupportedCouchbaseFeatureException e) {
-      assertEquals(CouchbaseFeature.N1QL, e.getFeature());
+      assertThat(e.getFeature()).isEqualTo(CouchbaseFeature.N1QL);
     }
   }
 }

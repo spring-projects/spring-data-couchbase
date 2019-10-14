@@ -16,23 +16,19 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
 import com.couchbase.client.java.Bucket;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-;
-import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.TestContainerResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Michael Nitschinger
@@ -57,12 +53,12 @@ public class ClusterInfoIntegrationTests {
 
 	@Test
 	public void totalDiskAssigned() {
-		assertThat(ci.getTotalDiskAssigned(), greaterThan(0L));
+		assertThat(ci.getTotalDiskAssigned()).isGreaterThan(0);
 	}
 
 	@Test
 	public void totalRAMUsed() {
-		assertThat(ci.getTotalRAMUsed(), greaterThan(0L));
+		assertThat(ci.getTotalRAMUsed()).isGreaterThan(0);
 	}
 
 }

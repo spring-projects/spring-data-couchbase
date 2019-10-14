@@ -1,6 +1,7 @@
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.HashSet;
@@ -67,9 +68,9 @@ public class DimensionalQueryIntegrationTests {
 
     List<Party> parties = repository.findByLocationWithin(zone);
 
-    assertEquals(4, parties.size());
+    assertThat(parties.size()).isEqualTo(4);
     for (Party party : parties) {
-      assertTrue(expectedKeys.contains(party.getKey()));
+      assertThat(expectedKeys.contains(party.getKey())).isTrue();
     }
   }
 
@@ -80,24 +81,24 @@ public class DimensionalQueryIntegrationTests {
     expectedKeys.add("testparty-1");
 
     List<Party> parties = repository.findByLocationNear(new Point(0, 0), new Distance(1.5));
-    assertEquals(2, parties.size());
+    assertThat(parties.size()).isEqualTo(2);
     for (Party party : parties) {
-      assertTrue(expectedKeys.contains(party.getKey()));
+      assertThat(expectedKeys.contains(party.getKey())).isTrue();
     }
 
     //with this one, testparty-2 is within the bounding box but not in correct distance
     parties = repository.findByLocationNear(new Point(0, 0), new Distance(2.5));
-    assertEquals(2, parties.size());
+    assertThat(parties.size()).isEqualTo(2);
     for (Party party : parties) {
-      assertTrue(expectedKeys.contains(party.getKey()));
+      assertThat(expectedKeys.contains(party.getKey())).isTrue();
     }
 
     //here we adjust the distance so that testparty-2 falls just on the edge
     parties = repository.findByLocationNear(new Point(0, 0), new Distance(2.8284271247461903));
     expectedKeys.add("testparty-2");
-    assertEquals(3, parties.size());
+    assertThat(parties.size()).isEqualTo(3);
     for (Party party : parties) {
-      assertTrue(expectedKeys.contains(party.getKey()));
+      assertThat(expectedKeys.contains(party.getKey())).isTrue();
     }
   }
 
@@ -117,8 +118,8 @@ public class DimensionalQueryIntegrationTests {
     //first check the zone contains 4 parties
     List<Party> allPartiesInZone = repository.findByLocationWithinAndAttendeesGreaterThan(zone, -1);
     List<Party> allPartiesInZoneWithoutAttendeeCriteria = repository.findByLocationWithin(zone);
-    assertEquals(allPartiesInZone.toString(), 4, allPartiesInZone.size());
-    assertEquals(allPartiesInZoneWithoutAttendeeCriteria, allPartiesInZone);
+    assertThat(allPartiesInZone.size()).as(allPartiesInZone.toString()).isEqualTo(4);
+    assertThat(allPartiesInZone).isEqualTo(allPartiesInZoneWithoutAttendeeCriteria);
 
     //check parties are limited by the attendees
     List<Party> parties = repository.findByLocationWithinAndAttendeesGreaterThan(zone, 140);
@@ -126,10 +127,10 @@ public class DimensionalQueryIntegrationTests {
       System.out.println(party.getKey() + " : " + party.getLocation() + " " + party.getAttendees());
     }
 
-    assertEquals(parties.toString(), 2, parties.size());
+    assertThat(parties.size()).as(parties.toString()).isEqualTo(2);
     for (Party party : parties) {
-      assertTrue(party.getAttendees() >= 140);
-      assertTrue(expectedKeys.contains(party.getKey()));
+      assertThat(party.getAttendees() >= 140).isTrue();
+      assertThat(expectedKeys.contains(party.getKey())).isTrue();
     }
   }
 
@@ -141,17 +142,17 @@ public class DimensionalQueryIntegrationTests {
     Circle zoneEmpty = new Circle(new Point(6,6), new Distance(3));
 
     List<Party> parties = repository.findByLocationWithin(zoneBboxFalse);
-    assertEquals(0, parties.size());
+    assertThat(parties.size()).isEqualTo(0);
 
     parties = repository.findByLocationWithin(zoneEdge);
-    assertEquals(1, parties.size());
-    assertEquals("testparty-0", parties.get(0).getKey());
+    assertThat(parties.size()).isEqualTo(1);
+    assertThat(parties.get(0).getKey()).isEqualTo("testparty-0");
 
     parties = repository.findByLocationWithin(zoneInside);
-    assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
+    assertThat(parties.size()).isEqualTo(12); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmpty);
-    assertEquals(0, parties.size());
+    assertThat(parties.size()).isEqualTo(0);
   }
 
   @Test
@@ -162,15 +163,15 @@ public class DimensionalQueryIntegrationTests {
 
     List<Party> parties = repository.findByLocationWithin(zone1);
 
-    assertEquals(1, parties.size());
-    assertEquals("testparty-0", parties.get(0).getKey());
+    assertThat(parties.size()).isEqualTo(1);
+    assertThat(parties.get(0).getKey()).isEqualTo("testparty-0");
 
     parties = repository.findByLocationWithin(zone2);
 
-    assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
+    assertThat(parties.size()).isEqualTo(12); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmpty);
-    assertEquals(0, parties.size());
+    assertThat(parties.size()).isEqualTo(0);
   }
 
   @Test
@@ -207,16 +208,19 @@ public class DimensionalQueryIntegrationTests {
         new Point(6, 3));
 
     List<Party> parties = repository.findByLocationWithin(zoneFalsePositive);
-    assertEquals("points outside a polygon but within bounding box shouldn't be considered within", 0, parties.size());
+    assertThat(parties.size())
+			.as("points outside a polygon but within bounding box shouldn't be considered within")
+			.isEqualTo(0);
 
     parties = repository.findByLocationWithin(zoneEdge);
-    assertEquals("point on edge of a polygon shouldn't be considered within", 0, parties.size());
+    assertThat(parties.size())
+			.as("point on edge of a polygon shouldn't be considered within").isEqualTo(0);
 
     parties = repository.findByLocationWithin(zoneWithin);
-    assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
+    assertThat(parties.size()).isEqualTo(12); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmpty);
-    assertEquals(0, parties.size());
+    assertThat(parties.size()).isEqualTo(0);
   }
 
   @Test
@@ -230,15 +234,15 @@ public class DimensionalQueryIntegrationTests {
 
     List<Party> parties = repository.findByLocationWithin(zone1LowerLeft, zone1UpperRight);
 
-    assertEquals(1, parties.size());
-    assertEquals("testparty-0", parties.get(0).getKey());
+    assertThat(parties.size()).isEqualTo(1);
+    assertThat(parties.get(0).getKey()).isEqualTo("testparty-0");
 
     parties = repository.findByLocationWithin(zone2LowerLeft, zone2UpperRight);
 
-    assertEquals(12, parties.size()); //all the parties except the special one at 100, 100
+    assertThat(parties.size()).isEqualTo(12); //all the parties except the special one at 100, 100
 
     parties = repository.findByLocationWithin(zoneEmptyLowerLeft, zoneEmptyUpperRight);
-    assertEquals(0, parties.size());
+    assertThat(parties.size()).isEqualTo(0);
   }
 
   @Test
@@ -259,13 +263,13 @@ public class DimensionalQueryIntegrationTests {
     List<Party> fromZone = repository.findByLocationWithin(zone);
     List<Party> fromPoints = repository.findByLocationWithin(points);
 
-    assertEquals(4, fromZone.size());
-    assertEquals(fromZone, fromPoints);
+    assertThat(fromZone.size()).isEqualTo(4);
+    assertThat(fromPoints).isEqualTo(fromZone);
     Set<String> keys = new HashSet<String>();
     for (Party party : fromZone) {
       keys.add(party.getKey());
     }
-    assertEquals(expectedKeys, keys);
+    assertThat(keys).isEqualTo(expectedKeys);
   }
 
   @Test
@@ -274,14 +278,16 @@ public class DimensionalQueryIntegrationTests {
       repository.findByLocationWithin(new Point(0, 0));
       fail("Expected IllegalArgumentException");
     } catch (IllegalArgumentException e) {
-      assertEquals("Cannot compute a bounding box for within, 2 Point needed, missing parameter", e.getMessage());
+      assertThat(e.getMessage())
+			  .isEqualTo("Cannot compute a bounding box for within, 2 Point needed, missing parameter");
     }
 
     try {
       repository.findByLocationWithin(new Point(0, 0), null);
       fail("Expected IllegalArgumentException");
     } catch (IllegalArgumentException e) {
-      assertEquals("Cannot compute a bounding box for within, 2 Point needed, got null", e.getMessage());
+      assertThat(e.getMessage())
+			  .isEqualTo("Cannot compute a bounding box for within, 2 Point needed, got null");
     }
   }
 
@@ -289,22 +295,22 @@ public class DimensionalQueryIntegrationTests {
   public void testProvidingOneJsonArrayIsRejected() {
     try {
       List<Party> parties = repository.findByLocationWithin(JsonArray.from(0,0));
-      fail();
+      fail("Expected IllegalArgumentException");
     } catch (IllegalArgumentException e) {
-      assertEquals("2 JsonArray required for within: startRange and endRange, missing parameter", e.getMessage());
+      assertThat(e.getMessage())
+			  .isEqualTo("2 JsonArray required for within: startRange and endRange, missing parameter");
     }
   }
 
   @Test(expected = CouchbaseQueryExecutionException.class)
   public void testJsonArrayWithNonNumericalValueProducesServerSideError() {
     repository.findByLocationWithin(JsonArray.from("toto", -2), JsonArray.from(4, 1));
-    fail();
   }
 
   @Test
   public void testWithinJsonArrayRangesFiltersLocationAndAttendees() {
     List<Party> parties = repository.findByLocationWithin(JsonArray.from(0, -4, 115), JsonArray.from(4, 1, 132));
-    assertEquals(2, parties.size());
+    assertThat(parties.size()).isEqualTo(2);
   }
 
   @Test
@@ -314,11 +320,14 @@ public class DimensionalQueryIntegrationTests {
       repository.findByLocationIsWithin(new Point(0,0), null);
       fail("expected IllegalArgumentException from SpatialViewQueryCreator");
     } catch (IllegalArgumentException e) {
-      assertEquals("Cannot compute a bounding box for within, 2 Point needed, got null", e.getMessage());
+      assertThat(e.getMessage())
+			  .isEqualTo("Cannot compute a bounding box for within, 2 Point needed, got null");
     }
 
     //when it is correctly formed, it actually returns data
-    assertEquals(1, repository.findByLocationIsWithin(new Point(-10.5, -0.5), new Point(0.5, 10.5)).size());
+    assertThat(repository
+			.findByLocationIsWithin(new Point(-10.5, -0.5), new Point(0.5, 10.5)).size())
+			.isEqualTo(1);
   }
 
   @Test
@@ -331,7 +340,7 @@ public class DimensionalQueryIntegrationTests {
     final List<Party> parties1 = repository.findByLocationWithin(box1);
     final List<Party> parties2 = repository.findByLocationWithin(box2);
 
-    assertEquals(3, parties1.size());
-    assertNotEquals(parties1, parties2);
+    assertThat(parties1.size()).isEqualTo(3);
+    assertThat(parties2).isNotEqualTo(parties1);
   }
 }

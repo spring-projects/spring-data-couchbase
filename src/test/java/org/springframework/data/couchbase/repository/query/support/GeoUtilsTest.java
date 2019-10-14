@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.springframework.data.geo.Box;
 import org.springframework.data.geo.Circle;
@@ -11,6 +9,9 @@ import org.springframework.data.geo.Polygon;
 import org.springframework.data.geo.Shape;
 
 import com.couchbase.client.java.document.json.JsonArray;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
 
 /**
  * Unit tests for the {@link GeoUtils} utility class.
@@ -22,32 +23,32 @@ public class GeoUtilsTest {
   public void testGetBoundingBoxForNear() throws Exception {
     final Distance distance = new Distance(120);
     double[] bbox = GeoUtils.getBoundingBoxForNear(new Point(1, 1), distance);
-    assertEquals(-119d, bbox[0], 0d); //xMin
-    assertEquals(121d, bbox[2], 0d); //xMax
-    assertEquals(-119d, bbox[1], 0d); //yMin
-    assertEquals(121d, bbox[3], 0d); //yMax
+    assertThat(bbox[0]).isCloseTo(-119d, offset(0d)); //xMin
+    assertThat(bbox[2]).isCloseTo(121d, offset(0d)); //xMax
+    assertThat(bbox[1]).isCloseTo(-119d, offset(0d)); //yMin
+    assertThat(bbox[3]).isCloseTo(121d, offset(0d)); //yMax
 
     bbox = GeoUtils.getBoundingBoxForNear(new Point(-3,-5), distance);
-    assertEquals(-123d, bbox[0], 0d); //xMin
-    assertEquals(117d, bbox[2], 0d); //xMax
-    assertEquals(-125d, bbox[1], 0d); //yMin
-    assertEquals(115d, bbox[3], 0d); //yMax
+    assertThat(bbox[0]).isCloseTo(-123d, offset(0d)); //xMin
+    assertThat(bbox[2]).isCloseTo(117d, offset(0d)); //xMax
+    assertThat(bbox[1]).isCloseTo(-125d, offset(0d)); //yMin
+    assertThat(bbox[3]).isCloseTo(115d, offset(0d)); //yMax
   }
 
   @Test
   public void testGetBoundingBoxForNearNegativeDistance() throws Exception {
     final Distance distance = new Distance(-120);
     double[] bbox = GeoUtils.getBoundingBoxForNear(new Point(1, 1), distance);
-    assertEquals(-119d, bbox[0], 0d); //xMin
-    assertEquals(121d, bbox[2], 0d); //xMax
-    assertEquals(-119d, bbox[1], 0d); //yMin
-    assertEquals(121d, bbox[3], 0d); //yMax
+    assertThat(bbox[0]).isCloseTo(-119d, offset(0d)); //xMin
+    assertThat(bbox[2]).isCloseTo(121d, offset(0d)); //xMax
+    assertThat(bbox[1]).isCloseTo(-119d, offset(0d)); //yMin
+    assertThat(bbox[3]).isCloseTo(121d, offset(0d)); //yMax
 
     bbox = GeoUtils.getBoundingBoxForNear(new Point(-3,-5), distance);
-    assertEquals(-123d, bbox[0], 0d); //xMin
-    assertEquals(117d, bbox[2], 0d); //xMax
-    assertEquals(-125d, bbox[1], 0d); //yMin
-    assertEquals(115d, bbox[3], 0d); //yMax
+    assertThat(bbox[0]).isCloseTo(-123d, offset(0d)); //xMin
+    assertThat(bbox[2]).isCloseTo(117d, offset(0d)); //xMax
+    assertThat(bbox[1]).isCloseTo(-125d, offset(0d)); //yMin
+    assertThat(bbox[3]).isCloseTo(115d, offset(0d)); //yMax
   }
 
   @Test(expected = NullPointerException.class)
@@ -104,12 +105,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertPointsTo2DRanges(startRange, endRange, true, p1, p2);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(2d, startRange.getDouble(0), 0d);
-    assertEquals(3d, startRange.getDouble(1), 0d);
-    assertEquals(4d, endRange.getDouble(0), 0d);
-    assertEquals(5d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(2d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(4d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(5d, offset(0d));
   }
 
   @Test
@@ -121,12 +122,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertPointsTo2DRanges(startRange, endRange, false, p1, p2);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(2d, startRange.getDouble(0), 0d);
-    assertEquals(3d, startRange.getDouble(1), 0d);
-    assertEquals(4d, endRange.getDouble(0), 0d);
-    assertEquals(5d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(2d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(4d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(5d, offset(0d));
   }
 
   @Test
@@ -139,12 +140,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertPointsTo2DRanges(startRange, endRange, false, p1, p2, p3);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(-4d, startRange.getDouble(0), 0d);
-    assertEquals(-12d, startRange.getDouble(1), 0d);
-    assertEquals(6d, endRange.getDouble(0), 0d);
-    assertEquals(3d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(-4d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(-12d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(6d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(3d, offset(0d));
   }
 
   @Test
@@ -162,12 +163,12 @@ public class GeoUtilsTest {
         new Point(6, 5),
         new Point(6, 3));
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(3d, startRange.getDouble(0), 0d);
-    assertEquals(3d, startRange.getDouble(1), 0d);
-    assertEquals(9d, endRange.getDouble(0), 0d);
-    assertEquals(9d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(3d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(9d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(9d, offset(0d));
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -188,12 +189,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRange, endRange, box);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(0d, startRange.getDouble(0), 0d);
-    assertEquals(5d, startRange.getDouble(1), 0d);
-    assertEquals(10d, endRange.getDouble(0), 0d);
-    assertEquals(30, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(0d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(5d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(10d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(30, offset(0d));
   }
 
   @Test
@@ -204,12 +205,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRange, endRange, box);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(0d, startRange.getDouble(0), 0d);
-    assertEquals(5d, startRange.getDouble(1), 0d);
-    assertEquals(10d, endRange.getDouble(0), 0d);
-    assertEquals(-3d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(0d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(5d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(10d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(-3d, offset(0d));
   }
 
   @Test
@@ -220,12 +221,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRange, endRange, box);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(0d, startRange.getDouble(0), 0d);
-    assertEquals(-3d, startRange.getDouble(1), 0d);
-    assertEquals(10d, endRange.getDouble(0), 0d);
-    assertEquals(5d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(0d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(-3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(10d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(5d, offset(0d));
   }
 
   @Test
@@ -245,12 +246,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRange, endRange, polygon);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(3d, startRange.getDouble(0), 0d);
-    assertEquals(3d, startRange.getDouble(1), 0d);
-    assertEquals(9d, endRange.getDouble(0), 0d);
-    assertEquals(9d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(3d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(9d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(9d, offset(0d));
   }
 
   @Test
@@ -282,14 +283,14 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRangePolygon, endRangePolygon, polygon);
 
-    assertEquals(2, startRangePoints.size());
-    assertEquals(2, endRangePoints.size());
-    assertEquals(3d, startRangePoints.getDouble(0), 0d);
-    assertEquals(3d, startRangePoints.getDouble(1), 0d);
-    assertEquals(9d, endRangePoints.getDouble(0), 0d);
-    assertEquals(9d, endRangePoints.getDouble(1), 0d);
-    assertEquals(endRangePoints, endRangePolygon);
-    assertEquals(startRangePoints, startRangePolygon);
+    assertThat(startRangePoints.size()).isEqualTo(2);
+    assertThat(endRangePoints.size()).isEqualTo(2);
+    assertThat(startRangePoints.getDouble(0)).isCloseTo(3d, offset(0d));
+    assertThat(startRangePoints.getDouble(1)).isCloseTo(3d, offset(0d));
+    assertThat(endRangePoints.getDouble(0)).isCloseTo(9d, offset(0d));
+    assertThat(endRangePoints.getDouble(1)).isCloseTo(9d, offset(0d));
+    assertThat(endRangePolygon).isEqualTo(endRangePoints);
+    assertThat(startRangePolygon).isEqualTo(startRangePoints);
   }
 
   @Test
@@ -300,12 +301,12 @@ public class GeoUtilsTest {
 
     GeoUtils.convertShapeTo2DRanges(startRange, endRange, circle);
 
-    assertEquals(2, startRange.size());
-    assertEquals(2, endRange.size());
-    assertEquals(-3d, startRange.getDouble(0), 0d);
-    assertEquals(-3d, startRange.getDouble(1), 0d);
-    assertEquals(3d, endRange.getDouble(0), 0d);
-    assertEquals(3d, endRange.getDouble(1), 0d);
+    assertThat(startRange.size()).isEqualTo(2);
+    assertThat(endRange.size()).isEqualTo(2);
+    assertThat(startRange.getDouble(0)).isCloseTo(-3d, offset(0d));
+    assertThat(startRange.getDouble(1)).isCloseTo(-3d, offset(0d));
+    assertThat(endRange.getDouble(0)).isCloseTo(3d, offset(0d));
+    assertThat(endRange.getDouble(1)).isCloseTo(3d, offset(0d));
   }
 
   @Test
@@ -319,18 +320,18 @@ public class GeoUtilsTest {
     GeoUtils.convertShapeTo2DRanges(startRangeCircle, endRangeCircle, circle);
     double[] bbox = GeoUtils.getBoundingBoxForNear(origin, distance);
 
-    assertEquals(2, startRangeCircle.size());
-    assertEquals(2, endRangeCircle.size());
+    assertThat(startRangeCircle.size()).isEqualTo(2);
+    assertThat(endRangeCircle.size()).isEqualTo(2);
 
-    assertEquals(-3d, bbox[0], 0d);
-    assertEquals(-3d, bbox[1], 0d);
-    assertEquals(3d, bbox[2], 0d);
-    assertEquals(3d, bbox[3], 0d);
+    assertThat(bbox[0]).isCloseTo(-3d, offset(0d));
+    assertThat(bbox[1]).isCloseTo(-3d, offset(0d));
+    assertThat(bbox[2]).isCloseTo(3d, offset(0d));
+    assertThat(bbox[3]).isCloseTo(3d, offset(0d));
 
-    assertEquals(bbox[0], startRangeCircle.getDouble(0), 0d);
-    assertEquals(bbox[1], startRangeCircle.getDouble(1), 0d);
-    assertEquals(bbox[2], endRangeCircle.getDouble(0), 0d);
-    assertEquals(bbox[3], endRangeCircle.getDouble(1), 0d);
+    assertThat(startRangeCircle.getDouble(0)).isCloseTo(bbox[0], offset(0d));
+    assertThat(startRangeCircle.getDouble(1)).isCloseTo(bbox[1], offset(0d));
+    assertThat(endRangeCircle.getDouble(0)).isCloseTo(bbox[2], offset(0d));
+    assertThat(endRangeCircle.getDouble(1)).isCloseTo(bbox[3], offset(0d));
   }
 
   @Test(expected = IllegalArgumentException.class)

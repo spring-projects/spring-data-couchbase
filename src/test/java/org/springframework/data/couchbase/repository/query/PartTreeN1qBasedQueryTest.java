@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -100,8 +100,9 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
-				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+		assertThat(statement.toString())
+				.isEqualTo("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
+						+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"");
 
 	}
 
@@ -145,8 +146,9 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getCount(accessor, new Object[] { "value", pr });
 
-		assertEquals("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
-				+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+		assertThat(statement.toString())
+				.isEqualTo("SELECT COUNT(*) AS count FROM `default` WHERE (name = $1) "
+						+ "AND `_class` = \"org.springframework.data.couchbase.core.Beer\"");
 
 	}
 
@@ -180,8 +182,9 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
 
-		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`desc` FROM `B` WHERE "
-				+ "`_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+		assertThat(statement.toString())
+				.isEqualTo("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`desc` FROM `B` WHERE "
+						+ "`_class` = \"org.springframework.data.couchbase.core.Beer\"");
 
 	}
 
@@ -212,8 +215,9 @@ public class PartTreeN1qBasedQueryTest {
 		PartTreeN1qlBasedQuery query = new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
 		Statement statement = query.getStatement(accessor, null, processor.getReturnedType());
 
-		assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`name`, `B`.`desc` FROM `B` "
-				+ "WHERE `_class` = \"org.springframework.data.couchbase.core.Beer\"", statement.toString());
+		assertThat(statement.toString())
+				.isEqualTo("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.`name`, `B`.`desc` FROM `B` "
+						+ "WHERE `_class` = \"org.springframework.data.couchbase.core.Beer\"");
 
 	}
 

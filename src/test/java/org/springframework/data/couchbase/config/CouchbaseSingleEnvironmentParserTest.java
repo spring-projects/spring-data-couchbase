@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.springframework.beans.factory.support.BeanDefinitionReader;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -29,6 +26,8 @@ import org.springframework.core.io.ClassPathResource;
 import com.couchbase.client.core.env.DefaultCoreEnvironment;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Simon Bland
@@ -53,7 +52,7 @@ public class CouchbaseSingleEnvironmentParserTest {
 
     int instanceCounterAfter = DefaultCoreEnvironment.instanceCounter();
 
-    assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
-    assertThat(instanceCounterAfter, is(instanceCounterBefore + 1));
+    assertThat(env).isInstanceOf(DefaultCouchbaseEnvironment.class);
+    assertThat(instanceCounterAfter).isEqualTo(instanceCounterBefore + 1);
   }
 }

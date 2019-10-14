@@ -32,7 +32,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE;
 
 /**
@@ -58,7 +58,7 @@ public class CouchbaseIdGenerationIntegrationTests {
   public void idFieldEntityIsFillWithGeneratedValueOnSave() {
     SimpleClassWithGeneratedIdValueUsingUUID entity = new SimpleClassWithGeneratedIdValueUsingUUID();
     SimpleClassWithGeneratedIdValueUsingUUID savedEntity = entityRepository.save(entity);
-    assertThat("Expected generated value", savedEntity.id != null);
+    assertThat(savedEntity.id != null).as("Expected generated value").isTrue();
     if (entityRepository.existsById(savedEntity.id)) {
       entityRepository.existsById(savedEntity.id);
     }
@@ -71,7 +71,7 @@ public class CouchbaseIdGenerationIntegrationTests {
     SimpleClassWithGeneratedIdValueUsingUUID entity = new SimpleClassWithGeneratedIdValueUsingUUID();
     entity.setId(id);
     SimpleClassWithGeneratedIdValueUsingUUID savedEntity = entityRepository.save(entity);
-    assertThat("Expected same id instance", savedEntity.id == id);
+    assertThat(savedEntity.id == id).as("Expected same id instance").isTrue();
     if (entityRepository.existsById(savedEntity.id)) {
       entityRepository.existsById(savedEntity.id);
     }

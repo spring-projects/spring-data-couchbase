@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +11,8 @@ import com.couchbase.client.java.query.dsl.Expression;
 import org.junit.Test;
 import org.springframework.data.couchbase.repository.query.support.N1qlQueryCreatorUtils;
 import org.springframework.data.repository.query.parser.Part;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class N1qlQueryCreatorTest {
 
@@ -32,12 +33,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a").add("b"), phexp);
-    assertEquals(JsonArray.create().add(1).add(2), phexpNum);
-    assertEquals(JsonArray.create().add("C").add("D"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a").add("b"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1).add(2));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("C").add("D"));
   }
 
   @Test
@@ -55,12 +56,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create(), phexp);
-    assertEquals(JsonArray.create(), phexpNum);
-    assertEquals(JsonArray.create(), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create());
+    assertThat(phexpNum).isEqualTo(JsonArray.create());
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create());
   }
 
   @Test
@@ -78,12 +79,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create(), phexp);
-    assertEquals(JsonArray.create(), phexpNum);
-    assertEquals(JsonArray.create(), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create());
+    assertThat(phexpNum).isEqualTo(JsonArray.create());
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create());
   }
 
   @Test
@@ -101,12 +102,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -124,12 +125,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -147,12 +148,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -170,12 +171,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -193,12 +194,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -216,12 +217,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -239,12 +240,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -262,12 +263,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -285,12 +286,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -308,12 +309,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -331,12 +332,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -354,12 +355,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -377,12 +378,13 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("a")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add(1)), phexpNum);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("b")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add(JsonArray.create().add("a")));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(JsonArray.create().add(1)));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("b")));
   }
 
   @Test
@@ -399,10 +401,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("av1").add("av2")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("av1").add("av2")));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")));
   }
 
   @Test
@@ -419,10 +423,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("av1").add("av2")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("av1").add("av2")));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")));
   }
 
   @Test
@@ -440,12 +446,13 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("a")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add(1)), phexpNum);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("b")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add(JsonArray.create().add("a")));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(JsonArray.create().add(1)));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("b")));
   }
 
   @Test
@@ -462,10 +469,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("av1").add("av2")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("av1").add("av2")));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")));
   }
 
   @Test
@@ -482,10 +491,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add(JsonArray.create().add("av1").add("av2")), phexp);
-    assertEquals(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("av1").add("av2")));
+    assertThat(phexpIgnoreCase)
+			.isEqualTo(JsonArray.create().add(JsonArray.create().add("bv1").add("bv2")));
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -519,12 +530,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add("1"), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add("1"));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   @Test
@@ -542,12 +553,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create(), phexp);
-    assertEquals(JsonArray.create(), phexpNum);
-    assertEquals(JsonArray.create(), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create());
+    assertThat(phexpNum).isEqualTo(JsonArray.create());
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create());
   }
 
   @Test
@@ -565,12 +576,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create(), phexp);
-    assertEquals(JsonArray.create(), phexpNum);
-    assertEquals(JsonArray.create(), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create());
+    assertThat(phexpNum).isEqualTo(JsonArray.create());
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create());
   }
 
   @Test
@@ -588,12 +599,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create(), phexp);
-    assertEquals(JsonArray.create(), phexpNum);
-    assertEquals(JsonArray.create(), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create());
+    assertThat(phexpNum).isEqualTo(JsonArray.create());
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create());
   }
 
   @Test
@@ -611,12 +622,12 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpIgnoreCase = JsonArray.create();
     Expression expIgnoreCase = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", true, values, new AtomicInteger(), phexpIgnoreCase);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
   }
 
   enum TestEnum {
@@ -641,13 +652,13 @@ public class N1qlQueryCreatorTest {
     JsonArray phexpEnum = JsonArray.create();
     Expression expEnum = N1qlQueryCreatorUtils.createExpression(keyword, "doc.field", false, values, new AtomicInteger(), phexpEnum);
 
-    assertEquals(expected, exp.toString());
-    assertEquals(expectedNum, expNum.toString());
-    assertEquals(expectedIgnoreCase, expIgnoreCase.toString());
-    assertEquals(expectedEnum, expEnum.toString());
-    assertEquals(JsonArray.create().add("a"), phexp);
-    assertEquals(JsonArray.create().add(1), phexpNum);
-    assertEquals(JsonArray.create().add("b"), phexpIgnoreCase);
-    assertEquals(JsonArray.create().add("TEST"), phexpEnum);
+    assertThat(exp.toString()).isEqualTo(expected);
+    assertThat(expNum.toString()).isEqualTo(expectedNum);
+    assertThat(expIgnoreCase.toString()).isEqualTo(expectedIgnoreCase);
+    assertThat(expEnum.toString()).isEqualTo(expectedEnum);
+    assertThat(phexp).isEqualTo(JsonArray.create().add("a"));
+    assertThat(phexpNum).isEqualTo(JsonArray.create().add(1));
+    assertThat(phexpIgnoreCase).isEqualTo(JsonArray.create().add("b"));
+    assertThat(phexpEnum).isEqualTo(JsonArray.create().add("TEST"));
   }
 }

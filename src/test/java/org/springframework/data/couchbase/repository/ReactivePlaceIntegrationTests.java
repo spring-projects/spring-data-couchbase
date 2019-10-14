@@ -17,7 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
 import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 /**
@@ -52,6 +52,6 @@ public class ReactivePlaceIntegrationTests {
         ReactivePlace place = new ReactivePlace("somePlace");
         assertNull(place.getId());
         ReactivePlace returned = repository.save(place).block();
-        assertNotNull(returned.getId());
+        assertThat(returned.getId()).isNotNull();
     }
 }

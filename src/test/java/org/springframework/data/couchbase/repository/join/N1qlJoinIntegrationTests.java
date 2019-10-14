@@ -28,7 +28,7 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 /**
@@ -65,12 +65,14 @@ public class N1qlJoinIntegrationTests {
     @Test
     public void testN1qlJoin() {
         Author a = authorRepository.findById("Author" + 1).get();
-        assertTrue(a.books.size() == 5);
+        assertThat(a.books.size() == 5).isTrue();
         for(Book b:a.books) {
-            assertEquals("Book Join on author name mismatch", a.name, b.authorName);
+            assertThat(b.authorName).as("Book Join on author name mismatch")
+					.isEqualTo(a.name);
         }
-        assertNotNull(a.address);
-        assertEquals("Address Join on author name mismatch", a.name, a.address.name);
+        assertThat(a.address).isNotNull();
+        assertThat(a.address.name).as("Address Join on author name mismatch")
+				.isEqualTo(a.name);
     }
 
     @Test
@@ -80,7 +82,7 @@ public class N1qlJoinIntegrationTests {
         authorRepository.save(a);
 
         Author saveda = authorRepository.findById(name).get();
-        assertTrue(saveda.books.isEmpty());
-        assertNull(saveda.address);
+        assertThat(saveda.books.isEmpty()).isTrue();
+        assertThat(saveda.address).isNull();
     }
 }

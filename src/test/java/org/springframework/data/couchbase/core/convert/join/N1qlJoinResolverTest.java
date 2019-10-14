@@ -1,6 +1,6 @@
 package org.springframework.data.couchbase.core.convert.join;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.lang.annotation.Annotation;
@@ -98,7 +98,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks USE INDEX(leftIndex) JOIN B rks ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks JOIN B rks USE INDEX(rightIndex) ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -120,7 +120,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks JOIN B rks USE HASH(probe) ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -131,7 +131,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks JOIN B rks USE HASH(build) ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks JOIN B rks USE KEYS [\"x\",\"y\"] ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -153,7 +153,7 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks JOIN B rks ON A=B" +
                 " AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\" AND C=D";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 
     @Test
@@ -164,6 +164,6 @@ public class N1qlJoinResolverTest {
         String expected = "SELECT META(rks).id AS _ID, META(rks).cas AS _CAS, (rks).*  FROM `B` lks USE INDEX(leftIndex) JOIN B rks USE INDEX(rightIndex)" +
                 " HASH(build) KEYS [\"x\"] ON A=B AND lks._class = \"" + entityClassName + "\"" + " AND " +
                 "rks._class = \"" + entityClassName + "\" WHERE META(lks).id=\"mydoc\"";
-        assertEquals(statement, expected);
+        assertThat(expected).isEqualTo(statement);
     }
 }

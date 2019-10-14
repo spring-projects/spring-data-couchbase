@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.List;
@@ -67,11 +68,11 @@ public class N1qlPlaceholderIntegrationTests {
     int min = 200;
     List<Party> result = partyRepository.findAllWithNamedParams(excluded, included, min);
 
-    assertEquals(2, result.size());
+    assertThat(result.size()).isEqualTo(2);
     for (Party party : result) {
-      assertTrue(party.getDescription().contains(included));
-      assertFalse(party.getDescription().contains(excluded));
-      assertTrue(party.getAttendees() >= min);
+      assertThat(party.getDescription().contains(included)).isTrue();
+      assertThat(party.getDescription().contains(excluded)).isFalse();
+      assertThat(party.getAttendees() >= min).isTrue();
     }
   }
 
@@ -82,11 +83,11 @@ public class N1qlPlaceholderIntegrationTests {
     int min = 200;
     List<Party> result = partyRepository.findAllWithPositionalParams(excluded, included, min);
 
-    assertEquals(2, result.size());
+    assertThat(result.size()).isEqualTo(2);
     for (Party party : result) {
-      assertTrue(party.getDescription().contains(included));
-      assertFalse(party.getDescription().contains(excluded));
-      assertTrue(party.getAttendees() >= min);
+      assertThat(party.getDescription().contains(included)).isTrue();
+      assertThat(party.getDescription().contains(excluded)).isFalse();
+      assertThat(party.getAttendees() >= min).isTrue();
     }
   }
 
@@ -97,11 +98,11 @@ public class N1qlPlaceholderIntegrationTests {
     int min = 200;
     List<Party> result = partyRepository.findAllWithPositionalParamsAndQuotedNamedParams(excluded, included, min);
 
-    assertEquals(2, result.size());
+    assertThat(result.size()).isEqualTo(2);
     for (Party party : result) {
-      assertTrue(party.getDescription().contains(included));
-      assertFalse(party.getDescription().contains(excluded));
-      assertTrue(party.getAttendees() >= min);
+      assertThat(party.getDescription().contains(included)).isTrue();
+      assertThat(party.getDescription().contains(excluded)).isFalse();
+      assertThat(party.getAttendees() >= min).isTrue();
     }
   }
 
@@ -117,8 +118,9 @@ public class N1qlPlaceholderIntegrationTests {
       factory.getRepository(BadRepository.class);
       fail("Expected IllegalArgumentException");
     } catch (IllegalArgumentException e) {
-      assertEquals(e.toString(), "Using both named (1) and positional (2) placeholders is not supported, please choose " +
-          "one over the other in findAllWithMixedParamsInQuery", e.getMessage());
+      assertThat(e.getMessage()).as(e.toString())
+			  .isEqualTo("Using both named (1) and positional (2) placeholders is not supported, please choose " +
+					  "one over the other in findAllWithMixedParamsInQuery");
     }
   }
 
@@ -129,11 +131,11 @@ public class N1qlPlaceholderIntegrationTests {
     int max = 200;
     List<Party> result = partyRepository.removeWithPositionalParams(excluded, included, max);
 
-    assertEquals(10, result.size());
+    assertThat(result.size()).isEqualTo(10);
     for (Party party : result) {
-      assertTrue(party.getDescription().contains(included));
-      assertFalse(party.getDescription().contains(excluded));
-      assertTrue(party.getAttendees() < max);
+      assertThat(party.getDescription().contains(included)).isTrue();
+      assertThat(party.getDescription().contains(excluded)).isFalse();
+      assertThat(party.getAttendees() < max).isTrue();
     }
   }
 }

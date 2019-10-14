@@ -18,9 +18,7 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.Expression.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,7 +63,8 @@ import org.springframework.test.context.TestExecutionListeners;
 /**
  * @author Michael Nitschinger
  * @author Simon Baslé
- * @author Anastasiia Smirnova */
+ * @author Anastasiia Smirnova
+ */
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseTemplateQueryListener.class)
@@ -101,16 +100,17 @@ public class CouchbaseTemplateIntegrationTests {
 
 		template.save(beer);
 		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
+		assertThat(resultDoc).isNotNull();
 		String result = resultDoc.content();
-		assertNotNull(result);
+		assertThat(result).isNotNull();
 		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertNull(resultConv.get("javaClass"));
-		assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertEquals(false, resultConv.get("is_active"));
-		assertEquals("The Awesome Stout", resultConv.get("name"));
+		assertThat(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT)).isNotNull();
+		assertThat(resultConv.get("javaClass")).isNull();
+		assertThat(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT))
+				.isEqualTo("org.springframework.data.couchbase.core.Beer");
+		assertThat(resultConv.get("is_active")).isEqualTo(false);
+		assertThat(resultConv.get("name")).isEqualTo("The Awesome Stout");
 	}
 
 	@Test
@@ -118,9 +118,9 @@ public class CouchbaseTemplateIntegrationTests {
 		String id = "simple-doc-with-expiry";
 		DocumentWithExpiry doc = new DocumentWithExpiry(id);
 		template.save(doc);
-		assertNotNull(client.get(id));
+		assertThat(client.get(id)).isNotNull();
 		Thread.sleep(3000);
-		assertNull(client.get(id));
+		assertThat(client.get(id)).isNull();
 	}
 
 	@Test
@@ -131,11 +131,11 @@ public class CouchbaseTemplateIntegrationTests {
 		SimplePerson doc = new SimplePerson(id, "Mr. A");
 		template.insert(doc);
 		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
+		assertThat(resultDoc).isNotNull();
 		String result = resultDoc.content();
 
 		Map<String, String> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
+		assertThat(resultConv.get("name")).isEqualTo("Mr. A");
 
 		doc = new SimplePerson(id, "Mr. B");
 		try {
@@ -145,11 +145,11 @@ public class CouchbaseTemplateIntegrationTests {
 		}
 
 		resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
+		assertThat(resultDoc).isNotNull();
 		result = resultDoc.content();
 
 		resultConv = MAPPER.readValue(result, new TypeReference<Map<String, String>>() {});
-		assertEquals("Mr. A", resultConv.get("name"));
+		assertThat(resultConv.get("name")).isEqualTo("Mr. A");
 	}
 
 
@@ -158,7 +158,7 @@ public class CouchbaseTemplateIntegrationTests {
 		String id = "update-does-not-insert";
 		SimplePerson doc = new SimplePerson(id, "Nice Guy");
 		template.update(doc);
-		assertNull(client.get(id));
+		assertThat(client.get(id)).isNull();
 	}
 
 
@@ -169,11 +169,11 @@ public class CouchbaseTemplateIntegrationTests {
 
 		template.save(beer);
 		Object result = client.get(id);
-		assertNotNull(result);
+		assertThat(result).isNotNull();
 
 		template.remove(beer);
 		result = client.get(id);
-		assertNull(result);
+		assertThat(result).isNull();
 	}
 
 
@@ -194,14 +194,14 @@ public class CouchbaseTemplateIntegrationTests {
 		ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
 		template.save(complex);
-		assertNotNull(client.get(id));
+		assertThat(client.get(id)).isNotNull();
 
 		ComplexPerson response = template.findById(id, ComplexPerson.class);
-		assertEquals(names, response.getFirstnames());
-		assertEquals(votes, response.getVotes());
-		assertEquals(id, response.getId());
-		assertEquals(info1, response.getInfo1());
-		assertEquals(info2, response.getInfo2());
+		assertThat(response.getFirstnames()).isEqualTo(names);
+		assertThat(response.getVotes()).isEqualTo(votes);
+		assertThat(response.getId()).isEqualTo(id);
+		assertThat(response.getInfo1()).isEqualTo(info1);
+		assertThat(response.getInfo2()).isEqualTo(info2);
 	}
 
 
@@ -215,10 +215,10 @@ public class CouchbaseTemplateIntegrationTests {
 
 		Beer found = template.findById(id, Beer.class);
 
-		assertNotNull(found);
-		assertEquals(id, found.getId());
-		assertEquals(name, found.getName());
-		assertEquals(active, found.getActive());
+		assertThat(found).isNotNull();
+		assertThat(found.getId()).isEqualTo(id);
+		assertThat(found.getName()).isEqualTo(name);
+		assertThat(found.getActive()).isEqualTo(active);
 	}
 
 	@Test
@@ -227,12 +227,12 @@ public class CouchbaseTemplateIntegrationTests {
 		query.stale(Stale.FALSE);
 
 		final List<Beer> beers = template.findByView(query, Beer.class);
-		assertTrue(beers.size() > 0);
+		assertThat(beers.size() > 0).isTrue();
 
 		for (Beer beer : beers) {
-			assertNotNull(beer.getId());
-			assertNotNull(beer.getName());
-			assertNotNull(beer.getActive());
+			assertThat(beer.getId()).isNotNull();
+			assertThat(beer.getName()).isNotNull();
+			assertThat(beer.getActive()).isNotNull();
 		}
 	}
 
@@ -242,9 +242,10 @@ public class CouchbaseTemplateIntegrationTests {
 				.where(x("name").isNotMissing()));
 
 		N1qlQueryResult queryResult = template.queryN1QL(query);
-		assertNotNull(queryResult);
-		assertTrue(queryResult.errors().toString(), queryResult.finalSuccess());
-		assertFalse(queryResult.allRows().isEmpty());
+		assertThat(queryResult).isNotNull();
+		assertThat(queryResult.finalSuccess()).as(queryResult.errors().toString())
+				.isTrue();
+		assertThat(queryResult.allRows().isEmpty()).isFalse();
 	}
 
 	@Test
@@ -261,10 +262,10 @@ public class CouchbaseTemplateIntegrationTests {
 				N1qlParams.build().consistency(ScanConsistency.REQUEST_PLUS));
 
 		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class);
-		assertNotNull(fragments);
-		assertFalse(fragments.isEmpty());
-		assertEquals(1, fragments.size());
-		assertEquals("test2", fragments.get(0).value);
+		assertThat(fragments).isNotNull();
+		assertThat(fragments.isEmpty()).isFalse();
+		assertThat(fragments.size()).isEqualTo(1);
+		assertThat(fragments.get(0).value).isEqualTo("test2");
 	}
 
 	/**
@@ -277,15 +278,15 @@ public class CouchbaseTemplateIntegrationTests {
 
 		template.save(new SimpleWithLongAndInt("simpleWithLong:simple", longValue, intValue));
 		SimpleWithLongAndInt document = template.findById("simpleWithLong:simple", SimpleWithLongAndInt.class);
-		assertNotNull(document);
-		assertEquals(longValue, document.getLongValue());
-		assertEquals(intValue, document.getIntValue());
+		assertThat(document).isNotNull();
+		assertThat(document.getLongValue()).isEqualTo(longValue);
+		assertThat(document.getIntValue()).isEqualTo(intValue);
 
 		template.save(new SimpleWithLongAndInt("simpleWithLong:simple:other", intValue, intValue));
 		document = template.findById("simpleWithLong:simple:other", SimpleWithLongAndInt.class);
-		assertNotNull(document);
-		assertEquals(intValue, document.getLongValue());
-		assertEquals(intValue, document.getIntValue());
+		assertThat(document).isNotNull();
+		assertThat(document.getLongValue()).isEqualTo(intValue);
+		assertThat(document.getIntValue()).isEqualTo(intValue);
 	}
 
 	@Test
@@ -293,8 +294,8 @@ public class CouchbaseTemplateIntegrationTests {
 		SimpleWithEnum simpleWithEnum = new SimpleWithEnum("simpleWithEnum:enum", SimpleWithEnum.Type.BIG);
 		template.save(simpleWithEnum);
 		simpleWithEnum = template.findById("simpleWithEnum:enum", SimpleWithEnum.class);
-		assertNotNull(simpleWithEnum);
-		assertEquals(simpleWithEnum.getType(), SimpleWithEnum.Type.BIG);
+		assertThat(simpleWithEnum).isNotNull();
+		assertThat(SimpleWithEnum.Type.BIG).isEqualTo(simpleWithEnum.getType());
 	}
 
 	@Test
@@ -303,8 +304,9 @@ public class CouchbaseTemplateIntegrationTests {
 		simpleWithClass.setValue("The dish ran away with the spoon.");
 		template.save(simpleWithClass);
 		simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class);
-		assertNotNull(simpleWithClass);
-		assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
+		assertThat(simpleWithClass).isNotNull();
+		assertThat(simpleWithClass.getValue())
+				.isEqualTo("The dish ran away with the spoon.");
 	}
 
 	@Test
@@ -312,10 +314,10 @@ public class CouchbaseTemplateIntegrationTests {
 		removeIfExist("versionedClass:1");
 
 		VersionedClass versionedClass = new VersionedClass("versionedClass:1", "foobar");
-		assertEquals(0, versionedClass.getVersion());
+		assertThat(versionedClass.getVersion()).isEqualTo(0);
 		template.insert(versionedClass);
 		RawJsonDocument rawStored = client.get("versionedClass:1", RawJsonDocument.class);
-		assertEquals(rawStored.cas(), versionedClass.getVersion());
+		assertThat(versionedClass.getVersion()).isEqualTo(rawStored.cas());
 	}
 
 	@Test
@@ -332,9 +334,9 @@ public class CouchbaseTemplateIntegrationTests {
 		}
 		long version2 = versionedClass.getVersion();
 
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertEquals(version1, version2);
+		assertThat(version1 > 0).isTrue();
+		assertThat(version2 > 0).isTrue();
+		assertThat(version2).isEqualTo(version1);
 	}
 
 	@Test
@@ -349,11 +351,12 @@ public class CouchbaseTemplateIntegrationTests {
 		template.save(versionedClass);
 		long version2 = versionedClass.getVersion();
 
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertNotEquals(version1, version2);
+		assertThat(version1 > 0).isTrue();
+		assertThat(version2 > 0).isTrue();
+		assertThat(version2).isNotEqualTo(version1);
 
-		assertEquals("foobar2", template.findById("versionedClass:3", VersionedClass.class).getField());
+		assertThat(template.findById("versionedClass:3", VersionedClass.class).getField())
+				.isEqualTo("foobar2");
 	}
 
 	@Test(expected = OptimisticLockingFailureException.class)
@@ -364,7 +367,7 @@ public class CouchbaseTemplateIntegrationTests {
 		template.insert(versionedClass);
 
 		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:4", "different");
-		assertNotNull(client.upsert(toCompare));
+		assertThat(client.upsert(toCompare)).isNotNull();
 
 		versionedClass.setField("foobar2");
 		//save (aka upsert) won't error in case of CAS mismatch anymore
@@ -383,11 +386,12 @@ public class CouchbaseTemplateIntegrationTests {
 		template.update(versionedClass);
 		long version2 = versionedClass.getVersion();
 
-		assertTrue(version1 > 0);
-		assertTrue(version2 > 0);
-		assertNotEquals(version1, version2);
+		assertThat(version1 > 0).isTrue();
+		assertThat(version2 > 0).isTrue();
+		assertThat(version2).isNotEqualTo(version1);
 
-		assertEquals("foobar2", template.findById("versionedClass:5", VersionedClass.class).getField());
+		assertThat(template.findById("versionedClass:5", VersionedClass.class).getField())
+				.isEqualTo("foobar2");
 	}
 
 	@Test(expected = OptimisticLockingFailureException.class)
@@ -398,7 +402,7 @@ public class CouchbaseTemplateIntegrationTests {
 		template.insert(versionedClass);
 
 		RawJsonDocument toCompare = RawJsonDocument.create("versionedClass:6", "different");
-		assertNotNull(client.upsert(toCompare));
+		assertThat(client.upsert(toCompare)).isNotNull();
 
 		versionedClass.setField("foobar2");
 		template.update(versionedClass);
@@ -410,10 +414,10 @@ public class CouchbaseTemplateIntegrationTests {
 
 		VersionedClass versionedClass = new VersionedClass("versionedClass:7", "foobar");
 		template.insert(versionedClass);
-		assertTrue(versionedClass.getVersion() > 0);
+		assertThat(versionedClass.getVersion() > 0).isTrue();
 
 		VersionedClass foundClass = template.findById("versionedClass:7", VersionedClass.class);
-		assertEquals(versionedClass.getVersion(), foundClass.getVersion());
+		assertThat(foundClass.getVersion()).isEqualTo(versionedClass.getVersion());
 	}
 
 	@Test
@@ -446,8 +450,8 @@ public class CouchbaseTemplateIntegrationTests {
 
 		VersionedClass actual = template.findById(key, VersionedClass.class);
 
-		assertNotEquals(initial.field, actual.field);
-		assertNotEquals(initial.version, actual.version);
+		assertThat(actual.field).isNotEqualTo(initial.field);
+		assertThat(actual.version).isNotEqualTo(initial.version);
 	}
 
 	@Test
@@ -474,7 +478,7 @@ public class CouchbaseTemplateIntegrationTests {
 		});
 
 
-		assertEquals(4, optimisticLockCounter.intValue());
+		assertThat(optimisticLockCounter.intValue()).isEqualTo(4);
 	}
 
 	/**
@@ -486,11 +490,11 @@ public class CouchbaseTemplateIntegrationTests {
 		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
 		template.save(doc);
 		Thread.sleep(1000);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class)).isNotNull();
 		Thread.sleep(1000);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class)).isNotNull();
 		Thread.sleep(3000);
-		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class)).isNull();
 	}
 
 	/**
@@ -503,12 +507,12 @@ public class CouchbaseTemplateIntegrationTests {
 
 		String prev = null;
 		List<Beer> beers = template.findByView(q, Beer.class);
-		assertTrue(q.isIncludeDocs());
-		assertTrue(q.isOrderRetained());
-		assertEquals(RawJsonDocument.class, q.includeDocsTarget());
+		assertThat(q.isIncludeDocs()).isTrue();
+		assertThat(q.isOrderRetained()).isTrue();
+		assertThat(q.includeDocsTarget()).isEqualTo(RawJsonDocument.class);
 		for (Beer beer : beers) {
 			if (prev != null) {
-				assertThat(beer.getName() + " not alphabetically < to " + prev, beer.getName().compareTo(prev) < 0);
+				assertThat(beer.getName().compareTo(prev) < 0).describedAs(beer.getName() + " not alphabetically < to " + prev).isTrue();
 			}
 			prev = beer.getName();
 		}

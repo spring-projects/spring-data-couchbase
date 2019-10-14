@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.*;
-
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,6 +38,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.repository.annotation.Field;
 import com.couchbase.client.java.repository.annotation.Id;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests to verify custom mapping logic.
@@ -73,7 +73,7 @@ public class CustomConvertersTests {
     CouchbaseDocument doc = new CouchbaseDocument();
     converter.write(post, doc);
 
-    assertEquals(date.toString(), doc.getPayload().get("created"));
+    assertThat(doc.getPayload().get("created")).isEqualTo(date.toString());
   }
 
   @Test
@@ -86,7 +86,7 @@ public class CustomConvertersTests {
     CouchbaseDocument doc = new CouchbaseDocument();
     doc.getPayload().put("content", 10);
     Counter loaded = converter.read(Counter.class, doc);
-    assertEquals("even", loaded.content);
+    assertThat(loaded.content).isEqualTo("even");
   }
 
   @Test
@@ -103,8 +103,8 @@ public class CustomConvertersTests {
     CouchbaseDocument doc = new CouchbaseDocument();
     converter.write(post, doc);
 
-    assertEquals("The Foo of the Bar", doc.getPayload().get("title"));
-    assertEquals("the_foo_of_the_bar", doc.getPayload().get("slug"));
+    assertThat(doc.getPayload().get("title")).isEqualTo("The Foo of the Bar");
+    assertThat(doc.getPayload().get("slug")).isEqualTo("the_foo_of_the_bar");
   }
 
   @Test
@@ -118,8 +118,8 @@ public class CustomConvertersTests {
     doc.getPayload().put("title", "My Title");
 
     BlogPost loaded = converter.read(BlogPost.class, doc);
-    assertEquals("modified", loaded.id);
-    assertEquals("My Title!!", loaded.title);
+    assertThat(loaded.id).isEqualTo("modified");
+    assertThat(loaded.title).isEqualTo("My Title!!");
   }
 
   public static class BlogPost {

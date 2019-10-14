@@ -16,11 +16,11 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Verifies the functionality of a {@link JacksonTranslationService}.
@@ -42,7 +42,7 @@ public class JacksonTranslationServiceTests {
     CouchbaseDocument doc = new CouchbaseDocument("key");
     doc.put("language", "русский");
     String expected = "{\"language\":\"русский\"}";
-    assertEquals(expected, service.encode(doc));
+    assertThat(service.encode(doc)).isEqualTo(expected);
   }
 
   @Test
@@ -50,15 +50,15 @@ public class JacksonTranslationServiceTests {
     String source = "{\"language\":\"русский\"}";
     CouchbaseDocument target = new CouchbaseDocument();
     service.decode(source, target);
-    assertEquals("русский", target.get("language"));
+    assertThat(target.get("language")).isEqualTo("русский");
   }
 
   @Test
   public void shouldDecodeAdHocFragment() {
     String source = "{\"language\":\"french\"}";
     LanguageFragment f = service.decodeFragment(source, LanguageFragment.class);
-    assertNotNull(f);
-    assertEquals("french", f.language);
+    assertThat(f).isNotNull();
+    assertThat(f.language).isEqualTo("french");
   }
 
   private static class LanguageFragment {

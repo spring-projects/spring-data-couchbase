@@ -31,8 +31,7 @@ import org.springframework.data.repository.core.support.ReactiveRepositoryFactor
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 /**
@@ -79,12 +78,12 @@ public class SimpleReactiveCouchbaseRepositoryDeleteAllIntegrationTests {
         repository.save(instance).block();
 
         // we put a user in, lets be sure the count reflects that.
-        assertTrue(getCount() > 0L);
+        assertThat(getCount() > 0L).isTrue();
 
         repository.deleteAll().block();
 
         // after deleteAll, we should have a count of 0
-        assertEquals(0L, getCount());
+        assertThat(getCount()).isEqualTo(0L);
 
      }
 }

@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import org.junit.After;
@@ -95,10 +95,11 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     Iterable<Party> allByAttendanceDesc = repository.findAll(Sort.by(Sort.Direction.DESC, "attendees"));
     long previousAttendance = Long.MAX_VALUE;
     for (Party party : allByAttendanceDesc) {
-      assertTrue(party.getAttendees() <= previousAttendance);
+      assertThat(party.getAttendees() <= previousAttendance).isTrue();
       previousAttendance = party.getAttendees();
     }
-    assertFalse("Expected to find several parties", previousAttendance == Long.MAX_VALUE);
+    assertThat(previousAttendance == Long.MAX_VALUE)
+			.as("Expected to find several parties").isFalse();
   }
 
   @Test
@@ -107,11 +108,11 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     String previousDesc = null;
     for (Party party : parties) {
       if (previousDesc != null) {
-        assertTrue(party.getDescription().compareTo(previousDesc) <= 0);
+        assertThat(party.getDescription().compareTo(previousDesc) <= 0).isTrue();
       }
       previousDesc = party.getDescription();
     }
-    assertNotNull("Expected to find several parties", previousDesc);
+    assertThat(previousDesc).as("Expected to find several parties").isNotNull();
   }
 
   @Test
@@ -120,11 +121,12 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     String previousDesc = null;
     for (Party party : parties) {
       if (previousDesc != null) {
-        assertTrue(party.getDescription().compareToIgnoreCase(previousDesc) <= 0);
+        assertThat(party.getDescription().compareToIgnoreCase(previousDesc) <= 0)
+				.isTrue();
       }
       previousDesc = party.getDescription();
     }
-    assertNotNull("Expected to find several parties", previousDesc);
+    assertThat(previousDesc).as("Expected to find several parties").isNotNull();
   }
 
   @Test
@@ -132,8 +134,9 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     Pageable pageable = PageRequest.of(0, 8);
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
-    assertEquals(8, page1.getNumberOfElements());
+    assertThat(page1.getTotalElements() >= 12)
+			.as("Query for parties should be atleast 12").isTrue();
+    assertThat(page1.getNumberOfElements()).isEqualTo(8);
   }
 
   @Test
@@ -141,14 +144,15 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
 
     Page<Party> page1 = repository.findAll(pageable);
-    assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
-    assertEquals(8, page1.getNumberOfElements());
+    assertThat(page1.getTotalElements() >= 12)
+			.as("Query for parties should be atleast 12").isTrue();
+    assertThat(page1.getNumberOfElements()).isEqualTo(8);
 
     List<Party> parties = page1.getContent();
     Long previousAttendees = null;
     for (Party party : parties) {
       if (previousAttendees != null) {
-        assertTrue(party.getAttendees() <= previousAttendees);
+        assertThat(party.getAttendees() <= previousAttendees).isTrue();
       }
       previousAttendees = party.getAttendees();
     }
@@ -157,30 +161,31 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
   @Test
   public void testWrapWhereCriteria() {
     List<Party> partyList = partyRepository.findByDescriptionOrName("MatchingDescription", "partyName");
-    assertTrue(partyList.size() == 1);
+    assertThat(partyList.size() == 1).isTrue();
   }
 
   @Test
   public void shouldPageWithStringBasedQuery() {
     Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
     Page<Party> page1 = partyRepository.findPartiesWithAttendee(1, pageable);
-    assertTrue("Query for parties with attendees should be atleast 12", page1.getTotalElements() >= 12);
-    assertEquals(8, page1.getNumberOfElements());
+    assertThat(page1.getTotalElements() >= 12)
+			.as("Query for parties with attendees should be atleast 12").isTrue();
+    assertThat(page1.getNumberOfElements()).isEqualTo(8);
 
     List<Party> parties = page1.getContent();
     Long previousAttendees = null;
     for (Party party : parties) {
       if (previousAttendees != null) {
-        assertTrue(party.getAttendees() <= previousAttendees);
+        assertThat(party.getAttendees() <= previousAttendees).isTrue();
       }
       previousAttendees = party.getAttendees();
     }
     Page<Party> page2 = partyRepository.findPartiesWithAttendee(1, page1.nextPageable());
-    assertEquals(8, page2.getNumberOfElements());
+    assertThat(page2.getNumberOfElements()).isEqualTo(8);
     parties = page2.getContent();
     for (Party party : parties) {
       if (previousAttendees != null) {
-        assertTrue(party.getAttendees() <= previousAttendees);
+        assertThat(party.getAttendees() <= previousAttendees).isTrue();
       }
       previousAttendees = party.getAttendees();
     }
@@ -197,7 +202,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
   public void testDeleteQuery() {
     partyRepository.save(new Party("testDeleteQuery", "delete", "delete", null, 0, null));
     List<Party> partyList = partyRepository.removeByDescriptionOrName("delete", "delete");
-    assertTrue(partyList.size() == 1);
+    assertThat(partyList.size() == 1).isTrue();
   }
 
   @Test
@@ -209,8 +214,8 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     Date date = cal.getTime();
     partyRepository.save(new Party(key, "", "", date, 0, null));
     List<Party> partyList = partyRepository.getByEventDate(date);
-    assertTrue(partyList.size() == 1);
-    assertEquals("Key mismatch", partyList.get(0).getKey(), key);
+    assertThat(partyList.size() == 1).isTrue();
+    assertThat(key).as("Key mismatch").isEqualTo(partyList.get(0).getKey());
   }
 
   @Test
@@ -218,6 +223,6 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
     partyRepository.save(new Party("testN1qlQueryWithInvalidValue", "", "testN1qlQueryWithInvalidValue", null, 0, null));
     final String description = "testN1qlQueryWithInvalidValue* OR `description` LIKE \"\"";
     List<Party> partyList = partyRepository.findByDescriptionStartingWith(description);
-    assertTrue(partyList.size() == 0);
+    assertThat(partyList.size() == 0).isTrue();
   }
 }

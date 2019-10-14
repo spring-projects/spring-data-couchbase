@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase.repository.auditing;
 
-import static org.junit.Assert.*;
-
 import java.util.Date;
 import java.util.Optional;
 
@@ -16,6 +14,8 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.TestContainerResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Simon Baslé
@@ -40,7 +40,7 @@ public class AuditingIntegrationTests {
 
   @Test
   public void testCreationEventIsRegistered() {
-    assertFalse(repository.existsById(KEY));
+    assertThat(repository.existsById(KEY)).isFalse();
     Date start = new Date();
     AuditedItem item = new AuditedItem(KEY, "creation");
 
@@ -48,27 +48,34 @@ public class AuditingIntegrationTests {
     repository.save(item);
     Optional<AuditedItem> persisted = repository.findById(KEY);
 
-    assertTrue(persisted.isPresent());
+    assertThat(persisted.isPresent()).isTrue();
 
     persisted.ifPresent(actual -> {
 
-      assertNotNull("expected creation date audit trail", actual.getCreationDate());
-      assertEquals("expected creation user audit trail", "auditor", actual.getCreator());
+      assertThat(actual.getCreationDate()).as("expected creation date audit trail")
+			  .isNotNull();
+      assertThat(actual.getCreator()).as("expected creation user audit trail")
+			  .isEqualTo("auditor");
 
-      assertTrue("creation date is too early", actual.getCreationDate().after(start));
-      assertTrue("creation date is too late", actual.getCreationDate().before(new Date()));
+      assertThat(actual.getCreationDate().after(start)).as("creation date is too early")
+			  .isTrue();
+      assertThat(actual.getCreationDate().before(new Date()))
+			  .as("creation date is too late").isTrue();
 
-      assertNull("expected modification date to be empty", actual.getLastModification());
-      assertNull("expected modification user to be empty", actual.getLastModifiedBy());
+      assertThat(actual.getLastModification())
+			  .as("expected modification date to be empty").isNull();
+      assertThat(actual.getLastModifiedBy()).as("expected modification user to be empty")
+			  .isNull();
 
-      assertNotNull("expected version to be non null", actual.getVersion());
-      assertTrue("expected version to be greater than 0", actual.getVersion() > 0L);
+      assertThat(actual.getVersion()).as("expected version to be non null").isNotNull();
+      assertThat(actual.getVersion() > 0L).as("expected version to be greater than 0")
+			  .isTrue();
     });
   }
 
   @Test
   public void testUpdateEventIsRegistered() {
-    assertFalse(repository.existsById(KEY));
+    assertThat(repository.existsById(KEY)).isFalse();
 
     String expectedCreator = "user1";
     String expectedUpdater = "user2";
@@ -82,16 +89,25 @@ public class AuditingIntegrationTests {
     repository.save(item);
     AuditedItem updated = repository.findById(KEY).orElse(null);
 
-    assertNotNull("expected entity to be persisted", updated);
-    assertNotNull("expected creation date audit trail", updated.getCreationDate());
-    assertEquals("expected creation user audit trail", expectedCreator, updated.getCreator());
+    assertThat(updated).as("expected entity to be persisted").isNotNull();
+    assertThat(updated.getCreationDate()).as("expected creation date audit trail")
+			.isNotNull();
+    assertThat(updated.getCreator()).as("expected creation user audit trail")
+			.isEqualTo(expectedCreator);
 
-    assertNotNull("expected modification date audit trail", updated.getLastModification());
-    assertTrue("expected modification date to be after creation date", updated.getCreationDate().before(updated.getLastModification()));
-    assertEquals("expected modification user to be the modifier", expectedUpdater, updated.getLastModifiedBy());
+    assertThat(updated.getLastModification()).as("expected modification date audit trail")
+			.isNotNull();
+    assertThat(updated.getCreationDate().before(updated.getLastModification()))
+			.as("expected modification date to be after creation date").isTrue();
+    assertThat(updated.getLastModifiedBy())
+			.as("expected modification user to be the modifier")
+			.isEqualTo(expectedUpdater);
 
-    assertNotNull("expected version to be non null", updated.getVersion());
-    assertTrue("expected version to be greater than 0", updated.getVersion() > 0L);
-    assertTrue("expected updated version to be different from the one at creation", created.getVersion() != updated.getVersion());
+    assertThat(updated.getVersion()).as("expected version to be non null").isNotNull();
+    assertThat(updated.getVersion() > 0L).as("expected version to be greater than 0")
+			.isTrue();
+    assertThat(created.getVersion() != updated.getVersion())
+			.as("expected updated version to be different from the one at creation")
+			.isTrue();
   }
 }

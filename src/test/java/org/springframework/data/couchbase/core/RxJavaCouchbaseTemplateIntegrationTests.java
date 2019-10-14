@@ -18,9 +18,7 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.query.Select.select;
 import static com.couchbase.client.java.query.dsl.Expression.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.util.*;
@@ -123,11 +121,11 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		VersionedReactiveBeer secondBeer = new VersionedReactiveBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION);
 
 		long version = template.save(firstBeer).toBlocking().single().getVersion();
-		assertTrue(version > 0);
+		assertThat(version > 0).isTrue();
 		secondBeer.setVersion(version);
 		long newVersion = template.save(secondBeer).toBlocking().single().getVersion();
-		assertTrue(newVersion > 0);
-		assertNotEquals(version, newVersion);
+		assertThat(newVersion > 0).isTrue();
+		assertThat(newVersion).isNotEqualTo(version);
 
 		validateBeer(DEFAULT_ID, newName, DEFAULT_ACTIVE, DEFAULT_DESCRIPTION, VersionedReactiveBeer.class);
 	}
@@ -140,7 +138,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		TestSubscriber<VersionedReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
 
 		long version = template.save(firstBeer).toBlocking().single().getVersion();
-		assertTrue(version > 0);
+		assertThat(version > 0).isTrue();
 		secondBeer.setVersion(version + 1234);
 		template.save(secondBeer).subscribe(secondSaveSubscriber);
 		AsyncUtils.awaitError(secondSaveSubscriber, OptimisticLockingFailureException.class);
@@ -156,7 +154,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		TestSubscriber<VersionedReactiveBeer> secondSaveSubscriber = TestSubscriber.create();
 
 		long version = template.save(firstBeer).toBlocking().single().getVersion();
-		assertTrue(version > 0);
+		assertThat(version > 0).isTrue();
 		template.save(secondBeer).subscribe(secondSaveSubscriber);
 		AsyncUtils.awaitError(secondSaveSubscriber, OptimisticLockingFailureException.class);
 
@@ -286,14 +284,14 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		ComplexPerson complex = new ComplexPerson(id, names, votes, info1, info2);
 
 		template.save(complex).subscribe();
-		assertNotNull(client.get(id));
+		assertThat(client.get(id)).isNotNull();
 
 		ComplexPerson response = template.findById(id, ComplexPerson.class).toBlocking().single();
-		assertEquals(names, response.getFirstnames());
-		assertEquals(votes, response.getVotes());
-		assertEquals(id, response.getId());
-		assertEquals(info1, response.getInfo1());
-		assertEquals(info2, response.getInfo2());
+		assertThat(response.getFirstnames()).isEqualTo(names);
+		assertThat(response.getVotes()).isEqualTo(votes);
+		assertThat(response.getId()).isEqualTo(id);
+		assertThat(response.getInfo1()).isEqualTo(info1);
+		assertThat(response.getInfo2()).isEqualTo(info2);
 	}
 
 
@@ -317,12 +315,12 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		query.stale(Stale.FALSE);
 
 		final List<ReactiveBeer> beers = template.findByView(query, ReactiveBeer.class).toList().toBlocking().single();
-		assertTrue(beers.size() > 0);
+		assertThat(beers.size() > 0).isTrue();
 
 		for (ReactiveBeer beer : beers) {
-			assertNotNull(beer.getId());
-			assertNotNull(beer.getName());
-			assertNotNull(beer.getActive());
+			assertThat(beer.getId()).isNotNull();
+			assertThat(beer.getName()).isNotNull();
+			assertThat(beer.getActive()).isNotNull();
 		}
 	}
 
@@ -331,8 +329,8 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		N1qlQuery query = N1qlQuery.simple(select("name").from(i(client.name())).limit(1));
 
 		AsyncN1qlQueryResult queryResult = template.queryN1QL(query).toBlocking().single();
-		assertTrue(queryResult.finalSuccess().toBlocking().single());
-		assertFalse(queryResult.rows().toList().toBlocking().single().isEmpty());
+		assertThat(queryResult.finalSuccess().toBlocking().single()).isTrue();
+		assertThat(queryResult.rows().toList().toBlocking().single().isEmpty()).isFalse();
 	}
 
 	@Test
@@ -349,10 +347,10 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 				N1qlParams.build().consistency(ScanConsistency.REQUEST_PLUS));
 
 		List<Fragment> fragments = template.findByN1QLProjection(query, Fragment.class).toList().toBlocking().single();
-		assertNotNull(fragments);
-		assertFalse(fragments.isEmpty());
-		assertEquals(1, fragments.size());
-		assertEquals("test2", fragments.get(0).value);
+		assertThat(fragments).isNotNull();
+		assertThat(fragments.isEmpty()).isFalse();
+		assertThat(fragments.size()).isEqualTo(1);
+		assertThat(fragments.get(0).value).isEqualTo("test2");
 	}
 
 	@Test
@@ -362,15 +360,15 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 		template.save(new SimpleWithLongAndInt("simpleWithLong:simple", longValue, intValue)).toBlocking().single();
 		SimpleWithLongAndInt document = template.findById("simpleWithLong:simple", SimpleWithLongAndInt.class).toBlocking().single();
-		assertNotNull(document);
-		assertEquals(longValue, document.getLongValue());
-		assertEquals(intValue, document.getIntValue());
+		assertThat(document).isNotNull();
+		assertThat(document.getLongValue()).isEqualTo(longValue);
+		assertThat(document.getIntValue()).isEqualTo(intValue);
 
 		template.save(new SimpleWithLongAndInt("simpleWithLong:simple:other", intValue, intValue)).toBlocking().single();
 		document = template.findById("simpleWithLong:simple:other", SimpleWithLongAndInt.class).toBlocking().single();
-		assertNotNull(document);
-		assertEquals(intValue, document.getLongValue());
-		assertEquals(intValue, document.getIntValue());
+		assertThat(document).isNotNull();
+		assertThat(document.getLongValue()).isEqualTo(intValue);
+		assertThat(document.getIntValue()).isEqualTo(intValue);
 	}
 
 	@Test
@@ -378,8 +376,8 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		SimpleWithEnum simpleWithEnum = new SimpleWithEnum("simpleWithEnum:enum", SimpleWithEnum.Type.BIG);
 		template.save(simpleWithEnum).toBlocking().single();
 		simpleWithEnum = template.findById("simpleWithEnum:enum", SimpleWithEnum.class).toBlocking().single();
-		assertNotNull(simpleWithEnum);
-		assertEquals(simpleWithEnum.getType(), SimpleWithEnum.Type.BIG);
+		assertThat(simpleWithEnum).isNotNull();
+		assertThat(SimpleWithEnum.Type.BIG).isEqualTo(simpleWithEnum.getType());
 	}
 
 	@Test
@@ -388,8 +386,9 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		simpleWithClass.setValue("The dish ran away with the spoon.");
 		template.save(simpleWithClass).toBlocking().single();
 		simpleWithClass = template.findById("simpleWithClass:class", SimpleWithClass.class).toBlocking().single();
-		assertNotNull(simpleWithClass);
-		assertThat(simpleWithClass.getValue(), equalTo("The dish ran away with the spoon."));
+		assertThat(simpleWithClass).isNotNull();
+		assertThat(simpleWithClass.getValue())
+				.isEqualTo("The dish ran away with the spoon.");
 	}
 
 	@Test
@@ -398,11 +397,14 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 		DocumentWithTouchOnRead doc = new DocumentWithTouchOnRead(id);
 		template.save(doc).subscribe();
 		Thread.sleep(1000);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class).toBlocking()
+				.single()).isNotNull();
 		Thread.sleep(1000);
-		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class).toBlocking()
+				.single()).isNotNull();
 		Thread.sleep(3000);
-		assertNull(template.findById(id, DocumentWithTouchOnRead.class).toBlocking().single());
+		assertThat(template.findById(id, DocumentWithTouchOnRead.class).toBlocking()
+				.single()).isNull();
 	}
 
 	@Test
@@ -412,12 +414,12 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 		String prev = null;
 		List<ReactiveBeer> beers = template.findByView(q, ReactiveBeer.class).toList().toBlocking().single();
-		assertTrue(q.isIncludeDocs());
-		assertTrue(q.isOrderRetained());
-		assertEquals(RawJsonDocument.class, q.includeDocsTarget());
+		assertThat(q.isIncludeDocs()).isTrue();
+		assertThat(q.isOrderRetained()).isTrue();
+		assertThat(q.includeDocsTarget()).isEqualTo(RawJsonDocument.class);
 		for (ReactiveBeer beer : beers) {
 			if (prev != null) {
-				assertThat(beer.getName() + " not alphabetically < to " + prev, beer.getName().compareTo(prev) < 0);
+				assertThat(beer.getName().compareTo(prev) < 0).describedAs(beer.getName() + " not alphabetically < to " + prev).isTrue();
 			}
 			prev = beer.getName();
 		}
@@ -425,17 +427,18 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 	private void validateBeer(String id, String name, boolean active, String description, Class<?> clazz) throws IOException {
 		RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-		assertNotNull(resultDoc);
+		assertThat(resultDoc).isNotNull();
 		String result = resultDoc.content();
-		assertNotNull(result);
+		assertThat(result).isNotNull();
 		Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-		assertNotNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertNull(resultConv.get("javaClass"));
-		assertEquals(clazz.getCanonicalName(), resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-		assertEquals(active, resultConv.get("is_active"));
-		assertEquals(name, resultConv.get("name"));
-		assertEquals(description, resultConv.get("desc"));
+		assertThat(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT)).isNotNull();
+		assertThat(resultConv.get("javaClass")).isNull();
+		assertThat(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT))
+				.isEqualTo(clazz.getCanonicalName());
+		assertThat(resultConv.get("is_active")).isEqualTo(active);
+		assertThat(resultConv.get("name")).isEqualTo(name);
+		assertThat(resultConv.get("desc")).isEqualTo(description);
 	}
 
 	/**

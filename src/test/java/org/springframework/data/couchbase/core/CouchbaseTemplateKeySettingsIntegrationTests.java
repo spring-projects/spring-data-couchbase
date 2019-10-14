@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.core;
 
-import static org.junit.Assert.*;
 import com.couchbase.client.java.repository.annotation.Id;
 import org.junit.Before;
 import org.junit.Rule;
@@ -14,6 +13,9 @@ import org.springframework.data.couchbase.IntegrationTestCustomKeySettings;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.KeySettings;
 import org.springframework.test.context.ContextConfiguration;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author Subhashni Balakrishnan
@@ -40,7 +42,8 @@ public class CouchbaseTemplateKeySettingsIntegrationTests {
     public void shouldAddCustomKeySettings() throws Exception {
         SimpleClass simpleClass = new SimpleClass();
         String generatedId = template.getGeneratedId(simpleClass);
-        assertEquals("Id generated should include custom key settings", "MyAppPrefix::myId::MyAppSuffix", generatedId);
+        assertThat(generatedId).as("Id generated should include custom key settings")
+                .isEqualTo("MyAppPrefix::myId::MyAppSuffix");
     }
 
     @Test

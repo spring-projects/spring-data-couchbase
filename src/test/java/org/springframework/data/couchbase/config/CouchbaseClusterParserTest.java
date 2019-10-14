@@ -16,10 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.core.Is.is;
-
 import java.util.List;
 
 import org.junit.AfterClass;
@@ -35,6 +31,8 @@ import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 
 import com.couchbase.client.java.env.CouchbaseEnvironment;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CouchbaseClusterParserTest {
 
@@ -57,98 +55,102 @@ public class CouchbaseClusterParserTest {
 	public void testClusterWithoutSpecificEnv() {
 		BeanDefinition def = factory.getBeanDefinition("clusterDefault");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
-		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(1);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
+		assertThat(def.getFactoryMethodName()).isEqualTo("create");
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, CouchbaseEnvironment.class);
 
-		assertThat(holder.getValue(), instanceOf(RuntimeBeanReference.class));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 		RuntimeBeanReference envRef = (RuntimeBeanReference) holder.getValue();
 
-		assertThat(envRef.getBeanName(), is(equalTo("couchbaseEnv")));
+		assertThat(envRef.getBeanName()).isEqualTo("couchbaseEnv");
 	}
 
 	@Test
 	public void testClusterWithNodes() {
 		BeanDefinition def = factory.getBeanDefinition("clusterWithNodes");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(2)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
-		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(2);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
+		assertThat(def.getFactoryMethodName()).isEqualTo("create");
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(1, List.class);
-		assertThat(holder.getValue(), is(instanceOf(List.class)));
+		assertThat(holder.getValue()).isInstanceOf(List.class);
 		List nodes = (List<String>) holder.getValue();
 
-		assertThat(nodes.size(), is(equalTo(2)));
-		assertThat((String) nodes.get(0), is(equalTo("192.1.2.3")));
-		assertThat((String) nodes.get(1), is(equalTo("192.4.5.6")));
+		assertThat(nodes.size()).isEqualTo(2);
+		assertThat((String) nodes.get(0)).isEqualTo("192.1.2.3");
+		assertThat((String) nodes.get(1)).isEqualTo("192.4.5.6");
 	}
 
 	@Test
 	public void testClusterWithEnvInline() {
 		BeanDefinition def = factory.getBeanDefinition("clusterWithEnvInline");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(1);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, CouchbaseEnvironment.class);
 		GenericBeanDefinition envDef = (GenericBeanDefinition) holder.getValue();
 
-		assertThat(envDef.getBeanClassName(), is(equalTo(CouchbaseEnvironmentFactoryBean.class.getName())));
-		assertThat("unexpected attribute", envDef.getPropertyValues().contains("managementTimeout"));
+		assertThat(envDef.getBeanClassName())
+				.isEqualTo(CouchbaseEnvironmentFactoryBean.class.getName());
+		assertThat(envDef.getPropertyValues().contains("managementTimeout"))
+				.as("unexpected attribute").isTrue();
 	}
 
 	@Test
 	public void testClusterWithEnvRef() {
 		BeanDefinition def = factory.getBeanDefinition("clusterWithEnvRef");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(1);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, CouchbaseEnvironment.class);
 
-		assertThat(holder.getValue(), instanceOf(RuntimeBeanReference.class));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 		RuntimeBeanReference envRef = (RuntimeBeanReference) holder.getValue();
 
-		assertThat(envRef.getBeanName(), is(equalTo("someEnv")));
+		assertThat(envRef.getBeanName()).isEqualTo("someEnv");
 	}
 	@Test
 	public void testClusterConfigurationPrecedence() {
 		BeanDefinition def = factory.getBeanDefinition("clusterWithAll");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(2)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
-		assertThat(def.getFactoryMethodName(), is(equalTo("create")));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(2);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
+		assertThat(def.getFactoryMethodName()).isEqualTo("create");
 
-		assertThat(def.getConstructorArgumentValues().getIndexedArgumentValues().get(0).getValue(),
-				instanceOf(GenericBeanDefinition.class));
-		assertThat(def.getConstructorArgumentValues().getIndexedArgumentValues().get(1).getValue(),
-				instanceOf(List.class));
+		assertThat(def.getConstructorArgumentValues().getIndexedArgumentValues().get(0)
+				.getValue()).isInstanceOf(GenericBeanDefinition.class);
+		assertThat(def.getConstructorArgumentValues().getIndexedArgumentValues().get(1)
+				.getValue()).isInstanceOf(List.class);
 
 		ConstructorArgumentValues.ValueHolder holderEnv = def.getConstructorArgumentValues()
 				.getArgumentValue(0, CouchbaseEnvironment.class);
 		GenericBeanDefinition envDef = (GenericBeanDefinition) holderEnv.getValue();
 
-		assertThat(envDef.getBeanClassName(), is(equalTo(CouchbaseEnvironmentFactoryBean.class.getName())));
-		assertThat("unexpected attribute", envDef.getPropertyValues().contains("autoreleaseAfter"));
+		assertThat(envDef.getBeanClassName())
+				.isEqualTo(CouchbaseEnvironmentFactoryBean.class.getName());
+		assertThat(envDef.getPropertyValues().contains("autoreleaseAfter"))
+				.as("unexpected attribute").isTrue();
 
 		ConstructorArgumentValues.ValueHolder holderNodes = def.getConstructorArgumentValues()
 				.getArgumentValue(1, List.class);
 		List nodes = (List<String>) holderNodes.getValue();
 
-		assertThat(nodes.size(), is(equalTo(2)));
-		assertThat((String) nodes.get(0), is(equalTo("2.2.2.2")));
-		assertThat((String) nodes.get(1), is(equalTo("4.4.4.4")));
+		assertThat(nodes.size()).isEqualTo(2);
+		assertThat((String) nodes.get(0)).isEqualTo("2.2.2.2");
+		assertThat((String) nodes.get(1)).isEqualTo("4.4.4.4");
 	}
 }

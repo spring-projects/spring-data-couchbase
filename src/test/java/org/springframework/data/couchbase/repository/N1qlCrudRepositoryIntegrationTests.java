@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Date;
@@ -89,11 +90,11 @@ public class N1qlCrudRepositoryIntegrationTests {
     List<Object> items = itemRepository.findAllByDescriptionNotNull();
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
-    assertTrue(items.contains(item));
-    assertTrue(parties.contains(party));
+    assertThat(items.contains(item)).isTrue();
+    assertThat(parties.contains(party)).isTrue();
 
-    assertFalse(items.contains(party));
-    assertFalse(parties.contains(item));
+    assertThat(items.contains(party)).isFalse();
+    assertThat(parties.contains(item)).isFalse();
   }
 
   @Test
@@ -102,8 +103,8 @@ public class N1qlCrudRepositoryIntegrationTests {
     partyRepository.save(partyHasKeyword);
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
-    assertTrue(client.exists(KEY_PARTY_KEYWORD));
-    assertTrue(parties.contains(partyHasKeyword));
+    assertThat(client.exists(KEY_PARTY_KEYWORD)).isTrue();
+    assertThat(parties.contains(partyHasKeyword)).isTrue();
     for (Object o : parties) {
       if (!(o instanceof Party)) {
         fail("expected only Party objects");
@@ -117,7 +118,7 @@ public class N1qlCrudRepositoryIntegrationTests {
     partyRepository.save(partyHasKeyword);
     long countTotal = partyRepository.count();
     long countCustom = partyRepository.countAllByDescriptionNotNull();
-    assertEquals(countTotal - 1, countCustom);
+    assertThat(countCustom).isEqualTo(countTotal - 1);
   }
 
   @Test
@@ -127,7 +128,7 @@ public class N1qlCrudRepositoryIntegrationTests {
 
     long countTotal = partyRepository.count();
     long countCustom = partyRepository.countCustom();
-    assertEquals(countTotal, countCustom);
+    assertThat(countCustom).isEqualTo(countTotal);
   }
 
   @Test
@@ -137,7 +138,7 @@ public class N1qlCrudRepositoryIntegrationTests {
 
     long countTotal = partyRepository.count();
     long countCustom = partyRepository.countCustomPlusFive();
-    assertEquals(countTotal + 5, countCustom);
+    assertThat(countCustom).isEqualTo(countTotal + 5);
   }
 
   @Test(expected = CouchbaseQueryExecutionException.class)
@@ -154,12 +155,12 @@ public class N1qlCrudRepositoryIntegrationTests {
     partyRepository.save(partyHasKeyword);
 
     long max = partyRepository.findMaxAttendees();
-    assertEquals(4000000, max);
+    assertThat(max).isEqualTo(4000000);
   }
 
   @Test
   public void shouldDoBooleanProjectionWithStringBasedQuery() {
     boolean someBoolean = partyRepository.justABoolean();
-    assertEquals(true, someBoolean);
+    assertThat(someBoolean).isEqualTo(true);
   }
 }

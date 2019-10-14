@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.*;
-
 import java.lang.reflect.Field;
 import java.util.Optional;
 
@@ -29,6 +27,8 @@ import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ReflectionUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Verifies the correct behavior of properties on persistable objects.
@@ -58,7 +58,7 @@ public class BasicCouchbasePersistentPropertyTests {
   @Test
   public void usesPropertyFieldName() {
     Field field = ReflectionUtils.findField(Beer.class, "description");
-    assertEquals("description", getPropertyFor(field).getFieldName());
+    assertThat(getPropertyFor(field).getFieldName()).isEqualTo("description");
   }
 
   /**
@@ -67,7 +67,7 @@ public class BasicCouchbasePersistentPropertyTests {
   @Test
   public void usesAnnotatedFieldName() {
     Field field = ReflectionUtils.findField(Beer.class, "name");
-    assertEquals("foobar", getPropertyFor(field).getFieldName());
+    assertThat(getPropertyFor(field).getFieldName()).isEqualTo("foobar");
   }
 
   @Test
@@ -82,14 +82,14 @@ public class BasicCouchbasePersistentPropertyTests {
     test.addPersistentProperty(sdkIdProperty);
     test.addPersistentProperty(springIdProperty);
 
-    assertEquals("sdkId", sdkIdProperty.getFieldName());
-    assertEquals("springId", springIdProperty.getFieldName());
+    assertThat(sdkIdProperty.getFieldName()).isEqualTo("sdkId");
+    assertThat(springIdProperty.getFieldName()).isEqualTo("springId");
 
-    assertTrue(sdkIdProperty.isIdProperty());
-    assertTrue(springIdProperty.isIdProperty());
+    assertThat(sdkIdProperty.isIdProperty()).isTrue();
+    assertThat(springIdProperty.isIdProperty()).isTrue();
 
     CouchbasePersistentProperty property = test.getIdProperty();
-    assertEquals(springIdProperty, property);
+    assertThat(property).isEqualTo(springIdProperty);
   }
 
   @Test
@@ -101,7 +101,7 @@ public class BasicCouchbasePersistentPropertyTests {
     test.addPersistentProperty(idProperty);
 
     CouchbasePersistentProperty property = test.getIdProperty();
-    assertEquals(idProperty, property);
+    assertThat(property).isEqualTo(idProperty);
   }
 
   @Test
@@ -117,10 +117,10 @@ public class BasicCouchbasePersistentPropertyTests {
     // when "overriding" Spring @Id with SDK's @Id...
     test.addPersistentProperty(springIdProperty);
 
-    assertEquals(springIdProperty, test.getIdProperty());
+    assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
 
     test.addPersistentProperty(sdkIdProperty);
-    assertEquals(springIdProperty, test.getIdProperty());
+    assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
   }
 
   /**
@@ -130,9 +130,9 @@ public class BasicCouchbasePersistentPropertyTests {
    * @return the actual BasicCouchbasePersistentProperty instance.
    */
   private CouchbasePersistentProperty getPropertyFor(Field field) {
-  	
+
 		ClassTypeInformation<?> type = ClassTypeInformation.from(field.getDeclaringClass());
-		
+
 		return new BasicCouchbasePersistentProperty(Property.of(type, field), entity, SimpleTypeHolder.DEFAULT,
 				PropertyNameFieldNamingStrategy.INSTANCE);
   }

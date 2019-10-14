@@ -1,6 +1,6 @@
 package org.springframework.data.couchbase.core;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 
 import com.couchbase.client.java.Bucket;
@@ -52,21 +52,25 @@ public class CouchbaseTemplateIdGenerationIntegrationTests {
         String generatedId = template.getGeneratedId(simpleClass);
 
         removeIfExist(generatedId);
-        assertEquals("Id generation should be correct", generatedId,
-                "prefix1::prefix2::0::1::2.0::3.0::4::Simple::Nested{value:simple}::suffix1::suffix2");
+        assertThat("prefix1::prefix2::0::1::2.0::3.0::4::Simple::Nested{value:simple}::suffix1::suffix2")
+				.as("Id generation should be correct").isEqualTo(generatedId);
         template.insert(simpleClass);
-        assertEquals("Exists after insert", true, template.exists(generatedId));
+        assertThat(template.exists(generatedId)).as("Exists after insert")
+				.isEqualTo(true);
         simpleClass.value = "modified";
         template.save(simpleClass);
         SimpleClassWithGeneratedIdValueUsingAttributes modifiedClass = template.findById(generatedId,
                 SimpleClassWithGeneratedIdValueUsingAttributes.class);
-        assertEquals("Get after save id should be correct", generatedId, modifiedClass.id);
+        assertThat(modifiedClass.id).as("Get after save id should be correct")
+				.isEqualTo(generatedId);
         template.update(simpleClass);
         SimpleClassWithGeneratedIdValueUsingAttributes updatedClass = template.findById(generatedId,
                 SimpleClassWithGeneratedIdValueUsingAttributes.class);
-        assertEquals("Get after update id should be correct", generatedId, updatedClass.id);
+        assertThat(updatedClass.id).as("Get after update id should be correct")
+				.isEqualTo(generatedId);
         template.remove(generatedId);
-        assertEquals("Exists after remove", false, template.exists(generatedId));
+        assertThat(template.exists(generatedId)).as("Exists after remove")
+				.isEqualTo(false);
     }
 
     @Test
@@ -75,9 +79,10 @@ public class CouchbaseTemplateIdGenerationIntegrationTests {
         String generatedId = template.getGeneratedId(simpleClass);
         simpleClass.id = generatedId;
         template.insert(simpleClass);
-        assertEquals("Should not regenerate id", generatedId, simpleClass.id);
+        assertThat(simpleClass.id).as("Should not regenerate id").isEqualTo(generatedId);
         template.remove(generatedId);
-        assertEquals("Exists after remove", false, template.exists(generatedId));
+        assertThat(template.exists(generatedId)).as("Exists after remove")
+				.isEqualTo(false);
     }
 
 

@@ -16,18 +16,18 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.isEmptyString;
-import static org.hamcrest.core.IsNot.not;
 
 import com.couchbase.client.java.Bucket;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.test.context.ContextConfiguration;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Michael Nitschinger
@@ -52,7 +52,7 @@ public class ClientInfoIntegrationTests {
 	@Test
 	public void hostNames() {
 		String hostnames = ci.getHostNames();
-		assertThat(hostnames, not(isEmptyString()));
+		assertThat(hostnames).isNotEmpty();
 	}
 
 }

@@ -15,7 +15,8 @@
  */
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
@@ -84,14 +85,14 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 		repository.save(instance).block();
 
 		ReactiveUser found = repository.findById(key).block();
-		assertEquals(instance.getKey(), found.getKey());
-		assertEquals(instance.getUsername(), found.getUsername());
+		assertThat(found.getKey()).isEqualTo(instance.getKey());
+		assertThat(found.getUsername()).isEqualTo(instance.getUsername());
 
-		assertTrue(repository.existsById(key).block());
+		assertThat(repository.existsById(key).block()).isTrue();
 		repository.delete(found).block();
 
-		assertNull(repository.findById(key).block());
-		assertFalse(repository.existsById(key).block());
+		assertThat(repository.findById(key).block()).isNull();
+		assertThat(repository.existsById(key).block()).isFalse();
 	}
 
 	@Test
@@ -106,10 +107,10 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 		int size = 0;
 		for (ReactiveUser u : allUsers) {
 			size++;
-			assertNotNull(u.getKey());
-			assertNotNull(u.getUsername());
+			assertThat(u.getKey()).isNotNull();
+			assertThat(u.getUsername()).isNotNull();
 		}
-		assertEquals(100, size);
+		assertThat(size).isEqualTo(100);
 	}
 
 	@Test
@@ -117,15 +118,15 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 		// do a non-stale query to populate data for testing.
 		client.query(ViewQuery.from("reactiveUser", "all").stale(Stale.FALSE));
 
-		assertEquals("100", repository.count().block().toString());
+		assertThat(repository.count().block().toString()).isEqualTo("100");
 	}
 
 	@Test
 	public void shouldFindByUsernameUsingN1ql() {
 		ReactiveUser user = repository.findByUsername("reactiveuname-1").single().block();
-		assertNotNull(user);
-		assertEquals("reactivetestuser-1", user.getKey());
-		assertEquals("reactiveuname-1", user.getUsername());
+		assertThat(user).isNotNull();
+		assertThat(user.getKey()).isEqualTo("reactivetestuser-1");
+		assertThat(user.getUsername()).isEqualTo("reactiveuname-1");
 	}
 
 	@Test
@@ -134,8 +135,10 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 			ReactiveUser user = repository.findByUsernameBadSelect("reactiveuname-1").single().block();
 			fail("shouldFailFindByUsernameWithNoIdOrCas");
 		} catch (CouchbaseQueryExecutionException e) {
-			assertTrue("_ID expected in exception " + e, e.getMessage().contains("_ID"));
-			assertTrue("_CAS expected in exception " + e, e.getMessage().contains("_CAS"));
+			assertThat(e.getMessage().contains("_ID"))
+					.as("_ID expected in exception " + e).isTrue();
+			assertThat(e.getMessage().contains("_CAS"))
+					.as("_CAS expected in exception " + e).isTrue();
 		} catch (Exception e) {
 			fail("CouchbaseQueryExecutionException expected");
 		}
@@ -144,7 +147,7 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	@Test
 	public void shouldFindFromUsernameInlineWithSpelParsing() {
 		ReactiveUser user = repository.findByUsernameWithSpelAndPlaceholder().take(1).blockLast();
-		assertNotNull(user);
+		assertThat(user).isNotNull();
 		assert(user.getUsername().startsWith("reactive"));
 		assert(user.getUsername().startsWith("reactive"));
 	}
@@ -152,18 +155,18 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	@Test
 	public void shouldFindFromDeriveQueryWithRegexpAndIn() {
 		ReactiveUser user = repository.findByUsernameRegexAndUsernameIn("reactiveuname-[123]", Arrays.asList("reactiveuname-2", "reactiveuname-4")).take(1).blockLast();
-		assertNotNull(user);
-		assertEquals("reactivetestuser-2", user.getKey());
-		assertEquals("reactiveuname-2", user.getUsername());
+		assertThat(user).isNotNull();
+		assertThat(user.getKey()).isEqualTo("reactivetestuser-2");
+		assertThat(user.getUsername()).isEqualTo("reactiveuname-2");
 	}
 
 	@Test
 	public void shouldFindContainsWithoutAnnotation() {
 		List<ReactiveUser> users = repository.findByUsernameContains("reactive").collectList().block();
-		assertNotNull(users);
-		assertFalse(users.isEmpty());
+		assertThat(users).isNotNull();
+		assertThat(users.isEmpty()).isFalse();
 		for (ReactiveUser user : users) {
-			assertTrue(user.getUsername().startsWith("reactive"));
+			assertThat(user.getUsername().startsWith("reactive")).isTrue();
 		}
 	}
 

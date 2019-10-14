@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +24,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Michael Nitschinger
@@ -49,9 +49,9 @@ public class AbstractCouchbaseEventListenerTests {
 
     couchbaseTemplate.save(new User("john smith", 18));
 
-    assertEquals(beforeSave + 1, eventListener.onBeforeSaveEvents.size());
-    assertEquals(afterSave + 1, eventListener.onAfterSaveEvents.size());
-    assertEquals(beforeConvert + 1, eventListener.onBeforeConvertEvents.size());
+    assertThat(eventListener.onBeforeSaveEvents.size()).isEqualTo(beforeSave + 1);
+    assertThat(eventListener.onAfterSaveEvents.size()).isEqualTo(afterSave + 1);
+    assertThat(eventListener.onBeforeConvertEvents.size()).isEqualTo(beforeConvert + 1);
   }
 
 }

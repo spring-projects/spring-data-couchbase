@@ -16,11 +16,6 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,10 +26,10 @@ import com.couchbase.client.java.document.json.JsonObject;
 import com.couchbase.client.java.view.Stale;
 import com.couchbase.client.java.view.ViewQuery;
 import com.couchbase.client.java.view.ViewResult;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
@@ -46,6 +41,9 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * @author David Harrigan
@@ -76,7 +74,7 @@ public class CouchbaseRepositoryViewIntegrationTests {
   public void shouldFindAllWithCustomView() {
     client.query(ViewQuery.from("user", "customFindAllView").stale(Stale.FALSE));
     Iterable<User> allUsers = repository.findAll();
-    assertThat(allUsers, Matchers.iterableWithSize(100));
+    assertThat(allUsers).hasSize(100);
   }
 
   @Test
@@ -85,22 +83,23 @@ public class CouchbaseRepositoryViewIntegrationTests {
         .reduce().stale(Stale.FALSE));
     final Object clientRowValue = clientResult.allRows().get(0).value();
     final long value = repository.count();
-    assertThat(value, is(100L));
-    assertThat(clientRowValue, instanceOf(Number.class));
-    assertThat(((Number) clientRowValue).longValue(), is(value));
+    assertThat(value).isEqualTo(100L);
+    assertThat(clientRowValue).isInstanceOf(Number.class);
+    assertThat(((Number) clientRowValue).longValue()).isEqualTo(value);
   }
 
   @Test
   public void shouldDetectMethodNameWithoutPropertyAndIssueGenericQueryOnView() {
     Iterable<User> users = repository.findRandomMethodName();
-    assertNotNull(users);
-    assertTrue(users.iterator().hasNext());
+    assertThat(users).isNotNull();
+    assertThat(users.iterator().hasNext()).isTrue();
 
     try {
       repository.findIncorrectExplicitView();
       fail("Expected InvalidDataAccessResourceException");
     } catch (InvalidDataAccessResourceUsageException e) {
-      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/allSomething does not exist"));
+      assertThat(e.getMessage().startsWith("View user/allSomething does not exist"))
+			  .as(e.getMessage()).isTrue();
     }
   }
 
@@ -112,18 +111,18 @@ public class CouchbaseRepositoryViewIntegrationTests {
   @Test
   public void shouldDeriveViewParametersAndReduce() {
     long count = repository.countByUsernameGreaterThanEqualAndUsernameLessThan("uname-8", "uname-9");
-    assertEquals(12, count);
+    assertThat(count).isEqualTo(12);
   }
 
   @Test
   public void shouldDeriveViewParametersAndReduceNonNumerical() {
     JsonObject reduceResult = repository.findByAgeLessThan(50);
 
-    assertNotNull(reduceResult);
-    assertEquals(51, (long) reduceResult.getLong("count"));
-    assertEquals(50, (long) reduceResult.getLong("max"));
-    assertEquals(0, (long) reduceResult.getLong("min"));
-    assertEquals(1275, (long) reduceResult.getLong("sum"));
+    assertThat(reduceResult).isNotNull();
+    assertThat((long) reduceResult.getLong("count")).isEqualTo(51);
+    assertThat((long) reduceResult.getLong("max")).isEqualTo(50);
+    assertThat((long) reduceResult.getLong("min")).isEqualTo(0);
+    assertThat((long) reduceResult.getLong("sum")).isEqualTo(1275);
   }
 
   @Test
@@ -137,9 +136,9 @@ public class CouchbaseRepositoryViewIntegrationTests {
     User u2 = repository.findByUsernameIs(middleKey).get(0);
     User u3 = repository.findByUsernameIs(highKey).get(0);
 
-    assertEquals(lowKey, u1.getUsername());
-    assertEquals(middleKey, u2.getUsername());
-    assertEquals(highKey, u3.getUsername());
+    assertThat(u1.getUsername()).isEqualTo(lowKey);
+    assertThat(u2.getUsername()).isEqualTo(middleKey);
+    assertThat(u3.getUsername()).isEqualTo(highKey);
 
     List<User> in = repository.findAllByUsernameIn(keys);
     List<User> gteLte = repository.findByUsernameGreaterThanEqualAndUsernameLessThanEqual(lowKey, highKey);
@@ -148,17 +147,17 @@ public class CouchbaseRepositoryViewIntegrationTests {
 
     // the results are unordered, so compare using Set
     Set<User> expected = new HashSet<>(Arrays.asList(u1, u2, u3));
-    assertEquals(expected, new HashSet<>(in));
-    assertEquals(expected, new HashSet<>(gteLte));
-    assertEquals(expected, new HashSet<>(between));
-    assertEquals(expected, new HashSet<>(gteLimited));
+    assertThat(new HashSet<>(in)).isEqualTo(expected);
+    assertThat(new HashSet<>(gteLte)).isEqualTo(expected);
+    assertThat(new HashSet<>(between)).isEqualTo(expected);
+    assertThat(new HashSet<>(gteLimited)).isEqualTo(expected);
   }
 
   @Test
   public void shouldDeriveToEmptyClause() {
     List<User> users = repository.findAllByUsername();
-    assertNotNull(users);
-    assertEquals(100, users.size());
+    assertThat(users).isNotNull();
+    assertThat(users.size()).isEqualTo(100);
   }
 
   @Test
@@ -167,20 +166,22 @@ public class CouchbaseRepositoryViewIntegrationTests {
       repository.findByIncorrectView();
       fail("Expected InvalidDataAccessResourceException");
     } catch (InvalidDataAccessResourceUsageException e) {
-      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/byIncorrectView does not exist"));
+      assertThat(e.getMessage().startsWith("View user/byIncorrectView does not exist"))
+			  .as(e.getMessage()).isTrue();
     }
   }
 
   @Test
   public void shouldDetermineViewNameFromCountPrefixAndReduce() {
     long count = repository.countCustomFindAllView();
-    assertEquals(100, count);
+    assertThat(count).isEqualTo(100);
 
     try {
       repository.countCustomFindInvalid();
       fail("Expected InvalidDataAccessResourceException");
     } catch (InvalidDataAccessResourceUsageException e) {
-      assertTrue(e.getMessage(), e.getMessage().startsWith("View user/customFindInvalid does not exist"));
+      assertThat(e.getMessage().startsWith("View user/customFindInvalid does not exist"))
+			  .as(e.getMessage()).isTrue();
     }
   }
 }

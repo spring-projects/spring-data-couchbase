@@ -1,9 +1,5 @@
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -24,6 +20,8 @@ import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Simon Baslé
@@ -54,7 +52,7 @@ public class QueryDerivationConversionIntegrationTests {
   @Test
   public void testConvertsDateParameterInN1qlQuery() {
     Optional<Party> partyApril = repository.findById("testparty-3");
-    assertTrue(partyApril.isPresent());
+    assertThat(partyApril.isPresent()).isTrue();
 
     Calendar cal = Calendar.getInstance();
     cal.clear();
@@ -62,20 +60,20 @@ public class QueryDerivationConversionIntegrationTests {
     Date find = cal.getTime();
 
     List<Party> parties = repository.findByEventDateIs(find);
-    assertNotNull(parties);
-    assertEquals(1, parties.size());
-    assertEquals(find, parties.get(0).getEventDate());
+    assertThat(parties).isNotNull();
+    assertThat(parties.size()).isEqualTo(1);
+    assertThat(parties.get(0).getEventDate()).isEqualTo(find);
 
     JsonDocument doc = client.get(parties.get(0).getKey());
-    assertEquals(find.getTime(), doc.content().get("eventDate"));
+    assertThat(doc.content().get("eventDate")).isEqualTo(find.getTime());
   }
 
   @Test
   public void testAcceptLongParameterInN1qlQuery() {
     List<Party> newYear90 = repository.findByAttendeesGreaterThanEqual(1200000);
-    assertNotNull(newYear90);
-    assertEquals(1, newYear90.size());
-    assertEquals("aTestParty", newYear90.get(0).getKey());
+    assertThat(newYear90).isNotNull();
+    assertThat(newYear90.size()).isEqualTo(1);
+    assertThat(newYear90.get(0).getKey()).isEqualTo("aTestParty");
   }
 
   @Test
@@ -86,8 +84,8 @@ public class QueryDerivationConversionIntegrationTests {
     Date find = cal.getTime();
 
     List<Party> afterSummerParties = repository.findFirst3ByEventDateGreaterThanEqual(find);
-    assertNotNull(afterSummerParties);
-    assertEquals(3, afterSummerParties.size());
+    assertThat(afterSummerParties).isNotNull();
+    assertThat(afterSummerParties.size()).isEqualTo(3);
     for (Party afterSummerParty : afterSummerParties) {
       assert(afterSummerParty.getEventDate().after(find));
     }

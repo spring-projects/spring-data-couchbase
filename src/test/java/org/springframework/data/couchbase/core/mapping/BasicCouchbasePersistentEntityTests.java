@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.*;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -34,6 +32,8 @@ import org.springframework.mock.env.MockPropertySource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Verifies the correct behavior of annotation at the class level on persistable objects.
@@ -59,7 +59,7 @@ public class BasicCouchbasePersistentEntityTests {
     CouchbasePersistentEntity<DefaultExpiry> entity = new BasicCouchbasePersistentEntity<DefaultExpiry>(
         ClassTypeInformation.from(DefaultExpiry.class));
 
-    assertEquals(0, entity.getExpiry());
+    assertThat(entity.getExpiry()).isEqualTo(0);
   }
 
   @Test
@@ -67,14 +67,14 @@ public class BasicCouchbasePersistentEntityTests {
     CouchbasePersistentEntity<DefaultExpiryUnit> entity = new BasicCouchbasePersistentEntity<DefaultExpiryUnit>(
         ClassTypeInformation.from(DefaultExpiryUnit.class));
 
-    assertEquals(78, entity.getExpiry());
+    assertThat(entity.getExpiry()).isEqualTo(78);
   }
 
   @Test
   public void testLargeExpiry30DaysStillInSeconds() {
     CouchbasePersistentEntity<LimitDaysExpiry> entityUnder = new BasicCouchbasePersistentEntity<LimitDaysExpiry>(
         ClassTypeInformation.from(LimitDaysExpiry.class));
-    assertEquals(30 * 24 * 60 * 60, entityUnder.getExpiry());
+    assertThat(entityUnder.getExpiry()).isEqualTo(30 * 24 * 60 * 60);
   }
 
   @Test
@@ -92,14 +92,16 @@ public class BasicCouchbasePersistentEntityTests {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     calendar.clear();
     calendar.add(Calendar.SECOND, expiryOver);
-    assertEquals(expected.get(Calendar.YEAR), calendar.get(Calendar.YEAR));
-    assertEquals(expected.get(Calendar.MONTH), calendar.get(Calendar.MONTH));
-    assertEquals(expected.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-    assertEquals(expected.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.HOUR_OF_DAY));
-    assertEquals(expected.get(Calendar.MINUTE), calendar.get(Calendar.MINUTE));
-    assertEquals(expected.get(Calendar.SECOND), calendar.get(Calendar.SECOND));
+    assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expected.get(Calendar.YEAR));
+    assertThat(calendar.get(Calendar.MONTH)).isEqualTo(expected.get(Calendar.MONTH));
+    assertThat(calendar.get(Calendar.DAY_OF_MONTH))
+			.isEqualTo(expected.get(Calendar.DAY_OF_MONTH));
+    assertThat(calendar.get(Calendar.HOUR_OF_DAY))
+			.isEqualTo(expected.get(Calendar.HOUR_OF_DAY));
+    assertThat(calendar.get(Calendar.MINUTE)).isEqualTo(expected.get(Calendar.MINUTE));
+    assertThat(calendar.get(Calendar.SECOND)).isEqualTo(expected.get(Calendar.SECOND));
   }
-  
+
   @Test
   public void testLargeExpiryExpression31DaysIsConvertedToUnixUtcTime() {
 	BasicCouchbasePersistentEntity<OverLimitDaysExpiryExpression> entityOver = new BasicCouchbasePersistentEntity<OverLimitDaysExpiryExpression>(
@@ -116,12 +118,14 @@ public class BasicCouchbasePersistentEntityTests {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     calendar.clear();
     calendar.add(Calendar.SECOND, expiryOver);
-    assertEquals(expected.get(Calendar.YEAR), calendar.get(Calendar.YEAR));
-    assertEquals(expected.get(Calendar.MONTH), calendar.get(Calendar.MONTH));
-    assertEquals(expected.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-    assertEquals(expected.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.HOUR_OF_DAY));
-    assertEquals(expected.get(Calendar.MINUTE), calendar.get(Calendar.MINUTE));
-    assertEquals(expected.get(Calendar.SECOND), calendar.get(Calendar.SECOND));
+    assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expected.get(Calendar.YEAR));
+    assertThat(calendar.get(Calendar.MONTH)).isEqualTo(expected.get(Calendar.MONTH));
+    assertThat(calendar.get(Calendar.DAY_OF_MONTH))
+			.isEqualTo(expected.get(Calendar.DAY_OF_MONTH));
+    assertThat(calendar.get(Calendar.HOUR_OF_DAY))
+			.isEqualTo(expected.get(Calendar.HOUR_OF_DAY));
+    assertThat(calendar.get(Calendar.MINUTE)).isEqualTo(expected.get(Calendar.MINUTE));
+    assertThat(calendar.get(Calendar.SECOND)).isEqualTo(expected.get(Calendar.SECOND));
   }
 
   @Test
@@ -139,59 +143,69 @@ public class BasicCouchbasePersistentEntityTests {
     Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     calendar.clear();
     calendar.add(Calendar.SECOND, expiryOver);
-    assertEquals(expected.get(Calendar.YEAR), calendar.get(Calendar.YEAR));
-    assertEquals(expected.get(Calendar.MONTH), calendar.get(Calendar.MONTH));
-    assertEquals(expected.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-    assertEquals(expected.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.HOUR_OF_DAY));
-    assertEquals(expected.get(Calendar.MINUTE), calendar.get(Calendar.MINUTE));
-    assertEquals(expected.get(Calendar.SECOND), calendar.get(Calendar.SECOND));
+    assertThat(calendar.get(Calendar.YEAR)).isEqualTo(expected.get(Calendar.YEAR));
+    assertThat(calendar.get(Calendar.MONTH)).isEqualTo(expected.get(Calendar.MONTH));
+    assertThat(calendar.get(Calendar.DAY_OF_MONTH))
+			.isEqualTo(expected.get(Calendar.DAY_OF_MONTH));
+    assertThat(calendar.get(Calendar.HOUR_OF_DAY))
+			.isEqualTo(expected.get(Calendar.HOUR_OF_DAY));
+    assertThat(calendar.get(Calendar.MINUTE)).isEqualTo(expected.get(Calendar.MINUTE));
+    assertThat(calendar.get(Calendar.SECOND)).isEqualTo(expected.get(Calendar.SECOND));
   }
 
   @Test
   public void doesNotUseGetExpiry() throws Exception {
-    assertEquals(0, getBasicCouchbasePersistentEntity(SimpleDocument.class).getExpiry());
+    assertThat(getBasicCouchbasePersistentEntity(SimpleDocument.class).getExpiry())
+			.isEqualTo(0);
   }
 
   @Test
   public void usesGetExpiry() throws Exception {
-    assertEquals(10, getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class).getExpiry());
+    assertThat(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class)
+			.getExpiry()).isEqualTo(10);
   }
 
   @Test
   public void doesNotUseIsUpdateExpiryForRead() throws Exception {
-    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocument.class).isTouchOnRead());
-    assertFalse(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class).isTouchOnRead());
+    assertThat(getBasicCouchbasePersistentEntity(SimpleDocument.class).isTouchOnRead())
+			.isFalse();
+    assertThat(getBasicCouchbasePersistentEntity(SimpleDocumentWithExpiry.class)
+			.isTouchOnRead()).isFalse();
   }
 
   @Test
   public void usesTouchOnRead() throws Exception {
-    assertTrue(getBasicCouchbasePersistentEntity(SimpleDocumentWithTouchOnRead.class).isTouchOnRead());
+    assertThat(getBasicCouchbasePersistentEntity(SimpleDocumentWithTouchOnRead.class)
+			.isTouchOnRead()).isTrue();
   }
 
   @Test
   public void usesGetExpiryExpression() throws Exception {
-    assertEquals(10, getBasicCouchbasePersistentEntity(ConstantExpiryExpression.class).getExpiry());
+    assertThat(getBasicCouchbasePersistentEntity(ConstantExpiryExpression.class)
+			.getExpiry()).isEqualTo(10);
   }
 
   @Test
   public void usesGetExpiryFromValidExpression() throws Exception {
-    assertEquals(10, getBasicCouchbasePersistentEntity(ExpiryWithValidExpression.class).getExpiry());
+    assertThat(getBasicCouchbasePersistentEntity(ExpiryWithValidExpression.class)
+			.getExpiry()).isEqualTo(10);
   }
 
   @Test
   public void doesNotAllowUseExpiryFromInvalidExpression() throws Exception {
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("Invalid Integer value for expiry expression: abc");
-    assertEquals(10, getBasicCouchbasePersistentEntity(ExpiryWithInvalidExpression.class).getExpiry());
+    assertThat(getBasicCouchbasePersistentEntity(ExpiryWithInvalidExpression.class)
+			.getExpiry()).isEqualTo(10);
   }
 
   @Test
   public void usesGetExpiryExpressionAndRespectsPropertyUpdates() throws Exception {
     BasicCouchbasePersistentEntity entity = getBasicCouchbasePersistentEntity(ExpiryWithValidExpression.class);
-    assertEquals(10, entity.getExpiry());
+    assertThat(entity.getExpiry()).isEqualTo(10);
 
     environment.getPropertySources().addFirst(new MockPropertySource().withProperty("valid.document.expiry", "20"));
-    assertEquals(20, entity.getExpiry());
+    assertThat(entity.getExpiry()).isEqualTo(20);
   }
 
   @Test
@@ -253,7 +267,7 @@ public class BasicCouchbasePersistentEntityTests {
   @Document(expiry = 31, expiryUnit = TimeUnit.DAYS)
   public class OverLimitDaysExpiry {
   }
-  
+
   /**
    * Simple POJO to test larger than 30 days expiry defined as an expression
    */

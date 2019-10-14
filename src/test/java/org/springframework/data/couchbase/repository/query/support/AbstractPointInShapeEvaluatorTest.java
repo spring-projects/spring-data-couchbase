@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.junit.Assert.*;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +11,8 @@ import org.springframework.data.geo.Circle;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.geo.Polygon;
+
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * An abstract base for testing {@link PointInShapeEvaluator} implementations.
@@ -72,14 +72,20 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     Point outside = new Point(1.1, 0.3);
     Point edge = new Point(1.0, 2.0);
 
-    assertTrue("point inside open polygon failed", evaluator.pointInPolygon(inside, openTriangle));
-    assertFalse("point outside open polygon failed", evaluator.pointInPolygon(outside, openTriangle));
-    assertFalse("point on edge of open polygon should not be considered within the polygon",
-        evaluator.pointInPolygon(edge, openTriangle));
-    assertTrue("point inside closed polygon failed", evaluator.pointInPolygon(inside, closedTriangle));
-    assertFalse("point outside closed polygon failed", evaluator.pointInPolygon(outside, closedTriangle));
-    assertFalse("point on edge of closed polygon should not be considered within the polygon",
-        evaluator.pointInPolygon(edge, closedTriangle));
+    assertThat(evaluator.pointInPolygon(inside, openTriangle))
+			.as("point inside open polygon failed").isTrue();
+    assertThat(evaluator.pointInPolygon(outside, openTriangle))
+			.as("point outside open polygon failed").isFalse();
+    assertThat(evaluator.pointInPolygon(edge, openTriangle))
+			.as("point on edge of open polygon should not be considered within the polygon")
+			.isFalse();
+    assertThat(evaluator.pointInPolygon(inside, closedTriangle))
+			.as("point inside closed polygon failed").isTrue();
+    assertThat(evaluator.pointInPolygon(outside, closedTriangle))
+			.as("point outside closed polygon failed").isFalse();
+    assertThat(evaluator.pointInPolygon(edge, closedTriangle))
+			.as("point on edge of closed polygon should not be considered within the polygon")
+			.isFalse();
   }
 
   @Test
@@ -101,14 +107,20 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     Point outside = new Point(1.1, 0.3);
     Point edge = new Point(1.0, 2.0);
 
-    assertTrue("point inside open polygon failed", evaluator.pointInPolygon(inside, openTriangle));
-    assertFalse("point outside open polygon failed", evaluator.pointInPolygon(outside, openTriangle));
-    assertFalse("point on edge of open polygon should not be considered within the polygon",
-        evaluator.pointInPolygon(edge, openTriangle));
-    assertTrue("point inside closed polygon failed", evaluator.pointInPolygon(inside, closedTriangle));
-    assertFalse("point outside closed polygon failed", evaluator.pointInPolygon(outside, closedTriangle));
-    assertFalse("point on edge of closed polygon should not be considered within the polygon",
-        evaluator.pointInPolygon(edge, closedTriangle));
+    assertThat(evaluator.pointInPolygon(inside, openTriangle))
+			.as("point inside open polygon failed").isTrue();
+    assertThat(evaluator.pointInPolygon(outside, openTriangle))
+			.as("point outside open polygon failed").isFalse();
+    assertThat(evaluator.pointInPolygon(edge, openTriangle))
+			.as("point on edge of open polygon should not be considered within the polygon")
+			.isFalse();
+    assertThat(evaluator.pointInPolygon(inside, closedTriangle))
+			.as("point inside closed polygon failed").isTrue();
+    assertThat(evaluator.pointInPolygon(outside, closedTriangle))
+			.as("point outside closed polygon failed").isFalse();
+    assertThat(evaluator.pointInPolygon(edge, closedTriangle))
+			.as("point on edge of closed polygon should not be considered within the polygon")
+			.isFalse();
   }
 
   @Test
@@ -119,9 +131,12 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     Point outside = new Point(1.3, 2d);
     Point onEdge = new Point(-2d, 0d);
 
-    assertTrue("point inside failed", evaluator.pointInCircle(inside, circle));
-    assertFalse("point outside failed", evaluator.pointInCircle(outside, circle));
-    assertTrue("point on edge of circle should be considered within / near", evaluator.pointInCircle(onEdge, circle));
+    assertThat(evaluator.pointInCircle(inside, circle)).as("point inside failed")
+			.isTrue();
+    assertThat(evaluator.pointInCircle(outside, circle)).as("point outside failed")
+			.isFalse();
+    assertThat(evaluator.pointInCircle(onEdge, circle))
+			.as("point on edge of circle should be considered within / near").isTrue();
   }
 
   @Test
@@ -133,9 +148,12 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     Point outside = new Point(1.3, 2d);
     Point onEdge = new Point(-2d, 0d);
 
-    assertTrue("point inside failed", evaluator.pointInCircle(inside, center, radius));
-    assertFalse("point outside failed", evaluator.pointInCircle(outside, center, radius));
-    assertTrue("point on edge of circle should be considered within / near", evaluator.pointInCircle(onEdge, center, radius));
+    assertThat(evaluator.pointInCircle(inside, center, radius)).as("point inside failed")
+			.isTrue();
+    assertThat(evaluator.pointInCircle(outside, center, radius))
+			.as("point outside failed").isFalse();
+    assertThat(evaluator.pointInCircle(onEdge, center, radius))
+			.as("point on edge of circle should be considered within / near").isTrue();
   }
 
   @Test
@@ -163,8 +181,8 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     List<LocatedValue> filteredOpen = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, openTriangle);
     List<LocatedValue> filteredClosed = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, closedTriangle);
 
-    assertEquals(expected, filteredOpen);
-    assertEquals(expected, filteredClosed);
+    assertThat(filteredOpen).isEqualTo(expected);
+    assertThat(filteredClosed).isEqualTo(expected);
   }
 
   @Test
@@ -192,8 +210,8 @@ public abstract class AbstractPointInShapeEvaluatorTest {
     List<LocatedValue> filteredOpen = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, openTriangle);
     List<LocatedValue> filteredClosed = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, closedTriangle);
 
-    assertEquals(expected, filteredOpen);
-    assertEquals(expected, filteredClosed);
+    assertThat(filteredOpen).isEqualTo(expected);
+    assertThat(filteredClosed).isEqualTo(expected);
   }
 
   @Test
@@ -209,7 +227,7 @@ public abstract class AbstractPointInShapeEvaluatorTest {
 
     List<LocatedValue> filtered = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, circle);
 
-    assertEquals(expected, filtered);
+    assertThat(filtered).isEqualTo(expected);
   }
 
   @Test
@@ -226,6 +244,6 @@ public abstract class AbstractPointInShapeEvaluatorTest {
 
     List<LocatedValue> filtered = evaluator.removeFalsePositives(tested, LOCATED_VALUE_POINT_CONVERTER, center, radius);
 
-    assertEquals(expected, filtered);
+    assertThat(filtered).isEqualTo(expected);
   }
 }

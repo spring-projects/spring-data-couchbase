@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.junit.Assert.*;
-
 import com.couchbase.client.java.document.JsonDocument;
 import com.couchbase.client.java.document.json.JsonObject;
 import org.junit.Before;
@@ -35,6 +33,8 @@ import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.User;
 import org.springframework.test.context.ContextConfiguration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Michael Nitschinger
@@ -58,7 +58,7 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-bean.xml"));
 
     BeanDefinition definition = factory.getBeanDefinition(BeanNames.COUCHBASE_TEMPLATE);
-    assertEquals(2, definition.getConstructorArgumentValues().getArgumentCount());
+    assertThat(definition.getConstructorArgumentValues().getArgumentCount()).isEqualTo(2);
 
     factory.getBean(BeanNames.COUCHBASE_TEMPLATE);
   }
@@ -68,7 +68,7 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-with-translation-service-bean.xml"));
 
     BeanDefinition definition = factory.getBeanDefinition(BeanNames.COUCHBASE_TEMPLATE);
-    assertEquals(3, definition.getConstructorArgumentValues().getArgumentCount());
+    assertThat(definition.getConstructorArgumentValues().getArgumentCount()).isEqualTo(3);
 
     factory.getBean(BeanNames.COUCHBASE_TEMPLATE);
   }
@@ -92,20 +92,21 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-typekey.xml"));
     CouchbaseTemplate template = factory.getBean(BeanNames.COUCHBASE_TEMPLATE, CouchbaseTemplate.class);
 
-    assertTrue(template.getConverter() instanceof MappingCouchbaseConverter);
+    assertThat(template.getConverter() instanceof MappingCouchbaseConverter).isTrue();
     MappingCouchbaseConverter converter = ((MappingCouchbaseConverter) template.getConverter());
 
-    assertEquals("javaXmlClass", converter.getTypeKey());
+    assertThat(converter.getTypeKey()).isEqualTo("javaXmlClass");
 
     User u = new User("specialSaveUser", "John Locke", 46);
     template.save(u);
     JsonDocument uJsonDoc = template.getCouchbaseBucket().get("specialSaveUser");
     template.getCouchbaseBucket().remove("specialSaveUser");
-    assertNotNull(uJsonDoc);
+    assertThat(uJsonDoc).isNotNull();
     JsonObject uJson = uJsonDoc.content();
-    assertNull(uJson.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-    assertEquals("org.springframework.data.couchbase.repository.User", uJson.getString("javaXmlClass"));
-    assertEquals("John Locke", uJson.getString("username"));
+    assertThat(uJson.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT)).isNull();
+    assertThat(uJson.getString("javaXmlClass"))
+			.isEqualTo("org.springframework.data.couchbase.repository.User");
+    assertThat(uJson.getString("username")).isEqualTo("John Locke");
   }
 
   /**
@@ -116,8 +117,10 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-consistency.xml"));
     CouchbaseTemplate template = factory.getBean("template", CouchbaseTemplate.class);
 
-    assertEquals(Consistency.EVENTUALLY_CONSISTENT, template.getDefaultConsistency());
-    assertNotEquals(Consistency.DEFAULT_CONSISTENCY, template.getDefaultConsistency());
+    assertThat(template.getDefaultConsistency())
+			.isEqualTo(Consistency.EVENTUALLY_CONSISTENT);
+    assertThat(template.getDefaultConsistency())
+			.isNotEqualTo(Consistency.DEFAULT_CONSISTENCY);
   }
 
   /**
@@ -128,7 +131,8 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-consistency.xml"));
     CouchbaseTemplate template = factory.getBean("templateBad", CouchbaseTemplate.class);
 
-    assertEquals(Consistency.DEFAULT_CONSISTENCY, template.getDefaultConsistency());
+    assertThat(template.getDefaultConsistency())
+			.isEqualTo(Consistency.DEFAULT_CONSISTENCY);
   }
 
   @Test
@@ -137,6 +141,7 @@ public class CouchbaseTemplateParserIntegrationTests {
     reader.loadBeanDefinitions(new ClassPathResource("configurations/couchbase-template-with-translation-service-bean.xml"));
     CouchbaseTemplate template = factory.getBean(BeanNames.COUCHBASE_TEMPLATE, CouchbaseTemplate.class);
 
-    assertEquals(Consistency.DEFAULT_CONSISTENCY, template.getDefaultConsistency());
+    assertThat(template.getDefaultConsistency())
+			.isEqualTo(Consistency.DEFAULT_CONSISTENCY);
   }
 }

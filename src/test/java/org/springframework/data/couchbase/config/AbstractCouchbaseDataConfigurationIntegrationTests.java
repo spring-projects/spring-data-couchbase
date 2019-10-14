@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase.config;
 
-import static org.junit.Assert.*;
-
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.CouchbaseCluster;
@@ -21,6 +19,8 @@ import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * This test case demonstrates that the {@link AbstractCouchbaseDataConfiguration} can take its SDK beans
@@ -97,13 +97,13 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
 
   @Test
   public void testInjectedBucketIsFromAdditionalConfig() {
-    assertSame(client, SdkConfig.bucket);
+    assertThat(SdkConfig.bucket).isSameAs(client);
   }
 
   @Test
   public void testTemplateIsUsable() {
     String key = "simpleConfigTest";
-    assertNotNull(repository);
+    assertThat(repository).isNotNull();
 
     Item item = new Item();
     item.id = key;
@@ -112,9 +112,9 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
     repository.save(item);
     JsonDocument testDoc = client.get(key);
 
-    assertNotNull(testDoc);
-    assertNotNull(testDoc.content());
-    assertEquals(item.value, testDoc.content().getString("value"));
+    assertThat(testDoc).isNotNull();
+    assertThat(testDoc.content()).isNotNull();
+    assertThat(testDoc.content().getString("value")).isEqualTo(item.value);
   }
 
   private static class Item {

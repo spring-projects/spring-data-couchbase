@@ -16,8 +16,7 @@
 
 package org.springframework.data.couchbase.repository.extending.base;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -114,14 +113,16 @@ public class RepositoryBaseIntegrationTests {
 
   @Test
   public void testRepositoryBaseIsChanged() {
-    assertNotNull(repositoryA);
-    assertNotNull(repositoryB);
+    assertThat(repositoryA).isNotNull();
+    assertThat(repositoryB).isNotNull();
 
-    assertEquals(4, repositoryA.sharedCustomMethod("toto"));
-    assertEquals(4000, repositoryA.sharedCustomMethod("anna"));
+    assertThat(repositoryA.sharedCustomMethod("toto")).isEqualTo(4);
+    assertThat(repositoryA.sharedCustomMethod("anna")).isEqualTo(4000);
 
-    assertEquals(repositoryA.sharedCustomMethod("sameInput"), repositoryB.sharedCustomMethod("sameInput"));
-    assertEquals(repositoryA.sharedCustomMethod("anna"), repositoryB.sharedCustomMethod("anna"));
+    assertThat(repositoryB.sharedCustomMethod("sameInput"))
+			.isEqualTo(repositoryA.sharedCustomMethod("sameInput"));
+    assertThat(repositoryB.sharedCustomMethod("anna"))
+			.isEqualTo(repositoryA.sharedCustomMethod("anna"));
   }
 
   private static class Item {

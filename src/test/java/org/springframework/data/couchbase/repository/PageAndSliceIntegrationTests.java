@@ -1,8 +1,6 @@
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.ArrayList;
@@ -53,19 +51,19 @@ public class PageAndSliceIntegrationTests {
     Page<User> page2 = repository.findByAgeGreaterThan(9, page1.nextPageable());
     Page<User> page3 = repository.findByAgeGreaterThan(9, page2.nextPageable());
 
-    assertEquals(90, page1.getTotalElements());
-    assertEquals(3, page1.getTotalPages());
-    assertTrue(page1.hasContent());
-    assertTrue(page1.hasNext());
-    assertEquals(40, page1.getNumberOfElements());
+    assertThat(page1.getTotalElements()).isEqualTo(90);
+    assertThat(page1.getTotalPages()).isEqualTo(3);
+    assertThat(page1.hasContent()).isTrue();
+    assertThat(page1.hasNext()).isTrue();
+    assertThat(page1.getNumberOfElements()).isEqualTo(40);
 
-    assertTrue(page2.hasContent());
-    assertTrue(page2.hasNext());
-    assertEquals(40, page2.getNumberOfElements());
+    assertThat(page2.hasContent()).isTrue();
+    assertThat(page2.hasNext()).isTrue();
+    assertThat(page2.getNumberOfElements()).isEqualTo(40);
 
-    assertTrue(page3.hasContent());
-    assertFalse(page3.hasNext());
-    assertEquals(10, page3.getNumberOfElements());
+    assertThat(page3.hasContent()).isTrue();
+    assertThat(page3.hasNext()).isFalse();
+    assertThat(page3.getNumberOfElements()).isEqualTo(10);
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -82,9 +80,9 @@ public class PageAndSliceIntegrationTests {
     while(slice.hasNext()) {
       slice = repository.findByAgeLessThan(9, slice.nextPageable());
       allMatching.addAll(slice.getContent());
-      assertEquals(3, slice.getContent().size());
+      assertThat(slice.getContent().size()).isEqualTo(3);
     }
-    assertEquals(9, allMatching.size());
+    assertThat(allMatching.size()).isEqualTo(9);
   }
 
   @Test(expected = UnsupportedOperationException.class)

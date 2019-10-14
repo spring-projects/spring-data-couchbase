@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import com.couchbase.client.java.document.json.JsonValue;
@@ -42,7 +42,7 @@ import reactor.core.publisher.Flux;
  * @author Johannes Jasper
  */
 public class ReactiveAbstractN1qlBasedQueryTest {
-	
+
   CouchbaseMappingContext context = new CouchbaseMappingContext();
   ProjectionFactory projectionFactory = new SpelAwareProxyProjectionFactory();
   RepositoryMetadata metadata = DefaultRepositoryMetadata.getMetadata(SampleRepository.class);
@@ -67,10 +67,11 @@ public class ReactiveAbstractN1qlBasedQueryTest {
     when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
 
     ScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
-    assertEquals(defaultConsistency, Consistency.STRONGLY_CONSISTENT.n1qlConsistency());
+    assertThat(Consistency.STRONGLY_CONSISTENT.n1qlConsistency())
+			.isEqualTo(defaultConsistency);
 
     ScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
-    assertEquals(unboundedConsistency, ScanConsistency.NOT_BOUNDED);
+    assertThat(ScanConsistency.NOT_BOUNDED).isEqualTo(unboundedConsistency);
 
   }
 

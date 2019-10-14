@@ -1,6 +1,6 @@
 package org.springframework.data.couchbase.repository.wiring;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.Arrays;
@@ -132,20 +132,20 @@ public class RepositoryTemplateWiringIntegrationTests {
 
   @Test
   public void testRepositoriesAreInstanciatedWithCorrectTemplates() {
-    assertNotNull(repositoryA);
-    assertNotNull(repositoryB);
-    assertNotNull(repositoryC);
+    assertThat(repositoryA).isNotNull();
+    assertThat(repositoryB).isNotNull();
+    assertThat(repositoryC).isNotNull();
 
     boolean existA = repositoryA.existsById("testA");
     boolean existB = repositoryB.existsById("testB");
     Optional<Misc> valueC = repositoryC.findById("toto");
 
-    assertTrue(existA);
-    assertFalse(existB);
-    assertTrue(valueC.isPresent());
+    assertThat(existA).isTrue();
+    assertThat(existB).isFalse();
+    assertThat(valueC.isPresent()).isTrue();
     valueC.ifPresent(actual -> {
-      assertEquals("mock", actual.id);
-      assertEquals(true, actual.random);
+      assertThat(actual.id).isEqualTo("mock");
+      assertThat(actual.random).isEqualTo(true);
     });
 
     verify(mockOpsA).exists("testA");

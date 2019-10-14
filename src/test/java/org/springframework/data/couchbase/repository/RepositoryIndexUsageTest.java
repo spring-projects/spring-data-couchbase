@@ -1,7 +1,8 @@
 package org.springframework.data.couchbase.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.domain.Sort.Direction;
-import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -85,7 +86,7 @@ public class RepositoryIndexUsageTest {
     ArgumentCaptor<ViewQuery> queryCaptor = ArgumentCaptor.forClass(ViewQuery.class);
     verify(couchbaseOperations).findByView(queryCaptor.capture(), any(Class.class));
     String sQuery = queryCaptor.getValue().toString();
-    assertEquals(expectedQueryParams, sQuery);
+    assertThat(sQuery).isEqualTo(expectedQueryParams);
   }
 
   @Test
@@ -99,7 +100,7 @@ public class RepositoryIndexUsageTest {
     ArgumentCaptor<ViewQuery> queryCaptor = ArgumentCaptor.forClass(ViewQuery.class);
     verify(couchbaseOperations).findByView(queryCaptor.capture(), any(Class.class));
     String sQuery = queryCaptor.getValue().toString();
-    assertEquals(expectedQueryParams, sQuery);
+    assertThat(sQuery).isEqualTo(expectedQueryParams);
   }
 
   @Test
@@ -113,13 +114,13 @@ public class RepositoryIndexUsageTest {
     ArgumentCaptor<ViewQuery> queryCaptor = ArgumentCaptor.forClass(ViewQuery.class);
     verify(couchbaseOperations).queryView(queryCaptor.capture());
     String sQuery = queryCaptor.getValue().toString();
-    assertEquals(expectedQueryParams, sQuery);
+    assertThat(sQuery).isEqualTo(expectedQueryParams);
   }
 
   @Test
   public void testCountParsesAndAddsLongValuesFromRows() {
     long count = repository.count();
-    assertEquals(300L, count);
+    assertThat(count).isEqualTo(300L);
   }
 
   @Test
@@ -133,7 +134,7 @@ public class RepositoryIndexUsageTest {
     ArgumentCaptor<ViewQuery> queryCaptor = ArgumentCaptor.forClass(ViewQuery.class);
     verify(couchbaseOperations).queryView(queryCaptor.capture());
     String sQuery = queryCaptor.getValue().toString();
-    assertEquals(expectedQueryParams, sQuery);
+    assertThat(sQuery).isEqualTo(expectedQueryParams);
   }
 
   @Test
@@ -149,9 +150,11 @@ public class RepositoryIndexUsageTest {
     verify(couchbaseOperations).findByN1QL(queryCaptor.capture(), any(Class.class));
 
     JsonObject query = queryCaptor.getValue().n1ql();
-    assertEquals(CONSISTENCY.n1qlConsistency().n1ql(), query.getString("scan_consistency"));
+    assertThat(query.getString("scan_consistency"))
+			.isEqualTo(CONSISTENCY.n1qlConsistency().n1ql());
     String statement = query.getString("statement");
-    assertTrue("Expected " + expectedOrderClause + " in " + statement, statement.contains(expectedOrderClause));
+    assertThat(statement.contains(expectedOrderClause))
+			.as("Expected " + expectedOrderClause + " in " + statement).isTrue();
   }
 
   @Test
@@ -166,9 +169,11 @@ public class RepositoryIndexUsageTest {
     verify(couchbaseOperations).findByN1QL(queryCaptor.capture(), any(Class.class));
 
     JsonObject query = queryCaptor.getValue().n1ql();
-    assertEquals(CONSISTENCY.n1qlConsistency().n1ql(), query.getString("scan_consistency"));
+    assertThat(query.getString("scan_consistency"))
+			.isEqualTo(CONSISTENCY.n1qlConsistency().n1ql());
     String statement = query.getString("statement");
-    assertTrue("Expected " + expectedLimitClause + " in " + statement, statement.contains(expectedLimitClause));
+    assertThat(statement.contains(expectedLimitClause))
+			.as("Expected " + expectedLimitClause + " in " + statement).isTrue();
   }
 
   @Test

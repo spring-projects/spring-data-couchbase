@@ -1,5 +1,7 @@
 package org.springframework.data.couchbase.repository.query.support;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * Test case for the {@link AwtPointInShapeEvaluator}.
  *

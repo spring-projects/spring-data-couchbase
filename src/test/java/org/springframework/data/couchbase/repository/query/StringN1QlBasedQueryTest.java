@@ -1,6 +1,6 @@
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.eq;
@@ -33,8 +33,9 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
     .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, false);
 
-    assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.* FROM `B` where "
-        + "SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.* FROM `B`", parsed);
+    assertThat(parsed)
+			.isEqualTo("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.* FROM `B` where "
+					+ "SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS, `B`.* FROM `B`");
   }
 
   @Test
@@ -43,7 +44,7 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, false);
 
-    assertEquals("SELECT * FROM `B` WHERE `B`.test = 1", parsed);
+    assertThat(parsed).isEqualTo("SELECT * FROM `B` WHERE `B`.test = 1");
   }
 
   @Test
@@ -52,8 +53,9 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, false);
 
-    assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS FROM a where a.test = 1 and "
-        + "META(`B`).id AS _ID, META(`B`).cas AS _CAS", parsed);
+    assertThat(parsed)
+			.isEqualTo("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS FROM a where a.test = 1 and "
+					+ "META(`B`).id AS _ID, META(`B`).cas AS _CAS");
   }
 
   @Test
@@ -62,8 +64,9 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "@class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, false);
 
-    assertEquals("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS FROM a WHERE a.test = 1 AND `@class` = "
-        + "\"java.lang.String\"", parsed);
+    assertThat(parsed)
+			.isEqualTo("SELECT META(`B`).id AS _ID, META(`B`).cas AS _CAS FROM a WHERE a.test = 1 AND `@class` = "
+					+ "\"java.lang.String\"");
   }
 
   @Test
@@ -72,7 +75,8 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, true);
 
-    assertEquals("SELECT COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM `B` WHERE true", parsed);
+    assertThat(parsed)
+			.isEqualTo("SELECT COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM `B` WHERE true");
   }
 
   @Test
@@ -81,8 +85,8 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, true);
 
-    assertEquals("DELETE FROM `B` WHERE test = 1 AND `_class` = "
-            + "\"java.lang.String\"", parsed);
+    assertThat(parsed).isEqualTo("DELETE FROM `B` WHERE test = 1 AND `_class` = "
+			+ "\"java.lang.String\"");
   }
 
   @Test
@@ -91,8 +95,8 @@ public class StringN1QlBasedQueryTest {
     String parsed = new StringBasedN1qlQueryParser(statement, null, "B", this.couchbaseConverter, "_class", String.class)
             .doParse(SPEL_PARSER, SPEL_EVALUATION_CONTEXT, true);
 
-    assertEquals("DELETE FROM `B` WHERE test = 1 AND `_class` = "
-            + "\"java.lang.String\" returning `B`.*, META(`B`).id AS _ID, META(`B`).cas AS _CAS", parsed);
+    assertThat(parsed).isEqualTo("DELETE FROM `B` WHERE test = 1 AND `_class` = "
+			+ "\"java.lang.String\" returning `B`.*, META(`B`).id AS _ID, META(`B`).cas AS _CAS");
   }
 
 }

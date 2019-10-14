@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.repository.cdi;
 
-import static org.junit.Assert.*;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +34,8 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Mark Paluch
@@ -89,20 +89,20 @@ public class CdiRepositoryIntegrationTests {
 	 */
 	@Test
 	public void testCdiRepository() {
-		assertNotNull(repository);
+		assertThat(repository).isNotNull();
 		repository.deleteAll();
 
 		Person bean = new Person("key", "username");
 
 		repository.save(bean);
 
-		assertTrue(repository.existsById(bean.getId()));
+		assertThat(repository.existsById(bean.getId())).isTrue();
 
 		Optional<Person> retrieved = repository.findById(bean.getId());
-		assertTrue(retrieved.isPresent());
+		assertThat(retrieved.isPresent()).isTrue();
 		retrieved.ifPresent(actual -> {
-			assertEquals(bean.getName(), actual.getName());
-			assertEquals(bean.getId(), actual.getId());
+			assertThat(actual.getName()).isEqualTo(bean.getName());
+			assertThat(actual.getId()).isEqualTo(bean.getId());
 		});
 	}
 
@@ -111,20 +111,20 @@ public class CdiRepositoryIntegrationTests {
 	 */
 	@Test
 	public void testQualifiedCdiRepository() {
-		assertNotNull(qualifiedPersonRepository);
+		assertThat(qualifiedPersonRepository).isNotNull();
 		qualifiedPersonRepository.deleteAll();
 
 		Person bean = new Person("key", "username");
 
 		qualifiedPersonRepository.save(bean);
 
-		assertTrue(qualifiedPersonRepository.existsById(bean.getId()));
+		assertThat(qualifiedPersonRepository.existsById(bean.getId())).isTrue();
 
 		Optional<Person> retrieved = qualifiedPersonRepository.findById(bean.getId());
-		assertTrue(retrieved.isPresent());
+		assertThat(retrieved.isPresent()).isTrue();
 		retrieved.ifPresent(actual -> {
-			assertEquals(bean.getName(), actual.getName());
-			assertEquals(bean.getId(), actual.getId());
+			assertThat(actual.getName()).isEqualTo(bean.getName());
+			assertThat(actual.getId()).isEqualTo(bean.getId());
 		});
 	}
 
@@ -134,7 +134,7 @@ public class CdiRepositoryIntegrationTests {
 	@Test
 	public void testCustomRepository() {
 
-		assertEquals(2, repository.returnTwo());
+		assertThat(repository.returnTwo()).isEqualTo(2);
 	}
 
 }

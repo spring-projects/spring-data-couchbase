@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.config;
 
-import static org.junit.Assert.*;
-
 import java.util.Collection;
 
 import org.junit.Test;
@@ -34,6 +32,9 @@ import org.springframework.data.repository.config.RepositoryConfiguration;
 import org.springframework.data.repository.config.RepositoryConfigurationSource;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.data.repository.reactive.RxJava2CrudRepository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * Unit tests for {@link ReactiveCouchbaseRepositoryConfigurationExtension}.
@@ -81,7 +82,8 @@ public class ReactiveCouchbaseRepositoryConfigurationExtensionUnitTests {
 			}
 		}
 
-		fail("Expected to find config for repository interface ".concat(repositoryInterface.getName()).concat(" but got ")
+		fail("Expected to find config for repository interface "
+				.concat(repositoryInterface.getName()).concat(" but got ")
 				.concat(configs.toString()));
 	}
 
@@ -90,7 +92,8 @@ public class ReactiveCouchbaseRepositoryConfigurationExtensionUnitTests {
 
 		for (RepositoryConfiguration<?> config : configs) {
 			if (config.getRepositoryInterface().equals(repositoryInterface.getName())) {
-				fail("Expected not to find config for repository interface ".concat(repositoryInterface.getName()));
+				fail("Expected not to find config for repository interface "
+						.concat(repositoryInterface.getName()));
 			}
 		}
 	}

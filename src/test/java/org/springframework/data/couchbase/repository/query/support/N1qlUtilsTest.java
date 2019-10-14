@@ -1,7 +1,7 @@
 package org.springframework.data.couchbase.repository.query.support;
 
 import static com.couchbase.client.java.query.dsl.Expression.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import org.junit.Ignore;
@@ -26,7 +26,7 @@ public class N1qlUtilsTest {
 
     String real = N1qlUtils.escapedBucket(bucketName).toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -34,7 +34,7 @@ public class N1qlUtilsTest {
     String expected = "SELECT META(`b`).id AS _ID, META(`b`).cas AS _CAS, `b`.*";
     String real = N1qlUtils.createSelectClauseForEntity("b").toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -42,7 +42,7 @@ public class N1qlUtilsTest {
     String expected = "SELECT META(`b`).id AS _ID, META(`b`).cas AS _CAS, `b`.* FROM `b`";
     String real = N1qlUtils.createSelectFromForEntity("b").toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -55,7 +55,7 @@ public class N1qlUtilsTest {
 
     String real = N1qlUtils.createWhereFilterForEntity(null, converter, metadata).toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class N1qlUtilsTest {
 
     String real = N1qlUtils.createWhereFilterForEntity(null, converter, metadata).toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -95,9 +95,13 @@ public class N1qlUtilsTest {
     com.couchbase.client.java.query.dsl.Sort[] realSort =
         N1qlUtils.createSort(Sort.by("description", "attendees"), converter);
 
-    assertEquals(2, realSort.length);
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`description`").toString(), realSort[0].toString());
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`").toString(), realSort[1].toString());
+    assertThat(realSort.length).isEqualTo(2);
+    assertThat(realSort[0].toString())
+			.isEqualTo(com.couchbase.client.java.query.dsl.Sort.asc("`description`")
+					.toString());
+    assertThat(realSort[1].toString())
+			.isEqualTo(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`")
+					.toString());
 
     verifyZeroInteractions(converter);
   }
@@ -108,9 +112,12 @@ public class N1qlUtilsTest {
     Sort sortDescription = Sort.by(Order.asc("description").ignoreCase(), Order.asc("attendees"));
     com.couchbase.client.java.query.dsl.Sort[] realSort = N1qlUtils.createSort(sortDescription, converter);
 
-    assertEquals(2, realSort.length);
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("LOWER(TOSTRING(`description`))").toString(), realSort[0].toString());
-    assertEquals(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`").toString(), realSort[1].toString());
+    assertThat(realSort.length).isEqualTo(2);
+    assertThat(realSort[0].toString()).isEqualTo(com.couchbase.client.java.query.dsl.Sort
+			.asc("LOWER(TOSTRING(`description`))").toString());
+    assertThat(realSort[1].toString())
+			.isEqualTo(com.couchbase.client.java.query.dsl.Sort.asc("`attendees`")
+					.toString());
 
     verifyZeroInteractions(converter);
   }
@@ -127,8 +134,8 @@ public class N1qlUtilsTest {
     String real = N1qlUtils.createCountQueryForEntity("b", converter, entityInformation).toString();
     String realWithTypeKey = N1qlUtils.createCountQueryForEntity("b", converter, entityInformation).toString();
 
-    assertEquals(expectedDefault, real);
-    assertEquals(expectedTypeKey, realWithTypeKey);
+    assertThat(real).isEqualTo(expectedDefault);
+    assertThat(realWithTypeKey).isEqualTo(expectedTypeKey);
   }
 
   @Test
@@ -143,7 +150,7 @@ public class N1qlUtilsTest {
             x("field1").gte(30).or(x("field2").eq(s("foo"))),
             converter, metadata).toString();
 
-    assertEquals(expected, real);
+    assertThat(real).isEqualTo(expected);
   }
 
   @Test
@@ -152,7 +159,7 @@ public class N1qlUtilsTest {
     com.couchbase.client.java.query.dsl.Sort[] realSort =
             N1qlUtils.createSort(Sort.by("party.attendees"), converter);
 
-    assertEquals("`party`.`attendees` ASC", realSort[0].toString());
+    assertThat(realSort[0].toString()).isEqualTo("`party`.`attendees` ASC");
     verifyZeroInteractions(converter);
   }
 }

@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import static org.junit.Assert.*;
-
 import java.util.Map;
 
 import com.couchbase.client.java.Bucket;
@@ -33,6 +31,8 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestCustomTypeKeyConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.test.context.ContextConfiguration;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests the Java Config template around type key modification (DATACOUCH-134)
@@ -63,15 +63,16 @@ public class TypeKeyIntegrationTests {
 
     template.save(beer);
     RawJsonDocument resultDoc = client.get(id, RawJsonDocument.class);
-    assertNotNull(resultDoc);
+    assertThat(resultDoc).isNotNull();
     String result = resultDoc.content();
-    assertNotNull(result);
+    assertThat(result).isNotNull();
     Map<String, Object> resultConv = MAPPER.readValue(result, new TypeReference<Map<String, Object>>() {});
 
-    assertNull(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT));
-    assertNotNull(resultConv.get("javaClass"));
-    assertEquals("org.springframework.data.couchbase.core.Beer", resultConv.get("javaClass"));
-    assertEquals(false, resultConv.get("is_active"));
-    assertEquals("The Awesome Stout", resultConv.get("name"));
+    assertThat(resultConv.get(MappingCouchbaseConverter.TYPEKEY_DEFAULT)).isNull();
+    assertThat(resultConv.get("javaClass")).isNotNull();
+    assertThat(resultConv.get("javaClass"))
+			.isEqualTo("org.springframework.data.couchbase.core.Beer");
+    assertThat(resultConv.get("is_active")).isEqualTo(false);
+    assertThat(resultConv.get("name")).isEqualTo("The Awesome Stout");
   }
 }

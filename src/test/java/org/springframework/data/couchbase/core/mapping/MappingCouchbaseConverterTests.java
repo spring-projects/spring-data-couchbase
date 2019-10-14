@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.junit.Assert.*;
-
 import java.math.BigDecimal;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -53,6 +51,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.couchbase.client.java.repository.annotation.Field;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Offset.offset;
+
 /**
  * @author Michael Nitschinger
  * @author Geoffrey Mina
@@ -70,8 +71,8 @@ public class MappingCouchbaseConverterTests {
   public void shouldNotThrowNPE() {
     CouchbaseDocument converted = new CouchbaseDocument();
     converter.write(null, converted);
-    assertNull(converted.getId());
-    assertEquals(0, converted.getExpiration());
+    assertThat(converted.getId()).isNull();
+    assertThat(converted.getExpiration()).isEqualTo(0);
   }
 
   @Test(expected = MappingException.class)
@@ -102,9 +103,9 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals("foobar", result.get("attr0"));
-    assertEquals(BaseEntity.ID, converted.getId());
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("attr0")).isEqualTo("foobar");
+    assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
   }
 
   @Test
@@ -114,7 +115,7 @@ public class MappingCouchbaseConverterTests {
     source.put("attr0", "foobar");
 
     StringEntity converted = converter.read(StringEntity.class, source);
-    assertEquals("foobar", converted.attr0);
+    assertThat(converted.attr0).isEqualTo("foobar");
   }
 
   @Test
@@ -124,9 +125,9 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals(42L, result.get("attr0"));
-    assertEquals(BaseEntity.ID, converted.getId());
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("attr0")).isEqualTo(42L);
+    assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
   }
 
   @Test
@@ -136,7 +137,7 @@ public class MappingCouchbaseConverterTests {
     source.put("attr0", 42);
 
     NumberEntity converted = converter.read(NumberEntity.class, source);
-    assertEquals(42, converted.attr0);
+    assertThat(converted.attr0).isEqualTo(42);
   }
 
   @Test
@@ -146,9 +147,9 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals(true, result.get("attr0"));
-    assertEquals("mockid", converted.getId());
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("attr0")).isEqualTo(true);
+    assertThat(converted.getId()).isEqualTo("mockid");
   }
 
   @Test
@@ -158,7 +159,7 @@ public class MappingCouchbaseConverterTests {
     source.put("attr0", true);
 
     BooleanEntity converted = converter.read(BooleanEntity.class, source);
-    assertTrue(converted.attr0);
+    assertThat(converted.attr0).isTrue();
   }
 
   @Test
@@ -168,11 +169,11 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals("a", result.get("attr0"));
-    assertEquals(5, result.get("attr1"));
-    assertEquals(-0.3, result.get("attr2"));
-    assertEquals(true, result.get("attr3"));
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("attr0")).isEqualTo("a");
+    assertThat(result.get("attr1")).isEqualTo(5);
+    assertThat(result.get("attr2")).isEqualTo(-0.3);
+    assertThat(result.get("attr3")).isEqualTo(true);
   }
 
   @Test
@@ -185,10 +186,10 @@ public class MappingCouchbaseConverterTests {
     source.put("attr3", true);
 
     MixedSimpleEntity converted = converter.read(MixedSimpleEntity.class, source);
-    assertEquals("a", converted.attr0);
-    assertEquals(5, converted.attr1);
-    assertEquals(-0.3, converted.attr2, 0);
-    assertTrue(converted.attr3);
+    assertThat(converted.attr0).isEqualTo("a");
+    assertThat(converted.attr1).isEqualTo(5);
+    assertThat(converted.attr2).isCloseTo(-0.3, offset(0.0));
+    assertThat(converted.attr3).isTrue();
   }
 
   @Test
@@ -198,7 +199,7 @@ public class MappingCouchbaseConverterTests {
     BasicCouchbasePersistentPropertyTests.Beer beer = converter.read(BasicCouchbasePersistentPropertyTests.Beer.class,
         document);
 
-    assertEquals("001", beer.getId());
+    assertThat(beer.getId()).isEqualTo("001");
   }
 
   @Test
@@ -208,8 +209,8 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals(0, result.get("attr1"));
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("attr1")).isEqualTo(0);
   }
 
   @Test
@@ -219,9 +220,9 @@ public class MappingCouchbaseConverterTests {
     source.put("attr1", 0);
 
     UninitializedEntity converted = converter.read(UninitializedEntity.class, source);
-    assertNull(converted.attr0);
-    assertEquals(0, converted.attr1);
-    assertNull(converted.attr2);
+    assertThat(converted.attr0).isNull();
+    assertThat(converted.attr1).isEqualTo(0);
+    assertThat(converted.attr2).isNull();
   }
 
   @Test
@@ -242,10 +243,10 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(attr0, result.get("attr0"));
-    assertEquals(attr1, result.get("attr1"));
-    assertEquals(attr2, result.get("attr2"));
-    assertEquals(attr3, result.get("attr3"));
+    assertThat(result.get("attr0")).isEqualTo(attr0);
+    assertThat(result.get("attr1")).isEqualTo(attr1);
+    assertThat(result.get("attr2")).isEqualTo(attr2);
+    assertThat(result.get("attr3")).isEqualTo(attr3);
 
     CouchbaseDocument cattr0 = new CouchbaseDocument();
     cattr0.put("foo", "bar");
@@ -266,10 +267,10 @@ public class MappingCouchbaseConverterTests {
     source.put("attr3", cattr3);
 
     MapEntity readConverted = converter.read(MapEntity.class, source);
-    assertEquals(attr0, readConverted.attr0);
-    assertEquals(attr1, readConverted.attr1);
-    assertEquals(attr2, readConverted.attr2);
-    assertEquals(attr3, readConverted.attr3);
+    assertThat(readConverted.attr0).isEqualTo(attr0);
+    assertThat(readConverted.attr1).isEqualTo(attr1);
+    assertThat(readConverted.attr2).isEqualTo(attr2);
+    assertThat(readConverted.attr3).isEqualTo(attr3);
   }
 
   @Test
@@ -287,9 +288,9 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(attr0, result.get("attr0"));
-    assertEquals(attr1, result.get("attr1"));
-    assertEquals(attr2, result.get("attr2"));
+    assertThat(result.get("attr0")).isEqualTo(attr0);
+    assertThat(result.get("attr1")).isEqualTo(attr1);
+    assertThat(result.get("attr2")).isEqualTo(attr2);
 
     CouchbaseDocument source = new CouchbaseDocument();
     source.put("_class", ListEntity.class.getName());
@@ -304,10 +305,10 @@ public class MappingCouchbaseConverterTests {
     source.put("attr2", cattr2);
 
     ListEntity readConverted = converter.read(ListEntity.class, source);
-    assertEquals(2, readConverted.attr0.size());
-    assertEquals(0, readConverted.attr1.size());
-    assertEquals(1, readConverted.attr2.size());
-    assertEquals(2, readConverted.attr2.get(0).size());
+    assertThat(readConverted.attr0.size()).isEqualTo(2);
+    assertThat(readConverted.attr1.size()).isEqualTo(0);
+    assertThat(readConverted.attr2.size()).isEqualTo(1);
+    assertThat(readConverted.attr2.get(0).size()).isEqualTo(2);
   }
 
   @Test
@@ -325,9 +326,9 @@ public class MappingCouchbaseConverterTests {
 
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
-    assertEquals(attr0.size(), ((Collection) result.get("attr0")).size());
-    assertEquals(attr1.size(), ((Collection) result.get("attr1")).size());
-    assertEquals(attr2.size(), ((Collection) result.get("attr2")).size());
+    assertThat(((Collection) result.get("attr0")).size()).isEqualTo(attr0.size());
+    assertThat(((Collection) result.get("attr1")).size()).isEqualTo(attr1.size());
+    assertThat(((Collection) result.get("attr2")).size()).isEqualTo(attr2.size());
 
     CouchbaseList cattr0 = new CouchbaseList();
     cattr0.put("foo");
@@ -345,9 +346,9 @@ public class MappingCouchbaseConverterTests {
     source.put("attr2", cattr2);
 
     SetEntity readConverted = converter.read(SetEntity.class, source);
-    assertEquals(attr0, readConverted.attr0);
-    assertEquals(attr1, readConverted.attr1);
-    assertEquals(attr2, readConverted.attr2);
+    assertThat(readConverted.attr0).isEqualTo(attr0);
+    assertThat(readConverted.attr1).isEqualTo(attr1);
+    assertThat(readConverted.attr2).isEqualTo(attr2);
   }
 
   @Test
@@ -363,10 +364,10 @@ public class MappingCouchbaseConverterTests {
     converter.write(entity, converted);
     Map<String, Object> result = converted.export();
 
-    assertEquals(entity.getClass().getName(), result.get("_class"));
-    assertEquals(new HashMap<String, Object>() {{
-      put("emailAddr", email);
-    }}, result.get("email"));
+    assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+    assertThat(result.get("email")).isEqualTo(new HashMap<String, Object>() {{
+		put("emailAddr", email);
+	}});
 
     CouchbaseDocument source = new CouchbaseDocument();
     source.put("_class", ValueEntity.class.getName());
@@ -378,9 +379,9 @@ public class MappingCouchbaseConverterTests {
     source.put("listOfEmails", listOfEmailsDoc);
 
     ValueEntity readConverted = converter.read(ValueEntity.class, source);
-    assertEquals(addy.emailAddr, readConverted.email.emailAddr);
-    assertEquals(listOfEmails.get(0).emailAddr,
-        readConverted.listOfEmails.get(0).emailAddr);
+    assertThat(readConverted.email.emailAddr).isEqualTo(addy.emailAddr);
+    assertThat(readConverted.listOfEmails.get(0).emailAddr)
+			.isEqualTo(listOfEmails.get(0).emailAddr);
   }
 
   @Test
@@ -419,16 +420,20 @@ public class MappingCouchbaseConverterTests {
     mapOfValuesDoc.put("val2", value2Str);
     source.put("mapOfValues", mapOfValuesDoc);
 
-    assertEquals(((CouchbaseList)converted.getPayload().get("listOfValues")).get(0), valueStr);
-    assertEquals(((CouchbaseList)converted.getPayload().get("listOfValues")).get(1), value2Str);
-    assertEquals(source.export().toString(), converted.export().toString());
+    assertThat(valueStr)
+			.isEqualTo(((CouchbaseList) converted.getPayload().get("listOfValues"))
+					.get(0));
+    assertThat(value2Str)
+			.isEqualTo(((CouchbaseList) converted.getPayload().get("listOfValues"))
+					.get(1));
+    assertThat(converted.export().toString()).isEqualTo(source.export().toString());
 
     CustomEntity readConverted = converter.read(CustomEntity.class, source);
-    assertEquals(value, readConverted.value);
-    assertEquals(listOfValues.get(0), readConverted.listOfValues.get(0));
-    assertEquals(listOfValues.get(1), readConverted.listOfValues.get(1));
-    assertEquals(mapOfValues.get("val1"), readConverted.mapOfValues.get("val1"));
-    assertEquals(mapOfValues.get("val2"), readConverted.mapOfValues.get("val2"));
+    assertThat(readConverted.value).isEqualTo(value);
+    assertThat(readConverted.listOfValues.get(0)).isEqualTo(listOfValues.get(0));
+    assertThat(readConverted.listOfValues.get(1)).isEqualTo(listOfValues.get(1));
+    assertThat(readConverted.mapOfValues.get("val1")).isEqualTo(mapOfValues.get("val1"));
+    assertThat(readConverted.mapOfValues.get("val2")).isEqualTo(mapOfValues.get("val2"));
   }
 
   @Test
@@ -465,13 +470,16 @@ public class MappingCouchbaseConverterTests {
     mapOfObjectsDoc.put("obj0", objectDoc);
     mapOfObjectsDoc.put("obj1", objectDoc);
     source.put("mapOfObjects", mapOfObjectsDoc);
-    assertEquals(source.export().toString(), converted.export().toString());
+    assertThat(converted.export().toString()).isEqualTo(source.export().toString());
 
     CustomObjectEntity readConverted = converter.read(CustomObjectEntity.class, source);
-    assertEquals(addy.weight, readConverted.object.weight);
-    assertEquals(listOfObjects.get(0).weight, readConverted.listOfObjects.get(0).weight);
-    assertEquals(mapOfObjects.get("obj0").weight, readConverted.mapOfObjects.get("obj0").weight);
-    assertEquals(mapOfObjects.get("obj1").weight, readConverted.mapOfObjects.get("obj1").weight);
+    assertThat(readConverted.object.weight).isEqualTo(addy.weight);
+    assertThat(readConverted.listOfObjects.get(0).weight)
+			.isEqualTo(listOfObjects.get(0).weight);
+    assertThat(readConverted.mapOfObjects.get("obj0").weight)
+			.isEqualTo(mapOfObjects.get("obj0").weight);
+    assertThat(readConverted.mapOfObjects.get("obj1").weight)
+			.isEqualTo(mapOfObjects.get("obj1").weight);
   }
 
   @Test
@@ -483,15 +491,19 @@ public class MappingCouchbaseConverterTests {
 
     CouchbaseDocument converted = new CouchbaseDocument();
     converter.write(entity, converted);
-    assertEquals(created.getTime(), converted.getPayload().get("created"));
-    assertEquals(modified.getTimeInMillis() / 1000, converted.getPayload().get("modified"));
+    assertThat(converted.getPayload().get("created")).isEqualTo(created.getTime());
+    assertThat(converted.getPayload().get("modified"))
+			.isEqualTo(modified.getTimeInMillis() / 1000);
     LocalDateTimeToLongConverter localDateTimeToDateconverter = LocalDateTimeToLongConverter.INSTANCE;
-    assertEquals(localDateTimeToDateconverter.convert(deleted), converted.getPayload().get("deleted"));
+    assertThat(converted.getPayload().get("deleted"))
+			.isEqualTo(localDateTimeToDateconverter.convert(deleted));
 
     DateEntity read = converter.read(DateEntity.class, converted);
-    assertEquals(created.getTime(), read.created.getTime());
-    assertEquals(modified.getTimeInMillis() / 1000, read.modified.getTimeInMillis() / 1000);
-    assertEquals(deleted.truncatedTo(ChronoUnit.MILLIS), read.deleted.truncatedTo(ChronoUnit.MILLIS));
+    assertThat(read.created.getTime()).isEqualTo(created.getTime());
+    assertThat(read.modified.getTimeInMillis() / 1000)
+			.isEqualTo(modified.getTimeInMillis() / 1000);
+    assertThat(read.deleted.truncatedTo(ChronoUnit.MILLIS))
+			.isEqualTo(deleted.truncatedTo(ChronoUnit.MILLIS));
   }
 
   @Test
@@ -500,7 +512,7 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     converter.write(entity, converted);
 
-    assertEquals("realId", converted.getId());
+    assertThat(converted.getId()).isEqualTo("realId");
   }
 
   @Test
@@ -509,7 +521,7 @@ public class MappingCouchbaseConverterTests {
     CouchbaseDocument converted = new CouchbaseDocument();
     converter.write(entity, converted);
 
-    assertEquals("springId", converted.getId());
+    assertThat(converted.getId()).isEqualTo("springId");
   }
 
   @Test
@@ -521,9 +533,9 @@ public class MappingCouchbaseConverterTests {
       converter.setEnableStrictFieldChecking(true);
       converter.write(entity,converted);
 
-      assertTrue(converted.getId() != null);
-      assertTrue(converted.getPayload().containsKey("annotatedField"));
-      assertFalse(converted.getPayload().containsKey("nonAnnotatedField"));
+      assertThat(converted.getId() != null).isTrue();
+      assertThat(converted.getPayload().containsKey("annotatedField")).isTrue();
+      assertThat(converted.getPayload().containsKey("nonAnnotatedField")).isFalse();
     } finally {
       converter.setEnableStrictFieldChecking(false);
     }
@@ -538,9 +550,9 @@ public class MappingCouchbaseConverterTests {
       converter.setEnableStrictFieldChecking(false);
       converter.write(entity,converted);
 
-      assertTrue(converted.getId() != null);
-      assertTrue(converted.getPayload().containsKey("annotatedField"));
-      assertTrue(converted.getPayload().containsKey("nonAnnotatedField"));
+      assertThat(converted.getId() != null).isTrue();
+      assertThat(converted.getPayload().containsKey("annotatedField")).isTrue();
+      assertThat(converted.getPayload().containsKey("nonAnnotatedField")).isTrue();
     } finally {
       converter.setEnableStrictFieldChecking(false);
     }

@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.repository.index;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
@@ -86,7 +87,7 @@ public class IndexedRepositoryIntegrationTests {
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"`");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
-    assertTrue(exist.finalSuccess());
+    assertThat(exist.finalSuccess()).isTrue();
   }
 
   @Test
@@ -97,7 +98,7 @@ public class IndexedRepositoryIntegrationTests {
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  SECONDARY +")");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
-    assertTrue(exist.finalSuccess());
+    assertThat(exist.finalSuccess()).isTrue();
   }
 
   @Test
@@ -113,7 +114,7 @@ public class IndexedRepositoryIntegrationTests {
 
     }
 
-    assertNotNull(designDoc);
+    assertThat(designDoc).isNotNull();
     for (View view : designDoc.views()) {
       if (view.name().equals(VIEW_NAME)) return;
     }
@@ -127,7 +128,7 @@ public class IndexedRepositoryIntegrationTests {
     N1qlQuery existQuery = N1qlQuery.simple("SELECT 1 FROM `"+ bucket +"` USE INDEX (" +  IGNORED_SECONDARY +")");
     N1qlQueryResult exist = template.queryN1QL(existQuery);
 
-    assertFalse(exist.finalSuccess());
+    assertThat(exist.finalSuccess()).isFalse();
   }
 
   @Test
@@ -161,7 +162,7 @@ public class IndexedRepositoryIntegrationTests {
         .bucketManager()
         .getDesignDocument("foo");
 
-    assertNotNull(designDoc);
+    assertThat(designDoc).isNotNull();
     boolean foundView = false;
     for (View view : designDoc.views()) {
       if (view.name().equals("all")) {
@@ -169,7 +170,8 @@ public class IndexedRepositoryIntegrationTests {
         break;
       }
     }
-    assertTrue("Expected to find view \"all\" on design document \"foo\"", foundView);
+    assertThat(foundView).as("Expected to find view \"all\" on design document \"foo\"")
+			.isTrue();
 
     repository.save(foo1);
     repository.save(foo2);
@@ -178,11 +180,11 @@ public class IndexedRepositoryIntegrationTests {
     for (Object o : repository.findAllById(Arrays.asList("foo1", "foo2"))) {
       count++;
     }
-    assertEquals(2L, count);
+    assertThat(count).isEqualTo(2L);
     count = 0;
     for (Object o : repository.findAllById(Arrays.asList("foo1", "foo3"))) {
       count++;
     }
-    assertEquals(1L, count);
+    assertThat(count).isEqualTo(1L);
   }
 }

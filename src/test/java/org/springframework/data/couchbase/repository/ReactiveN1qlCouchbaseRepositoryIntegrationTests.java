@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Calendar;
@@ -85,10 +85,11 @@ public class ReactiveN1qlCouchbaseRepositoryIntegrationTests {
 		Iterable<Party> allByAttendanceDesc = repository.findAll(Sort.by(Sort.Direction.DESC, "attendees")).collectList().block();
 		long previousAttendance = Long.MAX_VALUE;
 		for (Party party : allByAttendanceDesc) {
-			assertTrue(party.getAttendees() <= previousAttendance);
+			assertThat(party.getAttendees() <= previousAttendance).isTrue();
 			previousAttendance = party.getAttendees();
 		}
-		assertFalse("Expected to find several parties", previousAttendance == Long.MAX_VALUE);
+		assertThat(previousAttendance == Long.MAX_VALUE)
+				.as("Expected to find several parties").isFalse();
 	}
 
 	@Test
@@ -97,11 +98,11 @@ public class ReactiveN1qlCouchbaseRepositoryIntegrationTests {
 		String previousDesc = null;
 		for (Party party : parties) {
 			if (previousDesc != null) {
-				assertTrue(party.getDescription().compareTo(previousDesc) <= 0);
+				assertThat(party.getDescription().compareTo(previousDesc) <= 0).isTrue();
 			}
 			previousDesc = party.getDescription();
 		}
-		assertNotNull("Expected to find several parties", previousDesc);
+		assertThat(previousDesc).as("Expected to find several parties").isNotNull();
 	}
 
 	@Test
@@ -110,23 +111,27 @@ public class ReactiveN1qlCouchbaseRepositoryIntegrationTests {
 		String previousDesc = null;
 		for(Party party : parties) {
 			if (previousDesc != null) {
-				assertTrue(party.getDescription().compareToIgnoreCase(previousDesc) <= 0);
+				assertThat(party.getDescription().compareToIgnoreCase(previousDesc) <= 0)
+						.isTrue();
 			}
 			previousDesc = party.getDescription();
 		}
-		assertNotNull("Expected to find several parties", previousDesc);
+		assertThat(previousDesc).as("Expected to find several parties").isNotNull();
 	}
 
     @Test
     public void testCustomSpelCountQuery() {
         long count = partyRepository.countCustom().block();
-        assertTrue("Count query for parties should be atleast 12", count >= 12);
+        assertThat(count >= 12).as("Count query for parties should be atleast 12")
+				.isTrue();
     }
 
     @Test
     public void testPartTreeQuery() {
         long count = partyRepository.countAllByDescriptionNotNull().block();
-        assertTrue("Count query for parties with description not null should be atleast 12", count >= 12);
+        assertThat(count >= 12)
+				.as("Count query for parties with description not null should be atleast 12")
+				.isTrue();
     }
 
 	@Test
@@ -138,8 +143,8 @@ public class ReactiveN1qlCouchbaseRepositoryIntegrationTests {
 		Date date = cal.getTime();
 		partyRepository.save(new Party(key, "", "", date, 0, null)).block();
 		List<Party> partyList = partyRepository.getByEventDate(date).collectList().block();
-		assertTrue(partyList.size() == 1);
-		assertEquals("Key mismatch", partyList.get(0).getKey(), key);
+		assertThat(partyList.size() == 1).isTrue();
+		assertThat(key).as("Key mismatch").isEqualTo(partyList.get(0).getKey());
 	}
 
     @Test
@@ -147,6 +152,6 @@ public class ReactiveN1qlCouchbaseRepositoryIntegrationTests {
         partyRepository.save(new Party("testReactiveN1qlQueryWithInvalidValue", "", "testReactiveN1qlQueryWithInvalidValue", null, 0, null));
         final String description = "testReactiveN1qlQueryWithInvalidValue* OR `description` LIKE \"\"";
         List<Party> partyList = partyRepository.findByDescriptionStartingWith(description).collectList().block();
-        assertTrue(partyList.size() == 0);
+        assertThat(partyList.size() == 0).isTrue();
     }
 }

@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,6 +29,8 @@ import com.couchbase.client.core.retry.BestEffortRetryStrategy;
 import com.couchbase.client.core.retry.FailFastRetryStrategy;
 import com.couchbase.client.java.env.CouchbaseEnvironment;
 import com.couchbase.client.java.env.DefaultCouchbaseEnvironment;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CouchbaseEnvironmentParserTest {
 
@@ -50,14 +49,14 @@ public class CouchbaseEnvironmentParserTest {
   public void testParsingRetryStrategyFailFast() throws Exception {
     CouchbaseEnvironment env = context.getBean("envWithFailFast", CouchbaseEnvironment.class);
 
-    assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
+    assertThat(env.retryStrategy()).isInstanceOf(FailFastRetryStrategy.class);
   }
 
   @Test
   public void testParsingRetryStrategyBestEffort() throws Exception {
     CouchbaseEnvironment env = context.getBean("envWithBestEffort", CouchbaseEnvironment.class);
 
-    assertThat(env.retryStrategy(), is(instanceOf(BestEffortRetryStrategy.class)));
+    assertThat(env.retryStrategy()).isInstanceOf(BestEffortRetryStrategy.class);
   }
 
   @Test
@@ -65,47 +64,55 @@ public class CouchbaseEnvironmentParserTest {
     CouchbaseEnvironment env = context.getBean("envWithNoDefault", CouchbaseEnvironment.class);
     CouchbaseEnvironment defaultEnv = DefaultCouchbaseEnvironment.create();
 
-    assertThat(env, is(instanceOf(DefaultCouchbaseEnvironment.class)));
+    assertThat(env).isInstanceOf(DefaultCouchbaseEnvironment.class);
 
-    assertThat(env.managementTimeout(), is(equalTo(1L)));
-    assertThat(env.queryTimeout(), is(equalTo(2L)));
-    assertThat(env.viewTimeout(), is(equalTo(3L)));
-    assertThat(env.kvTimeout(), is(equalTo(4L)));
-    assertThat(env.connectTimeout(), is(equalTo(5L)));
-    assertThat(env.disconnectTimeout(), is(equalTo(6L)));
-    assertThat(env.dnsSrvEnabled(), allOf(equalTo(true), not(defaultEnv.dnsSrvEnabled())));
+    assertThat(env.managementTimeout()).isEqualTo(1L);
+    assertThat(env.queryTimeout()).isEqualTo(2L);
+    assertThat(env.viewTimeout()).isEqualTo(3L);
+    assertThat(env.kvTimeout()).isEqualTo(4L);
+    assertThat(env.connectTimeout()).isEqualTo(5L);
+    assertThat(env.disconnectTimeout()).isEqualTo(6L);
+    assertThat(env.dnsSrvEnabled()).isTrue().isNotEqualTo(defaultEnv.dnsSrvEnabled());
 
-    assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
-    assertThat(env.sslKeystoreFile(), is(equalTo("test")));
-    assertThat(env.sslKeystorePassword(), is(equalTo("test")));
-    assertThat(env.bootstrapHttpEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapHttpEnabled())));
-    assertThat(env.bootstrapCarrierEnabled(), allOf(equalTo(false), not(defaultEnv.bootstrapCarrierEnabled())));
-    assertThat(env.bootstrapHttpDirectPort(), is(equalTo(8)));
-    assertThat(env.bootstrapHttpSslPort(), is(equalTo(9)));
-    assertThat(env.bootstrapCarrierDirectPort(), is(equalTo(10)));
-    assertThat(env.bootstrapCarrierSslPort(), is(equalTo(11)));
-    assertThat(env.ioPoolSize(), is(equalTo(12)));
-    assertThat(env.computationPoolSize(), is(equalTo(13)));
-    assertThat(env.responseBufferSize(), is(equalTo(14)));
-    assertThat(env.requestBufferSize(), is(equalTo(15)));
-    assertThat(env.kvEndpoints(), is(equalTo(16)));
-    assertThat(env.viewEndpoints(), is(equalTo(17)));
-    assertThat(env.queryEndpoints(), is(equalTo(18)));
-    assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
-    assertThat(env.maxRequestLifetime(), is(equalTo(19L)));
-    assertThat(env.keepAliveInterval(), is(equalTo(20L)));
-    assertThat(env.autoreleaseAfter(), is(equalTo(21L)));
-    assertThat(env.bufferPoolingEnabled(), allOf(equalTo(false), not(defaultEnv.bufferPoolingEnabled())));
-    assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
-    assertThat(env.mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.mutationTokensEnabled())));
-    assertThat(env.analyticsTimeout(), is(equalTo(30L)));
-    assertThat(env.configPollInterval(), is(equalTo(50L)));
-    assertThat(env.configPollFloorInterval(), is(equalTo(30L)));
-    assertThat(env.operationTracingEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingEnabled())));
-    assertThat(env.operationTracingServerDurationEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingServerDurationEnabled())));
-    assertThat(env.orphanResponseReportingEnabled(), allOf(equalTo(false), not(defaultEnv.orphanResponseReportingEnabled())));
-    assertThat(env.compressionMinSize(), is(equalTo(100)));
-    assertThat(env.compressionMinRatio(), is(equalTo(0.90)));
+    assertThat(env.sslEnabled()).isTrue().isNotEqualTo(defaultEnv.sslEnabled());
+    assertThat(env.sslKeystoreFile()).isEqualTo("test");
+    assertThat(env.sslKeystorePassword()).isEqualTo("test");
+    assertThat(env.bootstrapHttpEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.bootstrapHttpEnabled());
+    assertThat(env.bootstrapCarrierEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.bootstrapCarrierEnabled());
+    assertThat(env.bootstrapHttpDirectPort()).isEqualTo(8);
+    assertThat(env.bootstrapHttpSslPort()).isEqualTo(9);
+    assertThat(env.bootstrapCarrierDirectPort()).isEqualTo(10);
+    assertThat(env.bootstrapCarrierSslPort()).isEqualTo(11);
+    assertThat(env.ioPoolSize()).isEqualTo(12);
+    assertThat(env.computationPoolSize()).isEqualTo(13);
+    assertThat(env.responseBufferSize()).isEqualTo(14);
+    assertThat(env.requestBufferSize()).isEqualTo(15);
+    assertThat(env.kvEndpoints()).isEqualTo(16);
+    assertThat(env.viewEndpoints()).isEqualTo(17);
+    assertThat(env.queryEndpoints()).isEqualTo(18);
+    assertThat(env.retryStrategy()).isInstanceOf(FailFastRetryStrategy.class);
+    assertThat(env.maxRequestLifetime()).isEqualTo(19L);
+    assertThat(env.keepAliveInterval()).isEqualTo(20L);
+    assertThat(env.autoreleaseAfter()).isEqualTo(21L);
+    assertThat(env.bufferPoolingEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.bufferPoolingEnabled());
+    assertThat(env.tcpNodelayEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.tcpNodelayEnabled());
+    assertThat(env.mutationTokensEnabled()).isTrue()
+			.isNotEqualTo(defaultEnv.mutationTokensEnabled());
+    assertThat(env.analyticsTimeout()).isEqualTo(30L);
+    assertThat(env.configPollInterval()).isEqualTo(50L);
+    assertThat(env.configPollFloorInterval()).isEqualTo(30L);
+    assertThat(env.operationTracingEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.operationTracingEnabled());
+    assertThat(env.operationTracingServerDurationEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.operationTracingServerDurationEnabled());
+    assertThat(env.orphanResponseReportingEnabled()).isFalse()
+			.isNotEqualTo(defaultEnv.orphanResponseReportingEnabled());
+    assertThat(env.compressionMinSize()).isEqualTo(100);
+    assertThat(env.compressionMinRatio()).isEqualTo(0.90);
   }
 
   @AfterClass

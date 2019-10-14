@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.springframework.data.couchbase.CouchbaseTestHelper.getRepositoryWithRetry;
 
 import java.util.Arrays;
@@ -99,18 +100,18 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     repository.save(instance);
 
     Optional<User> found = repository.findById(key);
-    assertTrue(found.isPresent());
+    assertThat(found.isPresent()).isTrue();
 
     found.ifPresent(actual -> {
-      assertEquals(instance.getKey(), actual.getKey());
-      assertEquals(instance.getUsername(), actual.getUsername());
+      assertThat(actual.getKey()).isEqualTo(instance.getKey());
+      assertThat(actual.getUsername()).isEqualTo(instance.getUsername());
 
-      assertTrue(repository.existsById(key));
+      assertThat(repository.existsById(key)).isTrue();
       repository.delete(actual);
     });
 
-    assertFalse(repository.findById(key).isPresent());
-    assertFalse(repository.existsById(key));
+    assertThat(repository.findById(key).isPresent()).isFalse();
+    assertThat(repository.existsById(key)).isFalse();
   }
 
   @Test
@@ -125,10 +126,10 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     int size = 0;
     for (User u : allUsers) {
       size++;
-      assertNotNull(u.getKey());
-      assertNotNull(u.getUsername());
+      assertThat(u.getKey()).isNotNull();
+      assertThat(u.getUsername()).isNotNull();
     }
-    assertEquals(100, size);
+    assertThat(size).isEqualTo(100);
   }
 
   @Test
@@ -136,7 +137,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     // do a non-stale query to populate data for testing.
     client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));
 
-    assertEquals(100, repository.count());
+    assertThat(repository.count()).isEqualTo(100);
   }
 
   @Test
@@ -147,18 +148,18 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     int size = 0;
     for (User u : users) {
       size++;
-      assertNotNull(u.getKey());
-      assertNotNull(u.getUsername());
+      assertThat(u.getKey()).isNotNull();
+      assertThat(u.getUsername()).isNotNull();
     }
-    assertEquals(2, size);
+    assertThat(size).isEqualTo(2);
   }
 
   @Test
   public void shouldFindByUsernameUsingN1ql() {
     User user = repository.findByUsername("uname-1");
-    assertNotNull(user);
-    assertEquals("testuser-1", user.getKey());
-    assertEquals("uname-1", user.getUsername());
+    assertThat(user).isNotNull();
+    assertThat(user.getKey()).isEqualTo("testuser-1");
+    assertThat(user.getUsername()).isEqualTo("uname-1");
   }
 
   @Test
@@ -167,8 +168,10 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
       User user = repository.findByUsernameBadSelect("uname-1");
       fail("shouldFailFindByUsernameWithNoIdOrCas");
     } catch (CouchbaseQueryExecutionException e) {
-      assertTrue("_ID expected in exception " + e, e.getMessage().contains("_ID"));
-      assertTrue("_CAS expected in exception " + e, e.getMessage().contains("_CAS"));
+      assertThat(e.getMessage().contains("_ID")).as("_ID expected in exception " + e)
+			  .isTrue();
+      assertThat(e.getMessage().contains("_CAS")).as("_CAS expected in exception " + e)
+			  .isTrue();
     } catch (Exception e) {
       fail("CouchbaseQueryExecutionException expected");
     }
@@ -177,26 +180,26 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   @Test
   public void shouldFindFromUsernameInlineWithSpelParsing() {
     User user = repository.findByUsernameWithSpelAndPlaceholder();
-    assertNotNull(user);
-    assertEquals("testuser-4", user.getKey());
-    assertEquals("uname-4", user.getUsername());
+    assertThat(user).isNotNull();
+    assertThat(user.getKey()).isEqualTo("testuser-4");
+    assertThat(user.getUsername()).isEqualTo("uname-4");
   }
 
   @Test
   public void shouldFindFromDeriveQueryWithRegexpAndIn() {
     User user = repository.findByUsernameRegexAndUsernameIn("uname-[123]", Arrays.asList("uname-2", "uname-4"));
-    assertNotNull(user);
-    assertEquals("testuser-2", user.getKey());
-    assertEquals("uname-2", user.getUsername());
+    assertThat(user).isNotNull();
+    assertThat(user.getKey()).isEqualTo("testuser-2");
+    assertThat(user.getUsername()).isEqualTo("uname-2");
   }
 
   @Test
   public void shouldFindContainsWithoutAnnotation() {
     List<User> users = repository.findByUsernameContains("-9");
-    assertNotNull(users);
-    assertFalse(users.isEmpty());
+    assertThat(users).isNotNull();
+    assertThat(users.isEmpty()).isFalse();
     for (User user : users) {
-      assertTrue(user.getUsername().startsWith("uname-9"));
+      assertThat(user.getUsername().startsWith("uname-9")).isTrue();
     }
   }
 
@@ -217,14 +220,14 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     final String key = "versionedUserTest";
     VersionedData initial = new VersionedData(key, "ABCD");
     versionedDataRepository.save(initial);
-    assertNotEquals(0L, initial.version);
+    assertThat(initial.version).isNotEqualTo(0L);
 
     Optional<VersionedData> fetch1 = versionedDataRepository.findById(key);
 
-    assertTrue(fetch1.isPresent());
+    assertThat(fetch1.isPresent()).isTrue();
     fetch1.ifPresent(actual -> {
-      assertNotSame(initial, actual);
-      assertEquals(actual.version, initial.version);
+      assertThat(actual).isNotSameAs(initial);
+      assertThat(initial.version).isEqualTo(actual.version);
     });
 
     VersionedData versionedData = fetch1.get();
@@ -233,7 +236,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     bypass.content().put("data", "BBBB");
     JsonDocument bypassed = client.upsert(bypass);
 
-    assertNotEquals(bypassed.cas(), versionedData.version);
+    assertThat(versionedData.version).isNotEqualTo(bypassed.cas());
     System.out.println(bypassed.cas());
 
     try {
@@ -242,8 +245,9 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
       fail("Expected CAS failure");
     }  catch (OptimisticLockingFailureException e) {
       //success
-      assertTrue("optimistic locking should have CASMismatchException as cause, got " + e.getCause(),
-          e.getCause() instanceof CASMismatchException);
+      assertThat(e.getCause() instanceof CASMismatchException)
+			  .as("optimistic locking should have CASMismatchException as cause, got " + e
+					  .getCause()).isTrue();
     } finally {
       client.remove(key);
     }
@@ -260,7 +264,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     final AtomicLong updatedCounter = new AtomicLong();
     VersionedData initial = new VersionedData(key, "value-initial");
     versionedDataRepository.save(initial);
-    assertNotEquals(0L, initial.version);
+    assertThat(initial.version).isNotEqualTo(0L);
 
     Callable<Void> task = new Callable<Void>() {
       @Override
@@ -282,8 +286,9 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     };
     AsyncUtils.executeConcurrently(5, task);
 
-    assertNotEquals(initial.data, versionedDataRepository.findById(key).get().data);
-    assertEquals(5, updatedCounter.intValue());
+    assertThat(versionedDataRepository.findById(key).get().data)
+			.isNotEqualTo(initial.data);
+    assertThat(updatedCounter.intValue()).isEqualTo(5);
   }
 
   @Test
@@ -310,7 +315,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
 
     AsyncUtils.executeConcurrently(5, task);
 
-    assertEquals(4, optimisticLockCounter.intValue());
+    assertThat(optimisticLockCounter.intValue()).isEqualTo(4);
   }
 
 

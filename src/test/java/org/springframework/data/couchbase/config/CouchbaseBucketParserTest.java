@@ -16,10 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.core.Is.is;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -31,8 +27,9 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
 
-public class CouchbaseBucketParserTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
+public class CouchbaseBucketParserTest {
 
 	private static DefaultListableBeanFactory factory;
 
@@ -52,87 +49,87 @@ public class CouchbaseBucketParserTest {
 	public void testDefaultBucketNoCluster() {
 		BeanDefinition def = factory.getBeanDefinition("bucketDefaultNoCluster");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(1);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, Object.class);
-		assertThat(holder.getValue(), is(instanceOf(RuntimeBeanReference.class)));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 
 		RuntimeBeanReference clusterRef = (RuntimeBeanReference) holder.getValue();
 
-		assertThat(clusterRef.getBeanName(), is(equalTo(BeanNames.COUCHBASE_CLUSTER)));
+		assertThat(clusterRef.getBeanName()).isEqualTo(BeanNames.COUCHBASE_CLUSTER);
 	}
 
 	@Test
 	public void testDefaultBucket() throws Exception {
 		BeanDefinition def = factory.getBeanDefinition("bucketDefault");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(1)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(1);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, Object.class);
-		assertThat(holder.getValue(), is(instanceOf(RuntimeBeanReference.class)));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 
 		RuntimeBeanReference clusterRef = (RuntimeBeanReference) holder.getValue();
 
-		assertThat(clusterRef.getBeanName(), is(equalTo("clusterDefault")));
+		assertThat(clusterRef.getBeanName()).isEqualTo("clusterDefault");
 	}
 
 	@Test
 	public void testBucketWithName() throws Exception {
 		BeanDefinition def = factory.getBeanDefinition("bucketWithName");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(2)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(2);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, Object.class);
-		assertThat(holder.getValue(), is(instanceOf(RuntimeBeanReference.class)));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 
 		RuntimeBeanReference clusterRef = (RuntimeBeanReference) holder.getValue();
-		assertThat(clusterRef.getBeanName(), is(equalTo("clusterDefault")));
+		assertThat(clusterRef.getBeanName()).isEqualTo("clusterDefault");
 
 		ConstructorArgumentValues.ValueHolder nameHolder = def.getConstructorArgumentValues()
 				.getArgumentValue(1, Object.class);
-		assertThat(nameHolder.getValue(), is(instanceOf(String.class)));
-		assertThat(nameHolder.getValue().toString(), is((equalTo("toto"))));
+		assertThat(nameHolder.getValue()).isInstanceOf(String.class);
+		assertThat(nameHolder.getValue()).hasToString("toto");
 	}
 
 	@Test
 	public void testBucketWithNameAndPassword() throws Exception {
 		BeanDefinition def = factory.getBeanDefinition("bucketWithNameAndPassword");
 
-		assertThat(def, is(notNullValue()));
-		assertThat(def.getConstructorArgumentValues().getArgumentCount(), is(equalTo(4)));
-		assertThat(def.getPropertyValues().size(), is(equalTo(0)));
+		assertThat(def).isNotNull();
+		assertThat(def.getConstructorArgumentValues().getArgumentCount()).isEqualTo(4);
+		assertThat(def.getPropertyValues().size()).isEqualTo(0);
 
 		ConstructorArgumentValues.ValueHolder holder = def.getConstructorArgumentValues()
 				.getArgumentValue(0, Object.class);
-		assertThat(holder.getValue(), is(instanceOf(RuntimeBeanReference.class)));
+		assertThat(holder.getValue()).isInstanceOf(RuntimeBeanReference.class);
 
 		RuntimeBeanReference clusterRef = (RuntimeBeanReference) holder.getValue();
-		assertThat(clusterRef.getBeanName(), is(equalTo("clusterDefault")));
+		assertThat(clusterRef.getBeanName()).isEqualTo("clusterDefault");
 
 		ConstructorArgumentValues.ValueHolder nameHolder = def.getConstructorArgumentValues()
 				.getArgumentValue(1, Object.class);
-		assertThat(nameHolder.getValue(), is(instanceOf(String.class)));
-		assertThat(nameHolder.getValue().toString(), is((equalTo("test"))));
+		assertThat(nameHolder.getValue()).isInstanceOf(String.class);
+		assertThat(nameHolder.getValue()).hasToString("test");
 
 
 		ConstructorArgumentValues.ValueHolder usernameHolder = def.getConstructorArgumentValues()
 				.getArgumentValue(2, Object.class);
-		assertThat(usernameHolder.getValue(), is(instanceOf(String.class)));
-		assertThat(usernameHolder.getValue().toString(), is((equalTo("testuser"))));
+		assertThat(usernameHolder.getValue()).isInstanceOf(String.class);
+		assertThat(usernameHolder.getValue()).hasToString("testuser");
 
 
 		ConstructorArgumentValues.ValueHolder passwordHolder = def.getConstructorArgumentValues()
 				.getArgumentValue(3, Object.class);
-		assertThat(passwordHolder.getValue(), is(instanceOf(String.class)));
-		assertThat(passwordHolder.getValue().toString(), is((equalTo("123"))));
+		assertThat(passwordHolder.getValue()).isInstanceOf(String.class);
+		assertThat(passwordHolder.getValue()).hasToString("123");
 	}
 }

@@ -16,10 +16,6 @@
 
 package org.springframework.data.couchbase.repository.spel;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.*;
-
 import java.util.List;
 
 import com.couchbase.client.java.Bucket;
@@ -35,6 +31,8 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Simon Baslé
@@ -59,9 +57,9 @@ public class SpelRepositoryIntegrationTests {
   @Test
   public void testSpelExtensionResolved() {
     List<User> users = repository.findCustomUsers();
-    assertEquals(1, users.size());
-    assertEquals("testuser-3", users.get(0).getKey());
-    assertEquals("uname-3", users.get(0).getUsername());
+    assertThat(users.size()).isEqualTo(1);
+    assertThat(users.get(0).getKey()).isEqualTo("testuser-3");
+    assertThat(users.get(0).getUsername()).isEqualTo("uname-3");
   }
 
   @Test
@@ -69,10 +67,10 @@ public class SpelRepositoryIntegrationTests {
     List<User> usersByName = repository.findUserWithDynamicCriteria("username", "uname-5");
     List<User> usersByAge = repository.findUserWithDynamicCriteria("age", 4);
 
-    assertThat(usersByName, hasSize(1));
-    assertThat(usersByAge, hasSize(1));
-    assertThat(usersByName.get(0).getKey(), is("testuser-5"));
-    assertThat(usersByAge.get(0).getKey(), is("testuser-4"));
+    assertThat(usersByName).hasSize(1);
+    assertThat(usersByAge).hasSize(1);
+    assertThat(usersByName.get(0).getKey()).isEqualTo("testuser-5");
+    assertThat(usersByAge.get(0).getKey()).isEqualTo("testuser-4");
   }
 
 }

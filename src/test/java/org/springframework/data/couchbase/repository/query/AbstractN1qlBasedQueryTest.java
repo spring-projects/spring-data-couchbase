@@ -16,7 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static com.couchbase.client.java.query.Select.*;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -64,7 +64,7 @@ import org.springframework.data.repository.query.ReturnedType;
  * @author Oliver Gierke
  */
 public class AbstractN1qlBasedQueryTest {
-	
+
   CouchbaseMappingContext context = new CouchbaseMappingContext();
   ProjectionFactory projectionFactory = new SpelAwareProxyProjectionFactory();
   RepositoryMetadata metadata = DefaultRepositoryMetadata.getMetadata(SampleRepository.class);
@@ -75,10 +75,11 @@ public class AbstractN1qlBasedQueryTest {
     N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty(), ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof SimpleN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
-    assertFalse(queryObject.containsKey("args"));
+    assertThat(query instanceof SimpleN1qlQuery).isTrue();
+    assertThat(query.statement().toString()).isEqualTo(st.toString());
+    assertThat(query.params())
+			.isEqualTo(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED));
+    assertThat(queryObject.containsKey("args")).isFalse();
   }
 
   @Test
@@ -90,13 +91,14 @@ public class AbstractN1qlBasedQueryTest {
     N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParameterizedN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
-    assertTrue(queryObject.containsKey("args"));
+    assertThat(query instanceof ParameterizedN1qlQuery).isTrue();
+    assertThat(query.statement().toString()).isEqualTo(st.toString());
+    assertThat(query.params())
+			.isEqualTo(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED));
+    assertThat(queryObject.containsKey("args")).isTrue();
     JsonArray args = queryObject.getArray("args");
-    assertEquals(1, args.size());
-    assertEquals("test", args.get(0));
+    assertThat(args.size()).isEqualTo(1);
+    assertThat(args.get(0)).isEqualTo("test");
   }
 
   @Test
@@ -109,19 +111,20 @@ public class AbstractN1qlBasedQueryTest {
     N1qlQuery query = AbstractN1qlBasedQuery.buildQuery(st, placeholderValues, ScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
 
-    assertTrue(query instanceof ParameterizedN1qlQuery);
-    assertEquals(st.toString(), query.statement().toString());
-    assertEquals(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED), query.params());
-    assertTrue(queryObject.containsKey("args"));
+    assertThat(query instanceof ParameterizedN1qlQuery).isTrue();
+    assertThat(query.statement().toString()).isEqualTo(st.toString());
+    assertThat(query.params())
+			.isEqualTo(N1qlParams.build().consistency(ScanConsistency.NOT_BOUNDED));
+    assertThat(queryObject.containsKey("args")).isTrue();
     JsonArray args = queryObject.getArray("args");
-    assertEquals(2, args.size());
-    assertEquals(123L, args.get(0));
-    assertEquals("test", args.get(1));
+    assertThat(args.size()).isEqualTo(2);
+    assertThat(args.get(0)).isEqualTo(123L);
+    assertThat(args.get(1)).isEqualTo("test");
   }
 
   @Test
   public void shouldChooseCollectionExecutionWhenCollectionType() throws Exception {
-  	
+
     Method method = SampleRepository.class.getMethod("findAll");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
@@ -142,11 +145,11 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void shouldChooseEntityExecutionWhenEntityType() throws Exception {
-    
+
     Method method = SampleRepository.class.getMethod("findById", Integer.class);
-  	
+
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
+
     N1qlQuery query = Mockito.mock(N1qlQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
@@ -164,10 +167,10 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void shouldChooseStreamExecutionWhenStreamType() throws Exception {
-  	
+
     Method method = SampleRepository.class.getMethod("streamAll");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
+
     N1qlQuery query = Mockito.mock(N1qlQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
@@ -186,10 +189,10 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void shouldChoosePagedExecutionWhenPageType() throws Exception {
-  	
+
     Method method = SampleRepository.class.getMethod("findAllPaged", Pageable.class);
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
-    
+
     N1qlQuery query = Mockito.mock(N1qlQuery.class);
     Pageable pageable = Mockito.mock(Pageable.class);
     AbstractN1qlBasedQuery mock = mock(AbstractN1qlBasedQuery.class);
@@ -253,7 +256,7 @@ public class AbstractN1qlBasedQueryTest {
 
   @Test
   public void shouldExecuteSingleProjectionWhenPrimitiveReturnType() throws Exception {
-  	
+
     Method method = SampleRepository.class.getMethod("longMethod");
     CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, projectionFactory, context);
 
@@ -292,10 +295,11 @@ public class AbstractN1qlBasedQueryTest {
     when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
 
     ScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
-    assertEquals(defaultConsistency, Consistency.STRONGLY_CONSISTENT.n1qlConsistency());
+    assertThat(Consistency.STRONGLY_CONSISTENT.n1qlConsistency())
+			.isEqualTo(defaultConsistency);
 
     ScanConsistency unboundedConsistency = new SampleQuery(unboundedQueryMethod, template).getScanConsistency();
-    assertEquals(unboundedConsistency, ScanConsistency.NOT_BOUNDED);
+    assertThat(ScanConsistency.NOT_BOUNDED).isEqualTo(unboundedConsistency);
 
   }
 
