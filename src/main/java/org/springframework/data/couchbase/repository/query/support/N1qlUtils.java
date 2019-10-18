@@ -154,7 +154,7 @@ public class N1qlUtils {
    * @return the needed SELECT...FROM clauses of the statement.
    */
   public static N1QLExpression createSelectFromForEntity(String bucketName) {
-    return createSelectClauseForEntity(bucketName);
+    return createSelectClauseForEntity(bucketName).from(bucketName);
   }
 
   /**
@@ -220,7 +220,7 @@ public class N1qlUtils {
       }
       N1QLExpression orderFieldName = x(sb.toString());
       if (order.isIgnoreCase()) {
-        orderFieldName = orderFieldName.lower();
+        orderFieldName = orderFieldName.convertToString().lower();
       }
       if (order.isAscending()) {
         cbSortList.add(orderFieldName.asc());

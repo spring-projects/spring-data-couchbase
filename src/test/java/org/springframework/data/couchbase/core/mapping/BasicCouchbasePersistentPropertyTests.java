@@ -19,11 +19,9 @@ package org.springframework.data.couchbase.core.mapping;
 import static org.junit.Assert.*;
 
 import java.lang.reflect.Field;
-import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
@@ -145,7 +143,7 @@ public class BasicCouchbasePersistentPropertyTests {
     @org.springframework.data.couchbase.core.mapping.annotation.Id
     private String sdkId;
 
-    @Id
+    @org.springframework.data.annotation.Id
     private String springId;
 
     @org.springframework.data.couchbase.core.mapping.annotation.Field("foobar")

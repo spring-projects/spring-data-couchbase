@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.core.mapping;
 
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
-import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;

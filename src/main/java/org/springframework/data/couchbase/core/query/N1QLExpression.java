@@ -140,11 +140,20 @@ public class N1QLExpression {
         return infix("USE KEYS", toString(), sb.toString());
     }
     /**
-     * Returned expression results in the given expression in lowercase
+     * Returned expression results in the given expression in lowercase.
      */
     public N1QLExpression lower() {
         return x("LOWER(" + toString() + ")");
     }
+
+    /** Returned expression will be converted to a string
+     *
+     */
+
+    public N1QLExpression convertToString() {
+        return x("TOSTRING(" + toString() + ")");
+    }
+
     /**
      * Combines two expressions with the equals operator ("=").
      *
