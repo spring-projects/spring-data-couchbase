@@ -30,6 +30,7 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.json.JsonObject;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -51,6 +52,8 @@ import org.springframework.test.context.TestExecutionListeners;
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(CouchbaseRepositoryViewListener.class)
+@Ignore
+// TODO: we do not support views - revisit soon when we add them back in!!!
 public class CouchbaseRepositoryViewIntegrationTests {
 
   @Autowired

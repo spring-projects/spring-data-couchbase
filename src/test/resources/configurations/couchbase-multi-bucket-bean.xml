@@ -8,11 +8,11 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
-    <couchbase:clusterInfo login="protected" password="password"/>
 
     <couchbase:bucket id="cb-first" bucketName="protected" username="protected" bucketPassword="password"/>
     <couchbase:bucket id="cb-second" bucketName="protected" username="protected" bucketPassword="password"/>
-
-    <couchbase:template id="cb-template-first"  bucket-ref="cb-first" />
-    <couchbase:template id="cb-template-second" bucket-ref="cb-second" />
+    <couchbase:cluster id="cb-cluster-first"/>
+    <couchbase:cluster id="cb-cluster-second"/>
+    <couchbase:template id="cb-template-first"  bucket-ref="cb-first" cluster-ref="cb-cluster-first"/>
+    <couchbase:template id="cb-template-second" bucket-ref="cb-second" cluster-ref="cb-cluster-second"/>
 </beans>

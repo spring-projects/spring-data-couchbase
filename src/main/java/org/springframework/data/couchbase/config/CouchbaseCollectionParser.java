@@ -64,9 +64,9 @@ public class CouchbaseCollectionParser extends AbstractSingleBeanDefinitionParse
             bean.addConstructorArgValue(bucketName);
         }
 
-        String username = element.getAttribute(COLLECTIONNAME_ATTR);
-        if (StringUtils.hasText(username)) {
-            bean.addConstructorArgValue(username);
+        String collectionName = element.getAttribute(COLLECTIONNAME_ATTR);
+        if (StringUtils.hasText(collectionName)) {
+            bean.addConstructorArgValue(collectionName);
         }
     }
 }

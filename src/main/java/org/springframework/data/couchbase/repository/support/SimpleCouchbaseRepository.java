@@ -30,6 +30,7 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.util.Assert;
 
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
@@ -131,22 +132,18 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   }
 
   @Override
-  public Iterable<T> findAll() {
-    // TODO: figure out a cleaner way
-    N1QLExpression expression = select(x("*"))
-            .from(i(couchbaseOperations.getCouchbaseBucket().name()))
-            .where(x("_class").eq(s(entityInformation.getJavaType().getCanonicalName())));
-    QueryScanConsistency consisistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consisistency));
+    public Iterable<T> findAll() {
+      N1QLExpression expression = N1qlUtils.createSelectFromForEntity(couchbaseOperations.getCouchbaseBucket().name());
+      QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+      N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
     return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());
   }
 
   @Override
   public Iterable<T> findAllById(final Iterable<ID> ids) {
-    // TODO: figure out a cleaner way
-    N1QLExpression expression = select(x("*"))
-            .from(i(couchbaseOperations.getCouchbaseBucket().name()))
+    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(
+            couchbaseOperations.getCouchbaseBucket().name())
             .keys(ids);
     expression = addClassWhereClause(expression);
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();

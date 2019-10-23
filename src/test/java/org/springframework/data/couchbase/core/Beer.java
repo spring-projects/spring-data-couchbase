@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 
 /**
@@ -33,10 +33,10 @@ public class Beer {
 
   private String name;
 
-  @Field("is_active")
+  @JsonProperty("is_active")
   private boolean active = true;
 
-  @Field("desc")
+  @JsonProperty("desc")
   private String description;
 
   public Beer(String id, String name, Boolean active, String description) {

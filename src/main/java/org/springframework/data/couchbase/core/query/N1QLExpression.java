@@ -131,6 +131,7 @@ public class N1QLExpression {
     public N1QLExpression keys(Iterable<? extends Serializable> ids) {
         StringBuilder sb = new StringBuilder();
         Iterator<?> it = ids.iterator();
+        // TODO: really?  Lets do better.
         while(it.hasNext()) {
             sb.append(i(it.next().toString()));
             if (it.hasNext()) {

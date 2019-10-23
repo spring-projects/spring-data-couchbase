@@ -95,27 +95,27 @@ import java.time.Duration;
   //==== SETTERS for the factory bean ====
 
   public void setManagementTimeout(long managementTimeout) {
-    couchbaseEnvBuilder.timeoutConfig().managementTimeout(Duration.ofSeconds(managementTimeout));
+    couchbaseEnvBuilder.timeoutConfig().managementTimeout(Duration.ofMillis(managementTimeout));
   }
 
   public void setQueryTimeout(long queryTimeout) {
-    this.couchbaseEnvBuilder.timeoutConfig().queryTimeout(Duration.ofSeconds(queryTimeout));
+    this.couchbaseEnvBuilder.timeoutConfig().queryTimeout(Duration.ofMillis(queryTimeout));
   }
 
   public void setViewTimeout(long viewTimeout) {
-    this.couchbaseEnvBuilder.timeoutConfig().viewTimeout(Duration.ofSeconds(viewTimeout));
+    this.couchbaseEnvBuilder.timeoutConfig().viewTimeout(Duration.ofMillis(viewTimeout));
   }
 
   public void setKvTimeout(long kvTimeout) {
-    this.couchbaseEnvBuilder.timeoutConfig().kvTimeout(Duration.ofSeconds(kvTimeout));
+    this.couchbaseEnvBuilder.timeoutConfig().kvTimeout(Duration.ofMillis(kvTimeout));
   }
 
   public void setConnectTimeout(long connectTimeout) {
-    this.couchbaseEnvBuilder.timeoutConfig().connectTimeout(Duration.ofSeconds(connectTimeout));
+    this.couchbaseEnvBuilder.timeoutConfig().connectTimeout(Duration.ofMillis(connectTimeout));
   }
 
   public void setDisconnectTimeout(long disconnectTimeout) {
-    this.couchbaseEnvBuilder.timeoutConfig().disconnectTimeout(Duration.ofSeconds(disconnectTimeout));
+    this.couchbaseEnvBuilder.timeoutConfig().disconnectTimeout(Duration.ofMillis(disconnectTimeout));
   }
 
   public void setDnsSrvEnabled(boolean dnsSrvEnabled) {
@@ -215,11 +215,11 @@ import java.time.Duration;
   }
 
   public void setAnalyticsTimeout(long analyticsTimeout) {
-    this.couchbaseEnvBuilder.serviceConfig().analyticsServiceConfig().idleTime(Duration.ofSeconds(analyticsTimeout));
+    this.couchbaseEnvBuilder.serviceConfig().analyticsServiceConfig().idleTime(Duration.ofMillis(analyticsTimeout));
   }
 
   public void setConfigPollInterval(long configPollInterval) {
-    this.couchbaseEnvBuilder.ioConfig().configPollInterval(Duration.ofSeconds(configPollInterval));
+    this.couchbaseEnvBuilder.ioConfig().configPollInterval(Duration.ofMillis(configPollInterval));
   }
   /*
   public void setConfigPollFloorInterval(long configPollFloorInterval) {

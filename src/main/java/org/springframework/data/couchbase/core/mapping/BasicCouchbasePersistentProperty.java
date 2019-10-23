@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
@@ -26,8 +26,6 @@ import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
-
-import java.util.Optional;
 
 /**
  * Implements annotated property representations of a given {@link Field} instance.
@@ -75,8 +73,8 @@ public class BasicCouchbasePersistentProperty
    */
   @Override
   public String getFieldName() {
-    Field annotation = getField().
-        getAnnotation(Field.class);
+    JsonProperty annotation = getField().
+        getAnnotation(JsonProperty.class);
 
     if (annotation != null && StringUtils.hasText(annotation.value())) {
       return annotation.value();

@@ -1,8 +1,6 @@
 package org.springframework.data.couchbase.core;
 
 
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
-
 /**
  * Test DTO for projecting from {@link CouchbaseTemplate}.
  *
@@ -11,7 +9,6 @@ import org.springframework.data.couchbase.core.mapping.annotation.Field;
 public class BeerDTO{
     private String name;
 
-    @Field("desc")
     private String description;
 
     public BeerDTO(String name, String description) {

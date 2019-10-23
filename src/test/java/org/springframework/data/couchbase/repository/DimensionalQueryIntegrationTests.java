@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.couchbase.client.java.json.JsonArray;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,6 +36,8 @@ import org.springframework.test.context.TestExecutionListeners;
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(PartyPopulatorListener.class)
+@Ignore // Dimensional is using views, which we are not supporting right now
+// TODO: revisit soon!
 public class DimensionalQueryIntegrationTests {
 
   @Autowired
@@ -123,7 +126,7 @@ public class DimensionalQueryIntegrationTests {
     //check parties are limited by the attendees
     List<Party> parties = repository.findByLocationWithinAndAttendeesGreaterThan(zone, 140);
     for (Party party : parties) {
-      System.out.println(party.getKey() + " : " + party.getLocation() + " " + party.getAttendees());
+      System.out.println(party.getKey() + " : "  + party.getAttendees());
     }
 
     assertEquals(parties.toString(), 2, parties.size());

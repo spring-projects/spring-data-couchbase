@@ -111,10 +111,16 @@ public abstract class AbstractCouchbaseConfiguration
     @Override
     @Bean(name = BeanNames.COUCHBASE_COLLECTION)
     public Collection couchbaseClient() throws Exception {
-        Bucket bucket = couchbaseCluster().bucket(getBucketName());
         if (getCollectionName().isEmpty()) {
-            return bucket.defaultCollection();
+            return couchbaseBucket().defaultCollection();
         }
-        return bucket.collection(getCollectionName());
+        return couchbaseBucket().collection(getCollectionName());
     }
+
+    @Override
+    @Bean(name = BeanNames.COUCHBASE_BUCKET)
+    public Bucket couchbaseBucket() throws Exception {
+        return couchbaseCluster().bucket(getBucketName());
+    }
+
 }

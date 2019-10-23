@@ -30,8 +30,7 @@ import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.Assert;
-import rx.Single;
-import rx.Observable;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -88,11 +87,11 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
         this.viewMetadataProvider = viewMetadataProvider;
     }
 
-    protected Mono mapMono(Single single) {
+    protected Mono mapMono(Mono single) {
         return ReactiveWrapperConverters.toWrapper(single , Mono.class);
     }
 
-    protected Flux mapFlux(Observable observable) {
+    protected Flux mapFlux(Flux observable) {
         return ReactiveWrapperConverters.toWrapper(observable, Flux.class);
     }
 

@@ -17,35 +17,22 @@
 package org.springframework.data.couchbase.core;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.*;
 
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import rx.observers.TestSubscriber;
 
 /**
  * @author Subhashni Balakrishnan
@@ -436,7 +423,6 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 		@Id
 		private final String id;
-		@Field
 		private final String name;
 
 		public SimplePerson(String id, String name) {
@@ -478,14 +464,10 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 
 		@Id
 		private final String id;
-		@Field
 		private final List<String> firstnames;
-		@Field
 		private final List<Integer> votes;
 
-		@Field
 		private final Map<String, Boolean> info1;
-		@Field
 		private final Map<String, Integer> info2;
 
 		public ComplexPerson(String id, List<String> firstnames,

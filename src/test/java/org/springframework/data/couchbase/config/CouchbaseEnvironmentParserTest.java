@@ -32,6 +32,8 @@ import org.springframework.core.io.ClassPathResource;
 import com.couchbase.client.core.retry.BestEffortRetryStrategy;
 import com.couchbase.client.core.retry.FailFastRetryStrategy;
 
+import java.time.Duration;
+
 
 public class CouchbaseEnvironmentParserTest {
 
@@ -65,12 +67,12 @@ public class CouchbaseEnvironmentParserTest {
     ClusterEnvironment env = context.getBean("envWithNoDefault", ClusterEnvironment.class);
     ClusterEnvironment defaultEnv = ClusterEnvironment.create();
 
-    assertThat(env.timeoutConfig().managementTimeout(), is(equalTo(1L)));
-    assertThat(env.timeoutConfig().queryTimeout(), is(equalTo(2L)));
-    assertThat(env.timeoutConfig().viewTimeout(), is(equalTo(3L)));
-    assertThat(env.timeoutConfig().kvTimeout(), is(equalTo(4L)));
-    assertThat(env.timeoutConfig().connectTimeout(), is(equalTo(5L)));
-    assertThat(env.timeoutConfig().disconnectTimeout(), is(equalTo(6L)));
+    assertThat(env.timeoutConfig().managementTimeout(), is(equalTo(Duration.ofMillis(1L))));
+    assertThat(env.timeoutConfig().queryTimeout(), is(equalTo(Duration.ofMillis(2L))));
+    assertThat(env.timeoutConfig().viewTimeout(), is(equalTo(Duration.ofMillis(3L))));
+    assertThat(env.timeoutConfig().kvTimeout(), is(equalTo(Duration.ofMillis(4L))));
+    assertThat(env.timeoutConfig().connectTimeout(), is(equalTo(Duration.ofMillis(5L))));
+    assertThat(env.timeoutConfig().disconnectTimeout(), is(equalTo(Duration.ofMillis(6L))));
     assertThat(env.ioConfig().dnsSrvEnabled(), allOf(equalTo(true), not(defaultEnv.ioConfig().dnsSrvEnabled())));
 
  /*   assertThat(env.sslEnabled(), allOf(equalTo(true), not(defaultEnv.sslEnabled())));
@@ -89,7 +91,7 @@ public class CouchbaseEnvironmentParserTest {
 */
     // TODO: look at how to deal with max/min endpoints!
     assertThat(env.serviceConfig().keyValueServiceConfig().maxEndpoints(), is(equalTo(16)));
-    assertThat(env.serviceConfig().viewServiceConfig().maxEndpoints(), is(equalTo(17)));
+    //assertThat(env.serviceConfig().viewServiceConfig().maxEndpoints(), is(equalTo(17)));
     assertThat(env.serviceConfig().queryServiceConfig().maxEndpoints(), is(equalTo(18)));
 
     assertThat(env.retryStrategy(), is(instanceOf(FailFastRetryStrategy.class)));
@@ -99,9 +101,9 @@ public class CouchbaseEnvironmentParserTest {
     assertThat(env.bufferPoolingEnabled(), allOf(equalTo(false), not(defaultEnv.bufferPoolingEnabled())));
     assertThat(env.tcpNodelayEnabled(), allOf(equalTo(false), not(defaultEnv.tcpNodelayEnabled())));
  */
-    assertThat(env.ioConfig().mutationTokensEnabled(), allOf(equalTo(true), not(defaultEnv.ioConfig().mutationTokensEnabled())));
-    assertThat(env.serviceConfig().analyticsServiceConfig().idleTime(), is(equalTo(30L)));
-    assertThat(env.ioConfig().configPollInterval(), is(equalTo(50L)));
+    assertThat(env.ioConfig().mutationTokensEnabled(), allOf(equalTo(false), not(defaultEnv.ioConfig().mutationTokensEnabled())));
+    assertThat(env.serviceConfig().analyticsServiceConfig().idleTime(), is(equalTo(Duration.ofMillis(30L))));
+    assertThat(env.ioConfig().configPollInterval(), is(equalTo(Duration.ofMillis(50L))));
     //assertThat(env.configPollFloorInterval(), is(equalTo(30L)));
     //assertThat(env.operationTracingEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingEnabled())));
     //assertThat(env.operationTracingServerDurationEnabled(), allOf(equalTo(false), not(defaultEnv.operationTracingServerDurationEnabled())));

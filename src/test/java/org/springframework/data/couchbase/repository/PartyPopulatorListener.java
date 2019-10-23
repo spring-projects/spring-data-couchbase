@@ -21,10 +21,9 @@ public class PartyPopulatorListener extends DependencyInjectionTestExecutionList
   @Override
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
-    Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
-    Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
+    Collection collection = (Collection) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_COLLECTION);
     populateTestData(cluster, collection);
-    cluster.queryIndexes().createPrimaryIndex(bucket.name());
+    cluster.queryIndexes().createPrimaryIndex(collection.bucketName());
   }
 
   private void populateTestData(Cluster cluster, Collection collection) {

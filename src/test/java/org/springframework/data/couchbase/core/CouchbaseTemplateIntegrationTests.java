@@ -54,7 +54,6 @@ import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.test.context.ContextConfiguration;
@@ -484,7 +483,6 @@ public class CouchbaseTemplateIntegrationTests {
 
 		@Id
 		private final String id;
-		@Field
 		private final String name;
 
 		public SimplePerson(String id, String name) {
@@ -526,14 +524,10 @@ public class CouchbaseTemplateIntegrationTests {
 
 		@Id
 		private final String id;
-		@Field
 		private final List<String> firstnames;
-		@Field
 		private final List<Integer> votes;
 
-		@Field
 		private final Map<String, Boolean> info1;
-		@Field
 		private final Map<String, Integer> info2;
 
 		public ComplexPerson(String id, List<String> firstnames,

@@ -38,7 +38,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
@@ -480,8 +479,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
       @Override
       public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
         if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
-          return;
-        } else if (enableStrictFieldChecking && !prop.isAnnotationPresent(Field.class)) {
           return;
         } else if (prop.isAnnotationPresent(N1qlJoin.class)) {
           return;

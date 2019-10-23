@@ -28,7 +28,7 @@ import org.springframework.data.domain.Slice;
 /**
  * @author Michael Nitschinger
  */
-@N1qlSecondaryIndexed(indexName = "User")
+//@N1qlSecondaryIndexed(indexName = "User")
 public interface UserRepository extends CouchbaseRepository<User, String> {
   @Query("#{#n1ql.selectEntity} WHERE username = $1 and #{#n1ql.filter}")
   User findByUsername(String username);

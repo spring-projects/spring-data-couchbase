@@ -28,7 +28,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;

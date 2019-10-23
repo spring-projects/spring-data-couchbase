@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.config;
 
+import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.env.ClusterEnvironment;
@@ -38,5 +39,7 @@ public interface CouchbaseConfigurer {
    * @throws Exception in case of error during the bucket instantiation.
    */
   Collection couchbaseClient() throws Exception;
+
+  Bucket couchbaseBucket() throws Exception;
 
 }

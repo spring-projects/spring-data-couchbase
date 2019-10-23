@@ -2,10 +2,7 @@ package org.springframework.data.couchbase.repository;
 
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.ViewIndexed;
 import reactor.core.publisher.Flux;
-
-import java.util.List;
 
 /**
  * @author David Kelly

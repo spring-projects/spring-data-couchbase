@@ -1,7 +1,5 @@
 package org.springframework.data.couchbase.core;
 
-import rx.observers.TestSubscriber;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +18,8 @@ public class AsyncUtils {
         }
     }
 
-    public static <T> void awaitCompleted(TestSubscriber<T> testSubscriber) {
+/* TODO: reactor-ize this public static <T> void awaitCompleted(TestSubscriber<T> testSubscriber) {
+
         testSubscriber.awaitTerminalEvent();
         testSubscriber.assertNoErrors();
         testSubscriber.assertNoValues();
@@ -52,4 +51,6 @@ public class AsyncUtils {
         testSubscriber.assertValue(value);
         testSubscriber.assertCompleted();
     }
+
+ */
 }

@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.core;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 
 /**
@@ -35,10 +34,8 @@ public class VersionedReactiveBeer {
 
 	private String name;
 
-	@Field("is_active")
 	private boolean active = true;
 
-	@Field("desc")
 	private String description;
 
 	@Version

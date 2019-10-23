@@ -51,7 +51,6 @@ import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.util.TypeInformation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import rx.Observable;
 
 import javax.management.openmbean.KeyAlreadyExistsException;
 import java.time.Duration;
@@ -365,7 +364,7 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     public <T>Flux<T> findByN1QLProjection(N1QLQuery query, Class<T> entityClass) {
         return queryN1QL(query)
                 .flatMapMany(res ->  Flux.from(res.rowsAs(entityClass)))
-                .doOnError(throwable -> Observable.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable)));
+                .doOnError(throwable -> Flux.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable)));
     }
 
 

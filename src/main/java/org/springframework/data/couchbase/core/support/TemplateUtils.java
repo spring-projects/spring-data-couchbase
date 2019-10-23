@@ -21,7 +21,6 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 import org.springframework.data.couchbase.core.OperationInterruptedException;
-import rx.Observable;
 
 /**
  * @author Subhashni Balakrishnan

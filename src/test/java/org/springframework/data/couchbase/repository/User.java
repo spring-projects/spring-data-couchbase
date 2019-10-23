@@ -25,11 +25,13 @@ import org.springframework.data.annotation.Id;
 public class User {
 
   @Id
-  private final String key;
+  private  String key;
 
-  private final String username;
+  private  String username;
 
-  private final int age;
+  private int age;
+
+  public User() {}
 
   public User(String key, String username, int age) {
     this.key = key;

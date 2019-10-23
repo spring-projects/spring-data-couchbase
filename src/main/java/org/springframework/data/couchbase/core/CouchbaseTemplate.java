@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import com.couchbase.client.core.config.ClusterConfig;
+import com.couchbase.client.core.error.DecodingFailedException;
 import com.couchbase.client.core.error.ErrorCodeAndMessage;
 import com.couchbase.client.core.error.KeyExistsException;
 import com.couchbase.client.core.error.KeyNotFoundException;
@@ -35,6 +36,7 @@ import com.couchbase.client.core.error.QueryException;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.codec.DefaultJsonSerializer;
 import com.couchbase.client.java.codec.JsonTranscoder;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.GetOptions;
@@ -60,8 +62,6 @@ import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.util.TypeInformation;
-import rx.Observable;
-import rx.functions.Func1;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
@@ -322,12 +322,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       Iterator<JsonObject> jsonIt = jsonRows.iterator();
       Iterator<T> objIt = objRows.iterator();
       while (jsonIt.hasNext() && objIt.hasNext()) {
-        String id = jsonIt.next().getString(SELECT_ID);
-        Long cas = jsonIt.next().getLong(SELECT_CAS);
+        JsonObject jsonObject = jsonIt.next();
         T obj = objIt.next();
 
         // append to end of return value list (maintaining order that way)
-        returnVal.add(mapToEntity(id, obj, cas));
+        returnVal.add(mapToEntity(jsonObject.getString(SELECT_ID), obj, jsonObject.getLong(SELECT_CAS)));
       }
       return returnVal;
 
@@ -338,6 +337,9 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
         message.append('\n').append(error);
       }
       throw new CouchbaseQueryExecutionException(message.toString());
+    } catch (DecodingFailedException e) {
+      System.out.println("ohhh");
+      throw e;
     }
   }
 
@@ -371,8 +373,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
       @Override
       public Boolean doInCollection() throws TimeoutException, ExecutionException, InterruptedException {
         try {
-          client.exists(id);
-          return true;
+          return client.exists(id).exists();
         } catch (KeyNotFoundException e) {
           return false;
         }
@@ -421,7 +422,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
     }
   }
 
-  public <T> Observable<T> executeAsync(Observable<T> asyncAction) {
+  /*public <T> Observable<T> executeAsync(Observable<T> asyncAction) {
     return asyncAction
         .onErrorResumeNext(new Func1<Throwable, Observable<T>>() {
           @Override
@@ -439,7 +440,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
             }
           }
         });
-  }
+  }*/
 
   private void doPersist(Object objectToPersist, final PersistTo persistTo, final ReplicateTo replicateTo,
                          final PersistType persistType) {
@@ -567,6 +568,10 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationEventP
 
     if (persistentEntity.getVersionProperty() != null) {
       accessor.setProperty(persistentEntity.getVersionProperty(), cas);
+    }
+
+    if (persistentEntity.getIdProperty() != null) {
+      accessor.setProperty(persistentEntity.getIdProperty(), id);
     }
 
     persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {

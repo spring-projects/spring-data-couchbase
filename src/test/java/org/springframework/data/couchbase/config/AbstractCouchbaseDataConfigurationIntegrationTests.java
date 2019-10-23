@@ -146,6 +146,11 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
       return this.collection;
     }
 
+    @Override
+    public Bucket couchbaseBucket() throws Exception {
+      return cluster.bucket(collection.bucketName());
+    }
+
   }
 
   @Repository

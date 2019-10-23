@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
@@ -13,7 +12,6 @@ public class ReactivePlace {
     @GeneratedValue(strategy= GenerationStrategy.UNIQUE)
     public String id;
 
-    @Field("name")
     public String name;
 
     public String getId() {
@@ -35,4 +33,6 @@ public class ReactivePlace {
     public ReactivePlace(String name) {
         this.name = name;
     }
+
+    public ReactivePlace() {};
 }

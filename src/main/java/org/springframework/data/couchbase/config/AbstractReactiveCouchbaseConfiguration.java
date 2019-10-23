@@ -119,7 +119,7 @@ public abstract class AbstractReactiveCouchbaseConfiguration
      * @throws Exception on Bean construction failure.
      */
     @Override
-    @Bean(name = BeanNames.COUCHBASE_BUCKET)
+    @Bean(name = BeanNames.COUCHBASE_COLLECTION)
     public Collection couchbaseClient() throws Exception {
         //@Bean method can use another @Bean method in the same @Configuration by directly invoking it
         Cluster cluster = couchbaseCluster();
@@ -129,5 +129,11 @@ public abstract class AbstractReactiveCouchbaseConfiguration
             return bucket.defaultCollection();
         }
         return bucket.collection(getCollectionName());
+    }
+
+    @Override
+    @Bean(name = BeanNames.COUCHBASE_BUCKET)
+    public Bucket couchbaseBucket() throws Exception {
+        return couchbaseCluster().bucket(getBucketName());
     }
 }

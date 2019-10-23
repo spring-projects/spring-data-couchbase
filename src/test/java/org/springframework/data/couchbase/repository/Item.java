@@ -2,14 +2,12 @@ package org.springframework.data.couchbase.repository;
 
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 public class Item {
 
   @Id
   public String id;
 
-  @Field("desc")
   public String description;
 
   public Item(String id, String description) {

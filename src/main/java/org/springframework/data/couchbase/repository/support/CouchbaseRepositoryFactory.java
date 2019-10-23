@@ -143,8 +143,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
   private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable,
                              N1qlPrimaryIndexed n1qlPrimaryIndexed, N1qlSecondaryIndexed n1qlSecondaryIndexed) {
-    //paging repo will always need N1QL, also check if the repository requires a N1QL index
-    boolean needsN1ql = metadata.isPagingRepository() || n1qlPrimaryIndexed != null || n1qlSecondaryIndexed != null;
+    // we always need N1QL now
+    // TODO: cleanup this logic a bit
+    boolean needsN1ql = true;
 
     //for other repos, they might also need N1QL if they don't have only @View methods
     if (!needsN1ql) {

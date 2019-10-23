@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.core;
 
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 
 
 /**
@@ -35,10 +34,8 @@ public class ReactiveBeer {
 
 	private String name;
 
-	@Field("is_active")
 	private boolean active = true;
 
-	@Field("desc")
 	private String description;
 
 	public ReactiveBeer(String id, String name, Boolean active, String description) {

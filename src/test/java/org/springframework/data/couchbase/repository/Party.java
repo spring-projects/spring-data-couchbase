@@ -2,8 +2,8 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.Date;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.geo.Point;
 
 
@@ -15,18 +15,21 @@ import org.springframework.data.geo.Point;
 public class Party {
 
   @Id
-  private final String key;
+  private String key;
 
-  private final String name;
+  private String name;
 
-  @Field("desc")
-  private final String description;
+  //@Field("desc")
+  @JsonProperty("desc")
+  private String description;
 
-  private final Date eventDate;
+  private Date eventDate;
 
-  private final long attendees;
+  private long attendees;
 
-  private final Point location;
+  private Point location;
+
+  public Party() {}
 
   public Party(String key, String name, String description, Date eventDate, long attendees, Point location) {
     this.key = key;
@@ -55,10 +58,6 @@ public class Party {
 
   public long getAttendees() {
     return attendees;
-  }
-
-  public Point getLocation() {
-    return location;
   }
 
   @Override

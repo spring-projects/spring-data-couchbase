@@ -37,7 +37,7 @@ import org.springframework.data.repository.query.Param;
  */
 @ViewIndexed(designDoc = "party", viewName = "all")
 @N1qlPrimaryIndexed
-@N1qlSecondaryIndexed(indexName = "party")
+//@N1qlSecondaryIndexed(indexName = "party")
 public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   List<Party> findByAttendeesGreaterThanEqual(int minAttendees);

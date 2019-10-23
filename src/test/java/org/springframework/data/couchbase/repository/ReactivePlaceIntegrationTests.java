@@ -27,7 +27,7 @@ import static org.springframework.data.couchbase.CouchbaseTestHelper.getReposito
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
 @TestExecutionListeners(SimpleReactiveCouchbaseRepositoryListener.class)
-public class ReactivePlaceTests {
+public class ReactivePlaceIntegrationTests {
     @Rule
     public TestName testName = new TestName();
 

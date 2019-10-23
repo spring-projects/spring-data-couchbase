@@ -28,9 +28,13 @@ import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
 import org.springframework.data.couchbase.repository.support.IndexManager;
+import org.springframework.data.couchbase.repository.support.SimpleReactiveCouchbaseRepository;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.test.context.ContextConfiguration;
+
+import java.util.Iterator;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE;
@@ -64,6 +68,20 @@ public class CouchbaseIdGenerationIntegrationTests {
     }
   }
 
+  @Test
+  public void donnotcheckin() {
+    String id = "AnId";
+    SimpleClassWithGeneratedIdValueUsingUUID entity = new SimpleClassWithGeneratedIdValueUsingUUID();
+    entity.setId(id);
+    SimpleClassWithGeneratedIdValueUsingUUID savedEntity = entityRepository.save(entity);
+    assertThat("Expected same id instance", savedEntity.id == id);
+    Iterable<SimpleClassWithGeneratedIdValueUsingUUID> itr = entityRepository.findAll();
+    for(SimpleClassWithGeneratedIdValueUsingUUID obj: itr) {
+      System.out.println("obj:" + obj.id + "," + obj.value);
+    }
+
+
+  }
 
   @Test
   public void ifIdFieldIsAlreadySetNothingIsDone() {
@@ -72,6 +90,8 @@ public class CouchbaseIdGenerationIntegrationTests {
     entity.setId(id);
     SimpleClassWithGeneratedIdValueUsingUUID savedEntity = entityRepository.save(entity);
     assertThat("Expected same id instance", savedEntity.id == id);
+
+    // TODO: ? what's the intent here?
     if (entityRepository.existsById(savedEntity.id)) {
       entityRepository.existsById(savedEntity.id);
     }
@@ -91,6 +111,6 @@ public class CouchbaseIdGenerationIntegrationTests {
   }
 
   @Repository
-  interface EntityRepository extends CrudRepository<SimpleClassWithGeneratedIdValueUsingUUID, String> {
+  interface EntityRepository extends CouchbaseRepository<SimpleClassWithGeneratedIdValueUsingUUID, String> {
   }
 }

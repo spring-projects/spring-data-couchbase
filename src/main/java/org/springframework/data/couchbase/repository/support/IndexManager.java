@@ -31,10 +31,7 @@ import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import rx.Observable;
-import rx.exceptions.CompositeException;
-import rx.functions.Action1;
-import rx.functions.Func1;
+
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
@@ -125,7 +122,8 @@ public class IndexManager {
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 
-    if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
+    // We now _must_ have a primary index, so skip this only if specifically asked
+    if (!ignoreN1qlPrimary) {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations.getCouchbaseBucket());
     }
 
@@ -161,11 +159,11 @@ public class IndexManager {
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, rxjava1CouchbaseOperations.getCouchbaseBucket());
     }
-
+    /* /TODO: figure this out - fails so commenting out just for now
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
       n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, rxjava1CouchbaseOperations.getCouchbaseBucket(), rxjava1CouchbaseOperations.getConverter().getTypeKey());
     }
-
+    */
     //trigger the builds, wait for the last one, throw CompositeException if errors
 
     Flux.mergeDelayError(1, viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
@@ -174,7 +172,7 @@ public class IndexManager {
   private Mono<Void> buildN1qlPrimary(final RepositoryInformation metadata, Bucket bucket) {
     final String bucketName = bucket.name();
     return Mono.fromFuture(cluster.async().queryIndexes()
-            .createPrimaryIndex(bucketName, CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions())
+            .createPrimaryIndex(bucketName, CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true))
     );
   }
 
@@ -185,7 +183,7 @@ public class IndexManager {
 
     return Mono.fromFuture(cluster.async().queryIndexes()
             .createIndex(bucketName, indexName, Collections.singletonList(typeKey),
-                    CreateQueryIndexOptions.createQueryIndexOptions().with(typeKey, type))
+                    CreateQueryIndexOptions.createQueryIndexOptions().with(typeKey, type).ignoreIfExists(true))
     );
   }
 }

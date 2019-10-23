@@ -128,6 +128,8 @@ public class CouchbaseTemplateIdGenerationIntegrationTests {
     static class Nested {
         private String value;
 
+        public Nested(){}
+
         public Nested(String value) {
             this.value = value;
         }

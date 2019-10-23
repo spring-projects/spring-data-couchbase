@@ -59,6 +59,10 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 	 */
 	public static final String CLUSTER_ENVIRONMENT_TAG = "env";
 
+	public static final String CLUSTER_USER_NAME = "username";
+
+	public static final String CLUSTER_PASSWORD = "password";
+
 	/**
 	 * The &lt;env-ref&gt; attribute allows to use a reference to an {@link CouchbaseEnvironment} to
 	 * tune the connection.
@@ -113,6 +117,14 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 				bootstrapUrls.add(nodes.get(i).getTextContent());
 			}
 			bean.addConstructorArgValue(bootstrapUrls);
+		}
+		String username = element.getAttribute(CLUSTER_USER_NAME);
+		if (StringUtils.hasText(username)) {
+			bean.addConstructorArgValue(username);
+		}
+		String password = element.getAttribute(CLUSTER_PASSWORD);
+			if (StringUtils.hasText(password)) {
+			bean.addConstructorArgValue(password);
 		}
 	}
 

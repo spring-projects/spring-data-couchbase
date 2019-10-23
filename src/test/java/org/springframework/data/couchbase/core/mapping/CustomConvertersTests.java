@@ -35,7 +35,6 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.UnitTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.annotation.Field;
 import org.springframework.data.couchbase.core.mapping.annotation.Id;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -126,16 +125,13 @@ public class CustomConvertersTests {
     @Id //also tests DATACOUCH-145 (this is SDK's @Id)
     public String id = "key";
 
-    @Field
     public Date created;
 
-    @Field
     public String title;
 
   }
 
   public class Counter {
-    @Field
     public String content;
   }
 
