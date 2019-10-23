@@ -152,7 +152,6 @@ public class IndexManager {
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
                            N1qlSecondaryIndexed n1qlSecondaryIndexed, RxJavaCouchbaseOperations rxjava1CouchbaseOperations) {
-    Mono<Void> viewAsync = Mono.empty();
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 
@@ -166,7 +165,7 @@ public class IndexManager {
     */
     //trigger the builds, wait for the last one, throw CompositeException if errors
 
-    Flux.mergeDelayError(1, viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
+    Flux.mergeDelayError(1, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
   }
 
   private Mono<Void> buildN1qlPrimary(final RepositoryInformation metadata, Bucket bucket) {

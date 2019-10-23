@@ -29,7 +29,7 @@ import org.springframework.data.annotation.Id;
 public class Beer {
 
   @Id
-  private final String id;
+  private String id;
 
   private String name;
 
@@ -38,6 +38,8 @@ public class Beer {
 
   @JsonProperty("desc")
   private String description;
+
+  public Beer() { }
 
   public Beer(String id, String name, Boolean active, String description) {
     this.id = id;
@@ -80,6 +82,11 @@ public class Beer {
 
   public String getId() {
     return id;
+  }
+
+  public Beer setId(String id) {
+    this.id = id;
+    return this;
   }
 
 }

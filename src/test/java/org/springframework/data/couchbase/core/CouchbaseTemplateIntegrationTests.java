@@ -114,7 +114,7 @@ public class CouchbaseTemplateIntegrationTests {
 		template.save(doc);
 		assertNotNull(client.get(id));
 		Thread.sleep(3000);
-		assertNull(client.get(id));
+		assertFalse(client.exists(id).exists());
 	}
 
 	@Test
@@ -146,7 +146,7 @@ public class CouchbaseTemplateIntegrationTests {
 		String id = "update-does-not-insert";
 		SimplePerson doc = new SimplePerson(id, "Nice Guy");
 		template.update(doc);
-		assertNull(client.get(id));
+		assertFalse(client.exists(id).exists());
 	}
 
 
@@ -160,8 +160,7 @@ public class CouchbaseTemplateIntegrationTests {
 		assertNotNull(result);
 
 		template.remove(beer);
-		result = client.get(id);
-		assertNull(result);
+		assertFalse(client.exists(id).exists());
 	}
 
 
@@ -472,7 +471,7 @@ public class CouchbaseTemplateIntegrationTests {
 		Thread.sleep(1000);
 		assertNotNull(template.findById(id, DocumentWithTouchOnRead.class));
 		Thread.sleep(3000);
-		assertNull(template.findById(id, DocumentWithTouchOnRead.class));
+		assertFalse(template.exists(id));
 	}
 
 	/**
@@ -512,8 +511,8 @@ public class CouchbaseTemplateIntegrationTests {
 	static class DocumentWithTouchOnRead {
 
 		@Id
-		private final String id;
-
+		private String id;
+		public DocumentWithTouchOnRead() {}
 		public DocumentWithTouchOnRead(String id) {
 			this.id = id;
 		}
@@ -523,12 +522,14 @@ public class CouchbaseTemplateIntegrationTests {
 	static class ComplexPerson {
 
 		@Id
-		private final String id;
-		private final List<String> firstnames;
-		private final List<Integer> votes;
+		private  String id;
+		private  List<String> firstnames;
+		private  List<Integer> votes;
 
-		private final Map<String, Boolean> info1;
-		private final Map<String, Integer> info2;
+		private  Map<String, Boolean> info1;
+		private  Map<String, Integer> info2;
+
+		public ComplexPerson() {}
 
 		public ComplexPerson(String id, List<String> firstnames,
 							 List<Integer> votes, Map<String, Boolean> info1,
@@ -570,6 +571,8 @@ public class CouchbaseTemplateIntegrationTests {
 		private long longValue;
 		private int intValue;
 
+		public SimpleWithLongAndInt() {}
+
 		SimpleWithLongAndInt(final String id, final long longValue, int intValue) {
 			this.id = id;
 			this.longValue = longValue;
@@ -608,6 +611,8 @@ public class CouchbaseTemplateIntegrationTests {
 
 		private Type type;
 
+		public SimpleWithEnum() {}
+
 		SimpleWithEnum(final String id, final Type type) {
 			this.id = id;
 			this.type = type;
@@ -638,6 +643,8 @@ public class CouchbaseTemplateIntegrationTests {
 		private Class<Integer> integerClass;
 
 		private String value;
+
+		public SimpleWithClass() {}
 
 		SimpleWithClass(final String id, final Class<Integer> integerClass) {
 			this.id = id;
@@ -678,6 +685,8 @@ public class CouchbaseTemplateIntegrationTests {
 		private long version;
 
 		private String field;
+
+		VersionedClass() {}
 
 		VersionedClass(String id, String field) {
 			this.id = id;
