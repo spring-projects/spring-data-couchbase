@@ -82,7 +82,7 @@ public class N1qlCrudRepositoryIntegrationTests {
   public void cleanUp() {
     try { itemRepository.deleteById(KEY_ITEM); } catch (DataRetrievalFailureException e) {}
     try { partyRepository.deleteById(KEY_PARTY); } catch (DataRetrievalFailureException e) {}
-    try { partyRepository.deleteById(KEY_PARTY_KEYWORD); } catch (DataRetrievalFailureException e) {}
+    try { partyRepository.deleteById(KEY_PARTY_KEYWORD); } catch(Exception e) {} // TODO: fix error handling in CouchbaseTemplateSupport! catch (DataRetrievalFailureException e) {}
   }
 
   @Test
@@ -90,6 +90,8 @@ public class N1qlCrudRepositoryIntegrationTests {
     List<Object> items = itemRepository.findAllByDescriptionNotNull();
     List<Object> parties = partyRepository.findAllByDescriptionNotNull();
 
+    int h1 = item.hashCode();
+    int h2 = items.get(0).hashCode();
     assertTrue(items.contains(item));
     assertTrue(parties.contains(party));
 

@@ -23,22 +23,18 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
-import com.couchbase.client.java.manager.query.QueryIndexManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
-import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.repository.core.RepositoryInformation;
 
 /**
@@ -127,9 +123,10 @@ public class IndexManager {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations.getCouchbaseBucket());
     }
 
-    if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
+    /* TODO: figure out why secondary indexes are failing
+      if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
       n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, couchbaseOperations.getCouchbaseBucket(), couchbaseOperations.getConverter().getTypeKey());
-    }
+    }*/
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
     Flux.mergeDelayError(1, viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
@@ -158,11 +155,12 @@ public class IndexManager {
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, rxjava1CouchbaseOperations.getCouchbaseBucket());
     }
-    /* /TODO: figure this out - fails so commenting out just for now
+    /* TODO: figure this out - fails so commenting out just for now
+
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
       n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, rxjava1CouchbaseOperations.getCouchbaseBucket(), rxjava1CouchbaseOperations.getConverter().getTypeKey());
-    }
-    */
+    }*/
+
     //trigger the builds, wait for the last one, throw CompositeException if errors
 
     Flux.mergeDelayError(1, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();

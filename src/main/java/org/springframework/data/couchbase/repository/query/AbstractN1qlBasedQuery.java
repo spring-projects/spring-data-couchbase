@@ -93,12 +93,17 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   @Override
   public Object execute(Object[] parameters) {
     ParametersParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
-
     ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
     ReturnedType returnedType = processor.getReturnedType();
 
-    Class<?> typeToRead = returnedType.getTypeToRead();
-    typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
+    // TODO: review this - I just hacked it to work, basically...
+    //       This was what was here in sdk2, but seem to end up being always Object. Forcing
+    //       it to be the same as the object type for the repo.
+    // Class<?> typeToRead = returnedType.getTypeToRead();
+    //typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
+
+
+    Class<?> typeToRead = queryMethod.getEntityInformation().getJavaType();
 
     N1QLExpression statement = getExpression(accessor, parameters, returnedType);
     JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);

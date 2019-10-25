@@ -279,7 +279,7 @@ public interface CouchbaseOperations {
    * @param <T> the return type.
    * @return the return type.
    */
-  <T> T execute(CollectionCallback<T> action);
+  //<T> T execute(CollectionCallback<T> action);
 
   /**
    * Returns the linked {@link com.couchbase.client.java.Collection} to this template.

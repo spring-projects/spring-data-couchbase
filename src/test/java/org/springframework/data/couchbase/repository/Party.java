@@ -2,6 +2,7 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.Date;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonAlias;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;

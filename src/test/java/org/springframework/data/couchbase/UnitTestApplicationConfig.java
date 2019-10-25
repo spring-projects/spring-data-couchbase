@@ -4,6 +4,12 @@ import java.util.Collections;
 import java.util.List;
 
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.ReactiveCluster;
+import com.couchbase.client.java.ReactiveCollection;
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.MutationResult;
+import com.couchbase.client.java.kv.ReplaceOptions;
+import com.couchbase.client.java.kv.UpsertOptions;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +20,12 @@ import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.repository.support.IndexManager;
 
 import com.couchbase.client.java.Cluster;
+import reactor.core.publisher.Mono;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Configuration
 public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
@@ -45,12 +57,25 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
 
   @Override
   public Cluster couchbaseCluster() throws Exception {
-    return Mockito.mock(Cluster.class);
+    Cluster mockedCluster = mock(Cluster.class);
+    ReactiveCluster mockedReactiveCluster = mock(ReactiveCluster.class);
+    when(mockedCluster.reactive()).thenReturn(mockedReactiveCluster);
+    return mockedCluster;
   }
 
   @Override
   public Collection couchbaseClient() throws Exception {
-    return Mockito.mock(Collection.class);
+    MutationResult mockedMutationResult = mock(MutationResult.class);
+    Collection mockedCollection = mock(Collection.class);
+    ReactiveCollection mockedReactiveCollection = mock(ReactiveCollection.class);
+    when(mockedReactiveCollection.insert(anyString(), any(), any(InsertOptions.class)))
+            .thenReturn(Mono.just(mockedMutationResult));
+    when(mockedReactiveCollection.upsert(anyString(), any(), any(UpsertOptions.class)))
+            .thenReturn(Mono.just(mockedMutationResult));
+    when(mockedReactiveCollection.replace(anyString(), any(), any(ReplaceOptions.class)))
+            .thenReturn(Mono.just(mockedMutationResult));
+    when(mockedCollection.reactive()).thenReturn(mockedReactiveCollection);
+    return mockedCollection;
   }
 
   @Override

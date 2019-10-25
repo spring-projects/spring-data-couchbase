@@ -17,9 +17,12 @@
 package org.springframework.data.couchbase.core.mapping.event;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.when;
 
+import com.couchbase.client.java.ReactiveCollection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.test.context.ContextConfiguration;

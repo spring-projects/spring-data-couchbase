@@ -111,9 +111,6 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   }
 
   @Test
-  /**
-   * This test uses/assumes a default viewName called "all" that is configured on Couchbase.
-   */
   public void shouldFindAll() {
     // do a non-stale query to populate data for testing.
     //client.query(ViewQuery.from("user", "all").stale(Stale.FALSE));

@@ -15,6 +15,8 @@ public class Item {
     this.description = description;
   }
 
+  public Item() {}
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
