@@ -71,7 +71,7 @@ public abstract class AbstractReactiveCouchbaseConfiguration
      *
      * @return the password of the bucket/user.
      */
-    protected abstract String getBucketPassword();
+    protected abstract String getPassword();
 
     protected boolean isEnvironmentManagedBySpring() {
         return true;
@@ -89,7 +89,7 @@ public abstract class AbstractReactiveCouchbaseConfiguration
     }
 
     protected ClusterOptions getOptions() {
-        return ClusterOptions.clusterOptions(getUsername(), getBucketPassword());
+        return ClusterOptions.clusterOptions(getUsername(), getPassword());
     }
 
     /**

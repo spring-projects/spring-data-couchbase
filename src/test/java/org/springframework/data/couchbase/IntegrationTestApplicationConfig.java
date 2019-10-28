@@ -41,7 +41,7 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
   }
 
   @Override
-  protected String getBucketPassword() {
+  protected String getPassword() {
     return "password";
   }
 

@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.config;
 
 import java.util.List;
-import java.util.ListIterator;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
@@ -73,7 +72,7 @@ public abstract class AbstractCouchbaseConfiguration
      *
      * @return the password of the bucket.
      */
-    protected abstract String getBucketPassword();
+    protected abstract String getPassword();
 
     /**
      * Is the {@link #getOptions()} to be destroyed by Spring?
@@ -86,7 +85,7 @@ public abstract class AbstractCouchbaseConfiguration
 
 
     protected ClusterOptions getOptions() {
-        return ClusterOptions.clusterOptions(getUsername(), getBucketPassword()).environment(getEnvironment());
+        return ClusterOptions.clusterOptions(getUsername(), getPassword()).environment(getEnvironment());
     }
 
     protected ClusterEnvironment getEnvironment() {

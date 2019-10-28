@@ -34,7 +34,7 @@ public class IntegrationTestNoShutdownApplicationConfig extends AbstractCouchbas
 	}
 
 	@Override
-	protected String getBucketPassword() {
+	protected String getPassword() {
 		return "password";
 	}
 

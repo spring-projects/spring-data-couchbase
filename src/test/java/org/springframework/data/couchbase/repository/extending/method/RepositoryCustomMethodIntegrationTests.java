@@ -60,7 +60,7 @@ public class RepositoryCustomMethodIntegrationTests {
     }
 
     @Override
-    protected String getBucketPassword() {
+    protected String getPassword() {
       return "password";
     }
 
