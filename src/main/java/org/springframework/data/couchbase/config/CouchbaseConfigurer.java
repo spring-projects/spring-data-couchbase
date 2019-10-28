@@ -22,7 +22,7 @@ public interface CouchbaseConfigurer {
    *
    * @throws Exception in case of error during the CouchbaseEnvironment instantiation.
    */
-  //ClusterEnvironment couchbaseEnvironment() throws Exception;
+  ClusterEnvironment couchbaseEnvironment() throws Exception;
 
   /**
    * Set up the underlying main Couchbase {@link Cluster} reference to be used by the Spring Data framework

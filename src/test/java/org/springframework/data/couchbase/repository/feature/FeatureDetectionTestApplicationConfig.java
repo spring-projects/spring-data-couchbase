@@ -43,7 +43,7 @@ public class FeatureDetectionTestApplicationConfig extends AbstractCouchbaseConf
 
 
   @Override
-  protected ClusterEnvironment getEnvironment() {
+  public  ClusterEnvironment couchbaseEnvironment() {
     return ClusterEnvironment.builder()
             .timeoutConfig(
                 TimeoutConfig.builder()

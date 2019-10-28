@@ -148,12 +148,12 @@ public class IndexManager {
    * @throws CompositeException when several errors (for multiple index types) have been raised.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
-                           N1qlSecondaryIndexed n1qlSecondaryIndexed, ReactiveJavaCouchbaseOperations rxjava1CouchbaseOperations) {
+                           N1qlSecondaryIndexed n1qlSecondaryIndexed, ReactiveJavaCouchbaseOperations reactiveCouchbaseOperations) {
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
-      n1qlPrimaryAsync = buildN1qlPrimary(metadata, rxjava1CouchbaseOperations.getCouchbaseBucket());
+      n1qlPrimaryAsync = buildN1qlPrimary(metadata, reactiveCouchbaseOperations.getCouchbaseBucket());
     }
     /* TODO: figure this out - fails so commenting out just for now
 

@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -91,6 +92,11 @@ public class RepositoryTemplateWiringIntegrationTests {
     @Override
     protected String getPassword() {
       return "password";
+    }
+
+    @Override
+    public ClusterEnvironment couchbaseEnvironment() {
+      return ClusterEnvironment.builder().build();
     }
 
     @Bean

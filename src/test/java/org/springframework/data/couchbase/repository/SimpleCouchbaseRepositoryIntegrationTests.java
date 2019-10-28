@@ -147,8 +147,8 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
       User user = repository.findByUsernameBadSelect("uname-1");
       fail("shouldFailFindByUsernameWithNoIdOrCas");
     } catch (CouchbaseQueryExecutionException e) {
-      assertTrue("_ID expected in exception " + e, e.getMessage().contains("_ID"));
-      assertTrue("_CAS expected in exception " + e, e.getMessage().contains("_CAS"));
+      // it used to be, we has _ID and _CAS in the exception message, now we just have the
+      // root cause (in this case a NullPointerException)
     } catch (Exception e) {
       fail("CouchbaseQueryExecutionException expected");
     }
@@ -300,7 +300,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   public static class VersionedData {
 
     @Id
-    private final String key;
+    private String key;
 
     @Version
     public long version = 0L;
@@ -311,6 +311,8 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
       this.key = key;
       this.data = data;
     }
+
+    public VersionedData() {}
 
     public String getKey() {
       return key;

@@ -135,6 +135,7 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     public Iterable<T> findAll() {
       N1QLExpression expression = N1qlUtils.createSelectFromForEntity(couchbaseOperations.getCouchbaseBucket().name());
       QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+      expression = addClassWhereClause(expression);
       N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
     return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());

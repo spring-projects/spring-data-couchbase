@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.repository.extending.method;
 import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
+
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +69,11 @@ public class RepositoryCustomMethodIntegrationTests {
     @Override
     protected Consistency getDefaultConsistency() {
       return Consistency.STRONGLY_CONSISTENT;
+    }
+
+    @Override
+    public ClusterEnvironment couchbaseEnvironment() {
+      return ClusterEnvironment.builder().build();
     }
   }
 

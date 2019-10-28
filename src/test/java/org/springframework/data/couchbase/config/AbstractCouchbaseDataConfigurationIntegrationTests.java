@@ -151,8 +151,13 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
       return cluster.bucket(collection.bucketName());
     }
 
+    @Override
+    public ClusterEnvironment couchbaseEnvironment() {
+      return ClusterEnvironment.builder().build();
+    }
   }
 
-  @Repository
-  interface ItemRepository extends CouchbaseRepository<Item, String> {}
+    @Repository
+    interface ItemRepository extends CouchbaseRepository<Item, String> {
+    }
 }

@@ -45,7 +45,10 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
     return "password";
   }
 
-  //TODO maybe create the bucket if doesn't exist
+  @Override
+  public ClusterEnvironment couchbaseEnvironment() {
+    return ClusterEnvironment.builder().build();
+  }
 
   @Override
   protected ClusterEnvironment getEnvironment() {

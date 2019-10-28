@@ -17,6 +17,8 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.CASMismatchException;
+import com.couchbase.client.core.error.KeyExistsException;
+import com.couchbase.client.core.error.KeyNotFoundException;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ReactiveCluster;
 import com.couchbase.client.java.ReactiveCollection;
@@ -30,8 +32,6 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
@@ -110,7 +110,7 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                     result = client.upsert(converted.getId(), converted.getPayload(), UpsertOptions.upsertOptions().durability(persistTo, replicateTo));
                 } else if (version > 0) {
                     //Updating existing document with cas
-                    result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().durability(persistTo, replicateTo));
+                    result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().cas(version).durability(persistTo, replicateTo));
                 } else {
                     //Creating new document
                     result = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo));
@@ -138,7 +138,7 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                     maybeEmitEvent(new AfterSaveEvent<T>(objectToPersist, converted));
                     return Mono.just(objectToPersist);
                 }).onErrorResume(e -> {
-                    if (e instanceof KeyAlreadyExistsException) {
+                    if (e instanceof KeyExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
                                 " document with version value failed: " + version, e);
                     }
@@ -159,14 +159,26 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                         T doc = res.contentAs(entityClass);
                         return Mono.just(mapToEntity(id, doc, res.cas()));
                     })
-                    .doOnError(e -> TemplateUtils.translateError(e));
+                    .onErrorResume(e -> {
+                        if (e instanceof KeyNotFoundException) {
+                            return Mono.empty();
+                        } else {
+                            return Mono.error(TemplateUtils.translateError(e));
+                        }
+                    });
         } else {
             return client.get(id)
                     .flatMap(res -> {
                         T doc = res.contentAs(entityClass);
                         return Mono.just(mapToEntity(id, doc, res.cas()));
                     })
-                    .doOnError(e -> Mono.error(TemplateUtils.translateError(e)));
+                    .onErrorResume(e -> {
+                                if (e instanceof KeyNotFoundException) {
+                                    return Mono.empty();
+                                } else {
+                                    return Mono.error(TemplateUtils.translateError(e));
+                                }
+                            });
         }
     }
 
@@ -195,7 +207,7 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                                     converted,
                                     obj.getLong(TemplateUtils.SELECT_CAS)));
                         } catch (Throwable t) {
-                            return Flux.error(t);
+                            return Flux.error(new CouchbaseQueryExecutionException("oops", t));
                         }
                 })
                 .doOnError(throwable -> {

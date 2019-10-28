@@ -134,14 +134,4 @@ public class BeanNames {
    */
   public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
 
-
-  /**
-   * The name for the default {@link ReactiveJavaCouchbaseOperations} bean.
-   *
-   * See {@link AbstractRxJavaCouchbaseConfiguration#rxjava1CouchbaseTemplate()} for java config, and
-   * the "&lt;couchbase:template /&gt;" element for xml config.
-   */
-  public static final String RXJAVA1_COUCHBASE_TEMPLATE = "rxjava1CouchbaseTemplate";
-
-
 }

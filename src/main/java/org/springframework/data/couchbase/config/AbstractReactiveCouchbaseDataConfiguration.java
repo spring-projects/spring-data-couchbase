@@ -41,7 +41,7 @@ public abstract class AbstractReactiveCouchbaseDataConfiguration extends Couchba
      *
      * @throws Exception on Bean construction failure.
      */
-    @Bean(name = BeanNames.RXJAVA1_COUCHBASE_TEMPLATE)
+    @Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
     public ReactiveJavaCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
         ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(couchbaseConfigurer().couchbaseCluster(),
                 couchbaseConfigurer().couchbaseClient(), mappingCouchbaseConverter(), translationService());

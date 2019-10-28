@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -92,6 +93,11 @@ public class RepositoryBaseIntegrationTests {
     @Override
     protected String getPassword() {
       return "password";
+    }
+
+    @Override
+    public ClusterEnvironment couchbaseEnvironment() {
+      return ClusterEnvironment.builder().build();
     }
 
     @Bean

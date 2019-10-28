@@ -43,6 +43,15 @@ public class User {
     return username;
   }
 
+  @Override
+  public String toString() {
+    return "User{" +
+            "key='" + key + '\'' +
+            ", username='" + username + '\'' +
+            ", age=" + age +
+            '}';
+  }
+
   public String getKey() {
     return key;
   }
@@ -51,10 +60,6 @@ public class User {
     return age;
   }
 
-  @Override
-  public String toString() {
-    return this.key;
-  }
 
   @Override
   public boolean equals(Object o) {

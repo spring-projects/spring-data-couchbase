@@ -43,7 +43,7 @@ public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCo
 	}
 
 	@Override
-	protected ClusterEnvironment getEnvironment() {
+	public ClusterEnvironment couchbaseEnvironment() {
 		return ClusterEnvironment.builder().timeoutConfig(
 				TimeoutConfig.builder()
 					.connectTimeout(Duration.ofMillis(10000))

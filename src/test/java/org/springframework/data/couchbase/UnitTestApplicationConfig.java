@@ -6,6 +6,7 @@ import java.util.List;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCluster;
 import com.couchbase.client.java.ReactiveCollection;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.ReplaceOptions;
@@ -53,6 +54,11 @@ public class UnitTestApplicationConfig extends AbstractCouchbaseConfiguration {
   @Override
   protected String getPassword() {
     return "someBucketPassword";
+  }
+
+  @Override
+  public ClusterEnvironment couchbaseEnvironment() {
+    return ClusterEnvironment.builder().build();
   }
 
   @Override
