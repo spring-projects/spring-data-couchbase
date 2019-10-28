@@ -22,7 +22,7 @@ import org.springframework.data.annotation.Version;
 
 
 /**
- * Test class for persisting and loading from {@link RxJavaCouchbaseTemplate}.
+ * Test class for persisting and loading from {@link ReactiveJavaCouchbaseTemplate}.
  *
  * @author Alex Derkach
  */

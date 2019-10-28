@@ -27,7 +27,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 /**
  * @author Subhashni Balakrishnan
  */
-public class RxCouchbaseTemplateQueryListener extends DependencyInjectionTestExecutionListener {
+public class ReactiveCouchbaseTemplateQueryListener extends DependencyInjectionTestExecutionListener {
 
 	@Override
 	public void beforeTestClass(final TestContext testContext) throws Exception {
@@ -39,7 +39,7 @@ public class RxCouchbaseTemplateQueryListener extends DependencyInjectionTestExe
 	}
 
 	private void populateTestData(Cluster cluster, Collection collection) {
-		RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(cluster, collection);
+		ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(cluster, collection);
 		for (int i = 0; i < 100; i++) {
 			ReactiveBeer b = new ReactiveBeer("testbeer-" + i, "MyBeer" + i, true, "");
 			template.save(b).subscribe();
@@ -51,7 +51,7 @@ public class RxCouchbaseTemplateQueryListener extends DependencyInjectionTestExe
 		Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
 		Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
 		Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
-		RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(cluster, collection);
+		ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(cluster, collection);
 
 		for (int i = 0; i < 100; i++) {
 			ReactiveBeer b = new ReactiveBeer("testbeer-" + i, "MyBeer" + i, true, "");

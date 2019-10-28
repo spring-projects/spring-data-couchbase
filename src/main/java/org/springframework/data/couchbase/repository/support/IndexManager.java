@@ -26,7 +26,7 @@ import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -148,7 +148,7 @@ public class IndexManager {
    * @throws CompositeException when several errors (for multiple index types) have been raised.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
-                           N1qlSecondaryIndexed n1qlSecondaryIndexed, RxJavaCouchbaseOperations rxjava1CouchbaseOperations) {
+                           N1qlSecondaryIndexed n1qlSecondaryIndexed, ReactiveJavaCouchbaseOperations rxjava1CouchbaseOperations) {
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 

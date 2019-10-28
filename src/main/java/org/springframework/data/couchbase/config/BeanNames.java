@@ -22,7 +22,7 @@ import com.couchbase.client.java.Cluster;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 
 /**
@@ -136,7 +136,7 @@ public class BeanNames {
 
 
   /**
-   * The name for the default {@link RxJavaCouchbaseOperations} bean.
+   * The name for the default {@link ReactiveJavaCouchbaseOperations} bean.
    *
    * See {@link AbstractRxJavaCouchbaseConfiguration#rxjava1CouchbaseTemplate()} for java config, and
    * the "&lt;couchbase:template /&gt;" element for xml config.

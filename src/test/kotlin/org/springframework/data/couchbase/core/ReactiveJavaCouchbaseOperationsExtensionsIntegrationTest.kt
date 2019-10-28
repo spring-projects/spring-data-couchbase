@@ -6,17 +6,16 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.annotation.Id
 import org.springframework.data.couchbase.ContainerResourceRunner
 import org.springframework.data.couchbase.ReactiveIntegrationTestApplicationConfig
-import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed
 import org.springframework.test.context.ContextConfiguration
 import kotlin.test.assertEquals
 
 
 @RunWith(ContainerResourceRunner::class)
 @ContextConfiguration(classes = [ReactiveIntegrationTestApplicationConfig::class])
-class RxJavaCouchbaseOperationsExtensionsIntegrationTest {
+class ReactiveJavaCouchbaseOperationsExtensionsIntegrationTest {
 
     @Autowired
-    lateinit var template: RxJavaCouchbaseTemplate
+    lateinit var template: ReactiveJavaCouchbaseTemplate
 
     @Test
     fun `findById should call the reified extension`()  {

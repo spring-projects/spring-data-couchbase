@@ -17,10 +17,10 @@ package org.springframework.data.couchbase.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
 
 /**
  * Provides beans to setup reactive repositories in SDC using {@link CouchbaseConfigurer}.
@@ -33,7 +33,7 @@ public abstract class AbstractReactiveCouchbaseDataConfiguration extends Couchba
     protected abstract CouchbaseConfigurer couchbaseConfigurer();
 
     /**
-     * Creates a {@link RxJavaCouchbaseTemplate}.
+     * Creates a {@link ReactiveJavaCouchbaseTemplate}.
      *
      * This uses {@link #mappingCouchbaseConverter()}, {@link #translationService()} and {@link #getDefaultConsistency()}
      * for construction.
@@ -42,8 +42,8 @@ public abstract class AbstractReactiveCouchbaseDataConfiguration extends Couchba
      * @throws Exception on Bean construction failure.
      */
     @Bean(name = BeanNames.RXJAVA1_COUCHBASE_TEMPLATE)
-    public RxJavaCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
-        RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(couchbaseConfigurer().couchbaseCluster(),
+    public ReactiveJavaCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
+        ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(couchbaseConfigurer().couchbaseCluster(),
                 couchbaseConfigurer().couchbaseClient(), mappingCouchbaseConverter(), translationService());
         template.setDefaultConsistency(getDefaultConsistency());
         return template;
@@ -51,13 +51,13 @@ public abstract class AbstractReactiveCouchbaseDataConfiguration extends Couchba
 
     /**
      * Creates the {@link ReactiveRepositoryOperationsMapping} bean which will be used by the framework to choose which
-     * {@link RxJavaCouchbaseOperations} should back which {@link ReactiveCouchbaseRepository}.
+     * {@link ReactiveJavaCouchbaseOperations} should back which {@link ReactiveCouchbaseRepository}.
      * Override {@link #configureReactiveRepositoryOperationsMapping} in order to customize this.
      *
      * @throws Exception
      */
     @Bean(name = BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING)
-    public ReactiveRepositoryOperationsMapping reactiveRepositoryOperationsMapping(RxJavaCouchbaseTemplate couchbaseTemplate) throws  Exception {
+    public ReactiveRepositoryOperationsMapping reactiveRepositoryOperationsMapping(ReactiveJavaCouchbaseTemplate couchbaseTemplate) throws  Exception {
         //create a base mapping that associates all repositories to the default template
         ReactiveRepositoryOperationsMapping baseMapping = new ReactiveRepositoryOperationsMapping(couchbaseTemplate);
         //let the user tune it

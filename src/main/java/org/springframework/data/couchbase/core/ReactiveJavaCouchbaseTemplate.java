@@ -38,13 +38,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * RxJavaCouchbaseTemplate implements operations using rxjava1 observables
+ * ReactiveJavaCouchbaseTemplate implements operations using rxjava1 observables
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  * @author Alex Derkach
  * @since 3.0
  */
-public class RxJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements RxJavaCouchbaseOperations {
+public class ReactiveJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements ReactiveJavaCouchbaseOperations {
 
     private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
 
@@ -138,11 +138,11 @@ public class RxJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements
                 .flatMap(object -> remove(object, persistTo, replicateTo));
     }
 
-    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client) {
+    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client) {
         this(cluster, client, null, null);
     }
 
-    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
+    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
         this(cluster, client, null, translationService);
     }
 
@@ -151,9 +151,9 @@ public class RxJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements
         this.writeResultChecking = writeResultChecking == null ? DEFAULT_WRITE_RESULT_CHECKING : writeResultChecking;
     }
 
-    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client,
-                                   final CouchbaseConverter converter,
-                                   final TranslationService translationService) {
+    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client,
+                                         final CouchbaseConverter converter,
+                                         final TranslationService translationService) {
         this.syncClient = client;
         this.cluster = cluster;
         this.client = client.reactive();

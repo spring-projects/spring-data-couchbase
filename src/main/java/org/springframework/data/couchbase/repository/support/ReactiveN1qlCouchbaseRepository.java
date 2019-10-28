@@ -21,7 +21,7 @@ import java.io.Serializable;
 import com.couchbase.client.java.query.QueryOptions;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository;
@@ -39,7 +39,7 @@ public class ReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
         extends SimpleReactiveCouchbaseRepository<T, ID>
     implements ReactiveCouchbaseSortingRepository<T, ID> {
 
-    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, RxJavaCouchbaseOperations operations) {
+    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, ReactiveJavaCouchbaseOperations operations) {
         super(metadata, operations);
     }
 

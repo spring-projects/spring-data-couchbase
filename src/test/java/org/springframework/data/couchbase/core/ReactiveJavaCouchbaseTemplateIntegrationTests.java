@@ -40,8 +40,8 @@ import org.springframework.test.context.TestExecutionListeners;
  **/
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
-@TestExecutionListeners(RxCouchbaseTemplateQueryListener.class)
-public class RxJavaCouchbaseTemplateIntegrationTests {
+@TestExecutionListeners(ReactiveCouchbaseTemplateQueryListener.class)
+public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 
 	@Rule
 	public TestName testName = new TestName();
@@ -50,7 +50,7 @@ public class RxJavaCouchbaseTemplateIntegrationTests {
 	private Collection client;
 
 	@Autowired
-	private RxJavaCouchbaseOperations template;
+	private ReactiveJavaCouchbaseOperations template;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 	private static final String DEFAULT_ID = "reactivebeers:awesome-stout";
