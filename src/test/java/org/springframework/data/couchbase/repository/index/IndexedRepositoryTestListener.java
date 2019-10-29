@@ -18,7 +18,10 @@ public class IndexedRepositoryTestListener extends DependencyInjectionTestExecut
   public void beforeTestClass(final TestContext testContext) throws Exception {
     Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
     Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
-    cluster.queryIndexes().dropPrimaryIndex(bucket.name());
-    cluster.queryIndexes().dropIndex(bucket.name(), IndexedRepositoryIntegrationTests.SECONDARY);
+    // TODO: how did this used to work?  Did the creation of the beans above somehow kick off the
+    // index manager to build indexes (and now if doesn't)?
+    //
+    //cluster.queryIndexes().dropPrimaryIndex(bucket.name());
+    //cluster.queryIndexes().dropIndex(bucket.name(), IndexedRepositoryIntegrationTests.SECONDARY);
   }
 }

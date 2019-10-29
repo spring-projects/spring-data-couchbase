@@ -29,6 +29,8 @@ public class Address {
 
     String country;
 
+    public Address() {}
+
     public Address(String id, String name, String country) {
         this.id = id;
         this.name = name;

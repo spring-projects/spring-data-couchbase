@@ -122,11 +122,9 @@ public class IndexManager {
     if (!ignoreN1qlPrimary) {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations.getCouchbaseBucket());
     }
-
-    /* TODO: figure out why secondary indexes are failing
-      if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
+    if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
       n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, couchbaseOperations.getCouchbaseBucket(), couchbaseOperations.getConverter().getTypeKey());
-    }*/
+    }
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
     Flux.mergeDelayError(1, viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
@@ -144,7 +142,7 @@ public class IndexManager {
    * @param n1qlPrimaryIndexed the annotation for creation of a N1QL-based primary index (generic).
    * @param n1qlSecondaryIndexed the annotation for creation of a N1QL-based secondary index (specific to the repository
    *   stored entity).
-   * @param rxjava1CouchbaseOperations the template to use for index creation.
+   * @param reactiveCouchbaseOperations the template to use for index creation.
    * @throws CompositeException when several errors (for multiple index types) have been raised.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
@@ -155,11 +153,10 @@ public class IndexManager {
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
       n1qlPrimaryAsync = buildN1qlPrimary(metadata, reactiveCouchbaseOperations.getCouchbaseBucket());
     }
-    /* TODO: figure this out - fails so commenting out just for now
 
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
-      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, rxjava1CouchbaseOperations.getCouchbaseBucket(), rxjava1CouchbaseOperations.getConverter().getTypeKey());
-    }*/
+      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, reactiveCouchbaseOperations.getCouchbaseBucket(), reactiveCouchbaseOperations.getConverter().getTypeKey());
+    }
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
 
@@ -178,9 +175,11 @@ public class IndexManager {
     final String indexName = config.indexName();
     final String type = metadata.getDomainType().getName();
 
+    // TODO: this doesn't restict the index to just those documents in the repository.  We really
+    //       should add a where clause here.
     return Mono.fromFuture(cluster.async().queryIndexes()
             .createIndex(bucketName, indexName, Collections.singletonList(typeKey),
-                    CreateQueryIndexOptions.createQueryIndexOptions().with(typeKey, type).ignoreIfExists(true))
+                    CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true))
     );
   }
 }

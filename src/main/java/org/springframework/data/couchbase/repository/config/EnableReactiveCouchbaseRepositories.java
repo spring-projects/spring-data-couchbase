@@ -108,7 +108,7 @@ public @interface  EnableReactiveCouchbaseRepositories {
 	boolean considerNestedRepositories() default false;
 
 	/**
-	 * Configures the name of the {@link ReactiveCouchbaseTemplate} bean to be used by default with the repositories detected.
+	 * Configures the name of the {@link ReactiveJavaCouchbaseTemplate} bean to be used by default with the repositories detected.
 	 *
 	 * @return
 	 */

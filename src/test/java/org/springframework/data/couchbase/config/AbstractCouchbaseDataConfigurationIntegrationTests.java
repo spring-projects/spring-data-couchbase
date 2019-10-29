@@ -111,11 +111,9 @@ public class AbstractCouchbaseDataConfigurationIntegrationTests {
 
     repository.save(item);
     Item repoItem = repository.findById(key).get();
-    System.out.println("XXXXXXXX " + repoItem.value);
     JsonObject testItem = client.get(key).contentAsObject();
 
     assertNotNull(testItem);
-    System.out.println("XXXXXXXXXX " + testItem.toString() + "XXXXXXX " + item.value);
     assertEquals(item.value, testItem.getString("value"));
   }
 

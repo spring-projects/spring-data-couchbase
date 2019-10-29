@@ -40,7 +40,7 @@ public class SimpleCouchbaseRepositoryListener extends DependencyInjectionTestEx
     Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
     Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
     populateTestData(cluster, collection);
-    cluster.queryIndexes().createPrimaryIndex(bucket.name());
+    //cluster.queryIndexes().createPrimaryIndex(bucket.name());
   }
 
   private void populateTestData(Cluster cluster, Collection collection) {

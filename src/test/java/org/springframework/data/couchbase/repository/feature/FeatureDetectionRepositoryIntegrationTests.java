@@ -49,6 +49,13 @@ import org.springframework.test.context.ContextConfiguration;
  *
  * @author Simon Baslé
  */
+/*
+
+IT seems we no longer need this, at least in this form.  We don't have non-n1ql
+repositories any more
+
+Commenting out for now, will discuss and remove
+
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = FeatureDetectionTestApplicationConfig.class)
 public class FeatureDetectionRepositoryIntegrationTests {
@@ -61,8 +68,8 @@ public class FeatureDetectionRepositoryIntegrationTests {
 
   @Autowired
   private IndexManager indexManager;
-/*
-  @Before
+
+ /* @Before
   public void checkClusterInfo() {
 
     cluster.core().clusterConfig().
@@ -72,7 +79,7 @@ public class FeatureDetectionRepositoryIntegrationTests {
 
   @Test
   public void testN1qlIncompatibleClusterFailsFastForN1qlBasedRepository() throws Exception {
-    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager))
+    RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
     try {
       factory.getRepository(UserRepository.class);
       fail("expected UnsupportedCouchbaseFeatureException");
@@ -115,5 +122,4 @@ public class FeatureDetectionRepositoryIntegrationTests {
     }
   }
 
- */
-}
+}*/

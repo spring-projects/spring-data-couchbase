@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 /**
- * Kotlin extensions for [RxJavaCouchbaseOperations]
+ * Kotlin extensions for [ReactiveJavaCouchbaseOperations]
  *
  * @author Subhashni Balakrishnan
  */

@@ -65,11 +65,10 @@ public class ReactiveCouchbaseRepositoryConfigurationExtensionUnitTests {
 
 	@Test // DATACOUCH-350
 	public void isNotStrictMatchIfDomainTypeIsNotAnnotatedWithDocument() {
-/* rx -> reactor not done - TODO
 		ReactiveCouchbaseRepositoryConfigurationExtension extension = new ReactiveCouchbaseRepositoryConfigurationExtension();
 		assertDoesNotHaveRepo(UnannotatedRepository.class,
 				extension.getRepositoryConfigurations(configurationSource, loader, true));
-*/	}
+	}
 
 	private static void assertHasRepo(Class<?> repositoryInterface,
 			Collection<RepositoryConfiguration<RepositoryConfigurationSource>> configs) {
@@ -106,7 +105,7 @@ public class ReactiveCouchbaseRepositoryConfigurationExtensionUnitTests {
 
 	interface SampleRepository extends ReactiveCrudRepository<Sample, Long> {}
 
-//	interface UnannotatedRepository extends RxJava2CrudRepository<Store, Long> {}
+	interface UnannotatedRepository extends ReactiveCrudRepository<Store, Long> {}
 
 	interface StoreRepository extends ReactiveCouchbaseRepository<Store, Long> {}
 }

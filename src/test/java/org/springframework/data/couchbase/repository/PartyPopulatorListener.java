@@ -23,7 +23,6 @@ public class PartyPopulatorListener extends DependencyInjectionTestExecutionList
     Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
     Collection collection = (Collection) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_COLLECTION);
     populateTestData(cluster, collection);
-    cluster.queryIndexes().createPrimaryIndex(collection.bucketName());
   }
 
   private void populateTestData(Cluster cluster, Collection collection) {

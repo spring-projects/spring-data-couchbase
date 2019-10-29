@@ -47,11 +47,7 @@ public class IntegrationTestApplicationConfig extends AbstractCouchbaseConfigura
 
   @Override
   public ClusterEnvironment couchbaseEnvironment() {
-    return ClusterEnvironment.builder().build();
-  }
 
-  @Override
-  protected ClusterEnvironment getEnvironment() {
     return ClusterEnvironment.builder().timeoutConfig(
       TimeoutConfig.builder()
         .connectTimeout(Duration.ofSeconds(10000))

@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.Assert;
 
@@ -158,11 +159,11 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Flux<T> findAll() {
         // TODO: figure out a cleaner way
-        N1QLExpression expression = select(x("*"))
-                .from(i(operations.getCouchbaseBucket().name()))
-                .where(x("_class").eq(s(entityInformation.getJavaType().getCanonicalName())));
-        QueryScanConsistency consisistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consisistency));
+        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
+        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        expression = addClassWhereClause(expression);
+        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+
         return operations.findByN1QL(query, entityInformation.getJavaType());
     }
 
@@ -170,9 +171,9 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Flux<T> findAllById(final Iterable<ID> ids) {
         // TODO: figure out a cleaner way
-        N1QLExpression expression = select(x("*"))
-                .from(i(operations.getCouchbaseBucket().name()))
-                .keys(ids);
+        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
+        expression = expression.keys(ids);
+        expression = addClassWhereClause(expression);
         QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
         N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
         return operations.findByN1QL(query, entityInformation.getJavaType());

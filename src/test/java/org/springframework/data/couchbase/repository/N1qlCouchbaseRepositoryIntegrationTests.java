@@ -195,8 +195,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
   public void shouldFailWithMissingFilterStringBasedQuery() {
     Sort sort = Sort.by(Sort.Direction.DESC, "attendees");
     List<Party> list = partyRepository.findParties(sort);
-    assertEquals(17, list.size());
-    assertEquals(16, partyRepository.count());
+    assertTrue(list.size() > partyRepository.count());
   }
 
   @Test

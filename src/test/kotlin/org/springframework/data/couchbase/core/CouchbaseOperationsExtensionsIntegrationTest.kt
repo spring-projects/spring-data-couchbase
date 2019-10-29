@@ -25,8 +25,14 @@ class CouchbaseOperationsExtensionsIntegrationTest {
         assertEquals(entity.id, stored.id)
     }
 
-    class Entity constructor(id: String) {
+    class Entity {
         @Id
-        var id = id
+        var id : String = ""
+        constructor(id: String){
+            this.id = id
+        }
+        constructor() {
+
+        }
     }
 }

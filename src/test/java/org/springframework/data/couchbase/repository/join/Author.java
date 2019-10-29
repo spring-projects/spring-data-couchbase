@@ -39,6 +39,8 @@ public class Author {
     @N1qlJoin(on = "lks.name=rks.name", fetchType = FetchType.IMMEDIATE)
     Address address;
 
+    public Author() {}
+
     public Author(String id, String name) {
         this.id = id;
         this.name = name;

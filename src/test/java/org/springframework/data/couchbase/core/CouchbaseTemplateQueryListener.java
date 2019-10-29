@@ -22,6 +22,7 @@ import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -37,7 +38,7 @@ public class CouchbaseTemplateQueryListener extends DependencyInjectionTestExecu
     Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
     Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
     populateTestData(cluster, collection);
-    cluster.queryIndexes().createPrimaryIndex(bucket.name());
+    cluster.queryIndexes().createPrimaryIndex(bucket.name(), CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
   }
 
   private void populateTestData(Cluster cluster, Collection collection) {

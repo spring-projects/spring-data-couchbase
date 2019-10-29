@@ -23,11 +23,13 @@ import org.springframework.data.annotation.Id;
 public class ReactiveUser {
 
 	@Id
-	private final String key;
+	private String key;
 
-	private final String username;
+	private String username;
 
-	private final int age;
+	private int age;
+
+	public ReactiveUser() {}
 
 	public ReactiveUser(String key, String username, int age) {
 		this.key = key;

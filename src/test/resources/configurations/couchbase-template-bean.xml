@@ -7,7 +7,6 @@
 
     <couchbase:env/>
     <couchbase:cluster/>
-    <couchbase:clusterInfo login="protected" password="password"/>
     <couchbase:bucket username="protected" bucketName="protected" bucketPassword="password"/>
 
     <couchbase:template/>

@@ -48,12 +48,9 @@ public class ReactiveJavaCouchbaseTemplate extends CouchbaseTemplateSupport impl
 
     private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
 
-    protected final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
-
     private Collection syncClient;
     private ReactiveCollection client;
     private Cluster cluster;
-    private final CouchbaseConverter converter;
     private final TranslationService translationService;
     private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
     private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;

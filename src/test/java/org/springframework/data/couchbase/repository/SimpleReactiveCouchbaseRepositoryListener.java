@@ -5,6 +5,7 @@ import com.couchbase.client.java.Collection;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
 import org.springframework.test.context.TestContext;
@@ -20,10 +21,7 @@ public class SimpleReactiveCouchbaseRepositoryListener extends DependencyInjecti
 		Collection collection = (Collection) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_COLLECTION);
 		Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
 		populateTestData(cluster, collection);
-		// need a default index now, so...
-		cluster.queryIndexes().createPrimaryIndex(collection.bucketName());
-		// this is horrible
-		try { Thread.sleep(5000); } catch(Exception e) {}
+		cluster.queryIndexes().createPrimaryIndex(collection.bucketName(), CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	private void populateTestData(Cluster cluster, Collection collection) {

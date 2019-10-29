@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.couchbase.client.core.error.KeyNotFoundException;
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.query.QueryOptions;
@@ -46,6 +47,7 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
@@ -53,6 +55,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
@@ -141,12 +144,11 @@ public class CouchbaseTemplateIntegrationTests {
 	}
 
 
-	@Test
+	@Test(expected= DataRetrievalFailureException.class)
 	public void updateDoesNotInsert() {
 		String id = "update-does-not-insert";
 		SimplePerson doc = new SimplePerson(id, "Nice Guy");
 		template.update(doc);
-		assertFalse(client.exists(id).exists());
 	}
 
 
@@ -541,23 +543,24 @@ public class CouchbaseTemplateIntegrationTests {
 			this.info2 = info2;
 		}
 
-		List<String> getFirstnames() {
+
+		public List<String> getFirstnames() {
 			return firstnames;
 		}
 
-		List<Integer> getVotes() {
+		public List<Integer> getVotes() {
 			return votes;
 		}
 
-		Map<String, Boolean> getInfo1() {
+		public Map<String, Boolean> getInfo1() {
 			return info1;
 		}
 
-		Map<String, Integer> getInfo2() {
+		public Map<String, Integer> getInfo2() {
 			return info2;
 		}
 
-		String getId() {
+		public String getId() {
 			return id;
 		}
 	}

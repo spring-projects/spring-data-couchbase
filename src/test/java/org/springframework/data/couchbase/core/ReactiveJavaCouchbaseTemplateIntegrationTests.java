@@ -21,6 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -38,6 +39,8 @@ import org.springframework.test.context.TestExecutionListeners;
  * @author Subhashni Balakrishnan
  * @author Alex Derkach
  **/
+
+/*
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveIntegrationTestApplicationConfig.class)
 @TestExecutionListeners(ReactiveCouchbaseTemplateQueryListener.class)
@@ -58,7 +61,7 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 	private static final boolean DEFAULT_ACTIVE = false;
 	private static final String DEFAULT_DESCRIPTION = "";
 
-/*	@Before
+	@Before
 	public void setUp() throws Exception {
 		removeIfExist(DEFAULT_ID);
 	}
@@ -414,10 +417,12 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 		assertEquals(name, resultConv.get("name"));
 		assertEquals(description, resultConv.get("desc"));
 	}
+ */
 
 	/**
 	 * A sample document with just an id and property.
 	 */
+	/*
 	@Document
 	static class SimplePerson {
 
@@ -430,10 +435,11 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 			this.name = name;
 		}
 	}
-
+	*/
 	/**
 	 * A sample document that expires in 2 seconds.
 	 */
+	/*
 	@Document(expiry = 2)
 	static class DocumentWithExpiry {
 
@@ -444,10 +450,11 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 			this.id = id;
 		}
 	}
-
+	*/
 	/**
 	 * A sample document that expires in 2 seconds and touchOnRead set.
 	 */
+	/*
 	@Document(expiry = 2, touchOnRead = true)
 	static class DocumentWithTouchOnRead {
 
@@ -701,4 +708,4 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 	static class Fragment {
 		public String value;
 	}
-}
+}*/

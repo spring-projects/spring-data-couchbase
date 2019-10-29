@@ -97,11 +97,6 @@ public class BeanNames {
   public static final String REACTIVE_COUCHBASE_OPERATIONS_MAPPING = "reactiveCouchbaseRepositoryOperationsMapping";
 
   /**
-   * The name for the bean that stores custom mapping between rxjava repositories and their backing rxjavaCouchbaseOperations.
-   */
-  public static final String RXJAVA_COUCHBASE_OPERATIONS_MAPPING = "rxJavaCouchbaseRepositoryOperationsMapping";
-
-  /**
    * The name for the  bean that drives how some indexes are automatically created.
    */
   public static final String COUCHBASE_INDEX_MANAGER = "couchbaseIndexManager";
@@ -127,7 +122,7 @@ public class BeanNames {
   public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
 
   /**
-   * The name for the default {@link ReactiveCouchbaseOperations} bean.
+   * The name for the default {@link ReactiveJavaCouchbaseOperations} bean.
    *
    * See {@link AbstractReactiveCouchbaseConfiguration#reactiveCouchbaseTemplate()} for java config, and
    * the "&lt;couchbase:template /&gt;" element for xml config.

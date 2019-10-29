@@ -127,12 +127,10 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   @Override
   protected final Object getTargetRepository(final RepositoryInformation metadata) {
     CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
-    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
 
+    // TODO: we really require the primary index now -- lets ponder this a bit.
     N1qlPrimaryIndexed n1qlPrimaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlPrimaryIndexed.class);
     N1qlSecondaryIndexed n1qlSecondaryIndexed = AnnotationUtils.findAnnotation(metadata.getRepositoryInterface(), N1qlSecondaryIndexed.class);
-
-    checkFeatures(metadata, isN1qlAvailable, n1qlPrimaryIndexed, n1qlSecondaryIndexed);
 
     indexManager.buildIndexes(metadata, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
 
@@ -141,37 +139,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     return repo;
   }
 
-  private void checkFeatures(RepositoryInformation metadata, boolean isN1qlAvailable,
-                             N1qlPrimaryIndexed n1qlPrimaryIndexed, N1qlSecondaryIndexed n1qlSecondaryIndexed) {
-    // we always need N1QL now
-    // TODO: cleanup this logic a bit
-    boolean needsN1ql = true;
-
-    //for other repos, they might also need N1QL if they don't have only @View methods
-    if (!needsN1ql) {
-      for (Method method : metadata.getQueryMethods()) {
-
-        boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
-        boolean hasView = AnnotationUtils.findAnnotation(method, View.class) != null;
-
-        if (hasN1ql || !hasView) {
-          needsN1ql = true;
-          break;
-        }
-      }
-    }
-
-    if (needsN1ql && !isN1qlAvailable) {
-      throw new UnsupportedCouchbaseFeatureException("Repository uses N1QL", ServiceType.QUERY);
-    }
-  }
-
   /**
-   * Returns the base class for the repository being constructed. Two categories of repositories can be produced by
-   * this factory: {@link SimpleCouchbaseRepository} and {@link N1qlCouchbaseRepository}. This method checks if N1QL
-   * is available to choose between the two, but the actual concrete class is determined respectively by
-   * {@link #getSimpleBaseClass(RepositoryMetadata)} and {@link #getN1qlBaseClass(RepositoryMetadata)}.
-   *
+   * Returns the base class for the repository being constructed.  We always return {@link N1qlCouchbaseRepository}.
    * Override these methods if you want to change the base class for all your repositories.
    *
    * @param repositoryMetadata metadata for the repository.
@@ -180,21 +149,11 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
-    CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(repositoryMetadata.getRepositoryInterface(),
-        repositoryMetadata.getDomainType());
-    boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
-    if (isN1qlAvailable) {
-      return getN1qlBaseClass(repositoryMetadata);
-    }
-    return getSimpleBaseClass(repositoryMetadata);
-  }
-
-  protected Class<? extends N1qlCouchbaseRepository> getN1qlBaseClass(final RepositoryMetadata repositoryMetadata) {
+    // TODO: ponder this in more detail.
+    // Since we now use n1ql in SimpleCouchbaseRepository, there is no real reason not to just return
+    // the N1qlRepository in all cases.  In which case, we don't really need to have both, at all.  For
+    // now lets just return it, and later we can combine them into one.
     return N1qlCouchbaseRepository.class;
-  }
-
-  protected Class<? extends SimpleCouchbaseRepository> getSimpleBaseClass(final RepositoryMetadata repositoryMetadata) {
-    return SimpleCouchbaseRepository.class;
   }
 
   @Override

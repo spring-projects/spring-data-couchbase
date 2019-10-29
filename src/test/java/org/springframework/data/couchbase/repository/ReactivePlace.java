@@ -34,5 +34,5 @@ public class ReactivePlace {
         this.name = name;
     }
 
-    public ReactivePlace() {};
+    public ReactivePlace() {}
 }

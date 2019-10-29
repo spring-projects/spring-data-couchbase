@@ -14,7 +14,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 public class AuditedItem {
 
   @Id
-  private final String id;
+  private String id;
 
   private String value;
 
@@ -32,6 +32,8 @@ public class AuditedItem {
 
   @Version
   private long version;
+
+  public AuditedItem() {}
 
   public AuditedItem(String id, String value) {
     this.id = id;

@@ -56,7 +56,6 @@ import org.springframework.data.util.TypeInformation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.management.openmbean.KeyAlreadyExistsException;
 import java.time.Duration;
 import java.util.List;
 
@@ -107,21 +106,27 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                 if (version == null) {
 
                     //No version field - no cas
-                    result = client.upsert(converted.getId(), converted.getPayload(), UpsertOptions.upsertOptions().durability(persistTo, replicateTo));
+                    result = client.upsert(converted.getId(), converted.getPayload(),
+                            UpsertOptions.upsertOptions().durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
                 } else if (version > 0) {
                     //Updating existing document with cas
-                    result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().cas(version).durability(persistTo, replicateTo));
+                    result = client.replace(converted.getId(), converted.getPayload(),
+                            ReplaceOptions.replaceOptions().cas(version).durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
                 } else {
                     //Creating new document
-                    result = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo));
+                    result = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
                 }
                 break;
             case UPDATE:
-                result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().durability(persistTo, replicateTo));
+                if (version == null || version <= 0) {
+                    result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
+                } else {
+                    result = client.replace(converted.getId(), converted.getPayload(), ReplaceOptions.replaceOptions().cas(version).durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
+                }
                 break;
             case INSERT:
             default:
-                result = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo));
+                result = client.insert(converted.getId(), converted.getPayload(), InsertOptions.insertOptions().durability(persistTo, replicateTo).expiry(Duration.ofSeconds(converted.getExpiration())));
                 break;
         }
         // now lets write the new version back into the object (if it has @Version annotation)
@@ -207,11 +212,15 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                                     converted,
                                     obj.getLong(TemplateUtils.SELECT_CAS)));
                         } catch (Throwable t) {
-                            return Flux.error(new CouchbaseQueryExecutionException("oops", t));
+                            return Flux.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", t));
                         }
                 })
                 .doOnError(throwable -> {
-                        Flux.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable));
+                        if (throwable instanceof CouchbaseQueryExecutionException) {
+                            Flux.error(throwable);
+                        } else {
+                            Flux.error(new CouchbaseQueryExecutionException("Unable to execute n1ql query", throwable));
+                        }
                 });
     }
 

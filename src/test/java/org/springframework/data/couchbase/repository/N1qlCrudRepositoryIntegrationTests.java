@@ -155,7 +155,13 @@ public class N1qlCrudRepositoryIntegrationTests {
   public void shouldDoNumericProjectionWithStringBasedQuery() {
     Party partyHasKeyword = new Party(KEY_PARTY_KEYWORD, "party", "desc is a N1QL keyword", new Date(), 4000000, new Point(500, 500));
     partyRepository.save(partyHasKeyword);
-
+    // TODO: revisit this hacky sleep!!!
+    // seems we sometimes need a small pause here to be sure to see the new one in the aggregate...
+    try {
+      Thread.sleep(1000L);
+    } catch (Exception e) {
+      // noop
+    }
     long max = partyRepository.findMaxAttendees();
     assertEquals(4000000, max);
   }

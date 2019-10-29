@@ -19,16 +19,24 @@ class ReactiveJavaCouchbaseOperationsExtensionsIntegrationTest {
 
     @Test
     fun `findById should call the reified extension`()  {
-        val entityId = "RxJavaCouchbaseOperationsExtensionsTestFindById"
+        val entityId = "ReactiveCouchbaseOperationsExtensionsTestFindById"
         val entity = Entity(entityId)
         template.save(entity).block();
         val stored = template.findById<Entity>(entityId).block();
         assertEquals(entity.id, stored.id)
     }
 
-    class Entity constructor(id: String) {
+    class Entity {
         @Id
-        var id = id
+        var id : String = ""
+
+        constructor(id: String) {
+            this.id = id
+        }
+
+        constructor() {
+            this.id = ""
+        }
     }
 }
 
