@@ -10,7 +10,7 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractReactiveCouchbaseConfiguration;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.core.WriteResultChecking;
 import org.springframework.data.couchbase.core.query.Consistency;
 
@@ -54,8 +54,8 @@ public class ReactiveIntegrationTestApplicationConfig extends AbstractReactiveCo
 	}
 
 	@Override
-	public ReactiveJavaCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
-		ReactiveJavaCouchbaseTemplate template = super.reactiveCouchbaseTemplate();
+	public RxJavaCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
+		RxJavaCouchbaseTemplate template = super.reactiveCouchbaseTemplate();
 		template.setWriteResultChecking(WriteResultChecking.LOG);
 		return template;
 	}

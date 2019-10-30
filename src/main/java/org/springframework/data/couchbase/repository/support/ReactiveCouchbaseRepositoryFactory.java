@@ -21,7 +21,7 @@ import java.util.Optional;
 
 import com.couchbase.client.core.service.ServiceType;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -121,7 +121,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
      */
     @Override
     protected final Object getTargetRepository(final RepositoryInformation metadata) {
-        ReactiveJavaCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
+        RxJavaCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
                 metadata.getDomainType());
         boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
 
@@ -176,21 +176,9 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
      */
     @Override
     protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
-        ReactiveJavaCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(repositoryMetadata.getRepositoryInterface(),
-                repositoryMetadata.getDomainType());
-        boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
-        if (isN1qlAvailable) {
-            return getN1qlBaseClass(repositoryMetadata);
-        }
-        return getSimpleBaseClass(repositoryMetadata);
-    }
-
-    protected Class<? extends ReactiveN1qlCouchbaseRepository> getN1qlBaseClass(final RepositoryMetadata repositoryMetadata) {
+        // Since we always need n1ql (we eliminated use of views for findAll, etc...), lets just
+        // always return the n1ql repo
         return ReactiveN1qlCouchbaseRepository.class;
-    }
-
-    protected Class<? extends SimpleReactiveCouchbaseRepository> getSimpleBaseClass(final RepositoryMetadata repositoryMetadata) {
-        return SimpleReactiveCouchbaseRepository.class;
     }
 
     @Override
@@ -211,7 +199,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
         @Override
         public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory, NamedQueries namedQueries) {
-            ReactiveJavaCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
+            RxJavaCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
                     metadata.getDomainType());
 
             CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);

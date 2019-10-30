@@ -22,8 +22,8 @@ import java.io.Serializable;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.reactivestreams.Publisher;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.View;
@@ -51,9 +51,9 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
 
     /**
-     * Holds the reference to the {@link ReactiveJavaCouchbaseTemplate}.
+     * Holds the reference to the {@link RxJavaCouchbaseTemplate}.
      */
-    private final ReactiveJavaCouchbaseOperations operations;
+    private final RxJavaCouchbaseOperations operations;
 
     /**
      * Contains information about the entity being used in this repository.
@@ -72,8 +72,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
      * @param operations the reference to the reactive template used.
      */
     public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-                                             final ReactiveJavaCouchbaseOperations operations) {
-        Assert.notNull(operations, "ReactiveJavaCouchbaseOperations must not be null!");
+                                             final RxJavaCouchbaseOperations operations) {
+        Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
         Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
         this.entityInformation = metadata;
@@ -258,7 +258,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     }
 
     @Override
-    public ReactiveJavaCouchbaseOperations getCouchbaseOperations(){
+    public RxJavaCouchbaseOperations getCouchbaseOperations(){
         return operations;
     }
 

@@ -84,6 +84,7 @@ public abstract class AbstractReactiveCouchbaseConfiguration
         return this;
     }
 
+    @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
     protected ClusterEnvironment getEnvironment() {
         return ClusterEnvironment.builder().build();
     }

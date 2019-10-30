@@ -15,7 +15,7 @@ import kotlin.test.assertEquals
 class ReactiveJavaCouchbaseOperationsExtensionsIntegrationTest {
 
     @Autowired
-    lateinit var template: ReactiveJavaCouchbaseTemplate
+    lateinit var template: RxJavaCouchbaseTemplate
 
     @Test
     fun `findById should call the reified extension`()  {

@@ -88,6 +88,7 @@ public abstract class AbstractCouchbaseConfiguration
         return ClusterOptions.clusterOptions(getUsername(), getPassword()).environment(getEnvironment());
     }
 
+    @Bean(destroyMethod = "shutdown", name = BeanNames.COUCHBASE_ENV)
     protected ClusterEnvironment getEnvironment() {
         // TODO: reasonable default?
         return ClusterEnvironment.create();

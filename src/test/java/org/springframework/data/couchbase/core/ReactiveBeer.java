@@ -21,7 +21,7 @@ import org.springframework.data.annotation.Id;
 
 
 /**
- * Test class for persisting and loading from {@link ReactiveJavaCouchbaseTemplate}.
+ * Test class for persisting and loading from {@link RxJavaCouchbaseTemplate}.
  *
  * @author Subhashni Balakrishnan
  * @author Alex Derkach

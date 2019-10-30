@@ -53,7 +53,7 @@ public class ReactiveJavaCouchbaseTemplateIntegrationTests {
 	private Collection client;
 
 	@Autowired
-	private ReactiveJavaCouchbaseOperations template;
+	private RxJavaCouchbaseOperations template;
 
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 	private static final String DEFAULT_ID = "reactivebeers:awesome-stout";

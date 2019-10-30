@@ -33,7 +33,7 @@ import reactor.core.publisher.Mono;
  * @author Alex Derkach
  * @since 3.0
  */
-public interface ReactiveJavaCouchbaseOperations {
+public interface RxJavaCouchbaseOperations {
 
     <T> Mono<T> save(T objectToSave);
 

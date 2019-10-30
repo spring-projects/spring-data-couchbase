@@ -33,18 +33,17 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.*;
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
-import org.springframework.data.mapping.context.MappingContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * ReactiveJavaCouchbaseTemplate implements operations using rxjava1 observables
+ * RxJavaCouchbaseTemplate implements operations using rxjava1 observables
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  * @author Alex Derkach
  * @since 3.0
  */
-public class ReactiveJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements ReactiveJavaCouchbaseOperations {
+public class RxJavaCouchbaseTemplate extends CouchbaseTemplateSupport implements RxJavaCouchbaseOperations {
 
     private static final WriteResultChecking DEFAULT_WRITE_RESULT_CHECKING = WriteResultChecking.NONE;
 
@@ -135,11 +134,11 @@ public class ReactiveJavaCouchbaseTemplate extends CouchbaseTemplateSupport impl
                 .flatMap(object -> remove(object, persistTo, replicateTo));
     }
 
-    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client) {
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client) {
         this(cluster, client, null, null);
     }
 
-    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client, final TranslationService translationService) {
         this(cluster, client, null, translationService);
     }
 
@@ -148,9 +147,9 @@ public class ReactiveJavaCouchbaseTemplate extends CouchbaseTemplateSupport impl
         this.writeResultChecking = writeResultChecking == null ? DEFAULT_WRITE_RESULT_CHECKING : writeResultChecking;
     }
 
-    public ReactiveJavaCouchbaseTemplate(final Cluster cluster, final Collection client,
-                                         final CouchbaseConverter converter,
-                                         final TranslationService translationService) {
+    public RxJavaCouchbaseTemplate(final Cluster cluster, final Collection client,
+                                   final CouchbaseConverter converter,
+                                   final TranslationService translationService) {
         this.syncClient = client;
         this.cluster = cluster;
         this.client = client.reactive();

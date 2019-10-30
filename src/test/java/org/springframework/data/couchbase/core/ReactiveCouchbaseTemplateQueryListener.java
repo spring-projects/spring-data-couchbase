@@ -39,7 +39,7 @@ public class ReactiveCouchbaseTemplateQueryListener extends DependencyInjectionT
 	}
 
 	private void populateTestData(Cluster cluster, Collection collection) {
-		ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(cluster, collection);
+		RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(cluster, collection);
 		for (int i = 0; i < 100; i++) {
 			ReactiveBeer b = new ReactiveBeer("testbeer-" + i, "MyBeer" + i, true, "");
 			template.save(b).subscribe();
@@ -51,7 +51,7 @@ public class ReactiveCouchbaseTemplateQueryListener extends DependencyInjectionT
 		Cluster cluster = (Cluster) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_CLUSTER);
 		Bucket bucket = (Bucket) testContext.getApplicationContext().getBean(BeanNames.COUCHBASE_BUCKET);
 		Collection collection = bucket.defaultCollection(); // TODO: add better collection support when 6.5 is out?
-		ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(cluster, collection);
+		RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(cluster, collection);
 
 		for (int i = 0; i < 100; i++) {
 			ReactiveBeer b = new ReactiveBeer("testbeer-" + i, "MyBeer" + i, true, "");

@@ -108,7 +108,7 @@ public class CouchbaseClusterParser extends AbstractSingleBeanDefinitionParser {
 		bean.setFactoryMethod("create");
 		bean.setDestroyMethodName("disconnect");
 
-		parseEnvironment(bean, element);
+		//parseEnvironment(bean, element);
 
 		List<Element> nodes = DomUtils.getChildElementsByTagName(element, CLUSTER_NODE_TAG);
 		if (nodes != null && nodes.size() > 0) {

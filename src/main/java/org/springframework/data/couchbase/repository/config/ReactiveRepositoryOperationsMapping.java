@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.context.MappingContext;
@@ -31,16 +31,16 @@ import org.springframework.util.Assert;
  * @since 3.0
  */
 public class ReactiveRepositoryOperationsMapping {
-	private ReactiveJavaCouchbaseOperations defaultOperations;
-	private Map<String, ReactiveJavaCouchbaseOperations> byRepository = new HashMap<String, ReactiveJavaCouchbaseOperations>();
-	private Map<String, ReactiveJavaCouchbaseOperations> byEntity = new HashMap<String, ReactiveJavaCouchbaseOperations>();
+	private RxJavaCouchbaseOperations defaultOperations;
+	private Map<String, RxJavaCouchbaseOperations> byRepository = new HashMap<String, RxJavaCouchbaseOperations>();
+	private Map<String, RxJavaCouchbaseOperations> byEntity = new HashMap<String, RxJavaCouchbaseOperations>();
 
 	/**
 	 * Creates a new mapping, setting the default fallback to use by otherwise non mapped repositories.
 	 *
 	 * @param defaultOperations the default fallback reactive couchbase operations.
 	 */
-	public ReactiveRepositoryOperationsMapping(ReactiveJavaCouchbaseOperations defaultOperations) {
+	public ReactiveRepositoryOperationsMapping(RxJavaCouchbaseOperations defaultOperations) {
 		Assert.notNull(defaultOperations);
 		this.defaultOperations = defaultOperations;
 	}
@@ -51,7 +51,7 @@ public class ReactiveRepositoryOperationsMapping {
 	 * @param aDefault the new default couchbase operations.
 	 * @return the mapping, for chaining.
 	 */
-	public ReactiveRepositoryOperationsMapping setDefault(ReactiveJavaCouchbaseOperations aDefault) {
+	public ReactiveRepositoryOperationsMapping setDefault(RxJavaCouchbaseOperations aDefault) {
 		Assert.notNull(aDefault);
 		this.defaultOperations = aDefault;
 		return this;
@@ -59,13 +59,13 @@ public class ReactiveRepositoryOperationsMapping {
 
 	/**
 	 * Add a highest priority mapping that will associate a specific repository interface with a given
-	 * {@link ReactiveJavaCouchbaseOperations}.
+	 * {@link RxJavaCouchbaseOperations}.
 	 *
 	 * @param repositoryInterface the repository interface {@link Class}.
 	 * @param operations the ReactiveCouchbaseOperations to use.
 	 * @return the mapping, for chaining.
 	 */
-	public ReactiveRepositoryOperationsMapping map(Class<?> repositoryInterface, ReactiveJavaCouchbaseOperations operations) {
+	public ReactiveRepositoryOperationsMapping map(Class<?> repositoryInterface, RxJavaCouchbaseOperations operations) {
 		byRepository.put(repositoryInterface.getName(), operations);
 		return this;
 	}
@@ -78,20 +78,20 @@ public class ReactiveRepositoryOperationsMapping {
 	 * @param operations the CouchbaseOperations to use.
 	 * @return the mapping, for chaining.
 	 */
-	public ReactiveRepositoryOperationsMapping mapEntity(Class<?> entityClass, ReactiveJavaCouchbaseOperations operations) {
+	public ReactiveRepositoryOperationsMapping mapEntity(Class<?> entityClass, RxJavaCouchbaseOperations operations) {
 		byEntity.put(entityClass.getName(), operations);
 		return this;
 	}
 
 	/**
-	 * @return the configured default {@link ReactiveJavaCouchbaseOperations}.
+	 * @return the configured default {@link RxJavaCouchbaseOperations}.
 	 */
-	public ReactiveJavaCouchbaseOperations getDefault() {
+	public RxJavaCouchbaseOperations getDefault() {
 		return defaultOperations;
 	}
 
 	/**
-	 * Get the {@link MappingContext} to use in repositories. It is extracted from the default {@link ReactiveJavaCouchbaseOperations}.
+	 * Get the {@link MappingContext} to use in repositories. It is extracted from the default {@link RxJavaCouchbaseOperations}.
 	 *
 	 *  @return the mapping context.
 	 */
@@ -100,7 +100,7 @@ public class ReactiveRepositoryOperationsMapping {
 	}
 
 	/**
-	 * Given a repository interface and its domain type, resolves which {@link ReactiveJavaCouchbaseOperations} it should be backed with.
+	 * Given a repository interface and its domain type, resolves which {@link RxJavaCouchbaseOperations} it should be backed with.
 	 *
 	 * Starts by looking for a direct mapping to the interface, then a common mapping for the domain type, then falls back
 	 * to the default CouchbaseOperations.
@@ -109,8 +109,8 @@ public class ReactiveRepositoryOperationsMapping {
 	 * @param domainType the repository's domain type / entity.
 	 * @return the CouchbaseOperations to back the repository.
 	 */
-	public ReactiveJavaCouchbaseOperations resolve(Class<?> repositoryInterface, Class<?> domainType) {
-		ReactiveJavaCouchbaseOperations result = byRepository.get(repositoryInterface.getName());
+	public RxJavaCouchbaseOperations resolve(Class<?> repositoryInterface, Class<?> domainType) {
+		RxJavaCouchbaseOperations result = byRepository.get(repositoryInterface.getName());
 		if (result != null) {
 			return result;
 		} else {

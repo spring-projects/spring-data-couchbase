@@ -6,7 +6,7 @@
 		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <couchbase:env/>
-    <couchbase:cluster/>
+    <couchbase:cluster />
     <couchbase:bucket username="protected" bucketName="protected" bucketPassword="password"/>
 
     <couchbase:template/>

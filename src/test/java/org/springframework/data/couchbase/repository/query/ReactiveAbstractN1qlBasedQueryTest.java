@@ -22,8 +22,8 @@ import com.couchbase.client.java.json.JsonValue;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 import org.junit.*;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.query.Consistency;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -64,7 +64,7 @@ public class ReactiveAbstractN1qlBasedQueryTest {
                                                                          projectionFactory,
                                                                          context);
 
-    ReactiveJavaCouchbaseTemplate template = mock(ReactiveJavaCouchbaseTemplate.class);
+    RxJavaCouchbaseTemplate template = mock(RxJavaCouchbaseTemplate.class);
     when(template.getDefaultConsistency()).thenReturn(Consistency.STRONGLY_CONSISTENT);
 
     QueryScanConsistency defaultConsistency = new SampleQuery(defaultQueryMethod, template).getScanConsistency();
@@ -90,7 +90,7 @@ public class ReactiveAbstractN1qlBasedQueryTest {
   class SampleQuery extends ReactiveAbstractN1qlBasedQuery {
 
     protected SampleQuery(CouchbaseQueryMethod queryMethod,
-                          ReactiveJavaCouchbaseOperations couchbaseOperations) {
+                          RxJavaCouchbaseOperations couchbaseOperations) {
       super(queryMethod, couchbaseOperations);
     }
 

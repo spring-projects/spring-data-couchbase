@@ -7,7 +7,7 @@ import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import org.springframework.data.couchbase.config.BeanNames;
-import org.springframework.data.couchbase.core.ReactiveJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
@@ -25,7 +25,7 @@ public class SimpleReactiveCouchbaseRepositoryListener extends DependencyInjecti
 	}
 
 	private void populateTestData(Cluster cluster, Collection collection) {
-		ReactiveJavaCouchbaseTemplate template = new ReactiveJavaCouchbaseTemplate(cluster, collection);
+		RxJavaCouchbaseTemplate template = new RxJavaCouchbaseTemplate(cluster, collection);
 
 		for (int i = 0; i < 100; i++) {
 			ReactiveUser u = new ReactiveUser("reactivetestuser-" + i, "reactiveuname-" + i, i);
