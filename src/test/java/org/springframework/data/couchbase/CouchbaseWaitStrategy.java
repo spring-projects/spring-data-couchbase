@@ -7,11 +7,11 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.couchbase.client.java.util.features.Version;
-import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.WaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategyTarget;
 
 /**
  * WaitStrategy for Couchbase containers which makes the Server node is
@@ -21,8 +21,10 @@ public class CouchbaseWaitStrategy implements WaitStrategy {
 
     private Duration startupTimeout = Duration.of(60, SECONDS);
     private final Boolean rbacEnabled;
+    private final Container container;
 
-    public CouchbaseWaitStrategy(String serverVersion) {
+    public CouchbaseWaitStrategy(String serverVersion, GenericContainer container) {
+        this.container = container;
         Version version = Version.parseVersion(serverVersion);
         rbacEnabled = version.major() >= 5;
     }
@@ -40,11 +42,10 @@ public class CouchbaseWaitStrategy implements WaitStrategy {
     }
 
     @Override
-    public void waitUntilReady(GenericContainer container) {
+    public void waitUntilReady(WaitStrategyTarget target) {
         try {
             checkService(8091, "/pools");
             Container.ExecResult result;
-
             if (rbacEnabled) {
                 result = container.execInContainer("/opt/couchbase/bin/couchbase-cli",
                         "cluster-init",

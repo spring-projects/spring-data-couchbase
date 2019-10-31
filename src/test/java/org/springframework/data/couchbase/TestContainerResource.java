@@ -44,7 +44,7 @@ public class TestContainerResource extends ExternalResource {
                     .withFixedExposedPort(11210, 11210)
                     .withFixedExposedPort(11211, 11211)
                     .withFixedExposedPort(11207, 11207);
-            couchbaseContainer.waitingFor(new CouchbaseWaitStrategy(serverVersion));
+            couchbaseContainer.waitingFor(new CouchbaseWaitStrategy(serverVersion, couchbaseContainer));
             couchbaseContainer.start();
         }
 
