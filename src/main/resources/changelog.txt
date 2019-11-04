@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.1.12.RELEASE (2019-11-04)
+----------------------------------------------
+* DATACOUCH-480 - Release 3.1.12 (Lovelace SR12).
+
+
 Changes in version 3.2.0.RELEASE (2019-09-30)
 ---------------------------------------------
 * DATACOUCH-479 - Use version property for testcontainers in pom.xml.
