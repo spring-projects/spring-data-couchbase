@@ -42,6 +42,8 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   List<Party> findByAttendeesGreaterThanEqual(int minAttendees);
 
+  List<Party> findByName(String name);
+
   List<Party> findByEventDateIs(Date targetDate);
 
   @View(designDocument = "party", viewName = "byDate")
