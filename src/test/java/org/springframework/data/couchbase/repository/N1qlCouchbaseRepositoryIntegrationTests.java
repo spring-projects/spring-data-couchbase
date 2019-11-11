@@ -41,9 +41,15 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -88,6 +94,40 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
   public void cleanUp() {
     try { itemRepository.deleteById(KEY_ITEM); } catch (DataRetrievalFailureException e) {}
     try { partyRepository.deleteById(KEY_PARTY); } catch (DataRetrievalFailureException e) {}
+  }
+
+  @Test
+  public void shouldBeThreadsafe() {
+    // This doesn't guarantee it, but we should catch most thread issues without
+    // taking too long here...
+    int runs = 50;
+    for (int i=0; i<runs; i++) {
+      doShouldBeThreadsafe();
+    }
+  }
+  public void doShouldBeThreadsafe() {
+    int threads = 50;
+    ExecutorService service = Executors.newFixedThreadPool(threads);
+    List<Callable<Boolean>> callables = new ArrayList<>();
+    for (int thread = 0; thread < threads; ++thread) {
+      final int counter = thread;
+      Callable<Boolean> booleanSupplier = () -> {
+        String expectedName = "party like it's 199" + counter%12;
+        String foundName = partyRepository.findByName(expectedName).get(0).getName();
+        return expectedName.equals(foundName); //should never get false
+      };
+      callables.add(booleanSupplier);
+    }
+    try {
+      List<Future<Boolean>> futures = service.invokeAll(callables);
+      service.shutdown();
+      service.awaitTermination(5, TimeUnit.SECONDS);
+      for (Future<Boolean> future: futures) {
+        assertTrue(future.get());
+      }
+    } catch (InterruptedException | ExecutionException e) {
+      fail("Threads failed to run " + e.getMessage());
+    }
   }
 
   @Test
