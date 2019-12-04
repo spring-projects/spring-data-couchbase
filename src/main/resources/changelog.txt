@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.3.RELEASE (2019-12-04)
+---------------------------------------------
+* DATACOUCH-492 - Upgrade to Couchbase Driver 2.7.10.
+* DATACOUCH-491 - Release 3.2.3 (Moore SR3).
+
+
 Changes in version 3.1.14.RELEASE (2019-12-04)
 ----------------------------------------------
 * DATACOUCH-490 - Release 3.1.14 (Lovelace SR14).
@@ -947,4 +953,5 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
