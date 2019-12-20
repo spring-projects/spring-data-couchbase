@@ -30,8 +30,9 @@ import com.couchbase.client.java.error.CASMismatchException;
 import com.couchbase.client.java.error.DocumentAlreadyExistsException;
 import com.couchbase.client.java.query.*;
 import com.couchbase.client.java.view.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Set;
+import javax.validation.ConstraintViolationException;
+import javax.validation.Validator;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
@@ -66,7 +67,8 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     private final TranslationService translationService;
     private Consistency configuredConsistency = Consistency.DEFAULT_CONSISTENCY;
     private WriteResultChecking writeResultChecking = DEFAULT_WRITE_RESULT_CHECKING;
-
+    private Validator validator;
+    
     public <T> Observable<T> save(T objectToSave) {
         return save(objectToSave, PersistTo.NONE, ReplicateTo.NONE);
     }
@@ -203,6 +205,7 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     }
 
     private <T> Observable<T> doPersist(T objectToPersist, PersistType persistType, PersistTo persistTo, ReplicateTo replicateTo) {
+        validateBeforePersist(objectToPersist);
         // If version is not set - assumption that document is new, otherwise updating
         Long version = getVersion(objectToPersist);
         Func3<RawJsonDocument, PersistTo, ReplicateTo, Observable<RawJsonDocument>> persistFunction;
@@ -276,7 +279,7 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
         CouchbasePersistentProperty versionProperty = versionProperty(object);
 
         return versionProperty == null //
-            ? null // 
+            ? null //
             : getPropertyAccessor(object).getProperty(versionProperty, Long.class);
     }
 
@@ -494,7 +497,20 @@ public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
     public ClusterInfo getCouchbaseClusterInfo() {
         return this.clusterInfo;
     }
-
+    
+    public void setValidator(final Validator validator) {
+        this.validator = validator;
+    }
+    
+    private <T> void validateBeforePersist(T objectToPersist) {
+        if (validator != null) {
+            Set violations = validator.validate(objectToPersist);
+            if (!violations.isEmpty()) {
+                throw new ConstraintViolationException(violations);
+            }
+        }
+    }
+    
     private enum PersistType {
         SAVE("Save", "Upsert"),
         INSERT("Insert", "Insert"),
