@@ -33,6 +33,9 @@ import javax.validation.ConstraintViolationException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
+/**
+ * @author Leo Duarte
+ */
 @RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = ReactiveValidatingIntegrationTestApplicationConfig.class)
 public class ValidatingReactiveCouchbaseIntegrationTests {

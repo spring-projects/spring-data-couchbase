@@ -52,6 +52,7 @@ import rx.functions.Func3;
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  * @author Alex Derkach
+ * @author Leo Duarte
  * @since 3.0
  */
 public class RxJavaCouchbaseTemplate implements RxJavaCouchbaseOperations {
