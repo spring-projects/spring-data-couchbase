@@ -62,6 +62,9 @@ public class ValidatingReactiveCouchbaseIntegrationTests {
   }
 }
 
+/**
+ * @author Leo Duarte
+ */
 @Configuration
 class ReactiveValidatingIntegrationTestApplicationConfig extends ReactiveIntegrationTestApplicationConfig {
 
