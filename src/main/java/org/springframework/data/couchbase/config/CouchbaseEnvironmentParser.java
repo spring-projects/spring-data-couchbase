@@ -103,13 +103,13 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 	 */
 	@Override
 	protected void doParse(final Element envElement, final BeanDefinitionBuilder envDefinitionBuilder) {
-		setPropertyValue(envDefinitionBuilder, envElement, "managementTimeout", "managementTimeout");
+		/*setPropertyValue(envDefinitionBuilder, envElement, "managementTimeout", "managementTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "queryTimeout", "queryTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "viewTimeout", "viewTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "kvTimeout", "kvTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "connectTimeout", "connectTimeout");
 		setPropertyValue(envDefinitionBuilder, envElement, "disconnectTimeout", "disconnectTimeout");
-		setPropertyValue(envDefinitionBuilder, envElement, "dnsSrvEnabled", "dnsSrvEnabled");
+		setPropertyValue(envDefinitionBuilder, envElement, "enableDnsSrv", "enableDnsSrv");
 
 		setPropertyValue(envDefinitionBuilder, envElement, "sslEnabled", "sslEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "sslKeystoreFile", "sslKeystoreFile");
@@ -141,9 +141,9 @@ public class CouchbaseEnvironmentParser extends AbstractSingleBeanDefinitionPars
 		setPropertyValue(envDefinitionBuilder, envElement, "operationTracingServerDurationEnabled", "operationTracingServerDurationEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "orphanResponseReportingEnabled", "orphanResponseReportingEnabled");
 		setPropertyValue(envDefinitionBuilder, envElement, "compressionMinSize", "compressionMinSize");
-		setPropertyValue(envDefinitionBuilder, envElement, "compressionMinRatio", "compressionMinRatio");
+		setPropertyValue(envDefinitionBuilder, envElement, "compressionMinRatio", "compressionMinRatio");*/
 
 		//retry strategy is particular, in the xsd this is an enum (FailFast, BestEffort)
-		setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");
+		// setPropertyValue(envDefinitionBuilder, envElement, "retryStrategy", "retryStrategy");
 	}
 }

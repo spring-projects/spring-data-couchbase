@@ -3,8 +3,7 @@ package org.springframework.data.couchbase.core;
 import static org.junit.Assert.*;
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 
-import com.couchbase.client.core.error.KeyNotFoundException;
-import com.couchbase.client.java.Bucket;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import org.junit.Rule;
 import org.junit.Test;
@@ -42,7 +41,7 @@ public class CouchbaseTemplateIdGenerationIntegrationTests {
         try {
             client.remove(key);
         }
-        catch (KeyNotFoundException e) {
+        catch (DocumentNotFoundException e) {
             //ignore
         }
     }

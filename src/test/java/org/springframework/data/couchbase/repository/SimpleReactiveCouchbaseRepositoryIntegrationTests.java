@@ -21,7 +21,7 @@ import static org.springframework.data.couchbase.CouchbaseTestHelper.getReposito
 import java.util.Arrays;
 import java.util.List;
 
-import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import org.junit.Before;
 import org.junit.Rule;
@@ -70,7 +70,7 @@ public class SimpleReactiveCouchbaseRepositoryIntegrationTests {
 	private void remove(String key) {
 		try {
 			client.remove(key);
-		} catch (KeyNotFoundException e) {
+		} catch (DocumentNotFoundException e) {
 		}
 	}
 

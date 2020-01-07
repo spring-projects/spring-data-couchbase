@@ -244,7 +244,7 @@ public class StringBasedN1qlQueryParser {
 				return getPositionalPlaceholderValues(accessor);
 			case NONE:
 			default:
-				return JsonArray.empty();
+				return JsonArray.create();
 		}
 	}
 

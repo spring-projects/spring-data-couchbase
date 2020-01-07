@@ -52,7 +52,7 @@ public class IndexManager {
 
   private static final String TEMPLATE_MAP_FUNCTION = "function (doc, meta) { if(doc.%s == \"%s\") { emit(meta.id, null); } }";
 
-  private static final JsonObject SUCCESS_MARKER = JsonObject.empty();
+  private static final JsonObject SUCCESS_MARKER = JsonObject.create();
 
   /** True if this index manager should ignore N1QL PRIMARY creation annotations */
   private boolean ignoreN1qlPrimary;
@@ -100,8 +100,6 @@ public class IndexManager {
    * Build the relevant indexes according to the provided annotation and repository metadata, in parallel but blocking
    * until all relevant indexes are created. Existing indexes will be detected and skipped.
    * <p/>
-   * Note that this IndexManager could be configured to ignore some of the annotation types.
-   * In case of multiple errors, a {@link CompositeException} can be raised with up to 3 causes (one per type of index).
    *
    * @param metadata the repository's metadata (allowing to find out the type of entity stored, the key under which type
    *  information is stored, etc...).
@@ -109,7 +107,6 @@ public class IndexManager {
    * @param n1qlSecondaryIndexed the annotation for creation of a N1QL-based secondary index (specific to the repository
    *   stored entity).
    * @param couchbaseOperations the template to use for index creation.
-   * @throws CompositeException when several errors (for multiple index types) have been raised.
    */
   // TODO: remove ViewIndexed
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
@@ -134,16 +131,13 @@ public class IndexManager {
    * Build the relevant indexes according to the provided annotation and repository metadata, in parallel but blocking
    * until all relevant indexes are created. Existing indexes will be detected and skipped.
    * <p/>
-   * Note that this IndexManager could be configured to ignore some of the annotation types.
-   * In case of multiple errors, a {@link CompositeException} can be raised with up to 3 causes (one per type of index).
-   *
+
    * @param metadata the repository's metadata (allowing to find out the type of entity stored, the key under which type
    *  information is stored, etc...).
    * @param n1qlPrimaryIndexed the annotation for creation of a N1QL-based primary index (generic).
    * @param n1qlSecondaryIndexed the annotation for creation of a N1QL-based secondary index (specific to the repository
    *   stored entity).
    * @param reactiveCouchbaseOperations the template to use for index creation.
-   * @throws CompositeException when several errors (for multiple index types) have been raised.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
                            N1qlSecondaryIndexed n1qlSecondaryIndexed, RxJavaCouchbaseOperations reactiveCouchbaseOperations) {

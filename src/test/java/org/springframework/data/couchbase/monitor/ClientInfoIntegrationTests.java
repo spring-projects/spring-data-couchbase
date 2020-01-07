@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.monitor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.core.IsNot.not;
 
 import com.couchbase.client.java.Bucket;
@@ -50,10 +49,10 @@ public class ClientInfoIntegrationTests {
 		ci = new ClientInfo(client);
 	}
 
-	@Test
+	/*@Test
 	public void hostNames() {
 		String hostnames = ci.getHostNames();
 		assertThat(hostnames, not(isEmptyString()));
-	}
+	}*/
 
 }

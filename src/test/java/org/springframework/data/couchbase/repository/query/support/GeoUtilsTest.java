@@ -172,12 +172,12 @@ public class GeoUtilsTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void testConvertPointsTo2DRangesNullPoints() throws Exception {
-    GeoUtils.convertPointsTo2DRanges(JsonArray.empty(), JsonArray.empty(), false, null);
+    GeoUtils.convertPointsTo2DRanges(JsonArray.create(), JsonArray.create(), false, null);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testConvertPointsTo2DRangesEmptyPoints() throws Exception {
-    GeoUtils.convertPointsTo2DRanges(JsonArray.empty(), JsonArray.empty(), false, new Point[0]);
+    GeoUtils.convertPointsTo2DRanges(JsonArray.create(), JsonArray.create(), false, new Point[0]);
   }
 
   @Test

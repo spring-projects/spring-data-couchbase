@@ -32,7 +32,7 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonObject;
@@ -85,7 +85,7 @@ public class CouchbaseTemplateIntegrationTests {
 		try {
 			template.remove(key);
 		}
-		catch (KeyNotFoundException e) {
+		catch (DocumentNotFoundException e) {
 			//ignore
 		}
 	}
@@ -241,9 +241,7 @@ public class CouchbaseTemplateIntegrationTests {
 		assertEquals("test2", fragments.get(0).value);
 	}
 
-	/**
-	 * @see DATACOUCH-159
-	 */
+
 	@Test
 	public void shouldDeserialiseLongsAndInts() {
 		final long longValue = new Date().getTime();
@@ -460,9 +458,6 @@ public class CouchbaseTemplateIntegrationTests {
 		assertEquals(4, optimisticLockCounter.intValue());
 	}
 
-	/**
-	 * @see DATACOUCH-59
-   */
 	@Test
 	public void expiryWhenTouchOnReadDocument() throws InterruptedException {
 		String id = "simple-doc-with-update-expiry-for-read";

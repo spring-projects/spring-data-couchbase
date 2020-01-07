@@ -72,7 +72,7 @@ public class AbstractN1qlBasedQueryTest {
   @Test
   public void testEmptyArgumentsShouldProduceSimpleN1qlQuery() throws Exception {
     N1QLExpression st = select(x("*"));
-    N1QLQuery query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.empty(), QueryScanConsistency.NOT_BOUNDED);
+    N1QLQuery query = AbstractN1qlBasedQuery.buildQuery(st, JsonArray.create(), QueryScanConsistency.NOT_BOUNDED);
     JsonObject queryObject = query.n1ql();
     assertEquals(st.toString(), query.getExpression());
     // TODO: some sort of equals in QueryOptions?

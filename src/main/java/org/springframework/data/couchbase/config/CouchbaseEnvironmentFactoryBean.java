@@ -118,8 +118,8 @@ import java.time.Duration;
     this.couchbaseEnvBuilder.timeoutConfig().disconnectTimeout(Duration.ofMillis(disconnectTimeout));
   }
 
-  public void setDnsSrvEnabled(boolean dnsSrvEnabled) {
-    this.couchbaseEnvBuilder.ioConfig().dnsSrvEnabled(dnsSrvEnabled);
+  public void setEnableDnsSrv(boolean dnsSrvEnabled) {
+    this.couchbaseEnvBuilder.ioConfig().enableDnsSrv(dnsSrvEnabled);
   }
 
   /*public void setSslEnabled(boolean sslEnabled) {
@@ -173,7 +173,7 @@ import java.time.Duration;
   public void setRequestBufferSize(int requestBufferSize) {
     this.couchbaseEnvBuilder.requestBufferSize(requestBufferSize);
   }
- */
+
   public void setKvEndpoints(int kvEndpoints) {
     this.couchbaseEnvBuilder.serviceConfig().keyValueServiceConfig().endpoints(kvEndpoints);
   }
@@ -189,64 +189,5 @@ import java.time.Duration;
   public void setQueryEndpoints(int queryEndpoints) {
     this.couchbaseEnvBuilder.serviceConfig().queryServiceConfig().minEndpoints(queryEndpoints);
   }
-  /*
-  public void setMaxRequestLifetime(long maxRequestLifetime) {
-    this.couchbaseEnvBuilder.maxRequestLifetime(maxRequestLifetime);
-  }
-
-  public void setKeepAliveInterval(long keepAliveInterval) {
-    this.couchbaseEnvBuilder.keepAliveInterval(keepAliveInterval);
-  }
-
-  public void setAutoreleaseAfter(long autoreleaseAfter) {
-    this.couchbaseEnvBuilder.autoreleaseAfter(autoreleaseAfter);
-  }
-
-  public void setBufferPoolingEnabled(boolean bufferPoolingEnabled) {
-    this.couchbaseEnvBuilder.bufferPoolingEnabled(bufferPoolingEnabled);
-  }
-
-  public void setTcpNodelayEnabled(boolean tcpNodelayEnabled) {
-    this.couchbaseEnvBuilder.tcpNodelayEnabled(tcpNodelayEnabled);
-  }
-  */
-  public void setMutationTokensEnabled(boolean mutationTokensEnabled) {
-    this.couchbaseEnvBuilder.ioConfig().mutationTokensEnabled(mutationTokensEnabled);
-  }
-
-  public void setAnalyticsTimeout(long analyticsTimeout) {
-    this.couchbaseEnvBuilder.serviceConfig().analyticsServiceConfig().idleTime(Duration.ofMillis(analyticsTimeout));
-  }
-
-  public void setConfigPollInterval(long configPollInterval) {
-    this.couchbaseEnvBuilder.ioConfig().configPollInterval(Duration.ofMillis(configPollInterval));
-  }
-  /*
-  public void setConfigPollFloorInterval(long configPollFloorInterval) {
-    this.couchbaseEnvBuilder.ioConfig().configPollFloorInterval(configPollFloorInterval);
-  }
-
-  public void setCertAuthEnabled(boolean certAuthEnabled) {
-    this.couchbaseEnvBuilder.certAuthEnabled(certAuthEnabled);
-  }
-
-  public void setOperationTracingEnabled(boolean operationTracingEnabled) {
-    this.couchbaseEnvBuilder.operationTracingEnabled(operationTracingEnabled);
-  }
-
-  public void setOperationTracingServerDurationEnabled(boolean operationTracingServerDurationEnabled) {
-    this.couchbaseEnvBuilder.operationTracingServerDurationEnabled(operationTracingServerDurationEnabled);
-  }
-
-  public void setOrphanResponseReportingEnabled(boolean orphanResponseReportingEnabled) {
-    this.couchbaseEnvBuilder.orphanResponseReportingEnabled(orphanResponseReportingEnabled);
-  }
-  */
-  public void setCompressionMinSize(int compressionMinSize) {
-    this.couchbaseEnvBuilder.compressionConfig().minSize(compressionMinSize);
-  }
-
-  public void setCompressionMinRatio(double compressionMinRatio) {
-    this.couchbaseEnvBuilder.compressionConfig().minRatio(compressionMinRatio);
-  }
+   */
 }

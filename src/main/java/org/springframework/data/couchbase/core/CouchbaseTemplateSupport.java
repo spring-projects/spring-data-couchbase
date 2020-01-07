@@ -16,9 +16,9 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.error.CASMismatchException;
-import com.couchbase.client.core.error.KeyExistsException;
-import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.DocumentExistsException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ReactiveCluster;
 import com.couchbase.client.java.ReactiveCollection;
@@ -143,11 +143,11 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                     maybeEmitEvent(new AfterSaveEvent<T>(objectToPersist, converted));
                     return Mono.just(objectToPersist);
                 }).onErrorResume(e -> {
-                    if (e instanceof KeyExistsException) {
+                    if (e instanceof DocumentExistsException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
                                 " document with version value failed: " + version, e);
                     }
-                    if (e instanceof CASMismatchException) {
+                    if (e instanceof CasMismatchException) {
                         throw new OptimisticLockingFailureException(persistType.springDataOperationName +
                                 " document with version value failed: " + version, e);
                     }
@@ -165,7 +165,7 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                         return Mono.just(mapToEntity(id, doc, res.cas()));
                     })
                     .onErrorResume(e -> {
-                        if (e instanceof KeyNotFoundException) {
+                        if (e instanceof DocumentNotFoundException) {
                             return Mono.empty();
                         } else {
                             return Mono.error(TemplateUtils.translateError(e));
@@ -178,7 +178,7 @@ public class CouchbaseTemplateSupport implements ApplicationEventPublisherAware 
                         return Mono.just(mapToEntity(id, doc, res.cas()));
                     })
                     .onErrorResume(e -> {
-                                if (e instanceof KeyNotFoundException) {
+                                if (e instanceof DocumentNotFoundException) {
                                     return Mono.empty();
                                 } else {
                                     return Mono.error(TemplateUtils.translateError(e));

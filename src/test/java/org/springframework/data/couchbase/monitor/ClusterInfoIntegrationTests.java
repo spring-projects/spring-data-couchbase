@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.monitor;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-
 import com.couchbase.client.java.Bucket;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -55,6 +52,7 @@ public class ClusterInfoIntegrationTests {
 		ci = new ClusterInfo(client);
 	}
 
+	/*
 	@Test
 	public void totalDiskAssigned() {
 		assertThat(ci.getTotalDiskAssigned(), greaterThan(0L));
@@ -64,5 +62,6 @@ public class ClusterInfoIntegrationTests {
 	public void totalRAMUsed() {
 		assertThat(ci.getTotalRAMUsed(), greaterThan(0L));
 	}
+	 */
 
 }

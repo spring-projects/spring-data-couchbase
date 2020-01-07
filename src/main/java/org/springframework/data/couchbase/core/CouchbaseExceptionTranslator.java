@@ -19,27 +19,26 @@ package org.springframework.data.couchbase.core;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.TimeoutException;
 
-import com.couchbase.client.core.error.AuthenticationException;
-import com.couchbase.client.core.error.CollectionDoesNotExistException;
-import com.couchbase.client.core.error.DecodingFailedException;
-import com.couchbase.client.core.error.EncodingFailedException;
-import com.couchbase.client.core.error.KeyExistsException;
-import com.couchbase.client.core.error.KeyNotFoundException;
-import com.couchbase.client.core.error.LockException;
+import com.couchbase.client.core.error.BucketNotFoundException;
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.CollectionNotFoundException;
+import com.couchbase.client.core.error.DecodingFailureException;
+import com.couchbase.client.core.error.DesignDocumentNotFoundException;
+import com.couchbase.client.core.error.DocumentExistsException;
+import com.couchbase.client.core.error.DocumentLockedException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.core.error.EncodingFailureException;
 import com.couchbase.client.core.error.ReplicaNotConfiguredException;
 import com.couchbase.client.core.error.RequestCanceledException;
+import com.couchbase.client.core.error.ScopeNotFoundException;
 import com.couchbase.client.core.error.ServiceNotAvailableException;
 import com.couchbase.client.core.error.ConfigException;
 import com.couchbase.client.core.error.ValueTooLargeException;
-import com.couchbase.client.core.error.CASMismatchException;
 import com.couchbase.client.core.error.DurabilityAmbiguousException;
 import com.couchbase.client.core.error.DurabilityImpossibleException;
 import com.couchbase.client.core.error.DurabilityLevelNotAvailableException;
 
 import com.couchbase.client.core.error.TemporaryFailureException;
-
-import com.couchbase.client.java.manager.view.DesignDocumentNotFoundException;
-import com.couchbase.client.java.manager.collection.CollectionNotFoundException;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -73,25 +72,23 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
   @Override
   public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
 
-    if (ex instanceof AuthenticationException
-        //|| ex instanceof ConnectionClosedException
-        || ex instanceof ConfigException
-        //|| ex instanceof EnvironmentException
+    if (ex instanceof ConfigException
         || ex instanceof ServiceNotAvailableException
         || ex instanceof CollectionNotFoundException
-        || ex instanceof CollectionDoesNotExistException) {
+        || ex instanceof ScopeNotFoundException
+        || ex instanceof BucketNotFoundException) {
       return new DataAccessResourceFailureException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof KeyExistsException) {
+    if (ex instanceof DocumentExistsException) {
       return new DuplicateKeyException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof KeyNotFoundException) {
+    if (ex instanceof DocumentNotFoundException) {
       return new DataRetrievalFailureException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof CASMismatchException
+    if (ex instanceof CasMismatchException
         || ex instanceof ConcurrentModificationException
         || ex instanceof ReplicaNotConfiguredException
         || ex instanceof DurabilityLevelNotAvailableException
@@ -110,7 +107,7 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
     }
 
     if (ex instanceof TemporaryFailureException
-        || ex instanceof LockException) {
+        || ex instanceof DocumentLockedException) {
       return new TransientDataAccessResourceException(ex.getMessage(), ex);
     }
 
@@ -118,8 +115,8 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
       return new QueryTimeoutException(ex.getMessage(), ex);
     }
 
-    if (ex instanceof EncodingFailedException
-        || ex instanceof DecodingFailedException) {
+    if (ex instanceof EncodingFailureException
+        || ex instanceof DecodingFailureException) {
       //note: the more specific CouchbaseQueryExecutionException should be thrown by the template
       //when dealing with TranscodingException in the query/n1ql methods.
       return new DataRetrievalFailureException(ex.getMessage(), ex);

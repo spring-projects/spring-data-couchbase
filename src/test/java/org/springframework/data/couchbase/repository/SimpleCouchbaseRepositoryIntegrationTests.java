@@ -25,8 +25,8 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.couchbase.client.core.error.CASMismatchException;
-import com.couchbase.client.core.error.KeyNotFoundException;
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
 import org.junit.Before;
@@ -85,7 +85,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
   private void remove(String key) {
     try {
       client.remove(key);
-    } catch (KeyNotFoundException e) {
+    } catch (DocumentNotFoundException e) {
     }
   }
 
@@ -223,7 +223,7 @@ public class SimpleCouchbaseRepositoryIntegrationTests {
     }  catch (OptimisticLockingFailureException e) {
       //success
       assertTrue("optimistic locking should have CASMismatchException as cause, got " + e.getCause(),
-          e.getCause() instanceof CASMismatchException);
+          e.getCause() instanceof CasMismatchException);
     } finally {
       client.remove(key);
     }
