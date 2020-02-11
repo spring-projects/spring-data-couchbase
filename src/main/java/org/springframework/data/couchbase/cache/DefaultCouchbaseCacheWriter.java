@@ -18,13 +18,16 @@ package org.springframework.data.couchbase.cache;
 
 import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.codec.Transcoder;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryMetrics;
 import com.couchbase.client.java.query.QueryResult;
-import org.springframework.data.couchbase.connection.CouchbaseConnectionFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 
 import java.time.Duration;
 
@@ -35,15 +38,14 @@ import static com.couchbase.client.java.query.QueryOptions.queryOptions;
 
 public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 
-  private final CouchbaseConnectionFactory connectionFactory;
+  private final CouchbaseClientFactory clientFactory;
 
-  public DefaultCouchbaseCacheWriter(final CouchbaseConnectionFactory connectionFactory) {
-    this.connectionFactory = connectionFactory;
+  public DefaultCouchbaseCacheWriter(final CouchbaseClientFactory clientFactory) {
+    this.clientFactory = clientFactory;
   }
 
   @Override
-  public void put(final String bucketName, final String scopeName, final String collectionName,
-                  final String key, final Object value, final Duration expiry,
+  public void put(final String collectionName, final String key, final Object value, final Duration expiry,
                   final Transcoder transcoder) {
     UpsertOptions options = upsertOptions();
 
@@ -54,13 +56,12 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
       options.transcoder(transcoder);
     }
 
-    connectionFactory.getCollection(bucketName, scopeName, collectionName).upsert(key, value, options);
+    getCollection(collectionName).upsert(key, value, options);
   }
 
   @Override
-  public Object putIfAbsent(final String bucketName, final String scopeName, final String collectionName,
-                            final String key, final Object value, final Duration expiry,
-                          final Transcoder transcoder) {
+  public Object putIfAbsent(final String collectionName, final String key, final Object value, final Duration expiry,
+                            final Transcoder transcoder) {
     InsertOptions options = insertOptions();
 
     if (expiry != null) {
@@ -71,21 +72,19 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
     }
 
     try {
-      connectionFactory.getCollection(bucketName, scopeName, collectionName).insert(key, value, options);
+      getCollection(collectionName).insert(key, value, options);
       return null;
     } catch (final DocumentExistsException ex) {
       // If the document exists, return the current one per contract
-      return get(bucketName, scopeName, collectionName, key, transcoder);
+      return get(collectionName, key, transcoder);
     }
   }
 
   @Override
-  public Object get(final String bucketName, final String scopeName, final String collectionName,
-                    final String key, final Transcoder transcoder) {
+  public Object get(final String collectionName, final String key, final Transcoder transcoder) {
     // TODO .. the decoding side transcoding needs to be figured out?
     try {
-      return connectionFactory
-        .getCollection(bucketName, scopeName, collectionName)
+      return getCollection(collectionName)
         .get(key, getOptions().transcoder(transcoder))
         .contentAs(Object.class);
     } catch (DocumentNotFoundException ex) {
@@ -94,9 +93,9 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
   }
 
   @Override
-  public boolean remove(final String bucketName, final String scopeName, final String collectionName, final String key) {
+  public boolean remove(final String collectionName, final String key) {
     try {
-      connectionFactory.getCollection(bucketName, scopeName, collectionName).remove(key);
+      getCollection(collectionName).remove(key);
       return true;
     } catch (final DocumentNotFoundException ex) {
       return false;
@@ -104,11 +103,22 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
   }
 
   @Override
-  public long clear(final String bucketName, final String pattern) {
-    QueryResult result = connectionFactory.getCluster().query(
-      "DELETE FROM `" + bucketName + "` where meta().id LIKE $pattern",
+  public long clear(final String pattern) {
+    QueryResult result = clientFactory.getCluster().query(
+      "DELETE FROM `" + clientFactory.getBucket().name() + "` where meta().id LIKE $pattern",
       queryOptions().metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%"))
     );
     return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
+  }
+
+  private Collection getCollection(final String collectionName) {
+    final Scope scope = clientFactory.getScope();
+    if (collectionName == null) {
+      if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+        throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+      }
+      return clientFactory.getBucket().defaultCollection();
+    }
+    return scope.collection(collectionName);
   }
 }

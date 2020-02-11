@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.repository.cdi.CdiRepositoryBean;
 import org.springframework.data.repository.cdi.CdiRepositoryExtensionSupport;
 
@@ -39,7 +39,7 @@ import org.springframework.data.repository.cdi.CdiRepositoryExtensionSupport;
  */
 public class ReactiveCouchbaseRepositoryExtension extends CdiRepositoryExtensionSupport{
 
-	private final Map<Set<Annotation>, Bean<RxJavaCouchbaseOperations>> reactiveCouchbaseOperationsMap = new HashMap<Set<Annotation>, Bean<RxJavaCouchbaseOperations>>();
+	private final Map<Set<Annotation>, Bean<ReactiveCouchbaseOperations>> reactiveCouchbaseOperationsMap = new HashMap<>();
 
 	/**
 	 * Implementation of a an observer which checks for CouchbaseOperations beans and stores them in {@link #reactiveCouchbaseOperationsMap} for
@@ -53,7 +53,7 @@ public class ReactiveCouchbaseRepositoryExtension extends CdiRepositoryExtension
 		Bean<T> bean = processBean.getBean();
 		for (Type type : bean.getTypes()) {
 			if (type instanceof Class<?> && CouchbaseOperations.class.isAssignableFrom((Class<?>) type)) {
-				reactiveCouchbaseOperationsMap.put(bean.getQualifiers(), ((Bean<RxJavaCouchbaseOperations>) bean));
+				reactiveCouchbaseOperationsMap.put(bean.getQualifiers(), ((Bean<ReactiveCouchbaseOperations>) bean));
 			}
 		}
 	}
@@ -88,7 +88,7 @@ public class ReactiveCouchbaseRepositoryExtension extends CdiRepositoryExtension
 	 */
 	private <T> CdiRepositoryBean<T> createRepositoryBean(Class<T> repositoryType, Set<Annotation> qualifiers, BeanManager beanManager) {
 
-		Bean<RxJavaCouchbaseOperations> reactiveCouchbaseOperationsBean = this.reactiveCouchbaseOperationsMap.get(qualifiers);
+		Bean<ReactiveCouchbaseOperations> reactiveCouchbaseOperationsBean = this.reactiveCouchbaseOperationsMap.get(qualifiers);
 
 		if (reactiveCouchbaseOperationsBean == null) {
 			throw new UnsatisfiedResolutionException(String.format("Unable to resolve a bean for '%s' with qualifiers %s.",

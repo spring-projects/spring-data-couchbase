@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 
 import com.couchbase.client.java.json.JsonValue;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -39,7 +39,7 @@ public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQue
     private final PartTree partTree;
     private JsonValue placeHolderValues;
 
-    public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, RxJavaCouchbaseOperations operations) {
+    public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, ReactiveCouchbaseOperations operations) {
         super(queryMethod, operations);
         this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
     }
@@ -51,7 +51,7 @@ public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQue
 
     @Override
     protected N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
-        String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
+        String bucketName = getCouchbaseOperations().getBucketName();
         N1QLExpression bucket = N1qlUtils.escapedBucket(bucketName);
 
         N1QLExpression select;

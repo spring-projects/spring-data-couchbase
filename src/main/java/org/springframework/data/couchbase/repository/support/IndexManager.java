@@ -18,15 +18,14 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.util.Collections;
 
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -60,7 +59,7 @@ public class IndexManager {
   private boolean ignoreN1qlSecondary;
 
   /** To perform index creation, you need a reference to the Cluster */
-  private Cluster cluster;
+  private CouchbaseClientFactory clientFactory;
   /**
    * Construct an IndexManager that can be used as a Bean in a {@link Profile @Profile} annotated configuration
    * in order to activate only all or part of automatic index creations in some contexts (like activating it in Dev but
@@ -69,8 +68,8 @@ public class IndexManager {
    * @param processN1qlPrimary true to process, false to ignore {@link N1qlPrimaryIndexed} annotations.
    * @param processN1qlSecondary true to process, false to ignore {@link N1qlSecondaryIndexed} annotations.
    */
-  public IndexManager(Cluster cluster, boolean processN1qlPrimary, boolean processN1qlSecondary) {
-    this.cluster = cluster;
+  public IndexManager(CouchbaseClientFactory clientFactory, boolean processN1qlPrimary, boolean processN1qlSecondary) {
+    this.clientFactory = clientFactory;
     this.ignoreN1qlPrimary = !processN1qlPrimary;
     this.ignoreN1qlSecondary = !processN1qlSecondary;
   }
@@ -78,8 +77,8 @@ public class IndexManager {
   /**
    * Construct a default IndexManager that process all three types of automatic index creations.
    */
-  public IndexManager(Cluster cluster) {
-    this(cluster, true, true);
+  public IndexManager(CouchbaseClientFactory clientFactory) {
+    this(clientFactory, true, true);
   }
 
   /**
@@ -117,10 +116,10 @@ public class IndexManager {
 
     // We now _must_ have a primary index, so skip this only if specifically asked
     if (!ignoreN1qlPrimary) {
-      n1qlPrimaryAsync = buildN1qlPrimary(metadata, couchbaseOperations.getCouchbaseBucket());
+      n1qlPrimaryAsync = buildN1qlPrimary(metadata, clientFactory.getBucket().name());
     }
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
-      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, couchbaseOperations.getCouchbaseBucket(), couchbaseOperations.getConverter().getTypeKey());
+      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, clientFactory.getBucket().name(), couchbaseOperations.getConverter().getTypeKey());
     }
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
@@ -140,16 +139,16 @@ public class IndexManager {
    * @param reactiveCouchbaseOperations the template to use for index creation.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
-                           N1qlSecondaryIndexed n1qlSecondaryIndexed, RxJavaCouchbaseOperations reactiveCouchbaseOperations) {
+                           N1qlSecondaryIndexed n1qlSecondaryIndexed, ReactiveCouchbaseOperations reactiveCouchbaseOperations) {
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 
     if (n1qlPrimaryIndexed != null && !ignoreN1qlPrimary) {
-      n1qlPrimaryAsync = buildN1qlPrimary(metadata, reactiveCouchbaseOperations.getCouchbaseBucket());
+      n1qlPrimaryAsync = buildN1qlPrimary(metadata, clientFactory.getBucket().name());
     }
 
     if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
-      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, reactiveCouchbaseOperations.getCouchbaseBucket(), reactiveCouchbaseOperations.getConverter().getTypeKey());
+      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, clientFactory.getBucket().name(), reactiveCouchbaseOperations.getConverter().getTypeKey());
     }
 
     //trigger the builds, wait for the last one, throw CompositeException if errors
@@ -157,23 +156,26 @@ public class IndexManager {
     Flux.mergeDelayError(1, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
   }
 
-  private Mono<Void> buildN1qlPrimary(final RepositoryInformation metadata, Bucket bucket) {
-    final String bucketName = bucket.name();
-    return Mono.fromFuture(cluster.async().queryIndexes()
-            .createPrimaryIndex(bucketName, CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true))
+  private Mono<Void> buildN1qlPrimary(final RepositoryInformation metadata, String bucketName) {
+    return clientFactory
+      .getCluster()
+      .reactive()
+      .queryIndexes()
+      .createPrimaryIndex(bucketName, CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true)
     );
   }
 
-  private Mono<Void> buildN1qlSecondary(N1qlSecondaryIndexed config, final RepositoryInformation metadata, Bucket bucket, String typeKey) {
-    final String bucketName = bucket.name();
+  private Mono<Void> buildN1qlSecondary(N1qlSecondaryIndexed config, final RepositoryInformation metadata, String bucketName, String typeKey) {
     final String indexName = config.indexName();
     final String type = metadata.getDomainType().getName();
 
     // TODO: this doesn't restict the index to just those documents in the repository.  We really
     //       should add a where clause here.
-    return Mono.fromFuture(cluster.async().queryIndexes()
-            .createIndex(bucketName, indexName, Collections.singletonList(typeKey),
-                    CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true))
+    return clientFactory
+      .getCluster()
+      .reactive()
+      .queryIndexes()
+      .createIndex(bucketName, indexName, Collections.singletonList(typeKey), CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true)
     );
   }
 }

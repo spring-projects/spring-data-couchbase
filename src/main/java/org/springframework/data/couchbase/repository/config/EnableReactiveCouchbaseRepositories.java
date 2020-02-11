@@ -21,6 +21,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactoryBean;
 import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 
@@ -108,7 +109,7 @@ public @interface  EnableReactiveCouchbaseRepositories {
 	boolean considerNestedRepositories() default false;
 
 	/**
-	 * Configures the name of the {@link ReactiveJavaCouchbaseTemplate} bean to be used by default with the repositories detected.
+	 * Configures the name of the {@link ReactiveCouchbaseTemplate} bean to be used by default with the repositories detected.
 	 *
 	 * @return
 	 */

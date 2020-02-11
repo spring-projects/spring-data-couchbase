@@ -23,7 +23,7 @@ import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.couchbase.repository.support.ReactiveCouchbaseRepositoryFactory;
@@ -38,7 +38,7 @@ import org.springframework.util.Assert;
  */
 public class ReactiveCouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 
-	private final Bean<RxJavaCouchbaseOperations> reactiveCouchbaseOperationsBean;
+	private final Bean<ReactiveCouchbaseOperations> reactiveCouchbaseOperationsBean;
 
 	/**
 	 * Creates a new {@link ReactiveCouchbaseRepositoryBean}.
@@ -50,8 +50,8 @@ public class ReactiveCouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	 * @param detector detector for the custom {@link org.springframework.data.repository.Repository} implementations
 	 *          {@link org.springframework.data.repository.config.CustomRepositoryImplementationDetector}, can be {@literal null}.
 	 */
-	public ReactiveCouchbaseRepositoryBean(Bean<RxJavaCouchbaseOperations> reactiveOperations, Set<Annotation> qualifiers, Class<T> repositoryType,
-										   BeanManager beanManager, CustomRepositoryImplementationDetector detector) {
+	public ReactiveCouchbaseRepositoryBean(Bean<ReactiveCouchbaseOperations> reactiveOperations, Set<Annotation> qualifiers, Class<T> repositoryType,
+																				 BeanManager beanManager, CustomRepositoryImplementationDetector detector) {
 		super(qualifiers, repositoryType, beanManager, Optional.of(detector));
 
 		Assert.notNull(reactiveOperations, "Cannot create repository with 'null' for ReactiveCouchbaseOperations.");
@@ -65,14 +65,16 @@ public class ReactiveCouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	 */
 	@Override
 	protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType, Optional<Object> customImplementation) {
-		RxJavaCouchbaseOperations reactiveCouchbaseOperations = getDependencyInstance(reactiveCouchbaseOperationsBean, RxJavaCouchbaseOperations.class);
+		throw new UnsupportedOperationException("todo");
+/*
+		ReactiveCouchbaseOperations reactiveCouchbaseOperations = getDependencyInstance(reactiveCouchbaseOperationsBean, ReactiveCouchbaseOperations.class);
 		ReactiveRepositoryOperationsMapping reactiveCouchbaseOperationsMapping = new ReactiveRepositoryOperationsMapping(reactiveCouchbaseOperations);
 		IndexManager indexManager = new IndexManager(reactiveCouchbaseOperations.getCouchbaseCluster());
 
 		ReactiveCouchbaseRepositoryFactory factory = new ReactiveCouchbaseRepositoryFactory(reactiveCouchbaseOperationsMapping, indexManager);
 		
 		return customImplementation.map(o -> factory.getRepository(repositoryType, o))
-				.orElseGet(() -> factory.getRepository(repositoryType));
+				.orElseGet(() -> factory.getRepository(repositoryType));*/
 	}
 
 	@Override

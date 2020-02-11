@@ -50,7 +50,8 @@ public class CouchbaseJmxParser implements BeanDefinitionParser {
   public BeanDefinition parse(final Element element, final ParserContext parserContext) {
     String bucketName = element.getAttribute("bucket-ref");
     if (!StringUtils.hasText(bucketName)) {
-      bucketName = BeanNames.COUCHBASE_BUCKET;
+      bucketName = "couchbaseBucket";
+      // TODO
     }
     registerJmxComponents(bucketName, element, parserContext);
     return null;

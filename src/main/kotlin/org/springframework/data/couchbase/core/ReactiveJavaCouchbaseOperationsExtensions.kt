@@ -25,27 +25,3 @@ import reactor.core.publisher.Mono
  *
  * @author Subhashni Balakrishnan
  */
-
-/**
- * Extension for [RxJavaCouchbaseOperations.findById] leveraging reified type
- * @param id the identifier of the document.
- * @return the document fetched from couchbase.
- */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findById(id: String) : Mono<T> =
-        findById(id, T::class.java)
-
-/**
- * Extension for [RxJavaCouchbaseOperations.findByN1QL] leveraging reified type.
- * @param query a [N1qlQuery] instance that defines the query.
- * @return list of entities satisfying the n1ql query.
- */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QL(query: N1QLQuery) : Flux<T> =
-        findByN1QL(query, T::class.java)
-
-/**
- * Extension for [RxJavaCouchbaseOperations.findByN1QLProjection] leveraging reified type.
- * @param query a [N1qlQuery] instance that defines the query.
- * @return list of entities satisfying the n1ql query projection.
- */
-inline fun <reified T: Any> RxJavaCouchbaseOperations.findByN1QLProjection(query: N1QLQuery) : Flux<T> =
-        findByN1QLProjection(query, T::class.java)

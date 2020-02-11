@@ -82,12 +82,13 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
   protected QueryScanConsistency getScanConsistency() {
-
+    return QueryScanConsistency.REQUEST_PLUS;
+/*
     if (queryMethod.hasConsistencyAnnotation()) {
       return queryMethod.getConsistencyAnnotation().value();
     }
 
-    return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+    return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
   }
 
   @Override
@@ -162,9 +163,11 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   }
 
   protected List<?> executeCollection(N1QLQuery query, Class<?> typeToRead) {
-    logIfNecessary(query);
+    throw new UnsupportedOperationException("TODO");
+
+/*    logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
-    return result;
+    return result;*/
   }
 
   protected Object executeEntity(N1QLQuery query, Class<?> typeToRead) {
@@ -179,6 +182,8 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
   }
 
   protected Object executePaged(N1QLQuery query, N1QLQuery countQuery, Pageable pageable, Class<?> typeToRead) {
+    throw new UnsupportedOperationException("TODO");
+/*
     Assert.notNull(pageable, "Pageable must not be null!");
 
     long total = 0L;
@@ -190,21 +195,25 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 
     logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
-    return new PageImpl(result, pageable, total);
+    return new PageImpl(result, pageable, total);*/
   }
 
   protected Object executeSliced(N1QLQuery query, N1QLQuery countQuery, Pageable pageable, Class<?> typeToRead) {
-    Assert.notNull(pageable, "Pageable must not be null!");
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(pageable, "Pageable must not be null!");
     logIfNecessary(query);
     List<?> result = couchbaseOperations.findByN1QL(query, typeToRead);
     int pageSize = pageable.getPageSize();
     boolean hasNext = result.size() > pageSize;
 
-    return new SliceImpl(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);
+    return new SliceImpl(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);*/
   }
 
   protected Object executeSingleProjection(N1QLQuery query) {
-    logIfNecessary(query);
+    throw new UnsupportedOperationException("TODO");
+
+/*    logIfNecessary(query);
     //the structure of the response from N1QL gives us a JSON object even when selecting a single aggregation
     List<Map> resultAsMap = couchbaseOperations.findByN1QLProjection(query, Map.class);
 
@@ -224,7 +233,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
           "single aggregation/projection, got " + rowValues.size());
     }
 
-    return rowValues.iterator().next();
+    return rowValues.iterator().next();*/
   }
 
   @Override

@@ -38,9 +38,6 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
 
-
-
-
 /**
  * Repository base implementation for Couchbase.
  *
@@ -82,9 +79,11 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public <S extends T> S save(S entity) {
-    Assert.notNull(entity, "Entity must not be null!");
-    couchbaseOperations.save(entity);
-    return entity;
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(entity, "Entity must not be null!");
+    couchbaseOperations.upsert(entity);
+    return entity;*/
   }
 
   @Override
@@ -101,76 +100,94 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
 
   @Override
   public Optional<T> findById(ID id) {
-    Assert.notNull(id, "The given id must not be null!");
-    return Optional.ofNullable(couchbaseOperations.findById(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString(), entityInformation.getJavaType()));
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(id, "The given id must not be null!");
+    return Optional.ofNullable(couchbaseOperations.findById(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString(), entityInformation.getJavaType()));*/
   }
 
   @Override
   public boolean existsById(ID id) {
-    Assert.notNull(id, "The given id must not be null!");
-    return couchbaseOperations.exists(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(id, "The given id must not be null!");
+    return couchbaseOperations.exists(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());*/
   }
 
   @Override
   public void deleteById(ID id) {
+    throw new UnsupportedOperationException("TODO");
+/*
     Assert.notNull(id, "The given id must not be null!");
-    couchbaseOperations.remove(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());
+    couchbaseOperations.remove(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());*/
   }
 
   @Override
   public void delete(T entity) {
-    Assert.notNull(entity, "The given id must not be null!");
-    couchbaseOperations.remove(entity);
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(entity, "The given id must not be null!");
+    couchbaseOperations.remove(entity);*/
   }
 
   @Override
   public void deleteAll(Iterable<? extends T> entities) {
-    Assert.notNull(entities, "The given Iterable of entities must not be null!");
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(entities, "The given Iterable of entities must not be null!");
     for (T entity : entities) {
       couchbaseOperations.remove(entity);
-    }
+    }*/
   }
 
   @Override
     public Iterable<T> findAll() {
-      N1QLExpression expression = N1qlUtils.createSelectFromForEntity(couchbaseOperations.getCouchbaseBucket().name());
+    throw new UnsupportedOperationException("TODO");
+
+/*    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(couchbaseOperations.getBucketName());
       QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
       expression = addClassWhereClause(expression);
       N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
-    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());
+    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());*/
   }
 
   @Override
   public Iterable<T> findAllById(final Iterable<ID> ids) {
-    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(
-            couchbaseOperations.getCouchbaseBucket().name())
+    throw new UnsupportedOperationException("TODO");
+
+/*    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(
+            couchbaseOperations.getBucketName())
             .keys(ids);
     expression = addClassWhereClause(expression);
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
     N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
-    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());
+    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());*/
   }
 
   @Override
   public long count() {
-    N1QLExpression expression = select(x("COUNT(*)")).from(i(couchbaseOperations.getCouchbaseBucket().name()));
+    throw new UnsupportedOperationException("TODO");
+
+/*    N1QLExpression expression = select(x("COUNT(*)")).from(i(couchbaseOperations.getBucketName()));
     expression = addClassWhereClause(expression);
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
     N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
     QueryResult res = couchbaseOperations.queryN1QL(query);
     List<JsonObject> obj = res.rowsAsObject();
-    return couchbaseOperations.queryN1QL(query).rowsAsObject().get(0).getLong("$1");
+    return couchbaseOperations.queryN1QL(query).rowsAsObject().get(0).getLong("$1");*/
   }
 
   @Override
   public void deleteAll() {
-    N1QLExpression expression = x("DELETE").from(i(couchbaseOperations.getCouchbaseBucket().name()));
+    throw new UnsupportedOperationException("TODO");
+
+/*    N1QLExpression expression = x("DELETE").from(i(couchbaseOperations.getBucketName()));
     expression = addClassWhereClause(expression);
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
     N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-    couchbaseOperations.queryN1QL(query);
+    couchbaseOperations.queryN1QL(query);*/
   }
 
   @Override

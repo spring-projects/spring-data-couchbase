@@ -55,7 +55,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   @Override
   protected N1QLExpression getCount(ParameterAccessor accessor, Object[] runtimeParameters) {
-    N1QLExpression bucket = i(getCouchbaseOperations().getCouchbaseBucket().name());
+    N1QLExpression bucket = i(getCouchbaseOperations().getBucketName());
     N1QLExpression countFrom = select(count(x("*")).as(x(CountFragment.COUNT_ALIAS))).from(bucket);
 
     N1qlCountQueryCreator queryCountCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
@@ -67,7 +67,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   @Override
   protected N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType) {
-    String bucketName = getCouchbaseOperations().getCouchbaseBucket().name();
+    String bucketName = getCouchbaseOperations().getBucketName();
     N1QLExpression bucket = N1qlUtils.escapedBucket(bucketName);
 
     if (partTree.isDelete()) {

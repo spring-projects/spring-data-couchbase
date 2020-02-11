@@ -64,8 +64,7 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 
   @Override
   protected Object lookup(final Object key) {
-    return cacheWriter.get(cacheConfig.getBucketName(), cacheConfig.getScopeName().orElse(null),
-      cacheConfig.getCollectionName().orElse(null), createCacheKey(key), cacheConfig.getValueTranscoder());
+    return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder());
   }
 
   @Override
@@ -92,8 +91,7 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
         name));
     }
 
-    cacheWriter.put(cacheConfig.getBucketName(), cacheConfig.getScopeName().orElse(null),
-      cacheConfig.getCollectionName().orElse(null), createCacheKey(key), value, cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
+    cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
   }
 
   @Override
@@ -102,8 +100,7 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
       return get(key);
     }
 
-    Object result = cacheWriter.putIfAbsent(cacheConfig.getBucketName(), cacheConfig.getScopeName().orElse(null),
-      cacheConfig.getCollectionName().orElse(null), createCacheKey(key), value, cacheConfig.getExpiry(),
+    Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(),
       cacheConfig.getValueTranscoder());
 
     if (result == null) {
@@ -115,24 +112,22 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 
   @Override
   public void evict(final Object key) {
-    cacheWriter.remove(cacheConfig.getBucketName(), cacheConfig.getScopeName().orElse(null),
-      cacheConfig.getCollectionName().orElse(null), createCacheKey(key));
+    cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
   }
 
   @Override
   public boolean evictIfPresent(final Object key) {
-    return cacheWriter.remove(cacheConfig.getBucketName(), cacheConfig.getScopeName().orElse(null),
-      cacheConfig.getCollectionName().orElse(null), createCacheKey(key));
+    return cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
   }
 
   @Override
   public boolean invalidate() {
-    return cacheWriter.clear(name, cacheConfig.getKeyPrefixFor(name)) > 0;
+    return cacheWriter.clear(cacheConfig.getKeyPrefixFor(name)) > 0;
   }
 
   @Override
   public void clear() {
-    cacheWriter.clear(name, cacheConfig.getKeyPrefixFor(name));
+    cacheWriter.clear(cacheConfig.getKeyPrefixFor(name));
   }
 
   /**

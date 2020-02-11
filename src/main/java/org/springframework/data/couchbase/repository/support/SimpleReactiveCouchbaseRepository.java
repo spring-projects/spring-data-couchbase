@@ -22,8 +22,7 @@ import java.io.Serializable;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.reactivestreams.Publisher;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.View;
@@ -51,9 +50,9 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
 
     /**
-     * Holds the reference to the {@link RxJavaCouchbaseTemplate}.
+     * Holds the reference to the {@link ReactiveCouchbaseOperations}.
      */
-    private final RxJavaCouchbaseOperations operations;
+    private final ReactiveCouchbaseOperations operations;
 
     /**
      * Contains information about the entity being used in this repository.
@@ -72,7 +71,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
      * @param operations the reference to the reactive template used.
      */
     public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-                                             final RxJavaCouchbaseOperations operations) {
+                                             final ReactiveCouchbaseOperations operations) {
         Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
         Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
@@ -100,14 +99,17 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     public <S extends T> Mono<S> save(S entity) {
         Assert.notNull(entity, "Entity must not be null!");
-        return operations.save(entity);
+        throw new UnsupportedOperationException("TODO");
+        //return operations.save(entity);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return operations.save(entities);
+        throw new UnsupportedOperationException("TODO");
+
+//        return operations.save(entities);
     }
 
     @SuppressWarnings("unchecked")
@@ -121,15 +123,17 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<T> findById(ID id) {
-        Assert.notNull(id, "The given id must not be null!");
-        return operations.findById(id.toString(), entityInformation.getJavaType())
+        throw new UnsupportedOperationException("TODO");
+
+       // Assert.notNull(id, "The given id must not be null!");
+/*        return operations.findById(id.toString(), entityInformation.getJavaType())
                 .onErrorResume(throwable -> {
                     //reactive streams adapter doesn't work with null
                     if(throwable instanceof NullPointerException) {
                         return Mono.empty();
                     }
                     return Mono.error(throwable);
-                });
+                });*/
     }
 
     @SuppressWarnings("unchecked")
@@ -144,7 +148,9 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<Boolean> existsById(ID id) {
         Assert.notNull(id, "The given id must not be null!");
-        return operations.exists(id.toString());
+        throw new UnsupportedOperationException("TODO");
+
+        //return operations.exists(id.toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -158,25 +164,29 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAll() {
+        throw new UnsupportedOperationException("TODO");
+
         // TODO: figure out a cleaner way
-        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
+/*        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
         QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
         expression = addClassWhereClause(expression);
         N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
 
-        return operations.findByN1QL(query, entityInformation.getJavaType());
+        return operations.findByN1QL(query, entityInformation.getJavaType());*/
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAllById(final Iterable<ID> ids) {
-        // TODO: figure out a cleaner way
+        throw new UnsupportedOperationException("TODO");
+
+/*        // TODO: figure out a cleaner way
         N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
         expression = expression.keys(ids);
         expression = addClassWhereClause(expression);
         QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
         N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-        return operations.findByN1QL(query, entityInformation.getJavaType());
+        return operations.findByN1QL(query, entityInformation.getJavaType());*/
     }
 
     @SuppressWarnings("unchecked")
@@ -190,9 +200,11 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteById(ID id) {
+        throw new UnsupportedOperationException("TODO");
+
         // TODO: why does this not match the operations (Mono<T> vs Mono<Void>)
-        Assert.notNull(id, "The given id must not be null!");
-        return operations.remove(id.toString()).flatMap(res-> Mono.empty());
+/*        Assert.notNull(id, "The given id must not be null!");
+        return operations.remove(id.toString()).flatMap(res-> Mono.empty());*/
     }
 
     @Override
@@ -206,18 +218,22 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void>  delete(T entity) {
-        Assert.notNull(entity, "The given id must not be null!");
-        return operations.remove(entity).flatMap(res -> Mono.empty());
+        throw new UnsupportedOperationException("TODO");
+
+/*        Assert.notNull(entity, "The given id must not be null!");
+        return operations.remove(entity).flatMap(res -> Mono.empty());*/
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll(Iterable<? extends T> entities) {
-        Assert.notNull(entities, "The given Iterable of entities must not be null!");
+        throw new UnsupportedOperationException("TODO");
+
+/*        Assert.notNull(entities, "The given Iterable of entities must not be null!");
         return operations
                 .remove(entities)
                 .last()
-                .then(Mono.empty());
+                .then(Mono.empty());*/
     }
 
 
@@ -231,21 +247,25 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Long> count() {
-        N1QLExpression expression = select(x("COUNT(*)")).from(i(operations.getCouchbaseBucket().name()));
+        throw new UnsupportedOperationException("TODO");
+
+/*        N1QLExpression expression = select(x("COUNT(*)")).from(i(operations.getCouchbaseBucket().name()));
         QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
         expression = addClassWhereClause(expression);
         N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
         return operations.queryN1QL(query)
-                .flatMapMany(res -> res.rowsAsObject()).single().map(row -> row.getLong("$1"));
+                .flatMapMany(res -> res.rowsAsObject()).single().map(row -> row.getLong("$1"));*/
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll() {
-        N1QLExpression expression = x("DELETE").from(i(operations.getCouchbaseBucket().name()));
+        throw new UnsupportedOperationException("TODO");
+
+/*        N1QLExpression expression = x("DELETE").from(i(operations.getCouchbaseBucket().name()));
         QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
         N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-        return operations.queryN1QL(query).then(Mono.empty());
+        return operations.queryN1QL(query).then(Mono.empty());*/
     }
 
     /**
@@ -258,7 +278,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     }
 
     @Override
-    public RxJavaCouchbaseOperations getCouchbaseOperations(){
+    public ReactiveCouchbaseOperations getCouchbaseOperations(){
         return operations;
     }
 

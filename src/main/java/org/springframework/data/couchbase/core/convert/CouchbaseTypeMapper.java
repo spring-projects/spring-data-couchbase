@@ -28,4 +28,5 @@ public interface CouchbaseTypeMapper extends TypeMapper<CouchbaseDocument> {
 
   String getTypeKey();
 
+
 }

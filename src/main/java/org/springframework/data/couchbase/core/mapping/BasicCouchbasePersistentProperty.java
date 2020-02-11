@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.core.mapping;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.data.couchbase.core.mapping.annotation.Id;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;

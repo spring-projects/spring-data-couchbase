@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.convert;
+package org.springframework.data.couchbase.core;
 
-import org.springframework.data.convert.EntityWriter;
+
+import com.couchbase.client.java.kv.MutationResult;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import reactor.core.publisher.Mono;
 
 /**
- * Marker interface for the Couchbase {@link EntityWriter}.
- *
- * @author Michael Nitschinger
+ * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
  */
-public interface CouchbaseWriter<T, ConvertedCouchbaseDocument> extends EntityWriter<T, ConvertedCouchbaseDocument> {
+public interface ReactiveCouchbaseOperations {
+
+  CouchbaseConverter getConverter();
+  String getBucketName();
+  String getScopeName();
+
 }

@@ -27,7 +27,6 @@ import org.springframework.util.Assert;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Optional;
 
 public class CouchbaseCacheConfiguration {
 
@@ -37,32 +36,27 @@ public class CouchbaseCacheConfiguration {
   private final boolean usePrefix;
   private final Transcoder valueTranscoder;
   private final ConversionService conversionService;
-  private final String bucketName;
-  private final Optional<String> scopeName;
-  private final Optional<String> collectionName;
+  private final String collectionName;
 
-  private CouchbaseCacheConfiguration(final Duration expiry, final String bucketName, final boolean cacheNullValues,
+  private CouchbaseCacheConfiguration(final Duration expiry, final boolean cacheNullValues,
                                       final boolean usePrefix,
                                       final CacheKeyPrefix keyPrefix, final ConversionService conversionService,
-                                      final Transcoder valueTranscoder, final Optional<String> scopeName,
-                                      final Optional<String> collectionName) {
+                                      final Transcoder valueTranscoder, final String collectionName) {
     this.expiry = expiry;
     this.cacheNullValues = cacheNullValues;
     this.usePrefix = usePrefix;
     this.keyPrefix = keyPrefix;
     this.conversionService = conversionService;
     this.valueTranscoder = valueTranscoder;
-    this.bucketName = bucketName;
-    this.scopeName = scopeName;
     this.collectionName = collectionName;
   }
 
-  public static CouchbaseCacheConfiguration defaultCacheConfig(final String bucketName) {
+  public static CouchbaseCacheConfiguration defaultCacheConfig() {
     DefaultFormattingConversionService conversionService = new DefaultFormattingConversionService();
     registerDefaultConverters(conversionService);
 
-    return new CouchbaseCacheConfiguration(Duration.ZERO, bucketName, true, true, CacheKeyPrefix.simple(),
-      conversionService, SerializableTranscoder.INSTANCE, Optional.empty(), Optional.empty());
+    return new CouchbaseCacheConfiguration(Duration.ZERO, true, true, CacheKeyPrefix.simple(),
+      conversionService, SerializableTranscoder.INSTANCE, null);
   }
 
   /**
@@ -73,8 +67,8 @@ public class CouchbaseCacheConfiguration {
    */
   public CouchbaseCacheConfiguration entryExpiry(final Duration expiry) {
     Assert.notNull(expiry, "Expiry duration must not be null!");
-    return new CouchbaseCacheConfiguration(expiry, bucketName, cacheNullValues, usePrefix, keyPrefix,
-      conversionService, valueTranscoder, scopeName, collectionName);
+    return new CouchbaseCacheConfiguration(expiry, cacheNullValues, usePrefix, keyPrefix,
+      conversionService, valueTranscoder, collectionName);
   }
 
   /**
@@ -85,8 +79,8 @@ public class CouchbaseCacheConfiguration {
    */
   public CouchbaseCacheConfiguration valueTranscoder(final Transcoder valueTranscoder) {
     Assert.notNull(valueTranscoder, "Transcoder must not be null!");
-    return new CouchbaseCacheConfiguration(expiry, bucketName, cacheNullValues, usePrefix, keyPrefix,
-      conversionService, valueTranscoder, scopeName, collectionName);
+    return new CouchbaseCacheConfiguration(expiry, cacheNullValues, usePrefix, keyPrefix,
+      conversionService, valueTranscoder, collectionName);
   }
 
   /**
@@ -98,18 +92,8 @@ public class CouchbaseCacheConfiguration {
    * @return new {@link CouchbaseCacheConfiguration}.
    */
   public CouchbaseCacheConfiguration disableCachingNullValues() {
-    return new CouchbaseCacheConfiguration(expiry, bucketName, false, usePrefix, keyPrefix,
-      conversionService, valueTranscoder, scopeName, collectionName);
-  }
-
-  public CouchbaseCacheConfiguration scopeName(String scopeName) {
-    return new CouchbaseCacheConfiguration(expiry, bucketName, false, usePrefix, keyPrefix,
-      conversionService, valueTranscoder, Optional.of(scopeName), collectionName);
-  }
-
-  public CouchbaseCacheConfiguration collectionName(String collectionName) {
-    return new CouchbaseCacheConfiguration(expiry, bucketName, false, usePrefix, keyPrefix,
-      conversionService, valueTranscoder, scopeName, Optional.of(collectionName));
+    return new CouchbaseCacheConfiguration(expiry, false, usePrefix, keyPrefix,
+      conversionService, valueTranscoder, collectionName);
   }
 
   /**
@@ -135,8 +119,8 @@ public class CouchbaseCacheConfiguration {
    */
   public CouchbaseCacheConfiguration computePrefixWith(CacheKeyPrefix cacheKeyPrefix) {
     Assert.notNull(cacheKeyPrefix, "Function for computing prefix must not be null!");
-    return new CouchbaseCacheConfiguration(expiry, bucketName, cacheNullValues, true, cacheKeyPrefix,
-      conversionService, valueTranscoder, scopeName, collectionName);
+    return new CouchbaseCacheConfiguration(expiry, cacheNullValues, true, cacheKeyPrefix,
+      conversionService, valueTranscoder, collectionName);
   }
 
   /**
@@ -186,23 +170,9 @@ public class CouchbaseCacheConfiguration {
   }
 
   /**
-   * The name of the bucket to use for this cache.
-   */
-  public String getBucketName() {
-    return bucketName;
-  }
-
-  /**
-   * The name of the scope to use for this cache - if empty uses the default scope.
-   */
-  public Optional<String> getScopeName() {
-    return scopeName;
-  }
-
-  /**
    * The name of the collection to use for this cache - if empty uses the default collection.
    */
-  public Optional<String> getCollectionName() {
+  public String getCollectionName() {
     return collectionName;
   }
 

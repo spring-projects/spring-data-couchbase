@@ -21,7 +21,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
@@ -39,9 +39,9 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
     private static final Logger LOG = LoggerFactory.getLogger(ReactiveAbstractN1qlBasedQuery.class);
 
     protected final CouchbaseQueryMethod queryMethod;
-    private final RxJavaCouchbaseOperations couchbaseOperations;
+    private final ReactiveCouchbaseOperations couchbaseOperations;
 
-    protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, RxJavaCouchbaseOperations operations) {
+    protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, ReactiveCouchbaseOperations operations) {
         this.queryMethod = method;
         this.couchbaseOperations = operations;
     }
@@ -91,12 +91,16 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
     }
 
     protected Object execute(N1QLQuery query, Class<?> typeToRead) {
+        throw new UnsupportedOperationException();
+/*
         logIfNecessary(query);
-        return couchbaseOperations.findByN1QL(query, typeToRead);
+        return couchbaseOperations.findByN1QL(query, typeToRead);*/
     }
 
     protected Object executeSingleProjection(N1QLQuery query, final Class<?> typeToRead) {
-        logIfNecessary(query);
+        throw new UnsupportedOperationException();
+
+/*        logIfNecessary(query);
         return couchbaseOperations.findByN1QLProjection(query, Map.class)
                 .map(m -> {
                         if (m.size() > 1) {
@@ -105,7 +109,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
                         }
                         Object v = m.values().iterator().next();
                         return this.couchbaseOperations.getConverter().getConversionService().convert(v, typeToRead);
-                    });
+                    });*/
     }
 
     @Override
@@ -113,17 +117,19 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         return this.queryMethod;
     }
 
-    protected RxJavaCouchbaseOperations getCouchbaseOperations() {
+    protected ReactiveCouchbaseOperations getCouchbaseOperations() {
         return this.couchbaseOperations;
     }
 
 
     protected QueryScanConsistency getScanConsistency() {
+        throw new UnsupportedOperationException();
 
-      if (queryMethod.hasConsistencyAnnotation()) {
+/*
+        if (queryMethod.hasConsistencyAnnotation()) {
         return queryMethod.getConsistencyAnnotation().value();
       }
 
-      return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+      return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
     }
 }

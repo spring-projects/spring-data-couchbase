@@ -58,10 +58,12 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
   @Override
   public Iterable<T> findAll(Sort sort) {
-    Assert.notNull(sort, "Sort must not be null!");
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(sort, "Sort must not be null!");
 
     //prepare elements of the query
-    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getBucketName());
     N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
         getEntityInformation());
 
@@ -72,16 +74,18 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     //fire the query
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
     N1QLQuery query = new N1QLQuery(st, QueryOptions.queryOptions().scanConsistency(consistency));
-    return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
+    return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());*/
   }
 
   @Override
   public Page<T> findAll(Pageable pageable) {
-    Assert.notNull(pageable, "Pageable must not be null");
+    throw new UnsupportedOperationException("TODO");
+
+/*    Assert.notNull(pageable, "Pageable must not be null");
     QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
 
     //prepare the count total query
-    N1QLExpression countStatement = N1qlUtils.createCountQueryForEntity(getCouchbaseOperations().getCouchbaseBucket().name(),
+    N1QLExpression countStatement = N1qlUtils.createCountQueryForEntity(getCouchbaseOperations().getBucketName(),
         getCouchbaseOperations().getConverter(), getEntityInformation());
     N1QLQuery countQuery = new N1QLQuery(countStatement, QueryOptions.queryOptions().scanConsistency(consistency));
 
@@ -91,7 +95,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
     long totalCount = countResult == null || countResult.isEmpty() ? 0 : countResult.get(0).count;
 
     //prepare elements of the data query
-    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+    N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getBucketName());
 
     //add where criteria
     N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
@@ -114,5 +118,7 @@ public class N1qlCouchbaseRepository<T, ID extends Serializable>
 
     //return the list as a Page
     return new PageImpl<>(pageContent, pageable, totalCount);
+    */
+
   }
 }

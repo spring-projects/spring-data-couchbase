@@ -54,7 +54,7 @@ public class N1qlJoinResolver {
         }
         String useLKS = useLKSBuilder.length() > 0 ? "USE " + useLKSBuilder.toString() + " " : "";
 
-        String from = "FROM `" + template.getCouchbaseBucket().name() + "` lks " + useLKS + joinType + " " + template.getCouchbaseBucket().name() + " rks";
+       String from = "FROM `" + template.getBucketName()+ "` lks " + useLKS + joinType + " " + template.getBucketName() + " rks";
         String onLks = "lks." + template.getConverter().getTypeKey() + " = \""+ parameters.getEntityTypeInfo().getType().getName() + "\"";
         String onRks = "rks." + template.getConverter().getTypeKey() + " = \"" + parameters.getAssociatedEntityTypeInfo().getType().getName() + "\"";
 
@@ -96,6 +96,8 @@ public class N1qlJoinResolver {
     public static <R> List<R> doResolve(CouchbaseTemplate template,
                                         N1qlJoinResolverParameters parameters,
                                         Class<R> associatedEntityClass) {
+        throw new UnsupportedOperationException();
+/*
         String statement = buildQuery(template, parameters);
 
         if (LOGGER.isDebugEnabled()) {
@@ -103,7 +105,7 @@ public class N1qlJoinResolver {
         }
 
         N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
-        return template.findByN1QL(query, associatedEntityClass);
+        return template.findByN1QL(query, associatedEntityClass);*/
     }
 
     public static boolean isLazyJoin(N1qlJoin joinDefinition) {

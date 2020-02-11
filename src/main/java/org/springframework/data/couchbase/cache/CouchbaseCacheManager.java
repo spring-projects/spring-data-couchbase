@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.cache;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.AbstractCacheManager;
-import org.springframework.data.couchbase.connection.CouchbaseConnectionFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
@@ -41,7 +41,7 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
    *
    * @param cacheWriter must not be {@literal null}.
    * @param defaultCacheConfiguration must not be {@literal null}. Maybe just use
-   *          {@link CouchbaseCacheConfiguration#defaultCacheConfig(String)}.
+   *          {@link CouchbaseCacheConfiguration#defaultCacheConfig()}.
    * @param allowInFlightCacheCreation allow create unconfigured caches.
    */
   private CouchbaseCacheManager(final CouchbaseCacheWriter cacheWriter,
@@ -57,10 +57,10 @@ public class CouchbaseCacheManager extends AbstractCacheManager {
     this.allowInFlightCacheCreation = allowInFlightCacheCreation;
   }
 
-  public static CouchbaseCacheManager create(final CouchbaseConnectionFactory connectionFactory, final String bucketName) {
+  public static CouchbaseCacheManager create(final CouchbaseClientFactory connectionFactory) {
     return new CouchbaseCacheManager(
       new DefaultCouchbaseCacheWriter(connectionFactory),
-      CouchbaseCacheConfiguration.defaultCacheConfig(bucketName),
+      CouchbaseCacheConfiguration.defaultCacheConfig(),
       true
     );
   }

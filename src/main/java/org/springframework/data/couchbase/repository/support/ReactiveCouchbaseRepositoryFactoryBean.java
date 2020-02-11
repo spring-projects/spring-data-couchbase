@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.io.Serializable;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
@@ -55,7 +55,7 @@ public class ReactiveCouchbaseRepositoryFactoryBean<T extends Repository<S, ID>,
      *
      * @param couchbaseOperationsMapping the reference to the operations template.
      */
-    public void setCouchbaseOperations(final RxJavaCouchbaseOperations couchbaseOperationsMapping) {
+    public void setCouchbaseOperations(final ReactiveCouchbaseOperations couchbaseOperationsMapping) {
         setCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(couchbaseOperationsMapping));
     }
 

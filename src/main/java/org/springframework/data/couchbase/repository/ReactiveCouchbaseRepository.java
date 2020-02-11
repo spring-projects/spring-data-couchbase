@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.repository;
 
 import java.io.Serializable;
 
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
 /**
@@ -26,7 +26,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
  */
 public interface ReactiveCouchbaseRepository<T, ID extends Serializable> extends ReactiveCrudRepository<T, ID> {
     /**
-     * @return a reference to the underlying {@link RxJavaCouchbaseOperations operation template}.
+     * @return a reference to the underlying {@link ReactiveCouchbaseOperations operation template}.
      */
-    RxJavaCouchbaseOperations getCouchbaseOperations();
+    ReactiveCouchbaseOperations getCouchbaseOperations();
 }

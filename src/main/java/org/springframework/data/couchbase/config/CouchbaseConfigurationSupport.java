@@ -46,14 +46,14 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
- * Provides configuration support for common beans in both {@link AbstractCouchbaseDataConfiguration}
- * and {@link AbstractReactiveCouchbaseDataConfiguration} configurations
+ * Provides configuration support for the {@link AbstractCouchbaseConfiguration} configuration.
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  */
 public class CouchbaseConfigurationSupport {
+
     /**
      * Scans the mapping base package for classes annotated with {@link Document}.
      *
@@ -68,7 +68,7 @@ public class CouchbaseConfigurationSupport {
             componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
             componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
             for (BeanDefinition candidate : componentProvider.findCandidateComponents(basePackage)) {
-                initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(), AbstractReactiveCouchbaseConfiguration.class.getClassLoader()));
+                initialEntitySet.add(ClassUtils.forName(candidate.getBeanClassName(), AbstractCouchbaseConfiguration.class.getClassLoader()));
             }
         }
         return initialEntitySet;
@@ -140,23 +140,6 @@ public class CouchbaseConfigurationSupport {
     }
 
     /**
-     * Register an {@link IndexManager} bean that will be used to process {@link ViewIndexed},
-     * {@link N1qlPrimaryIndexed} and {@link N1qlSecondaryIndexed} annotations on repositories
-     * to automatically create indexes. By default, since such automatic creations are discouraged in
-     * production envrironment, the configuration will assume the worst and will ignore these annotations.
-     * <p/>
-     * If you are sure this configuration used in a context where such automatic creations are desired (eg.
-     * you want automatic index creation in Dev, just not in Prod, and this configuration is the Dev one),
-     * override the bean and use the {@link IndexManager#IndexManager()} constructor (or
-     * {@link IndexManager#IndexManager(boolean, boolean, boolean)} constructor with appropriate flags set to true to
-     * activate).
-     */
-    @Bean(name = BeanNames.COUCHBASE_INDEX_MANAGER)
-    public IndexManager indexManager(Cluster cluster) {
-        return new IndexManager(cluster, false, false); //this ignores, N1QL primary and secondary annotations
-    }
-
-    /**
      * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
      * class (the concrete class, not this one here) by default.
      * <p/>
@@ -188,13 +171,4 @@ public class CouchbaseConfigurationSupport {
         return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy() : PropertyNameFieldNamingStrategy.INSTANCE;
     }
 
-    /**
-     * Configures the default consistency for generated {@link ViewQuery view queries}
-     * and {@link N1qlQuery N1QL queries} in repositories.
-     *
-     * @return the {@link Consistency consistency} to apply by default on generated queries.
-     */
-    protected Consistency getDefaultConsistency() {
-        return Consistency.DEFAULT_CONSISTENCY;
-    }
 }

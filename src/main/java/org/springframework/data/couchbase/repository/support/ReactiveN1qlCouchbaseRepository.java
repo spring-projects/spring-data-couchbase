@@ -20,8 +20,7 @@ import java.io.Serializable;
 
 import com.couchbase.client.java.query.QueryOptions;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository;
@@ -39,17 +38,19 @@ public class ReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
         extends SimpleReactiveCouchbaseRepository<T, ID>
     implements ReactiveCouchbaseSortingRepository<T, ID> {
 
-    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, RxJavaCouchbaseOperations operations) {
+    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, ReactiveCouchbaseOperations operations) {
         super(metadata, operations);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAll(Sort sort) {
+        throw new UnsupportedOperationException("TODO");
+/*
         Assert.notNull(sort);
 
         //prepare elements of the query
-        N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getCouchbaseBucket().name());
+        N1QLExpression selectFrom = N1qlUtils.createSelectFromForEntity(getCouchbaseOperations().getBucketName());
         N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(null, getCouchbaseOperations().getConverter(),
                 getEntityInformation());
 
@@ -58,9 +59,9 @@ public class ReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
         N1QLExpression st = selectFrom.where(whereCriteria).orderBy(orderings);
 
         //fire the query
-        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        N1QLQuery query = new N1QLQuery(st, QueryOptions.queryOptions().scanConsistency(consistency));
-        return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());
+        //QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
+        N1QLQuery query = new N1QLQuery(st, QueryOptions.queryOptions()*//*.scanConsistency(consistency)*//*);
+        return getCouchbaseOperations().findByN1QL(query, getEntityInformation().getJavaType());*/
     }
 
 

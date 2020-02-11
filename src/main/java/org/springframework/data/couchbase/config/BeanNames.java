@@ -16,13 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
-import com.couchbase.client.core.config.ClusterConfig;
-import com.couchbase.client.java.Bucket;
-import com.couchbase.client.java.Cluster;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 
 /**
@@ -37,46 +32,14 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 public class BeanNames {
 
   /**
-   * The name for the default {@link ClusterConfig} bean.
-   *
-   * See {@link AbstractCouchbaseConfiguration#get()} for java config, and
-   * the "&lt;couchbase:env /&gt;" element for xml config.
-   */
-  public static final String COUCHBASE_ENV = "couchbaseEnv";
-
-  /**
-   * The name for the default {@link Cluster} bean.
-   *
-   * See {@link AbstractCouchbaseConfiguration#couchbaseCluster()} for java config, and
-   * the "&lt;couchbase:cluster /&gt;" element for xml config.
-   */
-  public static final String COUCHBASE_CLUSTER = "couchbaseCluster";
-
-  /**
-   * The name for the default {@link Bucket} bean.
-   *
-   * See {@link AbstractCouchbaseConfiguration#couchbaseClient()} for java config, and
-   * the "&lt;couchbase:bucket /&gt;" element for xml config.
-   */
-  public static final String COUCHBASE_BUCKET = "couchbaseBucket";
-
-  /**
-   * The name for the default {@link Collection}  bean;
-   */
-  public static final String COUCHBASE_COLLECTION = "couchbaseCollection";
-
-  /**
-   * The name for the default {@link Colletion} bean.
-   *
-   */
-
-  /**
    * The name for the default {@link CouchbaseOperations} bean.
    *
    * See {@link AbstractCouchbaseConfiguration#couchbaseTemplate()} for java config, and
    * the "&lt;couchbase:template /&gt;" element for xml config.
    */
   public static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
+
+  public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
 
   /**
    * The name for the default {@link TranslationService} bean.
@@ -120,13 +83,5 @@ public class BeanNames {
    * The name for the bean that will handle audit trail marking of entities.
    */
   public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
-
-  /**
-   * The name for the default {@link RxJavaCouchbaseOperations} bean.
-   *
-   * See {@link AbstractReactiveCouchbaseConfiguration#reactiveCouchbaseTemplate()} for java config, and
-   * the "&lt;couchbase:template /&gt;" element for xml config.
-   */
-  public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
 
 }

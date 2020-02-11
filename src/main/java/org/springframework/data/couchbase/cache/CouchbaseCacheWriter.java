@@ -26,45 +26,45 @@ public interface CouchbaseCacheWriter {
   /**
    * Write the given key/value pair to Couchbase an set the expiration time if defined.
    *
-   * @param name The cache name must not be {@literal null}.
+   * @param collectionName The cache name must not be {@literal null}.
    * @param key The key for the cache entry. Must not be {@literal null}.
    * @param value The value stored for the key. Must not be {@literal null}.
    * @param expiry Optional expiration time. Can be {@literal null}.
    * @param transcoder Optional transcoder to use. Can be {@literal null}.
    */
-  void put(String bucketName, String scopeName, String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
+  void put(String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
 
   /**
    * Write the given value to Couchbase if the key does not already exist.
    *
-   * @param name The cache name must not be {@literal null}.
+   * @param collectionName The cache name must not be {@literal null}.
    * @param key The key for the cache entry. Must not be {@literal null}.
    * @param value The value stored for the key. Must not be {@literal null}.
    * @param expiry Optional expiration time. Can be {@literal null}.
    * @param transcoder Optional transcoder to use. Can be {@literal null}.
    */
   @Nullable
-  Object putIfAbsent(String bucketName, String scopeName, String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
+  Object putIfAbsent(String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
 
   /**
    * Get the binary value representation from Couchbase stored for the given key.
    *
-   * @param name must not be {@literal null}.
+   * @param collectionName must not be {@literal null}.
    * @param key must not be {@literal null}.
    * @param transcoder Optional transcoder to use. Can be {@literal null}.
    * @return {@literal null} if key does not exist.
    */
   @Nullable
-  Object get(String bucketName, String scopeName, String collectionName, String key, @Nullable Transcoder transcoder);
+  Object get(String collectionName, String key, @Nullable Transcoder transcoder);
 
   /**
    * Remove the given key from Couchbase.
    *
-   * @param name The cache name must not be {@literal null}.
+   * @param collectionName The cache name must not be {@literal null}.
    * @param key The key for the cache entry. Must not be {@literal null}.
    * @return true if the document existed on removal, false otherwise.
    */
-  boolean remove(String bucketName, String scopeName, String collectionName, String key);
+  boolean remove(String collectionName, String key);
 
 
   /**
@@ -73,6 +73,6 @@ public interface CouchbaseCacheWriter {
    * @param pattern the pattern to clear.
    * @return the number of cleared items.
    */
-  long clear(String bucketName, String pattern);
+  long clear(String pattern);
 
 }
