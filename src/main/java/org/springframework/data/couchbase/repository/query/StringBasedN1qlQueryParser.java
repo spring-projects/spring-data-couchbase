@@ -30,6 +30,7 @@ import com.couchbase.client.java.json.JsonValue;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.Queryable;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -47,7 +48,7 @@ public class StringBasedN1qlQueryParser {
 
 	public static final String SPEL_PREFIX = "n1ql";
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement. This will be replaced by the correct <code>SELECT x FROM y</code> clause needed
 	 * for entity mapping. Eg. <code>"#{{@value SPEL_SELECT_FROM_CLAUSE}} WHERE test = true"</code>.
 	 * Note this only makes sense once, as the beginning of the statement.
@@ -55,28 +56,28 @@ public class StringBasedN1qlQueryParser {
 	public static final String SPEL_SELECT_FROM_CLAUSE = "#" + SPEL_PREFIX + ".selectEntity";
 
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement. This will be replaced by the (escaped) bucket name corresponding to the repository's
 	 * entity. Eg. <code>"SELECT * FROM #{{@value SPEL_BUCKET}} LIMIT 3"</code>.
 	 */
 	public static final String SPEL_BUCKET = "#" + SPEL_PREFIX + ".bucket";
 
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement. This will be replaced by the fields allowing to construct the repository's entity
 	 * (SELECT clause). Eg. <code>"SELECT #{{@value SPEL_ENTITY}} FROM test"</code>.
 	 */
 	public static final String SPEL_ENTITY = "#" + SPEL_PREFIX + ".fields";
 
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement WHERE clause. This will be replaced by the expression allowing to only select
 	 * documents matching the entity's class. Eg. <code>"SELECT * FROM test WHERE test = true AND #{{@value SPEL_FILTER}}"</code>.
 	 */
 	public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
 
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement. This will be replaced by the correct <code>delete</code> expression needed
 	 * Eg. <code>"#{{@value SPEL_DELETE}} WHERE test = true"</code>.
 	 * Note this only makes sense once, as the beginning of the statement.
@@ -84,7 +85,7 @@ public class StringBasedN1qlQueryParser {
 	public static final String SPEL_DELETE = "#" + SPEL_PREFIX + ".delete";
 
 	/**
-	 * Use this variable in a SpEL expression in a {@link org.springframework.data.couchbase.core.query.Query @Query}
+	 * Use this variable in a SpEL expression in a {@link Queryable @Query}
 	 * annotation's inline statement. This will be replaced by the correct <code>returning</code> clause needed
 	 * for entity mapping. Eg. <code>"#{{@value SPEL_RETURNING}} WHERE test = true"</code>.
 	 * Note this only makes sense once, as the beginning of the statement.

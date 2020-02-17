@@ -35,8 +35,8 @@ import org.springframework.util.Assert;
  */
 public class RepositoryOperationsMapping {
   private CouchbaseOperations defaultOperations;
-  private Map<String, CouchbaseOperations> byRepository = new HashMap<String, CouchbaseOperations>();
-  private Map<String, CouchbaseOperations> byEntity = new HashMap<String, CouchbaseOperations>();
+  private Map<String, CouchbaseOperations> byRepository = new HashMap<>();
+  private Map<String, CouchbaseOperations> byEntity = new HashMap<>();
 
 
   /**

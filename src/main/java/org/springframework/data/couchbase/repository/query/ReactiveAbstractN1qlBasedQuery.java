@@ -15,13 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import java.util.Map;
 import com.couchbase.client.java.json.JsonValue;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
@@ -39,9 +37,9 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
     private static final Logger LOG = LoggerFactory.getLogger(ReactiveAbstractN1qlBasedQuery.class);
 
     protected final CouchbaseQueryMethod queryMethod;
-    private final ReactiveCouchbaseOperations couchbaseOperations;
+    private final CouchbaseOperations couchbaseOperations;
 
-    protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, ReactiveCouchbaseOperations operations) {
+    protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, CouchbaseOperations operations) {
         this.queryMethod = method;
         this.couchbaseOperations = operations;
     }
@@ -117,7 +115,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
         return this.queryMethod;
     }
 
-    protected ReactiveCouchbaseOperations getCouchbaseOperations() {
+    protected CouchbaseOperations getCouchbaseOperations() {
         return this.couchbaseOperations;
     }
 

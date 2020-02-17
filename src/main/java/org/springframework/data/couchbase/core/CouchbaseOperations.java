@@ -22,7 +22,7 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
  */
-public interface CouchbaseOperations extends ExecutableUpsertOperation, ExecutableGetOperation, ExecutableQueryOperation {
+public interface CouchbaseOperations extends FluentCouchbaseOperations {
 
   CouchbaseConverter getConverter();
 

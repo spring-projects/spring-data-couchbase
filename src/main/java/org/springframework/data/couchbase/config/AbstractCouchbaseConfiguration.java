@@ -22,7 +22,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -50,7 +51,26 @@ public abstract class AbstractCouchbaseConfiguration extends CouchbaseConfigurat
     }
 
     @Bean
-    public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
-        return new ReactiveCouchbaseTemplate(couchbaseClientFactory(), mappingCouchbaseConverter());
+    public IndexManager couchbaseIndexManager() {
+        return new IndexManager(couchbaseClientFactory(), false, false); //this ignores view, N1QL primary and secondary annotations
+    }
+
+    @Bean
+    public RepositoryOperationsMapping couchbaseRepositoryOperationsMapping(CouchbaseTemplate couchbaseTemplate) throws  Exception {
+        //create a base mapping that associates all repositories to the default template
+        RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate);
+        //let the user tune it
+        configureRepositoryOperationsMapping(baseMapping);
+        return baseMapping;
+    }
+
+    /**
+     * In order to customize the mapping between repositories/entity types to couchbase templates,
+     * use the provided mapping's api (eg. in order to have different buckets backing different repositories).
+     *
+     * @param mapping the default mapping (will associate all repositories to the default template).
+     */
+    protected void configureRepositoryOperationsMapping(RepositoryOperationsMapping mapping) {
+        //NO_OP
     }
 }

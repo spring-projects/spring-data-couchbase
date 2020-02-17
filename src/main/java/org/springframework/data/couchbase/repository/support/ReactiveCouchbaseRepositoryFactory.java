@@ -21,13 +21,13 @@ import java.util.Optional;
 
 import com.couchbase.client.core.service.ServiceType;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
-import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.Queryable;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -121,7 +121,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
      */
     @Override
     protected final Object getTargetRepository(final RepositoryInformation metadata) {
-        ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
+        CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
                 metadata.getDomainType());
         //boolean isN1qlAvailable = couchbaseOperations.getCouchbaseClusterConfig().clusterCapabilities().containsKey(ServiceType.QUERY);
 
@@ -137,7 +137,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
         CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
         SimpleReactiveCouchbaseRepository repo = getTargetRepositoryViaReflection(metadata, entityInformation, couchbaseOperations);
-        repo.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
+        //repo.setViewMetadataProvider(viewPostProcessor.getViewMetadataProvider());
         return repo;
     }
 
@@ -150,7 +150,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
         if (!needsN1ql) {
             for (Method method : metadata.getQueryMethods()) {
 
-                boolean hasN1ql = AnnotationUtils.findAnnotation(method, Query.class) != null;
+                boolean hasN1ql = AnnotationUtils.findAnnotation(method, Queryable.class) != null;
                 boolean hasView = AnnotationUtils.findAnnotation(method, View.class) != null;
 
                 if (hasN1ql || !hasView) {
@@ -202,7 +202,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
         @Override
         public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory, NamedQueries namedQueries) {
-            ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
+            CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
                     metadata.getDomainType());
 
             CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);

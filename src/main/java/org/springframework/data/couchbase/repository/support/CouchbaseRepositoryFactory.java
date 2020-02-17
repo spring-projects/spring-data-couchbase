@@ -20,17 +20,12 @@ import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
-import com.couchbase.client.core.service.ServiceType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.UnsupportedCouchbaseFeatureException;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1qlPrimaryIndexed;
 import org.springframework.data.couchbase.core.query.N1qlSecondaryIndexed;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.View;
-import org.springframework.data.couchbase.core.query.ViewIndexed;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
@@ -115,7 +110,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
   /**
    * Returns a new Repository based on the metadata. Two categories of repositories can be instantiated:
-   * {@link SimpleCouchbaseRepository} and {@link N1qlCouchbaseRepository}.
+   * {@link SimpleCouchbaseRepository}.
    *
    * This method performs feature checks to decide which of the two categories can be instantiated (eg. is N1QL available?).
    * Instantiation is done via reflection, see {@link #getRepositoryBaseClass(RepositoryMetadata)}.
@@ -140,7 +135,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /**
-   * Returns the base class for the repository being constructed.  We always return {@link N1qlCouchbaseRepository}.
+   * Returns the base class for the repository being constructed.  We always return
    * Override these methods if you want to change the base class for all your repositories.
    *
    * @param repositoryMetadata metadata for the repository.
@@ -153,7 +148,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     // Since we now use n1ql in SimpleCouchbaseRepository, there is no real reason not to just return
     // the N1qlRepository in all cases.  In which case, we don't really need to have both, at all.  For
     // now lets just return it, and later we can combine them into one.
-    return N1qlCouchbaseRepository.class;
+    return SimpleCouchbaseRepository.class;
   }
 
   @Override

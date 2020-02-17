@@ -15,18 +15,18 @@
  */
 package org.springframework.data.couchbase.repository;
 
-import java.io.Serializable;
-
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.repository.NoRepositoryBean;
+import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 
 /**
  * @author Subhashni Balakrishnan
  * @since 3.0
  */
-public interface ReactiveCouchbaseRepository<T, ID extends Serializable> extends ReactiveCrudRepository<T, ID> {
+@NoRepositoryBean
+public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepository<T, ID> {
     /**
-     * @return a reference to the underlying {@link ReactiveCouchbaseOperations operation template}.
+     * @return a reference to the underlying {@link CouchbaseOperations operation template}.
      */
-    ReactiveCouchbaseOperations getCouchbaseOperations();
+    CouchbaseOperations getCouchbaseOperations();
 }

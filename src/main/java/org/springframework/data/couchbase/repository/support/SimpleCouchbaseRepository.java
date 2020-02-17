@@ -16,27 +16,23 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryResult;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.N1QLQuery;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.util.StreamUtils;
+import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
-
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
-import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
 
 /**
  * Repository base implementation for Couchbase.
@@ -44,7 +40,7 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.selec
  * @author Michael Nitschinger
  * @author Mark Paluch
  */
-public class SimpleCouchbaseRepository<T, ID extends Serializable> implements CouchbaseRepository<T, ID> {
+public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, ID> {
 
   /**
    * Holds the reference to the {@link org.springframework.data.couchbase.core.CouchbaseTemplate}.
@@ -57,137 +53,97 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
   private final CouchbaseEntityInformation<T, String> entityInformation;
 
   /**
-   * Custom ViewMetadataProvider.
-   */
-  private ViewMetadataProvider viewMetadataProvider;
-
-  /**
    * Create a new Repository.
    *
-   * @param metadata the Metadata for the entity.
+   * @param entityInformation the Metadata for the entity.
    * @param couchbaseOperations the reference to the template used.
    */
-  public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata, final CouchbaseOperations couchbaseOperations) {
-    Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
+  public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> entityInformation,
+                                   final CouchbaseOperations couchbaseOperations) {
+    Assert.notNull(entityInformation, "CouchbaseEntityInformation must not be null!");
     Assert.notNull(couchbaseOperations, "CouchbaseOperations must not be null!");
 
-    entityInformation = metadata;
-
-    // the base query gets all the items by their
+    this.entityInformation = entityInformation;
     this.couchbaseOperations = couchbaseOperations;
   }
 
   @Override
-  public <S extends T> S save(S entity) {
-    throw new UnsupportedOperationException("TODO");
-
-/*    Assert.notNull(entity, "Entity must not be null!");
-    couchbaseOperations.upsert(entity);
-    return entity;*/
+  @SuppressWarnings("unchecked")
+  public <S extends T> S save(final S entity) {
+    Assert.notNull(entity, "Entity must not be null!");
+    return (S) couchbaseOperations.upsertById(entityInformation.getJavaType()).one(entity);
   }
 
   @Override
-  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+  @SuppressWarnings("unchecked")
+  public <S extends T> Iterable<S> saveAll(final Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-
-    List<S> result = new ArrayList<S>();
-    for (S entity : entities) {
-      save(entity);
-      result.add(entity);
-    }
-    return result;
+    return (Iterable<S>) couchbaseOperations.upsertById(entityInformation.getJavaType()).all(Streamable.of(entities).toList());
   }
 
   @Override
-  public Optional<T> findById(ID id) {
-    throw new UnsupportedOperationException("TODO");
-
-/*    Assert.notNull(id, "The given id must not be null!");
-    return Optional.ofNullable(couchbaseOperations.findById(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString(), entityInformation.getJavaType()));*/
-  }
-
-  @Override
-  public boolean existsById(ID id) {
-    throw new UnsupportedOperationException("TODO");
-
-/*    Assert.notNull(id, "The given id must not be null!");
-    return couchbaseOperations.exists(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());*/
-  }
-
-  @Override
-  public void deleteById(ID id) {
-    throw new UnsupportedOperationException("TODO");
-/*
+  public Optional<T> findById(final ID id) {
     Assert.notNull(id, "The given id must not be null!");
-    couchbaseOperations.remove(couchbaseOperations.getConverter().convertForWriteIfNeeded(id).toString());*/
+    return Optional.ofNullable(couchbaseOperations.findById(entityInformation.getJavaType()).one(id.toString()));
   }
 
   @Override
-  public void delete(T entity) {
-    throw new UnsupportedOperationException("TODO");
-
-/*    Assert.notNull(entity, "The given id must not be null!");
-    couchbaseOperations.remove(entity);*/
+  @SuppressWarnings("unchecked")
+  public List<T> findAllById(final Iterable<ID> ids) {
+    Assert.notNull(ids, "The given Iterable of ids must not be null!");
+    List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
+    Collection<? extends T> all = couchbaseOperations.findById(entityInformation.getJavaType()).all(convertedIds);
+    return Streamable.of(all).stream().collect(StreamUtils.toUnmodifiableList());
   }
 
   @Override
-  public void deleteAll(Iterable<? extends T> entities) {
-    throw new UnsupportedOperationException("TODO");
-
-/*    Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    for (T entity : entities) {
-      couchbaseOperations.remove(entity);
-    }*/
+  public boolean existsById(final ID id) {
+    Assert.notNull(id, "The given id must not be null!");
+    return couchbaseOperations.existsById().one(id.toString());
   }
 
   @Override
-    public Iterable<T> findAll() {
-    throw new UnsupportedOperationException("TODO");
-
-/*    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(couchbaseOperations.getBucketName());
-      QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-      expression = addClassWhereClause(expression);
-      N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-
-    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());*/
+  public void deleteById(final ID id) {
+    Assert.notNull(id, "The given id must not be null!");
+    couchbaseOperations.removeById().one(id.toString());
   }
 
   @Override
-  public Iterable<T> findAllById(final Iterable<ID> ids) {
-    throw new UnsupportedOperationException("TODO");
+  public void delete(final T entity) {
+    Assert.notNull(entity, "Entity must not be null!");
+    couchbaseOperations.removeById().one(entityInformation.getId(entity));
+  }
 
-/*    N1QLExpression expression = N1qlUtils.createSelectFromForEntity(
-            couchbaseOperations.getBucketName())
-            .keys(ids);
-    expression = addClassWhereClause(expression);
-    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
+  @Override
+  public void deleteAll(final Iterable<? extends T> entities) {
+    Assert.notNull(entities, "The given Iterable of entities must not be null!");
+    couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
+  }
 
-    return couchbaseOperations.findByN1QL(query, entityInformation.getJavaType());*/
+  @Override
+  public List<T> findAll() {
+    return findAll(new Query());
   }
 
   @Override
   public long count() {
-    throw new UnsupportedOperationException("TODO");
-
-/*    N1QLExpression expression = select(x("COUNT(*)")).from(i(couchbaseOperations.getBucketName()));
-    expression = addClassWhereClause(expression);
-    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-    QueryResult res = couchbaseOperations.queryN1QL(query);
-    List<JsonObject> obj = res.rowsAsObject();
-    return couchbaseOperations.queryN1QL(query).rowsAsObject().get(0).getLong("$1");*/
+    return couchbaseOperations.findByQuery(entityInformation.getJavaType()).count();
   }
 
   @Override
   public void deleteAll() {
-    throw new UnsupportedOperationException("TODO");
+    couchbaseOperations.removeByQuery(entityInformation.getJavaType()).all();
+  }
 
-/*    N1QLExpression expression = x("DELETE").from(i(couchbaseOperations.getBucketName()));
-    expression = addClassWhereClause(expression);
-    QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-    N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-    couchbaseOperations.queryN1QL(query);*/
+  @Override
+  public List<T> findAll(final Sort sort) {
+    return findAll(new Query().with(sort));
+  }
+
+  @Override
+  public Page<T> findAll(final Pageable pageable) {
+    List<T> results = findAll(new Query().with(pageable));
+    return new PageImpl<>(results, pageable, count());
   }
 
   @Override
@@ -204,8 +160,8 @@ public class SimpleCouchbaseRepository<T, ID extends Serializable> implements Co
     return entityInformation;
   }
 
-  private final N1QLExpression addClassWhereClause(N1QLExpression exp) {
-    String classString = entityInformation.getJavaType().getCanonicalName();
-    return exp.where(x("_class").eq(s(classString)));
+  private List<T> findAll(final Query query) {
+    return couchbaseOperations.findByQuery(entityInformation.getJavaType()).matching(query).all();
   }
+
 }

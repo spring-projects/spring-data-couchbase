@@ -2,33 +2,37 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryResult;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.query.Query;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ExecutableQueryOperationSupport implements ExecutableQueryOperation {
+public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQueryOperation {
+
+  private static final Query ALL_QUERY = new Query();
 
   private final CouchbaseTemplate template;
 
-  public ExecutableQueryOperationSupport(final CouchbaseTemplate template) {
+  public ExecutableFindByQueryOperationSupport(final CouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public <T> ExecutableQuery<T> query(final Class<T> domainType) {
-    return new ExecutableQuerySupport<>(template, domainType);
+  public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
+    return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY);
   }
 
-  static class ExecutableQuerySupport<T> implements ExecutableQuery<T> {
+  static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
+    private final Query query;
 
-    ExecutableQuerySupport(final CouchbaseTemplate template, final Class<T> domainType) {
+    ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
       this.template = template;
       this.domainType = domainType;
+      this.query = query;
     }
 
     @Override
@@ -55,6 +59,11 @@ public class ExecutableQueryOperationSupport implements ExecutableQueryOperation
       String statement = assembleEntityQuery(0, false);
       QueryResult result = template.getCouchbaseClientFactory().getCluster().query(statement);
       return rowsToEntities(result.rowsAsObject());
+    }
+
+    @Override
+    public TerminatingFindByQuery<T> matching(final Query query) {
+      return new ExecutableFindByQuerySupport<>(template, domainType, query);
     }
 
     private String assembleEntityQuery(final int limit, final boolean count) {

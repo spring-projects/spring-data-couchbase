@@ -1,16 +1,17 @@
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface ExecutableQueryOperation {
+public interface ExecutableFindByQueryOperation {
 
-  <T> ExecutableQuery<T> query(Class<T> domainType);
+  <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType);
 
-  interface TerminatingQuery<T> {
+  interface TerminatingFindByQuery<T> {
     /**
      * Get exactly zero or one result.
      *
@@ -77,6 +78,25 @@ public interface ExecutableQueryOperation {
 
   }
 
-  interface ExecutableQuery<T> extends TerminatingQuery<T> {}
+  /**
+   * Terminating operations invoking the actual query execution.
+   *
+   * @author Christoph Strobl
+   * @since 2.0
+   */
+  interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
+
+    /**
+     * Set the filter query to be used.
+     *
+     * @param query must not be {@literal null}.
+     * @return new instance of {@link TerminatingFindByQuery}.
+     * @throws IllegalArgumentException if query is {@literal null}.
+     */
+    TerminatingFindByQuery<T> matching(Query query);
+
+  }
+
+  interface ExecutableFindByQuery<T> extends FindByQueryWithQuery<T> {}
 
 }

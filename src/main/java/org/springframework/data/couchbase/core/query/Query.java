@@ -1,73 +1,93 @@
-/*
- * Copyright 2012-2019 the original author or authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *        https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.springframework.data.couchbase.core.query;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.util.Assert;
 
-import org.springframework.data.annotation.QueryAnnotation;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
+public class Query {
 
-/**
- * Annotation to support the use of N1QL queries with Couchbase.
- * <p/>
- * Using it without parameter will resolve the query from the method name. Providing a value
- * (an inline N1QL statement) will execute that statement instead.
- * <p/>
- * In this case, one can use a placeholder notation of {@code ?0}, {@code ?1} and so on.
- * <p/>
- * Also, SpEL in the form <code>#{spelExpression}</code> is supported, including the
- * following N1QL variables that will be replaced by the underlying {@link CouchbaseTemplate}
- * associated information:
- * <ul>
- *  <li>
- *    {@value StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE}
- *    (see {@link StringN1qlBasedQuery#SPEL_SELECT_FROM_CLAUSE})
- *  </li>
- *  <li>
- *    {@value StringN1qlBasedQuery#SPEL_BUCKET}
- *    (see {@link StringN1qlBasedQuery#SPEL_BUCKET})
- *  </li>
- *  <li>
- *    {@value StringN1qlBasedQuery#SPEL_ENTITY}
- *    (see {@link StringN1qlBasedQuery#SPEL_ENTITY})
- *  </li>
- *  <li>
- *    {@value StringN1qlBasedQuery#SPEL_FILTER}
- *    (see {@link StringN1qlBasedQuery#SPEL_FILTER})
- *  </li>
- * </ul>
- *
- * @author Simon Baslé.
- */
-@Documented
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@QueryAnnotation
-public @interface Query {
+  private long skip;
+  private int limit;
+  private Sort sort = Sort.unsorted();
+
+  public Query() {}
 
   /**
-   * Takes a N1QL statement string to define the actual query to be executed. This one will take precedence over the
-   * method name then.
+   * Set number of documents to skip before returning results.
+   *
+   * @param skip
+   * @return
    */
-  String value() default "";
+  public Query skip(long skip) {
+    this.skip = skip;
+    return this;
+  }
+
+  /**
+   * Limit the number of returned documents to {@code limit}.
+   *
+   * @param limit
+   * @return
+   */
+  public Query limit(int limit) {
+    this.limit = limit;
+    return this;
+  }
+
+  /**
+   * Sets the given pagination information on the {@link Query} instance. Will transparently set {@code skip} and
+   * {@code limit} as well as applying the {@link Sort} instance defined with the {@link Pageable}.
+   *
+   * @param pageable
+   * @return
+   */
+  public Query with(final Pageable pageable) {
+    if (pageable.isUnpaged()) {
+      return this;
+    }
+    this.limit = pageable.getPageSize();
+    this.skip = pageable.getOffset();
+    return with(pageable.getSort());
+  }
+
+  /**
+   * Adds a {@link Sort} to the {@link Query} instance.
+   *
+   * @param sort
+   * @return
+   */
+  public Query with(final Sort sort) {
+    Assert.notNull(sort, "Sort must not be null!");
+    if (sort.isUnsorted()) {
+      return this;
+    }
+    this.sort = this.sort.and(sort);
+    return this;
+  }
+
+  public void appendSkipAndLimit(final StringBuilder sb) {
+    if (skip > 0) {
+      sb.append(" SKIP ").append(skip);
+    }
+    if (limit > 0) {
+      sb.append(" LIMIT ").append(limit);
+    }
+  }
+
+  public void appendSort(final StringBuilder sb) {
+    if (sort.isUnsorted()) {
+      return;
+    }
+
+    sb.append(" ORDER BY ");
+    sort.stream().forEach(order -> {
+      if (order.isIgnoreCase()) {
+        throw new IllegalArgumentException(String.format("Given sort contained an Order for %s with ignore case! "
+          + "Couchbase N1QL does not support sorting ignoring case currently!", order.getProperty()));
+      }
+      sb.append(order.getProperty()).append(" ").append(order.isAscending() ? "ASC," : "DESC,");
+    });
+    sb.deleteCharAt(sb.length() - 1);
+  }
 
 }

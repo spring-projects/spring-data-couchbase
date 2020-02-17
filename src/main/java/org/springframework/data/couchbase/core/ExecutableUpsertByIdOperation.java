@@ -21,30 +21,30 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 import java.util.Collection;
 
-public interface ExecutableUpsertOperation {
+public interface ExecutableUpsertByIdOperation {
 
-  <T> ExecutableUpsert<T> upsert(Class<T> domainType);
+  <T> ExecutableUpsertById<T> upsertById(Class<T> domainType);
 
-  interface TerminatingUpsert<T> {
+  interface TerminatingUpsertById<T> {
 
     T one(T object);
 
     Collection<? extends T> all(Collection<? extends T> objects);
   }
 
-  interface UpsertWithCollection<T> extends TerminatingUpsert<T> {
+  interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
 
-    TerminatingUpsert<T> inCollection(String collection);
+    TerminatingUpsertById<T> inCollection(String collection);
   }
 
-  interface UpsertWithDurability<T> extends UpsertWithCollection<T> {
+  interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
 
-    UpsertWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+    UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
-    UpsertWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+    UpsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
   }
 
-  interface ExecutableUpsert<T> extends UpsertWithDurability<T> {}
+  interface ExecutableUpsertById<T> extends UpsertByIdWithDurability<T> {}
 
 }

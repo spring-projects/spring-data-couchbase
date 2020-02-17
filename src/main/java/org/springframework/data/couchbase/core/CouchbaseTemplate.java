@@ -23,18 +23,33 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   @Override
-  public <T> ExecutableUpsert<T> upsert(final Class<T> domainType) {
-    return new ExecutableUpsertOperationSupport(this).upsert(domainType);
+  public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
+    return new ExecutableUpsertByIdOperationSupport(this).upsertById(domainType);
   }
 
   @Override
-  public <T> ExecutableGet<T> get(Class<T> domainType) {
-    return new ExecutableGetOperationSupport(this).get(domainType);
+  public <T> ExecutableFindById<T> findById(Class<T> domainType) {
+    return new ExecutableFindByIdOperationSupport(this).findById(domainType);
   }
 
   @Override
-  public <T> ExecutableQuery<T> query(Class<T> domainType) {
-    return new ExecutableQueryOperationSupport(this).query(domainType);
+  public <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType) {
+    return new ExecutableFindByQueryOperationSupport(this).findByQuery(domainType);
+  }
+
+  @Override
+  public ExecutableRemoveById removeById() {
+    return new ExecutableRemoveByIdOperationSupport(this).removeById();
+  }
+
+  @Override
+  public ExecutableExistsById existsById() {
+    return new ExecutableExistsByIdOperationSupport(this).existsById();
+  }
+
+  @Override
+  public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
+    return new ExecutableRemoveByQueryOperationSupport(this).removeByQuery(domainType);
   }
 
   @Override

@@ -25,7 +25,6 @@ import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -95,36 +94,6 @@ public class IndexManager {
     return ignoreN1qlSecondary;
   }
 
-  /**
-   * Build the relevant indexes according to the provided annotation and repository metadata, in parallel but blocking
-   * until all relevant indexes are created. Existing indexes will be detected and skipped.
-   * <p/>
-   *
-   * @param metadata the repository's metadata (allowing to find out the type of entity stored, the key under which type
-   *  information is stored, etc...).
-   * @param n1qlPrimaryIndexed the annotation for creation of a N1QL-based primary index (generic).
-   * @param n1qlSecondaryIndexed the annotation for creation of a N1QL-based secondary index (specific to the repository
-   *   stored entity).
-   * @param couchbaseOperations the template to use for index creation.
-   */
-  // TODO: remove ViewIndexed
-  public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
-                            N1qlSecondaryIndexed n1qlSecondaryIndexed, CouchbaseOperations couchbaseOperations) {
-    Mono<Void> viewAsync = Mono.empty();
-    Mono<Void> n1qlPrimaryAsync = Mono.empty();
-    Mono<Void> n1qlSecondaryAsync = Mono.empty();
-
-    // We now _must_ have a primary index, so skip this only if specifically asked
-    if (!ignoreN1qlPrimary) {
-      n1qlPrimaryAsync = buildN1qlPrimary(metadata, clientFactory.getBucket().name());
-    }
-    if (n1qlSecondaryIndexed != null && !ignoreN1qlSecondary) {
-      n1qlSecondaryAsync = buildN1qlSecondary(n1qlSecondaryIndexed, metadata, clientFactory.getBucket().name(), couchbaseOperations.getConverter().getTypeKey());
-    }
-
-    //trigger the builds, wait for the last one, throw CompositeException if errors
-    Flux.mergeDelayError(1, viewAsync, n1qlPrimaryAsync, n1qlSecondaryAsync).blockLast();
-  }
 
   /**
    * Build the relevant indexes according to the provided annotation and repository metadata, in parallel but blocking
@@ -139,7 +108,7 @@ public class IndexManager {
    * @param reactiveCouchbaseOperations the template to use for index creation.
    */
   public void buildIndexes(RepositoryInformation metadata, N1qlPrimaryIndexed n1qlPrimaryIndexed,
-                           N1qlSecondaryIndexed n1qlSecondaryIndexed, ReactiveCouchbaseOperations reactiveCouchbaseOperations) {
+                           N1qlSecondaryIndexed n1qlSecondaryIndexed, CouchbaseOperations reactiveCouchbaseOperations) {
     Mono<Void> n1qlPrimaryAsync = Mono.empty();
     Mono<Void> n1qlSecondaryAsync = Mono.empty();
 

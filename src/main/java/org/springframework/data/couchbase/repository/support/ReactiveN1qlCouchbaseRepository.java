@@ -17,17 +17,9 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.io.Serializable;
 
-
-import com.couchbase.client.java.query.QueryOptions;
-
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.N1QLQuery;
-import org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Sort;
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 
 /**
@@ -35,10 +27,9 @@ import reactor.core.publisher.Flux;
  * @since 3.0
  */
 public class ReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
-        extends SimpleReactiveCouchbaseRepository<T, ID>
-    implements ReactiveCouchbaseSortingRepository<T, ID> {
+        extends SimpleReactiveCouchbaseRepository<T, ID> {
 
-    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, ReactiveCouchbaseOperations operations) {
+    public ReactiveN1qlCouchbaseRepository(CouchbaseEntityInformation<T, String> metadata, CouchbaseOperations operations) {
         super(metadata, operations);
     }
 

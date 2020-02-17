@@ -25,22 +25,22 @@ import reactor.core.publisher.Flux;
 
 import java.util.Collection;
 
-public class ExecutableUpsertOperationSupport implements ExecutableUpsertOperation {
+public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByIdOperation {
 
   private final CouchbaseTemplate template;
 
-  public ExecutableUpsertOperationSupport(final CouchbaseTemplate template) {
+  public ExecutableUpsertByIdOperationSupport(final CouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public <T> ExecutableUpsert<T> upsert(final Class<T> domainType) {
+  public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
     Assert.notNull(domainType, "DomainType must not be null!");
-    return new ExecutableUpsertSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+    return new ExecutableUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
       DurabilityLevel.NONE);
   }
 
-  static class ExecutableUpsertSupport<T> implements ExecutableUpsert<T> {
+  static class ExecutableUpsertByIdSupport<T> implements ExecutableUpsertById<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
@@ -49,9 +49,9 @@ public class ExecutableUpsertOperationSupport implements ExecutableUpsertOperati
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
 
-    ExecutableUpsertSupport(final CouchbaseTemplate template, final Class<T> domainType,
-                            final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-                            final DurabilityLevel durabilityLevel) {
+    ExecutableUpsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType,
+                                final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
+                                final DurabilityLevel durabilityLevel) {
       this.template = template;
       this.domainType = domainType;
       this.collection = collection;
@@ -94,22 +94,22 @@ public class ExecutableUpsertOperationSupport implements ExecutableUpsertOperati
     }
 
     @Override
-    public TerminatingUpsert<T> inCollection(final String collection) {
+    public TerminatingUpsertById<T> inCollection(final String collection) {
       Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableUpsertSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ExecutableUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
-    public UpsertWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
+    public UpsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
       Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-      return new ExecutableUpsertSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ExecutableUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
-    public UpsertWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
+    public UpsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
       Assert.notNull(persistTo, "PersistTo must not be null.");
       Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-      return new ExecutableUpsertSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ExecutableUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
   }

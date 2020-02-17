@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
@@ -57,7 +57,7 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
 
     public ReactiveStringN1qlBasedQuery(String statement,
                                         CouchbaseQueryMethod queryMethod,
-                                        ReactiveCouchbaseOperations couchbaseOperations,
+                                        CouchbaseOperations couchbaseOperations,
                                         SpelExpressionParser spelParser,
                                         QueryMethodEvaluationContextProvider evaluationContextProvider) {
         super(queryMethod, couchbaseOperations);

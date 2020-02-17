@@ -39,8 +39,6 @@ public class BeanNames {
    */
   public static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
 
-  public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
-
   /**
    * The name for the default {@link TranslationService} bean.
    *

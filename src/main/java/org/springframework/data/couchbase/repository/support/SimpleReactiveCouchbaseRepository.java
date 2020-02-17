@@ -16,26 +16,14 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import java.io.Serializable;
-
-
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.reactivestreams.Publisher;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.N1QLQuery;
-import org.springframework.data.couchbase.core.query.View;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.repository.util.ReactiveWrapperConverters;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -47,22 +35,17 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
  * @author Douglas Six
  * @since 3.0
  */
-public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> implements ReactiveCouchbaseRepository<T, ID> {
+public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {
 
     /**
-     * Holds the reference to the {@link ReactiveCouchbaseOperations}.
+     * Holds the reference to the {@link CouchbaseOperations}.
      */
-    private final ReactiveCouchbaseOperations operations;
+    private final CouchbaseOperations operations;
 
     /**
      * Contains information about the entity being used in this repository.
      */
     private final CouchbaseEntityInformation<T, String> entityInformation;
-
-    /**
-     * Custom ViewMetadataProvider.
-     */
-    private ViewMetadataProvider viewMetadataProvider;
 
     /**
      * Create a new Repository.
@@ -71,7 +54,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
      * @param operations the reference to the reactive template used.
      */
     public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-                                             final ReactiveCouchbaseOperations operations) {
+                                             final CouchbaseOperations operations) {
         Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
         Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
@@ -79,28 +62,16 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
         this.operations = operations;
     }
 
-    /**
-     * Configures a custom {@link ViewMetadataProvider} to be used to detect {@link View}s to be applied to queries.
-     *
-     * @param viewMetadataProvider that is used to lookup any annotated View on a query method.
-     */
-    public void setViewMetadataProvider(final ViewMetadataProvider viewMetadataProvider) {
-        this.viewMetadataProvider = viewMetadataProvider;
-    }
-
-    protected Mono mapMono(Mono single) {
-        return ReactiveWrapperConverters.toWrapper(single , Mono.class);
-    }
-
-    protected Flux mapFlux(Flux observable) {
-        return ReactiveWrapperConverters.toWrapper(observable, Flux.class);
-    }
-
     @SuppressWarnings("unchecked")
     public <S extends T> Mono<S> save(S entity) {
         Assert.notNull(entity, "Entity must not be null!");
         throw new UnsupportedOperationException("TODO");
         //return operations.save(entity);
+    }
+
+    @Override
+    public Flux<T> findAll(Sort sort) {
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -146,19 +117,16 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Boolean> existsById(ID id) {
+    public Mono<Boolean> existsById(final ID id) {
         Assert.notNull(id, "The given id must not be null!");
-        throw new UnsupportedOperationException("TODO");
-
-        //return operations.exists(id.toString());
+        return operations.existsById().reactive().one(id.toString());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Boolean> existsById(Publisher<ID> publisher) {
+    public Mono<Boolean> existsById(final Publisher<ID> publisher) {
         Assert.notNull(publisher, "The given Publisher must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::existsById);
+        return Mono.from(publisher).flatMap(this::existsById);
     }
 
     @SuppressWarnings("unchecked")
@@ -240,8 +208,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     @Override
     public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
         Assert.notNull(entityStream, "The given publisher of entities must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(entity -> delete(entity)).single();
+        return Flux.from(entityStream).flatMap(this::delete).single();
     }
 
     @SuppressWarnings("unchecked")
@@ -278,35 +245,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID extends Serializable> imple
     }
 
     @Override
-    public ReactiveCouchbaseOperations getCouchbaseOperations(){
+    public CouchbaseOperations getCouchbaseOperations(){
         return operations;
-    }
-
-    private final N1QLExpression addClassWhereClause(N1QLExpression exp) {
-        String classString = entityInformation.getJavaType().getCanonicalName();
-        return exp.where(x("_class").eq(s(classString)));
-    }
-
-    /**
-     * Simple holder to allow an easier exchange of information.
-     */
-    private final class ResolvedView {
-
-        private final String designDocument;
-        private final String viewName;
-
-        public ResolvedView(final String designDocument, final String viewName) {
-            this.designDocument = designDocument;
-            this.viewName = viewName;
-        }
-
-        private String getDesignDocument() {
-            return designDocument;
-        }
-
-        private String getViewName() {
-            return viewName;
-        }
     }
 
 }
