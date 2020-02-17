@@ -1,6 +1,8 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.analytics.ReactiveAnalyticsResult;
 import com.couchbase.client.java.query.ReactiveQueryResult;
+import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -8,31 +10,31 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQueryOperation {
+public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFindByAnalyticsOperation {
 
-  private static final Query ALL_QUERY = new Query();
+  private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();
 
   private final CouchbaseTemplate template;
 
-  public ExecutableFindByQueryOperationSupport(final CouchbaseTemplate template) {
+  public ExecutableFindByAnalyticsOperationSupport(final CouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-    return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY);
+  public <T> ExecutableFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
+    return new ExecutableFindByAnalyticsSupport<>(template, domainType, ALL_QUERY);
   }
 
-  static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
+  static class ExecutableFindByAnalyticsSupport<T> implements ExecutableFindByAnalytics<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
-    private final TerminatingReactiveFindByQuery<T> reactiveSupport;
+    private final TerminatingReactiveFindByAnalytics<T> reactiveSupport;
 
-    ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
+    ExecutableFindByAnalyticsSupport(final CouchbaseTemplate template, final Class<T> domainType, final AnalyticsQuery query) {
       this.template = template;
       this.domainType = domainType;
-      this.reactiveSupport = new TerminatingReactiveFindByQuerySupport<>(template, domainType, query);
+      this.reactiveSupport = new TerminatingReactiveFindByAnalyticsSupport<>(template, domainType, query);
     }
 
     @Override
@@ -51,8 +53,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
     }
 
     @Override
-    public TerminatingFindByQuery<T> matching(final Query query) {
-      return new ExecutableFindByQuerySupport<>(template, domainType, query);
+    public TerminatingFindByAnalytics<T> matching(final AnalyticsQuery query) {
+      return new ExecutableFindByAnalyticsSupport<>(template, domainType, query);
     }
 
     @Override
@@ -71,19 +73,19 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
     }
 
     @Override
-    public TerminatingReactiveFindByQuery<T> reactive() {
+    public TerminatingReactiveFindByAnalytics<T> reactive() {
       return reactiveSupport;
     }
   }
 
-  static class TerminatingReactiveFindByQuerySupport<T> implements TerminatingReactiveFindByQuery<T> {
+  static class TerminatingReactiveFindByAnalyticsSupport<T> implements TerminatingReactiveFindByAnalytics<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
-    private final Query query;
+    private final AnalyticsQuery query;
 
-    TerminatingReactiveFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType,
-                                          final Query query) {
+    TerminatingReactiveFindByAnalyticsSupport(final CouchbaseTemplate template, final Class<T> domainType,
+                                          final AnalyticsQuery query) {
       this.template = template;
       this.domainType = domainType;
       this.query = query;
@@ -107,7 +109,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
           .getCouchbaseClientFactory()
           .getCluster()
           .reactive()
-          .query(statement)
+          .analyticsQuery(statement)
           .onErrorMap(throwable -> {
             if (throwable instanceof RuntimeException) {
               return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -115,7 +117,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
               return throwable;
             }
           })
-          .flatMapMany(ReactiveQueryResult::rowsAsObject)
+          .flatMapMany(ReactiveAnalyticsResult::rowsAsObject)
           .map(row -> {
             String id = row.getString("__id");
             long cas = row.getLong("__cas");
@@ -134,7 +136,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
           .getCouchbaseClientFactory()
           .getCluster()
           .reactive()
-          .query(statement)
+          .analyticsQuery(statement)
           .onErrorMap(throwable -> {
             if (throwable instanceof RuntimeException) {
               return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -142,7 +144,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
               return throwable;
             }
           })
-          .flatMapMany(ReactiveQueryResult::rowsAsObject)
+          .flatMapMany(ReactiveAnalyticsResult::rowsAsObject)
           .map(row -> row.getLong("__count"))
           .next();
       });
@@ -163,11 +165,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
         statement.append("meta().id as __id, meta().cas as __cas, ").append(bucket).append(".*");
       }
 
-      statement.append(" FROM ").append(bucket);
-
-      String typeKey = template.getConverter().getTypeKey();
-      String typeValue = template.support().getJavaNameForEntity(domainType);
-      statement.append(" WHERE `").append(typeKey).append("` = \"").append(typeValue).append("\"");
+      final String dataset = template.support().getJavaNameForEntity(domainType);
+      statement.append(" FROM ").append(dataset);
 
       query.appendSort(statement);
       query.appendSkipAndLimit(statement);

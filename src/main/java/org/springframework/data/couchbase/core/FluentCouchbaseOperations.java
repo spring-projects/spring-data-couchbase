@@ -6,6 +6,7 @@ public interface FluentCouchbaseOperations extends
   ExecutableReplaceByIdOperation,
   ExecutableFindByIdOperation,
   ExecutableFindByQueryOperation,
+  ExecutableFindByAnalyticsOperation,
   ExecutableExistsByIdOperation,
   ExecutableRemoveByIdOperation,
   ExecutableRemoveByQueryOperation {

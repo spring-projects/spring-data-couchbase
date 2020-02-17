@@ -48,6 +48,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   @Override
+  public <T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
+    return new ExecutableFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
+  }
+
+  @Override
   public ExecutableRemoveById removeById() {
     return new ExecutableRemoveByIdOperationSupport(this).removeById();
   }
