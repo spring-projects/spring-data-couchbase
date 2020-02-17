@@ -28,6 +28,16 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   @Override
+  public <T> ExecutableInsertById<T> insertById(Class<T> domainType) {
+    return new ExecutableInsertByIdOperationSupport(this).insertById(domainType);
+  }
+
+  @Override
+  public <T> ExecutableReplaceById<T> replaceById(Class<T> domainType) {
+    return new ExecutableReplaceByIdOperationSupport(this).replaceById(domainType);
+  }
+
+  @Override
   public <T> ExecutableFindById<T> findById(Class<T> domainType) {
     return new ExecutableFindByIdOperationSupport(this).findById(domainType);
   }
