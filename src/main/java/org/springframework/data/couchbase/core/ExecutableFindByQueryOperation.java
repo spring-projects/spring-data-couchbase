@@ -94,8 +94,6 @@ public interface ExecutableFindByQueryOperation {
 
     Flux<T> all();
 
-    Flux<T> tail();
-
     Mono<Long> count();
 
     Mono<Boolean> exists();

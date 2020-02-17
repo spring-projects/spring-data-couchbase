@@ -66,11 +66,11 @@ public class Query {
   }
 
   public void appendSkipAndLimit(final StringBuilder sb) {
-    if (skip > 0) {
-      sb.append(" SKIP ").append(skip);
-    }
     if (limit > 0) {
       sb.append(" LIMIT ").append(limit);
+    }
+    if (skip > 0) {
+      sb.append(" OFFSET ").append(skip);
     }
   }
 

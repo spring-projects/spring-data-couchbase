@@ -70,11 +70,6 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
     private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
     /**
-     * Holds a custom ViewPostProcessor..
-     */
-    private final ViewPostProcessor viewPostProcessor;
-
-    /**
      * Create a new factory.
      *
      * @param couchbaseOperationsMapping the template for the underlying actions.
@@ -87,9 +82,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
         this.couchbaseOperationsMapping = couchbaseOperationsMapping;
         this.indexManager = indexManager;
         mappingContext = this.couchbaseOperationsMapping.getMappingContext();
-        viewPostProcessor = ViewPostProcessor.INSTANCE;
 
-        addRepositoryProxyPostProcessor(viewPostProcessor);
     }
 
     /**

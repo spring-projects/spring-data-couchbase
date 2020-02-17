@@ -1,12 +1,10 @@
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.ReactiveQueryResult;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -29,40 +27,27 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
-    private final Query query;
     private final TerminatingReactiveFindByQuery<T> reactiveSupport;
 
     ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
       this.template = template;
       this.domainType = domainType;
-      this.query = query;
       this.reactiveSupport = new TerminatingReactiveFindByQuerySupport<>(template, domainType, query);
     }
 
     @Override
     public T oneValue() {
-      return null;
+      return reactiveSupport.one().block();
     }
 
     @Override
     public T firstValue() {
-      // TODO: add all the where clauses and _class
-      String statement = assembleEntityQuery(1, false);
-      QueryResult result = template.getCouchbaseClientFactory().getCluster().query(statement);
-      List<T> decoded = rowsToEntities(result.rowsAsObject());
-      if (decoded.isEmpty()) {
-        return null;
-      } else {
-        return decoded.get(0);
-      }
+      return reactiveSupport.first().block();
     }
 
     @Override
     public List<T> all() {
-      // TODO: add all the where clauses and _class
-      String statement = assembleEntityQuery(0, false);
-      QueryResult result = template.getCouchbaseClientFactory().getCluster().query(statement);
-      return rowsToEntities(result.rowsAsObject());
+      return reactiveSupport.all().collectList().block();
     }
 
     @Override
@@ -70,50 +55,14 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
       return new ExecutableFindByQuerySupport<>(template, domainType, query);
     }
 
-    private String assembleEntityQuery(final int limit, final boolean count) {
-      String bucket = "`" + template.getBucketName() + "`";
-
-      String project;
-      if (count) {
-        project = "count(*) as __count";
-      } else {
-        project = "meta().id as __id, meta().cas as __cas, " + bucket +".*";
-      }
-
-      String typeKey = template.getConverter().getTypeKey();
-      String typeValue = template.support().getJavaNameForEntity(domainType);
-
-      String where = " WHERE `" + typeKey + "` = \"" + typeValue + "\"";
-
-      String statement = "SELECT " + project + " FROM " + bucket + where;
-      if (limit > 0) {
-        statement = statement + " LIMIT " + limit;
-      }
-      return statement;
-    }
-
-    private List<T> rowsToEntities(final List<JsonObject> input) {
-      final List<T> converted = new ArrayList<>(input.size());
-      for (JsonObject row : input) {
-        String id = row.getString("__id");
-        long cas = row.getLong("__cas");
-        row.removeKey("__id");
-        row.removeKey("__cas");
-        converted.add(template.support().decodeEntity(id, row.toString(), cas, domainType));
-      }
-      return converted;
-    }
-
     @Override
     public Stream<T> stream() {
-      return all().stream();
+      return reactiveSupport.all().toStream();
     }
 
     @Override
     public long count() {
-      String statement = assembleEntityQuery(0, false);
-      QueryResult result = template.getCouchbaseClientFactory().getCluster().query(statement);
-      return result.rowsAsObject().get(0).getLong("__count");
+      return reactiveSupport.count().block();
     }
 
     @Override
@@ -133,7 +82,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
     private final Class<T> domainType;
     private final Query query;
 
-    TerminatingReactiveFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
+    TerminatingReactiveFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType,
+                                          final Query query) {
       this.template = template;
       this.domainType = domainType;
       this.query = query;
@@ -141,33 +91,87 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
     @Override
     public Mono<T> one() {
-      return null;
+      return all().single();
     }
 
     @Override
     public Mono<T> first() {
-      return null;
+      return all().next();
     }
 
     @Override
     public Flux<T> all() {
-      return null;
-    }
-
-    @Override
-    public Flux<T> tail() {
-      return null;
+      return Flux.defer(() -> {
+        String statement = assembleEntityQuery(false);
+        return template
+          .getCouchbaseClientFactory()
+          .getCluster()
+          .reactive()
+          .query(statement)
+          .onErrorMap(throwable -> {
+            if (throwable instanceof RuntimeException) {
+              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+            } else {
+              return throwable;
+            }
+          })
+          .flatMapMany(ReactiveQueryResult::rowsAsObject)
+          .map(row -> {
+            String id = row.getString("__id");
+            long cas = row.getLong("__cas");
+            row.removeKey("__id");
+            row.removeKey("__cas");
+            return template.support().decodeEntity(id, row.toString(), cas, domainType);
+          });
+      });
     }
 
     @Override
     public Mono<Long> count() {
-      return null;
+      return Mono.defer(() -> {
+        String statement = assembleEntityQuery(true);
+        return template
+          .getCouchbaseClientFactory()
+          .getCluster()
+          .reactive()
+          .query(statement)
+          .onErrorMap(throwable -> {
+            if (throwable instanceof RuntimeException) {
+              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+            } else {
+              return throwable;
+            }
+          })
+          .flatMapMany(ReactiveQueryResult::rowsAsObject)
+          .map(row -> row.getLong("__count"))
+          .next();
+      });
     }
 
     @Override
     public Mono<Boolean> exists() {
-      return null;
+      return count().map(count -> count > 0);
     }
+
+    private String assembleEntityQuery(final boolean count) {
+      final String bucket = "`" + template.getBucketName() + "`";
+
+      final StringBuilder statement = new StringBuilder("SELECT ");
+      if (count) {
+        statement.append("count(*) as __count");
+      } else {
+        statement.append("meta().id as __id, meta().cas as __cas, ").append(bucket).append(".*");
+      }
+
+      String typeKey = template.getConverter().getTypeKey();
+      String typeValue = template.support().getJavaNameForEntity(domainType);
+      statement.append(" WHERE `").append(typeKey).append("` = \"").append(typeValue).append("\"");
+
+      query.appendSort(statement);
+      query.appendSkipAndLimit(statement);
+      return statement.toString();
+    }
+
   }
 
 }
