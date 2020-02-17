@@ -16,17 +16,15 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
 
@@ -48,6 +46,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
     private final PersistTo persistTo;
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
+    private final TerminatingReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
     ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String collection, final PersistTo persistTo,
                                 final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel) {
@@ -56,29 +55,23 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
       this.persistTo = persistTo;
       this.replicateTo = replicateTo;
       this.durabilityLevel = durabilityLevel;
+      this.reactiveRemoveByIdSupport = new TerminatingReactiveRemoveByIdSupport(template, collection, persistTo,
+        replicateTo, durabilityLevel);
     }
 
     @Override
     public RemoveResult one(final String id) {
-      return RemoveResult.from(id, template.getCollection(collection).remove(id));
+      return reactiveRemoveByIdSupport.one(id).block();
     }
 
     @Override
-    public List<RemoveResult> all(Collection<String> ids) {
-      return Flux.fromIterable(ids)
-        .flatMap(id -> template.getCollection(collection).reactive()
-          .remove(id)
-          .map(mutationResult -> RemoveResult.from(id, mutationResult))
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-        )
-        .collectList()
-        .block();
+    public List<RemoveResult> all(final Collection<String> ids) {
+      return reactiveRemoveByIdSupport.all(ids).collectList().block();
+    }
+
+    @Override
+    public TerminatingReactiveRemoveById reactive() {
+      return reactiveRemoveByIdSupport;
     }
 
     @Override
@@ -98,6 +91,71 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
       Assert.notNull(persistTo, "PersistTo must not be null.");
       Assert.notNull(replicateTo, "ReplicateTo must not be null.");
       return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+    }
+
+  }
+
+  static class TerminatingReactiveRemoveByIdSupport implements TerminatingReactiveRemoveById {
+
+    private final CouchbaseTemplate template;
+    private final String collection;
+    private final PersistTo persistTo;
+    private final ReplicateTo replicateTo;
+    private final DurabilityLevel durabilityLevel;
+
+    TerminatingReactiveRemoveByIdSupport(final CouchbaseTemplate template, final String collection,
+                                         final PersistTo persistTo, final ReplicateTo replicateTo,
+                                         final DurabilityLevel durabilityLevel) {
+      this.template = template;
+      this.collection = collection;
+      this.persistTo = persistTo;
+      this.replicateTo = replicateTo;
+      this.durabilityLevel = durabilityLevel;
+    }
+
+    @Override
+    public Mono<RemoveResult> one(final String id) {
+      return Mono
+        .just(id)
+        .flatMap(docId -> template
+          .getCollection(collection)
+          .reactive()
+          .remove(id, buildRemoveOptions())
+          .map(r -> RemoveResult.from(docId, r))
+        )
+        .onErrorMap(throwable -> {
+          if (throwable instanceof RuntimeException) {
+            return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+          } else {
+            return throwable;
+          }
+        });
+    }
+
+    @Override
+    public Flux<RemoveResult> all(final Collection<String> ids) {
+      return Flux.fromIterable(ids)
+        .flatMap(id -> template.getCollection(collection).reactive()
+          .remove(id, buildRemoveOptions())
+          .map(mutationResult -> RemoveResult.from(id, mutationResult))
+          .onErrorMap(throwable -> {
+            if (throwable instanceof RuntimeException) {
+              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+            } else {
+              return throwable;
+            }
+          })
+        );
+    }
+
+    private RemoveOptions buildRemoveOptions() {
+      final RemoveOptions options = RemoveOptions.removeOptions();
+      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+        options.durability(persistTo, replicateTo);
+      } else if (durabilityLevel != DurabilityLevel.NONE) {
+        options.durability(durabilityLevel);
+      }
+      return options;
     }
 
   }

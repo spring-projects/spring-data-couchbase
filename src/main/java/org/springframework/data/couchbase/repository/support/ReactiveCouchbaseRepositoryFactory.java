@@ -110,7 +110,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
     /**
      * Returns a new Repository based on the metadata. Two categories of repositories can be instantiated:
-     * {@link SimpleReactiveCouchbaseRepository} and {@link ReactiveN1qlCouchbaseRepository}.
+     * {@link SimpleReactiveCouchbaseRepository}.
      *
      * This method performs feature checks to decide which of the two categories can be instantiated (eg. is N1QL available?).
      * Instantiation is done via reflection, see {@link #getRepositoryBaseClass(RepositoryMetadata)}.
@@ -167,9 +167,8 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 
     /**
      * Returns the base class for the repository being constructed. Two categories of repositories can be produced by
-     * this factory: {@link SimpleReactiveCouchbaseRepository} and {@link ReactiveN1qlCouchbaseRepository}. This method checks if N1QL
-     * is available to choose between the two, but the actual concrete class is determined respectively by
-     * {@link #getSimpleBaseClass(RepositoryMetadata)} and {@link #getN1qlBaseClass(RepositoryMetadata)}.
+     * this factory: {@link SimpleReactiveCouchbaseRepository} and. This method checks if N1QL
+     * is available to choose between the two, but the actual concrete class is determined respectively by.
      *
      * Override these methods if you want to change the base class for all your repositories.
      *
@@ -181,7 +180,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
     protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
         // Since we always need n1ql (we eliminated use of views for findAll, etc...), lets just
         // always return the n1ql repo
-        return ReactiveN1qlCouchbaseRepository.class;
+        return SimpleReactiveCouchbaseRepository.class;
     }
 
     @Override

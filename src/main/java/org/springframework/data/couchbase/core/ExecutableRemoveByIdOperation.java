@@ -4,6 +4,8 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +20,16 @@ public interface ExecutableRemoveByIdOperation {
     RemoveResult one(String id);
 
     List<RemoveResult> all(Collection<String> ids);
+
+    TerminatingReactiveRemoveById reactive();
+
+  }
+
+  interface TerminatingReactiveRemoveById {
+
+    Mono<RemoveResult> one(String id);
+
+    Flux<RemoveResult> all(Collection<String> ids);
 
   }
 

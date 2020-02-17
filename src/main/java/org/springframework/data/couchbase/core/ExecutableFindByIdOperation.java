@@ -1,5 +1,8 @@
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import java.util.Collection;
 
 public interface ExecutableFindByIdOperation {
@@ -11,6 +14,16 @@ public interface ExecutableFindByIdOperation {
     T one(String id);
 
     Collection<? extends T> all(Collection<String> ids);
+
+    TerminatingReactiveFindById<T> reactive();
+
+  }
+
+  interface TerminatingReactiveFindById<T> {
+
+    Mono<T> one(String id);
+
+    Flux<? extends T> all(Collection<String> ids);
 
   }
 

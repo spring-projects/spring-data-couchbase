@@ -2,6 +2,8 @@ package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.lang.Nullable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +78,30 @@ public interface ExecutableFindByQueryOperation {
      */
     boolean exists();
 
+
+    TerminatingReactiveFindByQuery<T> reactive();
+
   }
+
+  /**
+   * Compose find execution by calling one of the terminating methods.
+   */
+  interface TerminatingReactiveFindByQuery<T> {
+
+    Mono<T> one();
+
+    Mono<T> first();
+
+    Flux<T> all();
+
+    Flux<T> tail();
+
+    Mono<Long> count();
+
+    Mono<Boolean> exists();
+
+  }
+
 
   /**
    * Terminating operations invoking the actual query execution.

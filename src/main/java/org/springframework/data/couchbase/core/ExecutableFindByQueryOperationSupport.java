@@ -3,6 +3,8 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryResult;
 import org.springframework.data.couchbase.core.query.Query;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +30,13 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
     private final Query query;
+    private final TerminatingReactiveFindByQuery<T> reactiveSupport;
 
     ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
       this.template = template;
       this.domainType = domainType;
       this.query = query;
+      this.reactiveSupport = new TerminatingReactiveFindByQuerySupport<>(template, domainType, query);
     }
 
     @Override
@@ -117,6 +121,53 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
       return count() > 0;
     }
 
+    @Override
+    public TerminatingReactiveFindByQuery<T> reactive() {
+      return reactiveSupport;
+    }
+  }
+
+  static class TerminatingReactiveFindByQuerySupport<T> implements TerminatingReactiveFindByQuery<T> {
+
+    private final CouchbaseTemplate template;
+    private final Class<T> domainType;
+    private final Query query;
+
+    TerminatingReactiveFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
+      this.template = template;
+      this.domainType = domainType;
+      this.query = query;
+    }
+
+    @Override
+    public Mono<T> one() {
+      return null;
+    }
+
+    @Override
+    public Mono<T> first() {
+      return null;
+    }
+
+    @Override
+    public Flux<T> all() {
+      return null;
+    }
+
+    @Override
+    public Flux<T> tail() {
+      return null;
+    }
+
+    @Override
+    public Mono<Long> count() {
+      return null;
+    }
+
+    @Override
+    public Mono<Boolean> exists() {
+      return null;
+    }
   }
 
 }

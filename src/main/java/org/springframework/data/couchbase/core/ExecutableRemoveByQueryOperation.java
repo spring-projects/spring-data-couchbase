@@ -1,10 +1,9 @@
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.kv.MutationResult;
 import org.springframework.data.couchbase.core.query.Query;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ExecutableRemoveByQueryOperation {
 
@@ -13,6 +12,14 @@ public interface ExecutableRemoveByQueryOperation {
   interface TerminatingRemoveByQuery<T> {
 
     List<RemoveResult> all();
+
+    TerminatingReactiveRemoveByQuery reactive();
+
+  }
+
+  interface TerminatingReactiveRemoveByQuery<T> {
+
+    Flux<RemoveResult> all();
 
   }
 

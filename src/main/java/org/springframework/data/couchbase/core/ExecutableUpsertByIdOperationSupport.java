@@ -18,10 +18,14 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.MutationResult;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.manager.user.UpsertUserOptions;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
@@ -48,6 +52,7 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
     private final PersistTo persistTo;
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
+    private final TerminatingReactiveUpsertByIdSupport<T> reactiveSupport;
 
     ExecutableUpsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType,
                                 final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
@@ -58,39 +63,23 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
       this.persistTo = persistTo;
       this.replicateTo = replicateTo;
       this.durabilityLevel = durabilityLevel;
+      this.reactiveSupport = new TerminatingReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo,
+        replicateTo, durabilityLevel);
     }
 
     @Override
     public T one(final T object) {
-      try {
-        CouchbaseDocument converted = template.support().encodeEntity(object);
-        MutationResult result = template.getCollection(collection).upsert(converted.getId(), converted.getPayload());
-        template.support().applyUpdatedCas(object, result.cas());
-        return object;
-      } catch (RuntimeException ex) {
-        throw template.potentiallyConvertRuntimeException(ex);
-      }
+      return reactiveSupport.one(object).block();
     }
 
     @Override
     public Collection<? extends T> all(Collection<? extends T> objects) {
-      return Flux.fromIterable(objects).flatMap(entity -> {
-        CouchbaseDocument converted = template.support().encodeEntity(entity);
-        return template
-          .getCollection(collection)
-          .reactive()
-          .upsert(converted.getId(), converted.getPayload())
-          .map(res -> {
-            template.support().applyUpdatedCas(entity, res.cas());
-            return entity;
-          }).onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          });
-      }).collectList().block();
+      return reactiveSupport.all(objects).collectList().block();
+    }
+
+    @Override
+    public TerminatingReactiveUpsertById<T> reactive() {
+      return reactiveSupport;
     }
 
     @Override
@@ -112,6 +101,79 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
       return new ExecutableUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
+  }
+
+  static class TerminatingReactiveUpsertByIdSupport<T> implements TerminatingReactiveUpsertById<T> {
+
+    private final CouchbaseTemplate template;
+    private final Class<T> domainType;
+    private final String collection;
+    private final PersistTo persistTo;
+    private final ReplicateTo replicateTo;
+    private final DurabilityLevel durabilityLevel;
+
+    TerminatingReactiveUpsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType,
+                                final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
+                                final DurabilityLevel durabilityLevel) {
+      this.template = template;
+      this.domainType = domainType;
+      this.collection = collection;
+      this.persistTo = persistTo;
+      this.replicateTo = replicateTo;
+      this.durabilityLevel = durabilityLevel;
+    }
+
+    @Override
+    public Mono<T> one(T object) {
+      return Mono.just(object).flatMap(o -> {
+        CouchbaseDocument converted = template.support().encodeEntity(o);
+        return template
+          .getCollection(collection)
+          .reactive()
+          .upsert(converted.getId(), converted.getPayload(), buildUpsertOptions())
+          .map(result -> {
+            template.support().applyUpdatedCas(object, result.cas());
+            return o;
+          });
+      }).onErrorMap(throwable -> {
+        if (throwable instanceof RuntimeException) {
+          return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+        } else {
+          return throwable;
+        }
+      });
+    }
+
+    @Override
+    public Flux<? extends T> all(Collection<? extends T> objects) {
+      return Flux.fromIterable(objects).flatMap(entity -> {
+        CouchbaseDocument converted = template.support().encodeEntity(entity);
+        return template
+          .getCollection(collection)
+          .reactive()
+          .upsert(converted.getId(), converted.getPayload(), buildUpsertOptions())
+          .map(res -> {
+            template.support().applyUpdatedCas(entity, res.cas());
+            return entity;
+          }).onErrorMap(throwable -> {
+            if (throwable instanceof RuntimeException) {
+              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+            } else {
+              return throwable;
+            }
+          });
+      });
+    }
+
+    private UpsertOptions buildUpsertOptions() {
+      final UpsertOptions options = UpsertOptions.upsertOptions();
+      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+        options.durability(persistTo, replicateTo);
+      } else if (durabilityLevel != DurabilityLevel.NONE) {
+        options.durability(durabilityLevel);
+      }
+      return options;
+    }
   }
 
 }

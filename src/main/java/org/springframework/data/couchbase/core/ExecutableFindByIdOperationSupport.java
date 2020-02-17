@@ -2,9 +2,9 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetOptions;
-import com.couchbase.client.java.kv.GetResult;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,45 +31,29 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
     private final Class<T> domainType;
     private final String collection;
     private final List<String> fields;
+    private final TerminatingReactiveFindByIdSupport<T> reactiveSupport;
 
     ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
       this.template = template;
       this.domainType = domainType;
       this.collection = collection;
       this.fields = fields;
+      this.reactiveSupport = new TerminatingReactiveFindByIdSupport<>(template, domainType, collection, fields);
     }
 
     @Override
     public T one(final String id) {
-      try {
-        GetOptions options = getOptions().transcoder(RawJsonTranscoder.INSTANCE);
-        if (fields != null && !fields.isEmpty()) {
-          options.project(fields);
-        }
-        GetResult result = template.getCollection(collection).get(id, options);
-        return template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType);
-      } catch (RuntimeException ex) {
-        throw template.potentiallyConvertRuntimeException(ex);
-      }
+      return reactiveSupport.one(id).block();
     }
 
     @Override
     public Collection<? extends T> all(final Collection<String> ids) {
-      return Flux
-        .fromIterable(ids)
-        .flatMap(id -> template.getCollection(collection).reactive()
-          .get(id, getOptions().transcoder(RawJsonTranscoder.INSTANCE))
-          .map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-        )
-        .collectList()
-        .block();
+      return reactiveSupport.all(ids).collectList().block();
+    }
+
+    @Override
+    public TerminatingReactiveFindById<T> reactive() {
+      return null;
     }
 
     @Override
@@ -82,6 +66,59 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
     public FindByIdWithCollection<T> project(String... fields) {
       Assert.notEmpty(fields, "Fields must not be null nor empty.");
       return new ExecutableFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
+    }
+  }
+
+  static class TerminatingReactiveFindByIdSupport<T> implements TerminatingReactiveFindById<T> {
+
+    private final CouchbaseTemplate template;
+    private final Class<T> domainType;
+    private final String collection;
+    private final List<String> fields;
+
+    TerminatingReactiveFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
+      this.template = template;
+      this.domainType = domainType;
+      this.collection = collection;
+      this.fields = fields;
+    }
+
+    @Override
+    public Mono<T> one(final String id) {
+      return Mono
+        .just(id)
+        .flatMap(docId -> {
+          GetOptions options = getOptions().transcoder(RawJsonTranscoder.INSTANCE);
+          if (fields != null && !fields.isEmpty()) {
+            options.project(fields);
+          }
+          return template.getCollection(collection).reactive().get(docId, options);
+        })
+        .map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
+        .onErrorMap(throwable -> {
+          if (throwable instanceof RuntimeException) {
+            return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+          } else {
+            return throwable;
+          }
+        });
+    }
+
+    @Override
+    public Flux<? extends T> all(final Collection<String> ids) {
+      return Flux
+        .fromIterable(ids)
+        .flatMap(id -> template.getCollection(collection).reactive()
+          .get(id, getOptions().transcoder(RawJsonTranscoder.INSTANCE))
+          .map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
+          .onErrorMap(throwable -> {
+            if (throwable instanceof RuntimeException) {
+              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+            } else {
+              return throwable;
+            }
+          })
+        );
     }
   }
 

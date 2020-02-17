@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
@@ -30,6 +32,17 @@ public interface ExecutableUpsertByIdOperation {
     T one(T object);
 
     Collection<? extends T> all(Collection<? extends T> objects);
+
+    TerminatingReactiveUpsertById<T> reactive();
+
+  }
+
+  interface TerminatingReactiveUpsertById<T> {
+
+    Mono<T> one(T object);
+
+    Flux<? extends T> all(Collection<? extends T> objects);
+
   }
 
   interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {

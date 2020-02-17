@@ -18,12 +18,18 @@ package org.springframework.data.couchbase.repository.support;
 
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -63,56 +69,41 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     }
 
     @SuppressWarnings("unchecked")
-    public <S extends T> Mono<S> save(S entity) {
+    public <S extends T> Mono<S> save(final S entity) {
         Assert.notNull(entity, "Entity must not be null!");
-        throw new UnsupportedOperationException("TODO");
-        //return operations.save(entity);
+        return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).reactive().one(entity);
     }
 
     @Override
-    public Flux<T> findAll(Sort sort) {
-        return null;
+    public Flux<T> findAll(final Sort sort) {
+        return findAll(new Query().with(sort));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
+    public <S extends T> Flux<S> saveAll(final Iterable<S> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        throw new UnsupportedOperationException("TODO");
-
-//        return operations.save(entities);
+        return (Flux<S>) operations.upsertById(entityInformation.getJavaType()).reactive().all(Streamable.of(entities).toList());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
+    public <S extends T> Flux<S> saveAll(final Publisher<S> entityStream) {
         Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(object -> save(object));
+        return Flux.from(entityStream).flatMap(this::save);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<T> findById(ID id) {
-        throw new UnsupportedOperationException("TODO");
-
-       // Assert.notNull(id, "The given id must not be null!");
-/*        return operations.findById(id.toString(), entityInformation.getJavaType())
-                .onErrorResume(throwable -> {
-                    //reactive streams adapter doesn't work with null
-                    if(throwable instanceof NullPointerException) {
-                        return Mono.empty();
-                    }
-                    return Mono.error(throwable);
-                });*/
+    public Mono<T> findById(final ID id) {
+        return operations.findById(entityInformation.getJavaType()).reactive().one(id.toString());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<T> findById(Publisher<ID> publisher) {
+    public Mono<T> findById(final Publisher<ID> publisher) {
         Assert.notNull(publisher, "The given Publisher must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::findById);
+        return Mono.from(publisher).flatMap(this::findById);
     }
 
     @SuppressWarnings("unchecked")
@@ -132,81 +123,52 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAll() {
-        throw new UnsupportedOperationException("TODO");
-
-        // TODO: figure out a cleaner way
-/*        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
-        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        expression = addClassWhereClause(expression);
-        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-
-        return operations.findByN1QL(query, entityInformation.getJavaType());*/
+        return findAll(new Query());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Flux<T> findAllById(final Iterable<ID> ids) {
-        throw new UnsupportedOperationException("TODO");
-
-/*        // TODO: figure out a cleaner way
-        N1QLExpression expression = N1qlUtils.createSelectFromForEntity(operations.getCouchbaseBucket().name());
-        expression = expression.keys(ids);
-        expression = addClassWhereClause(expression);
-        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-        return operations.findByN1QL(query, entityInformation.getJavaType());*/
+        Assert.notNull(ids, "The given Iterable of ids must not be null!");
+        List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
+        return (Flux<T>) operations.findById(entityInformation.getJavaType()).reactive().all(convertedIds);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Flux<T> findAllById(Publisher<ID> entityStream) {
+    public Flux<T> findAllById(final Publisher<ID> entityStream) {
         Assert.notNull(entityStream, "The given entityStream must not be null!");
-        return Flux.from(entityStream)
-                .flatMap(this::findById);
+        return Flux.from(entityStream).flatMap(this::findById);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Void> deleteById(ID id) {
-        throw new UnsupportedOperationException("TODO");
-
-        // TODO: why does this not match the operations (Mono<T> vs Mono<Void>)
-/*        Assert.notNull(id, "The given id must not be null!");
-        return operations.remove(id.toString()).flatMap(res-> Mono.empty());*/
+    public Mono<Void> deleteById(final ID id) {
+        return operations.removeById().reactive().one(id.toString()).then();
     }
 
     @Override
-    public Mono<Void> deleteById(Publisher<ID> publisher) {
-        // TODO: why does this not match the operations (Mono<T> vs Mono<Void>)
+    public Mono<Void> deleteById(final Publisher<ID> publisher) {
         Assert.notNull(publisher, "The given id must not be null!");
-        return Mono.from(publisher).flatMap(
-                this::deleteById);
+        return Mono.from(publisher).flatMap(this::deleteById);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Void>  delete(T entity) {
-        throw new UnsupportedOperationException("TODO");
-
-/*        Assert.notNull(entity, "The given id must not be null!");
-        return operations.remove(entity).flatMap(res -> Mono.empty());*/
+    public Mono<Void>  delete(final T entity) {
+        Assert.notNull(entity, "Entity must not be null!");
+        return operations.removeById().reactive().one(entityInformation.getId(entity)).then();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Mono<Void> deleteAll(Iterable<? extends T> entities) {
-        throw new UnsupportedOperationException("TODO");
-
-/*        Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return operations
-                .remove(entities)
-                .last()
-                .then(Mono.empty());*/
+    public Mono<Void> deleteAll(final Iterable<? extends T> entities) {
+        return operations.removeById().reactive().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
     }
 
 
     @Override
-    public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
+    public Mono<Void> deleteAll(final Publisher<? extends T> entityStream) {
         Assert.notNull(entityStream, "The given publisher of entities must not be null!");
         return Flux.from(entityStream).flatMap(this::delete).single();
     }
@@ -214,25 +176,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Long> count() {
-        throw new UnsupportedOperationException("TODO");
-
-/*        N1QLExpression expression = select(x("COUNT(*)")).from(i(operations.getCouchbaseBucket().name()));
-        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        expression = addClassWhereClause(expression);
-        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-        return operations.queryN1QL(query)
-                .flatMapMany(res -> res.rowsAsObject()).single().map(row -> row.getLong("$1"));*/
+       return operations.findByQuery(entityInformation.getJavaType()).reactive().count();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll() {
-        throw new UnsupportedOperationException("TODO");
-
-/*        N1QLExpression expression = x("DELETE").from(i(operations.getCouchbaseBucket().name()));
-        QueryScanConsistency consistency = getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();
-        N1QLQuery query = new N1QLQuery(expression, QueryOptions.queryOptions().scanConsistency(consistency));
-        return operations.queryN1QL(query).then(Mono.empty());*/
+        return operations.removeByQuery(entityInformation.getJavaType()).reactive().all().then();
     }
 
     /**
@@ -247,6 +197,10 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @Override
     public CouchbaseOperations getCouchbaseOperations(){
         return operations;
+    }
+
+    private Flux<T> findAll(final Query query) {
+        return operations.findByQuery(entityInformation.getJavaType()).matching(query).reactive().all();
     }
 
 }

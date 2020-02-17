@@ -69,18 +69,25 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
     }
 
     @Override
-    public Mono<Boolean> one(String id) {
-      return template.getCollection(collection).reactive().exists(id, existsOptions()).onErrorMap(throwable -> {
-        if (throwable instanceof RuntimeException) {
-          return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-        } else {
-          return throwable;
-        }
-      }).map(ExistsResult::exists);
+    public Mono<Boolean> one(final String id) {
+      return Mono
+        .just(id)
+        .flatMap(docId -> template
+          .getCollection(collection)
+          .reactive()
+          .exists(id, existsOptions())
+          .map(ExistsResult::exists))
+        .onErrorMap(throwable -> {
+          if (throwable instanceof RuntimeException) {
+            return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+          } else {
+            return throwable;
+          }
+        });
     }
 
     @Override
-    public Mono<Map<String, Boolean>> all(Collection<String> ids) {
+    public Mono<Map<String, Boolean>> all(final Collection<String> ids) {
       return Flux
         .fromIterable(ids)
         .flatMap(id -> template.getCollection(collection).reactive()
