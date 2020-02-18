@@ -36,6 +36,7 @@ import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
@@ -115,6 +116,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    * Enable strict @Field checking on mapper
    */
   private boolean enableStrictFieldChecking = false;
+
+  public MappingCouchbaseConverter() {
+    super(new DefaultConversionService());
+
+    this.typeMapper = new DefaultCouchbaseTypeMapper(TYPEKEY_DEFAULT);
+    this.mappingContext = new CouchbaseMappingContext();
+    this.spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
+  }
 
   /**
    * Create a new {@link MappingCouchbaseConverter}.
