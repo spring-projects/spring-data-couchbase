@@ -2,9 +2,11 @@ package org.springframework.data.couchbase.domain;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.couchbase.core.mapping.Document;
 
 import java.util.Objects;
 
+@Document
 public class User {
 
   @Id private String id;
