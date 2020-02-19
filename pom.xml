@@ -142,6 +142,20 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.Couchbase</groupId>
+            <artifactId>CouchbaseMock</artifactId>
+            <version>73e493d259</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Kotlin extension -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -173,6 +187,10 @@
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <snapshots><enabled>true</enabled></snapshots>
             <releases><enabled>false</enabled></releases>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 

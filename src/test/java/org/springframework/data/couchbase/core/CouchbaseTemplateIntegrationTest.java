@@ -1,6 +1,8 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.java.Cluster;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataRetrievalFailureException;
@@ -10,22 +12,37 @@ import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import java.util.UUID;
 
+import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CouchbaseTemplateIntegrationTest {
+class CouchbaseTemplateIntegrationTest extends ClusterAwareIntegrationTest {
 
   private CouchbaseTemplate couchbaseTemplate;
 
+  private static Cluster cluster;
+
+  @BeforeAll
+  static void beforeAll() {
+    cluster = Cluster.connect(connectionString(), clusterOptions(authenticator()));
+  }
+
+  @AfterAll
+  static void afterAll() {
+    cluster.disconnect();
+  }
+
   @BeforeEach
   void beforeEach() {
-    Cluster cluster = Cluster.connect("127.0.0.1", "Administrator", "password");
-    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, "travel-sample");
+    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, config().bucketname());
     CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
     couchbaseTemplate = new CouchbaseTemplate(clientFactory, couchbaseConverter);
   }
@@ -88,6 +105,7 @@ class CouchbaseTemplateIntegrationTest {
   }
 
   @Test
+  @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
   void existsById() {
     String id = UUID.randomUUID().toString();
     assertFalse(couchbaseTemplate.existsById().one(id));
