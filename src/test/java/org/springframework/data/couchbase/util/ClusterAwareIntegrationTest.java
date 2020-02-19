@@ -52,6 +52,10 @@ public abstract class ClusterAwareIntegrationTest {
     return PasswordAuthenticator.create(config().adminUsername(), config().adminPassword());
   }
 
+  public static String bucketName() {
+    return config().bucketname();
+  }
+
   /**
    * Creates the right connection string out of the seed nodes in the config.
    *

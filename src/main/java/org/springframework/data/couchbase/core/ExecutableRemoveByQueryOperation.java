@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
 
@@ -13,7 +14,7 @@ public interface ExecutableRemoveByQueryOperation {
 
     List<RemoveResult> all();
 
-    TerminatingReactiveRemoveByQuery reactive();
+    TerminatingReactiveRemoveByQuery<T> reactive();
 
   }
 
@@ -29,6 +30,12 @@ public interface ExecutableRemoveByQueryOperation {
 
   }
 
-  interface ExecutableRemoveByQuery<T> extends RemoveByQueryWithQuery<T> {}
+  interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
+
+    RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+
+  }
+
+  interface ExecutableRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
 
 }

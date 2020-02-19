@@ -1,5 +1,7 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
@@ -19,19 +21,25 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
   @Override
   public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-    return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY);
+    return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
   }
 
   static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
+    private final Query query;
     private final TerminatingReactiveRemoveByQuerySupport<T> reactiveSupport;
+    private final QueryScanConsistency scanConsistency;
 
-    ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
+
+    ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
+                                   final QueryScanConsistency scanConsistency) {
       this.template = template;
       this.domainType = domainType;
-      this.reactiveSupport = new TerminatingReactiveRemoveByQuerySupport<>(template, domainType, query);
+      this.query = query;
+      this.reactiveSupport = new TerminatingReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+      this.scanConsistency = scanConsistency;
     }
 
     @Override
@@ -41,7 +49,12 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
     @Override
     public TerminatingRemoveByQuery<T> matching(final Query query) {
-      return new ExecutableRemoveByQuerySupport<>(template, domainType, query);
+      return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+    }
+
+    @Override
+    public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+      return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
     }
 
     @Override
@@ -55,12 +68,14 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
     private final Query query; // TODO
+    private final QueryScanConsistency scanConsistency;
 
     TerminatingReactiveRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType,
-                                            final Query query) {
+                                            final Query query, final QueryScanConsistency scanConsistency) {
       this.template = template;
       this.domainType = domainType;
       this.query = query;
+      this.scanConsistency = scanConsistency;
     }
 
     @Override
@@ -79,7 +94,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
           .getCouchbaseClientFactory()
           .getCluster()
           .reactive()
-          .query(statement)
+          .query(statement, buildQueryOptions())
           .onErrorMap(throwable -> {
             if (throwable instanceof RuntimeException) {
               return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -90,6 +105,14 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
           .flatMapMany(ReactiveQueryResult::rowsAsObject)
           .map(row -> new RemoveResult(row.getString("id"), row.getLong("cas"), Optional.empty()));
       });
+    }
+
+    private QueryOptions buildQueryOptions() {
+      final QueryOptions options = QueryOptions.queryOptions();
+      if (scanConsistency != null) {
+        options.scanConsistency(scanConsistency);
+      }
+      return options;
     }
   }
 

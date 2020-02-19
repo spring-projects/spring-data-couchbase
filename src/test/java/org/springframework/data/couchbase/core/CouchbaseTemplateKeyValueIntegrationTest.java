@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class CouchbaseTemplateIntegrationTest extends ClusterAwareIntegrationTest {
+class CouchbaseTemplateKeyValueIntegrationTest extends ClusterAwareIntegrationTest {
 
   private CouchbaseTemplate couchbaseTemplate;
 
@@ -42,7 +42,7 @@ class CouchbaseTemplateIntegrationTest extends ClusterAwareIntegrationTest {
 
   @BeforeEach
   void beforeEach() {
-    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, config().bucketname());
+    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, bucketName());
     CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
     couchbaseTemplate = new CouchbaseTemplate(clientFactory, couchbaseConverter);
   }
@@ -116,9 +116,5 @@ class CouchbaseTemplateIntegrationTest extends ClusterAwareIntegrationTest {
 
     assertTrue(couchbaseTemplate.existsById().one(id));
   }
-
-  // test find by query
-  // test find by analytics
-  // test remove by query
 
 }

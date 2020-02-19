@@ -1,5 +1,7 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
@@ -20,19 +22,24 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
   @Override
   public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-    return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY);
+    return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
   }
 
   static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
 
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
+    private final Query query;
     private final TerminatingReactiveFindByQuery<T> reactiveSupport;
+    private final QueryScanConsistency scanConsistency;
 
-    ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query) {
+    ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
+                                 final QueryScanConsistency scanConsistency) {
       this.template = template;
       this.domainType = domainType;
-      this.reactiveSupport = new TerminatingReactiveFindByQuerySupport<>(template, domainType, query);
+      this.query = query;
+      this.reactiveSupport = new TerminatingReactiveFindByQuerySupport<>(template, domainType, query, scanConsistency);
+      this.scanConsistency = scanConsistency;
     }
 
     @Override
@@ -52,7 +59,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
     @Override
     public TerminatingFindByQuery<T> matching(final Query query) {
-      return new ExecutableFindByQuerySupport<>(template, domainType, query);
+      return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
+    }
+
+    @Override
+    public FindByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+      return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
     }
 
     @Override
@@ -81,12 +93,14 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
     private final Query query;
+    private final QueryScanConsistency scanConsistency;
 
     TerminatingReactiveFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType,
-                                          final Query query) {
+                                          final Query query, final QueryScanConsistency scanConsistency) {
       this.template = template;
       this.domainType = domainType;
       this.query = query;
+      this.scanConsistency = scanConsistency;
     }
 
     @Override
@@ -107,7 +121,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
           .getCouchbaseClientFactory()
           .getCluster()
           .reactive()
-          .query(statement)
+          .query(statement, buildQueryOptions())
           .onErrorMap(throwable -> {
             if (throwable instanceof RuntimeException) {
               return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -134,7 +148,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
           .getCouchbaseClientFactory()
           .getCluster()
           .reactive()
-          .query(statement)
+          .query(statement, buildQueryOptions())
           .onErrorMap(throwable -> {
             if (throwable instanceof RuntimeException) {
               return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -172,6 +186,14 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
       query.appendSort(statement);
       query.appendSkipAndLimit(statement);
       return statement.toString();
+    }
+
+    private QueryOptions buildQueryOptions() {
+      final QueryOptions options = QueryOptions.queryOptions();
+      if (scanConsistency != null) {
+        options.scanConsistency(scanConsistency);
+      }
+      return options;
     }
 
   }

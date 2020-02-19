@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
@@ -120,6 +121,12 @@ public interface ExecutableFindByQueryOperation {
 
   }
 
-  interface ExecutableFindByQuery<T> extends FindByQueryWithQuery<T> {}
+  interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
+
+    FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+
+  }
+
+  interface ExecutableFindByQuery<T> extends FindByQueryConsistentWith<T> {}
 
 }
