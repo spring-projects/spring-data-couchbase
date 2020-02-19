@@ -1,14 +1,12 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -19,6 +17,7 @@ import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -34,26 +33,25 @@ class CouchbaseTemplateQueryIntegrationTest extends ClusterAwareIntegrationTest 
 
   private CouchbaseTemplate couchbaseTemplate;
 
-  private static Cluster cluster;
+  private static CouchbaseClientFactory couchbaseClientFactory;
 
   @BeforeAll
   static void beforeAll() {
-    cluster = Cluster.connect(connectionString(), clusterOptions(authenticator()));
+    couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
   }
 
   @AfterAll
-  static void afterAll() {
-    cluster.disconnect();
+  static void afterAll() throws IOException {
+    couchbaseClientFactory.close();
   }
 
   @BeforeEach
   void beforeEach() {
-    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, bucketName());
     CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
-    couchbaseTemplate = new CouchbaseTemplate(clientFactory, couchbaseConverter);
+    couchbaseTemplate = new CouchbaseTemplate(couchbaseClientFactory, couchbaseConverter);
 
     try {
-      clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
+      couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
     } catch (IndexExistsException ex) {
       // ignore, all good.
     }

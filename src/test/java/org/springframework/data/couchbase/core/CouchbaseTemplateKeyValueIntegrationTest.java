@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.Cluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,9 +15,9 @@ import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
+import java.io.IOException;
 import java.util.UUID;
 
-import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,23 +27,22 @@ class CouchbaseTemplateKeyValueIntegrationTest extends ClusterAwareIntegrationTe
 
   private CouchbaseTemplate couchbaseTemplate;
 
-  private static Cluster cluster;
+  private static CouchbaseClientFactory couchbaseClientFactory;
 
   @BeforeAll
   static void beforeAll() {
-    cluster = Cluster.connect(connectionString(), clusterOptions(authenticator()));
+    couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
   }
 
   @AfterAll
-  static void afterAll() {
-    cluster.disconnect();
+  static void afterAll() throws IOException {
+    couchbaseClientFactory.close();
   }
 
   @BeforeEach
   void beforeEach() {
-    CouchbaseClientFactory clientFactory = new SimpleCouchbaseClientFactory(cluster, bucketName());
     CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
-    couchbaseTemplate = new CouchbaseTemplate(clientFactory, couchbaseConverter);
+    couchbaseTemplate = new CouchbaseTemplate(couchbaseClientFactory, couchbaseConverter);
   }
 
   @Test

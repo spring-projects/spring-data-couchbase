@@ -21,7 +21,9 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Scope;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
-public interface CouchbaseClientFactory {
+import java.io.Closeable;
+
+public interface CouchbaseClientFactory extends Closeable {
 
   Cluster getCluster();
 

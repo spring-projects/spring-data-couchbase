@@ -16,8 +16,10 @@
 
 package org.springframework.data.couchbase;
 
+import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Scope;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
@@ -29,17 +31,33 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
   private final Scope scope;
   private final PersistenceExceptionTranslator exceptionTranslator;
 
-  public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName) {
-    this(cluster, bucketName, null);
+  public SimpleCouchbaseClientFactory(
+    final String connectionString,
+    final Authenticator authenticator,
+    final String bucketName
+  ) {
+    this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, null);
   }
 
-  public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
+  public SimpleCouchbaseClientFactory(
+    final String connectionString,
+    final Authenticator authenticator,
+    final String bucketName,
+    final String scopeName
+  ) {
+    this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, scopeName);
+  }
+
+  SimpleCouchbaseClientFactory(
+    final Cluster cluster,
+    final String bucketName,
+    final String scopeName
+  ) {
     this.cluster = cluster;
     this.bucket = cluster.bucket(bucketName);
     this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
     this.exceptionTranslator = new CouchbaseExceptionTranslator();
   }
-
 
   public CouchbaseClientFactory withScope(final String scopeName) {
     return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName);
@@ -64,4 +82,10 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
   public PersistenceExceptionTranslator getExceptionTranslator() {
     return exceptionTranslator;
   }
+
+  @Override
+  public void close() {
+    cluster.disconnect();
+  }
+
 }
