@@ -134,18 +134,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
     @Override
     public Flux<RemoveResult> all(final Collection<String> ids) {
-      return Flux.fromIterable(ids)
-        .flatMap(id -> template.getCollection(collection).reactive()
-          .remove(id, buildRemoveOptions())
-          .map(mutationResult -> RemoveResult.from(id, mutationResult))
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-        );
+      return Flux.fromIterable(ids).flatMap(this::one);
     }
 
     private RemoveOptions buildRemoveOptions() {

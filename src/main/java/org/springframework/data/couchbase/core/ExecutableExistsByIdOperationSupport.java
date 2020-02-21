@@ -90,17 +90,7 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
     public Mono<Map<String, Boolean>> all(final Collection<String> ids) {
       return Flux
         .fromIterable(ids)
-        .flatMap(id -> template.getCollection(collection).reactive()
-          .exists(id, existsOptions())
-          .map(result -> Tuples.of(id, result.exists()))
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-        )
+        .flatMap(id -> one(id).map(result -> Tuples.of(id, result)))
         .collectMap(Tuple2::getT1, Tuple2::getT2);
     }
   }

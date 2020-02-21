@@ -143,23 +143,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 
     @Override
     public Flux<? extends T> all(Collection<? extends T> objects) {
-      return Flux.fromIterable(objects).flatMap(entity -> {
-        CouchbaseDocument converted = template.support().encodeEntity(entity);
-        return template
-          .getCollection(collection)
-          .reactive()
-          .insert(converted.getId(), converted.getPayload(), buildInsertOptions())
-          .map(res -> {
-            template.support().applyUpdatedCas(entity, res.cas());
-            return entity;
-          }).onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          });
-      });
+      return Flux.fromIterable(objects).flatMap(this::one);
     }
 
     private InsertOptions buildInsertOptions() {
