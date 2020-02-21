@@ -43,6 +43,11 @@ public class CouchbaseTemplate implements CouchbaseOperations {
   }
 
   @Override
+  public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+    return new ExecutableFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
+  }
+
+  @Override
   public <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType) {
     return new ExecutableFindByQueryOperationSupport(this).findByQuery(domainType);
   }

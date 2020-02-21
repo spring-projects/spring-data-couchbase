@@ -106,19 +106,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
     @Override
     public Flux<? extends T> all(final Collection<String> ids) {
-      return Flux
-        .fromIterable(ids)
-        .flatMap(id -> template.getCollection(collection).reactive()
-          .get(id, getOptions().transcoder(RawJsonTranscoder.INSTANCE))
-          .map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-        );
+      return Flux.fromIterable(ids).flatMap(this::one);
     }
   }
 
