@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Michael Nitschinger
  * @author Mark Paluch
  */
-public class BasicCouchbasePersistentPropertyTest {
+public class BasicCouchbasePersistentPropertyTests {
 
   /**
    * Holds the entity to test against (contains the properties).

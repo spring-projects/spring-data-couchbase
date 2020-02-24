@@ -29,7 +29,7 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.util.Capabilities;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-class CouchbaseTemplateQueryIntegrationTest extends ClusterAwareIntegrationTest {
+class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTests {
 
   private CouchbaseTemplate couchbaseTemplate;
 

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @since 2.0.0
  */
 @ExtendWith(ClusterInvocationProvider.class)
-public abstract class ClusterAwareIntegrationTest {
+public abstract class ClusterAwareIntegrationTests {
 
   private static TestClusterConfig testClusterConfig;
 

@@ -23,7 +23,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.Optional;
@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringJUnitConfig(CouchbaseRepositoryKeyValueIntegrationTest.Config.class)
-public class CouchbaseRepositoryKeyValueIntegrationTest extends ClusterAwareIntegrationTest {
+@SpringJUnitConfig(CouchbaseRepositoryKeyValueIntegrationTests.Config.class)
+public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
   @Autowired
   UserRepository userRepository;

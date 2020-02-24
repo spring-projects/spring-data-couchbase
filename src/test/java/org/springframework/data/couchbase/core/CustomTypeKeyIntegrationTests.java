@@ -25,7 +25,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMapper;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTest;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import java.util.UUID;
@@ -33,8 +33,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@SpringJUnitConfig(CustomTypeKeyIntegrationTest.Config.class)
-public class CustomTypeKeyIntegrationTest extends ClusterAwareIntegrationTest {
+@SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
+public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
 
   private static final String CUSTOM_TYPE_KEY = "javaClass";
 

@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * @author Michael Nitschinger
  */
-public class JacksonTranslationServiceTest {
+public class JacksonTranslationServiceTests {
 
   private static TranslationService service;
 

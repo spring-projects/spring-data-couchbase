@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Michael Nitschinger
  * @author Mark Paluch
  */
-public class CustomConvertersTest {
+public class CustomConvertersTests {
 
   private MappingCouchbaseConverter converter;
 

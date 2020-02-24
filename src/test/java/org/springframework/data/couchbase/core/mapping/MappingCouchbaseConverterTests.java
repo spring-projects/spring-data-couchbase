@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
  */
-public class MappingCouchbaseConverterTest {
+public class MappingCouchbaseConverterTests {
 
   private static MappingCouchbaseConverter converter = new MappingCouchbaseConverter();
 

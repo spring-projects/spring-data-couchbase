@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
   "valid.document.expiry = 10",
   "invalid.document.expiry = abc"
 })
-public class BasicCouchbasePersistentEntityTest {
+public class BasicCouchbasePersistentEntityTests {
 
   @Configuration
   static class Config { }
