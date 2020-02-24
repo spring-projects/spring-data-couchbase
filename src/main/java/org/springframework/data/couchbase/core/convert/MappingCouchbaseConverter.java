@@ -112,11 +112,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
    */
   private final SpELContext spELContext;
 
-  /**
-   * Enable strict @Field checking on mapper
-   */
-  private boolean enableStrictFieldChecking = false;
-
   public MappingCouchbaseConverter() {
     super(new DefaultConversionService());
 
@@ -159,20 +154,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter
   @Override
   public String getTypeKey() {
     return typeMapper.getTypeKey();
-  }
-
-  /**
-   * Toggles strict checking of the {@link Field} annotation. If enabled,
-   * strict checking will prevent non-annotated properties to be serialized. This only
-   * applies to the Couchbase datastore, allowing other Spring Data datastores to still
-   * deal with the property.
-   *
-   * @param enableStrictFieldChecking true to only consider Field-annotated properties for
-   * Couchbase serialization.
-   * @see DATACOUCH-226
-   */
-  public void setEnableStrictFieldChecking(boolean enableStrictFieldChecking){
-    this.enableStrictFieldChecking = enableStrictFieldChecking;
   }
 
   @Override

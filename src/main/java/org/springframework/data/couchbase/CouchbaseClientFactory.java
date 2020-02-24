@@ -18,6 +18,7 @@ package org.springframework.data.couchbase;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
@@ -32,5 +33,7 @@ public interface CouchbaseClientFactory extends Closeable {
   Scope getScope();
 
   PersistenceExceptionTranslator getExceptionTranslator();
+
+  Collection getCollection(String name);
 
 }

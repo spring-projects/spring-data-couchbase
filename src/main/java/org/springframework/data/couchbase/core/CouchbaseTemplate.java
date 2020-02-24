@@ -110,14 +110,7 @@ public class CouchbaseTemplate implements CouchbaseOperations {
    * @return the collection instance.
    */
   public Collection getCollection(final String collectionName) {
-    final Scope scope = clientFactory.getScope();
-    if (collectionName == null) {
-      if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-        throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
-      }
-      return clientFactory.getBucket().defaultCollection();
-    }
-    return scope.collection(collectionName);
+    return clientFactory.getCollection(collectionName);
   }
 
   @Override

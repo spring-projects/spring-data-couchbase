@@ -17,9 +17,11 @@
 package org.springframework.data.couchbase;
 
 import com.couchbase.client.core.env.Authenticator;
+import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
+import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
@@ -76,6 +78,18 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
   @Override
   public Scope getScope() {
     return scope;
+  }
+
+  @Override
+  public Collection getCollection(final String collectionName) {
+    final Scope scope = getScope();
+    if (collectionName == null) {
+      if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+        throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+      }
+      return getBucket().defaultCollection();
+    }
+    return scope.collection(collectionName);
   }
 
   @Override
