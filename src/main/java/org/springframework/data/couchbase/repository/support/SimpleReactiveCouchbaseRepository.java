@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.support;
 
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -46,7 +47,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     /**
      * Holds the reference to the {@link CouchbaseOperations}.
      */
-    private final CouchbaseOperations operations;
+    private final ReactiveCouchbaseOperations operations;
 
     /**
      * Contains information about the entity being used in this repository.
@@ -60,7 +61,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
      * @param operations the reference to the reactive template used.
      */
     public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
-                                             final CouchbaseOperations operations) {
+                                             final ReactiveCouchbaseOperations operations) {
         Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
         Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
 
@@ -71,7 +72,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     public <S extends T> Mono<S> save(final S entity) {
         Assert.notNull(entity, "Entity must not be null!");
-        return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).reactive().one(entity);
+        return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @Override
     public <S extends T> Flux<S> saveAll(final Iterable<S> entities) {
         Assert.notNull(entities, "The given Iterable of entities must not be null!");
-        return (Flux<S>) operations.upsertById(entityInformation.getJavaType()).reactive().all(Streamable.of(entities).toList());
+        return (Flux<S>) operations.upsertById(entityInformation.getJavaType()).all(Streamable.of(entities).toList());
     }
 
     @SuppressWarnings("unchecked")
@@ -96,7 +97,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     @Override
     public Mono<T> findById(final ID id) {
-        return operations.findById(entityInformation.getJavaType()).reactive().one(id.toString());
+        return operations.findById(entityInformation.getJavaType()).one(id.toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -110,7 +111,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @Override
     public Mono<Boolean> existsById(final ID id) {
         Assert.notNull(id, "The given id must not be null!");
-        return operations.existsById().reactive().one(id.toString());
+        return operations.existsById().one(id.toString());
     }
 
     @SuppressWarnings("unchecked")
@@ -131,7 +132,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     public Flux<T> findAllById(final Iterable<ID> ids) {
         Assert.notNull(ids, "The given Iterable of ids must not be null!");
         List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
-        return (Flux<T>) operations.findById(entityInformation.getJavaType()).reactive().all(convertedIds);
+        return (Flux<T>) operations.findById(entityInformation.getJavaType()).all(convertedIds);
     }
 
     @SuppressWarnings("unchecked")
@@ -144,7 +145,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteById(final ID id) {
-        return operations.removeById().reactive().one(id.toString()).then();
+        return operations.removeById().one(id.toString()).then();
     }
 
     @Override
@@ -157,13 +158,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @Override
     public Mono<Void>  delete(final T entity) {
         Assert.notNull(entity, "Entity must not be null!");
-        return operations.removeById().reactive().one(entityInformation.getId(entity)).then();
+        return operations.removeById().one(entityInformation.getId(entity)).then();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll(final Iterable<? extends T> entities) {
-        return operations.removeById().reactive().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
+        return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
     }
 
 
@@ -176,13 +177,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Long> count() {
-       return operations.findByQuery(entityInformation.getJavaType()).reactive().count();
+       return operations.findByQuery(entityInformation.getJavaType()).count();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Mono<Void> deleteAll() {
-        return operations.removeByQuery(entityInformation.getJavaType()).reactive().all().then();
+        return operations.removeByQuery(entityInformation.getJavaType()).all().then();
     }
 
     /**
@@ -195,12 +196,12 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
     }
 
     @Override
-    public CouchbaseOperations getCouchbaseOperations(){
+    public ReactiveCouchbaseOperations getReactiveCouchbaseOperations(){
         return operations;
     }
 
     private Flux<T> findAll(final Query query) {
-        return operations.findByQuery(entityInformation.getJavaType()).matching(query).reactive().all();
+        return operations.findByQuery(entityInformation.getJavaType()).matching(query).all();
     }
 
 }

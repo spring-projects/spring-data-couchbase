@@ -26,32 +26,31 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
-public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceByIdOperation {
+public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
-  private final CouchbaseTemplate template;
+  private final ReactiveCouchbaseTemplate template;
 
-  public ExecutableReplaceByIdOperationSupport(final CouchbaseTemplate template) {
+  public ReactiveReplaceByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public <T> ExecutableReplaceById<T> replaceById(final Class<T> domainType) {
+  public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
     Assert.notNull(domainType, "DomainType must not be null!");
-    return new ExecutableReplaceByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+    return new ReactiveReplaceByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
       DurabilityLevel.NONE);
   }
 
-  static class ExecutableReplaceByIdSupport<T> implements ExecutableReplaceById<T> {
+  static class ReactiveReplaceByIdSupport<T> implements ReactiveReplaceById<T> {
 
-    private final CouchbaseTemplate template;
+    private final ReactiveCouchbaseTemplate template;
     private final Class<T> domainType;
     private final String collection;
     private final PersistTo persistTo;
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
-    private final ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport<T> reactiveSupport;
 
-    ExecutableReplaceByIdSupport(final CouchbaseTemplate template, final Class<T> domainType,
+    ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
                                 final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
                                 final DurabilityLevel durabilityLevel) {
       this.template = template;
@@ -60,39 +59,64 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
       this.persistTo = persistTo;
       this.replicateTo = replicateTo;
       this.durabilityLevel = durabilityLevel;
-      this.reactiveSupport = new ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport<>(template.reactive(), domainType, collection, persistTo,
-        replicateTo, durabilityLevel);
     }
 
     @Override
-    public T one(final T object) {
-      return reactiveSupport.one(object).block();
+    public Mono<T> one(T object) {
+      return Mono.just(object).flatMap(o -> {
+        CouchbaseDocument converted = template.support().encodeEntity(o);
+        return template
+          .getCollection(collection)
+          .reactive()
+          .replace(converted.getId(), converted.getPayload(), buildReplaceOptions())
+          .map(result -> {
+            template.support().applyUpdatedCas(object, result.cas());
+            return o;
+          });
+      }).onErrorMap(throwable -> {
+        if (throwable instanceof RuntimeException) {
+          return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+        } else {
+          return throwable;
+        }
+      });
     }
 
     @Override
-    public Collection<? extends T> all(Collection<? extends T> objects) {
-      return reactiveSupport.all(objects).collectList().block();
+    public Flux<? extends T> all(Collection<? extends T> objects) {
+      return Flux.fromIterable(objects).flatMap(this::one);
+    }
+
+    private ReplaceOptions buildReplaceOptions() {
+      final ReplaceOptions options = ReplaceOptions.replaceOptions();
+      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+        options.durability(persistTo, replicateTo);
+      } else if (durabilityLevel != DurabilityLevel.NONE) {
+        options.durability(durabilityLevel);
+      }
+      return options;
     }
 
     @Override
     public TerminatingReplaceById<T> inCollection(final String collection) {
       Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public ReplaceByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
       Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-      return new ExecutableReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public ReplaceByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
       Assert.notNull(persistTo, "PersistTo must not be null.");
       Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-      return new ExecutableReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
   }
+
 
 }

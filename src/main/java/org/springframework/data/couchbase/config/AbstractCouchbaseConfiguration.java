@@ -30,6 +30,7 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
@@ -82,12 +83,17 @@ public abstract class AbstractCouchbaseConfiguration {
     }
 
     @Bean
+    public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
+        return new ReactiveCouchbaseTemplate(couchbaseClientFactory(), mappingCouchbaseConverter());
+    }
+
+    @Bean
     public IndexManager couchbaseIndexManager() {
         return new IndexManager(couchbaseClientFactory(), false, false); //this ignores view, N1QL primary and secondary annotations
     }
 
     @Bean
-    public RepositoryOperationsMapping couchbaseRepositoryOperationsMapping(CouchbaseTemplate couchbaseTemplate) throws  Exception {
+    public RepositoryOperationsMapping couchbaseRepositoryOperationsMapping(CouchbaseTemplate couchbaseTemplate) {
         //create a base mapping that associates all repositories to the default template
         RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate);
         //let the user tune it

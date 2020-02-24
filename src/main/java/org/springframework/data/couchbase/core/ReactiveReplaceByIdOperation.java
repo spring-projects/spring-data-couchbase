@@ -23,15 +23,15 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
-public interface ExecutableReplaceByIdOperation {
+public interface ReactiveReplaceByIdOperation {
 
-  <T> ExecutableReplaceById<T> replaceById(Class<T> domainType);
+  <T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
   interface TerminatingReplaceById<T> {
 
-    T one(T object);
+    Mono<T> one(T object);
 
-    Collection<? extends T> all(Collection<? extends T> objects);
+    Flux<? extends T> all(Collection<? extends T> objects);
 
   }
 
@@ -48,6 +48,6 @@ public interface ExecutableReplaceByIdOperation {
 
   }
 
-  interface ExecutableReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+  interface ReactiveReplaceById<T> extends ReplaceByIdWithDurability<T> {}
 
 }

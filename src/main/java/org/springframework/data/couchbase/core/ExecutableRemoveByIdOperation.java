@@ -36,16 +36,6 @@ public interface ExecutableRemoveByIdOperation {
 
     List<RemoveResult> all(Collection<String> ids);
 
-    TerminatingReactiveRemoveById reactive();
-
-  }
-
-  interface TerminatingReactiveRemoveById {
-
-    Mono<RemoveResult> one(String id);
-
-    Flux<RemoveResult> all(Collection<String> ids);
-
   }
 
   interface RemoveByIdWithCollection extends TerminatingRemoveById {

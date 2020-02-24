@@ -16,78 +16,74 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.Scope;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
-public class CouchbaseTemplate implements CouchbaseOperations {
+public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations {
 
   private final CouchbaseClientFactory clientFactory;
   private final CouchbaseConverter converter;
   private final PersistenceExceptionTranslator exceptionTranslator;
   private final CouchbaseTemplateSupport templateSupport;
-  private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
-  public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
+  public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
     this.clientFactory = clientFactory;
     this.converter = converter;
     this.exceptionTranslator = clientFactory.getExceptionTranslator();
     this.templateSupport = new CouchbaseTemplateSupport(converter);
-    this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter);
   }
 
   @Override
-  public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
-    return new ExecutableUpsertByIdOperationSupport(this).upsertById(domainType);
+  public <T> ReactiveFindById<T> findById(Class<T> domainType) {
+    return new ReactiveFindByIdOperationSupport(this).findById(domainType);
   }
 
   @Override
-  public <T> ExecutableInsertById<T> insertById(Class<T> domainType) {
-    return new ExecutableInsertByIdOperationSupport(this).insertById(domainType);
+  public ReactiveExistsById existsById() {
+    return new ReactiveExistsByIdOperationSupport(this).existsById();
   }
 
   @Override
-  public <T> ExecutableReplaceById<T> replaceById(Class<T> domainType) {
-    return new ExecutableReplaceByIdOperationSupport(this).replaceById(domainType);
+  public <T> ReactiveFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
+    return new ReactiveFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
   }
 
   @Override
-  public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-    return new ExecutableFindByIdOperationSupport(this).findById(domainType);
+  public <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType) {
+    return new ReactiveFindByQueryOperationSupport(this).findByQuery(domainType);
   }
 
   @Override
-  public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-    return new ExecutableFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
+  public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+    return new ReactiveFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
   }
 
   @Override
-  public <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType) {
-    return new ExecutableFindByQueryOperationSupport(this).findByQuery(domainType);
+  public <T> ReactiveInsertById<T> insertById(Class<T> domainType) {
+    return new ReactiveInsertByIdOperationSupport(this).insertById(domainType);
   }
 
   @Override
-  public <T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
-    return new ExecutableFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
+  public ReactiveRemoveById removeById() {
+    return new ReactiveRemoveByIdOperationSupport(this).removeById();
   }
 
   @Override
-  public ExecutableRemoveById removeById() {
-    return new ExecutableRemoveByIdOperationSupport(this).removeById();
+  public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
+    return new ReactiveRemoveByQueryOperationSupport(this).removeByQuery(domainType);
   }
 
   @Override
-  public ExecutableExistsById existsById() {
-    return new ExecutableExistsByIdOperationSupport(this).existsById();
+  public <T> ReactiveReplaceById<T> replaceById(Class<T> domainType) {
+    return new ReactiveReplaceByIdOperationSupport(this).replaceById(domainType);
   }
 
   @Override
-  public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-    return new ExecutableRemoveByQueryOperationSupport(this).removeByQuery(domainType);
+  public <T> ReactiveUpsertById<T> upsertById(Class<T> domainType) {
+    return new ReactiveUpsertByIdOperationSupport(this).upsertById(domainType);
   }
 
   @Override
@@ -123,10 +119,6 @@ public class CouchbaseTemplate implements CouchbaseOperations {
 
   CouchbaseTemplateSupport support() {
     return templateSupport;
-  }
-
-  public ReactiveCouchbaseTemplate reactive() {
-    return reactiveCouchbaseTemplate;
   }
 
   /**

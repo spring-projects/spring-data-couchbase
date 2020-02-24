@@ -30,16 +30,6 @@ public interface ExecutableFindFromReplicasByIdOperation {
 
     Collection<? extends T> any(Collection<String> ids);
 
-    TerminatingReactiveFindFromReplicasById<T> reactive();
-
-  }
-
-  interface TerminatingReactiveFindFromReplicasById<T> {
-
-    Mono<T> any(String id);
-
-    Flux<? extends T> any(Collection<String> ids);
-
   }
 
   interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {

@@ -16,8 +16,8 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.util.Assert;
@@ -26,32 +26,31 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
-public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByIdOperation {
+public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
-  private final CouchbaseTemplate template;
+  private final ReactiveCouchbaseTemplate template;
 
-  public ExecutableInsertByIdOperationSupport(final CouchbaseTemplate template) {
+  public ReactiveInsertByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public <T> ExecutableInsertById<T> insertById(final Class<T> domainType) {
+  public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
     Assert.notNull(domainType, "DomainType must not be null!");
-    return new ExecutableInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+    return new ReactiveInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
       DurabilityLevel.NONE);
   }
 
-  static class ExecutableInsertByIdSupport<T> implements ExecutableInsertById<T> {
+  static class ReactiveInsertByIdSupport<T> implements ReactiveInsertById<T> {
 
-    private final CouchbaseTemplate template;
+    private final ReactiveCouchbaseTemplate template;
     private final Class<T> domainType;
     private final String collection;
     private final PersistTo persistTo;
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
-    private final ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport<T> reactiveSupport;
 
-    ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType,
+    ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
                                 final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
                                 final DurabilityLevel durabilityLevel) {
       this.template = template;
@@ -60,40 +59,63 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
       this.persistTo = persistTo;
       this.replicateTo = replicateTo;
       this.durabilityLevel = durabilityLevel;
-      this.reactiveSupport = new ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport<>(template.reactive(), domainType, collection, persistTo,
-        replicateTo, durabilityLevel);
     }
 
     @Override
-    public T one(final T object) {
-      return reactiveSupport.one(object).block();
+    public Mono<T> one(T object) {
+      return Mono.just(object).flatMap(o -> {
+        CouchbaseDocument converted = template.support().encodeEntity(o);
+        return template
+          .getCollection(collection)
+          .reactive()
+          .insert(converted.getId(), converted.getPayload(), buildInsertOptions())
+          .map(result -> {
+            template.support().applyUpdatedCas(object, result.cas());
+            return o;
+          });
+      }).onErrorMap(throwable -> {
+        if (throwable instanceof RuntimeException) {
+          return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+        } else {
+          return throwable;
+        }
+      });
     }
 
     @Override
-    public Collection<? extends T> all(Collection<? extends T> objects) {
-      return reactiveSupport.all(objects).collectList().block();
+    public Flux<? extends T> all(Collection<? extends T> objects) {
+      return Flux.fromIterable(objects).flatMap(this::one);
+    }
+
+    private InsertOptions buildInsertOptions() {
+      final InsertOptions options = InsertOptions.insertOptions();
+      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+        options.durability(persistTo, replicateTo);
+      } else if (durabilityLevel != DurabilityLevel.NONE) {
+        options.durability(durabilityLevel);
+      }
+      return options;
     }
 
     @Override
     public TerminatingInsertById<T> inCollection(final String collection) {
       Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public InsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
       Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-      return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public InsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
       Assert.notNull(persistTo, "PersistTo must not be null.");
       Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-      return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
     }
 
   }
-
 
 }

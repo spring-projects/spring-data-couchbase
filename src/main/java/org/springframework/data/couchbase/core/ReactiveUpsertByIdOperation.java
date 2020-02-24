@@ -23,31 +23,31 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
-public interface ExecutableReplaceByIdOperation {
+public interface ReactiveUpsertByIdOperation {
 
-  <T> ExecutableReplaceById<T> replaceById(Class<T> domainType);
+  <T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
 
-  interface TerminatingReplaceById<T> {
+  interface TerminatingUpsertById<T> {
 
-    T one(T object);
+    Mono<T> one(T object);
 
-    Collection<? extends T> all(Collection<? extends T> objects);
-
-  }
-
-  interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
-
-    TerminatingReplaceById<T> inCollection(String collection);
-  }
-
-  interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
-
-    ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
-
-    ReplaceByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+    Flux<? extends T> all(Collection<? extends T> objects);
 
   }
 
-  interface ExecutableReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+  interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
+
+    TerminatingUpsertById<T> inCollection(String collection);
+  }
+
+  interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
+
+    UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+
+    UpsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+  }
+
+  interface ReactiveUpsertById<T> extends UpsertByIdWithDurability<T> {}
 
 }

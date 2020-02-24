@@ -44,7 +44,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
     private final CouchbaseTemplate template;
     private final Class<T> domainType;
     private final Query query;
-    private final TerminatingReactiveRemoveByQuerySupport<T> reactiveSupport;
+    private final ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<T> reactiveSupport;
     private final QueryScanConsistency scanConsistency;
 
 
@@ -53,7 +53,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
       this.template = template;
       this.domainType = domainType;
       this.query = query;
-      this.reactiveSupport = new TerminatingReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+      this.reactiveSupport = new ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query, scanConsistency);
       this.scanConsistency = scanConsistency;
     }
 
@@ -72,63 +72,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
       return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
     }
 
-    @Override
-    public TerminatingReactiveRemoveByQuery<T> reactive() {
-      return reactiveSupport;
-    }
   }
 
-  static class TerminatingReactiveRemoveByQuerySupport<T> implements TerminatingReactiveRemoveByQuery<T> {
-
-    private final CouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final Query query; // TODO
-    private final QueryScanConsistency scanConsistency;
-
-    TerminatingReactiveRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType,
-                                            final Query query, final QueryScanConsistency scanConsistency) {
-      this.template = template;
-      this.domainType = domainType;
-      this.query = query;
-      this.scanConsistency = scanConsistency;
-    }
-
-    @Override
-    public Flux<RemoveResult> all() {
-      return Flux.defer(() -> {
-        String bucket = "`" + template.getBucketName() + "`";
-
-        String typeKey = template.getConverter().getTypeKey();
-        String typeValue = template.support().getJavaNameForEntity(domainType);
-        String where = " WHERE `" + typeKey + "` = \"" + typeValue + "\"";
-
-        String returning = " RETURNING meta().*";
-        String statement = "DELETE FROM " + bucket + " " + where + returning;
-
-        return template
-          .getCouchbaseClientFactory()
-          .getCluster()
-          .reactive()
-          .query(statement, buildQueryOptions())
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-          .flatMapMany(ReactiveQueryResult::rowsAsObject)
-          .map(row -> new RemoveResult(row.getString("id"), row.getLong("cas"), Optional.empty()));
-      });
-    }
-
-    private QueryOptions buildQueryOptions() {
-      final QueryOptions options = QueryOptions.queryOptions();
-      if (scanConsistency != null) {
-        options.scanConsistency(scanConsistency);
-      }
-      return options;
-    }
-  }
 
 }

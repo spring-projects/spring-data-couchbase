@@ -15,31 +15,28 @@
  */
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Mono;
+
 import java.util.Collection;
+import java.util.Map;
 
-public interface ExecutableFindByIdOperation {
+public interface ReactiveExistsByIdOperation {
 
-  <T> ExecutableFindById<T> findById(Class<T> domainType);
+  ReactiveExistsById existsById();
 
-  interface TerminatingFindById<T> {
+  interface TerminatingExistsById {
 
-    T one(String id);
+    Mono<Boolean> one(String id);
 
-    Collection<? extends T> all(Collection<String> ids);
-
-  }
-
-  interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
-
-    TerminatingFindById<T> inCollection(String collection);
-  }
-
-  interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
-
-    FindByIdWithCollection<T> project(String... fields);
+    Mono<Map<String, Boolean>> all(Collection<String> ids);
 
   }
 
-  interface ExecutableFindById<T> extends FindByIdWithProjection<T> {}
+  interface ExistsByIdWithCollection extends TerminatingExistsById {
+
+    TerminatingExistsById inCollection(String collection);
+  }
+
+  interface ReactiveExistsById extends ExistsByIdWithCollection {}
 
 }

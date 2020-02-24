@@ -26,69 +26,89 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.List;
 
-public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
+public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
-  private final CouchbaseTemplate template;
+  private final ReactiveCouchbaseTemplate template;
 
-  public ExecutableRemoveByIdOperationSupport(final CouchbaseTemplate template) {
+  public ReactiveRemoveByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
     this.template = template;
   }
 
   @Override
-  public ExecutableRemoveById removeById() {
-    return new ExecutableRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE);
+  public ReactiveRemoveById removeById() {
+    return new ReactiveRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE);
   }
 
-  static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
+  static class ReactiveRemoveByIdSupport implements ReactiveRemoveById {
 
-    private final CouchbaseTemplate template;
+    private final ReactiveCouchbaseTemplate template;
     private final String collection;
     private final PersistTo persistTo;
     private final ReplicateTo replicateTo;
     private final DurabilityLevel durabilityLevel;
-    private final ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
-    ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String collection, final PersistTo persistTo,
+    ReactiveRemoveByIdSupport(final ReactiveCouchbaseTemplate template, final String collection, final PersistTo persistTo,
                                 final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel) {
       this.template = template;
       this.collection = collection;
       this.persistTo = persistTo;
       this.replicateTo = replicateTo;
       this.durabilityLevel = durabilityLevel;
-      this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport(template.reactive(), collection, persistTo,
-        replicateTo, durabilityLevel);
     }
 
     @Override
-    public RemoveResult one(final String id) {
-      return reactiveRemoveByIdSupport.one(id).block();
+    public Mono<RemoveResult> one(final String id) {
+      return Mono
+        .just(id)
+        .flatMap(docId -> template
+          .getCollection(collection)
+          .reactive()
+          .remove(id, buildRemoveOptions())
+          .map(r -> RemoveResult.from(docId, r))
+        )
+        .onErrorMap(throwable -> {
+          if (throwable instanceof RuntimeException) {
+            return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+          } else {
+            return throwable;
+          }
+        });
     }
 
     @Override
-    public List<RemoveResult> all(final Collection<String> ids) {
-      return reactiveRemoveByIdSupport.all(ids).collectList().block();
+    public Flux<RemoveResult> all(final Collection<String> ids) {
+      return Flux.fromIterable(ids).flatMap(this::one);
+    }
+
+    private RemoveOptions buildRemoveOptions() {
+      final RemoveOptions options = RemoveOptions.removeOptions();
+      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+        options.durability(persistTo, replicateTo);
+      } else if (durabilityLevel != DurabilityLevel.NONE) {
+        options.durability(durabilityLevel);
+      }
+      return options;
     }
 
     @Override
     public TerminatingRemoveById inCollection(final String collection) {
       Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public RemoveByIdWithCollection withDurability(final DurabilityLevel durabilityLevel) {
       Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-      return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
     }
 
     @Override
     public RemoveByIdWithCollection withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
       Assert.notNull(persistTo, "PersistTo must not be null.");
       Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-      return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+      return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
     }
 
   }
-
 
 }

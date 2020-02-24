@@ -22,32 +22,33 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
+import java.util.List;
 
-public interface ExecutableReplaceByIdOperation {
+public interface ReactiveRemoveByIdOperation {
 
-  <T> ExecutableReplaceById<T> replaceById(Class<T> domainType);
+  ReactiveRemoveById removeById();
 
-  interface TerminatingReplaceById<T> {
+  interface TerminatingRemoveById {
 
-    T one(T object);
+    Mono<RemoveResult> one(String id);
 
-    Collection<? extends T> all(Collection<? extends T> objects);
-
-  }
-
-  interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
-
-    TerminatingReplaceById<T> inCollection(String collection);
-  }
-
-  interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
-
-    ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
-
-    ReplaceByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+    Flux<RemoveResult> all(Collection<String> ids);
 
   }
 
-  interface ExecutableReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+  interface RemoveByIdWithCollection extends TerminatingRemoveById {
+
+    TerminatingRemoveById inCollection(String collection);
+  }
+
+  interface RemoveByIdWithDurability extends RemoveByIdWithCollection {
+
+    RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
+
+    RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+  }
+
+  interface ReactiveRemoveById extends RemoveByIdWithDurability {}
 
 }

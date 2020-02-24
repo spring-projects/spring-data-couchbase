@@ -15,34 +15,34 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.util.Collection;
 
-public interface ExecutableRemoveByQueryOperation {
+public interface ReactiveFindByIdOperation {
 
-  <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType);
+  <T> ReactiveFindById<T> findById(Class<T> domainType);
 
-  interface TerminatingRemoveByQuery<T> {
+  interface TerminatingFindById<T> {
 
-    List<RemoveResult> all();
+    Mono<T> one(String id);
 
-  }
-
-  interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
-
-    TerminatingRemoveByQuery<T> matching(Query query);
+    Flux<? extends T> all(Collection<String> ids);
 
   }
 
-  interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
+  interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
 
-    RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+    TerminatingFindById<T> inCollection(String collection);
+  }
+
+  interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
+
+    FindByIdWithCollection<T> project(String... fields);
 
   }
 
-  interface ExecutableRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+  interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
 
 }

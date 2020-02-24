@@ -94,28 +94,7 @@ public interface ExecutableFindByAnalyticsOperation {
      */
     boolean exists();
 
-
-    TerminatingReactiveFindByAnalytics<T> reactive();
-
   }
-
-  /**
-   * Compose find execution by calling one of the terminating methods.
-   */
-  interface TerminatingReactiveFindByAnalytics<T> {
-
-    Mono<T> one();
-
-    Mono<T> first();
-
-    Flux<T> all();
-
-    Mono<Long> count();
-
-    Mono<Boolean> exists();
-
-  }
-
 
   /**
    * Terminating operations invoking the actual query execution.

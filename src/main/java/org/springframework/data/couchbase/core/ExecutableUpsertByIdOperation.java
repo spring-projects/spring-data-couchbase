@@ -33,16 +33,6 @@ public interface ExecutableUpsertByIdOperation {
 
     Collection<? extends T> all(Collection<? extends T> objects);
 
-    TerminatingReactiveUpsertById<T> reactive();
-
-  }
-
-  interface TerminatingReactiveUpsertById<T> {
-
-    Mono<T> one(T object);
-
-    Flux<? extends T> all(Collection<? extends T> objects);
-
   }
 
   interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {

@@ -33,16 +33,6 @@ public interface ExecutableInsertByIdOperation {
 
     Collection<? extends T> all(Collection<? extends T> objects);
 
-    TerminatingReactiveInsertById<T> reactive();
-
-  }
-
-  interface TerminatingReactiveInsertById<T> {
-
-    Mono<T> one(T object);
-
-    Flux<? extends T> all(Collection<? extends T> objects);
-
   }
 
   interface InsertByIdWithCollection<T> extends TerminatingInsertById<T> {

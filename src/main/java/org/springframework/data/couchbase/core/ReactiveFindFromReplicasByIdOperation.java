@@ -15,34 +15,29 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.util.Collection;
 
-public interface ExecutableRemoveByQueryOperation {
+public interface ReactiveFindFromReplicasByIdOperation {
 
-  <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType);
+  <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
 
-  interface TerminatingRemoveByQuery<T> {
+  interface TerminatingFindFromReplicasById<T> {
 
-    List<RemoveResult> all();
+    Mono<T> any(String id);
 
-  }
-
-  interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
-
-    TerminatingRemoveByQuery<T> matching(Query query);
+    Flux<? extends T> any(Collection<String> ids);
 
   }
 
-  interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
+  interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {
 
-    RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
-
+    TerminatingFindFromReplicasById<T> inCollection(String collection);
   }
 
-  interface ExecutableRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+
+  interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
 
 }

@@ -25,77 +25,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public interface ExecutableFindByQueryOperation {
+public interface ReactiveFindByQueryOperation {
 
-  <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType);
+  <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType);
 
+  /**
+   * Compose find execution by calling one of the terminating methods.
+   */
   interface TerminatingFindByQuery<T> {
-    /**
-     * Get exactly zero or one result.
-     *
-     * @return {@link Optional#empty()} if no match found.
-     * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
-     */
-    default Optional<T> one() {
-      return Optional.ofNullable(oneValue());
-    }
 
-    /**
-     * Get exactly zero or one result.
-     *
-     * @return {@literal null} if no match found.
-     * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
-     */
-    @Nullable
-    T oneValue();
+    Mono<T> one();
 
-    /**
-     * Get the first or no result.
-     *
-     * @return {@link Optional#empty()} if no match found.
-     */
-    default Optional<T> first() {
-      return Optional.ofNullable(firstValue());
-    }
+    Mono<T> first();
 
-    /**
-     * Get the first or no result.
-     *
-     * @return {@literal null} if no match found.
-     */
-    @Nullable
-    T firstValue();
+    Flux<T> all();
 
-    /**
-     * Get all matching elements.
-     *
-     * @return never {@literal null}.
-     */
-    List<T> all();
+    Mono<Long> count();
 
-    /**
-     * Stream all matching elements.
-     *
-     * @return a {@link Stream} of results. Never {@literal null}.
-     */
-    Stream<T> stream();
-
-    /**
-     * Get the number of matching elements.
-     *
-     * @return total number of matching elements.
-     */
-    long count();
-
-    /**
-     * Check for the presence of matching elements.
-     *
-     * @return {@literal true} if at least one matching element exists.
-     */
-    boolean exists();
+    Mono<Boolean> exists();
 
   }
-
 
   /**
    * Terminating operations invoking the actual query execution.
@@ -122,6 +71,6 @@ public interface ExecutableFindByQueryOperation {
 
   }
 
-  interface ExecutableFindByQuery<T> extends FindByQueryConsistentWith<T> {}
+  interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T> {}
 
 }

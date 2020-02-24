@@ -21,15 +21,14 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 
-public interface ExecutableRemoveByQueryOperation {
+public interface ReactiveRemoveByQueryOperation {
 
-  <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType);
+  <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType);
 
   interface TerminatingRemoveByQuery<T> {
-
-    List<RemoveResult> all();
-
+    Flux<RemoveResult> all();
   }
+
 
   interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
 
@@ -43,6 +42,6 @@ public interface ExecutableRemoveByQueryOperation {
 
   }
 
-  interface ExecutableRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+  interface ReactiveRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
 
 }
