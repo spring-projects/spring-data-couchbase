@@ -54,6 +54,12 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
   @BeforeAll
   static void beforeAll() {
     couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
+
+    try {
+      couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
+    } catch (IndexExistsException ex) {
+      // ignore, all good.
+    }
   }
 
   @AfterAll
@@ -65,12 +71,6 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
   void beforeEach() {
     CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
     couchbaseTemplate = new CouchbaseTemplate(couchbaseClientFactory, couchbaseConverter);
-
-    try {
-      couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-    } catch (IndexExistsException ex) {
-      // ignore, all good.
-    }
   }
 
   @Test

@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -51,6 +52,8 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
    * Contains information about the entity being used in this repository.
    */
   private final CouchbaseEntityInformation<T, String> entityInformation;
+
+  private CrudMethodMetadata crudMethodMetadata;
 
   /**
    * Create a new Repository.
@@ -122,6 +125,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 
   @Override
   public List<T> findAll() {
+    System.err.println(Arrays.asList(crudMethodMetadata.getMethod().getAnnotations()));
     return findAll(new Query());
   }
 
@@ -162,6 +166,10 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 
   private List<T> findAll(final Query query) {
     return couchbaseOperations.findByQuery(entityInformation.getJavaType()).matching(query).all();
+  }
+
+  void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
+    this.crudMethodMetadata = crudMethodMetadata;
   }
 
 }

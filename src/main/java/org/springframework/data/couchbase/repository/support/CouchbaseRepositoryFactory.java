@@ -70,18 +70,30 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
+  private final CrudMethodMetadataPostProcessor crudMethodMetadataPostProcessor;
+
   /**
    * Create a new factory.
    *
    * @param couchbaseOperationsMapping the template for the underlying actions.
    */
-  public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping, final IndexManager indexManager) {
+  public CouchbaseRepositoryFactory(final RepositoryOperationsMapping couchbaseOperationsMapping,
+                                    final IndexManager indexManager) {
     Assert.notNull(couchbaseOperationsMapping, "RepositoryOperationsMapping must not be null!");
     Assert.notNull(indexManager, "IndexManager must not be null!");
 
     this.couchbaseOperationsMapping = couchbaseOperationsMapping;
     this.indexManager = indexManager;
+    this.crudMethodMetadataPostProcessor = new CrudMethodMetadataPostProcessor();
     mappingContext = this.couchbaseOperationsMapping.getMappingContext();
+
+    addRepositoryProxyPostProcessor(crudMethodMetadataPostProcessor);
+  }
+
+  @Override
+  public void setBeanClassLoader(ClassLoader classLoader) {
+    super.setBeanClassLoader(classLoader);
+    this.crudMethodMetadataPostProcessor.setBeanClassLoader(classLoader);
   }
 
   /**
@@ -95,9 +107,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   public <T, ID> CouchbaseEntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
-
     CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(domainClass);
-    return new MappingCouchbaseEntityInformation<T, ID>((CouchbasePersistentEntity<T>) entity);
+    return new MappingCouchbaseEntityInformation<>((CouchbasePersistentEntity<T>) entity);
   }
 
   /**
@@ -122,8 +133,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
     indexManager.buildIndexes(metadata, n1qlPrimaryIndexed, n1qlSecondaryIndexed, couchbaseOperations);
 
     CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
-    SimpleCouchbaseRepository repo = getTargetRepositoryViaReflection(metadata, entityInformation, couchbaseOperations);
-    return repo;
+    SimpleCouchbaseRepository repository = getTargetRepositoryViaReflection(metadata, entityInformation, couchbaseOperations);
+    repository.setRepositoryMethodMetadata(crudMethodMetadataPostProcessor.getCrudMethodMetadata());
+    return repository;
   }
 
   /**
@@ -136,10 +148,6 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected final Class<?> getRepositoryBaseClass(final RepositoryMetadata repositoryMetadata) {
-    // TODO: ponder this in more detail.
-    // Since we now use n1ql in SimpleCouchbaseRepository, there is no real reason not to just return
-    // the N1qlRepository in all cases.  In which case, we don't really need to have both, at all.  For
-    // now lets just return it, and later we can combine them into one.
     return SimpleCouchbaseRepository.class;
   }
 
@@ -161,8 +169,10 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
     @Override
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory, NamedQueries namedQueries) {
-      CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
-          metadata.getDomainType());
+      final CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
+        metadata.getRepositoryInterface(),
+        metadata.getDomainType()
+      );
 
       CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
       String namedQueryName = queryMethod.getNamedQueryName();
