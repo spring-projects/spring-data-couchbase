@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 3.2.5.RELEASE (2020-02-26)
+---------------------------------------------
+* DATACOUCH-505 - Update Couchbase SDK to 2.7.12.
+* DATACOUCH-501 - Release 3.2.5 (Moore SR5).
+
+
 Changes in version 3.1.16.RELEASE (2020-02-26)
 ----------------------------------------------
 * DATACOUCH-500 - Release 3.1.16 (Lovelace SR16).
@@ -992,6 +998,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
