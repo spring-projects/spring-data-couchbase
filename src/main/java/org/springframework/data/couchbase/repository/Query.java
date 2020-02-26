@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.annotation.QueryAnnotation;
 
 import java.lang.annotation.Documented;
@@ -16,10 +15,9 @@ import java.lang.annotation.Target;
 public @interface Query {
 
   /**
-   * Allows to customize the scan consistency for the query.
-   *
-   * @return
+   * Takes a N1QL statement string to define the actual query to be executed. This one will take precedence over the
+   * method name.
    */
-  QueryScanConsistency scanConsistency() default QueryScanConsistency.NOT_BOUNDED;
+  String value() default "";
 
 }

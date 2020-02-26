@@ -16,15 +16,17 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import java.util.Arrays;
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.domain.Page;
@@ -124,12 +126,6 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
   }
 
   @Override
-  public List<T> findAll() {
-    System.err.println(Arrays.asList(crudMethodMetadata.getMethod().getAnnotations()));
-    return findAll(new Query());
-  }
-
-  @Override
   public long count() {
     return couchbaseOperations.findByQuery(entityInformation.getJavaType()).count();
   }
@@ -137,6 +133,11 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
   @Override
   public void deleteAll() {
     couchbaseOperations.removeByQuery(entityInformation.getJavaType()).all();
+  }
+
+  @Override
+  public List<T> findAll() {
+    return findAll(new Query());
   }
 
   @Override
@@ -164,11 +165,34 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
     return entityInformation;
   }
 
+  /**
+   * Helper method to assemble a n1ql find all query, taking annotations into acocunt.
+   *
+   * @param query the originating query.
+   * @return the list of found entities, already executed.
+   */
   private List<T> findAll(final Query query) {
-    return couchbaseOperations.findByQuery(entityInformation.getJavaType()).matching(query).all();
+    QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+
+    for (Annotation ann : crudMethodMetadata.getMethod().getAnnotations()) {
+      if (ann instanceof ScanConsistency) {
+        scanConsistency = ((ScanConsistency) ann).query();
+      }
+    }
+
+    return couchbaseOperations
+      .findByQuery(entityInformation.getJavaType())
+      .consistentWith(scanConsistency)
+      .matching(query)
+      .all();
   }
 
-  void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
+  /**
+   * Setter for the repository metadata, contains annotations on the overidden methods.
+   *
+   * @param crudMethodMetadata the injected repository metadata.
+   */
+  void setRepositoryMethodMetadata(final CrudMethodMetadata crudMethodMetadata) {
     this.crudMethodMetadata = crudMethodMetadata;
   }
 
