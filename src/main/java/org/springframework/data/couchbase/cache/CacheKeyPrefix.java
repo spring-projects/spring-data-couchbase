@@ -29,43 +29,43 @@ import org.springframework.util.Assert;
 @FunctionalInterface
 public interface CacheKeyPrefix {
 
-  /**
-   * Default separator.
-   *
-   * @since 2.3
-   */
-  String SEPARATOR = "::";
+	/**
+	 * Default separator.
+	 *
+	 * @since 2.3
+	 */
+	String SEPARATOR = "::";
 
-  /**
-   * Compute the prefix for the actual {@literal key} stored in Couchbase.
-   *
-   * @param cacheName will never be {@literal null}.
-   * @return never {@literal null}.
-   */
-  String compute(String cacheName);
+	/**
+	 * Creates a default {@link CacheKeyPrefix} scheme that prefixes cache keys with {@code cacheName} followed by double
+	 * colons. A cache named {@code myCache} will prefix all cache keys with {@code myCache::}.
+	 *
+	 * @return the default {@link CacheKeyPrefix} scheme.
+	 */
+	static CacheKeyPrefix simple() {
+		return name -> name + SEPARATOR;
+	}
 
-  /**
-   * Creates a default {@link CacheKeyPrefix} scheme that prefixes cache keys with {@code cacheName} followed by double
-   * colons. A cache named {@code myCache} will prefix all cache keys with {@code myCache::}.
-   *
-   * @return the default {@link CacheKeyPrefix} scheme.
-   */
-  static CacheKeyPrefix simple() {
-    return name -> name + SEPARATOR;
-  }
+	/**
+	 * Creates a {@link CacheKeyPrefix} scheme that prefixes cache keys with the given {@code prefix}. The prefix is
+	 * prepended to the {@code cacheName} followed by double colons. A prefix {@code cb-} with a cache named
+	 * {@code myCache} results in {@code cb-myCache::}.
+	 *
+	 * @param prefix must not be {@literal null}.
+	 * @return the default {@link CacheKeyPrefix} scheme.
+	 * @since 4.0.0
+	 */
+	static CacheKeyPrefix prefixed(final String prefix) {
+		Assert.notNull(prefix, "Prefix must not be null!");
+		return name -> prefix + name + SEPARATOR;
+	}
 
-  /**
-   * Creates a {@link CacheKeyPrefix} scheme that prefixes cache keys with the given {@code prefix}. The prefix is
-   * prepended to the {@code cacheName} followed by double colons. A prefix {@code cb-} with a cache named
-   * {@code myCache} results in {@code cb-myCache::}.
-   *
-   * @param prefix must not be {@literal null}.
-   * @return the default {@link CacheKeyPrefix} scheme.
-   * @since 4.0.0
-   */
-  static CacheKeyPrefix prefixed(final String prefix) {
-    Assert.notNull(prefix, "Prefix must not be null!");
-    return name -> prefix + name + SEPARATOR;
-  }
+	/**
+	 * Compute the prefix for the actual {@literal key} stored in Couchbase.
+	 *
+	 * @param cacheName will never be {@literal null}.
+	 * @return never {@literal null}.
+	 */
+	String compute(String cacheName);
 
 }

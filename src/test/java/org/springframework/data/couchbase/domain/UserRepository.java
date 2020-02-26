@@ -16,10 +16,8 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserRepository extends PagingAndSortingRepository<User, String> {
-}
+public interface UserRepository extends PagingAndSortingRepository<User, String> {}

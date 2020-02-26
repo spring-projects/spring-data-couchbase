@@ -24,18 +24,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IgnoreWhen {
 
-  ClusterType[] clusterTypes() default {};
+	ClusterType[] clusterTypes() default {};
 
-  Capabilities[] missesCapabilities() default {};
+	Capabilities[] missesCapabilities() default {};
 
-  Capabilities[] hasCapabilities() default {};
+	Capabilities[] hasCapabilities() default {};
 
-  int nodesLessThan() default 0;
+	int nodesLessThan() default 0;
 
-  int nodesGreaterThan() default Integer.MAX_VALUE;
+	int nodesGreaterThan() default Integer.MAX_VALUE;
 
-  int replicasLessThan() default 0;
+	int replicasLessThan() default 0;
 
-  int replicasGreaterThan() default Integer.MAX_VALUE;
+	int replicasGreaterThan() default Integer.MAX_VALUE;
 
 }

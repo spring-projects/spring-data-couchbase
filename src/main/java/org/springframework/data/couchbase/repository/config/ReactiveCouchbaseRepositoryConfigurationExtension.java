@@ -114,7 +114,6 @@ public class ReactiveCouchbaseRepositoryConfigurationExtension extends Repositor
 		builder.addPropertyReference("indexManager", BeanNames.COUCHBASE_INDEX_MANAGER);
 	}
 
-
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#useRepositoryConfiguration(org.springframework.data.repository.core.RepositoryMetadata)

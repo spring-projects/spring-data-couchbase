@@ -16,14 +16,14 @@
 
 package org.springframework.data.couchbase.core.mapping.event;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.auditing.AuditingHandler;
 import org.springframework.data.auditing.IsNewAwareAuditingHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.util.Assert;
-
-import java.util.Optional;
 
 /**
  * Event listener to populate auditing related fields on an entity about to be saved.
@@ -34,26 +34,26 @@ import java.util.Optional;
  */
 public class AuditingEventListener implements ApplicationListener<BeforeConvertEvent<Object>> {
 
-  private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
+	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
 
-  /**
-   * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
-   * provided by the given {@link ObjectFactory}.
-   *
-   * @param auditingHandlerFactory must not be {@literal null}.
-   */
-  public AuditingEventListener(ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory) {
-    Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null!");
-    this.auditingHandlerFactory = auditingHandlerFactory;
-  }
+	/**
+	 * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
+	 * provided by the given {@link ObjectFactory}.
+	 *
+	 * @param auditingHandlerFactory must not be {@literal null}.
+	 */
+	public AuditingEventListener(ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory) {
+		Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null!");
+		this.auditingHandlerFactory = auditingHandlerFactory;
+	}
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
-   */
-  public void onApplicationEvent(BeforeConvertEvent<Object> event) {
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+	 */
+	public void onApplicationEvent(BeforeConvertEvent<Object> event) {
 
-    Optional.ofNullable(event.getSource())//
-            .ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
-  }
+		Optional.ofNullable(event.getSource())//
+				.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
+	}
 }

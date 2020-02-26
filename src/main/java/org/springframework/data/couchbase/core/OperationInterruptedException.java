@@ -25,23 +25,23 @@ import org.springframework.dao.TransientDataAccessException;
  */
 public class OperationInterruptedException extends TransientDataAccessException {
 
-  /**
-   * Constructor for OperationInterruptedException.
-   *
-   * @param msg the detail message
-   */
-  public OperationInterruptedException(final String msg) {
-    super(msg);
-  }
+	/**
+	 * Constructor for OperationInterruptedException.
+	 *
+	 * @param msg the detail message
+	 */
+	public OperationInterruptedException(final String msg) {
+		super(msg);
+	}
 
-  /**
-   * Constructor for OperationInterruptedException.
-   *
-   * @param msg the detail message
-   * @param cause the root cause from the data access API in use
-   */
-  public OperationInterruptedException(final String msg, final Throwable cause) {
-    super(msg, cause);
-  }
+	/**
+	 * Constructor for OperationInterruptedException.
+	 *
+	 * @param msg the detail message
+	 * @param cause the root cause from the data access API in use
+	 */
+	public OperationInterruptedException(final String msg, final Throwable cause) {
+		super(msg, cause);
+	}
 
 }

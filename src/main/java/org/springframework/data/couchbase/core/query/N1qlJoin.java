@@ -15,61 +15,56 @@
  */
 
 package org.springframework.data.couchbase.core.query;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is targeted for entity field which is a list of the
- * associated entities fetched by ANSI Join across the entities available
- * from Couchbase Server 5.5
+ * This annotation is targeted for entity field which is a list of the associated entities fetched by ANSI Join across
+ * the entities available from Couchbase Server 5.5
  *
  * @author Subhashni Balakrishnan
  */
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface N1qlJoin {
-    /**
-     * Join Criteria can be a simple equi join or multiple conditions
-     * combined using AND or OR. Array based equi joins with unnest is
-     * also possible. To reference fields in entity use prefix "lks."
-     * (left key space) and for referencing fields in associated entities
-     * use "rks." (right key space)
-     */
-    String on();
+	/**
+	 * Join Criteria can be a simple equi join or multiple conditions combined using AND or OR. Array based equi joins
+	 * with unnest is also possible. To reference fields in entity use prefix "lks." (left key space) and for referencing
+	 * fields in associated entities use "rks." (right key space)
+	 */
+	String on();
 
-    /**
-     * Fetch type specifies how the associated entities are fetched
-     * {@link FetchType}
-     */
-    FetchType fetchType() default FetchType.IMMEDIATE;
+	/**
+	 * Fetch type specifies how the associated entities are fetched {@link FetchType}
+	 */
+	FetchType fetchType() default FetchType.IMMEDIATE;
 
-    /**
-     * Where clause for the join. To reference fields in entity use
-     * prefix "lks." and for referencing fields in associated entities
-     * use "rks."
-     */
-    String where() default "";
+	/**
+	 * Where clause for the join. To reference fields in entity use prefix "lks." and for referencing fields in associated
+	 * entities use "rks."
+	 */
+	String where() default "";
 
-    /**
-     * Hint index for entity for indexed nested loop join
-     */
-    String index() default "";
+	/**
+	 * Hint index for entity for indexed nested loop join
+	 */
+	String index() default "";
 
-    /**
-     * Hint index for associated entity for indexed nested loop join
-     */
-    String rightIndex() default "";
+	/**
+	 * Hint index for associated entity for indexed nested loop join
+	 */
+	String rightIndex() default "";
 
-    /**
-     * Hash side specification for the associated entity for hash join
-     * Note: Supported on enterprise edition only
-     */
-    HashSide hashside() default HashSide.NONE;
+	/**
+	 * Hash side specification for the associated entity for hash join Note: Supported on enterprise edition only
+	 */
+	HashSide hashside() default HashSide.NONE;
 
-    /**
-     * Use keys query hint
-     */
-    String[] keys() default {};
+	/**
+	 * Use keys query hint
+	 */
+	String[] keys() default {};
 }

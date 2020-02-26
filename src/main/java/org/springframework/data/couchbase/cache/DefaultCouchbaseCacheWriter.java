@@ -16,6 +16,15 @@
 
 package org.springframework.data.couchbase.cache;
 
+import static com.couchbase.client.java.kv.GetOptions.*;
+import static com.couchbase.client.java.kv.InsertOptions.*;
+import static com.couchbase.client.java.kv.UpsertOptions.*;
+import static com.couchbase.client.java.query.QueryOptions.*;
+
+import java.time.Duration;
+
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+
 import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.core.io.CollectionIdentifier;
@@ -27,98 +36,87 @@ import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryMetrics;
 import com.couchbase.client.java.query.QueryResult;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-
-import java.time.Duration;
-
-import static com.couchbase.client.java.kv.GetOptions.getOptions;
-import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
-import static com.couchbase.client.java.kv.UpsertOptions.upsertOptions;
-import static com.couchbase.client.java.query.QueryOptions.queryOptions;
 
 public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 
-  private final CouchbaseClientFactory clientFactory;
+	private final CouchbaseClientFactory clientFactory;
 
-  public DefaultCouchbaseCacheWriter(final CouchbaseClientFactory clientFactory) {
-    this.clientFactory = clientFactory;
-  }
+	public DefaultCouchbaseCacheWriter(final CouchbaseClientFactory clientFactory) {
+		this.clientFactory = clientFactory;
+	}
 
-  @Override
-  public void put(final String collectionName, final String key, final Object value, final Duration expiry,
-                  final Transcoder transcoder) {
-    UpsertOptions options = upsertOptions();
+	@Override
+	public void put(final String collectionName, final String key, final Object value, final Duration expiry,
+			final Transcoder transcoder) {
+		UpsertOptions options = upsertOptions();
 
-    if (expiry != null) {
-      options.expiry(expiry);
-    }
-    if (transcoder != null) {
-      options.transcoder(transcoder);
-    }
+		if (expiry != null) {
+			options.expiry(expiry);
+		}
+		if (transcoder != null) {
+			options.transcoder(transcoder);
+		}
 
-    getCollection(collectionName).upsert(key, value, options);
-  }
+		getCollection(collectionName).upsert(key, value, options);
+	}
 
-  @Override
-  public Object putIfAbsent(final String collectionName, final String key, final Object value, final Duration expiry,
-                            final Transcoder transcoder) {
-    InsertOptions options = insertOptions();
+	@Override
+	public Object putIfAbsent(final String collectionName, final String key, final Object value, final Duration expiry,
+			final Transcoder transcoder) {
+		InsertOptions options = insertOptions();
 
-    if (expiry != null) {
-      options.expiry(expiry);
-    }
-    if (transcoder != null) {
-      options.transcoder(transcoder);
-    }
+		if (expiry != null) {
+			options.expiry(expiry);
+		}
+		if (transcoder != null) {
+			options.transcoder(transcoder);
+		}
 
-    try {
-      getCollection(collectionName).insert(key, value, options);
-      return null;
-    } catch (final DocumentExistsException ex) {
-      // If the document exists, return the current one per contract
-      return get(collectionName, key, transcoder);
-    }
-  }
+		try {
+			getCollection(collectionName).insert(key, value, options);
+			return null;
+		} catch (final DocumentExistsException ex) {
+			// If the document exists, return the current one per contract
+			return get(collectionName, key, transcoder);
+		}
+	}
 
-  @Override
-  public Object get(final String collectionName, final String key, final Transcoder transcoder) {
-    // TODO .. the decoding side transcoding needs to be figured out?
-    try {
-      return getCollection(collectionName)
-        .get(key, getOptions().transcoder(transcoder))
-        .contentAs(Object.class);
-    } catch (DocumentNotFoundException ex) {
-      return null;
-    }
-  }
+	@Override
+	public Object get(final String collectionName, final String key, final Transcoder transcoder) {
+		// TODO .. the decoding side transcoding needs to be figured out?
+		try {
+			return getCollection(collectionName).get(key, getOptions().transcoder(transcoder)).contentAs(Object.class);
+		} catch (DocumentNotFoundException ex) {
+			return null;
+		}
+	}
 
-  @Override
-  public boolean remove(final String collectionName, final String key) {
-    try {
-      getCollection(collectionName).remove(key);
-      return true;
-    } catch (final DocumentNotFoundException ex) {
-      return false;
-    }
-  }
+	@Override
+	public boolean remove(final String collectionName, final String key) {
+		try {
+			getCollection(collectionName).remove(key);
+			return true;
+		} catch (final DocumentNotFoundException ex) {
+			return false;
+		}
+	}
 
-  @Override
-  public long clear(final String pattern) {
-    QueryResult result = clientFactory.getCluster().query(
-      "DELETE FROM `" + clientFactory.getBucket().name() + "` where meta().id LIKE $pattern",
-      queryOptions().metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%"))
-    );
-    return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
-  }
+	@Override
+	public long clear(final String pattern) {
+		QueryResult result = clientFactory.getCluster().query(
+				"DELETE FROM `" + clientFactory.getBucket().name() + "` where meta().id LIKE $pattern",
+				queryOptions().metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%")));
+		return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
+	}
 
-  private Collection getCollection(final String collectionName) {
-    final Scope scope = clientFactory.getScope();
-    if (collectionName == null) {
-      if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-        throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
-      }
-      return clientFactory.getBucket().defaultCollection();
-    }
-    return scope.collection(collectionName);
-  }
+	private Collection getCollection(final String collectionName) {
+		final Scope scope = clientFactory.getScope();
+		if (collectionName == null) {
+			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+			}
+			return clientFactory.getBucket().defaultCollection();
+		}
+		return scope.collection(collectionName);
+	}
 }

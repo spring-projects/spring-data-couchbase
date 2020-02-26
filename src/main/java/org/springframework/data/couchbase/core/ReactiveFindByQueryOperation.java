@@ -15,62 +15,59 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.lang.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
+import org.springframework.data.couchbase.core.query.Query;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 public interface ReactiveFindByQueryOperation {
 
-  <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType);
+	<T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType);
 
-  /**
-   * Compose find execution by calling one of the terminating methods.
-   */
-  interface TerminatingFindByQuery<T> {
+	/**
+	 * Compose find execution by calling one of the terminating methods.
+	 */
+	interface TerminatingFindByQuery<T> {
 
-    Mono<T> one();
+		Mono<T> one();
 
-    Mono<T> first();
+		Mono<T> first();
 
-    Flux<T> all();
+		Flux<T> all();
 
-    Mono<Long> count();
+		Mono<Long> count();
 
-    Mono<Boolean> exists();
+		Mono<Boolean> exists();
 
-  }
+	}
 
-  /**
-   * Terminating operations invoking the actual query execution.
-   *
-   * @author Christoph Strobl
-   * @since 2.0
-   */
-  interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
+	/**
+	 * Terminating operations invoking the actual query execution.
+	 *
+	 * @author Christoph Strobl
+	 * @since 2.0
+	 */
+	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
 
-    /**
-     * Set the filter query to be used.
-     *
-     * @param query must not be {@literal null}.
-     * @return new instance of {@link TerminatingFindByQuery}.
-     * @throws IllegalArgumentException if query is {@literal null}.
-     */
-    TerminatingFindByQuery<T> matching(Query query);
+		/**
+		 * Set the filter query to be used.
+		 *
+		 * @param query must not be {@literal null}.
+		 * @return new instance of {@link TerminatingFindByQuery}.
+		 * @throws IllegalArgumentException if query is {@literal null}.
+		 */
+		TerminatingFindByQuery<T> matching(Query query);
 
-  }
+	}
 
-  interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
+	interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
 
-    FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+		FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
 
-  }
+	}
 
-  interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T> {}
+	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T> {}
 
 }

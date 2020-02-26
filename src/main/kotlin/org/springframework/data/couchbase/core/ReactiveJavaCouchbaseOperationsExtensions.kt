@@ -16,10 +16,6 @@
 
 package org.springframework.data.couchbase.core
 
-import org.springframework.data.couchbase.core.query.N1QLQuery
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-
 /**
  * Kotlin extensions for [ReactiveJavaCouchbaseOperations]
  *

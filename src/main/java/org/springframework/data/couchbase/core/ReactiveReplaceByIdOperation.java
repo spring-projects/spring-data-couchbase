@@ -15,39 +15,40 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+
 public interface ReactiveReplaceByIdOperation {
 
-  <T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
+	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
-  interface TerminatingReplaceById<T> {
+	interface TerminatingReplaceById<T> {
 
-    Mono<T> one(T object);
+		Mono<T> one(T object);
 
-    Flux<? extends T> all(Collection<? extends T> objects);
+		Flux<? extends T> all(Collection<? extends T> objects);
 
-  }
+	}
 
-  interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
+	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
 
-    TerminatingReplaceById<T> inCollection(String collection);
-  }
+		TerminatingReplaceById<T> inCollection(String collection);
+	}
 
-  interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
+	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
 
-    ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+		ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
-    ReplaceByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		ReplaceByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
-  }
+	}
 
-  interface ReactiveReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+	interface ReactiveReplaceById<T> extends ReplaceByIdWithDurability<T> {}
 
 }

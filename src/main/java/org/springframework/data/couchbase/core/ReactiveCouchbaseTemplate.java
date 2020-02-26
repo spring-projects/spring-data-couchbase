@@ -16,120 +16,120 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.Collection;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
+import com.couchbase.client.java.Collection;
+
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations {
 
-  private final CouchbaseClientFactory clientFactory;
-  private final CouchbaseConverter converter;
-  private final PersistenceExceptionTranslator exceptionTranslator;
-  private final CouchbaseTemplateSupport templateSupport;
+	private final CouchbaseClientFactory clientFactory;
+	private final CouchbaseConverter converter;
+	private final PersistenceExceptionTranslator exceptionTranslator;
+	private final CouchbaseTemplateSupport templateSupport;
 
-  public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
-    this.clientFactory = clientFactory;
-    this.converter = converter;
-    this.exceptionTranslator = clientFactory.getExceptionTranslator();
-    this.templateSupport = new CouchbaseTemplateSupport(converter);
-  }
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
+		this.clientFactory = clientFactory;
+		this.converter = converter;
+		this.exceptionTranslator = clientFactory.getExceptionTranslator();
+		this.templateSupport = new CouchbaseTemplateSupport(converter);
+	}
 
-  @Override
-  public <T> ReactiveFindById<T> findById(Class<T> domainType) {
-    return new ReactiveFindByIdOperationSupport(this).findById(domainType);
-  }
+	@Override
+	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
+		return new ReactiveFindByIdOperationSupport(this).findById(domainType);
+	}
 
-  @Override
-  public ReactiveExistsById existsById() {
-    return new ReactiveExistsByIdOperationSupport(this).existsById();
-  }
+	@Override
+	public ReactiveExistsById existsById() {
+		return new ReactiveExistsByIdOperationSupport(this).existsById();
+	}
 
-  @Override
-  public <T> ReactiveFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
-    return new ReactiveFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
-  }
+	@Override
+	public <T> ReactiveFindByAnalytics<T> findByAnalytics(Class<T> domainType) {
+		return new ReactiveFindByAnalyticsOperationSupport(this).findByAnalytics(domainType);
+	}
 
-  @Override
-  public <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType) {
-    return new ReactiveFindByQueryOperationSupport(this).findByQuery(domainType);
-  }
+	@Override
+	public <T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType) {
+		return new ReactiveFindByQueryOperationSupport(this).findByQuery(domainType);
+	}
 
-  @Override
-  public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-    return new ReactiveFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
-  }
+	@Override
+	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+		return new ReactiveFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
+	}
 
-  @Override
-  public <T> ReactiveInsertById<T> insertById(Class<T> domainType) {
-    return new ReactiveInsertByIdOperationSupport(this).insertById(domainType);
-  }
+	@Override
+	public <T> ReactiveInsertById<T> insertById(Class<T> domainType) {
+		return new ReactiveInsertByIdOperationSupport(this).insertById(domainType);
+	}
 
-  @Override
-  public ReactiveRemoveById removeById() {
-    return new ReactiveRemoveByIdOperationSupport(this).removeById();
-  }
+	@Override
+	public ReactiveRemoveById removeById() {
+		return new ReactiveRemoveByIdOperationSupport(this).removeById();
+	}
 
-  @Override
-  public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-    return new ReactiveRemoveByQueryOperationSupport(this).removeByQuery(domainType);
-  }
+	@Override
+	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
+		return new ReactiveRemoveByQueryOperationSupport(this).removeByQuery(domainType);
+	}
 
-  @Override
-  public <T> ReactiveReplaceById<T> replaceById(Class<T> domainType) {
-    return new ReactiveReplaceByIdOperationSupport(this).replaceById(domainType);
-  }
+	@Override
+	public <T> ReactiveReplaceById<T> replaceById(Class<T> domainType) {
+		return new ReactiveReplaceByIdOperationSupport(this).replaceById(domainType);
+	}
 
-  @Override
-  public <T> ReactiveUpsertById<T> upsertById(Class<T> domainType) {
-    return new ReactiveUpsertByIdOperationSupport(this).upsertById(domainType);
-  }
+	@Override
+	public <T> ReactiveUpsertById<T> upsertById(Class<T> domainType) {
+		return new ReactiveUpsertByIdOperationSupport(this).upsertById(domainType);
+	}
 
-  @Override
-  public String getBucketName() {
-    return clientFactory.getBucket().name();
-  }
+	@Override
+	public String getBucketName() {
+		return clientFactory.getBucket().name();
+	}
 
-  @Override
-  public String getScopeName() {
-    return clientFactory.getScope().name();
-  }
+	@Override
+	public String getScopeName() {
+		return clientFactory.getScope().name();
+	}
 
-  @Override
-  public CouchbaseClientFactory getCouchbaseClientFactory() {
-    return clientFactory;
-  }
+	@Override
+	public CouchbaseClientFactory getCouchbaseClientFactory() {
+		return clientFactory;
+	}
 
-  /**
-   * Provides access to a  {@link Collection} on the configured {@link CouchbaseClientFactory}.
-   *
-   * @param collectionName the name of the collection, if null is passed in the default collection is assumed.
-   * @return the collection instance.
-   */
-  public Collection getCollection(final String collectionName) {
-    return clientFactory.getCollection(collectionName);
-  }
+	/**
+	 * Provides access to a {@link Collection} on the configured {@link CouchbaseClientFactory}.
+	 *
+	 * @param collectionName the name of the collection, if null is passed in the default collection is assumed.
+	 * @return the collection instance.
+	 */
+	public Collection getCollection(final String collectionName) {
+		return clientFactory.getCollection(collectionName);
+	}
 
-  @Override
-  public CouchbaseConverter getConverter() {
-    return converter;
-  }
+	@Override
+	public CouchbaseConverter getConverter() {
+		return converter;
+	}
 
+	CouchbaseTemplateSupport support() {
+		return templateSupport;
+	}
 
-  CouchbaseTemplateSupport support() {
-    return templateSupport;
-  }
-
-  /**
-   * Tries to convert the given {@link RuntimeException} into a {@link DataAccessException} but returns the original
-   * exception if the conversation failed. Thus allows safe re-throwing of the return value.
-   *
-   * @param ex the exception to translate
-   */
-  RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
-    RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
-    return resolved == null ? ex : resolved;
-  }
+	/**
+	 * Tries to convert the given {@link RuntimeException} into a {@link DataAccessException} but returns the original
+	 * exception if the conversation failed. Thus allows safe re-throwing of the return value.
+	 *
+	 * @param ex the exception to translate
+	 */
+	RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
+		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
+		return resolved == null ? ex : resolved;
+	}
 
 }

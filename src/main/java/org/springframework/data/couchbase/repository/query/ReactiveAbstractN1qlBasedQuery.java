@@ -15,17 +15,23 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.json.JsonValue;
-import com.couchbase.client.java.query.QueryScanConsistency;
+import reactor.core.publisher.Flux;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import reactor.core.publisher.Flux;
+
+import com.couchbase.client.java.json.JsonValue;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Subhashni Balakrishnan
@@ -34,100 +40,97 @@ import reactor.core.publisher.Flux;
  * @since 3.0
  */
 public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery {
-    private static final Logger LOG = LoggerFactory.getLogger(ReactiveAbstractN1qlBasedQuery.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveAbstractN1qlBasedQuery.class);
 
-    protected final CouchbaseQueryMethod queryMethod;
-    private final CouchbaseOperations couchbaseOperations;
+	protected final CouchbaseQueryMethod queryMethod;
+	private final CouchbaseOperations couchbaseOperations;
 
-    protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, CouchbaseOperations operations) {
-        this.queryMethod = method;
-        this.couchbaseOperations = operations;
-    }
+	protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, CouchbaseOperations operations) {
+		this.queryMethod = method;
+		this.couchbaseOperations = operations;
+	}
 
-    protected abstract N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters, ReturnedType returnedType);
+	protected abstract N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+			ReturnedType returnedType);
 
-    protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
+	protected abstract JsonValue getPlaceholderValues(ParameterAccessor accessor);
 
-    @Override
-    public Object execute(Object[] parameters) {
-        ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(queryMethod, parameters);
-        ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
-        ReturnedType returnedType = processor.getReturnedType();
+	@Override
+	public Object execute(Object[] parameters) {
+		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(queryMethod, parameters);
+		ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
+		ReturnedType returnedType = processor.getReturnedType();
 
-        Class<?> typeToRead = returnedType.getTypeToRead();
-        typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
+		Class<?> typeToRead = returnedType.getTypeToRead();
+		typeToRead = typeToRead == null ? returnedType.getDomainType() : typeToRead;
 
-        N1QLExpression expression = getExpression(accessor, parameters, returnedType);
-        JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
+		N1QLExpression expression = getExpression(accessor, parameters, returnedType);
+		JsonValue queryPlaceholderValues = getPlaceholderValues(accessor);
 
-        //prepare the final query
-        N1QLQuery query = N1qlUtils.buildQuery(expression, queryPlaceholderValues, getScanConsistency());
-        return ReactiveWrapperConverters.toWrapper(
-                processor.processResult(executeDependingOnType(query, queryMethod, typeToRead)), Flux.class);
-    }
+		// prepare the final query
+		N1QLQuery query = N1qlUtils.buildQuery(expression, queryPlaceholderValues, getScanConsistency());
+		return ReactiveWrapperConverters
+				.toWrapper(processor.processResult(executeDependingOnType(query, queryMethod, typeToRead)), Flux.class);
+	}
 
+	protected Object executeDependingOnType(N1QLQuery query, QueryMethod queryMethod, Class<?> typeToRead) {
 
-    protected Object executeDependingOnType(N1QLQuery query,
-                                            QueryMethod queryMethod,
-                                            Class<?> typeToRead) {
+		if (queryMethod.isModifyingQuery()) {
+			throw new UnsupportedOperationException("Modifying queries not yet supported");
+		}
 
-        if (queryMethod.isModifyingQuery()) {
-            throw new UnsupportedOperationException("Modifying queries not yet supported");
-        }
+		if (queryMethod.isQueryForEntity()) {
+			return execute(query, typeToRead);
+		} else {
+			return executeSingleProjection(query, typeToRead);
+		}
+	}
 
-        if (queryMethod.isQueryForEntity()) {
-            return execute(query, typeToRead);
-        } else {
-            return executeSingleProjection(query, typeToRead);
-        }
-    }
+	private void logIfNecessary(N1QLQuery query) {
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Executing N1QL query: " + query.n1ql());
+		}
+	}
 
-    private void logIfNecessary(N1QLQuery query) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Executing N1QL query: " + query.n1ql());
-        }
-    }
+	protected Object execute(N1QLQuery query, Class<?> typeToRead) {
+		throw new UnsupportedOperationException();
+		/*
+		    logIfNecessary(query);
+		    return couchbaseOperations.findByN1QL(query, typeToRead);*/
+	}
 
-    protected Object execute(N1QLQuery query, Class<?> typeToRead) {
-        throw new UnsupportedOperationException();
-/*
-        logIfNecessary(query);
-        return couchbaseOperations.findByN1QL(query, typeToRead);*/
-    }
+	protected Object executeSingleProjection(N1QLQuery query, final Class<?> typeToRead) {
+		throw new UnsupportedOperationException();
 
-    protected Object executeSingleProjection(N1QLQuery query, final Class<?> typeToRead) {
-        throw new UnsupportedOperationException();
+		/*        logIfNecessary(query);
+		    return couchbaseOperations.findByN1QLProjection(query, Map.class)
+		            .map(m -> {
+		                    if (m.size() > 1) {
+		                        throw new CouchbaseQueryExecutionException("Query returning primitive got more values than expected: "
+		                                + m.size());
+		                    }
+		                    Object v = m.values().iterator().next();
+		                    return this.couchbaseOperations.getConverter().getConversionService().convert(v, typeToRead);
+		                });*/
+	}
 
-/*        logIfNecessary(query);
-        return couchbaseOperations.findByN1QLProjection(query, Map.class)
-                .map(m -> {
-                        if (m.size() > 1) {
-                            throw new CouchbaseQueryExecutionException("Query returning primitive got more values than expected: "
-                                    + m.size());
-                        }
-                        Object v = m.values().iterator().next();
-                        return this.couchbaseOperations.getConverter().getConversionService().convert(v, typeToRead);
-                    });*/
-    }
+	@Override
+	public CouchbaseQueryMethod getQueryMethod() {
+		return this.queryMethod;
+	}
 
-    @Override
-    public CouchbaseQueryMethod getQueryMethod() {
-        return this.queryMethod;
-    }
+	protected CouchbaseOperations getCouchbaseOperations() {
+		return this.couchbaseOperations;
+	}
 
-    protected CouchbaseOperations getCouchbaseOperations() {
-        return this.couchbaseOperations;
-    }
+	protected QueryScanConsistency getScanConsistency() {
+		throw new UnsupportedOperationException();
 
-
-    protected QueryScanConsistency getScanConsistency() {
-        throw new UnsupportedOperationException();
-
-/*
-        if (queryMethod.hasConsistencyAnnotation()) {
-        return queryMethod.getConsistencyAnnotation().value();
-      }
-
-      return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
-    }
+		/*
+		    if (queryMethod.hasConsistencyAnnotation()) {
+		    return queryMethod.getConsistencyAnnotation().value();
+		  }
+		
+		  return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
+	}
 }

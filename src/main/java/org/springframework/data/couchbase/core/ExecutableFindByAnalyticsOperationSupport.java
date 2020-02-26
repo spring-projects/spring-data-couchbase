@@ -15,73 +15,75 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.query.AnalyticsQuery;
-
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+
 public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFindByAnalyticsOperation {
 
-  private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();
+	private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();
 
-  private final CouchbaseTemplate template;
+	private final CouchbaseTemplate template;
 
-  public ExecutableFindByAnalyticsOperationSupport(final CouchbaseTemplate template) {
-    this.template = template;
-  }
+	public ExecutableFindByAnalyticsOperationSupport(final CouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ExecutableFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-    return new ExecutableFindByAnalyticsSupport<>(template, domainType, ALL_QUERY);
-  }
+	@Override
+	public <T> ExecutableFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
+		return new ExecutableFindByAnalyticsSupport<>(template, domainType, ALL_QUERY);
+	}
 
-  static class ExecutableFindByAnalyticsSupport<T> implements ExecutableFindByAnalytics<T> {
+	static class ExecutableFindByAnalyticsSupport<T> implements ExecutableFindByAnalytics<T> {
 
-    private final CouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<T> reactiveSupport;
+		private final CouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<T> reactiveSupport;
 
-    ExecutableFindByAnalyticsSupport(final CouchbaseTemplate template, final Class<T> domainType, final AnalyticsQuery query) {
-      this.template = template;
-      this.domainType = domainType;
-      this.reactiveSupport = new ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<>(template.reactive(), domainType, query);
-    }
+		ExecutableFindByAnalyticsSupport(final CouchbaseTemplate template, final Class<T> domainType,
+				final AnalyticsQuery query) {
+			this.template = template;
+			this.domainType = domainType;
+			this.reactiveSupport = new ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<>(
+					template.reactive(), domainType, query);
+		}
 
-    @Override
-    public T oneValue() {
-      return reactiveSupport.one().block();
-    }
+		@Override
+		public T oneValue() {
+			return reactiveSupport.one().block();
+		}
 
-    @Override
-    public T firstValue() {
-      return reactiveSupport.first().block();
-    }
+		@Override
+		public T firstValue() {
+			return reactiveSupport.first().block();
+		}
 
-    @Override
-    public List<T> all() {
-      return reactiveSupport.all().collectList().block();
-    }
+		@Override
+		public List<T> all() {
+			return reactiveSupport.all().collectList().block();
+		}
 
-    @Override
-    public TerminatingFindByAnalytics<T> matching(final AnalyticsQuery query) {
-      return new ExecutableFindByAnalyticsSupport<>(template, domainType, query);
-    }
+		@Override
+		public TerminatingFindByAnalytics<T> matching(final AnalyticsQuery query) {
+			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query);
+		}
 
-    @Override
-    public Stream<T> stream() {
-      return reactiveSupport.all().toStream();
-    }
+		@Override
+		public Stream<T> stream() {
+			return reactiveSupport.all().toStream();
+		}
 
-    @Override
-    public long count() {
-      return reactiveSupport.count().block();
-    }
+		@Override
+		public long count() {
+			return reactiveSupport.count().block();
+		}
 
-    @Override
-    public boolean exists() {
-      return count() > 0;
-    }
+		@Override
+		public boolean exists() {
+			return count() > 0;
+		}
 
-  }
+	}
 
 }

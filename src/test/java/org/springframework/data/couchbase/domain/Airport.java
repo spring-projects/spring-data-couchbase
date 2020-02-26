@@ -6,29 +6,28 @@ import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
 public class Airport {
-  @Id
-  String id;
+	@Id String id;
 
-  String iata;
+	String iata;
 
-  String icao;
+	String icao;
 
-  @PersistenceConstructor
-  public Airport(String id, String iata, String icao) {
-    this.id = id;
-    this.iata = iata;
-    this.icao = icao;
-  }
+	@PersistenceConstructor
+	public Airport(String id, String iata, String icao) {
+		this.id = id;
+		this.iata = iata;
+		this.icao = icao;
+	}
 
-  public String getId() {
-    return id;
-  }
+	public String getId() {
+		return id;
+	}
 
-  public String getIata() {
-    return iata;
-  }
+	public String getIata() {
+		return iata;
+	}
 
-  public String getIcao() {
-    return icao;
-  }
+	public String getIcao() {
+		return icao;
+	}
 }

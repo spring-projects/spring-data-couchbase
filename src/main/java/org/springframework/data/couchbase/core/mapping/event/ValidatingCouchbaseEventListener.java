@@ -23,7 +23,6 @@ import javax.validation.Validator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.util.Assert;
 
@@ -37,34 +36,34 @@ import org.springframework.util.Assert;
  */
 public class ValidatingCouchbaseEventListener extends AbstractCouchbaseEventListener<Object> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ValidatingCouchbaseEventListener.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ValidatingCouchbaseEventListener.class);
 
-  private final Validator validator;
+	private final Validator validator;
 
-  /**
-   * Creates a new {@link ValidatingCouchbaseEventListener} using the given {@link Validator}.
-   *
-   * @param validator must not be {@literal null}.
-   */
-  public ValidatingCouchbaseEventListener(Validator validator) {
-    Assert.notNull(validator, "Validator must not be null!");
-    this.validator = validator;
-  }
+	/**
+	 * Creates a new {@link ValidatingCouchbaseEventListener} using the given {@link Validator}.
+	 *
+	 * @param validator must not be {@literal null}.
+	 */
+	public ValidatingCouchbaseEventListener(Validator validator) {
+		Assert.notNull(validator, "Validator must not be null!");
+		this.validator = validator;
+	}
 
-  @Override
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  public void onBeforeSave(Object source, CouchbaseDocument dbo) {
+	@Override
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public void onBeforeSave(Object source, CouchbaseDocument dbo) {
 
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Validating object: {}", source);
-    }
-    Set violations = validator.validate(source);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Validating object: {}", source);
+		}
+		Set violations = validator.validate(source);
 
-    if (!violations.isEmpty()) {
+		if (!violations.isEmpty()) {
 
-      LOG.info("During object: {} validation violations found: {}", source, violations);
-      throw new ConstraintViolationException(violations);
-    }
-  }
+			LOG.info("During object: {} validation violations found: {}", source, violations);
+			throw new ConstraintViolationException(violations);
+		}
+	}
 
 }

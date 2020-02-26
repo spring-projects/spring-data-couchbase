@@ -20,21 +20,21 @@ import java.util.Map;
 
 public interface ExecutableExistsByIdOperation {
 
-  ExecutableExistsById existsById();
+	ExecutableExistsById existsById();
 
-  interface TerminatingExistsById {
+	interface TerminatingExistsById {
 
-    boolean one(String id);
+		boolean one(String id);
 
-    Map<String, Boolean> all(Collection<String> ids);
+		Map<String, Boolean> all(Collection<String> ids);
 
-  }
+	}
 
-  interface ExistsByIdWithCollection extends TerminatingExistsById {
+	interface ExistsByIdWithCollection extends TerminatingExistsById {
 
-    TerminatingExistsById inCollection(String collection);
-  }
+		TerminatingExistsById inCollection(String collection);
+	}
 
-  interface ExecutableExistsById extends ExistsByIdWithCollection {}
+	interface ExecutableExistsById extends ExistsByIdWithCollection {}
 
 }

@@ -15,39 +15,40 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+
 public interface ReactiveUpsertByIdOperation {
 
-  <T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
+	<T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
 
-  interface TerminatingUpsertById<T> {
+	interface TerminatingUpsertById<T> {
 
-    Mono<T> one(T object);
+		Mono<T> one(T object);
 
-    Flux<? extends T> all(Collection<? extends T> objects);
+		Flux<? extends T> all(Collection<? extends T> objects);
 
-  }
+	}
 
-  interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
+	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
 
-    TerminatingUpsertById<T> inCollection(String collection);
-  }
+		TerminatingUpsertById<T> inCollection(String collection);
+	}
 
-  interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
+	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
 
-    UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+		UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
-    UpsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		UpsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
-  }
+	}
 
-  interface ReactiveUpsertById<T> extends UpsertByIdWithDurability<T> {}
+	interface ReactiveUpsertById<T> extends UpsertByIdWithDurability<T> {}
 
 }

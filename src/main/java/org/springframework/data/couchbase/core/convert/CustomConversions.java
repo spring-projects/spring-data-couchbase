@@ -21,8 +21,10 @@ import java.util.List;
 /**
  * Value object to capture custom conversion.
  * <p/>
- * <p>Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper
- * inspection nor nested conversion.</p>
+ * <p>
+ * Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper inspection
+ * nor nested conversion.
+ * </p>
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
@@ -33,12 +35,12 @@ import java.util.List;
 @Deprecated
 public class CustomConversions extends CouchbaseCustomConversions {
 
-  /**
-   * Create a new instance with a given list of conversers.
-   *
-   * @param converters the list of custom converters.
-   */
-  public CustomConversions(final List<?> converters) {
-    super(converters);
-  }
+	/**
+	 * Create a new instance with a given list of conversers.
+	 *
+	 * @param converters the list of custom converters.
+	 */
+	public CustomConversions(final List<?> converters) {
+		super(converters);
+	}
 }

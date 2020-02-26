@@ -15,39 +15,37 @@
  */
 package org.springframework.data.couchbase.core;
 
+import java.util.Collection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.util.Collection;
 
 public interface ExecutableInsertByIdOperation {
 
-  <T> ExecutableInsertById<T> insertById(Class<T> domainType);
+	<T> ExecutableInsertById<T> insertById(Class<T> domainType);
 
-  interface TerminatingInsertById<T> {
+	interface TerminatingInsertById<T> {
 
-    T one(T object);
+		T one(T object);
 
-    Collection<? extends T> all(Collection<? extends T> objects);
+		Collection<? extends T> all(Collection<? extends T> objects);
 
-  }
+	}
 
-  interface InsertByIdWithCollection<T> extends TerminatingInsertById<T> {
+	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T> {
 
-    TerminatingInsertById<T> inCollection(String collection);
-  }
+		TerminatingInsertById<T> inCollection(String collection);
+	}
 
-  interface InsertByIdWithDurability<T> extends InsertByIdWithCollection<T> {
+	interface InsertByIdWithDurability<T> extends InsertByIdWithCollection<T> {
 
-    InsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+		InsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
-    InsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		InsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
-  }
+	}
 
-  interface ExecutableInsertById<T> extends InsertByIdWithDurability<T> {}
+	interface ExecutableInsertById<T> extends InsertByIdWithDurability<T> {}
 
 }

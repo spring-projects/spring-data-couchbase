@@ -26,30 +26,30 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseStorable;
  */
 public interface TranslationService {
 
-  /**
-   * Encodes a JSON String into the target format.
-   *
-   * @param source the source contents to encode.
-   * @return the encoded document representation.
-   */
-  String encode(CouchbaseStorable source);
+	/**
+	 * Encodes a JSON String into the target format.
+	 *
+	 * @param source the source contents to encode.
+	 * @return the encoded document representation.
+	 */
+	String encode(CouchbaseStorable source);
 
-  /**
-   * Decodes the target format into a {@link CouchbaseDocument}
-   *
-   * @param source the source formatted document.
-   * @param target the target of the populated data.
-   * @return a properly populated document to work with.
-   */
-  CouchbaseStorable decode(String source, CouchbaseStorable target);
+	/**
+	 * Decodes the target format into a {@link CouchbaseDocument}
+	 *
+	 * @param source the source formatted document.
+	 * @param target the target of the populated data.
+	 * @return a properly populated document to work with.
+	 */
+	CouchbaseStorable decode(String source, CouchbaseStorable target);
 
-  /**
-   * Decodes an ad-hoc JSON object into a corresponding "case" class.
-   *
-   * @param source the JSON for the ad-hoc JSON object (from a N1QL query for instance).
-   * @param target the target class information.
-   * @param <T> the target class.
-   * @return an ad-hoc instance of the decoded JSON into the corresponding "case" class.
-   */
-  <T> T decodeFragment(String source, Class<T> target);
+	/**
+	 * Decodes an ad-hoc JSON object into a corresponding "case" class.
+	 *
+	 * @param source the JSON for the ad-hoc JSON object (from a N1QL query for instance).
+	 * @param target the target class information.
+	 * @param <T> the target class.
+	 * @return an ad-hoc instance of the decoded JSON into the corresponding "case" class.
+	 */
+	<T> T decodeFragment(String source, Class<T> target);
 }

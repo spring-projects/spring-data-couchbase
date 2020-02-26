@@ -22,22 +22,21 @@ import java.util.Collection;
 
 public interface ReactiveFindFromReplicasByIdOperation {
 
-  <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
+	<T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
 
-  interface TerminatingFindFromReplicasById<T> {
+	interface TerminatingFindFromReplicasById<T> {
 
-    Mono<T> any(String id);
+		Mono<T> any(String id);
 
-    Flux<? extends T> any(Collection<String> ids);
+		Flux<? extends T> any(Collection<String> ids);
 
-  }
+	}
 
-  interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {
+	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {
 
-    TerminatingFindFromReplicasById<T> inCollection(String collection);
-  }
+		TerminatingFindFromReplicasById<T> inCollection(String collection);
+	}
 
-
-  interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
+	interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
 
 }

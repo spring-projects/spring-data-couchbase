@@ -15,62 +15,63 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.util.Assert;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.util.Assert;
+
 public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOperation {
 
-  private final CouchbaseTemplate template;
+	private final CouchbaseTemplate template;
 
-  ExecutableFindByIdOperationSupport(CouchbaseTemplate template) {
-    this.template = template;
-  }
+	ExecutableFindByIdOperationSupport(CouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-    return new ExecutableFindByIdSupport<>(template, domainType, null, null);
-  }
+	@Override
+	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
+		return new ExecutableFindByIdSupport<>(template, domainType, null, null);
+	}
 
-  static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
+	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
 
-    private final CouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final String collection;
-    private final List<String> fields;
-    private final ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<T> reactiveSupport;
+		private final CouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final String collection;
+		private final List<String> fields;
+		private final ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<T> reactiveSupport;
 
-    ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
-      this.template = template;
-      this.domainType = domainType;
-      this.collection = collection;
-      this.fields = fields;
-      this.reactiveSupport = new ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<>(template.reactive(), domainType, collection, fields);
-    }
+		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
+			this.template = template;
+			this.domainType = domainType;
+			this.collection = collection;
+			this.fields = fields;
+			this.reactiveSupport = new ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<>(template.reactive(),
+					domainType, collection, fields);
+		}
 
-    @Override
-    public T one(final String id) {
-      return reactiveSupport.one(id).block();
-    }
+		@Override
+		public T one(final String id) {
+			return reactiveSupport.one(id).block();
+		}
 
-    @Override
-    public Collection<? extends T> all(final Collection<String> ids) {
-      return reactiveSupport.all(ids).collectList().block();
-    }
+		@Override
+		public Collection<? extends T> all(final Collection<String> ids) {
+			return reactiveSupport.all(ids).collectList().block();
+		}
 
-    @Override
-    public TerminatingFindById<T> inCollection(final String collection) {
-      Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableFindByIdSupport<>(template, domainType, collection, fields);
-    }
+		@Override
+		public TerminatingFindById<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ExecutableFindByIdSupport<>(template, domainType, collection, fields);
+		}
 
-    @Override
-    public FindByIdWithCollection<T> project(String... fields) {
-      Assert.notEmpty(fields, "Fields must not be null nor empty.");
-      return new ExecutableFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
-    }
-  }
+		@Override
+		public FindByIdWithCollection<T> project(String... fields) {
+			Assert.notEmpty(fields, "Fields must not be null nor empty.");
+			return new ExecutableFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
+		}
+	}
 
 }

@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.util;
 
 public enum ClusterType {
-  // CONTAINERIZED,
-  MOCKED,
-  UNMANAGED
+	// CONTAINERIZED,
+	MOCKED, UNMANAGED
 }

@@ -15,84 +15,86 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.query.Query;
-
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.data.couchbase.core.query.Query;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQueryOperation {
 
-  private static final Query ALL_QUERY = new Query();
+	private static final Query ALL_QUERY = new Query();
 
-  private final CouchbaseTemplate template;
+	private final CouchbaseTemplate template;
 
-  public ExecutableFindByQueryOperationSupport(final CouchbaseTemplate template) {
-    this.template = template;
-  }
+	public ExecutableFindByQueryOperationSupport(final CouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-    return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
-  }
+	@Override
+	public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
+		return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
+	}
 
-  static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
+	static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
 
-    private final CouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final Query query;
-    private final ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T> reactiveSupport;
-    private final QueryScanConsistency scanConsistency;
+		private final CouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final Query query;
+		private final ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T> reactiveSupport;
+		private final QueryScanConsistency scanConsistency;
 
-    ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-                                 final QueryScanConsistency scanConsistency) {
-      this.template = template;
-      this.domainType = domainType;
-      this.query = query;
-      this.reactiveSupport = new ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency);
-      this.scanConsistency = scanConsistency;
-    }
+		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
+				final QueryScanConsistency scanConsistency) {
+			this.template = template;
+			this.domainType = domainType;
+			this.query = query;
+			this.reactiveSupport = new ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T>(template.reactive(),
+					domainType, query, scanConsistency);
+			this.scanConsistency = scanConsistency;
+		}
 
-    @Override
-    public T oneValue() {
-      return reactiveSupport.one().block();
-    }
+		@Override
+		public T oneValue() {
+			return reactiveSupport.one().block();
+		}
 
-    @Override
-    public T firstValue() {
-      return reactiveSupport.first().block();
-    }
+		@Override
+		public T firstValue() {
+			return reactiveSupport.first().block();
+		}
 
-    @Override
-    public List<T> all() {
-      return reactiveSupport.all().collectList().block();
-    }
+		@Override
+		public List<T> all() {
+			return reactiveSupport.all().collectList().block();
+		}
 
-    @Override
-    public TerminatingFindByQuery<T> matching(final Query query) {
-      return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
+		@Override
+		public TerminatingFindByQuery<T> matching(final Query query) {
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public FindByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
-      return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
+		@Override
+		public FindByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public Stream<T> stream() {
-      return reactiveSupport.all().toStream();
-    }
+		@Override
+		public Stream<T> stream() {
+			return reactiveSupport.all().toStream();
+		}
 
-    @Override
-    public long count() {
-      return reactiveSupport.count().block();
-    }
+		@Override
+		public long count() {
+			return reactiveSupport.count().block();
+		}
 
-    @Override
-    public boolean exists() {
-      return count() > 0;
-    }
+		@Override
+		public boolean exists() {
+			return count() > 0;
+		}
 
-  }
+	}
 
 }

@@ -21,83 +21,77 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * This configuration is populated from the cluster container and represents the
- * settings that can be used from the tests for bootstrapping their own code.
+ * This configuration is populated from the cluster container and represents the settings that can be used from the
+ * tests for bootstrapping their own code.
  *
  * @since 2.0.0
  */
 public class TestClusterConfig {
 
-  private final String bucketname;
-  private final String adminUsername;
-  private final String adminPassword;
-  private final List<TestNodeConfig> nodes;
-  private final int numReplicas;
-  private final Optional<X509Certificate> clusterCert;
-  private final Set<Capabilities> capabilities;
+	private final String bucketname;
+	private final String adminUsername;
+	private final String adminPassword;
+	private final List<TestNodeConfig> nodes;
+	private final int numReplicas;
+	private final Optional<X509Certificate> clusterCert;
+	private final Set<Capabilities> capabilities;
 
-  TestClusterConfig(String bucketname, String adminUsername, String adminPassword,
-                    List<TestNodeConfig> nodes, int numReplicas,
-                    Optional<X509Certificate> clusterCert, Set<Capabilities> capabilities) {
-    this.bucketname = bucketname;
-    this.adminUsername = adminUsername;
-    this.adminPassword = adminPassword;
-    this.nodes = nodes;
-    this.numReplicas = numReplicas;
-    this.clusterCert = clusterCert;
-    this.capabilities = capabilities;
-  }
+	TestClusterConfig(String bucketname, String adminUsername, String adminPassword, List<TestNodeConfig> nodes,
+			int numReplicas, Optional<X509Certificate> clusterCert, Set<Capabilities> capabilities) {
+		this.bucketname = bucketname;
+		this.adminUsername = adminUsername;
+		this.adminPassword = adminPassword;
+		this.nodes = nodes;
+		this.numReplicas = numReplicas;
+		this.clusterCert = clusterCert;
+		this.capabilities = capabilities;
+	}
 
-  public String bucketname() {
-    return bucketname;
-  }
+	public String bucketname() {
+		return bucketname;
+	}
 
-  public String adminUsername() {
-    return adminUsername;
-  }
+	public String adminUsername() {
+		return adminUsername;
+	}
 
-  public String adminPassword() {
-    return adminPassword;
-  }
+	public String adminPassword() {
+		return adminPassword;
+	}
 
-  public List<TestNodeConfig> nodes() {
-    return nodes;
-  }
+	public List<TestNodeConfig> nodes() {
+		return nodes;
+	}
 
-  public int numReplicas() {
-    return numReplicas;
-  }
+	public int numReplicas() {
+		return numReplicas;
+	}
 
-  public Set<Capabilities> capabilities() {
-    return capabilities;
-  }
+	public Set<Capabilities> capabilities() {
+		return capabilities;
+	}
 
-  public Optional<X509Certificate> clusterCert() {
-    return clusterCert;
-  }
+	public Optional<X509Certificate> clusterCert() {
+		return clusterCert;
+	}
 
-  /**
-   * Finds the first node with a given service enabled in the config.
-   *
-   * <p>This method can be used to find bootstrap nodes and similar.</p>
-   *
-   * @param service the service to find.
-   * @return a node config if found, empty otherwise.
-   */
-  public Optional<TestNodeConfig> firstNodeWith(Services service) {
-    return nodes.stream().filter(n -> n.ports().containsKey(service)).findFirst();
-  }
+	/**
+	 * Finds the first node with a given service enabled in the config.
+	 * <p>
+	 * This method can be used to find bootstrap nodes and similar.
+	 * </p>
+	 *
+	 * @param service the service to find.
+	 * @return a node config if found, empty otherwise.
+	 */
+	public Optional<TestNodeConfig> firstNodeWith(Services service) {
+		return nodes.stream().filter(n -> n.ports().containsKey(service)).findFirst();
+	}
 
-  @Override
-  public String toString() {
-    return "TestClusterConfig{" +
-      "bucketname='" + bucketname + '\'' +
-      ", adminUsername='" + adminUsername + '\'' +
-      ", adminPassword='" + adminPassword + '\'' +
-      ", nodes=" + nodes +
-      ", numReplicas=" + numReplicas +
-      ", clusterCert=" + clusterCert +
-      ", capabilities=" + capabilities +
-      '}';
-  }
+	@Override
+	public String toString() {
+		return "TestClusterConfig{" + "bucketname='" + bucketname + '\'' + ", adminUsername='" + adminUsername + '\''
+				+ ", adminPassword='" + adminPassword + '\'' + ", nodes=" + nodes + ", numReplicas=" + numReplicas
+				+ ", clusterCert=" + clusterCert + ", capabilities=" + capabilities + '}';
+	}
 }

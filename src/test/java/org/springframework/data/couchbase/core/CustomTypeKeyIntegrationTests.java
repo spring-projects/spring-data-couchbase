@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.kv.GetResult;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -28,65 +31,58 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import com.couchbase.client.java.kv.GetResult;
 
 @SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
 public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
 
-  private static final String CUSTOM_TYPE_KEY = "javaClass";
+	private static final String CUSTOM_TYPE_KEY = "javaClass";
 
-  @Autowired
-  private CouchbaseOperations operations;
+	@Autowired private CouchbaseOperations operations;
 
-  @Autowired
-  private CouchbaseClientFactory clientFactory;
+	@Autowired private CouchbaseClientFactory clientFactory;
 
-  @Test
-  void saveSimpleEntityCorrectlyWithDifferentTypeKey() {
-    User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-    User modified = operations.upsertById(User.class).one(user);
-    assertEquals(user, modified);
+	@Test
+	void saveSimpleEntityCorrectlyWithDifferentTypeKey() {
+		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		User modified = operations.upsertById(User.class).one(user);
+		assertEquals(user, modified);
 
-    GetResult getResult = clientFactory.getCollection(null).get(user.getId());
-    assertEquals(
-      "org.springframework.data.couchbase.domain.User",
-      getResult.contentAsObject().getString(CUSTOM_TYPE_KEY)
-    );
-    assertFalse(getResult.contentAsObject().containsKey(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY));
-  }
+		GetResult getResult = clientFactory.getCollection(null).get(user.getId());
+		assertEquals("org.springframework.data.couchbase.domain.User",
+				getResult.contentAsObject().getString(CUSTOM_TYPE_KEY));
+		assertFalse(getResult.contentAsObject().containsKey(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY));
+	}
 
-  @Configuration
-  @EnableCouchbaseRepositories("org.springframework.data.couchbase")
-  static class Config extends AbstractCouchbaseConfiguration {
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	static class Config extends AbstractCouchbaseConfiguration {
 
-    @Override
-    public String getConnectionString() {
-      return connectionString();
-    }
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
 
-    @Override
-    public String getUserName() {
-      return config().adminUsername();
-    }
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
 
-    @Override
-    public String getPassword() {
-      return config().adminPassword();
-    }
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
 
-    @Override
-    public String getBucketName() {
-      return bucketName();
-    }
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
 
-    @Override
-    public String typeKey() {
-      return CUSTOM_TYPE_KEY;
-    }
+		@Override
+		public String typeKey() {
+			return CUSTOM_TYPE_KEY;
+		}
 
-  }
+	}
 
 }

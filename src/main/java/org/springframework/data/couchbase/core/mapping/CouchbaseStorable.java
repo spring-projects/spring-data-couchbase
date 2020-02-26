@@ -23,5 +23,4 @@ package org.springframework.data.couchbase.core.mapping;
  *
  * @author Michael Nitschinger
  */
-public interface CouchbaseStorable {
-}
+public interface CouchbaseStorable {}

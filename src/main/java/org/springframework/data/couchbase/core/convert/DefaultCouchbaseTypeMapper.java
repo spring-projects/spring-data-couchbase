@@ -21,8 +21,6 @@ import org.springframework.data.convert.TypeAliasAccessor;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.Alias;
 
-import java.util.Optional;
-
 /**
  * The Couchbase Type Mapper.
  *
@@ -31,47 +29,47 @@ import java.util.Optional;
  */
 public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocument> implements CouchbaseTypeMapper {
 
-  /**
-   * The type key to use if a complex type was identified.
-   */
-  public static final String DEFAULT_TYPE_KEY = "_class";
+	/**
+	 * The type key to use if a complex type was identified.
+	 */
+	public static final String DEFAULT_TYPE_KEY = "_class";
 
-  private final String typeKey;
+	private final String typeKey;
 
-  /**
-   * Create a new type mapper with the type key.
-   *
-   * @param typeKey the typeKey to use.
-   */
-  public DefaultCouchbaseTypeMapper(final String typeKey) {
-    super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
-    this.typeKey = typeKey;
-  }
+	/**
+	 * Create a new type mapper with the type key.
+	 *
+	 * @param typeKey the typeKey to use.
+	 */
+	public DefaultCouchbaseTypeMapper(final String typeKey) {
+		super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
+		this.typeKey = typeKey;
+	}
 
-  @Override
-  public String getTypeKey() {
-    return this.typeKey;
-  }
+	@Override
+	public String getTypeKey() {
+		return this.typeKey;
+	}
 
-  public static final class CouchbaseDocumentTypeAliasAccessor implements TypeAliasAccessor<CouchbaseDocument> {
+	public static final class CouchbaseDocumentTypeAliasAccessor implements TypeAliasAccessor<CouchbaseDocument> {
 
-    private final String typeKey;
+		private final String typeKey;
 
-    public CouchbaseDocumentTypeAliasAccessor(final String typeKey) {
-      this.typeKey = typeKey;
-    }
+		public CouchbaseDocumentTypeAliasAccessor(final String typeKey) {
+			this.typeKey = typeKey;
+		}
 
-    @Override
-    public Alias readAliasFrom(final CouchbaseDocument source) {
-      return Alias.ofNullable(source.get(typeKey));
-    }
+		@Override
+		public Alias readAliasFrom(final CouchbaseDocument source) {
+			return Alias.ofNullable(source.get(typeKey));
+		}
 
-    @Override
-    public void writeTypeTo(final CouchbaseDocument sink, final Object alias) {
-      if (typeKey != null) {
-        sink.put(typeKey, alias);
-      }
-    }
-  }
+		@Override
+		public void writeTypeTo(final CouchbaseDocument sink, final Object alias) {
+			if (typeKey != null) {
+				sink.put(typeKey, alias);
+			}
+		}
+	}
 
 }

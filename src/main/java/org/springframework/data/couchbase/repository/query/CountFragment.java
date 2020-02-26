@@ -21,20 +21,20 @@ package org.springframework.data.couchbase.repository.query;
  * <p/>
  * The query should use the COUNT_ALIAS, eg.: SELECT COUNT(*) AS count FROM default;
  * <p/>
- * This ensures that the framework will be able to map the JSON result to this {@link CountFragment} class
- * so that it can be used.
+ * This ensures that the framework will be able to map the JSON result to this {@link CountFragment} class so that it
+ * can be used.
  */
 public class CountFragment {
 
-  /**
-   * Use this alias for the COUNT part of a N1QL query so that the framework can extract the count result.
-   * Eg.: "SELECT A.COUNT(*) AS " + COUNT_ALIAS + " FROM A";
-   */
-  public static final String COUNT_ALIAS = "count";
+	/**
+	 * Use this alias for the COUNT part of a N1QL query so that the framework can extract the count result. Eg.: "SELECT
+	 * A.COUNT(*) AS " + COUNT_ALIAS + " FROM A";
+	 */
+	public static final String COUNT_ALIAS = "count";
 
-  /**
-   * The value for a COUNT that used {@link #COUNT_ALIAS} as an alias.
-   */
-  public long count;
+	/**
+	 * The value for a COUNT that used {@link #COUNT_ALIAS} as an alias.
+	 */
+	public long count;
 
 }

@@ -15,40 +15,40 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
-import java.util.List;
+
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 
 public interface ReactiveRemoveByIdOperation {
 
-  ReactiveRemoveById removeById();
+	ReactiveRemoveById removeById();
 
-  interface TerminatingRemoveById {
+	interface TerminatingRemoveById {
 
-    Mono<RemoveResult> one(String id);
+		Mono<RemoveResult> one(String id);
 
-    Flux<RemoveResult> all(Collection<String> ids);
+		Flux<RemoveResult> all(Collection<String> ids);
 
-  }
+	}
 
-  interface RemoveByIdWithCollection extends TerminatingRemoveById {
+	interface RemoveByIdWithCollection extends TerminatingRemoveById {
 
-    TerminatingRemoveById inCollection(String collection);
-  }
+		TerminatingRemoveById inCollection(String collection);
+	}
 
-  interface RemoveByIdWithDurability extends RemoveByIdWithCollection {
+	interface RemoveByIdWithDurability extends RemoveByIdWithCollection {
 
-    RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
+		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
 
-    RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
-  }
+	}
 
-  interface ReactiveRemoveById extends RemoveByIdWithDurability {}
+	interface ReactiveRemoveById extends RemoveByIdWithDurability {}
 
 }

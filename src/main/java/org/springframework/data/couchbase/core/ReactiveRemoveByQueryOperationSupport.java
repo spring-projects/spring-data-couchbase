@@ -15,93 +15,88 @@
  */
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Flux;
+
+import java.util.Optional;
+
+import org.springframework.data.couchbase.core.query.Query;
+
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import org.springframework.data.couchbase.core.query.Query;
-import reactor.core.publisher.Flux;
-
-import java.util.List;
-import java.util.Optional;
 
 public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQueryOperation {
 
-  private static final Query ALL_QUERY = new Query();
+	private static final Query ALL_QUERY = new Query();
 
-  private final ReactiveCouchbaseTemplate template;
+	private final ReactiveCouchbaseTemplate template;
 
-  public ReactiveRemoveByQueryOperationSupport(final ReactiveCouchbaseTemplate template) {
-    this.template = template;
-  }
+	public ReactiveRemoveByQueryOperationSupport(final ReactiveCouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-    return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
-  }
+	@Override
+	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
+	}
 
-  static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
+	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
 
-    private final ReactiveCouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final Query query;
-    private final QueryScanConsistency scanConsistency;
+		private final ReactiveCouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final Query query;
+		private final QueryScanConsistency scanConsistency;
 
+		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
+				final QueryScanConsistency scanConsistency) {
+			this.template = template;
+			this.domainType = domainType;
+			this.query = query;
+			this.scanConsistency = scanConsistency;
+		}
 
-    ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-                                   final QueryScanConsistency scanConsistency) {
-      this.template = template;
-      this.domainType = domainType;
-      this.query = query;
-      this.scanConsistency = scanConsistency;
-    }
+		@Override
+		public Flux<RemoveResult> all() {
+			return Flux.defer(() -> {
+				String bucket = "`" + template.getBucketName() + "`";
 
-    @Override
-    public Flux<RemoveResult> all() {
-      return Flux.defer(() -> {
-        String bucket = "`" + template.getBucketName() + "`";
+				String typeKey = template.getConverter().getTypeKey();
+				String typeValue = template.support().getJavaNameForEntity(domainType);
+				String where = " WHERE `" + typeKey + "` = \"" + typeValue + "\"";
 
-        String typeKey = template.getConverter().getTypeKey();
-        String typeValue = template.support().getJavaNameForEntity(domainType);
-        String where = " WHERE `" + typeKey + "` = \"" + typeValue + "\"";
+				String returning = " RETURNING meta().*";
+				String statement = "DELETE FROM " + bucket + " " + where + returning;
 
-        String returning = " RETURNING meta().*";
-        String statement = "DELETE FROM " + bucket + " " + where + returning;
+				return template.getCouchbaseClientFactory().getCluster().reactive().query(statement, buildQueryOptions())
+						.onErrorMap(throwable -> {
+							if (throwable instanceof RuntimeException) {
+								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+							} else {
+								return throwable;
+							}
+						}).flatMapMany(ReactiveQueryResult::rowsAsObject)
+						.map(row -> new RemoveResult(row.getString("id"), row.getLong("cas"), Optional.empty()));
+			});
+		}
 
-        return template
-          .getCouchbaseClientFactory()
-          .getCluster()
-          .reactive()
-          .query(statement, buildQueryOptions())
-          .onErrorMap(throwable -> {
-            if (throwable instanceof RuntimeException) {
-              return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-            } else {
-              return throwable;
-            }
-          })
-          .flatMapMany(ReactiveQueryResult::rowsAsObject)
-          .map(row -> new RemoveResult(row.getString("id"), row.getLong("cas"), Optional.empty()));
-      });
-    }
+		private QueryOptions buildQueryOptions() {
+			final QueryOptions options = QueryOptions.queryOptions();
+			if (scanConsistency != null) {
+				options.scanConsistency(scanConsistency);
+			}
+			return options;
+		}
 
-    private QueryOptions buildQueryOptions() {
-      final QueryOptions options = QueryOptions.queryOptions();
-      if (scanConsistency != null) {
-        options.scanConsistency(scanConsistency);
-      }
-      return options;
-    }
+		@Override
+		public TerminatingRemoveByQuery<T> matching(final Query query) {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public TerminatingRemoveByQuery<T> matching(final Query query) {
-      return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
+		@Override
+		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
-      return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
-
-  }
+	}
 
 }

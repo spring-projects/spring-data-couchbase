@@ -16,63 +16,64 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.java.codec.Transcoder;
+import java.time.Duration;
+
 import org.springframework.lang.Nullable;
 
-import java.time.Duration;
+import com.couchbase.client.java.codec.Transcoder;
 
 public interface CouchbaseCacheWriter {
 
-  /**
-   * Write the given key/value pair to Couchbase an set the expiration time if defined.
-   *
-   * @param collectionName The cache name must not be {@literal null}.
-   * @param key The key for the cache entry. Must not be {@literal null}.
-   * @param value The value stored for the key. Must not be {@literal null}.
-   * @param expiry Optional expiration time. Can be {@literal null}.
-   * @param transcoder Optional transcoder to use. Can be {@literal null}.
-   */
-  void put(String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
+	/**
+	 * Write the given key/value pair to Couchbase an set the expiration time if defined.
+	 *
+	 * @param collectionName The cache name must not be {@literal null}.
+	 * @param key The key for the cache entry. Must not be {@literal null}.
+	 * @param value The value stored for the key. Must not be {@literal null}.
+	 * @param expiry Optional expiration time. Can be {@literal null}.
+	 * @param transcoder Optional transcoder to use. Can be {@literal null}.
+	 */
+	void put(String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
 
-  /**
-   * Write the given value to Couchbase if the key does not already exist.
-   *
-   * @param collectionName The cache name must not be {@literal null}.
-   * @param key The key for the cache entry. Must not be {@literal null}.
-   * @param value The value stored for the key. Must not be {@literal null}.
-   * @param expiry Optional expiration time. Can be {@literal null}.
-   * @param transcoder Optional transcoder to use. Can be {@literal null}.
-   */
-  @Nullable
-  Object putIfAbsent(String collectionName, String key, Object value, @Nullable Duration expiry, @Nullable Transcoder transcoder);
+	/**
+	 * Write the given value to Couchbase if the key does not already exist.
+	 *
+	 * @param collectionName The cache name must not be {@literal null}.
+	 * @param key The key for the cache entry. Must not be {@literal null}.
+	 * @param value The value stored for the key. Must not be {@literal null}.
+	 * @param expiry Optional expiration time. Can be {@literal null}.
+	 * @param transcoder Optional transcoder to use. Can be {@literal null}.
+	 */
+	@Nullable
+	Object putIfAbsent(String collectionName, String key, Object value, @Nullable Duration expiry,
+			@Nullable Transcoder transcoder);
 
-  /**
-   * Get the binary value representation from Couchbase stored for the given key.
-   *
-   * @param collectionName must not be {@literal null}.
-   * @param key must not be {@literal null}.
-   * @param transcoder Optional transcoder to use. Can be {@literal null}.
-   * @return {@literal null} if key does not exist.
-   */
-  @Nullable
-  Object get(String collectionName, String key, @Nullable Transcoder transcoder);
+	/**
+	 * Get the binary value representation from Couchbase stored for the given key.
+	 *
+	 * @param collectionName must not be {@literal null}.
+	 * @param key must not be {@literal null}.
+	 * @param transcoder Optional transcoder to use. Can be {@literal null}.
+	 * @return {@literal null} if key does not exist.
+	 */
+	@Nullable
+	Object get(String collectionName, String key, @Nullable Transcoder transcoder);
 
-  /**
-   * Remove the given key from Couchbase.
-   *
-   * @param collectionName The cache name must not be {@literal null}.
-   * @param key The key for the cache entry. Must not be {@literal null}.
-   * @return true if the document existed on removal, false otherwise.
-   */
-  boolean remove(String collectionName, String key);
+	/**
+	 * Remove the given key from Couchbase.
+	 *
+	 * @param collectionName The cache name must not be {@literal null}.
+	 * @param key The key for the cache entry. Must not be {@literal null}.
+	 * @return true if the document existed on removal, false otherwise.
+	 */
+	boolean remove(String collectionName, String key);
 
-
-  /**
-   * Clears the cache with the given key pattern prefix.
-   *
-   * @param pattern the pattern to clear.
-   * @return the number of cleared items.
-   */
-  long clear(String pattern);
+	/**
+	 * Clears the cache with the given key pattern prefix.
+	 *
+	 * @param pattern the pattern to clear.
+	 * @return the number of cleared items.
+	 */
+	long clear(String pattern);
 
 }

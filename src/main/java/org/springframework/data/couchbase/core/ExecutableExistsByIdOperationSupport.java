@@ -15,50 +15,51 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.util.Assert;
-
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.util.Assert;
+
 public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByIdOperation {
 
-  private final CouchbaseTemplate template;
+	private final CouchbaseTemplate template;
 
-  ExecutableExistsByIdOperationSupport(CouchbaseTemplate template) {
-    this.template = template;
-  }
+	ExecutableExistsByIdOperationSupport(CouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public ExecutableExistsById existsById() {
-    return new ExecutableExistsByIdSupport(template, null);
-  }
+	@Override
+	public ExecutableExistsById existsById() {
+		return new ExecutableExistsByIdSupport(template, null);
+	}
 
-  static class ExecutableExistsByIdSupport implements ExecutableExistsById {
+	static class ExecutableExistsByIdSupport implements ExecutableExistsById {
 
-    private final CouchbaseTemplate template;
-    private final ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport reactiveSupport;
+		private final CouchbaseTemplate template;
+		private final ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport reactiveSupport;
 
-    ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String collection) {
-      this.template = template;
-      this.reactiveSupport = new ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport(template.reactive(), collection);
-    }
+		ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String collection) {
+			this.template = template;
+			this.reactiveSupport = new ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport(template.reactive(),
+					collection);
+		}
 
-    @Override
-    public boolean one(final String id) {
-      return reactiveSupport.one(id).block();
-    }
+		@Override
+		public boolean one(final String id) {
+			return reactiveSupport.one(id).block();
+		}
 
-    @Override
-    public Map<String, Boolean> all(final Collection<String> ids) {
-      return reactiveSupport.all(ids).block();
-    }
+		@Override
+		public Map<String, Boolean> all(final Collection<String> ids) {
+			return reactiveSupport.all(ids).block();
+		}
 
-    @Override
-    public TerminatingExistsById inCollection(final String collection) {
-      Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ExecutableExistsByIdSupport(template, collection);
-    }
+		@Override
+		public TerminatingExistsById inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ExecutableExistsByIdSupport(template, collection);
+		}
 
-  }
+	}
 
 }

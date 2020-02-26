@@ -15,6 +15,13 @@
  */
 package org.springframework.data.couchbase.cache;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.concurrent.Callable;
+
 import org.springframework.cache.support.AbstractValueAdaptingCache;
 import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.core.convert.ConversionFailedException;
@@ -24,203 +31,197 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.StringJoiner;
-import java.util.concurrent.Callable;
-
 public class CouchbaseCache extends AbstractValueAdaptingCache {
 
-  private final String name;
-  private final CouchbaseCacheWriter cacheWriter;
-  private final CouchbaseCacheConfiguration cacheConfig;
-  private final ConversionService conversionService;
+	private final String name;
+	private final CouchbaseCacheWriter cacheWriter;
+	private final CouchbaseCacheConfiguration cacheConfig;
+	private final ConversionService conversionService;
 
-  protected CouchbaseCache(final String name, final CouchbaseCacheWriter cacheWriter,
-                           final CouchbaseCacheConfiguration cacheConfig) {
-    super(cacheConfig.getAllowCacheNullValues());
+	protected CouchbaseCache(final String name, final CouchbaseCacheWriter cacheWriter,
+			final CouchbaseCacheConfiguration cacheConfig) {
+		super(cacheConfig.getAllowCacheNullValues());
 
-    Assert.notNull(name, "Name must not be null!");
-    Assert.notNull(cacheWriter, "CacheWriter must not be null!");
-    Assert.notNull(cacheConfig, "CacheConfig must not be null!");
+		Assert.notNull(name, "Name must not be null!");
+		Assert.notNull(cacheWriter, "CacheWriter must not be null!");
+		Assert.notNull(cacheConfig, "CacheConfig must not be null!");
 
-    this.name = name;
-    this.cacheWriter = cacheWriter;
-    this.cacheConfig = cacheConfig;
-    this.conversionService = cacheConfig.getConversionService();
-  }
+		this.name = name;
+		this.cacheWriter = cacheWriter;
+		this.cacheConfig = cacheConfig;
+		this.conversionService = cacheConfig.getConversionService();
+	}
 
-  @Override
-  public String getName() {
-    return name;
-  }
+	private static <T> T valueFromLoader(Object key, Callable<T> valueLoader) {
+		try {
+			return valueLoader.call();
+		} catch (Exception e) {
+			throw new ValueRetrievalException(key, valueLoader, e);
+		}
+	}
 
-  @Override
-  public CouchbaseCacheWriter getNativeCache() {
-    return cacheWriter;
-  }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-  @Override
-  protected Object lookup(final Object key) {
-    return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder());
-  }
+	@Override
+	public CouchbaseCacheWriter getNativeCache() {
+		return cacheWriter;
+	}
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized <T> T get(final Object key, final Callable<T> valueLoader) {
-    ValueWrapper result = get(key);
+	@Override
+	protected Object lookup(final Object key) {
+		return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder());
+	}
 
-    if (result != null) {
-      return (T) result.get();
-    }
+	@Override
+	@SuppressWarnings("unchecked")
+	public synchronized <T> T get(final Object key, final Callable<T> valueLoader) {
+		ValueWrapper result = get(key);
 
-    T value = valueFromLoader(key, valueLoader);
-    put(key, value);
-    return value;
-  }
+		if (result != null) {
+			return (T) result.get();
+		}
 
-  @Override
-  public void put(final Object key, final Object value) {
-    if (!isAllowNullValues() && value == null) {
+		T value = valueFromLoader(key, valueLoader);
+		put(key, value);
+		return value;
+	}
 
-      throw new IllegalArgumentException(String.format(
-        "Cache '%s' does not allow 'null' values. Avoid storing null via '@Cacheable(unless=\"#result == null\")' or " +
-          "configure CouchbaseCache to allow 'null' via CouchbaseCacheConfiguration.",
-        name));
-    }
+	@Override
+	public void put(final Object key, final Object value) {
+		if (!isAllowNullValues() && value == null) {
 
-    cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
-  }
+			throw new IllegalArgumentException(String.format(
+					"Cache '%s' does not allow 'null' values. Avoid storing null via '@Cacheable(unless=\"#result == null\")' or "
+							+ "configure CouchbaseCache to allow 'null' via CouchbaseCacheConfiguration.",
+					name));
+		}
 
-  @Override
-  public ValueWrapper putIfAbsent(final Object key, final Object value) {
-    if (!isAllowNullValues() && value == null) {
-      return get(key);
-    }
+		cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(),
+				cacheConfig.getValueTranscoder());
+	}
 
-    Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(),
-      cacheConfig.getValueTranscoder());
+	@Override
+	public ValueWrapper putIfAbsent(final Object key, final Object value) {
+		if (!isAllowNullValues() && value == null) {
+			return get(key);
+		}
 
-    if (result == null) {
-      return null;
-    }
+		Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), value,
+				cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
 
-    return new SimpleValueWrapper(result);
-  }
+		if (result == null) {
+			return null;
+		}
 
-  @Override
-  public void evict(final Object key) {
-    cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
-  }
+		return new SimpleValueWrapper(result);
+	}
 
-  @Override
-  public boolean evictIfPresent(final Object key) {
-    return cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
-  }
+	@Override
+	public void evict(final Object key) {
+		cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
+	}
 
-  @Override
-  public boolean invalidate() {
-    return cacheWriter.clear(cacheConfig.getKeyPrefixFor(name)) > 0;
-  }
+	@Override
+	public boolean evictIfPresent(final Object key) {
+		return cacheWriter.remove(cacheConfig.getCollectionName(), createCacheKey(key));
+	}
 
-  @Override
-  public void clear() {
-    cacheWriter.clear(cacheConfig.getKeyPrefixFor(name));
-  }
+	@Override
+	public boolean invalidate() {
+		return cacheWriter.clear(cacheConfig.getKeyPrefixFor(name)) > 0;
+	}
 
-  /**
-   * Customization hook for creating cache key before it gets serialized.
-   *
-   * @param key will never be {@literal null}.
-   * @return never {@literal null}.
-   */
-  protected String createCacheKey(final Object key) {
-    String convertedKey = convertKey(key);
-    if (!cacheConfig.usePrefix()) {
-      return convertedKey;
-    }
-    return prefixCacheKey(convertedKey);
-  }
+	@Override
+	public void clear() {
+		cacheWriter.clear(cacheConfig.getKeyPrefixFor(name));
+	}
 
-  /**
-   * Convert {@code key} to a {@link String} representation used for cache key creation.
-   *
-   * @param key will never be {@literal null}.
-   * @return never {@literal null}.
-   * @throws IllegalStateException if {@code key} cannot be converted to {@link String}.
-   */
-  protected String convertKey(final Object key) {
-    if (key instanceof String) {
-      return (String) key;
-    }
+	/**
+	 * Customization hook for creating cache key before it gets serialized.
+	 *
+	 * @param key will never be {@literal null}.
+	 * @return never {@literal null}.
+	 */
+	protected String createCacheKey(final Object key) {
+		String convertedKey = convertKey(key);
+		if (!cacheConfig.usePrefix()) {
+			return convertedKey;
+		}
+		return prefixCacheKey(convertedKey);
+	}
 
-    TypeDescriptor source = TypeDescriptor.forObject(key);
+	/**
+	 * Convert {@code key} to a {@link String} representation used for cache key creation.
+	 *
+	 * @param key will never be {@literal null}.
+	 * @return never {@literal null}.
+	 * @throws IllegalStateException if {@code key} cannot be converted to {@link String}.
+	 */
+	protected String convertKey(final Object key) {
+		if (key instanceof String) {
+			return (String) key;
+		}
 
-    if (conversionService.canConvert(source, TypeDescriptor.valueOf(String.class))) {
-      try {
-        return conversionService.convert(key, String.class);
-      } catch (ConversionFailedException e) {
-        // may fail if the given key is a collection
-        if (isCollectionLikeOrMap(source)) {
-          return convertCollectionLikeOrMapKey(key, source);
-        }
-        throw e;
-      }
-    }
+		TypeDescriptor source = TypeDescriptor.forObject(key);
 
-    Method toString = ReflectionUtils.findMethod(key.getClass(), "toString");
-    if (toString != null && !Object.class.equals(toString.getDeclaringClass())) {
-      return key.toString();
-    }
+		if (conversionService.canConvert(source, TypeDescriptor.valueOf(String.class))) {
+			try {
+				return conversionService.convert(key, String.class);
+			} catch (ConversionFailedException e) {
+				// may fail if the given key is a collection
+				if (isCollectionLikeOrMap(source)) {
+					return convertCollectionLikeOrMapKey(key, source);
+				}
+				throw e;
+			}
+		}
 
-    throw new IllegalStateException(String.format(
-      "Cannot convert cache key %s to String. Please register a suitable Converter via " +
-        "'CouchbaseCacheConfiguration.configureKeyConverters(...)' or override '%s.toString()'.",
-      source, key.getClass().getSimpleName()));
-  }
+		Method toString = ReflectionUtils.findMethod(key.getClass(), "toString");
+		if (toString != null && !Object.class.equals(toString.getDeclaringClass())) {
+			return key.toString();
+		}
 
-  private String prefixCacheKey(final String key) {
-    // allow contextual cache names by computing the key prefix on every call.
-    return cacheConfig.getKeyPrefixFor(name) + key;
-  }
+		throw new IllegalStateException(String.format(
+				"Cannot convert cache key %s to String. Please register a suitable Converter via "
+						+ "'CouchbaseCacheConfiguration.configureKeyConverters(...)' or override '%s.toString()'.",
+				source, key.getClass().getSimpleName()));
+	}
 
-  private boolean isCollectionLikeOrMap(final TypeDescriptor source) {
-    return source.isArray() || source.isCollection() || source.isMap();
-  }
+	private String prefixCacheKey(final String key) {
+		// allow contextual cache names by computing the key prefix on every call.
+		return cacheConfig.getKeyPrefixFor(name) + key;
+	}
 
-  private String convertCollectionLikeOrMapKey(final Object key, final TypeDescriptor source) {
-    if (source.isMap()) {
-      StringBuilder target = new StringBuilder("{");
+	private boolean isCollectionLikeOrMap(final TypeDescriptor source) {
+		return source.isArray() || source.isCollection() || source.isMap();
+	}
 
-      for (Map.Entry<?, ?> entry : ((Map<?, ?>) key).entrySet()) {
-        target.append(convertKey(entry.getKey())).append("=").append(convertKey(entry.getValue()));
-      }
-      target.append("}");
+	private String convertCollectionLikeOrMapKey(final Object key, final TypeDescriptor source) {
+		if (source.isMap()) {
+			StringBuilder target = new StringBuilder("{");
 
-      return target.toString();
-    } else if (source.isCollection() || source.isArray()) {
-      StringJoiner sj = new StringJoiner(",");
+			for (Map.Entry<?, ?> entry : ((Map<?, ?>) key).entrySet()) {
+				target.append(convertKey(entry.getKey())).append("=").append(convertKey(entry.getValue()));
+			}
+			target.append("}");
 
-      Collection<?> collection = source.isCollection() ? (Collection<?>) key
-        : Arrays.asList(ObjectUtils.toObjectArray(key));
+			return target.toString();
+		} else if (source.isCollection() || source.isArray()) {
+			StringJoiner sj = new StringJoiner(",");
 
-      for (Object val : collection) {
-        sj.add(convertKey(val));
-      }
-      return "[" + sj.toString() + "]";
-    }
+			Collection<?> collection = source.isCollection() ? (Collection<?>) key
+					: Arrays.asList(ObjectUtils.toObjectArray(key));
 
-    throw new IllegalArgumentException(String.format("Cannot convert cache key %s to String.", key));
-  }
+			for (Object val : collection) {
+				sj.add(convertKey(val));
+			}
+			return "[" + sj.toString() + "]";
+		}
 
-  private static <T> T valueFromLoader(Object key, Callable<T> valueLoader) {
-    try {
-      return valueLoader.call();
-    } catch (Exception e) {
-      throw new ValueRetrievalException(key, valueLoader, e);
-    }
-  }
+		throw new IllegalArgumentException(String.format("Cannot convert cache key %s to String.", key));
+	}
 
 }

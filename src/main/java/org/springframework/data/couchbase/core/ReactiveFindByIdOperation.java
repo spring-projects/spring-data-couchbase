@@ -22,27 +22,27 @@ import java.util.Collection;
 
 public interface ReactiveFindByIdOperation {
 
-  <T> ReactiveFindById<T> findById(Class<T> domainType);
+	<T> ReactiveFindById<T> findById(Class<T> domainType);
 
-  interface TerminatingFindById<T> {
+	interface TerminatingFindById<T> {
 
-    Mono<T> one(String id);
+		Mono<T> one(String id);
 
-    Flux<? extends T> all(Collection<String> ids);
+		Flux<? extends T> all(Collection<String> ids);
 
-  }
+	}
 
-  interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
+	interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
 
-    TerminatingFindById<T> inCollection(String collection);
-  }
+		TerminatingFindById<T> inCollection(String collection);
+	}
 
-  interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
+	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
 
-    FindByIdWithCollection<T> project(String... fields);
+		FindByIdWithCollection<T> project(String... fields);
 
-  }
+	}
 
-  interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
+	interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
 
 }

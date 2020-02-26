@@ -25,6 +25,6 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public interface PartTreeN1qlQueryCreator {
 
-    /** Get the named placeholder values */
-    JsonValue getPlaceHolderValues();
+	/** Get the named placeholder values */
+	JsonValue getPlaceHolderValues();
 }

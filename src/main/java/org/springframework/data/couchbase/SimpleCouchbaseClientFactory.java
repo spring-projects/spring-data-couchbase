@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase;
 
+import org.springframework.dao.support.PersistenceExceptionTranslator;
+import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
+
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.Bucket;
@@ -23,83 +26,70 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-import org.springframework.dao.support.PersistenceExceptionTranslator;
-import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 
 public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
-  private final Cluster cluster;
-  private final Bucket bucket;
-  private final Scope scope;
-  private final PersistenceExceptionTranslator exceptionTranslator;
+	private final Cluster cluster;
+	private final Bucket bucket;
+	private final Scope scope;
+	private final PersistenceExceptionTranslator exceptionTranslator;
 
-  public SimpleCouchbaseClientFactory(
-    final String connectionString,
-    final Authenticator authenticator,
-    final String bucketName
-  ) {
-    this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, null);
-  }
+	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
+			final String bucketName) {
+		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, null);
+	}
 
-  public SimpleCouchbaseClientFactory(
-    final String connectionString,
-    final Authenticator authenticator,
-    final String bucketName,
-    final String scopeName
-  ) {
-    this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, scopeName);
-  }
+	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
+			final String bucketName, final String scopeName) {
+		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, scopeName);
+	}
 
-  SimpleCouchbaseClientFactory(
-    final Cluster cluster,
-    final String bucketName,
-    final String scopeName
-  ) {
-    this.cluster = cluster;
-    this.bucket = cluster.bucket(bucketName);
-    this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
-    this.exceptionTranslator = new CouchbaseExceptionTranslator();
-  }
+	SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
+		this.cluster = cluster;
+		this.bucket = cluster.bucket(bucketName);
+		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
+		this.exceptionTranslator = new CouchbaseExceptionTranslator();
+	}
 
-  public CouchbaseClientFactory withScope(final String scopeName) {
-    return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName);
-  }
+	public CouchbaseClientFactory withScope(final String scopeName) {
+		return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName);
+	}
 
-  @Override
-  public Cluster getCluster() {
-    return cluster;
-  }
+	@Override
+	public Cluster getCluster() {
+		return cluster;
+	}
 
-  @Override
-  public Bucket getBucket() {
-    return bucket;
-  }
+	@Override
+	public Bucket getBucket() {
+		return bucket;
+	}
 
-  @Override
-  public Scope getScope() {
-    return scope;
-  }
+	@Override
+	public Scope getScope() {
+		return scope;
+	}
 
-  @Override
-  public Collection getCollection(final String collectionName) {
-    final Scope scope = getScope();
-    if (collectionName == null) {
-      if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-        throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
-      }
-      return getBucket().defaultCollection();
-    }
-    return scope.collection(collectionName);
-  }
+	@Override
+	public Collection getCollection(final String collectionName) {
+		final Scope scope = getScope();
+		if (collectionName == null) {
+			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+			}
+			return getBucket().defaultCollection();
+		}
+		return scope.collection(collectionName);
+	}
 
-  @Override
-  public PersistenceExceptionTranslator getExceptionTranslator() {
-    return exceptionTranslator;
-  }
+	@Override
+	public PersistenceExceptionTranslator getExceptionTranslator() {
+		return exceptionTranslator;
+	}
 
-  @Override
-  public void close() {
-    cluster.disconnect();
-  }
+	@Override
+	public void close() {
+		cluster.disconnect();
+	}
 
 }

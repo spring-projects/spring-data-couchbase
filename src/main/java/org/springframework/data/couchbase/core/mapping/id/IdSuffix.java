@@ -16,22 +16,20 @@
 
 package org.springframework.data.couchbase.core.mapping.id;
 
-
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.Inherited;
 
 /**
- * This annotation is targeted at building the document id using the value
- * as a part of a suffix build. The order determines in way which the specified
- * suffix value is used in building the suffix.
+ * This annotation is targeted at building the document id using the value as a part of a suffix build. The order
+ * determines in way which the specified suffix value is used in building the suffix.
  *
  * @author Subhashni Balakrishnan
  */
 @Inherited
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IdSuffix {
 	int order() default 0;

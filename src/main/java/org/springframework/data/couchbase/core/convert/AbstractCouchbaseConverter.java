@@ -16,13 +16,13 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.Collections;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
-import org.springframework.data.convert.EntityInstantiators;
 import org.springframework.data.convert.CustomConversions;
-
-import java.util.Collections;
+import org.springframework.data.convert.EntityInstantiators;
 
 /**
  * An abstract {@link CouchbaseConverter} that provides the basics for the {@link MappingCouchbaseConverter}.
@@ -32,79 +32,79 @@ import java.util.Collections;
  */
 public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, InitializingBean {
 
-  /**
-   * Contains the conversion service.
-   */
-  protected final GenericConversionService conversionService;
+	/**
+	 * Contains the conversion service.
+	 */
+	protected final GenericConversionService conversionService;
 
-  /**
-   * Contains the entity instantiators.
-   */
-  protected EntityInstantiators instantiators = new EntityInstantiators();
+	/**
+	 * Contains the entity instantiators.
+	 */
+	protected EntityInstantiators instantiators = new EntityInstantiators();
 
-  /**
-   * Holds the custom conversions.
-   */
-  protected CustomConversions conversions = new CouchbaseCustomConversions(Collections.emptyList());
+	/**
+	 * Holds the custom conversions.
+	 */
+	protected CustomConversions conversions = new CouchbaseCustomConversions(Collections.emptyList());
 
-  /**
-   * Create a new converter and hand it over the {@link ConversionService}
-   *
-   * @param conversionService the conversion service to use.
-   */
-  protected AbstractCouchbaseConverter(final GenericConversionService conversionService) {
-    this.conversionService = conversionService;
-  }
+	/**
+	 * Create a new converter and hand it over the {@link ConversionService}
+	 *
+	 * @param conversionService the conversion service to use.
+	 */
+	protected AbstractCouchbaseConverter(final GenericConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
 
-  /**
-   * Return the conversion service.
-   *
-   * @return the conversion service.
-   */
-  @Override
-  public ConversionService getConversionService() {
-    return conversionService;
-  }
+	/**
+	 * Return the conversion service.
+	 *
+	 * @return the conversion service.
+	 */
+	@Override
+	public ConversionService getConversionService() {
+		return conversionService;
+	}
 
-  /**
-   * Set the custom conversions.
-   *
-   * @param conversions the conversions.
-   */
-  public void setCustomConversions(final CustomConversions conversions) {
-    this.conversions = conversions;
-  }
+	/**
+	 * Set the custom conversions.
+	 *
+	 * @param conversions the conversions.
+	 */
+	public void setCustomConversions(final CustomConversions conversions) {
+		this.conversions = conversions;
+	}
 
-  /**
-   * Set the entity instantiators.
-   *
-   * @param instantiators the instantiators.
-   */
-  public void setInstantiators(final EntityInstantiators instantiators) {
-    this.instantiators = instantiators;
-  }
+	/**
+	 * Set the entity instantiators.
+	 *
+	 * @param instantiators the instantiators.
+	 */
+	public void setInstantiators(final EntityInstantiators instantiators) {
+		this.instantiators = instantiators;
+	}
 
-  /**
-   * Do nothing after the properties set on the bean.
-   */
-  @Override
-  public void afterPropertiesSet() {
-    conversions.registerConvertersIn(conversionService);
-  }
+	/**
+	 * Do nothing after the properties set on the bean.
+	 */
+	@Override
+	public void afterPropertiesSet() {
+		conversions.registerConvertersIn(conversionService);
+	}
 
-  @Override
-  public Object convertForWriteIfNeeded(Object value) {
-    if (value == null) {
-      return null;
-    }
+	@Override
+	public Object convertForWriteIfNeeded(Object value) {
+		if (value == null) {
+			return null;
+		}
 
-    return this.conversions.getCustomWriteTarget(value.getClass()) //
-            .map(it -> (Object) this.conversionService.convert(value, it)) //
-            .orElse(value);
-  }
+		return this.conversions.getCustomWriteTarget(value.getClass()) //
+				.map(it -> (Object) this.conversionService.convert(value, it)) //
+				.orElse(value);
+	}
 
-  @Override
-  public Class<?> getWriteClassFor(Class<?> clazz) {
-    return this.conversions.getCustomWriteTarget(clazz).orElse(clazz);
-  }
+	@Override
+	public Class<?> getWriteClassFor(Class<?> clazz) {
+		return this.conversions.getCustomWriteTarget(clazz).orElse(clazz);
+	}
 }

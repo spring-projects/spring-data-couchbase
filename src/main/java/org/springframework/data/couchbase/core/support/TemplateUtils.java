@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core.support;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
@@ -31,18 +32,14 @@ public class TemplateUtils {
 	public static final String SELECT_CAS = "_CAS";
 	private static PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
-
 	public static Throwable translateError(Throwable e) {
 		if (e instanceof RuntimeException) {
 			return exceptionTranslator.translateExceptionIfPossible((RuntimeException) e);
-		}
-		else if(e instanceof TimeoutException) {
+		} else if (e instanceof TimeoutException) {
 			return new QueryTimeoutException(e.getMessage(), e);
-		}
-		else if(e instanceof InterruptedException) {
+		} else if (e instanceof InterruptedException) {
 			return new OperationInterruptedException(e.getMessage(), e);
-		}
-		else if(e instanceof ExecutionException) {
+		} else if (e instanceof ExecutionException) {
 			return new OperationInterruptedException(e.getMessage(), e);
 		} else {
 			return e;

@@ -20,36 +20,36 @@ package org.springframework.data.couchbase.util;
  * Certain capabilities used to figure out if a test can be run or not.
  */
 public enum Capabilities {
-  /**
-   * This cluster is able to perform sync replications.
-   */
-  SYNC_REPLICATION,
-  /**
-   * This cluster is able to handle N1QL queries.
-   */
-  QUERY,
-  /**
-   * This cluster is able to handle Analytics queries.
-   */
-  ANALYTICS,
-  /**
-   * This cluster is able to handle Search queries.
-   */
-  SEARCH,
-  /**
-   * This cluster is able to give us a config without opening a bucket.
-   */
-  GLOBAL_CONFIG,
-  /**
-   * This cluster is able to assign users to groups.
-   */
-  USER_GROUPS,
-  /**
-   * The cluster has collections enabled.
-   */
-  COLLECTIONS,
-  /**
-   * The cluster has views enabled.
-   */
-  VIEWS
+	/**
+	 * This cluster is able to perform sync replications.
+	 */
+	SYNC_REPLICATION,
+	/**
+	 * This cluster is able to handle N1QL queries.
+	 */
+	QUERY,
+	/**
+	 * This cluster is able to handle Analytics queries.
+	 */
+	ANALYTICS,
+	/**
+	 * This cluster is able to handle Search queries.
+	 */
+	SEARCH,
+	/**
+	 * This cluster is able to give us a config without opening a bucket.
+	 */
+	GLOBAL_CONFIG,
+	/**
+	 * This cluster is able to assign users to groups.
+	 */
+	USER_GROUPS,
+	/**
+	 * The cluster has collections enabled.
+	 */
+	COLLECTIONS,
+	/**
+	 * The cluster has views enabled.
+	 */
+	VIEWS
 }

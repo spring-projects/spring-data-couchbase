@@ -26,7 +26,6 @@ include::template.adoc[]
 include::ansijoins.adoc[]
 :leveloffset: -1
 
-
 [[appendix]]
 = Appendix
 

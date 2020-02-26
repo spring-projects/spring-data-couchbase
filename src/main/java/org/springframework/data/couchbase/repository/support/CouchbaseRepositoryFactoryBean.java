@@ -30,80 +30,63 @@ import org.springframework.util.Assert;
  *
  * @author Michael Nitschinger
  */
-public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable> extends
-  RepositoryFactoryBeanSupport<T, S, ID> {
+public class CouchbaseRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
+		extends RepositoryFactoryBeanSupport<T, S, ID> {
 
-  /**
-   * Contains the reference to the template.
-   */
-  private RepositoryOperationsMapping operationsMapping;
+	/**
+	 * Contains the reference to the template.
+	 */
+	private RepositoryOperationsMapping operationsMapping;
 
-  /**
-   * Contains the reference to the IndexManager.
-   */
-  private IndexManager indexManager;
-  
-  /**
-   * Creates a new {@link CouchbaseRepositoryFactoryBean} for the given repository interface.
-   * 
-   * @param repositoryInterface must not be {@literal null}.
-   */
-  public CouchbaseRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
-    super(repositoryInterface);
-  }
+	/**
+	 * Creates a new {@link CouchbaseRepositoryFactoryBean} for the given repository interface.
+	 * 
+	 * @param repositoryInterface must not be {@literal null}.
+	 */
+	public CouchbaseRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
+		super(repositoryInterface);
+	}
 
-  /**
-   * Set the template reference.
-   *
-   * @param operations the reference to the operations template.
-   */
-  public void setCouchbaseOperations(final CouchbaseOperations operations) {
-    setCouchbaseOperationsMapping(new RepositoryOperationsMapping(operations));
-  }
+	/**
+	 * Set the template reference.
+	 *
+	 * @param operations the reference to the operations template.
+	 */
+	public void setCouchbaseOperations(final CouchbaseOperations operations) {
+		setCouchbaseOperationsMapping(new RepositoryOperationsMapping(operations));
+	}
 
-  public void setCouchbaseOperationsMapping(final RepositoryOperationsMapping mapping) {
-    this.operationsMapping = mapping;
-    setMappingContext(operationsMapping.getMappingContext());
-  }
+	public void setCouchbaseOperationsMapping(final RepositoryOperationsMapping mapping) {
+		this.operationsMapping = mapping;
+		setMappingContext(operationsMapping.getMappingContext());
+	}
 
-  /**
-   * Set the IndexManager reference.
-   *
-   * @param indexManager the IndexManager to use.
-   */
-  public void setIndexManager(final IndexManager indexManager) {
-    this.indexManager = indexManager;
-  }
+	/**
+	 * Returns a factory instance.
+	 *
+	 * @return the factory instance.
+	 */
+	@Override
+	protected RepositoryFactorySupport createRepositoryFactory() {
+		return getFactoryInstance(operationsMapping);
+	}
 
-  /**
-   * Returns a factory instance.
-   *
-   * @return the factory instance.
-   */
-  @Override
-  protected RepositoryFactorySupport createRepositoryFactory() {
-    return getFactoryInstance(operationsMapping, indexManager);
-  }
+	/**
+	 * Get the factory instance for the operations.
+	 *
+	 * @param operationsMapping the reference to the template.
+	 * @return the factory instance.
+	 */
+	protected CouchbaseRepositoryFactory getFactoryInstance(final RepositoryOperationsMapping operationsMapping) {
+		return new CouchbaseRepositoryFactory(operationsMapping);
+	}
 
-  /**
-   * Get the factory instance for the operations.
-   *
-   * @param operationsMapping the reference to the template.
-   * @param indexManager the reference to the {@link IndexManager}.
-   * @return the factory instance.
-   */
-  protected CouchbaseRepositoryFactory getFactoryInstance(final RepositoryOperationsMapping operationsMapping,
-                                                      IndexManager indexManager) {
-    return new CouchbaseRepositoryFactory(operationsMapping, indexManager);
-  }
-
-  /**
-   * Make sure that the dependencies are set and not null.
-   */
-  @Override
-  public void afterPropertiesSet() {
-    super.afterPropertiesSet();
-    Assert.notNull(operationsMapping, "operationsMapping must not be null!");
-    Assert.notNull(indexManager, "indexManager must not be null!");
-  }
+	/**
+	 * Make sure that the dependencies are set and not null.
+	 */
+	@Override
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
+		Assert.notNull(operationsMapping, "operationsMapping must not be null!");
+	}
 }

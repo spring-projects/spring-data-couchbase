@@ -26,14 +26,14 @@ import java.util.concurrent.TimeoutException;
  */
 public interface CollectionCallback<T> {
 
-  /**
-   * The enclosed body will be executed on the connected bucket.
-   *
-   * @return the result of the enclosed execution.
-   * @throws TimeoutException     if the enclosed operation timed out.
-   * @throws ExecutionException   if the result could not be retrieved because of a thrown exception before.
-   * @throws InterruptedException if the enclosed operation was interrupted.
-   */
-  T doInCollection() throws TimeoutException, ExecutionException, InterruptedException;
+	/**
+	 * The enclosed body will be executed on the connected bucket.
+	 *
+	 * @return the result of the enclosed execution.
+	 * @throws TimeoutException if the enclosed operation timed out.
+	 * @throws ExecutionException if the result could not be retrieved because of a thrown exception before.
+	 * @throws InterruptedException if the enclosed operation was interrupted.
+	 */
+	T doInCollection() throws TimeoutException, ExecutionException, InterruptedException;
 
 }

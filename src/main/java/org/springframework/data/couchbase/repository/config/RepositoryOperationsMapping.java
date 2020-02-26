@@ -26,103 +26,103 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.util.Assert;
 
 /**
- * A utility class for configuration allowing to tell which {@link CouchbaseOperations} should be backing
- * repositories. Its fluent API allows to set that (in order of precedence) for specific repository interfaces,
- * by repository domain type or as a default fallback.
+ * A utility class for configuration allowing to tell which {@link CouchbaseOperations} should be backing repositories.
+ * Its fluent API allows to set that (in order of precedence) for specific repository interfaces, by repository domain
+ * type or as a default fallback.
  *
  * @author Simon Baslé
  * @author Mark Paluch
  */
 public class RepositoryOperationsMapping {
-  private CouchbaseOperations defaultOperations;
-  private Map<String, CouchbaseOperations> byRepository = new HashMap<>();
-  private Map<String, CouchbaseOperations> byEntity = new HashMap<>();
+	private CouchbaseOperations defaultOperations;
+	private Map<String, CouchbaseOperations> byRepository = new HashMap<>();
+	private Map<String, CouchbaseOperations> byEntity = new HashMap<>();
 
+	/**
+	 * Creates a new mapping, setting the default fallback to use by otherwise non mapped repositories.
+	 *
+	 * @param defaultOperations the default fallback couchbase operations.
+	 */
+	public RepositoryOperationsMapping(CouchbaseOperations defaultOperations) {
+		Assert.notNull(defaultOperations, "CouchbaseOperations must not be null!");
+		this.defaultOperations = defaultOperations;
+	}
 
-  /**
-   * Creates a new mapping, setting the default fallback to use by otherwise non mapped repositories.
-   *
-   * @param defaultOperations the default fallback couchbase operations.
-   */
-  public RepositoryOperationsMapping(CouchbaseOperations defaultOperations) {
-    Assert.notNull(defaultOperations, "CouchbaseOperations must not be null!");
-    this.defaultOperations = defaultOperations;
-  }
+	/**
+	 * Add a highest priority mapping that will associate a specific repository interface with a given
+	 * {@link CouchbaseOperations}.
+	 *
+	 * @param repositoryInterface the repository interface {@link Class}.
+	 * @param couchbaseOperations the CouchbaseOperations to use.
+	 * @return the mapping, for chaining.
+	 */
+	public RepositoryOperationsMapping map(Class<?> repositoryInterface, CouchbaseOperations couchbaseOperations) {
+		byRepository.put(repositoryInterface.getName(), couchbaseOperations);
+		return this;
+	}
 
-  /**
-   * Change the default couchbase operations in an existing mapping.
-   *
-   * @param aDefault the new default couchbase operations.
-   * @return the mapping, for chaining.
-   */
-  public RepositoryOperationsMapping setDefault(CouchbaseOperations aDefault) {
-    Assert.notNull(aDefault, "CouchbaseOperations must not be null!");
-    this.defaultOperations = aDefault;
-    return this;
-  }
+	/**
+	 * Add a middle priority mapping that will associate any un-mapped repository that deals with the given domain type
+	 * Class with a given {@link CouchbaseOperations}.
+	 *
+	 * @param entityClass the domain type's {@link Class}.
+	 * @param couchbaseOperations the CouchbaseOperations to use.
+	 * @return the mapping, for chaining.
+	 */
+	public RepositoryOperationsMapping mapEntity(Class<?> entityClass, CouchbaseOperations couchbaseOperations) {
+		byEntity.put(entityClass.getName(), couchbaseOperations);
+		return this;
+	}
 
-  /**
-   * Add a highest priority mapping that will associate a specific repository interface with a given {@link CouchbaseOperations}.
-   *
-   * @param repositoryInterface the repository interface {@link Class}.
-   * @param couchbaseOperations the CouchbaseOperations to use.
-   * @return the mapping, for chaining.
-   */
-  public RepositoryOperationsMapping map(Class<?> repositoryInterface, CouchbaseOperations couchbaseOperations) {
-    byRepository.put(repositoryInterface.getName(), couchbaseOperations);
-    return this;
-  }
+	/**
+	 * @return the configured default {@link CouchbaseOperations}.
+	 */
+	public CouchbaseOperations getDefault() {
+		return defaultOperations;
+	}
 
-  /**
-   * Add a middle priority mapping that will associate any un-mapped repository that deals with the given domain type
-   * Class with a given {@link CouchbaseOperations}.
-   *
-   * @param entityClass the domain type's {@link Class}.
-   * @param couchbaseOperations the CouchbaseOperations to use.
-   * @return the mapping, for chaining.
-   */
-  public RepositoryOperationsMapping mapEntity(Class<?> entityClass, CouchbaseOperations couchbaseOperations) {
-    byEntity.put(entityClass.getName(), couchbaseOperations);
-    return this;
-  }
+	/**
+	 * Change the default couchbase operations in an existing mapping.
+	 *
+	 * @param aDefault the new default couchbase operations.
+	 * @return the mapping, for chaining.
+	 */
+	public RepositoryOperationsMapping setDefault(CouchbaseOperations aDefault) {
+		Assert.notNull(aDefault, "CouchbaseOperations must not be null!");
+		this.defaultOperations = aDefault;
+		return this;
+	}
 
-  /**
-   * @return the configured default {@link CouchbaseOperations}.
-   */
-  public CouchbaseOperations getDefault() {
-    return defaultOperations;
-  }
+	/**
+	 * Get the {@link MappingContext} to use in repositories. It is extracted from the default
+	 * {@link CouchbaseOperations}.
+	 *
+	 * @return the mapping context.
+	 */
+	public MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> getMappingContext() {
+		return defaultOperations.getConverter().getMappingContext();
+	}
 
-  /**
-   * Get the {@link MappingContext} to use in repositories. It is extracted from the default {@link CouchbaseOperations}.
-   *
-   *  @return the mapping context.
-   */
-  public MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> getMappingContext() {
-    return defaultOperations.getConverter().getMappingContext();
-  }
-
-  /**
-   * Given a repository interface and its domain type, resolves which {@link CouchbaseOperations} it should be backed with.
-   *
-   * Starts by looking for a direct mapping to the interface, then a common mapping for the domain type, then falls back
-   * to the default CouchbaseOperations.
-   *
-   * @param repositoryInterface the repository's interface.
-   * @param domainType the repository's domain type / entity.
-   * @return the CouchbaseOperations to back the repository.
-   */
-  public CouchbaseOperations resolve(Class<?> repositoryInterface, Class<?> domainType) {
-    CouchbaseOperations result = byRepository.get(repositoryInterface.getName());
-    if (result != null) {
-      return result;
-    } else {
-      result = byEntity.get(domainType.getName());
-      if (result != null) {
-        return result;
-      } else {
-        return defaultOperations;
-      }
-    }
-  }
+	/**
+	 * Given a repository interface and its domain type, resolves which {@link CouchbaseOperations} it should be backed
+	 * with. Starts by looking for a direct mapping to the interface, then a common mapping for the domain type, then
+	 * falls back to the default CouchbaseOperations.
+	 *
+	 * @param repositoryInterface the repository's interface.
+	 * @param domainType the repository's domain type / entity.
+	 * @return the CouchbaseOperations to back the repository.
+	 */
+	public CouchbaseOperations resolve(Class<?> repositoryInterface, Class<?> domainType) {
+		CouchbaseOperations result = byRepository.get(repositoryInterface.getName());
+		if (result != null) {
+			return result;
+		} else {
+			result = byEntity.get(domainType.getName());
+			if (result != null) {
+				return result;
+			} else {
+				return defaultOperations;
+			}
+		}
+	}
 }

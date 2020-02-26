@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.lang.reflect.Field;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +29,6 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ReflectionUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * Verifies the correct behavior of properties on persistable objects.
  *
@@ -37,81 +37,77 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class BasicCouchbasePersistentPropertyTests {
 
-  /**
-   * Holds the entity to test against (contains the properties).
-   */
-  CouchbasePersistentEntity<Beer> entity;
+	/**
+	 * Holds the entity to test against (contains the properties).
+	 */
+	CouchbasePersistentEntity<Beer> entity;
 
-  /**
-   * Create an instance of the demo entity.
-   */
-  @BeforeEach
-  void beforeEach() {
-    entity = new BasicCouchbasePersistentEntity<>(ClassTypeInformation.from(Beer.class));
-  }
+	/**
+	 * Create an instance of the demo entity.
+	 */
+	@BeforeEach
+	void beforeEach() {
+		entity = new BasicCouchbasePersistentEntity<>(ClassTypeInformation.from(Beer.class));
+	}
 
-  /**
-   * Verifies the name of the property without annotations.
-   */
-  @Test
-  void usesPropertyFieldName() {
-    Field field = ReflectionUtils.findField(Beer.class, "description");
-    assertThat(getPropertyFor(field).getFieldName()).isEqualTo("description");
-  }
+	/**
+	 * Verifies the name of the property without annotations.
+	 */
+	@Test
+	void usesPropertyFieldName() {
+		Field field = ReflectionUtils.findField(Beer.class, "description");
+		assertThat(getPropertyFor(field).getFieldName()).isEqualTo("description");
+	}
 
-  /**
-   * Verifies the name of the property with custom name annotation.
-   */
-  @Test
-  void usesAnnotatedFieldName() {
-    Field field = ReflectionUtils.findField(Beer.class, "name");
-    assertThat(getPropertyFor(field).getFieldName()).isEqualTo("name");
-  }
+	/**
+	 * Verifies the name of the property with custom name annotation.
+	 */
+	@Test
+	void usesAnnotatedFieldName() {
+		Field field = ReflectionUtils.findField(Beer.class, "name");
+		assertThat(getPropertyFor(field).getFieldName()).isEqualTo("name");
+	}
 
-  @Test
-  void testSdkIdAnnotationEvaluatedAfterSpringIdAnnotationIsIgnored() {
-    BasicCouchbasePersistentEntity<Beer> test = new BasicCouchbasePersistentEntity<>(
-      ClassTypeInformation.from(Beer.class));
-    Field springIdField = ReflectionUtils.findField(Beer.class, "springId");
-    CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
+	@Test
+	void testSdkIdAnnotationEvaluatedAfterSpringIdAnnotationIsIgnored() {
+		BasicCouchbasePersistentEntity<Beer> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(Beer.class));
+		Field springIdField = ReflectionUtils.findField(Beer.class, "springId");
+		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
 
-    //here this simulates the order in which the annotations would be found
-    // when "overriding" Spring @Id with SDK's @Id...
-    test.addPersistentProperty(springIdProperty);
+		// here this simulates the order in which the annotations would be found
+		// when "overriding" Spring @Id with SDK's @Id...
+		test.addPersistentProperty(springIdProperty);
 
-    assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
-  }
+		assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
+	}
 
-  /**
-   * Helper method to create a property out of the field.
-   *
-   * @param field the field to retrieve the properties from.
-   * @return the actual BasicCouchbasePersistentProperty instance.
-   */
-  private CouchbasePersistentProperty getPropertyFor(Field field) {
+	/**
+	 * Helper method to create a property out of the field.
+	 *
+	 * @param field the field to retrieve the properties from.
+	 * @return the actual BasicCouchbasePersistentProperty instance.
+	 */
+	private CouchbasePersistentProperty getPropertyFor(Field field) {
 
-    ClassTypeInformation<?> type = ClassTypeInformation.from(field.getDeclaringClass());
+		ClassTypeInformation<?> type = ClassTypeInformation.from(field.getDeclaringClass());
 
-    return new BasicCouchbasePersistentProperty(Property.of(type, field), entity, SimpleTypeHolder.DEFAULT,
-      PropertyNameFieldNamingStrategy.INSTANCE);
-  }
+		return new BasicCouchbasePersistentProperty(Property.of(type, field), entity, SimpleTypeHolder.DEFAULT,
+				PropertyNameFieldNamingStrategy.INSTANCE);
+	}
 
-  /**
-   * Simple POJO to test attribute properties and annotations.
-   */
-  public class Beer {
+	/**
+	 * Simple POJO to test attribute properties and annotations.
+	 */
+	public class Beer {
 
-    @Id
-    private String springId;
+		@org.springframework.data.couchbase.core.mapping.Field String name;
+		String description;
+		@Id private String springId;
 
-    @org.springframework.data.couchbase.core.mapping.Field
-    String name;
-
-    String description;
-
-    public String getId() {
-      return springId;
-    }
-  }
+		public String getId() {
+			return springId;
+		}
+	}
 
 }

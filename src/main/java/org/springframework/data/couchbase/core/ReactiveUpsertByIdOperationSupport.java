@@ -15,107 +15,106 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.client.java.kv.UpsertOptions;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.util.Assert;
+
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.UpsertOptions;
+
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
-  private final ReactiveCouchbaseTemplate template;
+	private final ReactiveCouchbaseTemplate template;
 
-  public ReactiveUpsertByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
-    this.template = template;
-  }
+	public ReactiveUpsertByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
-    Assert.notNull(domainType, "DomainType must not be null!");
-    return new ReactiveUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-      DurabilityLevel.NONE);
-  }
+	@Override
+	public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
+		Assert.notNull(domainType, "DomainType must not be null!");
+		return new ReactiveUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+				DurabilityLevel.NONE);
+	}
 
-  static class ReactiveUpsertByIdSupport<T> implements ReactiveUpsertById<T> {
+	static class ReactiveUpsertByIdSupport<T> implements ReactiveUpsertById<T> {
 
-    private final ReactiveCouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final String collection;
-    private final PersistTo persistTo;
-    private final ReplicateTo replicateTo;
-    private final DurabilityLevel durabilityLevel;
+		private final ReactiveCouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final String collection;
+		private final PersistTo persistTo;
+		private final ReplicateTo replicateTo;
+		private final DurabilityLevel durabilityLevel;
 
-    ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-                                final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-                                final DurabilityLevel durabilityLevel) {
-      this.template = template;
-      this.domainType = domainType;
-      this.collection = collection;
-      this.persistTo = persistTo;
-      this.replicateTo = replicateTo;
-      this.durabilityLevel = durabilityLevel;
-    }
+		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
+				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
+				final DurabilityLevel durabilityLevel) {
+			this.template = template;
+			this.domainType = domainType;
+			this.collection = collection;
+			this.persistTo = persistTo;
+			this.replicateTo = replicateTo;
+			this.durabilityLevel = durabilityLevel;
+		}
 
-    @Override
-    public Mono<T> one(T object) {
-      return Mono.just(object).flatMap(o -> {
-        CouchbaseDocument converted = template.support().encodeEntity(o);
-        return template
-          .getCollection(collection)
-          .reactive()
-          .upsert(converted.getId(), converted.getPayload(), buildUpsertOptions())
-          .map(result -> {
-            template.support().applyUpdatedCas(object, result.cas());
-            return o;
-          });
-      }).onErrorMap(throwable -> {
-        if (throwable instanceof RuntimeException) {
-          return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-        } else {
-          return throwable;
-        }
-      });
-    }
+		@Override
+		public Mono<T> one(T object) {
+			return Mono.just(object).flatMap(o -> {
+				CouchbaseDocument converted = template.support().encodeEntity(o);
+				return template.getCollection(collection).reactive()
+						.upsert(converted.getId(), converted.getPayload(), buildUpsertOptions()).map(result -> {
+							template.support().applyUpdatedCas(object, result.cas());
+							return o;
+						});
+			}).onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
+		}
 
-    @Override
-    public Flux<? extends T> all(Collection<? extends T> objects) {
-      return Flux.fromIterable(objects).flatMap(this::one);
-    }
+		@Override
+		public Flux<? extends T> all(Collection<? extends T> objects) {
+			return Flux.fromIterable(objects).flatMap(this::one);
+		}
 
-    private UpsertOptions buildUpsertOptions() {
-      final UpsertOptions options = UpsertOptions.upsertOptions();
-      if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
-        options.durability(persistTo, replicateTo);
-      } else if (durabilityLevel != DurabilityLevel.NONE) {
-        options.durability(durabilityLevel);
-      }
-      return options;
-    }
+		private UpsertOptions buildUpsertOptions() {
+			final UpsertOptions options = UpsertOptions.upsertOptions();
+			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+				options.durability(persistTo, replicateTo);
+			} else if (durabilityLevel != DurabilityLevel.NONE) {
+				options.durability(durabilityLevel);
+			}
+			return options;
+		}
 
-    @Override
-    public TerminatingUpsertById<T> inCollection(final String collection) {
-      Assert.hasText(collection, "Collection must not be null nor empty.");
-      return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
-    }
+		@Override
+		public TerminatingUpsertById<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+		}
 
-    @Override
-    public UpsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
-      Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-      return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
-    }
+		@Override
+		public UpsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
+			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+		}
 
-    @Override
-    public UpsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
-      Assert.notNull(persistTo, "PersistTo must not be null.");
-      Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-      return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
-    }
+		@Override
+		public UpsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
+			Assert.notNull(persistTo, "PersistTo must not be null.");
+			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+		}
 
-  }
+	}
 
 }

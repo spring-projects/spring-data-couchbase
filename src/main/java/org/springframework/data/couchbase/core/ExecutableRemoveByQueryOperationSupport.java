@@ -15,64 +15,60 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.client.java.query.ReactiveQueryResult;
-import org.springframework.data.couchbase.core.query.Query;
-import reactor.core.publisher.Flux;
-
 import java.util.List;
-import java.util.Optional;
+
+import org.springframework.data.couchbase.core.query.Query;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemoveByQueryOperation {
 
-  private static final Query ALL_QUERY = new Query();
+	private static final Query ALL_QUERY = new Query();
 
-  private final CouchbaseTemplate template;
+	private final CouchbaseTemplate template;
 
-  public ExecutableRemoveByQueryOperationSupport(final CouchbaseTemplate template) {
-    this.template = template;
-  }
+	public ExecutableRemoveByQueryOperationSupport(final CouchbaseTemplate template) {
+		this.template = template;
+	}
 
-  @Override
-  public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-    return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
-  }
+	@Override
+	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
+		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
+	}
 
-  static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
+	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
 
-    private final CouchbaseTemplate template;
-    private final Class<T> domainType;
-    private final Query query;
-    private final ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<T> reactiveSupport;
-    private final QueryScanConsistency scanConsistency;
+		private final CouchbaseTemplate template;
+		private final Class<T> domainType;
+		private final Query query;
+		private final ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<T> reactiveSupport;
+		private final QueryScanConsistency scanConsistency;
 
+		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
+				final QueryScanConsistency scanConsistency) {
+			this.template = template;
+			this.domainType = domainType;
+			this.query = query;
+			this.reactiveSupport = new ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<>(
+					template.reactive(), domainType, query, scanConsistency);
+			this.scanConsistency = scanConsistency;
+		}
 
-    ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-                                   final QueryScanConsistency scanConsistency) {
-      this.template = template;
-      this.domainType = domainType;
-      this.query = query;
-      this.reactiveSupport = new ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query, scanConsistency);
-      this.scanConsistency = scanConsistency;
-    }
+		@Override
+		public List<RemoveResult> all() {
+			return reactiveSupport.all().collectList().block();
+		}
 
-    @Override
-    public List<RemoveResult> all() {
-      return reactiveSupport.all().collectList().block();
-    }
+		@Override
+		public TerminatingRemoveByQuery<T> matching(final Query query) {
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public TerminatingRemoveByQuery<T> matching(final Query query) {
-      return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
+		@Override
+		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 
-    @Override
-    public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
-      return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
-    }
-
-  }
-
+	}
 
 }

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
-       xmlns:data-repository="http://www.springframework.org/schema/data/repository"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
-		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/data/repository https://www.springframework.org/schema/data/repository/spring-repository.xsd">
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <couchbase:env/>
     <couchbase:cluster/>
@@ -13,6 +12,6 @@
     <couchbase:bucket id="cb-second" bucketName="protected" username="protected" bucketPassword="password"/>
     <couchbase:cluster id="cb-cluster-first"/>
     <couchbase:cluster id="cb-cluster-second"/>
-    <couchbase:template id="cb-template-first"  bucket-ref="cb-first" cluster-ref="cb-cluster-first"/>
+    <couchbase:template id="cb-template-first" bucket-ref="cb-first" cluster-ref="cb-cluster-first"/>
     <couchbase:template id="cb-template-second" bucket-ref="cb-second" cluster-ref="cb-cluster-second"/>
 </beans>

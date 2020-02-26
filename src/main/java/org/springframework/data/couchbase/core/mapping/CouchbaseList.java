@@ -26,199 +26,196 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 /**
  * A {@link CouchbaseList} is an abstract list that represents an array stored in a (most of the times JSON) document.
  * <p/>
- * <p>This {@link CouchbaseList} is part of the potentially nested structure inside one or more
- * {@link CouchbaseDocument}s. It can also contain them recursively, depending on how the document is modeled.</p>
+ * <p>
+ * This {@link CouchbaseList} is part of the potentially nested structure inside one or more {@link CouchbaseDocument}s.
+ * It can also contain them recursively, depending on how the document is modeled.
+ * </p>
  */
 public class CouchbaseList implements CouchbaseStorable {
 
-  /**
-   * Contains the actual data to be stored.
-   */
-  private List<Object> payload;
+	/**
+	 * Contains the actual data to be stored.
+	 */
+	private List<Object> payload;
 
-  /**
-   * Holds types considered simple and allowed to be stored.
-   */
-  private SimpleTypeHolder simpleTypeHolder;
+	/**
+	 * Holds types considered simple and allowed to be stored.
+	 */
+	private SimpleTypeHolder simpleTypeHolder;
 
-  /**
-   * Create a new (empty) list.
-   */
-  public CouchbaseList() {
-    this(new ArrayList<Object>());
-  }
+	/**
+	 * Create a new (empty) list.
+	 */
+	public CouchbaseList() {
+		this(new ArrayList<Object>());
+	}
 
-  /**
-   * Create a new list with a given payload on construction.
-   *
-   * @param initialPayload the initial data to store.
-   */
-  public CouchbaseList(final List<Object> initialPayload) {
-    this(initialPayload, null);
-  }
+	/**
+	 * Create a new list with a given payload on construction.
+	 *
+	 * @param initialPayload the initial data to store.
+	 */
+	public CouchbaseList(final List<Object> initialPayload) {
+		this(initialPayload, null);
+	}
 
-  /**
-   * Create a new (empty) list with an existing {@link SimpleTypeHolder}.
-   *
-   * @param simpleTypeHolder context instance.
-   */
-  public CouchbaseList(final SimpleTypeHolder simpleTypeHolder) {
-    this(new ArrayList<Object>(), simpleTypeHolder);
-  }
+	/**
+	 * Create a new (empty) list with an existing {@link SimpleTypeHolder}.
+	 *
+	 * @param simpleTypeHolder context instance.
+	 */
+	public CouchbaseList(final SimpleTypeHolder simpleTypeHolder) {
+		this(new ArrayList<Object>(), simpleTypeHolder);
+	}
 
-  /**
-   * Create a new list with a given payload on construction and an existing {@link SimpleTypeHolder}.
-   *
-   * @param initialPayload the initial data to store.
-   * @param simpleTypeHolder context instance.
-   */
-  public CouchbaseList(final List<Object> initialPayload, final SimpleTypeHolder simpleTypeHolder) {
-    this.payload = initialPayload;
-    if (simpleTypeHolder != null) {
-      Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
-      additionalTypes.add(CouchbaseDocument.class);
-      additionalTypes.add(CouchbaseList.class);
-      this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
-    } else {
-      this.simpleTypeHolder = CouchbaseSimpleTypes.DOCUMENT_TYPES;
-    }
-  }
+	/**
+	 * Create a new list with a given payload on construction and an existing {@link SimpleTypeHolder}.
+	 *
+	 * @param initialPayload the initial data to store.
+	 * @param simpleTypeHolder context instance.
+	 */
+	public CouchbaseList(final List<Object> initialPayload, final SimpleTypeHolder simpleTypeHolder) {
+		this.payload = initialPayload;
+		if (simpleTypeHolder != null) {
+			Set<Class<?>> additionalTypes = new HashSet<Class<?>>();
+			additionalTypes.add(CouchbaseDocument.class);
+			additionalTypes.add(CouchbaseList.class);
+			this.simpleTypeHolder = new SimpleTypeHolder(additionalTypes, simpleTypeHolder);
+		} else {
+			this.simpleTypeHolder = CouchbaseSimpleTypes.DOCUMENT_TYPES;
+		}
+	}
 
-  /**
-   * Add content to the underlying list.
-   *
-   * @param value the value to be added.
-   * @return the {@link CouchbaseList} object for chaining purposes.
-   */
-  public final CouchbaseList put(final Object value) {
-    verifyValueType(value);
+	/**
+	 * Add content to the underlying list.
+	 *
+	 * @param value the value to be added.
+	 * @return the {@link CouchbaseList} object for chaining purposes.
+	 */
+	public final CouchbaseList put(final Object value) {
+		verifyValueType(value);
 
-    payload.add(value);
-    return this;
-  }
+		payload.add(value);
+		return this;
+	}
 
-  /**
-   * Return the stored element at the given index.
-   *
-   * @param index the index where the document is located.
-   * @return the found object (or null if nothing found).
-   */
-  public final Object get(final int index) {
-    return payload.get(index);
-  }
+	/**
+	 * Return the stored element at the given index.
+	 *
+	 * @param index the index where the document is located.
+	 * @return the found object (or null if nothing found).
+	 */
+	public final Object get(final int index) {
+		return payload.get(index);
+	}
 
-  /**
-   * Returns the size of the attributes in this document (not nested).
-   *
-   * @return the size of the attributes in this document (not nested).
-   */
-  public final int size() {
-    return size(false);
-  }
+	/**
+	 * Returns the size of the attributes in this document (not nested).
+	 *
+	 * @return the size of the attributes in this document (not nested).
+	 */
+	public final int size() {
+		return size(false);
+	}
 
-  /**
-   * Retruns the size of the attributes in this and recursive documents.
-   *
-   * @param recursive wheter nested attributes should be taken into account.
-   * @return the size of the attributes in this and recursive documents.
-   */
-  public final int size(final boolean recursive) {
-    int thisSize = payload.size();
+	/**
+	 * Retruns the size of the attributes in this and recursive documents.
+	 *
+	 * @param recursive wheter nested attributes should be taken into account.
+	 * @return the size of the attributes in this and recursive documents.
+	 */
+	public final int size(final boolean recursive) {
+		int thisSize = payload.size();
 
-    if (!recursive || thisSize == 0) {
-      return thisSize;
-    }
+		if (!recursive || thisSize == 0) {
+			return thisSize;
+		}
 
-    int totalSize = thisSize;
-    for (Object value : payload) {
-      if (value instanceof CouchbaseDocument) {
-        totalSize += ((CouchbaseDocument) value).size(true);
-      }
-      else if (value instanceof CouchbaseList) {
-        totalSize += ((CouchbaseList) value).size(true);
-      }
-    }
+		int totalSize = thisSize;
+		for (Object value : payload) {
+			if (value instanceof CouchbaseDocument) {
+				totalSize += ((CouchbaseDocument) value).size(true);
+			} else if (value instanceof CouchbaseList) {
+				totalSize += ((CouchbaseList) value).size(true);
+			}
+		}
 
-    return totalSize;
-  }
+		return totalSize;
+	}
 
-  /**
-   * Returns the current payload, including all recursive elements.
-   * <p/>
-   * It either returns the raw results or makes sure that the recusrive elements
-   * are also exported properly.
-   *
-   * @return
-   */
-  public final List<Object> export() {
-    List<Object> toExport = new ArrayList<Object>(payload);
+	/**
+	 * Returns the current payload, including all recursive elements.
+	 * <p/>
+	 * It either returns the raw results or makes sure that the recusrive elements are also exported properly.
+	 *
+	 * @return
+	 */
+	public final List<Object> export() {
+		List<Object> toExport = new ArrayList<Object>(payload);
 
-    int elem = 0;
-    for (Object entry : payload) {
-      if (entry instanceof CouchbaseDocument) {
-        toExport.remove(elem);
-        toExport.add(elem, ((CouchbaseDocument) entry).export());
-      }
-      else if (entry instanceof CouchbaseList) {
-        toExport.remove(elem);
-        toExport.add(elem, ((CouchbaseList) entry).export());
-      }
-      elem++;
-    }
-    return toExport;
-  }
+		int elem = 0;
+		for (Object entry : payload) {
+			if (entry instanceof CouchbaseDocument) {
+				toExport.remove(elem);
+				toExport.add(elem, ((CouchbaseDocument) entry).export());
+			} else if (entry instanceof CouchbaseList) {
+				toExport.remove(elem);
+				toExport.add(elem, ((CouchbaseList) entry).export());
+			}
+			elem++;
+		}
+		return toExport;
+	}
 
-  /**
-   * Returns true if it contains the given value.
-   *
-   * @param value the value to check for.
-   * @return true if it contains the specified value.
-   */
-  public final boolean containsValue(final Object value) {
-    return payload.contains(value);
-  }
+	/**
+	 * Returns true if it contains the given value.
+	 *
+	 * @param value the value to check for.
+	 * @return true if it contains the specified value.
+	 */
+	public final boolean containsValue(final Object value) {
+		return payload.contains(value);
+	}
 
-  /**
-   * Checks if the underlying payload is empty or not.
-   *
-   * @return whether the underlying payload is empty or not.
-   */
-  public final boolean isEmpty() {
-    return payload.isEmpty();
-  }
+	/**
+	 * Checks if the underlying payload is empty or not.
+	 *
+	 * @return whether the underlying payload is empty or not.
+	 */
+	public final boolean isEmpty() {
+		return payload.isEmpty();
+	}
 
-  /**
-   * Verifies that only values of a certain and supported type
-   * can be stored.
-   * <p/>
-   * <p>If this is not the case, a {@link IllegalArgumentException} is
-   * thrown.</p>
-   *
-   * @param value the object to verify its type.
-   */
-  private void verifyValueType(final Object value) {
-    if (value == null) {
-      return;
-    }
+	/**
+	 * Verifies that only values of a certain and supported type can be stored.
+	 * <p/>
+	 * <p>
+	 * If this is not the case, a {@link IllegalArgumentException} is thrown.
+	 * </p>
+	 *
+	 * @param value the object to verify its type.
+	 */
+	private void verifyValueType(final Object value) {
+		if (value == null) {
+			return;
+		}
 
-    final Class<?> clazz = value.getClass();
-    if (simpleTypeHolder.isSimpleType(clazz)) {
-      return;
-    }
+		final Class<?> clazz = value.getClass();
+		if (simpleTypeHolder.isSimpleType(clazz)) {
+			return;
+		}
 
-    throw new IllegalArgumentException("Attribute of type "
-        + clazz.getCanonicalName() + "can not be stored and must be converted.");
-  }
+		throw new IllegalArgumentException(
+				"Attribute of type " + clazz.getCanonicalName() + "can not be stored and must be converted.");
+	}
 
-  /**
-   * A string reprensation of the payload.
-   *
-   * @return the underlying payload as a string representation for easier debugging.
-   */
-  @Override
-  public String toString() {
-    return "CouchbaseList{" +
-        "payload=" + payload +
-        '}';
-  }
+	/**
+	 * A string reprensation of the payload.
+	 *
+	 * @return the underlying payload as a string representation for easier debugging.
+	 */
+	@Override
+	public String toString() {
+		return "CouchbaseList{" + "payload=" + payload + '}';
+	}
 }

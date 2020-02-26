@@ -17,20 +17,19 @@
 package org.springframework.data.couchbase.core.mapping.id;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.Inherited;
 
 /**
- * This annotation is targeted at building the document id using the value
- * as a part of a prefix build. The order determines in way which the specified
- * prefix value is used in building the prefix.
+ * This annotation is targeted at building the document id using the value as a part of a prefix build. The order
+ * determines in way which the specified prefix value is used in building the prefix.
  *
  * @author Subhashni Balakrishnan
  */
 @Inherited
-@Target({ElementType.FIELD})
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IdPrefix {
 	int order() default 0;

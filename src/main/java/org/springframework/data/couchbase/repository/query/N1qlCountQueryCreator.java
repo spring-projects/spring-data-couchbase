@@ -25,10 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
 
-
-
 /**
- *
  * @author Mark Ramach
  * @author Mark Paluch
  */
@@ -105,7 +102,7 @@ public class N1qlCountQueryCreator extends N1qlQueryCreator {
 		}
 
 		public Sort getSort() {
-		  // Sorting is not allowed on aggregate count queries.
+			// Sorting is not allowed on aggregate count queries.
 			return Sort.unsorted();
 		}
 

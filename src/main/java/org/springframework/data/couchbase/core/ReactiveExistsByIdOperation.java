@@ -22,21 +22,21 @@ import java.util.Map;
 
 public interface ReactiveExistsByIdOperation {
 
-  ReactiveExistsById existsById();
+	ReactiveExistsById existsById();
 
-  interface TerminatingExistsById {
+	interface TerminatingExistsById {
 
-    Mono<Boolean> one(String id);
+		Mono<Boolean> one(String id);
 
-    Mono<Map<String, Boolean>> all(Collection<String> ids);
+		Mono<Map<String, Boolean>> all(Collection<String> ids);
 
-  }
+	}
 
-  interface ExistsByIdWithCollection extends TerminatingExistsById {
+	interface ExistsByIdWithCollection extends TerminatingExistsById {
 
-    TerminatingExistsById inCollection(String collection);
-  }
+		TerminatingExistsById inCollection(String collection);
+	}
 
-  interface ReactiveExistsById extends ExistsByIdWithCollection {}
+	interface ReactiveExistsById extends ExistsByIdWithCollection {}
 
 }

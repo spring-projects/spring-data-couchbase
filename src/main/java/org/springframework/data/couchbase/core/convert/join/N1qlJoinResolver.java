@@ -22,149 +22,147 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import com.couchbase.client.java.query.QueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.FetchType;
 import org.springframework.data.couchbase.core.query.HashSide;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 /**
- * N1qlJoinResolver resolves by converting the join definition to query statement
- * and executing using CouchbaseTemplate
+ * N1qlJoinResolver resolves by converting the join definition to query statement and executing using CouchbaseTemplate
  *
  * @author Subhashni Balakrishnan
  */
 public class N1qlJoinResolver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(N1qlJoinResolver.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(N1qlJoinResolver.class);
 
-    public static String buildQuery(CouchbaseTemplate template, N1qlJoinResolverParameters parameters) {
-        String joinType = "JOIN";
-        String selectEntity = "SELECT META(rks).id AS " + SELECT_ID +
-                ", META(rks).cas AS " + SELECT_CAS + ", (rks).* ";
+	public static String buildQuery(CouchbaseTemplate template, N1qlJoinResolverParameters parameters) {
+		String joinType = "JOIN";
+		String selectEntity = "SELECT META(rks).id AS " + SELECT_ID + ", META(rks).cas AS " + SELECT_CAS + ", (rks).* ";
 
-        StringBuilder useLKSBuilder = new StringBuilder();
-        if (parameters.getJoinDefinition().index().length() > 0) {
-            useLKSBuilder.append("INDEX(" + parameters.getJoinDefinition().index() + ")");
-        }
-        String useLKS = useLKSBuilder.length() > 0 ? "USE " + useLKSBuilder.toString() + " " : "";
+		StringBuilder useLKSBuilder = new StringBuilder();
+		if (parameters.getJoinDefinition().index().length() > 0) {
+			useLKSBuilder.append("INDEX(" + parameters.getJoinDefinition().index() + ")");
+		}
+		String useLKS = useLKSBuilder.length() > 0 ? "USE " + useLKSBuilder.toString() + " " : "";
 
-       String from = "FROM `" + template.getBucketName()+ "` lks " + useLKS + joinType + " " + template.getBucketName() + " rks";
-        String onLks = "lks." + template.getConverter().getTypeKey() + " = \""+ parameters.getEntityTypeInfo().getType().getName() + "\"";
-        String onRks = "rks." + template.getConverter().getTypeKey() + " = \"" + parameters.getAssociatedEntityTypeInfo().getType().getName() + "\"";
+		String from = "FROM `" + template.getBucketName() + "` lks " + useLKS + joinType + " " + template.getBucketName()
+				+ " rks";
+		String onLks = "lks." + template.getConverter().getTypeKey() + " = \""
+				+ parameters.getEntityTypeInfo().getType().getName() + "\"";
+		String onRks = "rks." + template.getConverter().getTypeKey() + " = \""
+				+ parameters.getAssociatedEntityTypeInfo().getType().getName() + "\"";
 
+		StringBuilder useRKSBuilder = new StringBuilder();
+		if (parameters.getJoinDefinition().rightIndex().length() > 0) {
+			useRKSBuilder.append("INDEX(" + parameters.getJoinDefinition().rightIndex() + ")");
+		}
+		if (!parameters.getJoinDefinition().hashside().equals(HashSide.NONE)) {
+			if (useRKSBuilder.length() > 0)
+				useRKSBuilder.append(" ");
+			useRKSBuilder.append("HASH(" + parameters.getJoinDefinition().hashside().getValue() + ")");
+		}
+		if (parameters.getJoinDefinition().keys().length > 0) {
+			if (useRKSBuilder.length() > 0)
+				useRKSBuilder.append(" ");
+			useRKSBuilder.append("KEYS [");
+			String[] keys = parameters.getJoinDefinition().keys();
 
-        StringBuilder useRKSBuilder = new StringBuilder();
-        if (parameters.getJoinDefinition().rightIndex().length() > 0) {
-            useRKSBuilder.append("INDEX(" + parameters.getJoinDefinition().rightIndex() + ")");
-        }
-        if (!parameters.getJoinDefinition().hashside().equals(HashSide.NONE)) {
-            if (useRKSBuilder.length() > 0) useRKSBuilder.append(" ");
-            useRKSBuilder.append("HASH(" + parameters.getJoinDefinition().hashside().getValue() +")");
-        }
-        if (parameters.getJoinDefinition().keys().length > 0) {
-            if (useRKSBuilder.length() > 0) useRKSBuilder.append(" ");
-            useRKSBuilder.append("KEYS [");
-            String[] keys = parameters.getJoinDefinition().keys();
+			for (int i = 0; i < keys.length; i++) {
+				if (i != 0)
+					useRKSBuilder.append(",");
+				useRKSBuilder.append("\"" + keys[i] + "\"");
+			}
+			useRKSBuilder.append("]");
+		}
 
-            for(int i=0; i < keys.length;i++) {
-                if(i != 0) useRKSBuilder.append(",");
-                useRKSBuilder.append("\"" + keys[i] +"\"");
-            }
-            useRKSBuilder.append("]");
-        }
+		String on = "ON " + parameters.getJoinDefinition().on().concat(" AND " + onLks).concat(" AND " + onRks);
 
-        String on = "ON " + parameters.getJoinDefinition().on().concat(" AND " + onLks).concat(" AND " + onRks);
+		String where = "WHERE META(lks).id=\"" + parameters.getLksId() + "\"";
+		where += ((parameters.getJoinDefinition().where().length() > 0) ? " AND " + parameters.getJoinDefinition().where()
+				: "");
 
-        String where = "WHERE META(lks).id=\"" + parameters.getLksId() + "\"";
-        where += ((parameters.getJoinDefinition().where().length() > 0) ? " AND " + parameters.getJoinDefinition().where() : "");
+		StringBuilder statementSb = new StringBuilder();
+		statementSb.append(selectEntity);
+		statementSb.append(" " + from);
+		statementSb.append((useRKSBuilder.length() > 0 ? " USE " + useRKSBuilder.toString() : ""));
+		statementSb.append(" " + on);
+		statementSb.append(" " + where);
+		return statementSb.toString();
+	}
 
-        StringBuilder statementSb = new StringBuilder();
-        statementSb.append(selectEntity);
-        statementSb.append(" " + from);
-        statementSb.append((useRKSBuilder.length() > 0? " USE "+ useRKSBuilder.toString() : ""));
-        statementSb.append(" " + on);
-        statementSb.append(" " + where);
-        return statementSb.toString();
-    }
+	public static <R> List<R> doResolve(CouchbaseTemplate template, N1qlJoinResolverParameters parameters,
+			Class<R> associatedEntityClass) {
+		throw new UnsupportedOperationException();
+		/*
+		    String statement = buildQuery(template, parameters);
+		
+		    if (LOGGER.isDebugEnabled()) {
+		        LOGGER.debug("Join query executed " + statement);
+		    }
+		
+		    N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
+		    return template.findByN1QL(query, associatedEntityClass);*/
+	}
 
-    public static <R> List<R> doResolve(CouchbaseTemplate template,
-                                        N1qlJoinResolverParameters parameters,
-                                        Class<R> associatedEntityClass) {
-        throw new UnsupportedOperationException();
-/*
-        String statement = buildQuery(template, parameters);
+	public static boolean isLazyJoin(N1qlJoin joinDefinition) {
+		return joinDefinition.fetchType().equals(FetchType.LAZY);
+	}
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Join query executed " + statement);
-        }
+	static public class N1qlJoinProxy implements InvocationHandler {
+		private final CouchbaseTemplate template;
+		private final N1qlJoinResolverParameters params;
+		private List<?> resolved = null;
 
-        N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
-        return template.findByN1QL(query, associatedEntityClass);*/
-    }
+		public N1qlJoinProxy(CouchbaseTemplate template, N1qlJoinResolverParameters params) {
+			this.template = template;
+			this.params = params;
+		}
 
-    public static boolean isLazyJoin(N1qlJoin joinDefinition) {
-        return joinDefinition.fetchType().equals(FetchType.LAZY);
-    }
+		@Override
+		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+			if (this.resolved == null) {
+				this.resolved = doResolve(this.template, this.params, this.params.associatedEntityTypeInfo.getType());
+			}
+			return method.invoke(this.resolved, args);
+		}
+	}
 
-    static public class N1qlJoinProxy implements InvocationHandler {
-        private final CouchbaseTemplate template;
-        private final N1qlJoinResolverParameters params;
-        private List<?> resolved = null;
+	static public class N1qlJoinResolverParameters {
+		private N1qlJoin joinDefinition;
+		private String lksId;
+		private TypeInformation<?> entityTypeInfo;
+		private TypeInformation<?> associatedEntityTypeInfo;
 
-        public N1qlJoinProxy(CouchbaseTemplate template, N1qlJoinResolverParameters params) {
-            this.template = template;
-            this.params = params;
-        }
+		public N1qlJoinResolverParameters(N1qlJoin joinDefinition, String lksId, TypeInformation<?> entityTypeInfo,
+				TypeInformation<?> associatedEntityTypeInfo) {
+			Assert.notNull(joinDefinition, "The join definition is required");
+			Assert.notNull(entityTypeInfo, "The entity type information is required");
+			Assert.notNull(associatedEntityTypeInfo, "The associated entity type information is required");
 
-        @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            if(this.resolved == null) {
-                this.resolved = doResolve(this.template, this.params, this.params.associatedEntityTypeInfo.getType());
-            }
-            return method.invoke(this.resolved, args);
-        }
-    }
+			this.joinDefinition = joinDefinition;
+			this.lksId = lksId;
+			this.entityTypeInfo = entityTypeInfo;
+			this.associatedEntityTypeInfo = associatedEntityTypeInfo;
+		}
 
-    static public class N1qlJoinResolverParameters {
-        private N1qlJoin joinDefinition;
-        private String lksId;
-        private TypeInformation<?> entityTypeInfo;
-        private TypeInformation<?> associatedEntityTypeInfo;
+		public N1qlJoin getJoinDefinition() {
+			return joinDefinition;
+		}
 
-        public N1qlJoinResolverParameters(N1qlJoin joinDefinition,
-                                          String lksId,
-                                          TypeInformation<?> entityTypeInfo,
-                                          TypeInformation<?> associatedEntityTypeInfo) {
-            Assert.notNull(joinDefinition, "The join definition is required");
-            Assert.notNull(entityTypeInfo, "The entity type information is required");
-            Assert.notNull(associatedEntityTypeInfo, "The associated entity type information is required");
+		public String getLksId() {
+			return lksId;
+		}
 
-            this.joinDefinition = joinDefinition;
-            this.lksId = lksId;
-            this.entityTypeInfo = entityTypeInfo;
-            this.associatedEntityTypeInfo = associatedEntityTypeInfo;
-        }
+		public TypeInformation getEntityTypeInfo() {
+			return entityTypeInfo;
+		}
 
-        public N1qlJoin getJoinDefinition() {
-            return joinDefinition;
-        }
-
-        public String getLksId() {
-            return lksId;
-        }
-
-        public TypeInformation getEntityTypeInfo() {
-            return entityTypeInfo;
-        }
-
-        public TypeInformation getAssociatedEntityTypeInfo() {
-            return associatedEntityTypeInfo;
-        }
-    }
+		public TypeInformation getAssociatedEntityTypeInfo() {
+			return associatedEntityTypeInfo;
+		}
+	}
 }

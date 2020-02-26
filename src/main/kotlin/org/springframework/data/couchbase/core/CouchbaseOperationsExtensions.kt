@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core
 
-import org.springframework.data.couchbase.core.query.N1QLQuery
-
 /**
  * Kotlin extensions for [CouchbaseOperations]
  *

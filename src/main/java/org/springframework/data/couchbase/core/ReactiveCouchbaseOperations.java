@@ -24,11 +24,12 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
  */
 public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOperations {
 
-  CouchbaseConverter getConverter();
+	CouchbaseConverter getConverter();
 
-  String getBucketName();
-  String getScopeName();
+	String getBucketName();
 
-  CouchbaseClientFactory getCouchbaseClientFactory();
+	String getScopeName();
+
+	CouchbaseClientFactory getCouchbaseClientFactory();
 
 }

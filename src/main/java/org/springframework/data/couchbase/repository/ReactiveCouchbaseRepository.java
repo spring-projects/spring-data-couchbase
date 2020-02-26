@@ -26,8 +26,8 @@ import org.springframework.data.repository.reactive.ReactiveSortingRepository;
  */
 @NoRepositoryBean
 public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepository<T, ID> {
-    /**
-     * @return a reference to the underlying {@link CouchbaseOperations operation template}.
-     */
-    ReactiveCouchbaseOperations getReactiveCouchbaseOperations();
+	/**
+	 * @return a reference to the underlying {@link CouchbaseOperations operation template}.
+	 */
+	ReactiveCouchbaseOperations getReactiveCouchbaseOperations();
 }

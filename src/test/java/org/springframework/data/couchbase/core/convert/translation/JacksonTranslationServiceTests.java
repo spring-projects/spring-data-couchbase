@@ -16,12 +16,11 @@
 
 package org.springframework.data.couchbase.core.convert.translation;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Verifies the functionality of a {@link JacksonTranslationService}.
@@ -30,40 +29,40 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class JacksonTranslationServiceTests {
 
-  private static TranslationService service;
+	private static TranslationService service;
 
-  @BeforeAll
-  static void beforeAll() {
-    service = new JacksonTranslationService();
-    ((JacksonTranslationService) service).afterPropertiesSet();
-  }
+	@BeforeAll
+	static void beforeAll() {
+		service = new JacksonTranslationService();
+		((JacksonTranslationService) service).afterPropertiesSet();
+	}
 
-  @Test
-  void shouldEncodeNonASCII() {
-    CouchbaseDocument doc = new CouchbaseDocument("key");
-    doc.put("language", "русский");
-    String expected = "{\"language\":\"русский\"}";
-    assertEquals(expected, service.encode(doc));
-  }
+	@Test
+	void shouldEncodeNonASCII() {
+		CouchbaseDocument doc = new CouchbaseDocument("key");
+		doc.put("language", "русский");
+		String expected = "{\"language\":\"русский\"}";
+		assertEquals(expected, service.encode(doc));
+	}
 
-  @Test
-  void shouldDecodeNonASCII() {
-    String source = "{\"language\":\"русский\"}";
-    CouchbaseDocument target = new CouchbaseDocument();
-    service.decode(source, target);
-    assertEquals("русский", target.get("language"));
-  }
+	@Test
+	void shouldDecodeNonASCII() {
+		String source = "{\"language\":\"русский\"}";
+		CouchbaseDocument target = new CouchbaseDocument();
+		service.decode(source, target);
+		assertEquals("русский", target.get("language"));
+	}
 
-  @Test
-  void shouldDecodeAdHocFragment() {
-    String source = "{\"language\":\"french\"}";
-    LanguageFragment f = service.decodeFragment(source, LanguageFragment.class);
-    assertNotNull(f);
-    assertEquals("french", f.language);
-  }
+	@Test
+	void shouldDecodeAdHocFragment() {
+		String source = "{\"language\":\"french\"}";
+		LanguageFragment f = service.decodeFragment(source, LanguageFragment.class);
+		assertNotNull(f);
+		assertEquals("french", f.language);
+	}
 
-  static class LanguageFragment {
-    public String language;
-  }
+	static class LanguageFragment {
+		public String language;
+	}
 
 }

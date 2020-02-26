@@ -16,8 +16,13 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.query.QueryScanConsistency;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,78 +38,67 @@ import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import static com.couchbase.client.java.ClusterOptions.clusterOptions;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTests {
 
-  private CouchbaseTemplate couchbaseTemplate;
+	private static CouchbaseClientFactory couchbaseClientFactory;
+	private CouchbaseTemplate couchbaseTemplate;
 
-  private static CouchbaseClientFactory couchbaseClientFactory;
+	@BeforeAll
+	static void beforeAll() {
+		couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
 
-  @BeforeAll
-  static void beforeAll() {
-    couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
+		try {
+			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
+		} catch (IndexExistsException ex) {
+			// ignore, all good.
+		}
+	}
 
-    try {
-      couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-    } catch (IndexExistsException ex) {
-      // ignore, all good.
-    }
-  }
+	@AfterAll
+	static void afterAll() throws IOException {
+		couchbaseClientFactory.close();
+	}
 
-  @AfterAll
-  static void afterAll() throws IOException {
-    couchbaseClientFactory.close();
-  }
+	@BeforeEach
+	void beforeEach() {
+		CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
+		couchbaseTemplate = new CouchbaseTemplate(couchbaseClientFactory, couchbaseConverter);
+	}
 
-  @BeforeEach
-  void beforeEach() {
-    CouchbaseConverter couchbaseConverter = new MappingCouchbaseConverter();
-    couchbaseTemplate = new CouchbaseTemplate(couchbaseClientFactory, couchbaseConverter);
-  }
+	@Test
+	void findByQuery() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
 
-  @Test
-  void findByQuery() {
-    User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
-    User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
 
-    couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
+				.consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
-    final List<User> foundUsers = couchbaseTemplate
-      .findByQuery(User.class)
-      .consistentWith(QueryScanConsistency.REQUEST_PLUS)
-      .all();
+		assertEquals(2, foundUsers.size());
+		for (User u : foundUsers) {
+			assertTrue(u.equals(user1) || u.equals(user2));
+		}
+	}
 
-    assertEquals(2, foundUsers.size());
-    for (User u : foundUsers) {
-      assertTrue(u.equals(user1) || u.equals(user2));
-    }
-  }
+	@Test
+	void removeByQuery() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
 
-  @Test
-  void removeByQuery() {
-    User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
-    User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
 
-    couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
+		assertTrue(couchbaseTemplate.existsById().one(user1.getId()));
+		assertTrue(couchbaseTemplate.existsById().one(user2.getId()));
 
-    assertTrue(couchbaseTemplate.existsById().one(user1.getId()));
-    assertTrue(couchbaseTemplate.existsById().one(user2.getId()));
+		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
-    couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
-
-    assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user1.getId()));
-    assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user2.getId()));
-  }
+		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user1.getId()));
+		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user2.getId()));
+	}
 
 }

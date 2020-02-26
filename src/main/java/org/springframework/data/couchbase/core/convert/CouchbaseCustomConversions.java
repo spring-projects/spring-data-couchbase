@@ -16,17 +16,19 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import org.springframework.data.mapping.model.SimpleTypeHolder;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.data.mapping.model.SimpleTypeHolder;
+
 /**
  * Value object to capture custom conversion.
  * <p/>
- * <p>Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper
- * inspection nor nested conversion.</p>
+ * <p>
+ * Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper inspection
+ * nor nested conversion.
+ * </p>
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke
@@ -38,27 +40,27 @@ import java.util.List;
  */
 public class CouchbaseCustomConversions extends org.springframework.data.convert.CustomConversions {
 
-  private static final StoreConversions STORE_CONVERSIONS;
+	private static final StoreConversions STORE_CONVERSIONS;
 
-  private static final List<Object> STORE_CONVERTERS;
+	private static final List<Object> STORE_CONVERTERS;
 
-  static {
+	static {
 
-    List<Object> converters = new ArrayList<>();
+		List<Object> converters = new ArrayList<>();
 
-    converters.addAll(DateConverters.getConvertersToRegister());
-    converters.addAll(CouchbaseJsr310Converters.getConvertersToRegister());
+		converters.addAll(DateConverters.getConvertersToRegister());
+		converters.addAll(CouchbaseJsr310Converters.getConvertersToRegister());
 
-    STORE_CONVERTERS = Collections.unmodifiableList(converters);
-    STORE_CONVERSIONS = StoreConversions.of(SimpleTypeHolder.DEFAULT, STORE_CONVERTERS);
-  }
+		STORE_CONVERTERS = Collections.unmodifiableList(converters);
+		STORE_CONVERSIONS = StoreConversions.of(SimpleTypeHolder.DEFAULT, STORE_CONVERTERS);
+	}
 
-  /**
-   * Create a new instance with a given list of converters.
-   *
-   * @param converters the list of custom converters.
-   */
-  public CouchbaseCustomConversions(final List<?> converters) {
-    super(STORE_CONVERSIONS, converters);
-  }
+	/**
+	 * Create a new instance with a given list of converters.
+	 *
+	 * @param converters the list of custom converters.
+	 */
+	public CouchbaseCustomConversions(final List<?> converters) {
+		super(STORE_CONVERSIONS, converters);
+	}
 }

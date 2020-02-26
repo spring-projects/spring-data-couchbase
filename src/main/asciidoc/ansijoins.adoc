@@ -1,21 +1,20 @@
 [[couchbase.ansijoins]]
 = ANSI Joins
 
-This chapter describes hows ANSI joins can be used across entities. Since 5.5 version, Couchbase server provides
-support for ANSI joins for joining documents using fields. Previous versions allowed index & lookup joins, which were
-supported in SDC only by querying directly through the SDK.
+This chapter describes hows ANSI joins can be used across entities.
+Since 5.5 version, Couchbase server provides support for ANSI joins for joining documents using fields.
+Previous versions allowed index & lookup joins, which were supported in SDC only by querying directly through the SDK.
 
-Relationships between entities across repositories can be one to one or one to many. By defining such relationships, a
-synchronized view of associated entities can be fetched.
+Relationships between entities across repositories can be one to one or one to many.
+By defining such relationships, a synchronized view of associated entities can be fetched.
 
 [[couchbase.ansijoins.configuration]]
 == Configuration
 
-Associated entities can be fetched by annotating the entity's property reference with `@N1qlJoin`. The prefix `lks` refers
-to left-hand side key space (current entity) and `rks` refers to the right-hand side key space (associated entity). The
-required element for `@N1qlJoin` annotation is the `on` clause, a boolean expression representing the join condition
-between the left-hand side (`lks`) and the right-hand side (`rks`), which can be fields, constant expressions or any complex
-N1QL expression. There could also be an optional `where` clause specified on the annotation for the join, similarly using
+Associated entities can be fetched by annotating the entity's property reference with `@N1qlJoin`.
+The prefix `lks` refers to left-hand side key space (current entity) and `rks` refers to the right-hand side key space (associated entity).
+The required element for `@N1qlJoin` annotation is the `on` clause, a boolean expression representing the join condition between the left-hand side (`lks`) and the right-hand side (`rks`), which can be fields, constant expressions or any complex N1QL expression.
+There could also be an optional `where` clause specified on the annotation for the join, similarly using
 `lks` to refer the current entity and `rks` to refer the associated entity.
 
 .Annotation for ANSI Join
@@ -42,9 +41,10 @@ public class Author {
 [[couchbase.ansijoins.fetchtype]]
 == Lazy fetching
 
-Associated entities can be lazily fetched upon the first access of the property, this could save on fetching more data than
-required when loading the entity. To load the associated entities lazily, `@N1qlJoin` annotation's element `fetchType`
-has to be set to `FetchType.LAZY`. The default is `FetchType.IMMEDIATE`.
+Associated entities can be lazily fetched upon the first access of the property, this could save on fetching more data than required when loading the entity.
+To load the associated entities lazily, `@N1qlJoin` annotation's element `fetchType`
+has to be set to `FetchType.LAZY`.
+The default is `FetchType.IMMEDIATE`.
 
 .Configuration for lazy fetch
 ====
@@ -63,11 +63,10 @@ List<Book> books;
 `index` element on the `@N1qlJoin` can be used to provided the hint for the `lks` (current entity) index and `rightIndex`
 element can be used to provided the `rks` (associated entity) index.
 
-
 === Hash Join Hint
 
-If the join type is going to be hash join, the hash side can be specified for the `rks` (associated entity). If the associated
-entity is on the build side, it can be specified as `HashSide.BUILD` else `HashSide.PROBE`.
+If the join type is going to be hash join, the hash side can be specified for the `rks` (associated entity).
+If the associated entity is on the build side, it can be specified as `HashSide.BUILD` else `HashSide.PROBE`.
 
 === Use Keys Hint
 

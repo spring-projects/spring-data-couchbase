@@ -26,7 +26,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
  */
 public interface CouchbaseTypeMapper extends TypeMapper<CouchbaseDocument> {
 
-  String getTypeKey();
-
+	String getTypeKey();
 
 }

@@ -25,10 +25,10 @@ import org.springframework.data.mapping.PersistentProperty;
  */
 public interface CouchbasePersistentProperty extends PersistentProperty<CouchbasePersistentProperty> {
 
-  /**
-   * Returns the field name of the property.
-   * <p/>
-   * The field name can be different from the actual property name by using a custom annotation.
-   */
-  String getFieldName();
+	/**
+	 * Returns the field name of the property.
+	 * <p/>
+	 * The field name can be different from the actual property name by using a custom annotation.
+	 */
+	String getFieldName();
 }

@@ -31,18 +31,18 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @NoRepositoryBean
 public interface CouchbaseRepository<T, ID> extends PagingAndSortingRepository<T, ID> {
 
-  /**
-   * @return a reference to the underlying {@link CouchbaseOperations operation template}.
-   */
-  CouchbaseOperations getCouchbaseOperations();
+	/**
+	 * @return a reference to the underlying {@link CouchbaseOperations operation template}.
+	 */
+	CouchbaseOperations getCouchbaseOperations();
 
-  @Override
-  List<T> findAll(Sort sort);
+	@Override
+	List<T> findAll(Sort sort);
 
-  @Override
-  List<T> findAll();
+	@Override
+	List<T> findAll();
 
-  @Override
-  List<T> findAllById(Iterable<ID> iterable);
+	@Override
+	List<T> findAllById(Iterable<ID> iterable);
 
 }

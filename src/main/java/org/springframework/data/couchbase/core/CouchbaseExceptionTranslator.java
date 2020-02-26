@@ -19,27 +19,6 @@ package org.springframework.data.couchbase.core;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.TimeoutException;
 
-import com.couchbase.client.core.error.BucketNotFoundException;
-import com.couchbase.client.core.error.CasMismatchException;
-import com.couchbase.client.core.error.CollectionNotFoundException;
-import com.couchbase.client.core.error.DecodingFailureException;
-import com.couchbase.client.core.error.DesignDocumentNotFoundException;
-import com.couchbase.client.core.error.DocumentExistsException;
-import com.couchbase.client.core.error.DocumentLockedException;
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.core.error.EncodingFailureException;
-import com.couchbase.client.core.error.ReplicaNotConfiguredException;
-import com.couchbase.client.core.error.RequestCanceledException;
-import com.couchbase.client.core.error.ScopeNotFoundException;
-import com.couchbase.client.core.error.ServiceNotAvailableException;
-import com.couchbase.client.core.error.ConfigException;
-import com.couchbase.client.core.error.ValueTooLargeException;
-import com.couchbase.client.core.error.DurabilityAmbiguousException;
-import com.couchbase.client.core.error.DurabilityImpossibleException;
-import com.couchbase.client.core.error.DurabilityLevelNotAvailableException;
-
-import com.couchbase.client.core.error.TemporaryFailureException;
-
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,6 +29,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
+import com.couchbase.client.core.error.*;
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
@@ -63,67 +43,59 @@ import org.springframework.dao.support.PersistenceExceptionTranslator;
  */
 public class CouchbaseExceptionTranslator implements PersistenceExceptionTranslator {
 
-  /**
-   * Translate Couchbase specific exceptions to spring exceptions if possible.
-   *
-   * @param ex the exception to translate.
-   * @return the translated exception or null.
-   */
-  @Override
-  public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
+	/**
+	 * Translate Couchbase specific exceptions to spring exceptions if possible.
+	 *
+	 * @param ex the exception to translate.
+	 * @return the translated exception or null.
+	 */
+	@Override
+	public final DataAccessException translateExceptionIfPossible(final RuntimeException ex) {
 
-    if (ex instanceof ConfigException
-        || ex instanceof ServiceNotAvailableException
-        || ex instanceof CollectionNotFoundException
-        || ex instanceof ScopeNotFoundException
-        || ex instanceof BucketNotFoundException) {
-      return new DataAccessResourceFailureException(ex.getMessage(), ex);
-    }
+		if (ex instanceof ConfigException || ex instanceof ServiceNotAvailableException
+				|| ex instanceof CollectionNotFoundException || ex instanceof ScopeNotFoundException
+				|| ex instanceof BucketNotFoundException) {
+			return new DataAccessResourceFailureException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof DocumentExistsException) {
-      return new DuplicateKeyException(ex.getMessage(), ex);
-    }
+		if (ex instanceof DocumentExistsException) {
+			return new DuplicateKeyException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof DocumentNotFoundException) {
-      return new DataRetrievalFailureException(ex.getMessage(), ex);
-    }
+		if (ex instanceof DocumentNotFoundException) {
+			return new DataRetrievalFailureException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof CasMismatchException
-        || ex instanceof ConcurrentModificationException
-        || ex instanceof ReplicaNotConfiguredException
-        || ex instanceof DurabilityLevelNotAvailableException
-        || ex instanceof DurabilityImpossibleException
-        || ex instanceof DurabilityAmbiguousException) {
-      return new DataIntegrityViolationException(ex.getMessage(), ex);
-    }
+		if (ex instanceof CasMismatchException || ex instanceof ConcurrentModificationException
+				|| ex instanceof ReplicaNotConfiguredException || ex instanceof DurabilityLevelNotAvailableException
+				|| ex instanceof DurabilityImpossibleException || ex instanceof DurabilityAmbiguousException) {
+			return new DataIntegrityViolationException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof RequestCanceledException) {
-      return new OperationCancellationException(ex.getMessage(), ex);
-    }
+		if (ex instanceof RequestCanceledException) {
+			return new OperationCancellationException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof DesignDocumentNotFoundException
-        || ex instanceof ValueTooLargeException) {
-      return new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
-    }
+		if (ex instanceof DesignDocumentNotFoundException || ex instanceof ValueTooLargeException) {
+			return new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof TemporaryFailureException
-        || ex instanceof DocumentLockedException) {
-      return new TransientDataAccessResourceException(ex.getMessage(), ex);
-    }
+		if (ex instanceof TemporaryFailureException || ex instanceof DocumentLockedException) {
+			return new TransientDataAccessResourceException(ex.getMessage(), ex);
+		}
 
-    if ((ex instanceof RuntimeException && ex.getCause() instanceof TimeoutException)) {
-      return new QueryTimeoutException(ex.getMessage(), ex);
-    }
+		if ((ex instanceof RuntimeException && ex.getCause() instanceof TimeoutException)) {
+			return new QueryTimeoutException(ex.getMessage(), ex);
+		}
 
-    if (ex instanceof EncodingFailureException
-        || ex instanceof DecodingFailureException) {
-      //note: the more specific CouchbaseQueryExecutionException should be thrown by the template
-      //when dealing with TranscodingException in the query/n1ql methods.
-      return new DataRetrievalFailureException(ex.getMessage(), ex);
-    }
+		if (ex instanceof EncodingFailureException || ex instanceof DecodingFailureException) {
+			// note: the more specific CouchbaseQueryExecutionException should be thrown by the template
+			// when dealing with TranscodingException in the query/n1ql methods.
+			return new DataRetrievalFailureException(ex.getMessage(), ex);
+		}
 
-    // Unable to translate exception, therefore just throw the original!
-    throw ex;
-  }
+		// Unable to translate exception, therefore just throw the original!
+		throw ex;
+	}
 
 }

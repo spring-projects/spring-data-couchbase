@@ -15,33 +15,32 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Flux;
 
-import java.util.List;
+import org.springframework.data.couchbase.core.query.Query;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 public interface ReactiveRemoveByQueryOperation {
 
-  <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType);
+	<T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType);
 
-  interface TerminatingRemoveByQuery<T> {
-    Flux<RemoveResult> all();
-  }
+	interface TerminatingRemoveByQuery<T> {
+		Flux<RemoveResult> all();
+	}
 
+	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
 
-  interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
+		TerminatingRemoveByQuery<T> matching(Query query);
 
-    TerminatingRemoveByQuery<T> matching(Query query);
+	}
 
-  }
+	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
 
-  interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
+		RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
 
-    RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+	}
 
-  }
-
-  interface ReactiveRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+	interface ReactiveRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
 
 }

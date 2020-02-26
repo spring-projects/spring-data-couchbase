@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.core.mapping.event;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
@@ -29,31 +28,31 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
  */
 public class LoggingEventListener extends AbstractCouchbaseEventListener<Object> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventListener.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(LoggingEventListener.class);
 
-  @Override
-  public void onBeforeDelete(Object source, CouchbaseDocument doc) {
-    LOGGER.info("onBeforeDelete: {}, {}", source, doc);
-  }
+	@Override
+	public void onBeforeDelete(Object source, CouchbaseDocument doc) {
+		LOGGER.info("onBeforeDelete: {}, {}", source, doc);
+	}
 
-  @Override
-  public void onAfterDelete(Object source, CouchbaseDocument doc) {
-    LOGGER.info("onAfterDelete: {} {}", source, doc);
-  }
+	@Override
+	public void onAfterDelete(Object source, CouchbaseDocument doc) {
+		LOGGER.info("onAfterDelete: {} {}", source, doc);
+	}
 
-  @Override
-  public void onAfterSave(Object source, CouchbaseDocument doc) {
-    LOGGER.info("onAfterSave: {}, {}", source, doc);
-  }
+	@Override
+	public void onAfterSave(Object source, CouchbaseDocument doc) {
+		LOGGER.info("onAfterSave: {}, {}", source, doc);
+	}
 
-  @Override
-  public void onBeforeSave(Object source, CouchbaseDocument doc) {
-    LOGGER.info("onBeforeSave: {}, {}", source, doc);
-  }
+	@Override
+	public void onBeforeSave(Object source, CouchbaseDocument doc) {
+		LOGGER.info("onBeforeSave: {}, {}", source, doc);
+	}
 
-  @Override
-  public void onBeforeConvert(Object source) {
-    LOGGER.info("onBeforeConvert: {}, {}", source);
-  }
+	@Override
+	public void onBeforeConvert(Object source) {
+		LOGGER.info("onBeforeConvert: {}, {}", source);
+	}
 
 }

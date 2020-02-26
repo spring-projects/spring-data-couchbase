@@ -26,20 +26,20 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
  */
 public class CouchbaseMappingEvent<T> extends ApplicationEvent {
 
-  private final CouchbaseDocument document;
+	private final CouchbaseDocument document;
 
-  public CouchbaseMappingEvent(T source, CouchbaseDocument document) {
-    super(source);
-    this.document = document;
-  }
+	public CouchbaseMappingEvent(T source, CouchbaseDocument document) {
+		super(source);
+		this.document = document;
+	}
 
-  public CouchbaseDocument getDocument() {
-    return document;
-  }
+	public CouchbaseDocument getDocument() {
+		return document;
+	}
 
-  @SuppressWarnings("unchecked")
-  @Override
-  public T getSource() {
-    return (T) super.getSource();
-  }
+	@SuppressWarnings("unchecked")
+	@Override
+	public T getSource() {
+		return (T) super.getSource();
+	}
 }

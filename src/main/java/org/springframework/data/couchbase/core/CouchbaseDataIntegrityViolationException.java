@@ -25,14 +25,14 @@ import org.springframework.dao.DataIntegrityViolationException;
  */
 public class CouchbaseDataIntegrityViolationException extends DataIntegrityViolationException {
 
-  private static final long serialVersionUID = -3724991479213025850L;
+	private static final long serialVersionUID = -3724991479213025850L;
 
-  public CouchbaseDataIntegrityViolationException(String msg) {
-    super(msg);
-  }
+	public CouchbaseDataIntegrityViolationException(String msg) {
+		super(msg);
+	}
 
-  public CouchbaseDataIntegrityViolationException(String msg, Throwable cause) {
-    super(msg, cause);
-  }
+	public CouchbaseDataIntegrityViolationException(String msg, Throwable cause) {
+		super(msg, cause);
+	}
 
 }
