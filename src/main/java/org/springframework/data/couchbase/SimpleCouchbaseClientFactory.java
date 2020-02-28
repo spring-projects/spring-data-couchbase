@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase;
 
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 
@@ -36,12 +37,17 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 			final String bucketName) {
-		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, null);
+		this(connectionString, authenticator, bucketName, null);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 			final String bucketName, final String scopeName) {
 		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, scopeName);
+	}
+
+	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
+																			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
+		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment)), bucketName, scopeName);
 	}
 
 	SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {

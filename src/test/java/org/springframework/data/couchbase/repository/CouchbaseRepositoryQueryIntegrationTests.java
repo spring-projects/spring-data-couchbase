@@ -48,6 +48,12 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 	}
 
+	@Test
+	void findBySimpleProperty() {
+		List<Airport> airports = airportRepository.findAllByIata("vie");
+		System.err.println(airports);
+	}
+
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {

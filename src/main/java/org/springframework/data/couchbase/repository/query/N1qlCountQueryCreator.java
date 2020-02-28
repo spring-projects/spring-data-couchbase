@@ -29,7 +29,7 @@ import org.springframework.data.repository.query.parser.PartTree;
  * @author Mark Ramach
  * @author Mark Paluch
  */
-public class N1qlCountQueryCreator extends N1qlQueryCreator {
+public class N1qlCountQueryCreator extends OldN1qlQueryCreator {
 
 	public N1qlCountQueryCreator(PartTree tree, ParameterAccessor parameters, N1QLExpression selectFrom,
 			CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {

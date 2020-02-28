@@ -22,9 +22,9 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Dimensional;
-import org.springframework.data.couchbase.core.query.Queryable;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -131,8 +131,8 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 *
 	 * @return the n1ql annotation if present.
 	 */
-	public Queryable getN1qlAnnotation() {
-		return method.getAnnotation(Queryable.class);
+	public Query getN1qlAnnotation() {
+		return method.getAnnotation(Query.class);
 	}
 
 	/**
@@ -153,7 +153,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
-	 * Returns the query string declared in a {@link Queryable} annotation or {@literal null} if neither the annotation
+	 * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation
 	 * found nor the attribute was specified.
 	 *
 	 * @return the query statement if present.

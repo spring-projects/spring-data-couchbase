@@ -56,11 +56,6 @@ public class BeanNames {
 	public static final String REACTIVE_COUCHBASE_OPERATIONS_MAPPING = "reactiveCouchbaseRepositoryOperationsMapping";
 
 	/**
-	 * The name for the bean that drives how some indexes are automatically created.
-	 */
-	public static final String COUCHBASE_INDEX_MANAGER = "couchbaseIndexManager";
-
-	/**
 	 * The name for the bean that performs conversion to/from representation suitable for storage in couchbase.
 	 */
 	public static final String COUCHBASE_MAPPING_CONVERTER = "couchbaseMappingConverter";

@@ -33,7 +33,7 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonValue;
 
 /**
- * N1qlMutateQueryCreator allows to create queries for delete operations. See {@link N1qlQueryCreator} for part types
+ * N1qlMutateQueryCreator allows to create queries for delete operations. See {@link OldN1qlQueryCreator} for part types
  * supported
  *
  * @author Subhashni Balakrishnan

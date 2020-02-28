@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -129,10 +130,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 			String typeKey = template.getConverter().getTypeKey();
 			String typeValue = template.support().getJavaNameForEntity(domainType);
-			statement.append(" WHERE `").append(typeKey).append("` = \"").append(typeValue).append("\"");
+			query.addCriteria(QueryCriteria.where(typeKey).is(typeValue));
 
+			query.appendWhere(statement);
 			query.appendSort(statement);
 			query.appendSkipAndLimit(statement);
+
 			return statement.toString();
 		}
 

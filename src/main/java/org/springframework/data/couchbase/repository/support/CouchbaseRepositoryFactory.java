@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
 import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
 import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.mapping.context.MappingContext;
@@ -35,6 +36,7 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
+import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -155,7 +157,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 			final CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
 					.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 
-			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+			return new CouchbaseRepositoryQuery(couchbaseOperations, new QueryMethod(method, metadata, factory));
+
+			/*CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 			String namedQueryName = queryMethod.getNamedQueryName();
 
 			if (queryMethod.hasN1qlAnnotation()) {
@@ -171,7 +175,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
 			}
 
-			return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);
+			return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);*/
 		}
 	}
 

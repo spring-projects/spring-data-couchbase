@@ -4,20 +4,32 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class Query {
 
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
+	private final Map<String, QueryCriteria> criteria = new LinkedHashMap<>();
+
 
 	public Query() {}
 
-	/**
-	 * Set number of documents to skip before returning results.
-	 *
-	 * @param skip
-	 * @return
-	 */
+	public Query addCriteria(QueryCriteria criteriaDefinition) {
+		String key = criteriaDefinition.getKey();
+		this.criteria.put(key, criteriaDefinition);
+		return this;
+	}
+
+
+		/**
+		 * Set number of documents to skip before returning results.
+		 *
+		 * @param skip
+		 * @return
+		 */
 	public Query skip(long skip) {
 		this.skip = skip;
 		return this;
@@ -89,5 +101,13 @@ public class Query {
 		});
 		sb.deleteCharAt(sb.length() - 1);
 	}
+
+	public void appendWhere(final StringBuilder sb) {
+		sb.append(" WHERE ");
+		for (QueryCriteria c : criteria.values()) {
+			sb.append(c.export());
+		}
+	}
+
 
 }

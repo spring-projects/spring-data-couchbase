@@ -92,7 +92,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 						this.getCouchbaseOperations().getConverter());
 			}
 			N1QLExpression selectFrom = select.from(bucket);
-			N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
+			OldN1qlQueryCreator queryCreator = new OldN1qlQueryCreator(partTree, accessor, selectFrom,
 					getCouchbaseOperations().getConverter(), getQueryMethod());
 			N1QLExpression selectFromWhereOrderBy = queryCreator.createQuery();
 			this.placeHolderValues = queryCreator.getPlaceHolderValues();

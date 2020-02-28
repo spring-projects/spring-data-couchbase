@@ -47,6 +47,7 @@ import org.springframework.util.StringUtils;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 
 /**
@@ -68,13 +69,29 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	public abstract String getBucketName();
 
+	protected String getScopeName() {
+		return null;
+	}
+
 	protected Authenticator authenticator() {
 		return PasswordAuthenticator.create(getUserName(), getPassword());
 	}
 
 	@Bean
 	public CouchbaseClientFactory couchbaseClientFactory() {
-		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName());
+		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName(),
+				getScopeName(), clusterEnvironment());
+	}
+
+	@Bean(destroyMethod = "shutdown")
+	protected ClusterEnvironment clusterEnvironment() {
+		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
+		configureEnvironment(builder);
+		return builder.build();
+	}
+
+	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
+
 	}
 
 	@Bean
