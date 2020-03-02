@@ -78,9 +78,9 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	@Bean
-	public CouchbaseClientFactory couchbaseClientFactory() {
+	public CouchbaseClientFactory couchbaseClientFactory(ClusterEnvironment clusterEnvironment) {
 		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName(),
-				getScopeName(), clusterEnvironment());
+				getScopeName(), clusterEnvironment);
 	}
 
 	@Bean(destroyMethod = "shutdown")
@@ -95,13 +95,15 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	@Bean
-	public CouchbaseTemplate couchbaseTemplate() throws Exception {
-		return new CouchbaseTemplate(couchbaseClientFactory(), mappingCouchbaseConverter());
+	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
 	@Bean
-	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate() throws Exception {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory(), mappingCouchbaseConverter());
+	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+																														 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
 	@Bean
@@ -161,10 +163,11 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @throws Exception on Bean construction failure.
 	 */
-	@Bean(name = BeanNames.COUCHBASE_MAPPING_CONVERTER)
-	public MappingCouchbaseConverter mappingCouchbaseConverter() throws Exception {
-		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext(), typeKey());
-		converter.setCustomConversions(customConversions());
+	@Bean
+	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
+																														 CouchbaseCustomConversions couchbaseCustomConversions) {
+		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
+		converter.setCustomConversions(couchbaseCustomConversions);
 		return converter;
 	}
 
@@ -173,8 +176,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @return TranslationService, defaulting to JacksonTranslationService.
 	 */
-	@Bean(name = BeanNames.COUCHBASE_TRANSLATION_SERVICE)
-	public TranslationService translationService() {
+	@Bean
+	public TranslationService couchbaseTranslationService() {
 		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
 		jacksonTranslationService.afterPropertiesSet();
 
@@ -188,24 +191,24 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @throws Exception on Bean construction failure.
 	 */
-	@Bean(name = BeanNames.COUCHBASE_MAPPING_CONTEXT)
+	@Bean
 	public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
-		mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
+		mappingContext.setSimpleTypeHolder(couchbaseCustomConversions().getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
 		return mappingContext;
 	}
 
 	/**
 	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
-	 * be registered with the {@link #mappingCouchbaseConverter()} and {@link #couchbaseMappingContext()}. Returns an
-	 * empty {@link CustomConversions} instance by default.
+	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext)} )} and
+	 * {@link #couchbaseMappingContext()}. Returns an empty {@link CustomConversions} instance by default.
 	 *
 	 * @return must not be {@literal null}.
 	 */
-	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
-	public CustomConversions customConversions() {
+	@Bean
+	public CustomConversions couchbaseCustomConversions() {
 		return new CouchbaseCustomConversions(Collections.emptyList());
 	}
 

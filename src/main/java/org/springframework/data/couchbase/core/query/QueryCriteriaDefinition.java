@@ -23,16 +23,5 @@ import org.springframework.lang.Nullable;
  */
 public interface QueryCriteriaDefinition {
 
-
 	String export();
-
-	/**
-	 * Get the identifying {@literal key}.
-	 *
-	 * @return can be {@literal null}.
-	 * @since 1.6
-	 */
-	@Nullable
-	String getKey();
-
 }

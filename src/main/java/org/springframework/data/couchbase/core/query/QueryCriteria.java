@@ -1,52 +1,55 @@
 package org.springframework.data.couchbase.core.query;
 
 import org.springframework.lang.Nullable;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class QueryCriteria implements QueryCriteriaDefinition {
 
-	private @Nullable String key;
-	private List<QueryCriteria> criteriaChain;
-	private LinkedHashMap<String, Object> criteria = new LinkedHashMap<>();
-	private @Nullable ChainOperator chainOperator;
-	private boolean nested;
+	/**
+	 * Holds the chain itself, the current operator being always the last one.
+	 */
+	private final List<QueryCriteria> criteriaChain;
 
-	public QueryCriteria() {
-		this.criteriaChain = new ArrayList<>();
-	}
+	/**
+	 * Represents how the chain is hung together, null only for the first element.
+	 */
+	private ChainOperator chainOperator;
 
-	public QueryCriteria(String key) {
-		this.criteriaChain = new ArrayList<>();
-		this.criteriaChain.add(this);
+	private final String key;
+	private String operator;
+	private Object value;
+
+	QueryCriteria(List<QueryCriteria> chain, String key, Object value, ChainOperator chainOperator) {
+		this.criteriaChain = chain;
+		criteriaChain.add(this);
 		this.key = key;
-	}
-
-	protected QueryCriteria(List<QueryCriteria> criteriaChain, String key, ChainOperator chainOperator, boolean nested) {
-		this.criteriaChain = criteriaChain;
-		this.criteriaChain.add(this);
-		this.key = key;
+		this.value = value;
 		this.chainOperator = chainOperator;
-		this.nested = nested;
 	}
 
 	/**
 	 * Static factory method to create a Criteria using the provided key.
 	 */
 	public static QueryCriteria where(String key) {
-		return new QueryCriteria(key);
+		return new QueryCriteria(new ArrayList<>(), key, null, null);
 	}
 
 	public QueryCriteria and(String key) {
-		return new QueryCriteria(this.criteriaChain, key, ChainOperator.AND, false);
+		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
+	}
+
+	public QueryCriteria and(QueryCriteria criteria) {
+		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.AND);
+	}
+
+	public QueryCriteria or(QueryCriteria criteria) {
+		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.OR);
 	}
 
 	public QueryCriteria or(String key) {
-		return new QueryCriteria(this.criteriaChain, key, ChainOperator.OR, false);
+		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.OR);
 	}
 
 	public QueryCriteria eq(@Nullable Object o) {
@@ -54,32 +57,38 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria is(@Nullable Object o) {
-		criteria.put("=", o);
+		operator = "=";
+		value = o;
 		return this;
 	}
 
 	public QueryCriteria ne(@Nullable Object o) {
-		criteria.put("!=", o);
+		operator = "!=";
+		value = o;
 		return this;
 	}
 
 	public QueryCriteria lt(@Nullable Object o) {
-		criteria.put("<", o);
+		operator = "<";
+		value = o;
 		return this;
 	}
 
 	public QueryCriteria lte(@Nullable Object o) {
-		criteria.put("<=", o);
+		operator = "<=";
+		value = o;
 		return this;
 	}
 
 	public QueryCriteria gt(@Nullable Object o) {
-		criteria.put(">", o);
+		operator = ">";
+		value = o;
 		return this;
 	}
 
 	public QueryCriteria gte(@Nullable Object o) {
-		criteria.put(">=", o);
+		operator = ">=";
+		value = o;
 		return this;
 	}
 
@@ -87,45 +96,30 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	public String export() {
 		StringBuilder output = new StringBuilder();
 
-		if (criteriaChain.size() == 1) {
-			criteriaChain.get(0).exportSingle(output);
-		} else if (CollectionUtils.isEmpty(this.criteriaChain) && !CollectionUtils.isEmpty(this.criteria)) {
-			exportSingle(output);
-		} else {
-			boolean first = true;
-			for (QueryCriteria c : this.criteriaChain) {
-				boolean opened = false;
-
-				if (!first) {
-					if (c.chainOperator == null) {
-						throw new IllegalStateException("A chain operator must be present when chaining!");
-					}
-
-					opened = true;
-					output.append(" ").append(c.chainOperator.representation).append(" (");
+		boolean first = true;
+		for (QueryCriteria c : this.criteriaChain) {
+			if (!first) {
+				if (c.chainOperator == null) {
+					throw new IllegalStateException("A chain operator must be present when chaining!");
 				}
-				if (first) {
-					first = false;
-				}
-				c.exportSingle(output);
 
-				if (opened) {
-					output.append(")");
-				}
+				output.append(" ").append(c.chainOperator.representation).append(" ");
 			}
+			if (first) {
+				first = false;
+			}
+			c.exportSingle(output);
 		}
 
 		return output.toString();
 	}
 
-	protected void exportSingle(StringBuilder sb) {
-		String fieldName = "`" + key + "`";
-
-		for (Map.Entry<String, Object> entry : criteria.entrySet()) {
-			String key = entry.getKey();
-			Object value = entry.getValue();
-
-			sb.append(fieldName).append(" ").append(key).append(" ").append(maybeWrapValue(value));
+	protected void exportSingle(final StringBuilder sb) {
+		if (value instanceof QueryCriteria) {
+			sb.append("(").append(((QueryCriteria) value).export()).append(")");
+		} else {
+			String fieldName = "`" + key + "`";
+			sb.append(fieldName).append(" ").append(operator).append(" ").append(maybeWrapValue(value));
 		}
 	}
 
@@ -139,14 +133,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		}
 	}
 
-	@Override
-	public String getKey() {
-		return key;
-	}
-
 	enum ChainOperator {
 		AND("and"),
-		OR("or");
+		OR("or"),
+		NOT("not");
 
 		private final String representation;
 

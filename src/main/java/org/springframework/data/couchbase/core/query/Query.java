@@ -4,7 +4,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Query {
@@ -12,14 +14,13 @@ public class Query {
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
-	private final Map<String, QueryCriteria> criteria = new LinkedHashMap<>();
+	private final List<QueryCriteria> criteria = new ArrayList<>();
 
 
 	public Query() {}
 
 	public Query addCriteria(QueryCriteria criteriaDefinition) {
-		String key = criteriaDefinition.getKey();
-		this.criteria.put(key, criteriaDefinition);
+		this.criteria.add(criteriaDefinition);
 		return this;
 	}
 
@@ -104,9 +105,17 @@ public class Query {
 
 	public void appendWhere(final StringBuilder sb) {
 		sb.append(" WHERE ");
-		for (QueryCriteria c : criteria.values()) {
+		for (QueryCriteria c : criteria) {
 			sb.append(c.export());
 		}
+	}
+
+	public String export() {
+		StringBuilder sb = new StringBuilder();
+		appendWhere(sb);
+		appendSort(sb);
+		appendSkipAndLimit(sb);
+		return sb.toString();
 	}
 
 

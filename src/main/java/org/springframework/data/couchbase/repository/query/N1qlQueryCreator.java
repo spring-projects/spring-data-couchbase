@@ -20,22 +20,22 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 
-	public N1qlQueryCreator(PartTree tree, ParameterAccessor accessor,
-													MappingContext<?, CouchbasePersistentProperty> context) {
+	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor,
+													final MappingContext<?, CouchbasePersistentProperty> context) {
 		super(tree, accessor);
 		this.accessor = accessor;
 		this.context = context;
 	}
 
 	@Override
-	protected QueryCriteria create(Part part, Iterator<Object> iterator) {
+	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 		return from(part, property, where(path.toDotPath()), iterator);
 	}
 
 	@Override
-	protected QueryCriteria and(Part part, QueryCriteria base, Iterator<Object> iterator) {
+	protected QueryCriteria and(final Part part, final QueryCriteria base, final Iterator<Object> iterator) {
 		if (base == null) {
 			return create(part, iterator);
 		}
@@ -48,8 +48,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	@Override
 	protected QueryCriteria or(QueryCriteria base, QueryCriteria criteria) {
-		//return new QueryCriteria().or(base, criteria);
-		return new QueryCriteria();
+		return base.or(criteria);
 	}
 
 	@Override
@@ -63,13 +62,16 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		final Part.Type type = part.getType();
 
 		switch (type) {
-			case AFTER:
 			case GREATER_THAN:
 				return criteria.gt(parameters.next());
 			case GREATER_THAN_EQUAL:
 				return criteria.gte(parameters.next());
+			case LESS_THAN:
+				return criteria.lt(parameters.next());
+			case LESS_THAN_EQUAL:
+				return criteria.lte(parameters.next());
 			case SIMPLE_PROPERTY:
-				return criteria.is(parameters.next());
+				return criteria.eq(parameters.next());
 			default:
 				throw new IllegalArgumentException("Unsupported keyword!");
 		}

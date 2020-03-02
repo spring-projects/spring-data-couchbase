@@ -17,7 +17,9 @@
 package org.springframework.data.couchbase.config;
 
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 
 /**
@@ -32,17 +34,11 @@ public class BeanNames {
 
 	/**
 	 * The name for the default {@link CouchbaseOperations} bean. See
-	 * {@link AbstractCouchbaseConfiguration#couchbaseTemplate()} for java config, and the "&lt;couchbase:template /&gt;"
+	 * {@link AbstractCouchbaseConfiguration#couchbaseTemplate(CouchbaseClientFactory, MappingCouchbaseConverter)} )}
+	 * for java config, and the "&lt;couchbase:template /&gt;"
 	 * element for xml config.
 	 */
 	public static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
-
-	/**
-	 * The name for the default {@link TranslationService} bean. See
-	 * {@link AbstractCouchbaseConfiguration#translationService()} for java config, and the
-	 * "&lt;couchbase:translation-service /&gt;" element for xml config.
-	 */
-	public static final String COUCHBASE_TRANSLATION_SERVICE = "couchbaseTranslationService";
 
 	/**
 	 * The name for the bean that stores custom mapping between repositories and their backing couchbaseOperations.
@@ -56,23 +52,8 @@ public class BeanNames {
 	public static final String REACTIVE_COUCHBASE_OPERATIONS_MAPPING = "reactiveCouchbaseRepositoryOperationsMapping";
 
 	/**
-	 * The name for the bean that performs conversion to/from representation suitable for storage in couchbase.
-	 */
-	public static final String COUCHBASE_MAPPING_CONVERTER = "couchbaseMappingConverter";
-
-	/**
 	 * The name for the bean that stores mapping metadata for entities stored in couchbase.
 	 */
 	public static final String COUCHBASE_MAPPING_CONTEXT = "couchbaseMappingContext";
-
-	/**
-	 * The name for the bean that registers custom {@link Converter Converters} to encode/decode entity members.
-	 */
-	public static final String COUCHBASE_CUSTOM_CONVERSIONS = "couchbaseCustomConversions";
-
-	/**
-	 * The name for the bean that will handle audit trail marking of entities.
-	 */
-	public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
 
 }
