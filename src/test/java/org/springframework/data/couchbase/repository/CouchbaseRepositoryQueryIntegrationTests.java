@@ -67,6 +67,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	void findBySimpleProperty() {
 		List<Airport> airports = airportRepository.findAllByIata("vie");
+		// TODO
 		System.err.println(airports);
 	}
 

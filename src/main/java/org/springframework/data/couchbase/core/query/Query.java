@@ -16,14 +16,16 @@ public class Query {
 	private Sort sort = Sort.unsorted();
 	private final List<QueryCriteria> criteria = new ArrayList<>();
 
-
 	public Query() {}
+
+	public Query(final QueryCriteria criteriaDefinition) {
+		addCriteria(criteriaDefinition);
+	}
 
 	public Query addCriteria(QueryCriteria criteriaDefinition) {
 		this.criteria.add(criteriaDefinition);
 		return this;
 	}
-
 
 		/**
 		 * Set number of documents to skip before returning results.
@@ -105,7 +107,13 @@ public class Query {
 
 	public void appendWhere(final StringBuilder sb) {
 		sb.append(" WHERE ");
+		boolean first = true;
 		for (QueryCriteria c : criteria) {
+			if (first) {
+				first = false;
+			} else {
+				sb.append(" AND ");
+			}
 			sb.append(c.export());
 		}
 	}
