@@ -32,13 +32,11 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
  */
 public class BeanNames {
 
-	/**
-	 * The name for the default {@link CouchbaseOperations} bean. See
-	 * {@link AbstractCouchbaseConfiguration#couchbaseTemplate(CouchbaseClientFactory, MappingCouchbaseConverter)} )}
-	 * for java config, and the "&lt;couchbase:template /&gt;"
-	 * element for xml config.
-	 */
 	public static final String COUCHBASE_TEMPLATE = "couchbaseTemplate";
+
+	public static final String REACTIVE_COUCHBASE_TEMPLATE = "reactiveCouchbaseTemplate";
+
+	public static final String COUCHBASE_CUSTOM_CONVERSIONS = "couchbaseCustomConversions";
 
 	/**
 	 * The name for the bean that stores custom mapping between repositories and their backing couchbaseOperations.
