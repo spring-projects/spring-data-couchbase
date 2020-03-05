@@ -94,13 +94,13 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	}
 
-	@Bean
+	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
-	@Bean
+	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 																														 MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
@@ -195,7 +195,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
-		mappingContext.setSimpleTypeHolder(couchbaseCustomConversions().getSimpleTypeHolder());
+		mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
 		return mappingContext;
 	}
@@ -207,8 +207,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @return must not be {@literal null}.
 	 */
-	@Bean
-	public CustomConversions couchbaseCustomConversions() {
+	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
+	public CustomConversions customConversions() {
 		return new CouchbaseCustomConversions(Collections.emptyList());
 	}
 

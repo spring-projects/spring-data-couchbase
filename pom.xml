@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>3.0.1</couchbase>
-        <couchbase.osgi>3.0.1</couchbase.osgi>
+        <couchbase>3.0.2</couchbase>
+        <couchbase.osgi>3.0.2</couchbase.osgi>
         <springdata.commons>2.3.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -39,7 +39,7 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
+            <artifactId>spring-context-support</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
