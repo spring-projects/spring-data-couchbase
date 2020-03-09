@@ -50,7 +50,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment)), bucketName, scopeName);
 	}
 
-	SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
+	public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
 		this.cluster = cluster;
 		this.bucket = cluster.bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);

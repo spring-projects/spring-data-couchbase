@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.config;
 
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 
 /**
  * Strategy interface for users to provide as a factory for custom components needed
@@ -38,11 +38,11 @@ public interface CouchbaseConfigurer {
 	ClusterEnvironment clusterEnvironment() throws Exception;
 
 	/**
-	 * Set up the underlying main {@link CouchbaseClientFactory} reference to be used by the Spring Data framework
+	 * Set up the underlying main {@link Cluster} reference to be used by the Spring Data framework
 	 * when storing into Couchbase.
 	 *
-	 * @throws Exception in case of error during the CouchbaseClientFactory instantiation.
+	 * @throws Exception in case of error during the Cluster instantiation.
 	 */
-	CouchbaseClientFactory couchbaseClientFactory(ClusterEnvironment clusterEnvironment) throws Exception;
+	Cluster couchbaseCluster() throws Exception;
 
 }
