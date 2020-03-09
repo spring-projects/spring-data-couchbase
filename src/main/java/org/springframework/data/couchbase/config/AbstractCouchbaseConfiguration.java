@@ -86,8 +86,8 @@ public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigu
 	}
 
 	@Bean
-	public CouchbaseClientFactory couchbaseClientFactory(Cluster couchbaseCluster) {
-		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
+	public CouchbaseClientFactory couchbaseClientFactory() throws Exception {
+		return new SimpleCouchbaseClientFactory(couchbaseConfigurer().couchbaseCluster(), getBucketName(), getScopeName());
 	}
 
 	@Override
