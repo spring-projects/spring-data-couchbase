@@ -75,6 +75,13 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 		return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder());
 	}
 
+	/**
+	 * Returns the configuration for this {@link CouchbaseCache}.
+	 */
+	public CouchbaseCacheConfiguration getCacheConfiguration() {
+		return cacheConfig;
+	}
+
 	@Override
 	@SuppressWarnings("unchecked")
 	public synchronized <T> T get(final Object key, final Callable<T> valueLoader) {
