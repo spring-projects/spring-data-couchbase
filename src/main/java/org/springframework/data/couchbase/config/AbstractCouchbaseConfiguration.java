@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.ClusterOptions;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -50,6 +52,8 @@ import com.couchbase.client.core.env.PasswordAuthenticator;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 
+import static com.couchbase.client.java.ClusterOptions.*;
+
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
  *
@@ -60,6 +64,10 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigurer {
+
+	protected CouchbaseConfigurer couchbaseConfigurer() {
+		return this;
+	}
 
 	public abstract String getConnectionString();
 
@@ -78,10 +86,17 @@ public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigu
 	}
 
 	@Bean
+	public CouchbaseClientFactory couchbaseClientFactory(Cluster couchbaseCluster) {
+		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
+	}
+
 	@Override
-	public CouchbaseClientFactory couchbaseClientFactory(ClusterEnvironment clusterEnvironment) {
-		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName(),
-				getScopeName(), clusterEnvironment);
+	@Bean
+	public Cluster couchbaseCluster() throws Exception {
+		return Cluster.connect(
+			getConnectionString(),
+			clusterOptions(authenticator()).environment(couchbaseConfigurer().clusterEnvironment())
+		);
 	}
 
 	@Override
