@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.ClusterOptions;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -95,13 +94,13 @@ public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigu
 	public Cluster couchbaseCluster() throws Exception {
 		return Cluster.connect(
 			getConnectionString(),
-			clusterOptions(authenticator()).environment(couchbaseConfigurer().clusterEnvironment())
+			clusterOptions(authenticator()).environment(couchbaseConfigurer().couchbaseClusterEnvironment())
 		);
 	}
 
 	@Override
 	@Bean(destroyMethod = "shutdown")
-	public ClusterEnvironment clusterEnvironment() {
+	public ClusterEnvironment couchbaseClusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
 		configureEnvironment(builder);
 		return builder.build();
