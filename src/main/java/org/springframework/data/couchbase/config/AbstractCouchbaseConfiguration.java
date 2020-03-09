@@ -59,7 +59,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
  * @author Subhashni Balakrishnan
  */
 @Configuration
-public abstract class AbstractCouchbaseConfiguration {
+public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigurer {
 
 	public abstract String getConnectionString();
 
@@ -78,13 +78,15 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	@Bean
+	@Override
 	public CouchbaseClientFactory couchbaseClientFactory(ClusterEnvironment clusterEnvironment) {
 		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), getBucketName(),
 				getScopeName(), clusterEnvironment);
 	}
 
+	@Override
 	@Bean(destroyMethod = "shutdown")
-	protected ClusterEnvironment clusterEnvironment() {
+	public ClusterEnvironment clusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
 		configureEnvironment(builder);
 		return builder.build();
@@ -149,7 +151,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Determines the name of the field that will store the type information for complex types when using the
-	 * {@link #mappingCouchbaseConverter()}. Defaults to {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
+	 * {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)}. Defaults
+	 * to {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
 	 *
 	 * @see MappingCouchbaseConverter#TYPEKEY_DEFAULT
 	 * @see MappingCouchbaseConverter#TYPEKEY_SYNCGATEWAY_COMPATIBLE
@@ -192,18 +195,19 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @throws Exception on Bean construction failure.
 	 */
 	@Bean
-	public CouchbaseMappingContext couchbaseMappingContext() throws Exception {
+	public CouchbaseMappingContext couchbaseMappingContext(CustomConversions customConversions) throws Exception {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
-		mappingContext.setSimpleTypeHolder(customConversions().getSimpleTypeHolder());
+		mappingContext.setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
 		return mappingContext;
 	}
 
 	/**
 	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
-	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext)} )} and
-	 * {@link #couchbaseMappingContext()}. Returns an empty {@link CustomConversions} instance by default.
+	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)} )}
+	 * and {@link #couchbaseMappingContext(CustomConversions)}. Returns an empty {@link CustomConversions} instance by
+	 * default.
 	 *
 	 * @return must not be {@literal null}.
 	 */
