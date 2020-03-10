@@ -62,11 +62,7 @@ import static com.couchbase.client.java.ClusterOptions.*;
  * @author Subhashni Balakrishnan
  */
 @Configuration
-public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigurer {
-
-	protected CouchbaseConfigurer couchbaseConfigurer() {
-		return this;
-	}
+public abstract class AbstractCouchbaseConfiguration {
 
 	public abstract String getConnectionString();
 
@@ -85,20 +81,18 @@ public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigu
 	}
 
 	@Bean
-	public CouchbaseClientFactory couchbaseClientFactory() throws Exception {
-		return new SimpleCouchbaseClientFactory(couchbaseConfigurer().couchbaseCluster(), getBucketName(), getScopeName());
+	public CouchbaseClientFactory couchbaseClientFactory(Cluster couchbaseCluster) {
+		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
 
-	@Override
 	@Bean
-	public Cluster couchbaseCluster() throws Exception {
+	public Cluster couchbaseCluster(ClusterEnvironment couchbaseClusterEnvironment) {
 		return Cluster.connect(
 			getConnectionString(),
-			clusterOptions(authenticator()).environment(couchbaseConfigurer().couchbaseClusterEnvironment())
+			clusterOptions(authenticator()).environment(couchbaseClusterEnvironment)
 		);
 	}
 
-	@Override
 	@Bean(destroyMethod = "shutdown")
 	public ClusterEnvironment couchbaseClusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
@@ -148,7 +142,7 @@ public abstract class AbstractCouchbaseConfiguration implements CouchbaseConfigu
 	 */
 	protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
 		String basePackage = getMappingBasePackage();
-		Set<Class<?>> initialEntitySet = new HashSet<Class<?>>();
+		Set<Class<?>> initialEntitySet = new HashSet<>();
 
 		if (StringUtils.hasText(basePackage)) {
 			ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(
