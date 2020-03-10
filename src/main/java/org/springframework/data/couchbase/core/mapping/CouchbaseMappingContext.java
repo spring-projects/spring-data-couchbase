@@ -49,6 +49,8 @@ public class CouchbaseMappingContext
 	 */
 	private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
 
+	private boolean autoIndexCreation = true;
+
 	/**
 	 * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
 	 * Defaults to a strategy using the plain property name.
@@ -99,6 +101,14 @@ public class CouchbaseMappingContext
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		context = applicationContext;
+	}
+
+	public boolean isAutoIndexCreation() {
+		return autoIndexCreation;
+	}
+
+	public void setAutoIndexCreation(boolean autoCreateIndexes) {
+		this.autoIndexCreation = autoCreateIndexes;
 	}
 
 }

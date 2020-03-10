@@ -208,7 +208,17 @@ public abstract class AbstractCouchbaseConfiguration {
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
 		mappingContext.setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
+		mappingContext.setAutoIndexCreation(autoIndexCreation());
+
 		return mappingContext;
+	}
+
+	/**
+	 * Configure whether to automatically create indices for domain types by deriving the
+	 * from the entity or not.
+	 */
+	protected boolean autoIndexCreation() {
+		return false;
 	}
 
 	/**
