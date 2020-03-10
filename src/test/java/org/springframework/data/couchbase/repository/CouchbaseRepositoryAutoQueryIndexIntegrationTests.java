@@ -16,20 +16,12 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.junit.jupiter.api.BeforeEach;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.manager.query.QueryIndex;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -37,42 +29,45 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.IndexExistsException;
+import java.util.Optional;
 
-@SpringJUnitConfig(CouchbaseRepositoryQueryIntegrationTests.Config.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringJUnitConfig(CouchbaseRepositoryAutoQueryIndexIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegrationTests {
+public class CouchbaseRepositoryAutoQueryIndexIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired CouchbaseClientFactory clientFactory;
+	@Autowired
+	private Cluster cluster;
 
-	@Autowired AirportRepository airportRepository;
+	/**
+	 * Since the index creation happens at startup, the only way to properly check is by querying the
+	 * index list and making sure it is present.
+	 */
+	@Test
+	void createsSingleFieldIndex() {
+		Optional<QueryIndex> foundIndex = cluster
+			.queryIndexes()
+			.getAllIndexes(bucketName())
+			.stream()
+			.filter(i -> i.name().equals("idx_airline_name"))
+			.findFirst();
 
-	@BeforeEach
-	void beforeEach() {
-		try {
-			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
+		assertTrue(foundIndex.isPresent());
+		assertTrue(foundIndex.get().condition().get().contains("_class"));
 	}
 
 	@Test
-	void shouldSaveAndFindAll() {
-		Airport vie = new Airport("airports::vie", "vie", "loww");
-		airportRepository.save(vie);
+	void createsCompositeIndex() {
+		Optional<QueryIndex> foundIndex = cluster
+			.queryIndexes()
+			.getAllIndexes(bucketName())
+			.stream()
+			.filter(i -> i.name().equals("idx_airline_id_name"))
+			.findFirst();
 
-		List<Airport> all = StreamSupport.stream(airportRepository.findAll().spliterator(), false)
-				.collect(Collectors.toList());
-
-		assertFalse(all.isEmpty());
-		assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
-	}
-
-	@Test
-	void findBySimpleProperty() {
-		List<Airport> airports = airportRepository.findAllByIata("vie");
-		// TODO
-		System.err.println(airports);
+		assertTrue(foundIndex.isPresent());
+		assertTrue(foundIndex.get().condition().get().contains("_class"));
 	}
 
 	@Configuration
@@ -99,6 +94,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			return bucketName();
 		}
 
+		@Override
+		protected boolean autoIndexCreation() {
+			return true;
+		}
 	}
 
 }
