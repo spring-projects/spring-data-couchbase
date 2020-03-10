@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import reactor.core.publisher.Flux;
 
 import org.slf4j.Logger;
@@ -43,9 +44,9 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveAbstractN1qlBasedQuery.class);
 
 	protected final CouchbaseQueryMethod queryMethod;
-	private final CouchbaseOperations couchbaseOperations;
+	private final ReactiveCouchbaseOperations couchbaseOperations;
 
-	protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, CouchbaseOperations operations) {
+	protected ReactiveAbstractN1qlBasedQuery(CouchbaseQueryMethod method, ReactiveCouchbaseOperations operations) {
 		this.queryMethod = method;
 		this.couchbaseOperations = operations;
 	}
@@ -119,7 +120,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 		return this.queryMethod;
 	}
 
-	protected CouchbaseOperations getCouchbaseOperations() {
+	protected ReactiveCouchbaseOperations getCouchbaseOperations() {
 		return this.couchbaseOperations;
 	}
 

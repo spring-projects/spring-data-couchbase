@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.repository.query;
 
 import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
@@ -47,8 +47,8 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public ReactiveStringN1qlBasedQuery(String statement, CouchbaseQueryMethod queryMethod,
-			CouchbaseOperations couchbaseOperations, SpelExpressionParser spelParser,
-			QueryMethodEvaluationContextProvider evaluationContextProvider) {
+																			ReactiveCouchbaseOperations couchbaseOperations, SpelExpressionParser spelParser,
+																			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		super(queryMethod, couchbaseOperations);
 
 		this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod, getCouchbaseOperations().getBucketName(),
