@@ -85,7 +85,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
 
-	@Bean
+	@Bean(destroyMethod = "disconnect")
 	public Cluster couchbaseCluster(ClusterEnvironment couchbaseClusterEnvironment) {
 		return Cluster.connect(
 			getConnectionString(),
