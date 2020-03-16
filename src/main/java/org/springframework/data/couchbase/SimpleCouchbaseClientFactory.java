@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase;
 
+import com.couchbase.client.core.env.OwnedSupplier;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
@@ -28,9 +29,11 @@ import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 
+import java.util.function.Supplier;
+
 public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
-	private final Cluster cluster;
+	private final Supplier<Cluster> cluster;
 	private final Bucket bucket;
 	private final Scope scope;
 	private final PersistenceExceptionTranslator exceptionTranslator;
@@ -42,17 +45,21 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 			final String bucketName, final String scopeName) {
-		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)), bucketName, scopeName);
+		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))), bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 																			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
-		this(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment)), bucketName, scopeName);
+		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))), bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
+		this(() -> cluster, bucketName, scopeName);
+	}
+
+	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName, final String scopeName) {
 		this.cluster = cluster;
-		this.bucket = cluster.bucket(bucketName);
+		this.bucket = cluster.get().bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
 	}
@@ -63,7 +70,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	@Override
 	public Cluster getCluster() {
-		return cluster;
+		return cluster.get();
 	}
 
 	@Override
@@ -95,7 +102,9 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	@Override
 	public void close() {
-		cluster.disconnect();
+		if (cluster instanceof OwnedSupplier) {
+			cluster.get().disconnect();
+		}
 	}
 
 }
