@@ -70,94 +70,145 @@ class QueryCriteriaTests {
 	void testNestedNotIn() {
 		QueryCriteria c =
 				where("name").is("Bubba").or(
-				where("age").gt(12).or("country").is("Austria")).and(
-				where("state").notin(new String[]{"Alabama","Florida"}));
-		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and "+
-				"(NOT( (`state` IN ( [ \"Alabama\", \"Florida\" ] )) ))",
+						where("age").gt(12).or("country").is("Austria")).and(
+						where("state").notIn(new String[]{"Alabama", "Florida"}));
+		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and " +
+						"(not( (`state` in ( [ \"Alabama\", \"Florida\" ] )) ))",
 				c.export());
 	}
 
-	/*
-	public QueryCriteria child(QueryCriteria criteria) {
-	public QueryCriteria eq(@Nullable Object o) {
-	public QueryCriteria is(@Nullable Object o) {
-	public QueryCriteria ne(@Nullable Object o) {
-	public QueryCriteria lt(@Nullable Object o) {
-	public QueryCriteria lte(@Nullable Object o) {
-	public QueryCriteria gt(@Nullable Object o) {
-	public QueryCriteria gte(@Nullable Object o) {
-	public QueryCriteria startingWith(@Nullable Object o) {
-	public QueryCriteria endingWith(@Nullable Object o) {
-	public QueryCriteria regex(@Nullable Object o) {
-	public QueryCriteria containing(@Nullable Object o) {
-	public QueryCriteria notcontaining(@Nullable Object o) {
-	public QueryCriteria like(@Nullable Object o) {
-	public QueryCriteria notlike(@Nullable Object o) {
-	public QueryCriteria isnull(@Nullable Object o) {
-	public QueryCriteria isnotnull(@Nullable Object o) {
-	public QueryCriteria ismissing(@Nullable Object o) {
-	public QueryCriteria isnotmissing(@Nullable Object o) {
-	public QueryCriteria isvalued(@Nullable Object o) {
-	public QueryCriteria isnotvalued(@Nullable Object o) {
-	x public QueryCriteria between(@Nullable Object o1, @Nullable Object o2) {
-	x public QueryCriteria in(@Nullable Object[] o) {
-	x public QueryCriteria notin(@Nullable Object[] o) {
-	x public QueryCriteria TRUE(@Nullable Object[] o) { // true/false are reserved, use TRUE/FALSE
-	x public QueryCriteria FALSE(@Nullable Object[] o) {
-	 */
+
+	@Test
+	void testLt() {
+		QueryCriteria c = where("name").lt("Couch");
+		assertEquals("`name` < \"Couch\"", c.export());
+	}
+
+	@Test
+	void testLte() {
+		QueryCriteria c = where("name").lte("Couch");
+		assertEquals("`name` <= \"Couch\"", c.export());
+	}
+
+	@Test
+	void testGt() {
+		QueryCriteria c = where("name").gt("Couch");
+		assertEquals("`name` > \"Couch\"", c.export());
+	}
+
+	@Test
+	void testGte() {
+		QueryCriteria c = where("name").gte("Couch");
+		assertEquals("`name` >= \"Couch\"", c.export());
+	}
+
+	@Test
+	void testNe() {
+		QueryCriteria c = where("name").ne("Couch");
+		assertEquals("`name` != \"Couch\"", c.export());
+	}
+
+	@Test
+	void testStartingWith() {
+		QueryCriteria c = where("name").startingWith("Cou");
+		assertEquals("`name` like \"Cou%\"", c.export());
+	}
+
+	@Test
+	void testStartingWithExpr() {
+		QueryCriteria c = where("name").startingWith(where("name").plus(""));
+		assertEquals("`name` like ((\"%\" + ((`name` + \"\"))))", c.export());
+	}
+
+	@Test
+	void testEndingWith() {
+		QueryCriteria c = where("name").endingWith("ouch");
+		assertEquals("`name` like \"%ouch\"", c.export());
+	}
+
+	@Test
+	void testRegex() {
+		QueryCriteria c = where("name").regex("C.*h");
+		assertEquals("regexp_like(`name`, \"C.*h\")", c.export());
+	}
+
+	@Test
+	void testContaining() {
+		QueryCriteria c = where("name").containing("ouch");
+		assertEquals("contains(`name`, \"ouch\")", c.export());
+	}
+
+	@Test
+	void testNotContaining() {
+		QueryCriteria c = where("name").notContaining("Elvis");
+		assertEquals("not( (contains(`name`, \"Elvis\")) )", c.export());
+	}
+
+	@Test
+	void testLike() {
+		QueryCriteria c = where("name").like("%ouch%");
+		assertEquals("`name` like \"%ouch%\"", c.export());
+	}
+
+	@Test
+	void testNotLike() {
+		QueryCriteria c = where("name").notLike("%Elvis%");
+		assertEquals("not( (`name` like \"%Elvis%\") )", c.export());
+	}
+
 
 	@Test
 	void testIsNull() {
-		QueryCriteria c = where("name").isnull();
+		QueryCriteria c = where("name").isNull();
 		assertEquals("`name` is null", c.export());
 	}
 
 	@Test
 	void testIsNotNull() {
-		QueryCriteria c = where("name").isnotnull();
+		QueryCriteria c = where("name").isNotNull();
 		assertEquals("`name` is not null", c.export());
 	}
 
 	@Test
 	void testIsMissing() {
-		QueryCriteria c = where("name").ismissing();
+		QueryCriteria c = where("name").isMissing();
 		assertEquals("`name` is missing", c.export());
 	}
 
 	@Test
 	void testIsNotMissing() {
-		QueryCriteria c = where("name").isnotmissing();
+		QueryCriteria c = where("name").isNotMissing();
 		assertEquals("`name` is not missing", c.export());
 	}
 
 	@Test
 	void testIsValued() {
-		QueryCriteria c = where("name").isvalued();
+		QueryCriteria c = where("name").isValued();
 		assertEquals("`name` is valued", c.export());
 	}
 
 	@Test
 	void testIsNotValued() {
-		QueryCriteria c = where("name").isnotvalued();
+		QueryCriteria c = where("name").isNotValued();
 		assertEquals("`name` is not valued", c.export());
 	}
 
 	@Test
 	void testBetween() {
-		QueryCriteria c = where("name").between("Davis","Gump");
-		assertEquals("`name` BETWEEN \"Davis\" AND \"Gump\"", c.export());
+		QueryCriteria c = where("name").between("Davis", "Gump");
+		assertEquals("`name` between \"Davis\" and \"Gump\"", c.export());
 	}
 
 	@Test
 	void testIn() {
-		QueryCriteria c = where("name").in(new String[]{"gump","davis"});
-		assertEquals("`name` IN ( [ \"gump\", \"davis\" ] )", c.export());
+		QueryCriteria c = where("name").in(new String[]{"gump", "davis"});
+		assertEquals("`name` in ( [ \"gump\", \"davis\" ] )", c.export());
 	}
 
 	@Test
-	void testNotin() {
-		QueryCriteria c = where("name").notin(new String[]{"gump","davis"});
-		assertEquals("NOT( (`name` IN ( [ \"gump\", \"davis\" ] )) )", c.export());
+	void testNotIn() {
+		QueryCriteria c = where("name").notIn(new String[]{"gump", "davis"});
+		assertEquals("not( (`name` in ( [ \"gump\", \"davis\" ] )) )", c.export());
 	}
 
 	@Test
@@ -169,6 +220,6 @@ class QueryCriteriaTests {
 	@Test
 	void testFalse() {
 		QueryCriteria c = where("name").FALSE();
-		assertEquals("NOT( (`name`) )", c.export());
+		assertEquals("not( (`name`) )", c.export());
 	}
 }

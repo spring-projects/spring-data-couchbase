@@ -57,7 +57,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	}
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
-														 final Iterator<Object> parameters) {
+							   final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
 /*
@@ -82,7 +82,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 			case CONTAINING:
 				return criteria.containing(parameters.next());
 			case NOT_CONTAINING:
-				return criteria.notcontaining(parameters.next());
+				return criteria.notContaining(parameters.next());
 			case STARTING_WITH:
 				return criteria.startingWith(parameters.next());
 			case ENDING_WITH:
@@ -90,25 +90,27 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 			case LIKE:
 				return criteria.like(parameters.next());
 			case NOT_LIKE:
-				return criteria.notlike(parameters.next());
+				return criteria.notLike(parameters.next());
+			case WITHIN:
+				return criteria.within(parameters.next());
 			case IS_NULL:
-				return criteria.isnull(parameters.next());
+				return criteria.isNull(/*parameters.next()*/);
 			case IS_NOT_NULL:
-				return criteria.isnotnull(parameters.next());
+				return criteria.isNotNull(/*parameters.next()*/);
 			case IS_EMPTY:
-				return criteria.isnotvalued(parameters.next());
+				return criteria.isNotValued(/*parameters.next()*/);
 			case IS_NOT_EMPTY:
-				return criteria.isvalued(parameters.next());
+				return criteria.isValued(/*parameters.next()*/);
 			case EXISTS:
-				return criteria.isnotmissing(parameters.next());
+				return criteria.isNotMissing(/*parameters.next()*/);
 			case REGEX:
 				return criteria.regex(parameters.next());
 			case BETWEEN:
-				return criteria.between(parameters.next(),parameters.next());
+				return criteria.between(parameters.next(), parameters.next());
 			case IN:
-				return criteria.in((Object[])parameters.next());
+				return criteria.in((Object[]) parameters.next());
 			case NOT_IN:
-				return criteria.notin((Object[])parameters.next());
+				return criteria.notIn((Object[]) parameters.next());
 			case TRUE:
 				return criteria.TRUE();
 			case FALSE:
