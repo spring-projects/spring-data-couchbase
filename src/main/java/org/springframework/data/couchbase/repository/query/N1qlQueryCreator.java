@@ -21,7 +21,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 
 	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor,
-													final MappingContext<?, CouchbasePersistentProperty> context) {
+							final MappingContext<?, CouchbasePersistentProperty> context) {
 		super(tree, accessor);
 		this.accessor = accessor;
 		this.context = context;
@@ -57,21 +57,64 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	}
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
-														 final Iterator<Object> parameters) {
+							   final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
-
+/*
+        NEAR(new String[]{"IsNear", "Near"}),
+        WITHIN(new String[]{"IsWithin", "Within"}),
+ */
 		switch (type) {
 			case GREATER_THAN:
+			case AFTER:
 				return criteria.gt(parameters.next());
 			case GREATER_THAN_EQUAL:
 				return criteria.gte(parameters.next());
 			case LESS_THAN:
+			case BEFORE:
 				return criteria.lt(parameters.next());
 			case LESS_THAN_EQUAL:
 				return criteria.lte(parameters.next());
 			case SIMPLE_PROPERTY:
 				return criteria.eq(parameters.next());
+			case NEGATING_SIMPLE_PROPERTY:
+				return criteria.ne(parameters.next());
+			case CONTAINING:
+				return criteria.containing(parameters.next());
+			case NOT_CONTAINING:
+				return criteria.notContaining(parameters.next());
+			case STARTING_WITH:
+				return criteria.startingWith(parameters.next());
+			case ENDING_WITH:
+				return criteria.endingWith(parameters.next());
+			case LIKE:
+				return criteria.like(parameters.next());
+			case NOT_LIKE:
+				return criteria.notLike(parameters.next());
+			case WITHIN:
+				return criteria.within(parameters.next());
+			case IS_NULL:
+				return criteria.isNull(/*parameters.next()*/);
+			case IS_NOT_NULL:
+				return criteria.isNotNull(/*parameters.next()*/);
+			case IS_EMPTY:
+				return criteria.isNotValued(/*parameters.next()*/);
+			case IS_NOT_EMPTY:
+				return criteria.isValued(/*parameters.next()*/);
+			case EXISTS:
+				return criteria.isNotMissing(/*parameters.next()*/);
+			case REGEX:
+				return criteria.regex(parameters.next());
+			case BETWEEN:
+				return criteria.between(parameters.next(), parameters.next());
+			case IN:
+				return criteria.in((Object[]) parameters.next());
+			case NOT_IN:
+				return criteria.notIn((Object[]) parameters.next());
+			case TRUE:
+				return criteria.TRUE();
+			case FALSE:
+				return criteria.FALSE();
 			default:
 				throw new IllegalArgumentException("Unsupported keyword!");
 		}
