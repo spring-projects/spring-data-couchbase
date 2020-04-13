@@ -20,8 +20,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -29,10 +32,18 @@ import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMappe
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.kv.GetResult;
 
+/**
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ * @since 3.0
+ */
 @SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
 public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
 
@@ -40,7 +51,14 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 
 	@Autowired private CouchbaseOperations operations;
 
-	@Autowired private CouchbaseClientFactory clientFactory;
+	private static ApplicationContext ac;
+	private static CouchbaseClientFactory clientFactory;
+
+	@BeforeAll
+	static void beforeAll() {
+		ac = new AnnotationConfigApplicationContext(org.springframework.data.couchbase.domain.Config.class);
+		clientFactory = (CouchbaseClientFactory)ac.getBean("couchbaseClientFactory");
+	}
 
 	@Test
 	void saveSimpleEntityCorrectlyWithDifferentTypeKey() {

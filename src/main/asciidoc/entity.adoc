@@ -8,16 +8,14 @@ include::{spring-data-commons-docs}/object-mapping.adoc[leveloffset=+1]
 [[basics]]
 == Documents and Fields
 
-All entities should be annotated with the `@Document` annotation.
+All entities should be annotated with the `@Document` annotation, but it is not a requirement.
 
-Also, every field in the entity should be annotated with the `@Field` annotation from the Couchbase SDK. While this is - strictly speaking - optional, it helps to reduce edge cases and clearly shows the intent and design of the entity.
-It can also be used to store the field under a different name.
+Also, every field in the entity should be annotated with the `@Field` annotation. While this is - strictly speaking -
+optional, it helps to reduce edge cases and clearly shows the intent and design of the entity. It can also be used to
+store the field under a different name.
 
-There is also a special `@Id` annotation which needs to be always in place.
-Best practice is to also name the property `id`.
-
-TIP: Both the Couchbase SDK and Spring Data define their own `@Id` annotation.
-Either can be used (the Spring Data one will get priority if both are found on different fields).
+There is also a special `@Id` annotation which needs to be always in place. Best practice is to also name the property
+`id`.
 
 Here is a very simple `User` entity:
 
@@ -25,8 +23,8 @@ Here is a very simple `User` entity:
 ====
 [source,java]
 ----
-import com.couchbase.client.java.repository.annotation.Id;
-import com.couchbase.client.java.repository.annotation.Field;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.couchbase.core.mapping.Field;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document

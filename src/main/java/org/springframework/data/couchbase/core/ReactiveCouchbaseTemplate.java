@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -23,7 +27,13 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 import com.couchbase.client.java.Collection;
 
-public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations {
+/**
+ * template class for Reactive Couchbase operations
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
+public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
 	private final CouchbaseClientFactory clientFactory;
 	private final CouchbaseConverter converter;
@@ -130,6 +140,11 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations {
 	RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
 		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
 		return resolved == null ? ex : resolved;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		templateSupport.setApplicationContext(applicationContext);
 	}
 
 }

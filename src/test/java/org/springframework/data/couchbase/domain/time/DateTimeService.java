@@ -14,25 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.domain;
+package org.springframework.data.couchbase.domain.time;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.UUID;
+import java.time.ZonedDateTime;
 
 /**
- * User Repository for tests
+ * DateTimeService interface
  *
- * @author Michael Nitschinger
  * @author Michael Reiche
+ * @since 3.0
  */
-@Repository
-public interface UserRepository extends PagingAndSortingRepository<User, String> {
-
-	List<User> findByFirstname(String firstname);
-
-	List<User> findByFirstnameAndLastname(String firstname, String lastname);
-
+public interface DateTimeService {
+	ZonedDateTime getCurrentDateAndTime();
 }

@@ -16,7 +16,7 @@ As a result, the library can be included like any other maven dependency:
 <dependency>
     <groupId>org.springframework.data</groupId>
     <artifactId>spring-data-couchbase</artifactId>
-    <version>2.0.0.RELEASE</version>
+    <version>4.0.0.RELEASE</version>
 </dependency>
 ----
 ====
@@ -33,7 +33,7 @@ Here is an example on how to use the current SNAPSHOT dependency:
 <dependency>
   <groupId>org.springframework.data</groupId>
   <artifactId>spring-data-couchbase</artifactId>
-  <version>2.1.0.BUILD-SNAPSHOT</version>
+  <version>4.0.0.BUILD-SNAPSHOT</version>
 </dependency>
 
 <repository>
@@ -45,17 +45,12 @@ Here is an example on how to use the current SNAPSHOT dependency:
 ====
 
 Once you have all needed dependencies on the classpath, you can start configuring it.
-Both Java and XML config are supported.
-The next sections describe both approaches in detail.
+Only Java config is supported (XML config has been removed in 4.0).
 
 [[configuration-java]]
 == Annotation-based Configuration ("JavaConfig")
 
-The annotation based configuration approach is getting more and more popular.
-It allows you to get rid of XML configuration and treat configuration as part of your code directly.
 To get started, all you need to do is subclcass the `AbstractCouchbaseConfiguration` and implement the abstract methods.
-
-Please make sure to have cglib support in the classpath so that the annotation based configuration works.
 
 .Extending the `AbstractCouchbaseConfiguration`
 ====
@@ -66,80 +61,49 @@ Please make sure to have cglib support in the classpath so that the annotation b
 public class Config extends AbstractCouchbaseConfiguration {
 
     @Override
-    protected List<String> getBootstrapHosts() {
-        return Collections.singletonList("127.0.0.1");
+    public String getConnectionString() {
+        return "couchbase://127.0.0.1";
     }
 
     @Override
-    protected String getBucketName() {
-        return "beer-sample";
+    public String getUserName() {
+        return "Administrator";
     }
 
     @Override
-    protected String getPassword() {
-        return "";
+    public String getPassword() {
+        return "password";
+    }
+
+    @Override
+    public String getBucketName() {
+        return "travel-sample";
     }
 }
 ----
 ====
 
-All you need to provide is a list of Couchbase nodes to bootstrap into (without any ports, just the IP address or hostname).
-Please note that while one host is sufficient in development, it is recommended to add 3 to 5 bootstrap nodes here.
-Couchbase will pick up all nodes from the cluster automatically, but it could be the case that the only node you've provided is experiencing issues while you are starting the application.
+The connection string is made up of a list of hosts and an optional scheme (`couchbase://`) as shown in the code above.
+All you need to provide is a list of Couchbase nodes to bootstrap into (separated by a `,`). Please note that while one
+host is sufficient in development, it is recommended to add 3 to 5 bootstrap nodes here. Couchbase will pick up all nodes
+from the cluster automatically, but it could be the case that the only node you've provided is experiencing issues while
+you are starting the application.
 
-The `bucketName` and `password` should be the same as configured in Couchbase Server itself.
-In the example given, we are connecting to the `beer-sample` bucket which is one of the sample buckets shipped with Couchbase Server and has no password set by default.
+The `userName` and `password` are configured in your Couchbase Server cluster through RBAC (role-based access control).
+The `bucketName` reflects the bucket you want to use for this configuration.
 
-Depending on how your environment is set up, the configuration will be automatically picked up by the context or you need to instantiate your own one.
-How to manage configurations is not in scope of this manual, please refer to the spring documentation for more information on that topic.
+Additionally, the SDK environment can be tuned by overriding the `configureEnvironment` method which takes a
+`ClusterEnvironment.Builder` to return a configured `ClusterEnvironment`.
 
-Additionally, the SDK environment can be tuned by overriding the `getEnvironment()` method to return a properly tuned `CouchbaseEnvironment`.
-
-While not immediately obvious, much more things can be customized and overridden as custom beans from this configuration (for example repositories, query consistency, validation and custom converters).
+Many more things can be customized and overridden as custom beans from this configuration (for example repositories,
+validation and custom converters).
 
 TIP: If you use `SyncGateway` and `CouchbaseMobile`, you may run into problem with fields prefixed by `_`.
 Since Spring Data Couchbase by default stores the type information as a `_class` attribute this can be problematic.
-Override `typeKey()` (for example to return `MappingCouchbaseConverter.TYPEKEY_SYNCGATEWAY_COMPATIBLE`) to change the name of said attribute.
+Override `typeKey()` (for example to return `MappingCouchbaseConverter.TYPEKEY_SYNCGATEWAY_COMPATIBLE`) to change the
+name of said attribute.
 
-TIP: For generated queries, if you want strong consistency (at the expense of performance), you can override `getDefaultConsistency()` and return `Consistency.READ_YOUR_OWN_WRITES`.
-
-[[configuration-xml]]
-== XML-based Configuration
-
-The library provides a custom namespace that you can use in your XML configuration:
-
-.Basic XML configuration
-====
-[source,xml]
-----
-<?xml version="1.0" encoding="UTF-8"?>
-<beans:beans xmlns:beans="http://www.springframework.org/schema/beans"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://www.springframework.org/schema/data/couchbase
-  xsi:schemaLocation="http://www.springframework.org/schema/beans
-    https://www.springframework.org/schema/beans/spring-beans.xsd
-    http://www.springframework.org/schema/data/couchbase
-    https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd">
-
-    <couchbase:cluster>
-      <couchbase:node>127.0.0.1</couchbase:node>
-    </couchbase:cluster>
-
-    <!-- This is needed to probe the server for N1QL support -->
-    <!-- Can be either cluster credentials or a bucket credentials -->
-    <couchbase:clusterInfo login="beer-sample" password=""/>
-
-    <couchbase:bucket bucketName="beer-sample" bucketPassword=""/>
-</beans:beans>
-----
-====
-
-This code is equivalent to the java configuration approach shown above.
-You can customize the SDK `CouchbaseEnvironment` via the `<couchbase:env/>` tag, that supports most tuning parameters as attributes.
-It is also possible to configure templates and repositories, which is shown in the appropriate sections.
-
-IMPORTANT: The XML configuration **must** include the `clusterInfo` credentials, in order to be able to detect N1QL feature.
-
-If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying Couchbase Java SDK is connecting to the database.
-If any errors are reported, make sure that the given credentials and host information are correct.
+If you start your application, you should see Couchbase INFO level logging in the logs, indicating that the underlying
+Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials
+and host information are correct.
 

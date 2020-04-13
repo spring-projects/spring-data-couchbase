@@ -37,37 +37,6 @@ public class User {
 ----
 ====
 
-Common prefix and suffix for all entities keys can be added to `CouchbaseTemplate` directly.
-Once added to the `CouchbaseTemplate`, they become immutable.
-These settings are always applied irrespective of the `GeneratedValue` annotation.
-
-.Common key settings in CouchbaseTemplate
-====
-[source,java]
-----
-@Autowired
-CouchbaseTemplate couchbaseTemplate;
-...
-couchbaseTemplate.keySettings(KeySettings.build().prefix("ApplicationA").suffix("Server1").delimiter("::"));
-----
-====
-
-Key will be auto-generated only for operations with direct entity input like insert, update, save, delete using entity.
-For other operations requiring just the key, it can be generated using `CouchbaseTemplate`.
-
-.Standalone key generation in CouchbaseTemplate
-====
-[source,java]
-----
-@Autowired
-CouchbaseTemplate couchbaseTemplate;
-...
-String id = couchbaseTemplate.getGeneratedId(entity);
-...
-repo.exists(id);
-----
-====
-
 [[couchbase.autokeygeneration.usingattributes]]
 == Key generation using attributes
 
