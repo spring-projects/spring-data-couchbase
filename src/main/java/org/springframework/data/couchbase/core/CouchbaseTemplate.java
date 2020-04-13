@@ -17,9 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -33,6 +31,14 @@ import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.Collection;
 
+/**
+ * Implements Couchbase operations
+ * findBy, insertBy, upsertBy, replaceBy, removeBy, existsBy
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ * @since 3.0
+ */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
 
 	private final CouchbaseClientFactory clientFactory;
@@ -161,6 +167,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		prepareIndexCreator(applicationContext);
+		templateSupport.setApplicationContext(applicationContext);
+		reactiveCouchbaseTemplate.setApplicationContext(applicationContext);
 	}
 
 	private void prepareIndexCreator(ApplicationContext context) {
