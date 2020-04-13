@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>3.0.2</couchbase>
-        <couchbase.osgi>3.0.2</couchbase.osgi>
+        <couchbase>3.0.3</couchbase>
+        <couchbase.osgi>3.0.3</couchbase.osgi>
         <springdata.commons>2.3.0.BUILD-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -93,12 +93,6 @@
             <artifactId>joda-time</artifactId>
             <version>${jodatime}</version>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-core</artifactId>
-            <version>3.2.12.RELEASE</version>
         </dependency>
 
         <dependency>
