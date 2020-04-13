@@ -31,10 +31,15 @@ import org.springframework.util.Assert;
  * @author Oliver Gierke
  * @author Simon Baslé
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class AuditingEventListener implements ApplicationListener<BeforeConvertEvent<Object>> {
 
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
+
+	public AuditingEventListener() {
+		this.auditingHandlerFactory = null;
+	}
 
 	/**
 	 * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
@@ -51,8 +56,8 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
 	 * (non-Javadoc)
 	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
 	 */
+	@Override
 	public void onApplicationEvent(BeforeConvertEvent<Object> event) {
-
 		Optional.ofNullable(event.getSource())//
 				.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
 	}

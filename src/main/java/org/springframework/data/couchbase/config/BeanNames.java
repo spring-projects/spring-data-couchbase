@@ -23,6 +23,7 @@ package org.springframework.data.couchbase.config;
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
+ * @author Michael Reiche
  */
 public class BeanNames {
 
@@ -48,4 +49,8 @@ public class BeanNames {
 	 */
 	public static final String COUCHBASE_MAPPING_CONTEXT = "couchbaseMappingContext";
 
+	/**
+	 * The name for the bean that will handle audit trail marking of entities.
+	 */
+	public static final String COUCHBASE_AUDITING_HANDLER = "couchbaseAuditingHandler";
 }

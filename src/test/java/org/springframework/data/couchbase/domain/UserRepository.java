@@ -20,7 +20,13 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
+/**
+ * User Repository for tests
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Repository
 public interface UserRepository extends PagingAndSortingRepository<User, String> {
 

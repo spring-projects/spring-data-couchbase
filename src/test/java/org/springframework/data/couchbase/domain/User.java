@@ -18,17 +18,33 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.Objects;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.*;
 import org.springframework.data.couchbase.core.mapping.Document;
+
+/**
+ * User entity for tests
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 
 @Document
 public class User {
 
-	@Id private String id;
-
+	@Id
+	private String id;
 	private String firstname;
 	private String lastname;
+	@CreatedBy
+	private String createdBy;
+	@CreatedDate
+	private long createdDate;
+	@LastModifiedBy
+	private String lastModifiedBy;
+	@LastModifiedDate
+	private long lastModifiedDate;
+	@Version
+	long version;
 
 	@PersistenceConstructor
 	public User(final String id, final String firstname, final String lastname) {
@@ -49,6 +65,26 @@ public class User {
 		return lastname;
 	}
 
+	public long getCreatedDate() {
+		return createdDate;
+	}
+
+	public String getCreator() {
+		return createdBy;
+	}
+
+	public long getLastModifiedDate() {
+		return lastModifiedDate;
+	}
+
+	public String getLastModifiedBy() {
+		return lastModifiedBy;
+	}
+
+	public long getVersion() {
+		return version;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -56,8 +92,8 @@ public class User {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		User user = (User) o;
-		return Objects.equals(id, user.id) && Objects.equals(firstname, user.firstname)
-				&& Objects.equals(lastname, user.lastname);
+		return Objects.equals(id, user.id) && Objects.equals(firstname, user.firstname) && Objects.equals(lastname,
+				user.lastname);
 	}
 
 	@Override
@@ -67,6 +103,8 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User{" + "id='" + id + '\'' + ", firstname='" + firstname + '\'' + ", lastname='" + lastname + '\'' + '}';
+		return "User{" + "id='" + id + '\'' + ", firstname='" + firstname + '\'' + ", lastname='" + lastname + '\''
+				+ ", createdBy='" + createdBy + '\'' + ", createdDate='" + createdDate + '\'' + ", lastModifiedBy='"
+				+ lastModifiedBy + '\'' + ", lastModifiedDate='" + lastModifiedDate + '\'' + '}';
 	}
 }
