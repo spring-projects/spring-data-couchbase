@@ -1,82 +1,100 @@
 [[couchbase.migrating]]
-= Migrating from Spring Data Couchbase 1.x to 2.x
+= Migrating from Spring Data Couchbase 3.x to 4.x
 
-This chapter is a quick reference of what major changes have been introduced in 2.0.x and gives a high-level overview of things to consider when migrating.
+This chapter is a quick reference of what major changes have been introduced in 4.x and gives a high-level overview of things to consider when migrating.
+
+Please note that implicitly the minimum Couchbase Server version has been bumped up to 5.5 and later, and we recommend running at least 6.0.x.
 
 [[couchbase.migrating.configuration]]
 == Configuration
 
-The configuration, xml schema, etc... has changed to take the evolution of the 2.x SDK API into account.
+Since the main objective was to migrate from the Java SDK 2 to 3, configuration has changed to adapt to the new SDK and also in the long run to prepare it for scopes and collections (but it can still be used without collection support).
 
-Where a single `CouchbaseClient` bean was previously the only bean declarable, you can now declare a `Cluster` bean (`<couchbase:cluster>`), one or more `Bucket` beans (`<couchbase:bucket>`) and even tune the SDK via a `CouchbaseEnvironment` bean (`<couchbase:env>`).
-All of these can also be created via Java Config method by extending `AbstractCouchbaseConfig`.
+IMPORTANT: XML Configuration support has been dropped, so only java/annotation based configuration is supported.
 
-The cluster bean lists the nodes to connect through (and references the environment bean if tuning is necessary) while the bucket beans map to bucket names and passwords and actually opens the connections internally.
+Your configuration still has to extend the `AbstractCouchbaseConfiguration`, but since RBAC (role-based access control) is now mandatory, different properties need to be overridden in order to be configured: `getConnectionString`, `getUserName`, `getPassword` and `getBucketName`. If you want to use a non-default scope optionally you can override the `getScopeName` method. Note that if you want to use certificate based authentication or you need to customize the password authentication, the `authenticator` method can be overridden to perform this task.
 
-You can define more beans that are used for internal configuration of the Spring Data Couchbase module (`MappingContext`, `CouchbaseConverter`, `TranslationService`, ...).
+The new SDK still has an environment that is used to configure it, so you can override the `configureEnvironment` method and supply custom configuration if needed.
 
 For more information, see <<couchbase.configuration>>.
 
-[[couchbase.migrating.repository-queries]]
+[[couchbase.migrating.template]]
+== Template and ReactiveTemplate
+
+Since the Couchbase SDK 3 removes support for `RxJava` and instead adds support for `Reactor`, both the `couchbaseTemplate` as well as the `reactiveCouchbaseTemplate` can be directly accessed from the `AbstractCouchbaseConfiguration`.
+
+The template has been completely overhauled so that it now uses a fluent API to configure instead of many method overloads. This has the advantage that in the future we are able to extend the functionality without having to introduce more and more overloads that make it complicated to navigate.
+
+The following table describes the method names in 3.x and compares them to their 4.x equivalents:
+
+.Template Method Comparison
+|===
+|SDC 3.x |SDC 4.x
+
+|save
+|upsertById
+
+|insert
+|insertById
+
+|update
+|replaceById
+
+|findById
+|findById
+
+|findByView
+|(removed)
+
+|findBySpatialView
+|(removed)
+
+|findByN1QL
+|findByQuery
+
+|findByN1QLProjection
+|findByQuery
+
+|queryN1QL
+|(call SDK directly)
+
+|exists
+|existsById
+
+|remove
+|removeById
+
+|execute
+|(call SDK directly)
+|===
+
+In addition, the following methods have been added which were not available in 3.x:
+
+.Template Additions in 4.x
+|===
+|Name |Description
+
+|removeByQuery
+|Allows to remove entities through a N1QL query
+
+|findByAnalytics
+|Performs a find through the analytics service
+
+|findFromReplicasById
+|Like findById, but takes replicas into account
+|===
+
+We tried to unify and align the APIs more closely to the underlying SDK semantics so they are easier to correlate and navigate.
+
+For more information, see <<couchbase.template>>.
+
+[[couchbase.migrating.repository]]
 == Repository queries
 
-The view-backed query method has evolved and support for N1QL has been introduced.
-As a result, there are now 4 ways of doing repository queries:
+IMPORTANT: Support for views has been removed and N1QL queries are now the first-class citizens for all custom repository methods as well as the built-in ones by default.
 
-* Simple View query (to return all elements emitted by a view) - @View annotated without `viewName`
-* Intermediate View query by query derivation (to provide some criteria for the view) @View annotated with `viewName`
-* N1QL with explicit statements inline - `@Query` annotated with value
-* N1QL query derivation - `@Query` annotated without value / no annotation (default)
+The behavior itself has not changed over the previous version on how the query derivation is supposed to work. Should you encounter any queries that worked in the past and now do not work anymore please let us know.
 
-View backed queries are associated with the `@View` annotation, while N1QL backed queries are associated with the `@Query` annotation.
+It is possible to override the default scan consistency for N1QL queries through the new `ScanConsistency` annotation.
 
-N1QL query derivation is now the default query method (and there the `@Query` annotation is optional).
-
-See <<couchbase.repository.n1ql>> and <<couchbase.repository.views>> for more information.
-
-[[couchbase.migrating.backing-views]]
-== Backing views and view query changes
-
-IMPORTANT: The `all` view is still backing most CRUD operations, but custom repository methods are now by default backed by N1QL.
-
-To instead back them with views, use the `@View` annotation explicitly.
-
-Without a `viewName` specified, the view will be guessed from method name (stripping `count` or `find` prefix).
-Otherwise, query derivation will be used to parameterize the view query from the method name and parameters.
-
-[[couchbase.migrating.view-query]]
-=== Passing a ViewQuery object as a parameter to a custom repository method
-
-This behavior has been removed and the recommended approach is now to either use query derivation (if the query parameters are simple enough) or <<repositories.single-repository-behaviour>>.
-
-For instance, for a view emitting user lastNames, the following:
-
-[source,java]
-----
-@View
-List<User> findByLastname(ViewQuery.from("","").key("test").limit(3));
-----
-
-is to be replaced by the (more flexible):
-
-[source,java]
-----
-@View("byLastName")
-List<User> findFirst3ByLastnameEquals(String lastName);
-----
-
-[[couchbase.migrating.reduce-in-views]]
-=== Reduce in views
-
-Reduce is now supported in view-based querying.
-
-It can be triggered by prefixing the method name with `count` instead of `find`.
-For example: `countByLastnameContains(String word)` instead of `findByLastnameContains(String word)`.
-
-Alternatively, it can be explicitly be activated by setting `reduce = true` on the `@View` annotation.
-
-Be sure to construct your view correctly:
-
-* specify a reduce function that matches the method return type, which can be anything, eg. long or JSON object
-* emit a simple key (not `null` nor a compound key).
-* emit a value suitable for the reduce to work (typically `_count` doesn't need any particular value, but `_stats` will need a numerical value, in addition to the key).
+See <<couchbase.repository>> for more information.
