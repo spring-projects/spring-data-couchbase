@@ -11,25 +11,17 @@ So make sure you’ve got a sound understanding of the basic concepts explained 
 [[couchbase.reactiverepository.libraries]]
 == Reactive Composition Libraries
 
-Couchbase Java SDK 2.x has taken a reactive programming approach since its inception using an early reactive extension to JVM, https://github.com/ReactiveX/RxJava/tree/1.x/[RxJava1].
-It provides RxJava1 observable sequence API to compose asynchronous database operations.
+The Couchbase Java SDK 3.x moved from RxJava to Reactor, so it blends in very nicely with the reactive spring ecosystem.
 
 Reactive Couchbase repositories provide project Reactor wrapper types and can be used by simply extending from one of the library-specific repository interfaces:
 
-* ReactiveCrudRepository
-
-* ReactiveSortingRepository
-
-Spring-data-couchbase converts RxJava 1 observables to reactor types by using reactive-streams adapters from https://github.com/ReactiveX/[RxJavaReactiveStreams]
-for convenience since these conversions can easily clutter application code.
-This transformation happens on same thread.
-It also provides direct access to RxJava1 observable sequence API from SDK through RxJavaCouchbaseOperations methods.
+ * ReactiveCrudRepository
+ * ReactiveSortingRepository
 
 [[couchbase.reactiverepository.usage]]
 == Usage
 
-To access domain entities stored in a Couchbase bucket you can leverage our sophisticated repository support that eases implementing those quite significantly.
-To do so, simply create an interface for your repository:
+Let's create a simple entity to start with:
 
 .Sample Person entity
 ====
@@ -48,7 +40,7 @@ public class Person {
 ----
 ====
 
-We have a quite simple domain object here.
+A corresponding repository implementation may look like this:
 
 .Basic repository interface to persist Person entities
 ====
@@ -71,28 +63,16 @@ For JavaConfig use the `@EnableReactiveCouchbaseRepositories` annotation.
 The annotation carries the very same attributes like the namespace element.
 If no base package is configured the infrastructure will scan the package of the annotated configuration class.
 
+Also note that if you are using it in a spring boot setup you likely can omit the annotation since it is autoconfigured for you.
+
 .JavaConfig for repositories
 ====
 [source,java]
 ----
 @Configuration
 @EnableReactiveCouchbaseRepositories
-class ApplicationConfig extends AbstractReactiveCouchbaseConfiguration {
-
-  @Override
-  protected List<String> getBootstrapHosts() {
-    return Collections.singletonList("127.0.0.1");
-  }
-
-  @Override
-  protected String getBucketName() {
-  		return "default";
-  }
-
-  @Override
-  protected String getPassword() {
- 	return "";
- }
+class ApplicationConfig extends AbstractCouchbaseConfiguration {
+	// ... (see configuration for details)
 }
 ----
 ====
