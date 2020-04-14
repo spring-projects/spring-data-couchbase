@@ -23,7 +23,8 @@ include::{spring-data-commons-docs}/repositories.adoc[]
 include::repository.adoc[]
 include::reactiverepository.adoc[]
 include::template.adoc[]
-include::ansijoins.adoc[]
+// (daschl) disabled the ansijoins docs since it is being overhauled for 4.x
+// include::ansijoins.adoc[]
 :leveloffset: -1
 
 [[appendix]]

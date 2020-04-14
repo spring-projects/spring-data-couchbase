@@ -2,61 +2,56 @@
 = Template & direct operations
 
 The template provides lower level access to the underlying database and also serves as the foundation for repositories.
-Any time a repository is too high-level for you needs chances are good that the templates will serve you well.
+Any time a repository is too high-level for you needs chances are good that the templates will serve you well. Note that
+you can always drop into the SDK directly through the beans exposed on the `AbstractCouchbaseConfiguration`.
 
 [[template.ops]]
 == Supported operations
 
-The template can be accessed through the `couchbaseTemplate` bean out of your context.
+The template can be accessed through the `couchbaseTemplate`  and `reactiveCouchbaseTemplate` beans out of your context.
 Once you've got a reference to it, you can run all kinds of operations against it.
 Other than through a repository, in a template you need to always specify the target entity type which you want to get converted.
 
-To mutate documents, you'll find `save`, `insert` and `update` methods exposed.
-Saving will insert or update the document, insert will fail if it has been created already and update only works against documents that have already been created.
+The templates use a fluent-style API which allows you to chain in optional operators as needed. As an example, here is
+how you store a user and then find it again by its ID:
 
-Since Couchbase Server has different levels of persistence (by default you'll get a positive response if it has been acknowledged in the managed cache), you can provide higher durability options through the overloaded `PersistTo` and/or `ReplicateTo` options.
-The behaviour is part of the Couchbase Java SDK, please refer to the official documentation for more details.
-
-Removing documents through the `remove` methods works exactly the same.
-
-If you want to load documents, you can do that through the `findById` method, which is the fastest and if possible your tool of choice.
-The find methods for views are `findByView` which converts it into the target entity, but also `queryView` which exposes lower level semantics.
-Similarly, find methods using N1QL are provided in `findByN1QL` and `queryN1QL`.
-Additionally, since N1QL allows you to select specific fields in documents (or even across documents using joins), `findByN1QLProjection` will allow you to skip full `Document` conversion and map these fields to an ad-hoc class.
-
-WARNING: If it is detected at runtime that the cluster doesn't support N1QL, these methods will throw a `UnsupportedCouchbaseFeatureException`.
-
-If you really need low-level semantics, the `couchbaseBucket` is also always in scope through `getCouchbaseBucket()`.
-
-[[couchbase.template.xml]]
-== Xml Configuration
-
-The template can be configured via xml, including setting a custom `TranslationService`.
-
-.XML Based Template Declaration
+.Fluent template access
 ====
-[source,xml]
+[source,java]
 ----
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:couchbase="http://www.springframework.org/schema/data/couchbase"
-       xsi:schemaLocation="http://www.springframework.org/schema/data/couchbase https://www.springframework.org/schema/data/couchbase/spring-couchbase.xsd
-		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+// Create an Entity
+User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 
-    <couchbase:env/>
-    <couchbase:cluster/>
-    <couchbase:clusterInfo/>
-    <couchbase:bucket/>
+// Upsert it
+couchbaseTemplate.upsertById(User.class).one(user);
 
-    <couchbase:template translation-service-ref="myCustomTranslationService"/>
-
-    <bean id="myCustomTranslationService" class="org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService"/>
-
-</beans>
+// Retrieve it again
+User found = couchbaseTemplate.findById(User.class).one(user.getId());
 ----
 ====
 
-NOTE: In the example above most tags assume their default values, that is a localhost cluster and bucket "default".
-In production you would have to also provide specifics to these tags.
+If you wanted to use a custom durability requirement for the `upsert` operation you can chain it in:
 
+.Upsert with durability
+====
+[source,java]
+----
+User modified = couchbaseTemplate
+  .upsertById(User.class)
+  .withDurability(DurabilityLevel.MAJORITY)
+  .one(user);
+----
+====
+
+In a similar fashion, you can perform a N1QL operation:
+
+.N1QL query on the template
+====
+[source,java]
+----
+final List<User> foundUsers = couchbaseTemplate
+  .findByQuery(User.class)
+  .consistentWith(QueryScanConsistency.REQUEST_PLUS)
+  .all();
+----
+====
