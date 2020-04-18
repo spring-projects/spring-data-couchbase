@@ -14,51 +14,45 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core;
+package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMapper;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.domain.Hotel;
+import org.springframework.data.couchbase.domain.ReactiveHotelRepository;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.java.kv.GetResult;
+@SpringJUnitConfig(ReactiveCouchbaseRepositoryKeyValueIntegrationTests.Config.class)
+public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
-@SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
-public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
-
-	private static final String CUSTOM_TYPE_KEY = "javaClass";
-
-	@Autowired private CouchbaseOperations operations;
-
-	@Autowired private CouchbaseClientFactory clientFactory;
+	@Autowired
+	ReactiveHotelRepository reactiveHotelRepository;
 
 	@Test
-	void saveSimpleEntityCorrectlyWithDifferentTypeKey() {
-		clientFactory.getBucket().waitUntilReady(Duration.ofSeconds(5));
+	void saveAndFindById() {
+		Hotel user = new Hotel(UUID.randomUUID().toString(), "f");
 
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		User modified = operations.upsertById(User.class).one(user);
-		assertEquals(user, modified);
+		assertFalse(reactiveHotelRepository.existsById(user.getId()).block());
 
-		GetResult getResult = clientFactory.getCollection(null).get(user.getId());
-		assertEquals("org.springframework.data.couchbase.domain.User",
-				getResult.contentAsObject().getString(CUSTOM_TYPE_KEY));
-		assertFalse(getResult.contentAsObject().containsKey(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY));
+		/*reactiveUserRepository.save(user);
+
+		Optional<User> found = reactiveUserRepository.findById(user.getId()).blockOptional();
+		assertTrue(found.isPresent());
+		found.ifPresent(u -> assertEquals(user, u));
+
+		assertTrue(reactiveUserRepository.existsById(user.getId()).block());*/
 	}
 
 	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override
@@ -79,11 +73,6 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 		@Override
 		public String getBucketName() {
 			return bucketName();
-		}
-
-		@Override
-		public String typeKey() {
-			return CUSTOM_TYPE_KEY;
 		}
 
 	}

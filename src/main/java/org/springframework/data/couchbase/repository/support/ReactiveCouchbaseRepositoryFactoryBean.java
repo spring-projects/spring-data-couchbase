@@ -51,10 +51,10 @@ public class ReactiveCouchbaseRepositoryFactoryBean<T extends Repository<S, ID>,
 	 * @param reactiveCouchbaseOperations the reference to the operations template.
 	 */
 	public void setCouchbaseOperations(final ReactiveCouchbaseOperations reactiveCouchbaseOperations) {
-		setCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(reactiveCouchbaseOperations));
+		setReactiveCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(reactiveCouchbaseOperations));
 	}
 
-	public void setCouchbaseOperationsMapping(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
+	public void setReactiveCouchbaseOperationsMapping(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
 		this.couchbaseOperationsMapping = couchbaseOperationsMapping;
 		setMappingContext(couchbaseOperationsMapping.getMappingContext());
 	}

@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
@@ -44,6 +45,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 	@BeforeAll
 	static void beforeAll() {
 		couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
+		couchbaseClientFactory.getBucket().waitUntilReady(Duration.ofSeconds(10));
 	}
 
 	@AfterAll

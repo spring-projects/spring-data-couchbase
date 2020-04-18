@@ -109,7 +109,7 @@ public class ReactiveCouchbaseRepositoryConfigurationExtension extends Repositor
 	public void postProcess(BeanDefinitionBuilder builder, AnnotationRepositoryConfigurationSource config) {
 
 		builder.addDependsOn(BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING);
-		builder.addPropertyReference("couchbaseOperationsMapping", BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING);
+		builder.addPropertyReference("reactiveCouchbaseOperationsMapping", BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING);
 	}
 
 	/*

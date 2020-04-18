@@ -38,6 +38,7 @@ import org.springframework.data.couchbase.core.convert.translation.JacksonTransl
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -116,7 +117,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
-	@Bean
+	@Bean(name = BeanNames.COUCHBASE_OPERATIONS_MAPPING)
 	public RepositoryOperationsMapping couchbaseRepositoryOperationsMapping(CouchbaseTemplate couchbaseTemplate) {
 		// create a base mapping that associates all repositories to the default template
 		RepositoryOperationsMapping baseMapping = new RepositoryOperationsMapping(couchbaseTemplate);
@@ -132,6 +133,25 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param mapping the default mapping (will associate all repositories to the default template).
 	 */
 	protected void configureRepositoryOperationsMapping(RepositoryOperationsMapping mapping) {
+		// NO_OP
+	}
+
+	@Bean(name = BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING)
+	public ReactiveRepositoryOperationsMapping reactiveCouchbaseRepositoryOperationsMapping(ReactiveCouchbaseTemplate reactiveCouchbaseTemplate) {
+		// create a base mapping that associates all repositories to the default template
+		ReactiveRepositoryOperationsMapping baseMapping = new ReactiveRepositoryOperationsMapping(reactiveCouchbaseTemplate);
+		// let the user tune it
+		configureReactiveRepositoryOperationsMapping(baseMapping);
+		return baseMapping;
+	}
+
+	/**
+	 * In order to customize the mapping between repositories/entity types to couchbase templates, use the provided
+	 * mapping's api (eg. in order to have different buckets backing different repositories).
+	 *
+	 * @param mapping the default mapping (will associate all repositories to the default template).
+	 */
+	protected void configureReactiveRepositoryOperationsMapping(ReactiveRepositoryOperationsMapping mapping) {
 		// NO_OP
 	}
 
