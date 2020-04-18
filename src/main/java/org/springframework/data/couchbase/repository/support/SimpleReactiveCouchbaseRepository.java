@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -55,18 +56,20 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	 */
 	private final CouchbaseEntityInformation<T, String> entityInformation;
 
+	private CrudMethodMetadata crudMethodMetadata;
+
 	/**
 	 * Create a new Repository.
 	 *
-	 * @param metadata the Metadata for the entity.
+	 * @param entityInformation the Metadata for the entity.
 	 * @param operations the reference to the reactive template used.
 	 */
-	public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> metadata,
+	public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> entityInformation,
 			final ReactiveCouchbaseOperations operations) {
-		Assert.notNull(operations, "RxJavaCouchbaseOperations must not be null!");
-		Assert.notNull(metadata, "CouchbaseEntityInformation must not be null!");
+		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
+		Assert.notNull(entityInformation, "CouchbaseEntityInformation must not be null!");
 
-		this.entityInformation = metadata;
+		this.entityInformation = entityInformation;
 		this.operations = operations;
 	}
 
@@ -195,13 +198,25 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 		return entityInformation;
 	}
 
-	@Override
-	public ReactiveCouchbaseOperations getReactiveCouchbaseOperations() {
-		return operations;
+	private Flux<T> findAll(final Query query) {
+		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency()).matching(query).all();
 	}
 
-	private Flux<T> findAll(final Query query) {
-		return operations.findByQuery(entityInformation.getJavaType()).matching(query).all();
+	private QueryScanConsistency buildQueryScanConsistency() {
+		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		if (crudMethodMetadata.getScanConsistency() != null) {
+			scanConsistency = crudMethodMetadata.getScanConsistency().query();
+		}
+		return scanConsistency;
+	}
+
+	/**
+	 * Setter for the repository metadata, contains annotations on the overidden methods.
+	 *
+	 * @param crudMethodMetadata the injected repository metadata.
+	 */
+	void setRepositoryMethodMetadata(final CrudMethodMetadata crudMethodMetadata) {
+		this.crudMethodMetadata = crudMethodMetadata;
 	}
 
 }

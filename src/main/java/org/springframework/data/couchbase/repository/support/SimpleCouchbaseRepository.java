@@ -153,11 +153,6 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 		return new PageImpl<>(results, pageable, count());
 	}
 
-	@Override
-	public CouchbaseOperations getCouchbaseOperations() {
-		return couchbaseOperations;
-	}
-
 	/**
 	 * Returns the information for the underlying template.
 	 *

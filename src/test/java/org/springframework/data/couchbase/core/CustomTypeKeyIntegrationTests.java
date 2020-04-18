@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,8 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 
 	@Test
 	void saveSimpleEntityCorrectlyWithDifferentTypeKey() {
+		clientFactory.getBucket().waitUntilReady(Duration.ofSeconds(5));
+
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User modified = operations.upsertById(User.class).one(user);
 		assertEquals(user, modified);

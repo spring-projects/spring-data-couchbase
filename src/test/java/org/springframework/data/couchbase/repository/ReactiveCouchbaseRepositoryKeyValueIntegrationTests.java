@@ -25,37 +25,38 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.ReactiveUserRepository;
 import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-@SpringJUnitConfig(CouchbaseRepositoryKeyValueIntegrationTests.Config.class)
+@SpringJUnitConfig(ReactiveCouchbaseRepositoryKeyValueIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
+public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired UserRepository userRepository;
+	@Autowired
+	ReactiveUserRepository userRepository;
 
 	@Test
 	void saveAndFindById() {
 		User user = new User(UUID.randomUUID().toString(), "f", "l");
 
-		assertFalse(userRepository.existsById(user.getId()));
+		assertFalse(userRepository.existsById(user.getId()).block());
 
-		userRepository.save(user);
+		userRepository.save(user).block();
 
-		Optional<User> found = userRepository.findById(user.getId());
+		Optional<User> found = userRepository.findById(user.getId()).blockOptional();
 		assertTrue(found.isPresent());
 		found.ifPresent(u -> assertEquals(user, u));
 
-		assertTrue(userRepository.existsById(user.getId()));
+		assertTrue(userRepository.existsById(user.getId()).block());
 	}
 
 	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override

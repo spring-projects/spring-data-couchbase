@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.repository.NoRepositoryBean;
+package org.springframework.data.couchbase.domain;
+
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
+import org.springframework.stereotype.Repository;
 
-/**
- * @author Subhashni Balakrishnan
- * @since 3.0
- */
-@NoRepositoryBean
-public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepository<T, ID> {
+import com.couchbase.client.java.query.QueryScanConsistency;
+import reactor.core.publisher.Flux;
+
+@Repository
+public interface ReactiveAirportRepository extends ReactiveSortingRepository<Airport, String> {
+
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<Airport> findAll();
+
+	Flux<Airport> findAllByIata(String iata);
 
 }

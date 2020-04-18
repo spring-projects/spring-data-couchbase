@@ -47,8 +47,8 @@ public @interface EnableReactiveCouchbaseRepositories {
 
 	/**
 	 * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
-	 * {@code @EnableCouchbaseRepositories("org.my.pkg")} instead of
-	 * {@code @EnableCouchbaseRepositories(basePackages="org.my.pkg")}.
+	 * {@code @EnableReactiveCouchbaseRepositories("org.my.pkg")} instead of
+	 * {@code @EnableReactiveCouchbaseRepositories(basePackages="org.my.pkg")}.
 	 */
 	String[] value() default {};
 
@@ -119,6 +119,6 @@ public @interface EnableReactiveCouchbaseRepositories {
 	 *
 	 * @return
 	 */
-	String couchbaseTemplateRef() default BeanNames.COUCHBASE_TEMPLATE;
+	String couchbaseTemplateRef() default BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 }
