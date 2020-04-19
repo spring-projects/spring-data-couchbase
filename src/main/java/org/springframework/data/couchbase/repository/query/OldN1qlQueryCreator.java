@@ -91,7 +91,7 @@ public class OldN1qlQueryCreator extends AbstractQueryCreator<N1QLExpression, N1
 	private final AtomicInteger position;
 
 	public OldN1qlQueryCreator(PartTree tree, ParameterAccessor parameters, N1QLExpression selectFrom,
-														 CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
+			CouchbaseConverter converter, CouchbaseQueryMethod queryMethod) {
 		super(tree, parameters);
 		this.selectFrom = selectFrom;
 		this.converter = converter;

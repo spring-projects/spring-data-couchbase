@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,6 +32,8 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -199,7 +200,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	private Flux<T> findAll(final Query query) {
-		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency()).matching(query).all();
+		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+				.matching(query).all();
 	}
 
 	private QueryScanConsistency buildQueryScanConsistency() {

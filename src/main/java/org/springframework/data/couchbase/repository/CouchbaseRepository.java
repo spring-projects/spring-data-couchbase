@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.List;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.PagingAndSortingRepository;

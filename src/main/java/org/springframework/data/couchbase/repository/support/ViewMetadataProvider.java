@@ -24,11 +24,11 @@ import org.springframework.data.couchbase.core.query.View;
  */
 public interface ViewMetadataProvider {
 
-  /**
-   * Returns the {@link View} to be used.
-   *
-   * @return the View, or null if the method hasn't been annotated with @View.
-   */
-  View getView();
+	/**
+	 * Returns the {@link View} to be used.
+	 *
+	 * @return the View, or null if the method hasn't been annotated with @View.
+	 */
+	View getView();
 
 }

@@ -15,26 +15,24 @@
  */
 package org.springframework.data.couchbase.core.index;
 
-import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.Cluster;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexResolver.IndexDefinitionHolder;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.context.MappingContextEvent;
-import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexResolver.IndexDefinitionHolder;
-import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.Cluster;
 
 public class CouchbasePersistentEntityIndexCreator implements ApplicationListener<MappingContextEvent<?, ?>> {
 
@@ -46,7 +44,7 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 	private final CouchbaseOperations couchbaseOperations;
 
 	public CouchbasePersistentEntityIndexCreator(final CouchbaseMappingContext mappingContext,
-																							 final CouchbaseOperations operations) {
+			final CouchbaseOperations operations) {
 		this.mappingContext = mappingContext;
 		this.couchbaseOperations = operations;
 		this.indexResolver = QueryIndexResolver.create(mappingContext, operations);
@@ -85,8 +83,9 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 
 			for (IndexDefinition indexDefinition : indexResolver.resolveIndexFor(entity.getTypeInformation())) {
 				IndexDefinitionHolder indexToCreate = indexDefinition instanceof IndexDefinitionHolder
-					? (IndexDefinitionHolder) indexDefinition
-					: new IndexDefinitionHolder(indexDefinition.getIndexFields(), indexDefinition.getIndexName(), indexDefinition.getIndexPredicate());
+						? (IndexDefinitionHolder) indexDefinition
+						: new IndexDefinitionHolder(indexDefinition.getIndexFields(), indexDefinition.getIndexName(),
+								indexDefinition.getIndexPredicate());
 
 				createIndex(indexToCreate);
 			}
@@ -96,13 +95,9 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 	private void createIndex(final IndexDefinitionHolder indexToCreate) {
 		Cluster cluster = couchbaseOperations.getCouchbaseClientFactory().getCluster();
 
-		StringBuilder statement = new StringBuilder("CREATE INDEX ")
-			.append(indexToCreate.getIndexName())
-			.append(" ON `")
-			.append(couchbaseOperations.getBucketName())
-			.append("` (")
-			.append(String.join(",", indexToCreate.getIndexFields()))
-			.append(")");
+		StringBuilder statement = new StringBuilder("CREATE INDEX ").append(indexToCreate.getIndexName()).append(" ON `")
+				.append(couchbaseOperations.getBucketName()).append("` (")
+				.append(String.join(",", indexToCreate.getIndexFields())).append(")");
 
 		if (indexToCreate.getIndexPredicate() != null && !indexToCreate.getIndexPredicate().isEmpty()) {
 			statement.append(" WHERE ").append(indexToCreate.getIndexPredicate());
@@ -114,8 +109,8 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 			// ignored on purpose, rest is propagated
 			LOGGER.debug("Index \"" + indexToCreate.getIndexName() + "\" already exists, ignoring.");
 		} catch (Exception ex) {
-			throw new DataIntegrityViolationException("Could not auto-create index with statement: "
-				+ statement.toString(), ex);
+			throw new DataIntegrityViolationException("Could not auto-create index with statement: " + statement.toString(),
+					ex);
 		}
 	}
 

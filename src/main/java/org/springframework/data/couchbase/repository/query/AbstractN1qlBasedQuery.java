@@ -97,7 +97,7 @@ public abstract class AbstractN1qlBasedQuery implements RepositoryQuery {
 		if (queryMethod.hasConsistencyAnnotation()) {
 		  return queryMethod.getConsistencyAnnotation().value();
 		}
-
+		
 		return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
 	}
 

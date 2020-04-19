@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.core.index;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Jon Brisbin <jbrisbin@vmware.com>

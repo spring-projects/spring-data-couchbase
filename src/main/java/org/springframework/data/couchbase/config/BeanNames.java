@@ -16,12 +16,6 @@
 
 package org.springframework.data.couchbase.config;
 
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-
 /**
  * Contains default bean names for Couchbase beans. These are the names of the beans used by Spring Data Couchbase,
  * unless an explicit id is given to the bean either in the xml configuration or the

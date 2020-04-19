@@ -16,20 +16,20 @@
 
 package org.springframework.data.couchbase;
 
-import com.couchbase.client.core.env.OwnedSupplier;
-import com.couchbase.client.java.env.ClusterEnvironment;
+import java.util.function.Supplier;
+
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 
 import com.couchbase.client.core.env.Authenticator;
+import com.couchbase.client.core.env.OwnedSupplier;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-
-import java.util.function.Supplier;
+import com.couchbase.client.java.env.ClusterEnvironment;
 
 public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
@@ -45,19 +45,24 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 			final String bucketName, final String scopeName) {
-		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))), bucketName, scopeName);
+		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))),
+				bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-																			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
-		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))), bucketName, scopeName);
+			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
+		this(
+				new OwnedSupplier<>(
+						Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))),
+				bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
 		this(() -> cluster, bucketName, scopeName);
 	}
 
-	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName, final String scopeName) {
+	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName,
+			final String scopeName) {
 		this.cluster = cluster;
 		this.bucket = cluster.get().bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);

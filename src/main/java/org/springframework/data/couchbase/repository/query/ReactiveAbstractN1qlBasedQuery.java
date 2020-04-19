@@ -15,12 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import reactor.core.publisher.Flux;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;

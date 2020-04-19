@@ -15,11 +15,11 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.query.QueryCriteria;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;

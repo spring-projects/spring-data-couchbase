@@ -48,9 +48,9 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 	 * @param allowInFlightCacheCreation allow create unconfigured caches.
 	 */
 	private CouchbaseCacheManager(final CouchbaseCacheWriter cacheWriter,
-																final CouchbaseCacheConfiguration defaultCacheConfiguration,
-																final Map<String, CouchbaseCacheConfiguration> initialCacheConfiguration,
-																final boolean allowInFlightCacheCreation) {
+			final CouchbaseCacheConfiguration defaultCacheConfiguration,
+			final Map<String, CouchbaseCacheConfiguration> initialCacheConfiguration,
+			final boolean allowInFlightCacheCreation) {
 
 		Assert.notNull(cacheWriter, "CacheWriter must not be null!");
 		Assert.notNull(defaultCacheConfiguration, "DefaultCacheConfiguration must not be null!");
@@ -70,7 +70,7 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 	public static CouchbaseCacheManager create(CouchbaseClientFactory clientFactory) {
 		Assert.notNull(clientFactory, "ConnectionFactory must not be null!");
 		return new CouchbaseCacheManager(new DefaultCouchbaseCacheWriter(clientFactory),
-			CouchbaseCacheConfiguration.defaultCacheConfig(), new LinkedHashMap<>(), true);
+				CouchbaseCacheConfiguration.defaultCacheConfig(), new LinkedHashMap<>(), true);
 	}
 
 	/**
@@ -126,10 +126,10 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 	public static class CouchbaseCacheManagerBuilder {
 
 		private final CouchbaseCacheWriter cacheWriter;
-		private CouchbaseCacheConfiguration defaultCacheConfiguration = CouchbaseCacheConfiguration.defaultCacheConfig();
 		private final Map<String, CouchbaseCacheConfiguration> initialCaches = new LinkedHashMap<>();
-		private boolean enableTransactions;
 		boolean allowInFlightCacheCreation = true;
+		private CouchbaseCacheConfiguration defaultCacheConfiguration = CouchbaseCacheConfiguration.defaultCacheConfig();
+		private boolean enableTransactions;
 
 		private CouchbaseCacheManagerBuilder(CouchbaseCacheWriter cacheWriter) {
 			this.cacheWriter = cacheWriter;
@@ -170,7 +170,8 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 		}
 
 		/**
-		 * Enable {@link CouchbaseCache}s to synchronize cache put/evict operations with ongoing Spring-managed transactions.
+		 * Enable {@link CouchbaseCache}s to synchronize cache put/evict operations with ongoing Spring-managed
+		 * transactions.
 		 *
 		 * @return this {@link CouchbaseCacheManagerBuilder}.
 		 */
@@ -200,11 +201,11 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 		 * @return this {@link CouchbaseCacheManagerBuilder}.
 		 */
 		public CouchbaseCacheManagerBuilder withInitialCacheConfigurations(
-			Map<String, CouchbaseCacheConfiguration> cacheConfigurations) {
+				Map<String, CouchbaseCacheConfiguration> cacheConfigurations) {
 
 			Assert.notNull(cacheConfigurations, "CacheConfigurations must not be null!");
 			cacheConfigurations.forEach((cacheName, configuration) -> Assert.notNull(configuration,
-				String.format("CouchbaseCacheConfiguration for cache %s must not be null!", cacheName)));
+					String.format("CouchbaseCacheConfiguration for cache %s must not be null!", cacheName)));
 
 			this.initialCaches.putAll(cacheConfigurations);
 			return this;
@@ -216,7 +217,7 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 		 * @return this {@link CouchbaseCacheManagerBuilder}.
 		 */
 		public CouchbaseCacheManagerBuilder withCacheConfiguration(String cacheName,
-																													 CouchbaseCacheConfiguration cacheConfiguration) {
+				CouchbaseCacheConfiguration cacheConfiguration) {
 
 			Assert.notNull(cacheName, "CacheName must not be null!");
 			Assert.notNull(cacheConfiguration, "CacheConfiguration must not be null!");
@@ -267,7 +268,7 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 		 */
 		public CouchbaseCacheManager build() {
 			CouchbaseCacheManager cm = new CouchbaseCacheManager(cacheWriter, defaultCacheConfiguration, initialCaches,
-				allowInFlightCacheCreation);
+					allowInFlightCacheCreation);
 			cm.setTransactionAware(enableTransactions);
 			return cm;
 		}

@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.ProxyFactory;
@@ -26,91 +30,87 @@ import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * {@link RepositoryProxyPostProcessor} that sets up an interceptor to read {@link View} information from the
- * invoked method. This is necessary to allow redeclaration of CRUD methods in repository interfaces and configure
- * view information on them.
+ * {@link RepositoryProxyPostProcessor} that sets up an interceptor to read {@link View} information from the invoked
+ * method. This is necessary to allow redeclaration of CRUD methods in repository interfaces and configure view
+ * information on them.
  *
  * @author David Harrigan
  * @author Oliver Gierke
  */
 public enum ViewPostProcessor implements RepositoryProxyPostProcessor {
 
-  INSTANCE;
+	INSTANCE;
 
-  private static final ThreadLocal<Map<Object, Object>> VIEW_METADATA = new NamedThreadLocal<Map<Object, Object>>("View Metadata");
+	private static final ThreadLocal<Map<Object, Object>> VIEW_METADATA = new NamedThreadLocal<Map<Object, Object>>(
+			"View Metadata");
 
-  /* 
-   * (non-Javadoc)
-   * @see org.springframework.data.repository.core.support.RepositoryProxyPostProcessor#postProcess(org.springframework.aop.framework.ProxyFactory, org.springframework.data.repository.core.RepositoryInformation)
-   */
-  @Override
-  public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
-  	
-    factory.addAdvice(ExposeInvocationInterceptor.INSTANCE);
-    factory.addAdvice(ViewInterceptor.INSTANCE);
-  }
+	/* 
+	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.core.support.RepositoryProxyPostProcessor#postProcess(org.springframework.aop.framework.ProxyFactory, org.springframework.data.repository.core.RepositoryInformation)
+	 */
+	@Override
+	public void postProcess(ProxyFactory factory, RepositoryInformation repositoryInformation) {
 
-  public ViewMetadataProvider getViewMetadataProvider() {
-    return ThreadBoundViewMetadata.INSTANCE;
-  }
+		factory.addAdvice(ExposeInvocationInterceptor.INSTANCE);
+		factory.addAdvice(ViewInterceptor.INSTANCE);
+	}
 
-  /**
-   * {@link MethodInterceptor} to inspect the currently invoked {@link Method} for a {@link View} annotation.
-   * <p/>
-   * If a View annotation is found, it will bind it to a locally held ThreadLocal for later lookup in the
-   * SimpleCouchbaseRepository class.
-   *
-   * @author David Harrigan.
-   */
-  static enum ViewInterceptor implements MethodInterceptor {
+	public ViewMetadataProvider getViewMetadataProvider() {
+		return ThreadBoundViewMetadata.INSTANCE;
+	}
 
-    INSTANCE;
+	/**
+	 * {@link MethodInterceptor} to inspect the currently invoked {@link Method} for a {@link View} annotation.
+	 * <p/>
+	 * If a View annotation is found, it will bind it to a locally held ThreadLocal for later lookup in the
+	 * SimpleCouchbaseRepository class.
+	 *
+	 * @author David Harrigan.
+	 */
+	static enum ViewInterceptor implements MethodInterceptor {
 
-    @Override
-    public Object invoke(final MethodInvocation invocation) throws Throwable {
+		INSTANCE;
 
-      final View view = AnnotationUtils.getAnnotation(invocation.getMethod(), View.class);
-      if (view != null) {
-        Map<Object, Object> map = VIEW_METADATA.get();
-        if (map == null) {
-          map = new HashMap<Object, Object>();
-          VIEW_METADATA.set(map);
-        }
-        map.put(invocation.getMethod(), view);
-      }
-      try {
-        return invocation.proceed();
-      } finally {
-        VIEW_METADATA.remove();
-      }
+		@Override
+		public Object invoke(final MethodInvocation invocation) throws Throwable {
 
-    }
+			final View view = AnnotationUtils.getAnnotation(invocation.getMethod(), View.class);
+			if (view != null) {
+				Map<Object, Object> map = VIEW_METADATA.get();
+				if (map == null) {
+					map = new HashMap<Object, Object>();
+					VIEW_METADATA.set(map);
+				}
+				map.put(invocation.getMethod(), view);
+			}
+			try {
+				return invocation.proceed();
+			} finally {
+				VIEW_METADATA.remove();
+			}
 
-  }
+		}
 
-  /**
-   * {@link ViewMetadataProvider} that looks up a bound View from a locally held ThreadLocal, using
-   * the current method invocationas as the key. If not bound View is found, a null is returned.
-   *
-   * @author David Harrigan.
-   */
-  private static enum ThreadBoundViewMetadata implements ViewMetadataProvider {
+	}
 
-    INSTANCE;
+	/**
+	 * {@link ViewMetadataProvider} that looks up a bound View from a locally held ThreadLocal, using the current method
+	 * invocationas as the key. If not bound View is found, a null is returned.
+	 *
+	 * @author David Harrigan.
+	 */
+	private static enum ThreadBoundViewMetadata implements ViewMetadataProvider {
 
-    @Override
-    public View getView() {
-      final MethodInvocation invocation = ExposeInvocationInterceptor.currentInvocation();
-      final Map<Object, Object> map = VIEW_METADATA.get();
-      return (map == null) ? null : (View) map.get(invocation.getMethod());
-    }
+		INSTANCE;
 
-  }
+		@Override
+		public View getView() {
+			final MethodInvocation invocation = ExposeInvocationInterceptor.currentInvocation();
+			final Map<Object, Object> map = VIEW_METADATA.get();
+			return (map == null) ? null : (View) map.get(invocation.getMethod());
+		}
 
+	}
 
 }

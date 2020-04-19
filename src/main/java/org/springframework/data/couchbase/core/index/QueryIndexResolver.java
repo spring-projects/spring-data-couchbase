@@ -42,8 +42,8 @@ public interface QueryIndexResolver {
 	 * @since 2.2
 	 */
 	static QueryIndexResolver create(
-		MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
-		CouchbaseOperations operations) {
+			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
+			CouchbaseOperations operations) {
 		Assert.notNull(mappingContext, "CouchbaseMappingContext must not be null!");
 		return new CouchbasePersistentEntityIndexResolver(mappingContext, operations);
 	}

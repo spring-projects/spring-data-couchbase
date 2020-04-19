@@ -1,8 +1,12 @@
 package org.springframework.data.couchbase.repository.query;
 
+import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+
+import java.util.Iterator;
+
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
@@ -11,17 +15,13 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
-import java.util.Iterator;
-
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
-
 public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 
 	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor,
-							final MappingContext<?, CouchbasePersistentProperty> context) {
+			final MappingContext<?, CouchbasePersistentProperty> context) {
 		super(tree, accessor);
 		this.accessor = accessor;
 		this.context = context;
@@ -57,13 +57,13 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	}
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
-							   final Iterator<Object> parameters) {
+			final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
-/*
-        NEAR(new String[]{"IsNear", "Near"}),
-        WITHIN(new String[]{"IsWithin", "Within"}),
- */
+		/*
+		    NEAR(new String[]{"IsNear", "Near"}),
+		    WITHIN(new String[]{"IsWithin", "Within"}),
+		 */
 		switch (type) {
 			case GREATER_THAN:
 			case AFTER:

@@ -153,8 +153,8 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
-	 * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation
-	 * found nor the attribute was specified.
+	 * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation found
+	 * nor the attribute was specified.
 	 *
 	 * @return the query statement if present.
 	 */

@@ -25,10 +25,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
-import org.springframework.data.couchbase.repository.query.PartTreeN1qlBasedQuery;
-import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -161,9 +158,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
 			/*CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 			String namedQueryName = queryMethod.getNamedQueryName();
-
+			
 			if (queryMethod.hasN1qlAnnotation()) {
-
+			
 				if (queryMethod.hasInlineN1qlQuery()) {
 					return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations,
 							SPEL_PARSER, evaluationContextProvider);
@@ -172,9 +169,9 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 					return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations, SPEL_PARSER,
 							evaluationContextProvider);
 				}
-
+			
 			}
-
+			
 			return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);*/
 		}
 	}

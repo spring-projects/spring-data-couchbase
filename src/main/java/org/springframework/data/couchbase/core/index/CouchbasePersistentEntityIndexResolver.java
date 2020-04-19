@@ -15,6 +15,11 @@
  */
 package org.springframework.data.couchbase.core.index;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -27,21 +32,14 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolver {
 
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final CouchbaseOperations operations;
 
 	public CouchbasePersistentEntityIndexResolver(
-		final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
-		CouchbaseOperations operations) {
+			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
+			CouchbaseOperations operations) {
 		this.mappingContext = mappingContext;
 		this.operations = operations;
 	}
@@ -55,29 +53,27 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 		Assert.notNull(root, "CouchbasePersistentEntity must not be null!");
 		Document document = root.findAnnotation(Document.class);
 		Assert.notNull(document, () -> String
-			.format("Entity %s is not a collection root. Make sure to annotate it with @Document!", root.getName()));
+				.format("Entity %s is not a collection root. Make sure to annotate it with @Document!", root.getName()));
 
 		List<IndexDefinitionHolder> indexInformation = new ArrayList<>();
 
 		root.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) property -> this
-			.potentiallyAddIndexForProperty(root, property, indexInformation));
+				.potentiallyAddIndexForProperty(root, property, indexInformation));
 
 		return indexInformation;
 	}
 
 	private void potentiallyAddIndexForProperty(final CouchbasePersistentEntity<?> root,
-																							final CouchbasePersistentProperty persistentProperty,
-																							final List<IndexDefinitionHolder> indexes) {
+			final CouchbasePersistentProperty persistentProperty, final List<IndexDefinitionHolder> indexes) {
 		List<IndexDefinitionHolder> indexDefinitions = createIndexDefinitionHolderForProperty(
-			persistentProperty.getFieldName(), root, persistentProperty);
+				persistentProperty.getFieldName(), root, persistentProperty);
 		if (!indexDefinitions.isEmpty()) {
 			indexes.addAll(indexDefinitions);
 		}
 	}
 
 	private List<IndexDefinitionHolder> createIndexDefinitionHolderForProperty(final String dotPath,
-																																						 final CouchbasePersistentEntity<?> persistentEntity,
-																																						 final CouchbasePersistentProperty persistentProperty) {
+			final CouchbasePersistentEntity<?> persistentEntity, final CouchbasePersistentProperty persistentProperty) {
 
 		List<IndexDefinitionHolder> indices = new ArrayList<>();
 
@@ -86,7 +82,7 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 		}
 
 		if (persistentEntity.isAnnotationPresent(CompositeQueryIndex.class)
-			|| persistentEntity.isAnnotationPresent(CompositeQueryIndexes.class)) {
+				|| persistentEntity.isAnnotationPresent(CompositeQueryIndexes.class)) {
 			indices.addAll(createCompositeQueryIndexDefinitions(persistentEntity, persistentProperty));
 		}
 
@@ -95,7 +91,7 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 
 	@Nullable
 	protected IndexDefinitionHolder createFieldQueryIndexDefinition(final CouchbasePersistentEntity<?> entity,
-																														 			final CouchbasePersistentProperty property) {
+			final CouchbasePersistentProperty property) {
 		QueryIndexed index = property.findAnnotation(QueryIndexed.class);
 		if (index == null) {
 			return null;
@@ -113,7 +109,7 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 	}
 
 	protected List<IndexDefinitionHolder> createCompositeQueryIndexDefinitions(final CouchbasePersistentEntity<?> entity,
-																																						 final CouchbasePersistentProperty property) {
+			final CouchbasePersistentProperty property) {
 
 		List<CompositeQueryIndex> indexAnnotations = new ArrayList<>();
 
@@ -128,33 +124,21 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 
 		String predicate = getPredicate(entityInfo);
 
-
-		return indexAnnotations
-			.stream()
-			.map(ann -> {
-				List<String> fields = Arrays.asList(ann.fields());
-				String fieldsIndexName = String
-					.join("_", fields)
-					.toLowerCase()
-					.replace(" ", "")
-					.replace("asc", "")
+		return indexAnnotations.stream().map(ann -> {
+			List<String> fields = Arrays.asList(ann.fields());
+			String fieldsIndexName = String.join("_", fields).toLowerCase().replace(" ", "").replace("asc", "")
 					.replace("desc", "");
 
-				String indexName = "idx_"
-					+ StringUtils.uncapitalize(entity.getType().getSimpleName())
-					+ "_"
-					+ fieldsIndexName;
-				return new IndexDefinitionHolder(fields, indexName, predicate);
-			})
-			.collect(Collectors.toList());
+			String indexName = "idx_" + StringUtils.uncapitalize(entity.getType().getSimpleName()) + "_" + fieldsIndexName;
+			return new IndexDefinitionHolder(fields, indexName, predicate);
+		}).collect(Collectors.toList());
 	}
 
 	private String getPredicate(final MappingCouchbaseEntityInformation<?, Object> entityInfo) {
 		String typeKey = operations.getConverter().getTypeKey();
 		String typeValue = entityInfo.getJavaType().getName();
-		return "`" + typeKey + "` = \"" +  typeValue + "\"";
+		return "`" + typeKey + "` = \"" + typeValue + "\"";
 	}
-
 
 	public static class IndexDefinitionHolder implements IndexDefinition {
 

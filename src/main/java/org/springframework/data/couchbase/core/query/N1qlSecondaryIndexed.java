@@ -24,23 +24,23 @@ import java.lang.annotation.Target;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 
 /**
- * This annotation is targeted at {@link CouchbaseRepository Repository} interfaces, indicating that
- * the framework should ensure a N1QL Secondary Index is present when the repository is instantiated.
+ * This annotation is targeted at {@link CouchbaseRepository Repository} interfaces, indicating that the framework
+ * should ensure a N1QL Secondary Index is present when the repository is instantiated.
  * <p/>
- * Said index will relate to the "type" field (the one bearing type information) and restrict on documents
- * that match the repository's entity class.
+ * Said index will relate to the "type" field (the one bearing type information) and restrict on documents that match
+ * the repository's entity class.
  * <p/>
  * Be sure to also use {@link N1qlPrimaryIndexed} to make sure the PRIMARY INDEX is there as well.
  *
  * @author Simon Baslé
  */
-@Target({ElementType.TYPE})
+@Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface N1qlSecondaryIndexed {
 
-  /**
-   * the name of the index to be created, in the repository's associated bucket namespace.
-   */
-  String indexName();
+	/**
+	 * the name of the index to be created, in the repository's associated bucket namespace.
+	 */
+	String indexName();
 
 }

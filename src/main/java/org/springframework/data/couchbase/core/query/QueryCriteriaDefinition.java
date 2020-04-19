@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.core.query;
 
-import org.springframework.lang.Nullable;
-
 /**
  * @author Oliver Gierke
  * @author Christoph Strobl

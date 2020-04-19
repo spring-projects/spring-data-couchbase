@@ -1,22 +1,21 @@
 package org.springframework.data.couchbase.repository.query;
 
-import java.util.List;
+import reactor.core.publisher.Flux;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
-import reactor.core.publisher.Flux;
 
 public class ReactiveN1qlRepositoryQueryExecutor {
 
 	private final ReactiveCouchbaseOperations operations;
 	private final QueryMethod queryMethod;
 
-	public ReactiveN1qlRepositoryQueryExecutor(final ReactiveCouchbaseOperations operations, final QueryMethod queryMethod) {
+	public ReactiveN1qlRepositoryQueryExecutor(final ReactiveCouchbaseOperations operations,
+			final QueryMethod queryMethod) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 	}

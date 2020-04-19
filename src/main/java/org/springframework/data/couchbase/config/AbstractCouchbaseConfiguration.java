@@ -16,11 +16,12 @@
 
 package org.springframework.data.couchbase.config;
 
+import static com.couchbase.client.java.ClusterOptions.*;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.couchbase.client.java.Cluster;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -49,10 +50,9 @@ import org.springframework.util.StringUtils;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
-
-import static com.couchbase.client.java.ClusterOptions.*;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -88,10 +88,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(destroyMethod = "disconnect")
 	public Cluster couchbaseCluster(ClusterEnvironment couchbaseClusterEnvironment) {
-		return Cluster.connect(
-			getConnectionString(),
-			clusterOptions(authenticator()).environment(couchbaseClusterEnvironment)
-		);
+		return Cluster.connect(getConnectionString(),
+				clusterOptions(authenticator()).environment(couchbaseClusterEnvironment));
 	}
 
 	@Bean(destroyMethod = "shutdown")
@@ -107,13 +105,13 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
+			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-																														 MappingCouchbaseConverter mappingCouchbaseConverter) {
+			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
@@ -137,9 +135,11 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_OPERATIONS_MAPPING)
-	public ReactiveRepositoryOperationsMapping reactiveCouchbaseRepositoryOperationsMapping(ReactiveCouchbaseTemplate reactiveCouchbaseTemplate) {
+	public ReactiveRepositoryOperationsMapping reactiveCouchbaseRepositoryOperationsMapping(
+			ReactiveCouchbaseTemplate reactiveCouchbaseTemplate) {
 		// create a base mapping that associates all repositories to the default template
-		ReactiveRepositoryOperationsMapping baseMapping = new ReactiveRepositoryOperationsMapping(reactiveCouchbaseTemplate);
+		ReactiveRepositoryOperationsMapping baseMapping = new ReactiveRepositoryOperationsMapping(
+				reactiveCouchbaseTemplate);
 		// let the user tune it
 		configureReactiveRepositoryOperationsMapping(baseMapping);
 		return baseMapping;
@@ -179,8 +179,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Determines the name of the field that will store the type information for complex types when using the
-	 * {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)}. Defaults
-	 * to {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
+	 * {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)}. Defaults to
+	 * {@value MappingCouchbaseConverter#TYPEKEY_DEFAULT}.
 	 *
 	 * @see MappingCouchbaseConverter#TYPEKEY_DEFAULT
 	 * @see MappingCouchbaseConverter#TYPEKEY_SYNCGATEWAY_COMPATIBLE
@@ -196,7 +196,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-																														 CouchbaseCustomConversions couchbaseCustomConversions) {
+			CouchbaseCustomConversions couchbaseCustomConversions) {
 		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
 		converter.setCustomConversions(couchbaseCustomConversions);
 		return converter;
@@ -234,8 +234,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * Configure whether to automatically create indices for domain types by deriving the
-	 * from the entity or not.
+	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.
 	 */
 	protected boolean autoIndexCreation() {
 		return false;

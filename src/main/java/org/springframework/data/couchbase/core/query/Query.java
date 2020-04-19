@@ -1,20 +1,18 @@
 package org.springframework.data.couchbase.core.query;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 public class Query {
 
+	private final List<QueryCriteria> criteria = new ArrayList<>();
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
-	private final List<QueryCriteria> criteria = new ArrayList<>();
 
 	public Query() {}
 
@@ -27,12 +25,12 @@ public class Query {
 		return this;
 	}
 
-		/**
-		 * Set number of documents to skip before returning results.
-		 *
-		 * @param skip
-		 * @return
-		 */
+	/**
+	 * Set number of documents to skip before returning results.
+	 *
+	 * @param skip
+	 * @return
+	 */
 	public Query skip(long skip) {
 		this.skip = skip;
 		return this;
@@ -125,6 +123,5 @@ public class Query {
 		appendSkipAndLimit(sb);
 		return sb.toString();
 	}
-
 
 }

@@ -24,14 +24,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-
-import com.couchbase.client.java.Collection;
 import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
+
+import com.couchbase.client.java.Collection;
 
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
 
@@ -42,7 +42,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this.clientFactory = clientFactory;
@@ -168,7 +167,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		String[] indexCreators = context.getBeanNamesForType(CouchbasePersistentEntityIndexCreator.class);
 
 		for (String creator : indexCreators) {
-			CouchbasePersistentEntityIndexCreator creatorBean = context.getBean(creator, CouchbasePersistentEntityIndexCreator.class);
+			CouchbasePersistentEntityIndexCreator creatorBean = context.getBean(creator,
+					CouchbasePersistentEntityIndexCreator.class);
 			if (creatorBean.isIndexCreatorFor(mappingContext)) {
 				return;
 			}

@@ -100,9 +100,9 @@ public class ReactiveRepositoryOperationsMapping {
 	}
 
 	/**
-	 * Given a repository interface and its domain type, resolves which {@link ReactiveCouchbaseOperations} it should be backed
-	 * with. Starts by looking for a direct mapping to the interface, then a common mapping for the domain type, then
-	 * falls back to the default CouchbaseOperations.
+	 * Given a repository interface and its domain type, resolves which {@link ReactiveCouchbaseOperations} it should be
+	 * backed with. Starts by looking for a direct mapping to the interface, then a common mapping for the domain type,
+	 * then falls back to the default CouchbaseOperations.
 	 *
 	 * @param repositoryInterface the repository's interface.
 	 * @param domainType the repository's domain type / entity.

@@ -65,8 +65,8 @@ public class StringBasedN1qlQueryParser {
 	 */
 	public static final String SPEL_ENTITY = "#" + SPEL_PREFIX + ".fields";
 	/**
-	 * Use this variable in a SpEL expression in a {@link Query @Query} annotation's inline statement WHERE clause.
-	 * This will be replaced by the expression allowing to only select documents matching the entity's class. Eg.
+	 * Use this variable in a SpEL expression in a {@link Query @Query} annotation's inline statement WHERE clause. This
+	 * will be replaced by the expression allowing to only select documents matching the entity's class. Eg.
 	 * <code>"SELECT * FROM test WHERE test = true AND #{{@value SPEL_FILTER}}"</code>.
 	 */
 	public static final String SPEL_FILTER = "#" + SPEL_PREFIX + ".filter";
@@ -97,6 +97,7 @@ public class StringBasedN1qlQueryParser {
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
+
 	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
 			CouchbaseConverter couchbaseConverter, String typeField, Class<?> typeValue) {
 		this.statement = statement;

@@ -1,13 +1,13 @@
 package org.springframework.data.couchbase.repository.query;
 
+import java.util.List;
+
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
-
-import java.util.List;
 
 public class N1qlRepositoryQueryExecutor {
 

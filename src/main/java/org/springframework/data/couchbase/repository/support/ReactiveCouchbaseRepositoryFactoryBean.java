@@ -54,7 +54,8 @@ public class ReactiveCouchbaseRepositoryFactoryBean<T extends Repository<S, ID>,
 		setReactiveCouchbaseOperationsMapping(new ReactiveRepositoryOperationsMapping(reactiveCouchbaseOperations));
 	}
 
-	public void setReactiveCouchbaseOperationsMapping(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
+	public void setReactiveCouchbaseOperationsMapping(
+			final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
 		this.couchbaseOperationsMapping = couchbaseOperationsMapping;
 		setMappingContext(couchbaseOperationsMapping.getMappingContext());
 	}
