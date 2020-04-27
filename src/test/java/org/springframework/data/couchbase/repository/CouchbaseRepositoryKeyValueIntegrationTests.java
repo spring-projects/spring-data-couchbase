@@ -47,20 +47,14 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	UserRepository userRepository;
 
 	@Test
-	//@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
 		User user = new User(UUID.randomUUID().toString(), "f", "l");
-		// existsByID currently fails when using mocked in integration.properties with status "UNKNOWN"
-		//assertFalse(userRepository.existsById(user.getId()));
-
 		userRepository.save(user);
 
 		Optional<User> found = userRepository.findById(user.getId());
 		assertTrue(found.isPresent());
 		found.ifPresent(u -> assertEquals(user, u));
 
-		// existsByID currently fails when using mocked in integration.properties with status "UNKNOWN"
-		//assertTrue(userRepository.existsById(user.getId()));
 		userRepository.delete(user);
 	}
 

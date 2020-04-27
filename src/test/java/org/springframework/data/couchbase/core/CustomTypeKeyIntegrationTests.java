@@ -32,8 +32,6 @@ import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMappe
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
-import org.springframework.data.couchbase.util.ClusterType;
-import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.kv.GetResult;
