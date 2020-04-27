@@ -37,6 +37,10 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
 
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
 
+	public AuditingEventListener() {
+		this.auditingHandlerFactory = null;
+	}
+
 	/**
 	 * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
 	 * provided by the given {@link ObjectFactory}.
