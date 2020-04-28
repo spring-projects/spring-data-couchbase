@@ -1,6 +1,13 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.0.RC2 (2020-04-28)
+-----------------------------------------
+* DATACOUCH-517 - Update SDK to 3.0.3.
+* DATACOUCH-516 - Use JDK 14 for Java.NEXT CI testing.
+* DATACOUCH-514 - Release 4.0 RC2 (Neumann).
+
+
 Changes in version 3.2.7.RELEASE (2020-04-28)
 ---------------------------------------------
 * DATACOUCH-523 - Upgrade to Couchbase Driver 2.7.14.
@@ -1028,6 +1035,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
