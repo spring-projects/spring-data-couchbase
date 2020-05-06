@@ -19,23 +19,51 @@ import java.util.Collection;
 
 public interface ExecutableFindByIdOperation {
 
+	/**
+	 * Loads a document from a bucket.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ExecutableFindById<T> findById(Class<T> domainType);
 
 	interface TerminatingFindById<T> {
 
+		/**
+		 * Finds one document based on the given ID.
+		 *
+		 * @param id the document ID.
+		 * @return the entity if found.
+		 */
 		T one(String id);
 
+		/**
+		 * Finds a list of documents based on the given IDs.
+		 *
+		 * @param ids the document ID ids.
+		 * @return the list of found entities.
+		 */
 		Collection<? extends T> all(Collection<String> ids);
 
 	}
 
 	interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
 
+		/**
+		 * Allows to specify a different collection than the default one configured.
+		 *
+		 * @param collection the collection to use in this scope.
+		 */
 		TerminatingFindById<T> inCollection(String collection);
+
 	}
 
 	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
 
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param fields the projected fields to load.
+		 */
 		FindByIdWithCollection<T> project(String... fields);
 
 	}

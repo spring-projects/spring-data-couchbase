@@ -31,6 +31,9 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.env.ClusterEnvironment;
 
+/**
+ * The default implementation of a {@link CouchbaseClientFactory}.
+ */
 public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	private final Supplier<Cluster> cluster;
@@ -69,6 +72,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
 	}
 
+	@Override
 	public CouchbaseClientFactory withScope(final String scopeName) {
 		return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName);
 	}

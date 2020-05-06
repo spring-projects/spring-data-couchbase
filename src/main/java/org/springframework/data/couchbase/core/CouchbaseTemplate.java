@@ -20,8 +20,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
@@ -34,7 +32,7 @@ import org.springframework.lang.Nullable;
 import com.couchbase.client.java.Collection;
 
 /**
- * Implements Couchbase operations findBy, insertBy, upsertBy, replaceBy, removeBy, existsBy
+ * Implements lower-level couchbase operations on top of the SDK with entity mapping capabilities.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -44,7 +42,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	private final CouchbaseClientFactory clientFactory;
 	private final CouchbaseConverter converter;
-	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final CouchbaseTemplateSupport templateSupport;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
@@ -53,7 +50,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
-		this.exceptionTranslator = clientFactory.getExceptionTranslator();
 		this.templateSupport = new CouchbaseTemplateSupport(converter);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter);
 
@@ -146,33 +142,18 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		return converter;
 	}
 
-	CouchbaseTemplateSupport support() {
-		return templateSupport;
-	}
-
 	public ReactiveCouchbaseTemplate reactive() {
 		return reactiveCouchbaseTemplate;
 	}
 
-	/**
-	 * Tries to convert the given {@link RuntimeException} into a {@link DataAccessException} but returns the original
-	 * exception if the conversation failed. Thus allows safe re-throwing of the return value.
-	 *
-	 * @param ex the exception to translate
-	 */
-	RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
-		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
-		return resolved == null ? ex : resolved;
-	}
-
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		prepareIndexCreator(applicationContext);
 		templateSupport.setApplicationContext(applicationContext);
 		reactiveCouchbaseTemplate.setApplicationContext(applicationContext);
 	}
 
-	private void prepareIndexCreator(ApplicationContext context) {
+	private void prepareIndexCreator(final ApplicationContext context) {
 		String[] indexCreators = context.getBeanNamesForType(CouchbasePersistentEntityIndexCreator.class);
 
 		for (String creator : indexCreators) {

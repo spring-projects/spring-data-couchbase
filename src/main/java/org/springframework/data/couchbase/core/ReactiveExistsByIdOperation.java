@@ -22,19 +22,40 @@ import java.util.Map;
 
 public interface ReactiveExistsByIdOperation {
 
+	/**
+	 * Checks if the document exists in the bucket.
+	 */
 	ReactiveExistsById existsById();
 
 	interface TerminatingExistsById {
 
+		/**
+		 * Performs the operation on the ID given.
+		 *
+		 * @param id the ID to perform the operation on.
+		 * @return true if the document exists, false otherwise.
+		 */
 		Mono<Boolean> one(String id);
 
+		/**
+		 * Performs the operation on the collection of ids.
+		 *
+		 * @param ids the ids to check.
+		 * @return a map consisting of the document IDs as the keys and if they exist as the value.
+		 */
 		Mono<Map<String, Boolean>> all(Collection<String> ids);
 
 	}
 
 	interface ExistsByIdWithCollection extends TerminatingExistsById {
 
+		/**
+		 * Allows to specify a different collection than the default one configured.
+		 *
+		 * @param collection the collection to use in this scope.
+		 */
 		TerminatingExistsById inCollection(String collection);
+
 	}
 
 	interface ReactiveExistsById extends ExistsByIdWithCollection {}

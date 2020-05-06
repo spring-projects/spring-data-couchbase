@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,6 +25,11 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 
 public interface ReactiveFindByQueryOperation {
 
+	/**
+	 * Queries the N1QL service.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ReactiveFindByQuery<T> findByQuery(Class<T> domainType);
 
 	/**
@@ -31,14 +37,40 @@ public interface ReactiveFindByQueryOperation {
 	 */
 	interface TerminatingFindByQuery<T> {
 
+		/**
+		 * Get exactly zero or one result.
+		 *
+		 * @return a mono with the match if found (an empty one otherwise).
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
+		 */
 		Mono<T> one();
 
+		/**
+		 * Get the first or no result.
+		 *
+		 * @return the first or an empty mono if none found.
+		 */
 		Mono<T> first();
 
+		/**
+		 * Get all matching elements.
+		 *
+		 * @return never {@literal null}.
+		 */
 		Flux<T> all();
 
+		/**
+		 * Get the number of matching elements.
+		 *
+		 * @return total number of matching elements.
+		 */
 		Mono<Long> count();
 
+		/**
+		 * Check for the presence of matching elements.
+		 *
+		 * @return {@literal true} if at least one matching element exists.
+		 */
 		Mono<Boolean> exists();
 
 	}
@@ -52,10 +84,9 @@ public interface ReactiveFindByQueryOperation {
 	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
 
 		/**
-		 * Set the filter query to be used.
+		 * Set the filter for the query to be used.
 		 *
 		 * @param query must not be {@literal null}.
-		 * @return new instance of {@link TerminatingFindByQuery}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
 		TerminatingFindByQuery<T> matching(Query query);
@@ -64,6 +95,11 @@ public interface ReactiveFindByQueryOperation {
 
 	interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
 
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
 		FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
 
 	}

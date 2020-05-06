@@ -40,20 +40,20 @@ import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.Assert;
 
 /**
- * encode/decode support for CouchbaseTemplate
+ * Internal encode/decode support for CouchbaseTemplate.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @since 3.0
  */
-public class CouchbaseTemplateSupport implements ApplicationContextAware {
+class CouchbaseTemplateSupport implements ApplicationContextAware {
+
 	private static final Logger LOG = LoggerFactory.getLogger(CouchbaseTemplateSupport.class);
 
 	private final CouchbaseConverter converter;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
-	// TODO: this should be replaced I think
 	private final TranslationService translationService;
-	EntityCallbacks entityCallbacks;
+	private EntityCallbacks entityCallbacks;
 	private ApplicationContext applicationContext;
 
 	public CouchbaseTemplateSupport(final CouchbaseConverter converter) {

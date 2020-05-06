@@ -136,13 +136,13 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 *
 	 * @param ex the exception to translate
 	 */
-	RuntimeException potentiallyConvertRuntimeException(RuntimeException ex) {
+	RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
 		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
 		return resolved == null ? ex : resolved;
 	}
 
 	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		templateSupport.setApplicationContext(applicationContext);
 	}
 

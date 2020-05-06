@@ -20,16 +20,28 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 /**
- * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
+ * Defines common operations on the Couchbase data source, most commonly implemented by {@link ReactiveCouchbaseTemplate}.
  */
 public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOperations {
 
+	/**
+	 * Returns the converter used for this template/operations.
+	 */
 	CouchbaseConverter getConverter();
 
+	/**
+	 * The name of the bucket used.
+	 */
 	String getBucketName();
 
+	/**
+	 * The name of the scope used, null if the default scope is used.
+	 */
 	String getScopeName();
 
+	/**
+	 * Returns the underlying client factory.
+	 */
 	CouchbaseClientFactory getCouchbaseClientFactory();
 
 }

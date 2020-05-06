@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core;
 
+/**
+ * The fluent couchbase operations combines all different possible operations for simplicity reasons.
+ */
 public interface ReactiveFluentCouchbaseOperations extends ReactiveUpsertByIdOperation, ReactiveInsertByIdOperation,
 		ReactiveReplaceByIdOperation, ReactiveFindByIdOperation, ReactiveExistsByIdOperation,
 		ReactiveFindByAnalyticsOperation, ReactiveFindFromReplicasByIdOperation, ReactiveFindByQueryOperation,
