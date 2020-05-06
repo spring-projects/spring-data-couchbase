@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.*;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -33,19 +33,14 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
 /**
- * KV tests
- *
- * Theses tests rely on a cb server running.
+ * KV tests Theses tests rely on a cb server running.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -70,7 +65,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 	@BeforeEach
 	void beforeEach() {
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate)ac.getBean(COUCHBASE_TEMPLATE);
+		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 	}
 
 	@Test
@@ -118,8 +113,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertTrue(removeResult.getCas() != 0);
 		assertTrue(removeResult.getMutationToken().isPresent());
 
-		assertThrows(DataRetrievalFailureException.class,
-				() -> couchbaseTemplate.findById(User.class).one(user.getId()));
+		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user.getId()));
 	}
 
 	@Test

@@ -1,8 +1,8 @@
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.domain.AuditorAware;
-
 import java.util.Optional;
+
+import org.springframework.data.domain.AuditorAware;
 
 // These are the classes that would be used for a real getCurrentAuditor() implementation
 //import org.springframework.security.core.Authentication;

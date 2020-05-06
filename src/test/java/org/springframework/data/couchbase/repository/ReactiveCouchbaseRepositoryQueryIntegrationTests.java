@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,9 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -63,8 +60,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		airportRepository.save(vie).block();
 
-		List<Airport> all = airportRepository.findAll().toStream()
-				.collect(Collectors.toList());
+		List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
 
 		assertFalse(all.isEmpty());
 		assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));

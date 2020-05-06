@@ -1,11 +1,11 @@
 package org.springframework.data.couchbase.domain;
 
+import java.util.UUID;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
-
-import java.util.UUID;
 
 /**
  * @author Oliver Gierke
@@ -13,52 +13,50 @@ import java.util.UUID;
 @Document
 public class AbstractEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
-    private UUID id;
+	@Id @GeneratedValue(strategy = GenerationStrategy.UNIQUE) private UUID id;
 
-    public AbstractEntity(){ }
+	public AbstractEntity() {}
 
-    /**
-     * set the id
-     */
-    public void setId(UUID id) {
-        this.id=id;
-    }
-    /**
-     * @return the id
-     */
-    public UUID getId() {
-        return id;
-    }
+	/**
+	 * @return the id
+	 */
+	public UUID getId() {
+		return id;
+	}
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
+	/**
+	 * set the id
+	 */
+	public void setId(UUID id) {
+		this.id = id;
+	}
 
-        if (this == obj) {
-            return true;
-        }
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
 
-        if (this.id == null || obj == null || !(this.getClass().equals(obj.getClass()))) {
-            return false;
-        }
+		if (this == obj) {
+			return true;
+		}
 
-        AbstractEntity that = (AbstractEntity) obj;
+		if (this.id == null || obj == null || !(this.getClass().equals(obj.getClass()))) {
+			return false;
+		}
 
-        return this.id.equals(that.getId());
-    }
+		AbstractEntity that = (AbstractEntity) obj;
 
-    /*
-     * (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        return id == null ? 0 : id.hashCode();
-    }
+		return this.id.equals(that.getId());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return id == null ? 0 : id.hashCode();
+	}
 }
-

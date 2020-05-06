@@ -17,17 +17,15 @@
 package org.springframework.data.couchbase.core;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.*;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.data.couchbase.domain.Config;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +35,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
@@ -44,15 +43,12 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.test.context.TestContext;
 
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * Query tests
- *
- *  Theses tests rely on a cb server running
+ * Query tests Theses tests rely on a cb server running
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -93,8 +89,8 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 
 			couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
 
-			final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).consistentWith(
-					QueryScanConsistency.REQUEST_PLUS).all();
+			final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
+					.consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
 			for (User u : foundUsers) {
 				System.out.println(u);
@@ -119,6 +115,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 			couchbaseTemplate.removeByQuery(User.class).all();
 		}
 	}
+
 	@Test
 	void removeByQuery() {
 		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
@@ -131,10 +128,8 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 
 		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
-		assertThrows(DataRetrievalFailureException.class,
-				() -> couchbaseTemplate.findById(User.class).one(user1.getId()));
-		assertThrows(DataRetrievalFailureException.class,
-				() -> couchbaseTemplate.findById(User.class).one(user2.getId()));
+		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user1.getId()));
+		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user2.getId()));
 	}
 
 }

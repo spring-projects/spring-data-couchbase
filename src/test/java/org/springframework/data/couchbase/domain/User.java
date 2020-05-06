@@ -18,7 +18,13 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.Objects;
 
-import org.springframework.data.annotation.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -31,20 +37,14 @@ import org.springframework.data.couchbase.core.mapping.Document;
 @Document
 public class User {
 
-	@Id
-	private String id;
+	@Version long version;
+	@Id private String id;
 	private String firstname;
 	private String lastname;
-	@CreatedBy
-	private String createdBy;
-	@CreatedDate
-	private long createdDate;
-	@LastModifiedBy
-	private String lastModifiedBy;
-	@LastModifiedDate
-	private long lastModifiedDate;
-	@Version
-	long version;
+	@CreatedBy private String createdBy;
+	@CreatedDate private long createdDate;
+	@LastModifiedBy private String lastModifiedBy;
+	@LastModifiedDate private long lastModifiedDate;
 
 	@PersistenceConstructor
 	public User(final String id, final String firstname, final String lastname) {
@@ -92,8 +92,8 @@ public class User {
 		if (o == null || getClass() != o.getClass())
 			return false;
 		User user = (User) o;
-		return Objects.equals(id, user.id) && Objects.equals(firstname, user.firstname) && Objects.equals(lastname,
-				user.lastname);
+		return Objects.equals(id, user.id) && Objects.equals(firstname, user.firstname)
+				&& Objects.equals(lastname, user.lastname);
 	}
 
 	@Override

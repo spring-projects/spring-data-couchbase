@@ -17,7 +17,9 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.beans.BeansException;
-import org.springframework.context.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -32,8 +34,7 @@ import org.springframework.lang.Nullable;
 import com.couchbase.client.java.Collection;
 
 /**
- * Implements Couchbase operations
- * findBy, insertBy, upsertBy, replaceBy, removeBy, existsBy
+ * Implements Couchbase operations findBy, insertBy, upsertBy, replaceBy, removeBy, existsBy
  *
  * @author Michael Nitschinger
  * @author Michael Reiche

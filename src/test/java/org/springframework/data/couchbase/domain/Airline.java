@@ -7,13 +7,11 @@ import org.springframework.data.couchbase.core.index.QueryIndexed;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
-@CompositeQueryIndex(fields = {"id", "name desc"})
+@CompositeQueryIndex(fields = { "id", "name desc" })
 public class Airline {
-	@Id
-	String id;
+	@Id String id;
 
-	@QueryIndexed
-	String name;
+	@QueryIndexed String name;
 
 	@PersistenceConstructor
 	public Airline(String id, String name) {

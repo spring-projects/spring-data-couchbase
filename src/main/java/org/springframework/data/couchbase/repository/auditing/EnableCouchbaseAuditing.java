@@ -41,24 +41,24 @@ import org.springframework.data.domain.AuditorAware;
 @Retention(RetentionPolicy.RUNTIME)
 @Import(CouchbaseAuditingRegistrar.class)
 public @interface EnableCouchbaseAuditing {
-  /**
-   * Configures the {@link AuditorAware} bean to be used to lookup the current principal.
-   */
-  String auditorAwareRef() default "auditorAwareRef";
+	/**
+	 * Configures the {@link AuditorAware} bean to be used to lookup the current principal.
+	 */
+	String auditorAwareRef() default "auditorAwareRef";
 
-  /**
-   * Configures whether the creation and modification dates are set. Defaults to {@literal true}.
-   */
-  boolean setDates() default true;
+	/**
+	 * Configures whether the creation and modification dates are set. Defaults to {@literal true}.
+	 */
+	boolean setDates() default true;
 
-  /**
-   * Configures whether the entity shall be marked as modified on creation. Defaults to {@literal true}.
-   */
-  boolean modifyOnCreate() default true;
+	/**
+	 * Configures whether the entity shall be marked as modified on creation. Defaults to {@literal true}.
+	 */
+	boolean modifyOnCreate() default true;
 
-  /**
-   * Configures a {@link DateTimeProvider} bean name that allows customizing the {@link org.joda.time.DateTime} to be
-   * used for setting creation and modification dates.
-   */
-  String dateTimeProviderRef() default "dateTimeProviderRef";
+	/**
+	 * Configures a {@link DateTimeProvider} bean name that allows customizing the {@link org.joda.time.DateTime} to be
+	 * used for setting creation and modification dates.
+	 */
+	String dateTimeProviderRef() default "dateTimeProviderRef";
 }

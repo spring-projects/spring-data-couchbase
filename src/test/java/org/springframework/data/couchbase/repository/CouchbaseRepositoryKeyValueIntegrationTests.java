@@ -28,7 +28,6 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -44,8 +43,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired
-	UserRepository userRepository;
+	@Autowired UserRepository userRepository;
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)

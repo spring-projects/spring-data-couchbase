@@ -27,7 +27,11 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.event.*;
+import org.springframework.data.couchbase.core.mapping.event.AfterConvertCallback;
+import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallback;
+import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.callback.EntityCallbacks;
@@ -49,8 +53,8 @@ public class CouchbaseTemplateSupport implements ApplicationContextAware {
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	// TODO: this should be replaced I think
 	private final TranslationService translationService;
-	private ApplicationContext applicationContext;
 	EntityCallbacks entityCallbacks;
+	private ApplicationContext applicationContext;
 
 	public CouchbaseTemplateSupport(final CouchbaseConverter converter) {
 		this.converter = converter;
@@ -74,8 +78,7 @@ public class CouchbaseTemplateSupport implements ApplicationContextAware {
 
 		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
 		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
-		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(
-				readEntity.getClass());
+		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
 
 		if (persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
@@ -85,8 +88,7 @@ public class CouchbaseTemplateSupport implements ApplicationContextAware {
 
 	public void applyUpdatedCas(final Object entity, final long cas) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(
-				entity.getClass());
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 
 		if (versionProperty != null) {

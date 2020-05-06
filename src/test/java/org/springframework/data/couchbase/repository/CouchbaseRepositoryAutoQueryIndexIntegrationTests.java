@@ -16,8 +16,10 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.manager.query.QueryIndex;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -29,29 +31,23 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.manager.query.QueryIndex;
 
 @SpringJUnitConfig(CouchbaseRepositoryAutoQueryIndexIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryAutoQueryIndexIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired
-	private Cluster cluster;
+	@Autowired private Cluster cluster;
 
 	/**
-	 * Since the index creation happens at startup, the only way to properly check is by querying the
-	 * index list and making sure it is present.
+	 * Since the index creation happens at startup, the only way to properly check is by querying the index list and
+	 * making sure it is present.
 	 */
 	@Test
 	void createsSingleFieldIndex() {
-		Optional<QueryIndex> foundIndex = cluster
-			.queryIndexes()
-			.getAllIndexes(bucketName())
-			.stream()
-			.filter(i -> i.name().equals("idx_airline_name"))
-			.findFirst();
+		Optional<QueryIndex> foundIndex = cluster.queryIndexes().getAllIndexes(bucketName()).stream()
+				.filter(i -> i.name().equals("idx_airline_name")).findFirst();
 
 		assertTrue(foundIndex.isPresent());
 		assertTrue(foundIndex.get().condition().get().contains("_class"));
@@ -59,12 +55,8 @@ public class CouchbaseRepositoryAutoQueryIndexIntegrationTests extends ClusterAw
 
 	@Test
 	void createsCompositeIndex() {
-		Optional<QueryIndex> foundIndex = cluster
-			.queryIndexes()
-			.getAllIndexes(bucketName())
-			.stream()
-			.filter(i -> i.name().equals("idx_airline_id_name"))
-			.findFirst();
+		Optional<QueryIndex> foundIndex = cluster.queryIndexes().getAllIndexes(bucketName()).stream()
+				.filter(i -> i.name().equals("idx_airline_id_name")).findFirst();
 
 		assertTrue(foundIndex.isPresent());
 		assertTrue(foundIndex.get().condition().get().contains("_class"));

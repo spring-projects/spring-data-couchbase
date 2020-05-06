@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.core.query;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+
+import org.junit.jupiter.api.Test;
 
 class QueryCriteriaTests {
 
@@ -65,18 +65,13 @@ class QueryCriteriaTests {
 		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\")", c.export());
 	}
 
-
 	@Test
 	void testNestedNotIn() {
-		QueryCriteria c =
-				where("name").is("Bubba").or(
-						where("age").gt(12).or("country").is("Austria")).and(
-						where("state").notIn(new String[]{"Alabama", "Florida"}));
-		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and " +
-						"(not( (`state` in ( [ \"Alabama\", \"Florida\" ] )) ))",
-				c.export());
+		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria"))
+				.and(where("state").notIn(new String[] { "Alabama", "Florida" }));
+		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and "
+				+ "(not( (`state` in ( [ \"Alabama\", \"Florida\" ] )) ))", c.export());
 	}
-
 
 	@Test
 	void testLt() {
@@ -156,7 +151,6 @@ class QueryCriteriaTests {
 		assertEquals("not( (`name` like \"%Elvis%\") )", c.export());
 	}
 
-
 	@Test
 	void testIsNull() {
 		QueryCriteria c = where("name").isNull();
@@ -201,13 +195,13 @@ class QueryCriteriaTests {
 
 	@Test
 	void testIn() {
-		QueryCriteria c = where("name").in(new String[]{"gump", "davis"});
+		QueryCriteria c = where("name").in(new String[] { "gump", "davis" });
 		assertEquals("`name` in ( [ \"gump\", \"davis\" ] )", c.export());
 	}
 
 	@Test
 	void testNotIn() {
-		QueryCriteria c = where("name").notIn(new String[]{"gump", "davis"});
+		QueryCriteria c = where("name").notIn(new String[] { "gump", "davis" });
 		assertEquals("not( (`name` in ( [ \"gump\", \"davis\" ] )) )", c.export());
 	}
 
