@@ -346,9 +346,12 @@ This is required for N1QL support.
 [[version]]
 == Optimistic Locking
 
-Couchbase Server does not support multi-document transactions or rollback.
-To implement optimistic locking, Couchbase uses a CAS (compare and swap) approach.
-When a document is mutated, the CAS value also changes.
+
+In certain situations you may want to ensure that you are not overwriting another users changes when you perform a mutation operation on a document. For this you have three choices: ACID Transactions (since Couchbase 6.5), pessimistic concurrency (locking) or optimistic concurrency.
+
+Optimistic concurrency tends to provide better performance than pessimistic concurrency or transactions, because no actual locks are held on the data and no extra information is stored about the operation (no transaction log).
+
+To implement optimistic locking, Couchbase uses a CAS (compare and swap) approach. When a document is mutated, the CAS value also changes.
 The CAS is opaque to the client, the only thing you need to know is that it changes when the content or a meta information changes too.
 
 In other datastores, similar behavior can be achieved through an arbitrary version field with a incrementing counter.

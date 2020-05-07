@@ -18,7 +18,15 @@ The new SDK still has an environment that is used to configure it, so you can ov
 
 For more information, see <<couchbase.configuration>>.
 
+=== Spring Boot Version Support
+
+Spring Data Couchbase 4.x will requires Spring Boot 2.3.x or higher. 
+
+If you are using Spring Boot in your project with Spring Data Couchbase 3.x, you will pontetially need to upgrade your Spring Boot version as well.
+
 [[couchbase.migrating.entities]]
+
+
 == Entities
 How to deal with entities has not changed, although since the SDK now does not ship annotations anymore only Spring-Data related annotations are supported.
 
@@ -30,6 +38,16 @@ Specifically:
 The `org.springframework.data.couchbase.core.mapping.Document` annotation stayed the same.
 
 For more information, see <<couchbase.entity>>.
+
+
+[[couchbase.migrating.indexes]]
+== Automatic Index Management
+
+Automatic Index Management was redesigned to allow more flexible indexing. New annotations have been introduced and old ones like `@ViewIndexed`, `@N1qlSecondaryIndexed` and `@N1qlPrimaryIndexed` were removed. 
+
+For more information, see <<couchbase.repository.indexing>>
+
+
 
 [[couchbase.migrating.template]]
 == Template and ReactiveTemplate
@@ -102,12 +120,81 @@ We tried to unify and align the APIs more closely to the underlying SDK semantic
 For more information, see <<couchbase.template>>.
 
 [[couchbase.migrating.repository]]
-== Repository queries
+== Repositories & Queries
 
+  - `org.springframework.data.couchbase.core.query.Query` became `org.springframework.data.couchbase.repository.Query`
+  - `org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository` has been removed. Consider extending  `ReactiveSortingRepository` or `ReactiveCouchbaseRepository`
+  - `org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRepository` has been removed. Consider extending  `PagingAndSortingRepository` or `CouchbaseRepository`
+  
+  
 IMPORTANT: Support for views has been removed and N1QL queries are now the first-class citizens for all custom repository methods as well as the built-in ones by default.
 
 The behavior itself has not changed over the previous version on how the query derivation is supposed to work. Should you encounter any queries that worked in the past and now do not work anymore please let us know.
 
 It is possible to override the default scan consistency for N1QL queries through the new `ScanConsistency` annotation.
 
+The method `getCouchbaseOperations()` has also been removed. You can still access all methods from the native Java SDK via the class `CouchbaseTemplate` or `Cluster`:
+
+====
+[source,java]
+----
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.stereotype.Service;
+import com.couchbase.client.java.Cluster;
+
+@Service
+public class MyService {
+    
+    @Autowired
+    private CouchbaseTemplate couchbaseTemplate;
+    
+    @Autowired
+    private Cluster cluster;
+}
+----
+====
+
 See <<couchbase.repository>> for more information.
+
+
+== Full Text Search (FTS)
+
+The FTS API has been simplified and now can be accessed via the `Cluster` class:
+
+====
+[source,java]
+----
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.search.result.SearchResult;
+import com.couchbase.client.java.search.result.SearchRow;
+import com.couchbase.client.core.error.CouchbaseException;
+
+@Service
+public class MyService {
+    
+    @Autowired
+    private Cluster cluster;
+    
+    public void myMethod() {
+        try {
+          final SearchResult result = cluster
+            .searchQuery("index", SearchQuery.queryString("query"));
+        
+          for (SearchRow row : result.rows()) {
+            System.out.println("Found row: " + row);
+          }
+        
+          System.out.println("Reported total rows: "
+            + result.metaData().metrics().totalRows());
+        } catch (CouchbaseException ex) {
+          ex.printStackTrace();
+        }
+    }
+}
+----
+====
+
+See link:https://docs.couchbase.com/java-sdk/current/howtos/full-text-searching-with-sdk.html[the FTS Documentation] for more information.
