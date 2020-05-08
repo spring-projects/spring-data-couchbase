@@ -25,11 +25,12 @@ import org.springframework.data.couchbase.core.OperationInterruptedException;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  * @since 3.0
  */
 public class TemplateUtils {
-	public static final String SELECT_ID = "_ID";
-	public static final String SELECT_CAS = "_CAS";
+	public static final String SELECT_ID = "__id";
+	public static final String SELECT_CAS = "__cas";
 	private static PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 	public static Throwable translateError(Throwable e) {

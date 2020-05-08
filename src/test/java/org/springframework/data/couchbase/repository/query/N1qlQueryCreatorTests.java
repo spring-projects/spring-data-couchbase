@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.query;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +37,10 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 class N1qlQueryCreatorTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
@@ -55,7 +58,7 @@ class N1qlQueryCreatorTests {
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class);
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), context);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), context, null, null);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where("firstname").is("Oliver").export());
@@ -67,7 +70,7 @@ class N1qlQueryCreatorTests {
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class, String.class);
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), context);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), context, null, null);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where("firstname").is("John").and("lastname").is("Doe").export());

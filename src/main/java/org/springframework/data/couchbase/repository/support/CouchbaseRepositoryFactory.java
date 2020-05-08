@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -33,7 +34,6 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -46,6 +46,7 @@ import org.springframework.util.Assert;
  * @author Simon Baslé
  * @author Oliver Gierke
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
@@ -154,7 +155,8 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 			final CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
 					.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 
-			return new CouchbaseRepositoryQuery(couchbaseOperations, new QueryMethod(method, metadata, factory));
+			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
+			return new CouchbaseRepositoryQuery(couchbaseOperations, queryMethod, namedQueries);
 
 			/*CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
 			String namedQueryName = queryMethod.getNamedQueryName();

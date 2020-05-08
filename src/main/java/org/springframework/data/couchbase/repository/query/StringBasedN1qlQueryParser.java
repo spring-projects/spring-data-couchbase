@@ -19,6 +19,8 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +44,7 @@ import com.couchbase.client.java.json.JsonValue;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  */
 public class StringBasedN1qlQueryParser {
 	public static final String SPEL_PREFIX = "n1ql";
@@ -97,6 +100,7 @@ public class StringBasedN1qlQueryParser {
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
+	private final Collection<String> parameterNames=new HashSet<String>();
 
 	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
 			CouchbaseConverter couchbaseConverter, String typeField, Class<?> typeValue) {
@@ -140,7 +144,9 @@ public class StringBasedN1qlQueryParser {
 		return parsedExpression.getValue(evaluationContext, String.class);
 	}
 
+
 	private PlaceholderType checkPlaceholders(String statement) {
+
 		Matcher quoteMatcher = QUOTE_DETECTION_PATTERN.matcher(statement);
 		Matcher positionMatcher = POSITIONAL_PLACEHOLDER_PATTERN.matcher(statement);
 		Matcher namedMatcher = NAMED_PLACEHOLDER_PATTERN.matcher(statement);
@@ -159,6 +165,7 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, positionMatcher.start(), positionMatcher.end(), quotes)) {
 				LOGGER.trace("{}: Found positional placeholder {}", this.queryMethod.getName(), placeholder);
 				posCount++;
+				parameterNames.add(placeholder.substring(1)); // save without the leading $
 			}
 		}
 
@@ -168,13 +175,17 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes)) {
 				LOGGER.trace("{}: Found named placeholder {}", this.queryMethod.getName(), placeholder);
 				namedCount++;
+				parameterNames.add(placeholder.substring(1));//save without the leading $
 			}
 		}
 
-		if (posCount > 0 && namedCount > 0) {
+		if (posCount > 0 && namedCount > 0) { // actual values from parameterNames might be more useful
 			throw new IllegalArgumentException("Using both named (" + namedCount + ") and positional (" + posCount
-					+ ") placeholders is not supported, please choose one over the other in " + this.queryMethod.getName());
-		} else if (posCount > 0) {
+					+ ") placeholders is not supported, please choose one over the other in " +
+					queryMethod.getClass().getName()+"."+this.queryMethod.getName()+"()");
+		}
+
+		if (posCount > 0) {
 			return PlaceholderType.POSITIONAL;
 		} else if (namedCount > 0) {
 			return PlaceholderType.NAMED;
@@ -203,7 +214,7 @@ public class StringBasedN1qlQueryParser {
 
 	private JsonObject getNamedPlaceholderValues(ParameterAccessor accessor) {
 		JsonObject namedValues = JsonObject.create();
-
+		HashSet<String> pNames=new HashSet<>(parameterNames);
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
 			String placeholder = parameter.getPlaceholder();
 			Object value = this.couchbaseConverter.convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex()));
@@ -211,10 +222,24 @@ public class StringBasedN1qlQueryParser {
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
 				namedValues.put(placeholder, value);
+				if(pNames.contains(placeholder))
+					pNames.remove(placeholder);
+				else
+					throw new RuntimeException("parameter named "+placeholder+
+							" does not match any named parameter "+parameterNames+
+							" in "+statement);
 			} else {
-				parameter.getName().ifPresent(name -> namedValues.put(name, value));
+				if(parameter.getName().isPresent())
+					namedValues.put(parameter.getName().get(), value);
+				else
+					throw new RuntimeException("cannot determine argument for named parameter. "+
+							"Argument "+ parameter.getIndex() +" to "+
+							queryMethod.getClass().getName()+"."+queryMethod.getName()+
+							"() needs @Param(\"name\") that matches a named parameter in "+ statement);
 			}
 		}
+		if(!pNames.isEmpty())
+			throw new RuntimeException("no parameter found for "+pNames);
 		return namedValues;
 	}
 

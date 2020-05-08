@@ -18,8 +18,11 @@ package org.springframework.data.couchbase.core.query;
 /**
  * @author Oliver Gierke
  * @author Christoph Strobl
+ * @author Michael Reiche
  */
 public interface QueryCriteriaDefinition {
+
+	String export(int[] paramIndexPtr);
 
 	String export();
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2012-2020 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.data.couchbase.core.query;
 
 import java.util.ArrayList;
@@ -7,6 +22,10 @@ import java.util.List;
 
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
 	private final String key;
@@ -111,29 +130,23 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria startingWith(@Nullable Object o) {
-		if (o instanceof QueryCriteria) {
-			QueryCriteria term = where("\"%\"").plus(o);
-			like(term);
-		} else {
-			like(o.toString() + "%");
-		}
+		operator = "STARTING_WITH";
+		value = new Object[] { o };
+		format = "%1$s like (%3$s||\"%%\")";
 		return this;
 	}
 
 	public QueryCriteria plus(@Nullable Object o) {
 		operator = "PLUS";
 		value = new Object[] { o };
-		format = "(%1$s + %3$s)";
+		format = "(%1$s || %3$s)";
 		return this;
 	}
 
 	public QueryCriteria endingWith(@Nullable Object o) {
-		if (o instanceof QueryCriteria) {
-			QueryCriteria term = where("%").plus(o);
-			like(term);
-		} else {
-			like("%" + o.toString());
-		}
+		operator = "ENDING_WITH";
+		value = new Object[] { o };
+		format = "%1$s like (\"%%\"||%3$s)";
 		return this;
 	}
 
@@ -166,10 +179,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria notLike(@Nullable Object o) {
-		value = new QueryCriteria[] { wrap(like(o)) };
-		operator = "NOT";
-		format = format = "not( %3$s )";
-		return (QueryCriteria) this;
+		operator = "NOTLIKE";
+		value = new Object[] { o };
+		format = "not(%1$s like %3$s)";
+		return this;
 	}
 
 	public QueryCriteria isNull() {
@@ -263,7 +276,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	@Override
-	public String export() {
+	public String export(int[] paramIndexPtr) {
 		StringBuilder output = new StringBuilder();
 		boolean first = true;
 		for (QueryCriteria c : this.criteriaChain) {
@@ -271,18 +284,23 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 				if (c.chainOperator == null) {
 					throw new IllegalStateException("A chain operator must be present when chaining!");
 				}
-				// the consistent place to output this would be in the c.toQueryString(output) about five lines down
+				// the consistent place to output this would be in the c.exportSingle(output) about five lines down
 				output.append(" ").append(c.chainOperator.representation).append(" ");
 			} else {
 				first = false;
 			}
-			c.exportSingle(output);
+			c.exportSingle(output, paramIndexPtr);
 		}
 
 		return output.toString();
 	}
 
-	private StringBuilder exportSingle(StringBuilder sb) {
+	@Override
+	public String export() {
+		return export(null);
+
+	}
+	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr) {
 		String fieldName = maybeQuote(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
@@ -290,9 +308,9 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		v[1] = operator;
 		for (int i = 0; i < valueLen; i++) {
 			if (value[i] instanceof QueryCriteria) {
-				v[i + 2] = "(" + ((QueryCriteria) value[i]).export() + ")";
+				v[i + 2] = "(" + ((QueryCriteria) value[i]).export(paramIndexPtr) + ")";
 			} else {
-				v[i + 2] = maybeWrapValue(value[i]);
+				v[i + 2] = maybeWrapValue(key,value[i],paramIndexPtr);
 			}
 		}
 
@@ -307,7 +325,15 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return sb;
 	}
 
-	private String maybeWrapValue(Object value) {
+	private String maybeWrapValue(String key, Object value, int[] paramIndexPtr) {
+		if(paramIndexPtr != null) {
+			if (paramIndexPtr[0] >= 0) {
+				return "$" + (++paramIndexPtr[0]); // these are generated in order
+			} else {
+				return "$" + key;
+			}
+		}
+
 		if (value instanceof String) {
 			return "\"" + value + "\"";
 		} else if (value == null) {
