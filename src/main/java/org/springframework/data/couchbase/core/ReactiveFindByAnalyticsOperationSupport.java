@@ -15,6 +15,9 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.analytics.AnalyticsOptions;
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.query.QueryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -34,7 +37,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 	@Override
 	public <T> ReactiveFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ReactiveFindByAnalyticsSupport<>(template, domainType, ALL_QUERY);
+		return new ReactiveFindByAnalyticsSupport<>(template, domainType, ALL_QUERY, AnalyticsScanConsistency.NOT_BOUNDED);
 	}
 
 	static class ReactiveFindByAnalyticsSupport<T> implements ReactiveFindByAnalytics<T> {
@@ -42,17 +45,24 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<T> domainType;
 		private final AnalyticsQuery query;
+		private final AnalyticsScanConsistency scanConsistency;
 
 		ReactiveFindByAnalyticsSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-				final AnalyticsQuery query) {
+				final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
+			this.scanConsistency = scanConsistency;
 		}
 
 		@Override
 		public TerminatingFindByAnalytics<T> matching(AnalyticsQuery query) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+		}
+
+		@Override
+		public FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency) {
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
 		}
 
 		@Override
@@ -69,7 +79,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement)
+				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())
 						.onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -90,7 +100,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
 				String statement = assembleEntityQuery(true);
-				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement)
+				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())
 						.onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -122,6 +132,14 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 			query.appendSort(statement);
 			query.appendSkipAndLimit(statement);
 			return statement.toString();
+		}
+
+		private AnalyticsOptions buildAnalyticsOptions() {
+			final AnalyticsOptions options = AnalyticsOptions.analyticsOptions();
+			if (scanConsistency != null) {
+				options.scanConsistency(scanConsistency);
+			}
+			return options;
 		}
 	}
 

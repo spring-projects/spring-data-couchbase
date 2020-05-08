@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -87,6 +88,17 @@ public interface ReactiveFindByAnalyticsOperation {
 
 	}
 
-	interface ReactiveFindByAnalytics<T> extends FindByAnalyticsWithQuery<T> {}
+	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsWithQuery<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency);
+
+	}
+
+	interface ReactiveFindByAnalytics<T> extends FindByAnalyticsConsistentWith<T> {}
 
 }

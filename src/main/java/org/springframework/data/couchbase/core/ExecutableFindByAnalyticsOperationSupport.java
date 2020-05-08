@@ -18,7 +18,10 @@ package org.springframework.data.couchbase.core;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.query.Query;
 
 public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFindByAnalyticsOperation {
 
@@ -32,7 +35,7 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 	@Override
 	public <T> ExecutableFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ExecutableFindByAnalyticsSupport<>(template, domainType, ALL_QUERY);
+		return new ExecutableFindByAnalyticsSupport<>(template, domainType, ALL_QUERY, AnalyticsScanConsistency.NOT_BOUNDED);
 	}
 
 	static class ExecutableFindByAnalyticsSupport<T> implements ExecutableFindByAnalytics<T> {
@@ -40,13 +43,17 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 		private final CouchbaseTemplate template;
 		private final Class<T> domainType;
 		private final ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<T> reactiveSupport;
+		private final AnalyticsQuery query;
+		private final AnalyticsScanConsistency scanConsistency;
 
 		ExecutableFindByAnalyticsSupport(final CouchbaseTemplate template, final Class<T> domainType,
-				final AnalyticsQuery query) {
+				final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency) {
 			this.template = template;
 			this.domainType = domainType;
+			this.query = query;
 			this.reactiveSupport = new ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport<>(
-					template.reactive(), domainType, query);
+					template.reactive(), domainType, query, scanConsistency);
+			this.scanConsistency = scanConsistency;
 		}
 
 		@Override
@@ -66,7 +73,12 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 		@Override
 		public TerminatingFindByAnalytics<T> matching(final AnalyticsQuery query) {
-			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query);
+			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+		}
+
+		@Override
+		public FindByAnalyticsWithQuery<T> consistentWith(final AnalyticsScanConsistency scanConsistency) {
+			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
 		}
 
 		@Override

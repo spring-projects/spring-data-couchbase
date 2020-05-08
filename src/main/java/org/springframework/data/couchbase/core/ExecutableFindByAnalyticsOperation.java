@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.lang.Nullable;
@@ -112,6 +114,17 @@ public interface ExecutableFindByAnalyticsOperation {
 
 	}
 
-	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsWithQuery<T> {}
+	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsWithQuery<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency);
+
+	}
+
+	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsConsistentWith<T> {}
 
 }
