@@ -21,9 +21,10 @@ import java.util.List;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.Repository;
 
 /**
- * Couchbase specific {@link org.springframework.data.repository.Repository} interface.
+ * Couchbase specific {@link Repository} interface.
  *
  * @author Michael Nitschinger
  */

@@ -33,6 +33,12 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+/**
+ * Repository KV tests
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @SpringJUnitConfig(CouchbaseRepositoryKeyValueIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
@@ -40,9 +46,10 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Autowired UserRepository userRepository;
 
 	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
 		User user = new User(UUID.randomUUID().toString(), "f", "l");
-
+		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
 		assertFalse(userRepository.existsById(user.getId()));
 
 		userRepository.save(user);
@@ -52,6 +59,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		found.ifPresent(u -> assertEquals(user, u));
 
 		assertTrue(userRepository.existsById(user.getId()));
+		userRepository.delete(user);
 	}
 
 	@Configuration

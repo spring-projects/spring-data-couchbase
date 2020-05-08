@@ -15,13 +15,21 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 
+import java.util.Optional;
+
 public interface ReactiveFindByAnalyticsOperation {
 
+	/**
+	 * Queries the analytics service.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ReactiveFindByAnalytics<T> findByAnalytics(Class<T> domainType);
 
 	/**
@@ -29,31 +37,50 @@ public interface ReactiveFindByAnalyticsOperation {
 	 */
 	interface TerminatingFindByAnalytics<T> {
 
+		/**
+		 * Get exactly zero or one result.
+		 *
+		 * @return a mono with the match if found (an empty one otherwise).
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
+		 */
 		Mono<T> one();
 
+		/**
+		 * Get the first or no result.
+		 *
+		 * @return the first or an empty mono if none found.
+		 */
 		Mono<T> first();
 
+		/**
+		 * Get all matching elements.
+		 *
+		 * @return never {@literal null}.
+		 */
 		Flux<T> all();
 
+		/**
+		 * Get the number of matching elements.
+		 *
+		 * @return total number of matching elements.
+		 */
 		Mono<Long> count();
 
+		/**
+		 * Check for the presence of matching elements.
+		 *
+		 * @return {@literal true} if at least one matching element exists.
+		 */
 		Mono<Boolean> exists();
 
 	}
 
-	/**
-	 * Terminating operations invoking the actual query execution.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.0
-	 */
 	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T> {
 
 		/**
-		 * Set the filter query to be used.
+		 * Set the filter for the analytics query to be used.
 		 *
 		 * @param query must not be {@literal null}.
-		 * @return new instance of {@link TerminatingFindByAnalytics}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
 		TerminatingFindByAnalytics<T> matching(AnalyticsQuery query);

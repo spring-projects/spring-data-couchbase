@@ -16,12 +16,13 @@
 
 package org.springframework.data.couchbase.domain;
 
+import reactor.core.publisher.Flux;
+
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-import reactor.core.publisher.Flux;
 
 @Repository
 public interface ReactiveAirportRepository extends ReactiveSortingRepository<Airport, String> {

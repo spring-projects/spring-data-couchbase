@@ -16,17 +16,22 @@
 
 package org.springframework.data.couchbase.domain;
 
+import java.util.List;
+
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
+/**
+ * User Repository for tests
+ * 
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Repository
 public interface UserRepository extends PagingAndSortingRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
 
 	List<User> findByFirstnameAndLastname(String firstname, String lastname);
-
 
 }

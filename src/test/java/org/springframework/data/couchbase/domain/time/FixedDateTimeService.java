@@ -13,13 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.data.couchbase.domain.time;
 
-package org.springframework.data.couchbase.core;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
-/**
- * The fluent couchbase operations combines all different possible operations for simplicity reasons.
- */
-public interface ReactiveFluentCouchbaseOperations extends ReactiveUpsertByIdOperation, ReactiveInsertByIdOperation,
-		ReactiveReplaceByIdOperation, ReactiveFindByIdOperation, ReactiveExistsByIdOperation,
-		ReactiveFindByAnalyticsOperation, ReactiveFindFromReplicasByIdOperation, ReactiveFindByQueryOperation,
-		ReactiveRemoveByIdOperation, ReactiveRemoveByQueryOperation {}
+public class FixedDateTimeService implements DateTimeService {
+	public static void main(String[] args) {
+		System.out.println((new FixedDateTimeService()).getCurrentDateAndTime());
+	}
+
+	@Override
+	public ZonedDateTime getCurrentDateAndTime() {
+		return ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT-8"));
+	}
+}

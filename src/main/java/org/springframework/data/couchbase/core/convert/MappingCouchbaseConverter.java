@@ -50,6 +50,7 @@ import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PreferredConstructor.Parameter;
 import org.springframework.data.mapping.PropertyHandler;
+import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.DefaultSpELExpressionEvaluator;
@@ -61,6 +62,7 @@ import org.springframework.data.mapping.model.SpELExpressionEvaluator;
 import org.springframework.data.mapping.model.SpELExpressionParameterValueProvider;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
@@ -72,6 +74,7 @@ import org.springframework.util.CollectionUtils;
  * @author Oliver Gierke
  * @author Geoffrey Mina
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
 
@@ -103,6 +106,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * The Couchbase specific type mapper in use.
 	 */
 	protected CouchbaseTypeMapper typeMapper;
+
+	/**
+	 * Callbacks for Audit Mechanism
+	 */
+	private @Nullable EntityCallbacks entityCallbacks;
 
 	public MappingCouchbaseConverter() {
 		super(new DefaultConversionService());
@@ -577,6 +585,18 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			return;
 		}
 
+		if (valueType.getType().equals(java.util.Optional.class)) {
+			if (source == null)
+				return;
+			Optional<String> o = (Optional<String>) source;
+			if (o.isPresent()) {
+				writeSimpleInternal(o.get(), target, prop.getFieldName());
+			} else {
+				writeSimpleInternal(null, target, prop.getFieldName());
+			}
+			return;
+		}
+
 		Optional<Class<?>> basicTargetType = conversions.getCustomWriteTarget(source.getClass());
 		if (basicTargetType.isPresent()) {
 
@@ -772,6 +792,24 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
+		if (entityCallbacks == null) {
+			setEntityCallbacks(EntityCallbacks.create(applicationContext));
+		}
+	}
+
+	/**
+	 * COPIED Set the {@link EntityCallbacks} instance to use when invoking
+	 * {@link org.springframework.data.mapping.callback.EntityCallback callbacks} like the {@link AfterConvertCallback}.
+	 * <p/>
+	 * Overrides potentially existing {@link EntityCallbacks}.
+	 *
+	 * @param entityCallbacks must not be {@literal null}.
+	 * @throws IllegalArgumentException if the given instance is {@literal null}.
+	 * @since 3.0
+	 */
+	public void setEntityCallbacks(EntityCallbacks entityCallbacks) {
+		Assert.notNull(entityCallbacks, "EntityCallbacks must not be null!");
+		this.entityCallbacks = entityCallbacks;
 	}
 
 	/**

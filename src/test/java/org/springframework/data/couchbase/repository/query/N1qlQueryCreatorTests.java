@@ -15,6 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+
+import java.lang.reflect.Method;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -32,6 +37,7 @@ import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
 
+<<<<<<< HEAD
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,6 +47,8 @@ import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
+=======
+>>>>>>> 7773a19e4230817b06506fba171265edc512fee1
 class N1qlQueryCreatorTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;

@@ -65,24 +65,59 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
+	/**
+	 * The connection string which allows the SDK to connect to the cluster.
+	 * <p>
+	 * Note that the connection string can take many forms, in its simplest it is just a single hostname
+	 * like "127.0.0.1". Please refer to the couchbase Java SDK documentation for all the different
+	 * possibilities and options.
+	 */
 	public abstract String getConnectionString();
 
+	/**
+	 * The username of the user accessing Couchbase, configured on the cluster.
+	 */
 	public abstract String getUserName();
 
+	/**
+	 * The password used or the username to authenticate against the cluster.
+	 */
 	public abstract String getPassword();
 
+	/**
+	 * The name of the bucket that should be used (for example "travel-sample").
+	 */
 	public abstract String getBucketName();
 
+	/**
+	 * If a non-default scope should be used, override this method.
+	 *
+	 * @return the custom scope name or null if the default scope should be used (default).
+	 */
 	protected String getScopeName() {
 		return null;
 	}
 
+	/**
+	 * Allows to override the {@link Authenticator} used.
+	 * <p>
+	 * The default implementation uses the {@link PasswordAuthenticator} and takes the username and password from
+	 * {@link #getUserName()} and {@link #getPassword()} respectively.
+	 *
+	 * @return the authenticator to be passed into the SDK.
+	 */
 	protected Authenticator authenticator() {
 		return PasswordAuthenticator.create(getUserName(), getPassword());
 	}
 
+	/**
+	 * The {@link CouchbaseClientFactory} provides access to the lower level SDK resources.
+	 *
+	 * @param couchbaseCluster the cluster reference from the SDK.
+	 * @return the initialized factory.
+	 */
 	@Bean
-	public CouchbaseClientFactory couchbaseClientFactory(Cluster couchbaseCluster) {
+	public CouchbaseClientFactory couchbaseClientFactory(final Cluster couchbaseCluster) {
 		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
 
@@ -99,6 +134,11 @@ public abstract class AbstractCouchbaseConfiguration {
 		return builder.build();
 	}
 
+	/**
+	 * Can be overridden to customize the configuration of the environment before bootstrap.
+	 *
+	 * @param builder the builder that can be customized.
+	 */
 	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
 
 	}

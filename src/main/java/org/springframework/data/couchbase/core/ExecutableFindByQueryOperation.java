@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.lang.Nullable;
 
@@ -26,6 +27,11 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 
 public interface ExecutableFindByQueryOperation {
 
+	/**
+	 * Queries the N1QL service.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType);
 
 	interface TerminatingFindByQuery<T> {
@@ -33,7 +39,7 @@ public interface ExecutableFindByQueryOperation {
 		 * Get exactly zero or one result.
 		 *
 		 * @return {@link Optional#empty()} if no match found.
-		 * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
 		default Optional<T> one() {
 			return Optional.ofNullable(oneValue());
@@ -43,7 +49,7 @@ public interface ExecutableFindByQueryOperation {
 		 * Get exactly zero or one result.
 		 *
 		 * @return {@literal null} if no match found.
-		 * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
 		@Nullable
 		T oneValue();
@@ -104,10 +110,9 @@ public interface ExecutableFindByQueryOperation {
 	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
 
 		/**
-		 * Set the filter query to be used.
+		 * Set the filter for the query to be used.
 		 *
 		 * @param query must not be {@literal null}.
-		 * @return new instance of {@link TerminatingFindByQuery}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
 		TerminatingFindByQuery<T> matching(Query query);
@@ -116,6 +121,11 @@ public interface ExecutableFindByQueryOperation {
 
 	interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
 
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
 		FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
 
 	}

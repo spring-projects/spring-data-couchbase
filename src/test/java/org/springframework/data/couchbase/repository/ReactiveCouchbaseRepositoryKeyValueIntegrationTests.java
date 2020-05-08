@@ -37,8 +37,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired
-	ReactiveUserRepository userRepository;
+	@Autowired ReactiveUserRepository userRepository;
 
 	@Test
 	void saveAndFindById() {

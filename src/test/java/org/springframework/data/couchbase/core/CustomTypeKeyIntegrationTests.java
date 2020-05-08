@@ -30,11 +30,14 @@ import org.springframework.data.couchbase.core.convert.DefaultCouchbaseTypeMappe
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.kv.GetResult;
 
 @SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
 
 	private static final String CUSTOM_TYPE_KEY = "javaClass";
@@ -48,6 +51,9 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 		clientFactory.getBucket().waitUntilReady(Duration.ofSeconds(5));
 
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		// When using 'mocked', this call runs fine when the test class is ran by itself,
+		// but it times-out when ran together with all the tests under
+		// org.springframework.data.couchbase
 		User modified = operations.upsertById(User.class).one(user);
 		assertEquals(user, modified);
 

@@ -16,8 +16,12 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 
 /**
@@ -28,6 +32,7 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
  */
 @Configuration
 @EnableCouchbaseRepositories
+@EnableCouchbaseAuditing // this activates auditing
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";
@@ -96,4 +101,13 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return bucketname;
 	}
 
+	@Bean(name = "auditorAwareRef")
+	public NaiveAuditorAware testAuditorAware() {
+		return new NaiveAuditorAware();
+	}
+
+	@Bean(name = "dateTimeProviderRef")
+	public DateTimeProvider testDateTimeProvider() {
+		return new AuditingDateTimeProvider();
+	}
 }

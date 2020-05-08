@@ -19,19 +19,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.lang.Nullable;
 
 public interface ExecutableFindByAnalyticsOperation {
 
+	/**
+	 * Queries the analytics service.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType);
 
 	interface TerminatingFindByAnalytics<T> {
+
 		/**
 		 * Get exactly zero or one result.
 		 *
 		 * @return {@link Optional#empty()} if no match found.
-		 * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
 		default Optional<T> one() {
 			return Optional.ofNullable(oneValue());
@@ -41,7 +48,7 @@ public interface ExecutableFindByAnalyticsOperation {
 		 * Get exactly zero or one result.
 		 *
 		 * @return {@literal null} if no match found.
-		 * @throws org.springframework.dao.IncorrectResultSizeDataAccessException if more than one match found.
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
 		@Nullable
 		T oneValue();
@@ -93,19 +100,12 @@ public interface ExecutableFindByAnalyticsOperation {
 
 	}
 
-	/**
-	 * Terminating operations invoking the actual query execution.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.0
-	 */
 	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T> {
 
 		/**
-		 * Set the filter query to be used.
+		 * Set the filter for the analytics query to be used.
 		 *
 		 * @param query must not be {@literal null}.
-		 * @return new instance of {@link TerminatingFindByAnalytics}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
 		TerminatingFindByAnalytics<T> matching(AnalyticsQuery query);

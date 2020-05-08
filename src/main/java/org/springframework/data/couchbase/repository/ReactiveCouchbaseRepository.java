@@ -19,6 +19,8 @@ import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 
 /**
+ * Couchbase-specific {@link ReactiveSortingRepository} implementation.
+ *
  * @author Subhashni Balakrishnan
  * @since 3.0
  */
