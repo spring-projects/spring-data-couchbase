@@ -60,7 +60,7 @@ public class CustomConvertersTests {
 		CouchbaseDocument doc = new CouchbaseDocument();
 		converter.write(post, doc);
 
-		assertThat(doc.getPayload().get("created")).isEqualTo(date.toString());
+		assertThat(doc.getContent().get("created")).isEqualTo(date.toString());
 	}
 
 	@Test
@@ -71,7 +71,7 @@ public class CustomConvertersTests {
 		converter.afterPropertiesSet();
 
 		CouchbaseDocument doc = new CouchbaseDocument();
-		doc.getPayload().put("content", 10);
+		doc.getContent().put("content", 10);
 		Counter loaded = converter.read(Counter.class, doc);
 		assertThat(loaded.content).isEqualTo("even");
 	}
@@ -90,8 +90,8 @@ public class CustomConvertersTests {
 		CouchbaseDocument doc = new CouchbaseDocument();
 		converter.write(post, doc);
 
-		assertThat(doc.getPayload().get("title")).isEqualTo("The Foo of the Bar");
-		assertThat(doc.getPayload().get("slug")).isEqualTo("the_foo_of_the_bar");
+		assertThat(doc.getContent().get("title")).isEqualTo("The Foo of the Bar");
+		assertThat(doc.getContent().get("slug")).isEqualTo("the_foo_of_the_bar");
 	}
 
 	@Test
@@ -102,7 +102,7 @@ public class CustomConvertersTests {
 		converter.afterPropertiesSet();
 
 		CouchbaseDocument doc = new CouchbaseDocument();
-		doc.getPayload().put("title", "My Title");
+		doc.getContent().put("title", "My Title");
 
 		BlogPost loaded = converter.read(BlogPost.class, doc);
 		assertThat(loaded.id).isEqualTo("modified");
@@ -146,7 +146,7 @@ public class CustomConvertersTests {
 		public BlogPost convert(CouchbaseDocument source) {
 			BlogPost post = new BlogPost();
 			post.id = "modified";
-			post.title = source.getPayload().get("title") + "!!";
+			post.title = source.getContent().get("title") + "!!";
 			return post;
 		}
 	}

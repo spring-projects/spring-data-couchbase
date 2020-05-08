@@ -329,7 +329,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 		Class<?> mapType = typeMapper.readType(source, type).getType();
 		Map<Object, Object> map = CollectionFactory.createMap(mapType, source.export().keySet().size());
-		Map<String, Object> sourceMap = source.getPayload();
+		Map<String, Object> sourceMap = source.getContent();
 
 		for (Map.Entry<String, Object> entry : sourceMap.entrySet()) {
 			Object key = entry.getKey();

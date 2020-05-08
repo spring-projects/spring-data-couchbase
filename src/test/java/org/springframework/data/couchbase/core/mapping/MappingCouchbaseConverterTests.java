@@ -399,8 +399,8 @@ public class MappingCouchbaseConverterTests {
 		mapOfValuesDoc.put("val2", value2Str);
 		source.put("mapOfValues", mapOfValuesDoc);
 
-		assertThat(valueStr).isEqualTo(((CouchbaseList) converted.getPayload().get("listOfValues")).get(0));
-		assertThat(value2Str).isEqualTo(((CouchbaseList) converted.getPayload().get("listOfValues")).get(1));
+		assertThat(valueStr).isEqualTo(((CouchbaseList) converted.getContent().get("listOfValues")).get(0));
+		assertThat(value2Str).isEqualTo(((CouchbaseList) converted.getContent().get("listOfValues")).get(1));
 		assertThat(converted.export().toString()).isEqualTo(source.export().toString());
 
 		CustomEntity readConverted = converter.read(CustomEntity.class, source);
@@ -463,10 +463,10 @@ public class MappingCouchbaseConverterTests {
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(entity, converted);
-		assertThat(converted.getPayload().get("created")).isEqualTo(created.getTime());
-		assertThat(converted.getPayload().get("modified")).isEqualTo(modified.getTimeInMillis() / 1000);
+		assertThat(converted.getContent().get("created")).isEqualTo(created.getTime());
+		assertThat(converted.getContent().get("modified")).isEqualTo(modified.getTimeInMillis() / 1000);
 		LocalDateTimeToLongConverter localDateTimeToDateconverter = LocalDateTimeToLongConverter.INSTANCE;
-		assertThat(converted.getPayload().get("deleted")).isEqualTo(localDateTimeToDateconverter.convert(deleted));
+		assertThat(converted.getContent().get("deleted")).isEqualTo(localDateTimeToDateconverter.convert(deleted));
 
 		DateEntity read = converter.read(DateEntity.class, converted);
 		assertThat(read.created.getTime()).isEqualTo(created.getTime());

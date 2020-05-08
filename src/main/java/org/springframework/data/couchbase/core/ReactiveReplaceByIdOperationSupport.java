@@ -68,7 +68,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.replace(converted.getId(), converted.getPayload(), buildReplaceOptions()).map(result -> {
+						.replace(converted.getId(), converted.getContent(), buildReplaceOptions()).map(result -> {
 							template.support().applyUpdatedCas(object, result.cas());
 							return o;
 						});

@@ -68,7 +68,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.upsert(converted.getId(), converted.getPayload(), buildUpsertOptions()).map(result -> {
+						.upsert(converted.getId(), converted.getContent(), buildUpsertOptions()).map(result -> {
 							template.support().applyUpdatedCas(object, result.cas());
 							return o;
 						});

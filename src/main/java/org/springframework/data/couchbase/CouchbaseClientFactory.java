@@ -56,6 +56,11 @@ public interface CouchbaseClientFactory extends Closeable {
 	Collection getCollection(String name);
 
 	/**
+	 * Provides access to the default collection.
+	 */
+	Collection getDefaultCollection();
+
+	/**
 	 * Returns a new {@link CouchbaseClientFactory} set to the scope given as an argument.
 	 *
 	 * @param scopeName the name of the scope to use for all collection access.

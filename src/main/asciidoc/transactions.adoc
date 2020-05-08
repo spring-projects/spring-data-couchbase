@@ -1,0 +1,114 @@
+[[couchbase.transactions]]
+= Transaction Support
+
+Couchbase supports https://docs.couchbase.com/server/6.5/learn/data/transactions.html[Distributed Transactions]. This section documents on how to use it with Spring Data Couchbase.
+
+== Requirements
+
+ - Couchbase Server 6.5 or above.
+ - Couchbase Java client 3.0.0 or above. It is recommended to follow the transitive dependency for the transactions library from maven.
+ - NTP should be configured so nodes of the Couchbase cluster are in sync with time. The time being out of sync will not cause incorrect behavior, but can impact metadata cleanup.
+
+== Getting Started & Configuration
+
+The `couchbase-transactions` artifact needs to be included into your `pom.xml` if maven is being used (or equivalent).
+
+ - Group: `com.couchbase.client`
+ - Artifact: `couchbase-transactions`
+ - Version: latest one, i.e. `1.0.0`
+
+Once it is included in your project, you need to create a single `Transactions` object. Conveniently, it can be part of
+your spring data couchbase `AbstractCouchbaseConfiguration` implementation:
+
+.Transaction Configuration
+====
+[source,java]
+----
+@Configuration
+static class Config extends AbstractCouchbaseConfiguration {
+
+    // Usual Setup
+    @Override public String getConnectionString() { /* ... */ }
+    @Override public String getUserName() { /* ... */ }
+    @Override public String getPassword() { /* ... */ }
+    @Override public String getBucketName() { /* ... */ }
+
+	@Bean
+	public Transactions transactions(final Cluster couchbaseCluster) {
+		return Transactions.create(couchbaseCluster, TransactionConfigBuilder.create()
+			// The configuration can be altered here, but in most cases the defaults are fine.
+			.build());
+	}
+
+}
+----
+====
+
+Once the `@Bean` is configured, you can autowire it from your service (or any other class) to make use of it. Please
+see the https://docs.couchbase.com/java-sdk/3.0/howtos/distributed-acid-transactions-from-the-sdk.html[Reference Documentation]
+on how to use the `Transactions` class. Since you need access to the current `Collection` as well, we recommend you to also
+autowire the `CouchbaseClientFactory` and access it from there:
+
+.Transaction Access
+====
+[source,java]
+----
+@Autowired
+Transactions transactions;
+
+@Autowired
+CouchbaseClientFactory couchbaseClientFactory;
+
+public void doSomething() {
+ transactions.run(ctx -> {
+  ctx.insert(couchbaseClientFactory.getDefaultCollection(), "id", "content");
+  ctx.commit();
+ });
+}
+----
+====
+
+== Object Conversions
+
+Since the transactions library itself has no knowledge of your spring data entity types, you need to convert it back and
+forth when reading/writing to interact properly. Fortunately, all you need to do is autowire the `MappingCouchbaseConverter` and
+utilize it:
+
+.Transaction Conversion on Write
+====
+[source,java]
+----
+@Autowired
+MappingCouchbaseConverter mappingCouchbaseConverter;
+
+public void doSomething() {
+  transactions.run(ctx -> {
+
+   Airline airline = new Airline("demo-airline", "at");
+   CouchbaseDocument target = new CouchbaseDocument();
+   mappingCouchbaseConverter.write(airline, target);
+
+   ctx.insert(couchbaseClientFactory.getDefaultCollection(), target.getId(), target.getContent());
+
+   ctx.commit();
+  });
+}
+----
+====
+
+The same approach can be used on read:
+
+.Transaction Conversion on Read
+====
+[source,java]
+----
+TransactionGetResult getResult = ctx.get(couchbaseClientFactory.getDefaultCollection(), "doc-id");
+
+CouchbaseDocument source = new CouchbaseDocument(getResult.id());
+source.setContent(getResult.contentAsObject());
+Airline read = mappingCouchbaseConverter.read(Airline.class, source);
+----
+====
+
+We are also looking into tighter integration of the transaction library into the spring data library
+ecosystem.

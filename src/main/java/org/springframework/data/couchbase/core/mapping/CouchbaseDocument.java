@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import com.couchbase.client.java.json.JsonObject;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +48,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	/**
 	 * Contains the actual data to be stored.
 	 */
-	private HashMap<String, Object> payload;
+	private Map<String, Object> content;
 
 	/**
 	 * Represents the document ID used to identify the document in the bucket.
@@ -83,7 +85,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	public CouchbaseDocument(final String id, final int expiration) {
 		this.id = id;
 		this.expiration = expiration;
-		payload = new HashMap<String, Object>();
+		content = new HashMap<>();
 	}
 
 	/**
@@ -96,7 +98,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	public final CouchbaseDocument put(final String key, final Object value) {
 		verifyValueType(value);
 
-		payload.put(key, value);
+		content.put(key, value);
 		return this;
 	}
 
@@ -107,7 +109,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @return the value to which the specified key is mapped, or null if does not contain a mapping for the key.
 	 */
 	public final Object get(final String key) {
-		return payload.get(key);
+		return content.get(key);
 	}
 
 	/**
@@ -118,8 +120,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @return
 	 */
 	public final HashMap<String, Object> export() {
-		HashMap<String, Object> toExport = new HashMap<String, Object>(payload);
-		for (Map.Entry<String, Object> entry : payload.entrySet()) {
+		HashMap<String, Object> toExport = new HashMap<String, Object>(content);
+		for (Map.Entry<String, Object> entry : content.entrySet()) {
 			if (entry.getValue() instanceof CouchbaseDocument) {
 				toExport.put(entry.getKey(), ((CouchbaseDocument) entry.getValue()).export());
 			} else if (entry.getValue() instanceof CouchbaseList) {
@@ -136,7 +138,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @return true if it contains a payload for the specified key.
 	 */
 	public final boolean containsKey(final String key) {
-		return payload.containsKey(key);
+		return content.containsKey(key);
 	}
 
 	/**
@@ -146,7 +148,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @return true if it contains the specified value.
 	 */
 	public final boolean containsValue(final Object value) {
-		return payload.containsValue(value);
+		return content.containsValue(value);
 	}
 
 	/**
@@ -165,14 +167,14 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @return the size of the attributes in this and recursive documents.
 	 */
 	public final int size(final boolean recursive) {
-		int thisSize = payload.size();
+		int thisSize = content.size();
 
 		if (!recursive || thisSize == 0) {
 			return thisSize;
 		}
 
 		int totalSize = thisSize;
-		for (Object value : payload.values()) {
+		for (Object value : content.values()) {
 			if (value instanceof CouchbaseDocument) {
 				totalSize += ((CouchbaseDocument) value).size(true);
 			} else if (value instanceof CouchbaseList) {
@@ -192,8 +194,29 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 *
 	 * @return the underlying payload.
 	 */
-	public HashMap<String, Object> getPayload() {
-		return payload;
+	public Map<String, Object> getContent() {
+		return content;
+	}
+
+	/**
+	 * Allows to set the full payload as a map.
+	 *
+	 * @param content the payload to set
+	 * @return this document for chaining purposes.
+	 */
+	public CouchbaseDocument setContent(final Map<String, Object> content) {
+		this.content = content;
+		return this;
+	}
+
+	/**
+	 * Allows to set the full payload as a json object for convenience.
+	 *
+	 * @param payload the payload to set
+	 * @return this document for chaining purposes.
+	 */
+	public CouchbaseDocument setContent(final JsonObject payload) {
+		return setContent(payload.toMap());
 	}
 
 	/**
@@ -271,6 +294,6 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 */
 	@Override
 	public String toString() {
-		return "CouchbaseDocument{" + "id=" + id + ", exp=" + expiration + ", payload=" + payload + '}';
+		return "CouchbaseDocument{" + "id=" + id + ", exp=" + expiration + ", content=" + content + '}';
 	}
 }

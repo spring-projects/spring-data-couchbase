@@ -105,6 +105,11 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	}
 
 	@Override
+	public Collection getDefaultCollection() {
+		return getCollection(null);
+	}
+
+	@Override
 	public PersistenceExceptionTranslator getExceptionTranslator() {
 		return exceptionTranslator;
 	}
