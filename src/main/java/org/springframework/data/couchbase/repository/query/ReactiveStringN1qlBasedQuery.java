@@ -61,8 +61,8 @@ public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery
 		return getCouchbaseOperations().getConverter().getTypeKey();
 	}
 
-	protected Class<?> getTypeValue() {
-		return getQueryMethod().getEntityInformation().getJavaType();
+	protected String getTypeValue() {
+		return getQueryMethod().getEntityInformation().getJavaType().getName();
 	}
 
 	@Override

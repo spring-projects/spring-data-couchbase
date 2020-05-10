@@ -18,7 +18,9 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -34,4 +36,9 @@ public interface UserRepository extends PagingAndSortingRepository<User, String>
 
 	List<User> findByFirstnameAndLastname(String firstname, String lastname);
 
+	@Query("#{#n1ql.selectEntity} where firstname = $1 and lastname = $2")
+	List<User> getByFirstnameAndLastname(String firstname, String lastname);
+
+	@Query("#{#n1ql.selectEntity} where (firstname = $first or lastname = $last)")
+	List<User>  getByFirstnameOrLastname(@Param("first")String firstname, @Param("last")String lastname);
 }
