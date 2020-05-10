@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseRepositoryQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -32,7 +33,6 @@ import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.ReactiveRepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -41,6 +41,7 @@ import org.springframework.util.Assert;
 /**
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Michael Reiche
  * @since 3.0
  */
 public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactorySupport {
@@ -83,14 +84,14 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 * Returns entity information based on the domain class.
 	 *
 	 * @param domainClass the class for the entity.
-	 * @param <T> the value type
-	 * @param <ID> the id type.
+	 * @param <T>         the value type
+	 * @param <ID>        the id type.
 	 * @return entity information for that domain class.
 	 */
 	@Override
 	public <T, ID> CouchbaseEntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
-		CouchbasePersistentEntity<T> entity = (CouchbasePersistentEntity<T>) mappingContext
-				.getRequiredPersistentEntity(domainClass);
+		CouchbasePersistentEntity<T> entity = (CouchbasePersistentEntity<T>) mappingContext.getRequiredPersistentEntity(
+				domainClass);
 		return new MappingCouchbaseEntityInformation<>(entity);
 	}
 
@@ -105,8 +106,8 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 */
 	@Override
 	protected final Object getTargetRepository(final RepositoryInformation metadata) {
-		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
-				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
+		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
+				metadata.getRepositoryInterface(), metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
 		SimpleReactiveCouchbaseRepository repository = getTargetRepositoryViaReflection(metadata, entityInformation,
 				couchbaseOperations);
@@ -148,10 +149,10 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 		@Override
 		public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
 				NamedQueries namedQueries) {
-			final ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
-					.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
-
-			return new ReactiveCouchbaseRepositoryQuery(couchbaseOperations, new QueryMethod(method, metadata, factory));
+			final ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
+					metadata.getRepositoryInterface(), metadata.getDomainType());
+			return new ReactiveCouchbaseRepositoryQuery(couchbaseOperations,
+					new CouchbaseQueryMethod(method, metadata, factory, mappingContext), namedQueries);
 		}
 	}
 

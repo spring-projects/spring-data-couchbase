@@ -60,7 +60,7 @@ public class StringN1qlBasedQuery extends AbstractN1qlBasedQuery {
 			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		super(queryMethod, couchbaseOperations);
 		this.queryParser = new StringBasedN1qlQueryParser(statement, queryMethod, getCouchbaseOperations().getBucketName(),
-				getCouchbaseOperations().getConverter(), getTypeField(), getTypeValue());
+				getCouchbaseOperations().getConverter(), getTypeField(), getTypeValue().getName());
 		this.parser = spelParser;
 		this.evaluationContextProvider = evaluationContextProvider;
 	}

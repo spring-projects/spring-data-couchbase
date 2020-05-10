@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,12 +31,13 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.repository.query.DefaultParameters;
-import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.Parameters;
-import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.PartTree;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 class N1qlQueryCreatorTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
@@ -55,7 +55,8 @@ class N1qlQueryCreatorTests {
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class);
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), context);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null,
+				converter);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where("firstname").is("Oliver").export());
@@ -66,8 +67,8 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameAndLastname";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class, String.class);
-
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), context);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), null,
+				converter);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where("firstname").is("John").and("lastname").is("Doe").export());

@@ -52,6 +52,8 @@ public abstract class ClusterAwareIntegrationTests {
 		return PasswordAuthenticator.create(config().adminUsername(), config().adminPassword());
 	}
 
+	public static String username() { return config().adminUsername(); }
+	public static String password() { return config().adminPassword(); }
 	public static String bucketName() {
 		return config().bucketname();
 	}
@@ -62,13 +64,33 @@ public abstract class ClusterAwareIntegrationTests {
 	 * @return the connection string to connect.
 	 */
 	public static String connectionString() {
+		/*
 		return seedNodes().stream().map(s -> {
 			if (s.kvPort().isPresent()) {
-				return s.address() + ":" + s.kvPort().get();
+				return s.address() + ":" + s.kvPort().get() + "=" + Services.KV;
+			} else if (s.clusterManagerPort().isPresent()) {
+				return s.address() + ":" + s.clusterManagerPort().get() + "=" + Services.MANAGER;
 			} else {
-				return s.address();
+				return s.address() ;
 			}
 		}).collect(Collectors.joining(","));
+		*/
+		StringBuffer sb = new StringBuffer();
+		for(SeedNode s:seedNodes()) {
+			if (s.kvPort().isPresent()) {
+				if(sb.length() > 0 ) sb.append(",");
+				sb.append (s.address() + ":" + s.kvPort().get() + "=" + Services.KV);
+			}
+			if (s.clusterManagerPort().isPresent()) {
+				if (sb.length() > 0)
+					sb.append(",");
+				sb.append(s.address() + ":" + s.clusterManagerPort().get() + "=" + Services.MANAGER);
+			}
+			if(sb.length() == 0 ){
+				sb.append(s.address());
+			}
+		}
+		return sb.toString();
 	}
 
 	public static Set<SeedNode> seedNodes() {

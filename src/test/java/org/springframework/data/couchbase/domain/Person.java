@@ -30,17 +30,23 @@ public class Person extends AbstractEntity {
 	Optional<String> firstname;
 	Optional<String> lastname;
 
-	@CreatedBy private String creator;
+	@CreatedBy
+	private String creator;
 
-	@LastModifiedBy private String lastModifiedBy;
+	@LastModifiedBy
+	private String lastModifiedBy;
 
-	@LastModifiedDate private long lastModification;
+	@LastModifiedDate
+	private long lastModification;
 
-	@CreatedDate private long creationDate; // =System.currentTimeMillis();
+	@CreatedDate
+	private long creationDate; // =System.currentTimeMillis();
 
-	@Version private long version;
+	@Version
+	private long version;
 
-	public Person() {}
+	public Person() {
+	}
 
 	public Person(String firstname, String lastname) {
 		this();
@@ -54,11 +60,13 @@ public class Person extends AbstractEntity {
 	}
 
 	static String optional(String name, Optional<String> obj) {
-		if (obj != null)
-			if (obj.isPresent())
+		if (obj != null) {
+			if (obj.isPresent()) {
 				return ("  " + name + ": '" + obj.get() + "'\n");
-			else
+			} else {
 				return "  " + name + ": null\n";
+			}
+		}
 		return "";
 	}
 
@@ -86,6 +94,10 @@ public class Person extends AbstractEntity {
 		this.lastname = lastname;
 	}
 
+	public long getVersion() {
+		return version;
+	}
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Person : {\n");
@@ -93,15 +105,31 @@ public class Person extends AbstractEntity {
 		sb.append(optional(", firstname", firstname));
 		sb.append(optional(", lastname", lastname));
 		sb.append(", version : " + version);
-		if (creator != null)
+		if (creator != null) {
 			sb.append(", creator : " + creator);
-		if (creationDate != 0)
+		}
+		if (creationDate != 0) {
 			sb.append(", creationDate : " + creationDate);
-		if (lastModifiedBy != null)
+		}
+		if (lastModifiedBy != null) {
 			sb.append(", lastModifiedBy : " + lastModifiedBy);
-		if (lastModification != 0)
+		}
+		if (lastModification != 0) {
 			sb.append(", lastModification : " + lastModification);
+		}
 		sb.append("}");
 		return sb.toString();
 	}
+
+	static String optional(String name, String obj) {
+		if (obj != null) {
+			if (obj != null /*.isPresent() */) {
+				return ("  " + name + ": '" + obj/*.get()*/ + "'\n");
+			} else {
+				return "  " + name + ": null\n";
+			}
+		}
+		return "";
+	}
+
 }

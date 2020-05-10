@@ -16,22 +16,30 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class CouchbaseRepositoryQuery implements RepositoryQuery {
 
 	private final CouchbaseOperations operations;
-	private final QueryMethod queryMethod;
+	private final CouchbaseQueryMethod queryMethod;
+	private final NamedQueries namedQueries;
 
-	public CouchbaseRepositoryQuery(final CouchbaseOperations operations, final QueryMethod queryMethod) {
+	public CouchbaseRepositoryQuery(final CouchbaseOperations operations, final CouchbaseQueryMethod queryMethod,
+			final NamedQueries namedQueries) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
+		this.namedQueries = namedQueries;
 	}
 
 	@Override
 	public Object execute(final Object[] parameters) {
-		return new N1qlRepositoryQueryExecutor(operations, queryMethod).execute(parameters);
+		return new N1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries).execute(parameters);
 	}
 
 	@Override

@@ -67,8 +67,8 @@ class QueryCriteriaTests {
 
 	@Test
 	void testNestedNotIn() {
-		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria"))
-				.and(where("state").notIn(new String[] { "Alabama", "Florida" }));
+		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria")).and(
+				where("state").notIn(new String[] { "Alabama", "Florida" }));
 		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and "
 				+ "(not( (`state` in ( [ \"Alabama\", \"Florida\" ] )) ))", c.export());
 	}
@@ -106,19 +106,28 @@ class QueryCriteriaTests {
 	@Test
 	void testStartingWith() {
 		QueryCriteria c = where("name").startingWith("Cou");
-		assertEquals("`name` like \"Cou%\"", c.export());
+		assertEquals("`name` like (\"Cou\"||\"%\")", c.export());
 	}
 
+	/* cannot do this properly yet because in arg to when() in
+         * startingWith()  cannot be a QueryCriteria
 	@Test
 	void testStartingWithExpr() {
-		QueryCriteria c = where("name").startingWith(where("name").plus(""));
-		assertEquals("`name` like ((\"%\" + ((`name` + \"\"))))", c.export());
+		QueryCriteria c = where("name").startingWith(where("name").plus("xxx"));
+		assertEquals("`name` like (((`name` || "xxx") || ""%""))", c.export());
 	}
+        */
 
 	@Test
 	void testEndingWith() {
 		QueryCriteria c = where("name").endingWith("ouch");
-		assertEquals("`name` like \"%ouch\"", c.export());
+		assertEquals("`name` like (\"%\"||\"ouch\")", c.export());
+	}
+
+	@Test
+	void testEndingWithExpr() {
+		QueryCriteria c = where("name").endingWith(where("name").plus("xxx"));
+		assertEquals("`name` like (\"%\"||((`name` || \"xxx\")))", c.export());
 	}
 
 	@Test
@@ -148,7 +157,7 @@ class QueryCriteriaTests {
 	@Test
 	void testNotLike() {
 		QueryCriteria c = where("name").notLike("%Elvis%");
-		assertEquals("not( (`name` like \"%Elvis%\") )", c.export());
+		assertEquals("not(`name` like \"%Elvis%\")", c.export());
 	}
 
 	@Test
