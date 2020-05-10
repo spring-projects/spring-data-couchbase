@@ -15,35 +15,67 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
+import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.repository.core.NamedQueries;
+import org.springframework.data.repository.query.*;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.ParametersParameterAccessor;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
 
+import java.util.List;
+
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class ReactiveN1qlRepositoryQueryExecutor {
 
 	private final ReactiveCouchbaseOperations operations;
-	private final QueryMethod queryMethod;
+	private final CouchbaseQueryMethod queryMethod;
+	private final NamedQueries namedQueries;
 
 	public ReactiveN1qlRepositoryQueryExecutor(final ReactiveCouchbaseOperations operations,
-			final QueryMethod queryMethod) {
+			final CouchbaseQueryMethod queryMethod, final NamedQueries namedQueries) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
+		this.namedQueries = namedQueries;
 	}
 
+	/**
+	 * see also {@link N1qlRepositoryQueryExecutor#execute(Object[] parameters) execute }
+	 *
+	 * @param parameters
+	 * @return
+	 */
 	public Object execute(final Object[] parameters) {
 		final Class<?> domainClass = queryMethod.getResultProcessor().getReturnedType().getDomainType();
 		final ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
+		final String namedQueryName = queryMethod.getNamedQueryName();
 
-		final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-		Query query = new N1qlQueryCreator(tree, accessor, operations.getConverter().getMappingContext()).createQuery();
+		// this is identical to ExecutableN1qlRespositoryQueryExecutor,
+		// except for the type of 'q', and the call to one() vs oneValue()
 
-		Flux<?> all = operations.findByQuery(domainClass).matching(query).all();
-		return all;
+		Query query;
+		ReactiveFindByQueryOperation.ReactiveFindByQuery q;
+		if (queryMethod.hasN1qlAnnotation()) {
+			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(),
+					operations.getBucketName(), QueryMethodEvaluationContextProvider.DEFAULT,
+					namedQueries).createQuery();
+		} else {
+			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
+		}
+		q = (ReactiveFindByQueryOperation.ReactiveFindByQuery) operations.findByQuery(domainClass).matching(query);
+		if (queryMethod.isCollectionQuery()) {
+			return q.all();
+		} else {
+			return q.one();
+		}
 	}
 
 }

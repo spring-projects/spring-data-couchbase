@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.data.couchbase.domain;
 
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,11 @@ import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ * @since 3.0
+ */
 @Configuration
 @EnableCouchbaseRepositories
 @EnableCouchbaseAuditing // this activates auditing
@@ -32,23 +38,69 @@ public class Config extends AbstractCouchbaseConfiguration {
 	String password = "password";
 	String connectionString = "127.0.0.1";
 
+	// if running a clusterAwareIntegrationTests, use those properties
+	static Class clusterAware = null;
+
+	static {
+		try {
+			clusterAware = Class.forName("org.springframework.data.couchbase.util.ClusterAwareIntegrationTests");
+		} catch (ClassNotFoundException cnfe) {
+		}
+	}
+
 	@Override
 	public String getConnectionString() {
+		if (clusterAware != null) {
+			try {
+				if (clusterAware.getMethod("config").invoke(null, (Object[]) null) != null) {
+					return (String) clusterAware.getMethod("connectionString").invoke(null, (Object[]) null);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 		return connectionString;
 	}
 
 	@Override
 	public String getUserName() {
+		if (clusterAware != null) {
+			try {
+				if (clusterAware.getMethod("config").invoke(null, (Object[]) null) != null) {
+					return (String) clusterAware.getMethod("username").invoke(null, (Object[]) null);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 		return username;
 	}
 
 	@Override
 	public String getPassword() {
+		if (clusterAware != null) {
+			try {
+				if (clusterAware.getMethod("config").invoke(null, (Object[]) null) != null) {
+					return (String) clusterAware.getMethod("password").invoke(null, (Object[]) null);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 		return password;
 	}
 
 	@Override
 	public String getBucketName() {
+		if (clusterAware != null) {
+			try {
+				if (clusterAware.getMethod("config").invoke(null, (Object[]) null) != null) {
+					return (String) clusterAware.getMethod("bucketName").invoke(null, (Object[]) null);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 		return bucketname;
 	}
 

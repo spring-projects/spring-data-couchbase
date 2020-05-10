@@ -22,6 +22,10 @@ import java.util.List;
 
 import org.springframework.lang.Nullable;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
 	private final String key;
@@ -126,29 +130,23 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria startingWith(@Nullable Object o) {
-		if (o instanceof QueryCriteria) {
-			QueryCriteria term = where("\"%\"").plus(o);
-			like(term);
-		} else {
-			like(o.toString() + "%");
-		}
+		operator = "STARTING_WITH";
+		value = new Object[] { o };
+		format = "%1$s like (%3$s||\"%%\")";
 		return this;
 	}
 
 	public QueryCriteria plus(@Nullable Object o) {
 		operator = "PLUS";
 		value = new Object[] { o };
-		format = "(%1$s + %3$s)";
+		format = "(%1$s || %3$s)";
 		return this;
 	}
 
 	public QueryCriteria endingWith(@Nullable Object o) {
-		if (o instanceof QueryCriteria) {
-			QueryCriteria term = where("%").plus(o);
-			like(term);
-		} else {
-			like("%" + o.toString());
-		}
+		operator = "ENDING_WITH";
+		value = new Object[] { o };
+		format = "%1$s like (\"%%\"||%3$s)";
 		return this;
 	}
 
@@ -181,10 +179,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria notLike(@Nullable Object o) {
-		value = new QueryCriteria[] { wrap(like(o)) };
-		operator = "NOT";
-		format = format = "not( %3$s )";
-		return (QueryCriteria) this;
+		operator = "NOTLIKE";
+		value = new Object[] { o };
+		format = "not(%1$s like %3$s)";
+		return this;
 	}
 
 	public QueryCriteria isNull() {
@@ -277,8 +275,17 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return (QueryCriteria) this;
 	}
 
+	/**
+	 * This exports the query criteria into a string to be appended to the beginning of an N1QL statement
+	 *
+	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters
+	 *                      There may already be positional parameters in the beginning of the statement,
+	 *                      so it may not always start at 1.  If it has the value -1, the query is using
+	 *                      named parameters. If the pointer is null, the query is not using parameters.
+	 * @return string containing part of N1QL query
+	 */
 	@Override
-	public String export() {
+	public String export(int[] paramIndexPtr) {
 		StringBuilder output = new StringBuilder();
 		boolean first = true;
 		for (QueryCriteria c : this.criteriaChain) {
@@ -286,18 +293,29 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 				if (c.chainOperator == null) {
 					throw new IllegalStateException("A chain operator must be present when chaining!");
 				}
-				// the consistent place to output this would be in the c.toQueryString(output) about five lines down
+				// the consistent place to output this would be in the c.exportSingle(output) about five lines down
 				output.append(" ").append(c.chainOperator.representation).append(" ");
 			} else {
 				first = false;
 			}
-			c.exportSingle(output);
+			c.exportSingle(output, paramIndexPtr);
 		}
 
 		return output.toString();
 	}
 
-	private StringBuilder exportSingle(StringBuilder sb) {
+	/**
+	 * Export the query criteria to a string without using positional or named parameters.
+	 *
+	 * @return string containing part of N1QL query
+	 */
+	@Override
+	public String export() {
+		return export(null);
+
+	}
+
+	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr) {
 		String fieldName = maybeQuote(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
@@ -305,9 +323,9 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		v[1] = operator;
 		for (int i = 0; i < valueLen; i++) {
 			if (value[i] instanceof QueryCriteria) {
-				v[i + 2] = "(" + ((QueryCriteria) value[i]).export() + ")";
+				v[i + 2] = "(" + ((QueryCriteria) value[i]).export(paramIndexPtr) + ")";
 			} else {
-				v[i + 2] = maybeWrapValue(value[i]);
+				v[i + 2] = maybeWrapValue(key, value[i], paramIndexPtr);
 			}
 		}
 
@@ -322,7 +340,15 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return sb;
 	}
 
-	private String maybeWrapValue(Object value) {
+	private String maybeWrapValue(String key, Object value, int[] paramIndexPtr) {
+		if (paramIndexPtr != null) {
+			if (paramIndexPtr[0] >= 0) {
+				return "$" + (++paramIndexPtr[0]); // these are generated in order
+			} else {
+				return "$" + key;
+			}
+		}
+
 		if (value instanceof String) {
 			return "\"" + value + "\"";
 		} else if (value == null) {

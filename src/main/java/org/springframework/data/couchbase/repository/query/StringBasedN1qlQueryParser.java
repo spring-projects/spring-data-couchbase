@@ -19,10 +19,13 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.couchbase.client.core.error.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -42,6 +45,7 @@ import com.couchbase.client.java.json.JsonValue;
 
 /**
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  */
 public class StringBasedN1qlQueryParser {
 	public static final String SPEL_PREFIX = "n1ql";
@@ -84,11 +88,17 @@ public class StringBasedN1qlQueryParser {
 	 * the statement.
 	 */
 	public static final String SPEL_RETURNING = "#" + SPEL_PREFIX + ".returning";
-	/** regexp that detect $named placeholder (starts with a letter, then alphanum chars) */
+	/**
+	 * regexp that detect $named placeholder (starts with a letter, then alphanum chars)
+	 */
 	public static final Pattern NAMED_PLACEHOLDER_PATTERN = Pattern.compile("\\W(\\$\\p{Alpha}\\p{Alnum}*)\\b");
-	/** regexp that detect positional placeholder ($ followed by digits only) */
+	/**
+	 * regexp that detect positional placeholder ($ followed by digits only)
+	 */
 	public static final Pattern POSITIONAL_PLACEHOLDER_PATTERN = Pattern.compile("\\W(\\$\\p{Digit}+)\\b");
-	/** regexp that detects " and ' quote boundaries, ignoring escaped quotes */
+	/**
+	 * regexp that detects " and ' quote boundaries, ignoring escaped quotes
+	 */
 	public static final Pattern QUOTE_DETECTION_PATTERN = Pattern.compile("[\"'](?:[^\"'\\\\]*(?:\\\\.)?)*[\"']");
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringBasedN1qlQueryParser.class);
 	private final String statement;
@@ -97,9 +107,10 @@ public class StringBasedN1qlQueryParser {
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
+	private final Collection<String> parameterNames = new HashSet<String>();
 
 	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
-			CouchbaseConverter couchbaseConverter, String typeField, Class<?> typeValue) {
+			CouchbaseConverter couchbaseConverter, String typeField, String typeValue) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.placeHolderType = checkPlaceholders(statement);
@@ -108,7 +119,7 @@ public class StringBasedN1qlQueryParser {
 		this.couchbaseConverter = couchbaseConverter;
 	}
 
-	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, Class<?> typeValue,
+	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue,
 			boolean isCount) {
 		String b = "`" + bucketName + "`";
 		String entity = "META(" + b + ").id AS " + SELECT_ID + ", META(" + b + ").cas AS " + SELECT_CAS;
@@ -119,7 +130,7 @@ public class StringBasedN1qlQueryParser {
 		} else {
 			selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
 		}
-		String typeSelection = "`" + typeField + "` = \"" + typeValue.getName() + "\"";
+		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
 		String delete = N1QLExpression.delete().from(i(bucketName)).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();
@@ -141,6 +152,7 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	private PlaceholderType checkPlaceholders(String statement) {
+
 		Matcher quoteMatcher = QUOTE_DETECTION_PATTERN.matcher(statement);
 		Matcher positionMatcher = POSITIONAL_PLACEHOLDER_PATTERN.matcher(statement);
 		Matcher namedMatcher = NAMED_PLACEHOLDER_PATTERN.matcher(statement);
@@ -159,6 +171,7 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, positionMatcher.start(), positionMatcher.end(), quotes)) {
 				LOGGER.trace("{}: Found positional placeholder {}", this.queryMethod.getName(), placeholder);
 				posCount++;
+				parameterNames.add(placeholder.substring(1)); // save without the leading $
 			}
 		}
 
@@ -168,13 +181,17 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes)) {
 				LOGGER.trace("{}: Found named placeholder {}", this.queryMethod.getName(), placeholder);
 				namedCount++;
+				parameterNames.add(placeholder.substring(1));//save without the leading $
 			}
 		}
 
-		if (posCount > 0 && namedCount > 0) {
+		if (posCount > 0 && namedCount > 0) { // actual values from parameterNames might be more useful
 			throw new IllegalArgumentException("Using both named (" + namedCount + ") and positional (" + posCount
-					+ ") placeholders is not supported, please choose one over the other in " + this.queryMethod.getName());
-		} else if (posCount > 0) {
+					+ ") placeholders is not supported, please choose one over the other in "
+					+ queryMethod.getClass().getName() + "." + this.queryMethod.getName() + "()");
+		}
+
+		if (posCount > 0) {
 			return PlaceholderType.POSITIONAL;
 		} else if (namedCount > 0) {
 			return PlaceholderType.NAMED;
@@ -186,48 +203,125 @@ public class StringBasedN1qlQueryParser {
 	private boolean checkNotQuoted(String item, int start, int end, List<int[]> quotes) {
 		for (int[] quote : quotes) {
 			if (quote[0] <= start && quote[1] >= end) {
-				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", this.queryMethod.getName(), item);
+				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", this.queryMethod.getName(),
+						item);
 				return false;
 			}
 		}
 		return true;
 	}
 
+	/**
+	 * Get Postional argument placeholders to use for parameters.  $1, $2 etc.
+	 *
+	 * @param accessor
+	 * @return - JsonValue holding parameters.
+	 */
 	private JsonValue getPositionalPlaceholderValues(ParameterAccessor accessor) {
 		JsonArray posValues = JsonArray.create();
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
-			posValues.add(this.couchbaseConverter.convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex())));
+			Object rawValue = accessor.getBindableValue(parameter.getIndex());
+			Object value = couchbaseConverter.convertForWriteIfNeeded(rawValue);
+			putPositionalValue(accessor, parameter, posValues, value);
 		}
 		return posValues;
 	}
 
+	/**
+	 * Get Named argument placeholders to use for parameters. $lastname, $city etc.
+	 *
+	 * @param accessor
+	 * @return
+	 */
 	private JsonObject getNamedPlaceholderValues(ParameterAccessor accessor) {
 		JsonObject namedValues = JsonObject.create();
-
+		HashSet<String> pNames = new HashSet<>(parameterNames);
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
 			String placeholder = parameter.getPlaceholder();
-			Object value = this.couchbaseConverter.convertForWriteIfNeeded(accessor.getBindableValue(parameter.getIndex()));
+			Object rawValue = accessor.getBindableValue(parameter.getIndex());
+			Object value = couchbaseConverter.convertForWriteIfNeeded(rawValue);
 
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
-				namedValues.put(placeholder, value);
+				putNamedValue(accessor, parameter, namedValues, placeholder, value);
+				if (pNames.contains(placeholder)) {
+					pNames.remove(placeholder);
+				} else {
+					throw new RuntimeException(
+							"parameter named " + placeholder + " does not match any named parameter " + parameterNames
+									+ " in " + statement);
+				}
 			} else {
-				parameter.getName().ifPresent(name -> namedValues.put(name, value));
+				if (parameter.getName().isPresent()) {
+					putNamedValue(accessor, parameter, namedValues, parameter.getName().get(), value);
+				} else {
+					throw new RuntimeException(
+							"cannot determine argument for named parameter. " + "Argument " + parameter.getIndex()
+									+ " to " + queryMethod.getClass().getName() + "." + queryMethod.getName()
+									+ "() needs @Param(\"name\") that matches a named parameter in " + statement);
+				}
 			}
+		}
+		if (!pNames.isEmpty()) {
+			throw new RuntimeException("no parameter found for " + pNames);
 		}
 		return namedValues;
 	}
 
 	protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
 		switch (this.placeHolderType) {
-			case NAMED:
-				return getNamedPlaceholderValues(accessor);
-			case POSITIONAL:
-				return getPositionalPlaceholderValues(accessor);
-			case NONE:
-			default:
-				return JsonArray.create();
+		case NAMED:
+			return getNamedPlaceholderValues(accessor);
+		case POSITIONAL:
+			return getPositionalPlaceholderValues(accessor);
+		case NONE:
+		default:
+			return JsonArray.create();
 		}
+	}
+
+	private void putPositionalValue(ParameterAccessor accessor, Parameter parameter, JsonArray posValues,
+			Object value) {
+		try {
+			posValues.add(value);
+		} catch (InvalidArgumentException iae) {
+			if (value instanceof Object[]) { // Maybe just need to treat it as an array ?
+				addAsArray(posValues, value);
+			} else {
+				throw iae;
+			}
+		}
+	}
+
+	private void addAsArray(JsonArray posValues, Object o) {
+		Object[] array = (Object[]) o;
+		JsonArray ja = JsonValue.ja();
+		for (Object e : array) {
+			ja.add(String.valueOf(couchbaseConverter.convertForWriteIfNeeded(e)));
+		}
+		posValues.add(ja);
+	}
+
+	private void putNamedValue(ParameterAccessor accessor, Parameter parameter, JsonObject namedValues,
+			String placeholder, Object value) {
+		try {
+			namedValues.put(placeholder, value);
+		} catch (InvalidArgumentException iae) {
+			if (value instanceof Object[]) { // Maybe just need to treat it as an array?
+				addAsArray(namedValues, placeholder, value);
+			} else {
+				throw iae;
+			}
+		}
+	}
+
+	private void addAsArray(JsonObject namedValues, String placeholder, Object o) {
+		Object[] array = (Object[]) o;
+		JsonArray ja = JsonValue.ja();
+		for (Object e : array) {
+			ja.add(String.valueOf(couchbaseConverter.convertForWriteIfNeeded(e)));
+		}
+		namedValues.put(placeholder, ja);
 	}
 
 	protected boolean useGeneratedCountQuery() {
@@ -246,7 +340,9 @@ public class StringBasedN1qlQueryParser {
 		return this.statement;
 	}
 
-	/** enumeration of all the combinations of placeholder types that could be found in a N1QL statement */
+	/**
+	 * enumeration of all the combinations of placeholder types that could be found in a N1QL statement
+	 */
 	private enum PlaceholderType {
 		NAMED, POSITIONAL, NONE
 	}
@@ -306,4 +402,5 @@ public class StringBasedN1qlQueryParser {
 			this.returning = returning;
 		}
 	}
+
 }
