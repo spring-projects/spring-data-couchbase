@@ -33,6 +33,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 // don't set @QueryAnnotation, as it causes problems with reduce and replacing count() method, the reduce detection
 // needs to be improved
+@Deprecated
 public @interface View {
 
 	/**
