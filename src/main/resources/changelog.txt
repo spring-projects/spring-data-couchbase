@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.0.RELEASE (2020-05-12)
+---------------------------------------------
+* DATACOUCH-544 - Upgrade to Couchbase SDK 3.0.3.
+* DATACOUCH-539 - Deprecate Annotations.
+* DATACOUCH-538 - Add scan consistency to analytics template query.
+* DATACOUCH-531 - Polish Javadoc for GA.
+* DATACOUCH-530 - Release 4.0 GA (Neumann).
+
+
 Changes in version 4.0.0.RC2 (2020-04-28)
 -----------------------------------------
 * DATACOUCH-517 - Update SDK to 3.0.3.
@@ -1035,6 +1044,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
