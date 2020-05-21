@@ -154,6 +154,58 @@ public class MyService {
 See <<couchbase.repository>> for more information.
 
 
+== Ad Hoc Queries
+
+The syntax for Ad Hoc queries has changed as well to be consistent with the Fluent API design. On Spring Data Couchbase 3.x the syntax for a dynamic query would look like the following:
+
+====
+[source,java]
+----
+    //Your custom repositoru
+    @Autowired
+    private MyRepository myRepository;
+
+    public List<User> getUsers() {
+    
+        //A very complex/dynamic query here
+        String queryString = "Select meta(u).id as id, u.* from myUsersBucket";
+        N1qlParams params = N1qlParams.build().consistency(ScanConsistency.STATEMENT_PLUS).adhoc(true);
+        ParameterizedN1qlQuery query = N1qlQuery.parameterized(queryString, JsonObject.create(), params);
+
+        return repository.getCouchbaseOperations().findByN1QLProjection(query, User.class);
+    }
+----
+====
+
+On Spring Data Couchbase 4.x, the same method will look like the following:
+
+
+====
+[source,java]
+----
+    //Cluster is a Couchbase object that you can inject
+    @Autowired
+    private Cluster cluster;
+
+    public List<User> getUsers() {
+        //A very complex/dynamic query here
+        String queryString = "Select meta(u).id as id, u.* from myUsersBucket";
+        
+        QueryOptions options = QueryOptions.queryOptions()
+            .scanConsistency(QueryScanConsistency.REQUEST_PLUS)
+            .adhoc(true);
+            
+        return cluster.query("Select * from myBucket", options)
+            .rowsAs(User.class);
+    }
+----
+====
+
+As you can see in the example above, ad hoc queries are now executed on the cluster level.
+
+See <<couchbase.repository>> for more information.
+
+
 == Full Text Search (FTS)
 
 The FTS API has been simplified and now can be accessed via the `Cluster` class:
