@@ -18,35 +18,33 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.lang.Nullable;
 
 @Document
 public class Person extends AbstractEntity {
 	Optional<String> firstname;
-	Optional<String> lastname;
+	@Nullable Optional<String> lastname;
 
-	@CreatedBy
-	private String creator;
+	@CreatedBy private String creator;
 
-	@LastModifiedBy
-	private String lastModifiedBy;
+	@LastModifiedBy private String lastModifiedBy;
 
-	@LastModifiedDate
-	private long lastModification;
+	@LastModifiedDate private long lastModification;
 
-	@CreatedDate
-	private long creationDate; // =System.currentTimeMillis();
+	@CreatedDate private long creationDate; // =System.currentTimeMillis();
 
-	@Version
-	private long version;
+	@Version private long version;
 
-	public Person() {
-	}
+	@Nullable @JsonProperty("nickname") private String middlename;
+
+	public Person() {}
 
 	public Person(String firstname, String lastname) {
 		this();
@@ -94,6 +92,14 @@ public class Person extends AbstractEntity {
 		this.lastname = lastname;
 	}
 
+	public String getMiddlename() {
+		return middlename;
+	}
+
+	public void setMiddlename(String middlename) {
+		this.middlename = middlename;
+	}
+
 	public long getVersion() {
 		return version;
 	}
@@ -104,6 +110,8 @@ public class Person extends AbstractEntity {
 		sb.append("  id : " + getId());
 		sb.append(optional(", firstname", firstname));
 		sb.append(optional(", lastname", lastname));
+		if (middlename != null)
+			sb.append(", middlename : " + middlename);
 		sb.append(", version : " + version);
 		if (creator != null) {
 			sb.append(", creator : " + creator);

@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.event.AfterConvertCallback;
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
@@ -458,8 +459,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			return (String) propertyObj;
 		} else if (propertyObj instanceof Number) {
 			return new StringBuffer().append(propertyObj).toString();
-		} else {
+		} else if (propertyObj != null) {
 			return propertyObj.toString();
+		} else {
+			return null;
 		}
 	}
 
@@ -501,33 +504,33 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				}
 
 				Object propertyObj = accessor.getProperty(prop, prop.getType());
-				if (null != propertyObj) {
-					if (prop.isAnnotationPresent(IdPrefix.class)) {
-						IdPrefix prefix = prop.findAnnotation(IdPrefix.class);
-						int order = prefix.order();
-						prefixes.put(order, convertToString(propertyObj));
-						return;
-					}
 
-					if (prop.isAnnotationPresent(IdSuffix.class)) {
-						IdSuffix suffix = prop.findAnnotation(IdSuffix.class);
-						int order = suffix.order();
-						suffixes.put(order, convertToString(propertyObj));
-						return;
-					}
-
-					if (prop.isAnnotationPresent(IdAttribute.class)) {
-						IdAttribute idAttribute = prop.findAnnotation(IdAttribute.class);
-						int order = idAttribute.order();
-						idAttributes.put(order, convertToString(propertyObj));
-					}
-
-					if (!conversions.isSimpleType(propertyObj.getClass())) {
-						writePropertyInternal(propertyObj, target, prop);
-					} else {
-						writeSimpleInternal(propertyObj, target, prop.getFieldName());
-					}
+				if (prop.isAnnotationPresent(IdPrefix.class)) {
+					IdPrefix prefix = prop.findAnnotation(IdPrefix.class);
+					int order = prefix.order();
+					prefixes.put(order, convertToString(propertyObj));
+					return;
 				}
+
+				if (prop.isAnnotationPresent(IdSuffix.class)) {
+					IdSuffix suffix = prop.findAnnotation(IdSuffix.class);
+					int order = suffix.order();
+					suffixes.put(order, convertToString(propertyObj));
+					return;
+				}
+
+				if (prop.isAnnotationPresent(IdAttribute.class)) {
+					IdAttribute idAttribute = prop.findAnnotation(IdAttribute.class);
+					int order = idAttribute.order();
+					idAttributes.put(order, convertToString(propertyObj));
+				}
+
+				if (propertyObj != null && !conversions.isSimpleType(propertyObj.getClass())) {
+					writePropertyInternal(propertyObj, target, prop);
+				} else if (propertyObj != null || prop.isNullable()) {
+					writeSimpleInternal(propertyObj, target, prop.getFieldName());
+				}
+
 			}
 		});
 
@@ -776,7 +779,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Add a custom type key if needed.
 	 *
 	 * @param type the type information.
-	 * @param source th the source object.
+	 * @param source the source object.
 	 * @param target the target document.
 	 */
 	protected void addCustomTypeKeyIfNecessary(TypeInformation<?> type, Object source, CouchbaseDocument target) {

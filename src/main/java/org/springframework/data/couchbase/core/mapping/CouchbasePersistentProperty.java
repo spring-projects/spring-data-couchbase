@@ -31,4 +31,6 @@ public interface CouchbasePersistentProperty extends PersistentProperty<Couchbas
 	 * The field name can be different from the actual property name by using a custom annotation.
 	 */
 	String getFieldName();
+
+	boolean isNullable();
 }
