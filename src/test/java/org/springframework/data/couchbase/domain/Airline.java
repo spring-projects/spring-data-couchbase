@@ -31,6 +31,7 @@ public class Airline {
 	@PersistenceConstructor
 	public Airline(String id, String name) {
 		this.id = id;
+		this.name = name;
 	}
 
 	public String getId() {
@@ -41,4 +42,15 @@ public class Airline {
 		return name;
 	}
 
+	@Override
+	public String toString(){
+		StringBuilder sb=new StringBuilder();
+		sb.append("airline: { ");
+		sb.append("  id: ");
+		sb.append(id);
+		sb.append(" , name: ");
+		sb.append(name);
+		sb.append(" }");
+		return sb.toString();
+	}
 }
