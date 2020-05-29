@@ -24,6 +24,7 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
@@ -93,5 +94,11 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	@Override
 	public boolean isIdProperty() {
 		return isAnnotationPresent(Id.class) || super.isIdProperty();
+	}
+
+	// DATACOUCH-524: allows explicitly storing null field
+	@Override
+	public boolean isNullable() {
+		return isAnnotationPresent(Nullable.class) ;
 	}
 }

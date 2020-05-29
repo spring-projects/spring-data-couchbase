@@ -52,6 +52,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		found.ifPresent(u -> assertEquals(user, u));
 
 		assertTrue(userRepository.existsById(user.getId()).block());
+		userRepository.delete(user).block();
 	}
 
 	@Configuration
