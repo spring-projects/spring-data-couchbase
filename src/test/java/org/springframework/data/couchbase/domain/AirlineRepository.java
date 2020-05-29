@@ -16,10 +16,17 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface AirlineRepository extends PagingAndSortingRepository<Airline, String> {
+
+	@Query("#{#n1ql.selectEntity} where (name = $1)")
+	List<User> getByName(@Param("airline_name")String airlineName);
 
 }
