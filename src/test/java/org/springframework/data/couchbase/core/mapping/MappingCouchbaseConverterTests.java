@@ -28,11 +28,13 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.mapping.MappingException;
 
@@ -45,9 +47,11 @@ import org.springframework.data.mapping.MappingException;
 public class MappingCouchbaseConverterTests {
 
 	private static MappingCouchbaseConverter converter = new MappingCouchbaseConverter();
+	private static MappingCouchbaseConverter customConverter = (new Config()).mappingCouchbaseConverter();
 
 	static {
 		converter.afterPropertiesSet();
+		customConverter.afterPropertiesSet();
 	}
 
 	@Test
@@ -108,6 +112,18 @@ public class MappingCouchbaseConverterTests {
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
 		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+		assertThat(result.get("attr0")).isEqualTo(42L);
+		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
+	}
+
+	@Test
+	void writesNumberCustom() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		NumberEntity entity = new NumberEntity(42);
+
+		customConverter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("t")).isEqualTo(entity.getClass().getName());
 		assertThat(result.get("attr0")).isEqualTo(42L);
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
@@ -343,6 +359,40 @@ public class MappingCouchbaseConverterTests {
 		Map<String, Object> result = converted.export();
 
 		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+		assertThat(result.get("email")).isEqualTo(new HashMap<String, Object>() {
+			{
+				put("emailAddr", email);
+			}
+		});
+
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", ValueEntity.class.getName());
+		CouchbaseDocument emailDoc = new CouchbaseDocument();
+		emailDoc.put("emailAddr", "foo@bar.com");
+		source.put("email", emailDoc);
+		CouchbaseList listOfEmailsDoc = new CouchbaseList();
+		listOfEmailsDoc.put(emailDoc);
+		source.put("listOfEmails", listOfEmailsDoc);
+
+		ValueEntity readConverted = converter.read(ValueEntity.class, source);
+		assertThat(readConverted.email.emailAddr).isEqualTo(addy.emailAddr);
+		assertThat(readConverted.listOfEmails.get(0).emailAddr).isEqualTo(listOfEmails.get(0).emailAddr);
+	}
+
+	@Test
+	void writesAndReadsValueClassCustomType() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+
+		final String email = "foo@bar.com";
+		final Emailx addy = new Emailx(email);
+		List<Emailx> listOfEmails = new ArrayList<Emailx>();
+		listOfEmails.add(addy);
+
+		ValueEntityx entity = new ValueEntityx(addy, listOfEmails);
+		customConverter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+
+		assertThat(result.get("t")).isEqualTo(ValueEntityx.class.getAnnotation(TypeAlias.class).value());
 		assertThat(result.get("email")).isEqualTo(new HashMap<String, Object>() {
 			{
 				put("emailAddr", email);
@@ -690,6 +740,26 @@ public class MappingCouchbaseConverterTests {
 			this.object = object;
 			this.listOfObjects = listOfObjects;
 			this.mapOfObjects = mapOfObjects;
+		}
+	}
+
+	@TypeAlias("x")
+	static class ValueEntityx extends BaseEntity {
+		private Emailx email;
+		private List<Emailx> listOfEmails;
+
+		public ValueEntityx(Emailx email, List<Emailx> listOfEmails) {
+			this.email = email;
+			this.listOfEmails = listOfEmails;
+		}
+	}
+
+	// @TypeAlias("x")
+	static class Emailx {
+		private String emailAddr;
+
+		public Emailx(String emailAddr) {
+			this.emailAddr = emailAddr;
 		}
 	}
 

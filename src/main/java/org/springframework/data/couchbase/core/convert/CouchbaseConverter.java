@@ -21,6 +21,8 @@ import org.springframework.data.convert.EntityReader;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.mapping.Alias;
+import org.springframework.data.util.TypeInformation;
 
 /**
  * Marker interface for the converter, identifying the types to and from that can be converted.
@@ -54,4 +56,9 @@ public interface CouchbaseConverter
 	 * @return the name of the field that will hold type information.
 	 */
 	String getTypeKey();
+
+	/**
+	 * @return the alias value for the type
+	 */
+	Alias getTypeAlias(TypeInformation<?> info);
 }
