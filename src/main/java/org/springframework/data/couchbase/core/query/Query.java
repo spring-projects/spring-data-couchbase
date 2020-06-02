@@ -31,6 +31,9 @@ import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryP
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.Alias;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 /**
@@ -47,8 +50,7 @@ public class Query {
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
-	public Query() {
-	}
+	public Query() {}
 
 	public Query(final QueryCriteria criteriaDefinition) {
 		addCriteria(criteriaDefinition);
@@ -60,8 +62,8 @@ public class Query {
 	}
 
 	/**
-	 * set the postional parameters on the query object
-	 * There can only be named parameters or positional parameters - not both.
+	 * set the postional parameters on the query object There can only be named parameters or positional parameters - not
+	 * both.
 	 *
 	 * @param parameters - the positional parameters
 	 * @return - the query
@@ -72,8 +74,8 @@ public class Query {
 	}
 
 	/**
-	 * set the named parameters on the query object
-	 * There can only be named parameters or positional parameters - not both.
+	 * set the named parameters on the query object There can only be named parameters or positional parameters - not
+	 * both.
 	 *
 	 * @param parameters - the named parameters
 	 * @return - the query
@@ -157,10 +159,8 @@ public class Query {
 		sb.append(" ORDER BY ");
 		sort.stream().forEach(order -> {
 			if (order.isIgnoreCase()) {
-				throw new IllegalArgumentException(String.format(
-						"Given sort contained an Order for %s with ignore case! "
-								+ "Couchbase N1QL does not support sorting ignoring case currently!",
-						order.getProperty()));
+				throw new IllegalArgumentException(String.format("Given sort contained an Order for %s with ignore case! "
+						+ "Couchbase N1QL does not support sorting ignoring case currently!", order.getProperty()));
 			}
 			sb.append(order.getProperty()).append(" ").append(order.isAscending() ? "ASC," : "DESC,");
 		});
@@ -257,10 +257,15 @@ public class Query {
 	StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template, Class domainClass,
 			boolean isCount) {
 		String typeKey = template.getConverter().getTypeKey();
-		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext().getRequiredPersistentEntity(
-				domainClass);
+		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
+				.getRequiredPersistentEntity(domainClass);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		String typeValue = info.getJavaType().getName();
+		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
+		Alias alias = template.getConverter().getTypeAlias(typeInfo);
+		if (alias != null && alias.isPresent()) {
+			typeValue = alias.toString();
+		}
 		return StringBasedN1qlQueryParser.createN1qlSpelValues(template.getBucketName(), typeKey, typeValue, isCount);
 	}
 

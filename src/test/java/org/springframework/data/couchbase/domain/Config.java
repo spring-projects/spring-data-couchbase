@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -113,4 +117,38 @@ public class Config extends AbstractCouchbaseConfiguration {
 	public DateTimeProvider testDateTimeProvider() {
 		return new AuditingDateTimeProvider();
 	}
+
+	// convenience constructor for tests
+	public MappingCouchbaseConverter mappingCouchbaseConverter() {
+		MappingCouchbaseConverter converter = null;
+		try {
+			// MappingCouchbaseConverter relies on a SimpleInformationMapper
+			// that has an getAliasFor(info) that just returns getType().getName().
+			// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
+			// use the DocumentType annotation
+			converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext(customConversions()), typeKey());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		return converter;
+	}
+
+	@Override
+	@Bean(name = "couchbaseMappingConverter")
+	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
+			CouchbaseCustomConversions couchbaseCustomConversions) {
+		// MappingCouchbaseConverter relies on a SimpleInformationMapper
+		// that has an getAliasFor(info) that just returns getType().getName().
+		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
+		// use the DocumentType annotation
+		MappingCouchbaseConverter converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext, typeKey());
+		converter.setCustomConversions(couchbaseCustomConversions);
+		return converter;
+	}
+
+	@Override
+	public String typeKey() {
+		return "t"; // this will override '_class', is passed in to new CustomMappingCouchbaseConverter
+	}
+
 }

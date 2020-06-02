@@ -18,14 +18,11 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.annotation.Version;
+import org.springframework.data.annotation.*;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
+@TypeAlias("p") // this will result in p : <className> or p : "t" using the CustomMappingCouchbaseConverter
 public class Person extends AbstractEntity {
 	Optional<String> firstname;
 	Optional<String> lastname;
@@ -40,10 +37,12 @@ public class Person extends AbstractEntity {
 	private long lastModification;
 
 	@CreatedDate
-	private long creationDate; // =System.currentTimeMillis();
+	private long creationDate;
 
 	@Version
 	private long version;
+
+	private Object middlename;
 
 	public Person() {
 	}
@@ -132,4 +131,7 @@ public class Person extends AbstractEntity {
 		return "";
 	}
 
+	public void setMiddlename(String middlename) {
+		this.middlename = middlename;
+	}
 }
