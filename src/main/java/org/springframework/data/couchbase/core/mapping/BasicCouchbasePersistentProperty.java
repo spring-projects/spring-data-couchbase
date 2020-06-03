@@ -73,6 +73,11 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	 */
 	@Override
 	public String getFieldName() {
+		Field annotationField = getField().getAnnotation(Field.class);
+
+		if (annotationField != null && StringUtils.hasText(annotationField.value())) {
+			return annotationField.value();
+		}
 		JsonProperty annotation = getField().getAnnotation(JsonProperty.class);
 
 		if (annotation != null && StringUtils.hasText(annotation.value())) {
