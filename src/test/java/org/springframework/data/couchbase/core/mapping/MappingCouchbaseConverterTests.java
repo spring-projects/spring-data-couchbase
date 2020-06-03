@@ -412,6 +412,54 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	@Test
+	void writesAndReadsCustomFieldsConvertedClass() {
+		List<Object> converters = new ArrayList<>();
+		converters.add(BigDecimalToStringConverter.INSTANCE);
+		converters.add(StringToBigDecimalConverter.INSTANCE);
+		converter.setCustomConversions(new CouchbaseCustomConversions(converters));
+		converter.afterPropertiesSet();
+
+		CouchbaseDocument converted = new CouchbaseDocument();
+
+		final String valueStr = "12.345";
+		final BigDecimal value = new BigDecimal(valueStr);
+		final String value2Str = "0.6789";
+		final BigDecimal value2 = new BigDecimal(value2Str);
+		List<BigDecimal> listOfValues = new ArrayList<>();
+		listOfValues.add(value);
+		listOfValues.add(value2);
+		Map<String, BigDecimal> mapOfValues = new HashMap<>();
+		mapOfValues.put("val1", value);
+		mapOfValues.put("val2", value2);
+
+		CustomFieldsEntity entity = new CustomFieldsEntity(value, listOfValues, mapOfValues);
+		converter.write(entity, converted);
+
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", CustomFieldsEntity.class.getName());
+		source.put("decimalValue", valueStr);
+		CouchbaseList listOfValuesDoc = new CouchbaseList();
+		listOfValuesDoc.put(valueStr);
+		listOfValuesDoc.put(value2Str);
+		source.put("listOfDecimalValues", listOfValuesDoc);
+		CouchbaseDocument mapOfValuesDoc = new CouchbaseDocument();
+		mapOfValuesDoc.put("val1", valueStr);
+		mapOfValuesDoc.put("val2", value2Str);
+		source.put("mapOfDecimalValues", mapOfValuesDoc);
+
+		assertThat(valueStr).isEqualTo(((CouchbaseList) converted.getContent().get("listOfDecimalValues")).get(0));
+		assertThat(value2Str).isEqualTo(((CouchbaseList) converted.getContent().get("listOfDecimalValues")).get(1));
+		assertThat(converted.export().toString()).isEqualTo(source.export().toString());
+
+		CustomFieldsEntity readConverted = converter.read(CustomFieldsEntity.class, source);
+		assertThat(readConverted.value).isEqualTo(value);
+		assertThat(readConverted.listOfValues.get(0)).isEqualTo(listOfValues.get(0));
+		assertThat(readConverted.listOfValues.get(1)).isEqualTo(listOfValues.get(1));
+		assertThat(readConverted.mapOfValues.get("val1")).isEqualTo(mapOfValues.get("val1"));
+		assertThat(readConverted.mapOfValues.get("val2")).isEqualTo(mapOfValues.get("val2"));
+	}
+
+	@Test
 	void writesAndReadsClassContainingCustomConvertedObjects() {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
@@ -615,6 +663,17 @@ public class MappingCouchbaseConverterTests {
 		private Map<String, BigDecimal> mapOfValues;
 
 		public CustomEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
+			this.value = value;
+			this.listOfValues = listOfValues;
+			this.mapOfValues = mapOfValues;
+		}
+	}
+
+	static class CustomFieldsEntity extends BaseEntity {
+		@Field("decimalValue") private BigDecimal value;
+		@Field("listOfDecimalValues") private List<BigDecimal> listOfValues;
+		@Field("mapOfDecimalValues") private Map<String, BigDecimal> mapOfValues;
+		public CustomFieldsEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
 			this.value = value;
 			this.listOfValues = listOfValues;
 			this.mapOfValues = mapOfValues;
