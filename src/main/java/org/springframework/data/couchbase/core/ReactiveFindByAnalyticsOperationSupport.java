@@ -67,7 +67,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 		@Override
 		public Mono<T> one() {
-			return all().single();
+			return all().singleOrEmpty();
 		}
 
 		@Override
@@ -79,8 +79,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())
-						.onErrorMap(throwable -> {
+				return template.getCouchbaseClientFactory().getCluster().reactive()
+						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {
@@ -100,8 +100,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
 				String statement = assembleEntityQuery(true);
-				return template.getCouchbaseClientFactory().getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())
-						.onErrorMap(throwable -> {
+				return template.getCouchbaseClientFactory().getCluster().reactive()
+						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {
