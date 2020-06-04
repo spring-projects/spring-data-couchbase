@@ -283,6 +283,9 @@ public class CouchbaseDocument implements CouchbaseStorable {
 		if (CouchbaseSimpleTypes.DOCUMENT_TYPES.isSimpleType(clazz)) {
 			return;
 		}
+		if (Map.class.isAssignableFrom(clazz)) { // so source.getContent() can be put
+			return;
+		}
 		throw new IllegalArgumentException(
 				"Attribute of type " + clazz.getCanonicalName() + " cannot be stored and must be converted.");
 	}

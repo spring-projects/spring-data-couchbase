@@ -18,17 +18,20 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
+import org.springframework.lang.Nullable;
 
 @Document
 public class Person extends AbstractEntity {
 	Optional<String> firstname;
-	Optional<String> lastname;
+	@Nullable Optional<String> lastname;
 
 	@CreatedBy
 	private String creator;
@@ -44,6 +47,12 @@ public class Person extends AbstractEntity {
 
 	@Version
 	private long version;
+
+	@Nullable
+	@Field("nickname")
+	private String middlename;
+
+	private Address address;
 
 	public Person() {
 	}
@@ -94,16 +103,31 @@ public class Person extends AbstractEntity {
 		this.lastname = lastname;
 	}
 
+	public String getMiddlename() {
+		return middlename;
+	}
+	public void setMiddlename(String middlename) {
+		this.middlename = middlename;
+	}
+
 	public long getVersion() {
 		return version;
 	}
 
+	public Address getAddress(){
+		return address;
+	}
+
+	public void setAddress(Address address){
+		this.address = address;
+	}
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Person : {\n");
 		sb.append("  id : " + getId());
 		sb.append(optional(", firstname", firstname));
 		sb.append(optional(", lastname", lastname));
+		if(middlename!=null) sb.append(", middlename : "+middlename);
 		sb.append(", version : " + version);
 		if (creator != null) {
 			sb.append(", creator : " + creator);
@@ -116,6 +140,9 @@ public class Person extends AbstractEntity {
 		}
 		if (lastModification != 0) {
 			sb.append(", lastModification : " + lastModification);
+		}
+		if( getAddress() != null) {
+			sb.append(", address : "+ getAddress().toString() );
 		}
 		sb.append("}");
 		return sb.toString();
