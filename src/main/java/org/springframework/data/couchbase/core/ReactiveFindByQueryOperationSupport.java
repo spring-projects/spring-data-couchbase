@@ -50,8 +50,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final Query query;
 		private final QueryScanConsistency scanConsistency;
 
-		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-				final Query query, final QueryScanConsistency scanConsistency) {
+		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
+				final QueryScanConsistency scanConsistency) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -70,7 +70,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public Mono<T> one() {
-			return all().single();
+			return all().singleOrEmpty();
 		}
 
 		@Override
@@ -82,20 +82,20 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-						query.buildQueryOptions(scanConsistency)).onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
-					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
-					String id = row.getString(TemplateUtils.SELECT_ID);
-					long cas = row.getLong(TemplateUtils.SELECT_CAS);
-					row.removeKey(TemplateUtils.SELECT_ID);
-					row.removeKey(TemplateUtils.SELECT_CAS);
-					return template.support().decodeEntity(id, row.toString(), cas, domainType);
-				});
+				return template.getCouchbaseClientFactory().getCluster().reactive()
+						.query(statement, query.buildQueryOptions(scanConsistency)).onErrorMap(throwable -> {
+							if (throwable instanceof RuntimeException) {
+								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+							} else {
+								return throwable;
+							}
+						}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
+							String id = row.getString(TemplateUtils.SELECT_ID);
+							long cas = row.getLong(TemplateUtils.SELECT_CAS);
+							row.removeKey(TemplateUtils.SELECT_ID);
+							row.removeKey(TemplateUtils.SELECT_CAS);
+							return template.support().decodeEntity(id, row.toString(), cas, domainType);
+						});
 			});
 		}
 
@@ -103,15 +103,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
 				String statement = assembleEntityQuery(true);
-				return template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-						query.buildQueryOptions(scanConsistency)).onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
-					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(
-						row -> row.getLong(TemplateUtils.SELECT_COUNT)).next();
+				return template.getCouchbaseClientFactory().getCluster().reactive()
+						.query(statement, query.buildQueryOptions(scanConsistency)).onErrorMap(throwable -> {
+							if (throwable instanceof RuntimeException) {
+								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+							} else {
+								return throwable;
+							}
+						}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(TemplateUtils.SELECT_COUNT))
+						.next();
 			});
 		}
 

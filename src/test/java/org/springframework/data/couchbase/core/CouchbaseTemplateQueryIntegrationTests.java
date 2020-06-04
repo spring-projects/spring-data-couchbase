@@ -46,6 +46,7 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import reactor.core.publisher.Mono;
 
 /**
  * Query tests Theses tests rely on a cb server running
@@ -58,6 +59,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 
 	private static CouchbaseClientFactory couchbaseClientFactory;
 	private CouchbaseTemplate couchbaseTemplate;
+	private ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeAll
 	static void beforeAll() {
@@ -79,6 +81,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 	void beforeEach() {
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	@Test
@@ -111,9 +114,17 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 				assertEquals(auditUser, u.getLastModifiedBy());
 				assertEquals(auditMillis, u.getLastModifiedDate());
 			}
+			couchbaseTemplate.findById(User.class).one(user1.getId());
+			reactiveCouchbaseTemplate.findById(User.class).one(user1.getId()).block();
 		} finally {
 			couchbaseTemplate.removeByQuery(User.class).all();
 		}
+
+		User usery = couchbaseTemplate.findById(User.class).one("userx");
+		assertNull(usery, "usery should be null");
+		User userz = reactiveCouchbaseTemplate.findById(User.class).one("userx").block();
+		assertNull(userz, "uz should be null");
+
 	}
 
 	@Test
@@ -128,8 +139,9 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 
 		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
-		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user1.getId()));
-		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user2.getId()));
+		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
+		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
+
 	}
 
 }
