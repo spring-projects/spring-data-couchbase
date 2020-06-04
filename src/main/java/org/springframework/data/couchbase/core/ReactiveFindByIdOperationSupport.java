@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetOptions.*;
 
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -66,7 +67,14 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				}
 				return template.getCollection(collection).reactive().get(docId, options);
 			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
-					.onErrorMap(throwable -> {
+					.onErrorResume(throwable -> {
+						if (throwable instanceof RuntimeException) {
+							if (throwable instanceof DocumentNotFoundException) {
+								return Mono.empty();
+							}
+						}
+						return Mono.error(throwable);
+					}).onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 						} else {
