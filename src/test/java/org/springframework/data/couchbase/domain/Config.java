@@ -44,8 +44,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	static {
 		try {
 			clusterAware = Class.forName("org.springframework.data.couchbase.util.ClusterAwareIntegrationTests");
-		} catch (ClassNotFoundException cnfe) {
-		}
+		} catch (ClassNotFoundException cnfe) {}
 	}
 
 	@Override

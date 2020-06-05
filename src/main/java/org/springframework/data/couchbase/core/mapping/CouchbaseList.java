@@ -156,11 +156,9 @@ public class CouchbaseList implements CouchbaseStorable {
 		int elem = 0;
 		for (Object entry : payload) {
 			if (entry instanceof CouchbaseDocument) {
-				toExport.remove(elem);
-				toExport.add(elem, ((CouchbaseDocument) entry).export());
+				toExport.set(elem, ((CouchbaseDocument) entry).export());
 			} else if (entry instanceof CouchbaseList) {
-				toExport.remove(elem);
-				toExport.add(elem, ((CouchbaseList) entry).export());
+				toExport.set(elem, ((CouchbaseList) entry).export());
 			}
 			elem++;
 		}

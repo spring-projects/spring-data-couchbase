@@ -22,6 +22,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.couchbase.client.java.codec.JacksonJsonSerializer;
+import com.couchbase.client.java.json.JsonValueModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.couchbase.client.java.json.RepackagedJsonValueModule;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -35,6 +39,7 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.CouchbaseJacksonModule;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -61,6 +66,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
  * @author Simon Baslé
  * @author Stephane Nicoll
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
@@ -140,7 +146,10 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param builder the builder that can be customized.
 	 */
 	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
-
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.registerModule(new CouchbaseJacksonModule());
+		objectMapper.registerModule(new JsonValueModule());
+		builder.jsonSerializer(JacksonJsonSerializer.create(objectMapper));
 	}
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
