@@ -68,7 +68,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.insert(converted.getId(), converted.getContent(), buildInsertOptions()).map(result -> {
+						.insert(converted.getId(), converted.export(), buildInsertOptions()).map(result -> {
 							template.support().applyUpdatedCas(object, result.cas());
 							return o;
 						});
