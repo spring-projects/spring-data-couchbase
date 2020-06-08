@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.Library;
+import org.springframework.data.couchbase.domain.LibraryRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -44,6 +48,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
 	@Autowired UserRepository userRepository;
+	@Autowired LibraryRepository libraryRepository;
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
@@ -60,6 +65,28 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 
 		assertTrue(userRepository.existsById(user.getId()));
 		userRepository.delete(user);
+	}
+
+	@Test // DATACOUCH-564
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveAndFindByIdWithList() {
+		List<String> books = new ArrayList<>();
+		books.add("book1");
+		books.add("book2");
+		Library library = new Library(UUID.randomUUID().toString(), books);
+		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
+		assertFalse(libraryRepository.existsById(library.getId()));
+
+		libraryRepository.save(library);
+
+		Optional<Library> found = libraryRepository.findById(library.getId());
+		assertTrue(found.isPresent());
+		found.ifPresent(l -> assertEquals(library, l));
+
+		assertTrue(userRepository.existsById(library.getId()));
+		libraryRepository.delete(library);
+
+		assertFalse(userRepository.existsById(library.getId()));
 	}
 
 	@Configuration
