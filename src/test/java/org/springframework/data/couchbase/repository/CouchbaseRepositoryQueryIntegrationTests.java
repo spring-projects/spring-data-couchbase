@@ -19,6 +19,10 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -73,6 +77,88 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		List<Airport> airports = airportRepository.findAllByIata("vie");
 		// TODO
 		System.err.println(airports);
+	}
+
+	@Test
+	void threadSafeParametersTest() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		Future[] future = new Future[iatas.length];
+		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
+
+		try {
+			Callable<Boolean>[] suppliers = new Callable[iatas.length];
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.save(airport);
+				final int idx = i;
+				suppliers[i] = () -> {
+					System.out.println(Thread.currentThread() + " " + iatas[idx] + " ->");
+					try {
+						Thread.sleep(iatas.length - idx); // so they are executed out-of-order
+					} catch (InterruptedException ie) {
+						;
+					}
+					String foundName = airportRepository.findAllByIata(iatas[idx]).get(0).getIata();
+					System.out.println(Thread.currentThread() + " " + iatas[idx] + " <- ");
+					assertEquals(iatas[idx], foundName);
+					return iatas[idx].equals(foundName);
+				};
+			}
+			for (int i = 0; i < iatas.length; i++) {
+				future[i] = executorService.submit(suppliers[i]);
+			}
+			for (int i = 0; i < iatas.length; i++) {
+				future[i].get();
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.delete(airport);
+			}
+		}
+	}
+
+	@Test
+	void threadSafeStringParametersTest() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		Future[] future = new Future[iatas.length];
+		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
+
+		try {
+			Callable<Boolean>[] suppliers = new Callable[iatas.length];
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.save(airport);
+				final int idx = i;
+				suppliers[i] = () -> {
+					System.out.println(Thread.currentThread() + " " + iatas[idx] + " ->");
+					try {
+						Thread.sleep(iatas.length - idx); // so they are executed out-of-order
+					} catch (InterruptedException ie) {
+						;
+					}
+					String foundName = airportRepository.getAllByIata(iatas[idx]).get(0).getIata();
+					System.out.println(Thread.currentThread() + " " + iatas[idx] + " <- ");
+					assertEquals(iatas[idx], foundName);
+					return iatas[idx].equals(foundName);
+				};
+			}
+			for (int i = 0; i < iatas.length; i++) {
+				future[i] = executorService.submit(suppliers[i]);
+			}
+			for (int i = 0; i < iatas.length; i++) {
+				future[i].get();
+			}
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.delete(airport);
+			}
+		}
 	}
 
 	@Configuration
