@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
@@ -32,5 +33,8 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	Iterable<Airport> findAll();
 
 	List<Airport> findAllByIata(String iata);
+
+	@Query("#{#n1ql.selectEntity} where iata = $1")
+	List<Airport> getAllByIata(String iata);
 
 }
