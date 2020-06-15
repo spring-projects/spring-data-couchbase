@@ -43,6 +43,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
 
+/**
+ * Repository tests
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @SpringJUnitConfig(CouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegrationTests {
@@ -113,6 +119,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
+			executorService.shutdown();
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
 				airportRepository.delete(airport);
@@ -154,6 +161,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
+			executorService.shutdown();
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
 				airportRepository.delete(airport);
