@@ -35,7 +35,9 @@ import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversion
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.id.*;
+import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.mapping.MappingException;
 
@@ -571,6 +573,37 @@ public class MappingCouchbaseConverterTests {
 		assertThat(read.created.getTime()).isEqualTo(created.getTime());
 		assertThat(read.modified.getTimeInMillis() / 1000).isEqualTo(modified.getTimeInMillis() / 1000);
 		assertThat(read.deleted.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(deleted.truncatedTo(ChronoUnit.MILLIS));
+	}
+
+	@Test
+	void writesAndReadsNestedClass() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+
+		final String street = "Easy Street";
+		final Person person = new Person();
+		person.setFirstname("firstname");
+		person.setLastname("lastname");
+		final Address addr = new Address();
+		addr.setStreet(street);
+		person.setAddress(addr);
+
+		converter.write(person, converted);
+		Map<String, Object> result = converted.export();
+
+		assertThat(result.get("_class")).isEqualTo(person.getClass().getName());
+		assertThat(result.get("address")).isEqualTo(new HashMap<String, Object>() {
+			{
+				put("street", street);
+			}
+		});
+
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", Person.class.getName());
+		CouchbaseDocument addressDoc = new CouchbaseDocument();
+		addressDoc.put("street", street);
+		source.put("address", addressDoc);
+		Person readConverted = converter.read(Person.class, source);
+		assertThat(readConverted.getAddress().getStreet()).isEqualTo(person.getAddress().getStreet());
 	}
 
 	@WritingConverter

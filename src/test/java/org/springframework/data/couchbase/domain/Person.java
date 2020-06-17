@@ -18,34 +18,36 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.data.annotation.*;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
+import org.springframework.lang.Nullable;
 
 @Document
-@TypeAlias("p") // this will result in p : <className> or p : "t" using the CustomMappingCouchbaseConverter
 public class Person extends AbstractEntity {
 	Optional<String> firstname;
-	Optional<String> lastname;
+	@Nullable Optional<String> lastname;
 
-	@CreatedBy
-	private String creator;
+	@CreatedBy private String creator;
 
-	@LastModifiedBy
-	private String lastModifiedBy;
+	@LastModifiedBy private String lastModifiedBy;
 
-	@LastModifiedDate
-	private long lastModification;
+	@LastModifiedDate private long lastModification;
 
-	@CreatedDate
-	private long creationDate;
+	@CreatedDate private long creationDate;
 
-	@Version
-	private long version;
+	@Version private long version;
 
-	private Object middlename;
+	@Nullable @Field("nickname") private String middlename;
 
-	public Person() {
-	}
+	private Address address;
+
+	public Person() {}
 
 	public Person(String firstname, String lastname) {
 		this();
@@ -93,8 +95,24 @@ public class Person extends AbstractEntity {
 		this.lastname = lastname;
 	}
 
+	public String getMiddlename() {
+		return middlename;
+	}
+
+	public void setMiddlename(String middlename) {
+		this.middlename = middlename;
+	}
+
 	public long getVersion() {
 		return version;
+	}
+
+	public Address getAddress() {
+		return address;
+	}
+
+	public void setAddress(Address address) {
+		this.address = address;
 	}
 
 	public String toString() {
@@ -103,6 +121,8 @@ public class Person extends AbstractEntity {
 		sb.append("  id : " + getId());
 		sb.append(optional(", firstname", firstname));
 		sb.append(optional(", lastname", lastname));
+		if (middlename != null)
+			sb.append(", middlename : " + middlename);
 		sb.append(", version : " + version);
 		if (creator != null) {
 			sb.append(", creator : " + creator);
@@ -115,6 +135,9 @@ public class Person extends AbstractEntity {
 		}
 		if (lastModification != 0) {
 			sb.append(", lastModification : " + lastModification);
+		}
+		if (getAddress() != null) {
+			sb.append(", address : " + getAddress().toString());
 		}
 		sb.append("}");
 		return sb.toString();
@@ -131,7 +154,4 @@ public class Person extends AbstractEntity {
 		return "";
 	}
 
-	public void setMiddlename(String middlename) {
-		this.middlename = middlename;
-	}
 }
