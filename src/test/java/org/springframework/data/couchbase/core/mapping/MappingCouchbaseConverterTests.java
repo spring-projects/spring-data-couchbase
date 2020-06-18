@@ -34,6 +34,9 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
+import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.mapping.MappingException;
@@ -723,6 +726,7 @@ public class MappingCouchbaseConverterTests {
 		@Field("decimalValue") private BigDecimal value;
 		@Field("listOfDecimalValues") private List<BigDecimal> listOfValues;
 		@Field("mapOfDecimalValues") private Map<String, BigDecimal> mapOfValues;
+
 		public CustomFieldsEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
 			this.value = value;
 			this.listOfValues = listOfValues;
@@ -780,6 +784,92 @@ public class MappingCouchbaseConverterTests {
 			this.created = created;
 			this.modified = modified;
 			this.deleted = deleted;
+		}
+	}
+
+	@Test
+	void idTest00() { // id does not get set
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest00Entity entity = new IdTest00Entity();
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest00Entity { // id does not get set
+		public static final String ID = "mockid";
+		@Id private String id = ID;
+
+		String getId() {
+			return id;
+		}
+	}
+
+	@Test
+	void idTest02() { // id is String
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest02Entity entity = new IdTest02Entity();
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest02Entity { // id is String
+		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id String id;
+
+		String getId() {
+			return id;
+		}
+	}
+
+	@Test
+	void idTest03() { // id is UUID
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest03Entity entity = new IdTest03Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest03Entity { // id is UUID
+		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id UUID id;
+
+		String getId() {
+			return id.toString();
+		}
+
+	}
+
+	@Test
+	void idTest05() { // id is Integer
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest05Entity entity = new IdTest05Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest05Entity { // id is Integer
+		@GeneratedValue() @Id Integer id;
+		@IdPrefix public String prefix = "123";
+
+		String getId() {
+			return id.toString();
+		}
+	}
+
+	@Test
+	void idTest07() { // id is Number
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest07Entity entity = new IdTest07Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest07Entity { // id is Number
+		@GeneratedValue() @Id public Number id;
+		@IdPrefix public String prefix = "123";
+
+		String getId() {
+			return id.toString();
 		}
 	}
 

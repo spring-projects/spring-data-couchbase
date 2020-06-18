@@ -537,7 +537,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			String id = accessor.getProperty(idProperty, String.class);
 			if (idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
 				generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
-				target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
+				String generatedId = generateId(generatedValueInfo, prefixes, suffixes, idAttributes);
+				target.setId(generatedId);
+				accessor.setProperty(idProperty, generatedId);
 			} else {
 				target.setId(id);
 			}
