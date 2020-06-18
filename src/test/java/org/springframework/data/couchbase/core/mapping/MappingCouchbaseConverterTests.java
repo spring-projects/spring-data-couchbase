@@ -34,6 +34,9 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
+import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.mapping.MappingException;
@@ -54,36 +57,30 @@ public class MappingCouchbaseConverterTests {
 		customConverter.afterPropertiesSet();
 	}
 
-	@Test
-	void shouldNotThrowNPE() {
+	@Test void shouldNotThrowNPE() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(null, converted);
 		assertThat(converted.getId()).isNull();
 		assertThat(converted.getExpiration()).isEqualTo(0);
 	}
 
-	@Test
-	void doesNotAllowSimpleType1() {
+	@Test void doesNotAllowSimpleType1() {
 		assertThrows(MappingException.class, () -> converter.write("hello", new CouchbaseDocument()));
 	}
 
-	@Test
-	void doesNotAllowSimpleType2() {
+	@Test void doesNotAllowSimpleType2() {
 		assertThrows(MappingException.class, () -> converter.write(true, new CouchbaseDocument()));
 	}
 
-	@Test
-	void doesNotAllowSimpleType3() {
+	@Test void doesNotAllowSimpleType3() {
 		assertThrows(MappingException.class, () -> converter.write(42, new CouchbaseDocument()));
 	}
 
-	@Test
-	void needsIDOnEntity() {
+	@Test void needsIDOnEntity() {
 		assertThrows(MappingException.class, () -> converter.write(new EntityWithoutID("foo"), new CouchbaseDocument()));
 	}
 
-	@Test
-	void writesString() {
+	@Test void writesString() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		StringEntity entity = new StringEntity("foobar");
 
@@ -94,8 +91,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
-	@Test
-	void readsString() {
+	@Test void readsString() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", StringEntity.class.getName());
 		source.put("attr0", "foobar");
@@ -104,8 +100,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.attr0).isEqualTo("foobar");
 	}
 
-	@Test
-	void writesNumber() {
+	@Test void writesNumber() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		NumberEntity entity = new NumberEntity(42);
 
@@ -116,8 +111,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
-	@Test
-	void writesNumberCustom() {
+	@Test void writesNumberCustom() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		NumberEntity entity = new NumberEntity(42);
 
@@ -128,8 +122,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
-	@Test
-	void readsNumber() {
+	@Test void readsNumber() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", NumberEntity.class.getName());
 		source.put("attr0", 42);
@@ -138,8 +131,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.attr0).isEqualTo(42);
 	}
 
-	@Test
-	void writesBoolean() {
+	@Test void writesBoolean() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		BooleanEntity entity = new BooleanEntity(true);
 
@@ -150,8 +142,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.getId()).isEqualTo("mockid");
 	}
 
-	@Test
-	void readsBoolean() {
+	@Test void readsBoolean() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", BooleanEntity.class.getName());
 		source.put("attr0", true);
@@ -160,8 +151,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.attr0).isTrue();
 	}
 
-	@Test
-	void writesMixedSimpleTypes() {
+	@Test void writesMixedSimpleTypes() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		MixedSimpleEntity entity = new MixedSimpleEntity("a", 5, -0.3, true);
 
@@ -174,8 +164,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(result.get("attr3")).isEqualTo(true);
 	}
 
-	@Test
-	void readsMixedSimpleTypes() {
+	@Test void readsMixedSimpleTypes() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", MixedSimpleEntity.class.getName());
 		source.put("attr0", "a");
@@ -190,15 +179,13 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.attr3).isTrue();
 	}
 
-	@Test
-	void readsID() {
+	@Test void readsID() {
 		CouchbaseDocument document = new CouchbaseDocument("001");
 		User user = converter.read(User.class, document);
 		assertThat(user.getId()).isEqualTo("001");
 	}
 
-	@Test
-	void writesUninitializedValues() {
+	@Test void writesUninitializedValues() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		UninitializedEntity entity = new UninitializedEntity();
 
@@ -208,8 +195,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(result.get("attr1")).isEqualTo(0);
 	}
 
-	@Test
-	void readsUninitializedValues() {
+	@Test void readsUninitializedValues() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", UninitializedEntity.class.getName());
 		source.put("attr1", 0);
@@ -220,8 +206,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.attr2).isNull();
 	}
 
-	@Test
-	void writesAndReadsMapsAndNestedMaps() {
+	@Test void writesAndReadsMapsAndNestedMaps() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 
 		Map<String, String> attr0 = new HashMap<>();
@@ -267,8 +252,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.attr3).isEqualTo(attr3);
 	}
 
-	@Test
-	void writesAndReadsListAndNestedList() {
+	@Test void writesAndReadsListAndNestedList() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		List<String> attr0 = new ArrayList<>();
 		List<Integer> attr1 = new LinkedList<>();
@@ -305,8 +289,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.attr2.get(0).size()).isEqualTo(2);
 	}
 
-	@Test
-	void writesAndReadsSetAndNestedSet() {
+	@Test void writesAndReadsSetAndNestedSet() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 		Set<String> attr0 = new HashSet<>();
 		TreeSet<Integer> attr1 = new TreeSet<>();
@@ -345,8 +328,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.attr2).isEqualTo(attr2);
 	}
 
-	@Test
-	void writesAndReadsValueClass() {
+	@Test void writesAndReadsValueClass() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 
 		final String email = "foo@bar.com";
@@ -379,8 +361,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.listOfEmails.get(0).emailAddr).isEqualTo(listOfEmails.get(0).emailAddr);
 	}
 
-	@Test
-	void writesAndReadsValueClassCustomType() {
+	@Test void writesAndReadsValueClassCustomType() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 
 		final String email = "foo@bar.com";
@@ -413,8 +394,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.listOfEmails.get(0).emailAddr).isEqualTo(listOfEmails.get(0).emailAddr);
 	}
 
-	@Test
-	void writesAndReadsCustomConvertedClass() {
+	@Test void writesAndReadsCustomConvertedClass() {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
@@ -461,8 +441,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.mapOfValues.get("val2")).isEqualTo(mapOfValues.get("val2"));
 	}
 
-	@Test
-	void writesAndReadsCustomFieldsConvertedClass() {
+	@Test void writesAndReadsCustomFieldsConvertedClass() {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
@@ -509,8 +488,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.mapOfValues.get("val2")).isEqualTo(mapOfValues.get("val2"));
 	}
 
-	@Test
-	void writesAndReadsClassContainingCustomConvertedObjects() {
+	@Test void writesAndReadsClassContainingCustomConvertedObjects() {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
@@ -552,8 +530,7 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.mapOfObjects.get("obj1").weight).isEqualTo(mapOfObjects.get("obj1").weight);
 	}
 
-	@Test
-	void writesAndReadsDates() {
+	@Test void writesAndReadsDates() {
 		Date created = new Date();
 		Calendar modified = Calendar.getInstance();
 		LocalDateTime deleted = LocalDateTime.now();
@@ -572,22 +549,18 @@ public class MappingCouchbaseConverterTests {
 		assertThat(read.deleted.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(deleted.truncatedTo(ChronoUnit.MILLIS));
 	}
 
-	@WritingConverter
-	public enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {
+	@WritingConverter public enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {
 		INSTANCE;
 
-		@Override
-		public String convert(BigDecimal source) {
+		@Override public String convert(BigDecimal source) {
 			return source.toPlainString();
 		}
 	}
 
-	@ReadingConverter
-	public enum StringToBigDecimalConverter implements Converter<String, BigDecimal> {
+	@ReadingConverter public enum StringToBigDecimalConverter implements Converter<String, BigDecimal> {
 		INSTANCE;
 
-		@Override
-		public BigDecimal convert(String source) {
+		@Override public BigDecimal convert(String source) {
 			return new BigDecimal(source);
 		}
 	}
@@ -723,6 +696,7 @@ public class MappingCouchbaseConverterTests {
 		@Field("decimalValue") private BigDecimal value;
 		@Field("listOfDecimalValues") private List<BigDecimal> listOfValues;
 		@Field("mapOfDecimalValues") private Map<String, BigDecimal> mapOfValues;
+
 		public CustomFieldsEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
 			this.value = value;
 			this.listOfValues = listOfValues;
@@ -743,8 +717,7 @@ public class MappingCouchbaseConverterTests {
 		}
 	}
 
-	@TypeAlias("x")
-	static class ValueEntityx extends BaseEntity {
+	@TypeAlias("x") static class ValueEntityx extends BaseEntity {
 		private Emailx email;
 		private List<Emailx> listOfEmails;
 
@@ -783,4 +756,181 @@ public class MappingCouchbaseConverterTests {
 		}
 	}
 
+	@Test void idTest00() {  // id does not get set
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest00Entity entity = new IdTest00Entity();
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest00Entity { // id does not get set
+		public static final String ID = "mockid";
+		@Id private String id = ID;
+
+		String getId() {
+			return id;
+		}
+	}
+
+	@Test void idTest01() { // id set via setId()
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest01Entity entity = new IdTest01Entity();
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest01Entity { // id set via setId()
+		@GeneratedValue @Id String id;
+
+		String getId() {
+			return id;
+		}
+
+		public void setId(String id) {
+			this.id = id;
+		}
+	}
+
+	@Test void idTest02() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest02Entity entity = new IdTest02Entity();
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest02Entity { // id set by public id
+		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id public String id;
+
+		String getId() {
+			return id;
+		}
+	}
+
+	@Test void idTest03() { // id set via setId() using fromString
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest03Entity entity = new IdTest03Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest03Entity { // id set via setId() using fromString
+		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id public UUID id;
+
+		String getId() {
+			return id.toString();
+		}
+
+		public void setId(UUID id) {
+			this.id = id;
+		}
+	}
+
+	@Test void idTest04() { // id set via public id using fromString
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest04Entity entity = new IdTest04Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest04Entity { // id set via public id using fromString
+		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id public UUID id;
+		String getId() {
+			return id.toString();
+		}
+	}
+
+	@Test void idTest05() { // id set via setId() using new Integer(string)
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest05Entity entity = new IdTest05Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest05Entity { // id set via setId() using new Integer(string)
+		@GeneratedValue() @Id public Integer id;
+		@IdPrefix public String prefix = "123";
+		String getId() {
+			return id.toString();
+		}
+		public void setId(Integer id) {
+			this.id = id;
+		}
+	}
+
+	@Test void idTest06() { // id set via public id using new Integer(string)
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest06Entity entity = new IdTest06Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest06Entity { // id set via public id using new Integer(string)
+		@GeneratedValue() @Id public Integer id;
+		@IdPrefix public String prefix = "123";
+		String getId() {
+			return id.toString();
+		}
+	}
+
+	/* -- won't work, tries Number() but not Integer()
+	@Test void idTest07() { // id set via public id using new Integer(string)
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest07Entity entity = new IdTest07Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest07Entity { // id set via setId() using new Integer(string)
+		@GeneratedValue() @Id public Number id;
+		@IdPrefix public String prefix = "123";
+		String getId() {
+			return id.toString();
+		}
+		public void setId(Number id) {
+			this.id = id;
+		}
+	}
+	 */
+/*  -- won't work, tries Number() but not Integer()
+	@Test void idTest08() { // id set via public id using new Integer(string)
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest08Entity entity = new IdTest08Entity();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	public static class IdTest08Entity { // id set via public id using new Integer(string)
+		@GeneratedValue() @Id public Number id;
+		@IdPrefix public String prefix = "123";
+		String getId() {
+			return id.toString();
+		}
+	}
+ */
+
+	@Test void idTest09() { // id nor setId()  is not public
+		CouchbaseDocument converted = new CouchbaseDocument();
+		IdTest09Entity entity = new IdTest09Entity();
+		try {
+			converter.write(entity, converted);
+		} catch( RuntimeException re){
+			return;
+		}
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+		org.assertj.core.api.Assertions.fail("should have thrown exception - could not set id");
+	}
+
+	public static class IdTest09Entity { // id nor setId()  is not public
+		@GeneratedValue() @Id Integer id;
+		@IdPrefix String prefix = "123";
+		String getId() {
+			return id.toString();
+		}
+		void setId(Integer id) {
+			this.id = id;
+		}
+	}
 }

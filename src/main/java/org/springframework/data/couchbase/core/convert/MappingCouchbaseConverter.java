@@ -18,21 +18,18 @@ package org.springframework.data.couchbase.core.convert;
 
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.UUID;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -132,7 +129,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * attribute.
 	 *
 	 * @param mappingContext the mapping context to use.
-	 * @param typeKey the attribute name to use to store complex types class name.
+	 * @param typeKey        the attribute name to use to store complex types class name.
 	 */
 	public MappingCouchbaseConverter(
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
@@ -161,7 +158,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Check if one class is a subtype of the other.
 	 *
-	 * @param left the first class.
+	 * @param left  the first class.
 	 * @param right the second class.
 	 * @return true if it is a subtype, false otherwise.
 	 */
@@ -174,27 +171,24 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		return mappingContext;
 	}
 
-	@Override
-	public String getTypeKey() {
+	@Override public String getTypeKey() {
 		return typeMapper.getTypeKey();
 	}
 
-	@Override
-	public Alias getTypeAlias(TypeInformation<?> info) {
+	@Override public Alias getTypeAlias(TypeInformation<?> info) {
 		return typeMapper.getTypeAlias(info);
 	}
 
-	@Override
-	public <R> R read(final Class<R> clazz, final CouchbaseDocument source) {
+	@Override public <R> R read(final Class<R> clazz, final CouchbaseDocument source) {
 		return read(ClassTypeInformation.from(clazz), source, null);
 	}
 
 	/**
 	 * Read an incoming {@link CouchbaseDocument} into the target entity.
 	 *
-	 * @param type the type information of the target entity.
+	 * @param type   the type information of the target entity.
 	 * @param source the document to convert.
-	 * @param <R> the entity type.
+	 * @param <R>    the entity type.
 	 * @return the converted entity.
 	 */
 	protected <R> R read(final TypeInformation<R> type, final CouchbaseDocument source) {
@@ -204,14 +198,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Read an incoming {@link CouchbaseDocument} into the target entity.
 	 *
-	 * @param type the type information of the target entity.
+	 * @param type   the type information of the target entity.
 	 * @param source the document to convert.
 	 * @param parent an optional parent object.
-	 * @param <R> the entity type.
+	 * @param <R>    the entity type.
 	 * @return the converted entity.
 	 */
-	@SuppressWarnings("unchecked")
-	protected <R> R read(final TypeInformation<R> type, final CouchbaseDocument source, final Object parent) {
+	@SuppressWarnings("unchecked") protected <R> R read(final TypeInformation<R> type, final CouchbaseDocument source,
+			final Object parent) {
 		if (source == null) {
 			return null;
 		}
@@ -242,7 +236,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param entity the target entity.
 	 * @param source the document to convert.
 	 * @param parent an optional parent object.
-	 * @param <R> the entity type.
+	 * @param <R>    the entity type.
 	 * @return the converted entity.
 	 */
 	protected <R> R read(final CouchbasePersistentEntity<R> entity, final CouchbaseDocument source, final Object parent) {
@@ -255,8 +249,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		final ConvertingPropertyAccessor accessor = getPropertyAccessor(instance);
 
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
-			@Override
-			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+			@Override public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
 				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
@@ -287,8 +280,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Loads the property value through the value provider.
 	 *
 	 * @param property the source property.
-	 * @param source the source document.
-	 * @param parent the optional parent.
+	 * @param source   the source document.
+	 * @param parent   the optional parent.
 	 * @return the actual property value.
 	 */
 	protected Object getValueInternal(final CouchbasePersistentProperty property, final CouchbaseDocument source,
@@ -299,10 +292,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Creates a new parameter provider.
 	 *
-	 * @param entity the persistent entity.
-	 * @param source the source document.
+	 * @param entity    the persistent entity.
+	 * @param source    the source document.
 	 * @param evaluator the SPEL expression evaluator.
-	 * @param parent the optional parent.
+	 * @param parent    the optional parent.
 	 * @return a new parameter value provider.
 	 */
 	private ParameterValueProvider<CouchbasePersistentProperty> getParameterProvider(
@@ -319,14 +312,13 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Recursively parses the a map from the source document.
 	 *
-	 * @param type the type information for the document.
+	 * @param type   the type information for the document.
 	 * @param source the source document.
 	 * @param parent the optional parent.
 	 * @return the recursively parsed map.
 	 */
-	@SuppressWarnings("unchecked")
-	protected Map<Object, Object> readMap(final TypeInformation<?> type, final CouchbaseDocument source,
-			final Object parent) {
+	@SuppressWarnings("unchecked") protected Map<Object, Object> readMap(final TypeInformation<?> type,
+			final CouchbaseDocument source, final Object parent) {
 		Assert.notNull(source, "CouchbaseDocument must not be null!");
 
 		Class<?> mapType = typeMapper.readType(source, type).getType();
@@ -360,12 +352,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Potentially convert simple values like ENUMs.
 	 *
-	 * @param value the value to convert.
+	 * @param value  the value to convert.
 	 * @param target the target object.
 	 * @return the potentially converted object.
 	 */
-	@SuppressWarnings("unchecked")
-	private Object getPotentiallyConvertedSimpleRead(final Object value, final Class<?> target) {
+	@SuppressWarnings("unchecked") private Object getPotentiallyConvertedSimpleRead(final Object value,
+			final Class<?> target) {
 		if (value == null || target == null) {
 			return value;
 		}
@@ -389,8 +381,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		return target.isAssignableFrom(value.getClass()) ? value : conversionService.convert(value, target);
 	}
 
-	@Override
-	public void write(final Object source, final CouchbaseDocument target) {
+	@Override public void write(final Object source, final CouchbaseDocument target) {
 		if (source == null) {
 			return;
 		}
@@ -411,12 +402,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Convert a source object into a {@link CouchbaseDocument} target.
 	 *
-	 * @param source the source object.
-	 * @param target the target document.
+	 * @param source   the source object.
+	 * @param target   the target document.
 	 * @param typeHint the type information for the source.
 	 */
-	@SuppressWarnings("unchecked")
-	protected void writeInternal(final Object source, CouchbaseDocument target, final TypeInformation<?> typeHint) {
+	@SuppressWarnings("unchecked") protected void writeInternal(final Object source, CouchbaseDocument target,
+			final TypeInformation<?> typeHint) {
 		if (source == null) {
 			return;
 		}
@@ -494,8 +485,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		target.setExpiration(entity.getExpiry());
 
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
-			@Override
-			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+			@Override public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
 				if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
 					return;
 				} else if (prop.isAnnotationPresent(N1qlJoin.class)) {
@@ -537,15 +527,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			String id = accessor.getProperty(idProperty, String.class);
 			if (idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
 				generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
-				target.setId(generateId(generatedValueInfo, prefixes, suffixes, idAttributes));
+				String generatedId = generateId(generatedValueInfo, prefixes, suffixes, idAttributes);
+				target.setId(generatedId);
+				setId(source, generatedId);
 			} else {
 				target.setId(id);
 			}
 		}
 
 		entity.doWithAssociations(new AssociationHandler<CouchbasePersistentProperty>() {
-			@Override
-			public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
+			@Override public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
 				CouchbasePersistentProperty inverseProp = association.getInverse();
 				Class<?> type = inverseProp.getType();
 				Object propertyObj = accessor.getProperty(inverseProp, type);
@@ -562,10 +553,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 *
 	 * @param source the source object.
 	 * @param target the target document.
-	 * @param prop the property information.
+	 * @param prop   the property information.
 	 */
-	@SuppressWarnings("unchecked")
-	private void writePropertyInternal(final Object source, final CouchbaseDocument target,
+	@SuppressWarnings("unchecked") private void writePropertyInternal(final Object source, final CouchbaseDocument target,
 			final CouchbasePersistentProperty prop) {
 		if (source == null) {
 			return;
@@ -612,9 +602,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		CouchbaseDocument propertyDoc = new CouchbaseDocument();
 		addCustomTypeKeyIfNecessary(type, source, propertyDoc);
 
-		CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass())
-				? mappingContext.getRequiredPersistentEntity(source.getClass())
-				: mappingContext.getRequiredPersistentEntity(type);
+		CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass()) ?
+				mappingContext.getRequiredPersistentEntity(source.getClass()) :
+				mappingContext.getRequiredPersistentEntity(type);
 		writeInternal(source, propertyDoc, entity);
 		target.put(name, propertyDoc);
 	}
@@ -622,7 +612,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Wrapper method to create the underlying map.
 	 *
-	 * @param map the source map.
+	 * @param map  the source map.
 	 * @param prop the persistent property.
 	 * @return the written couchbase document.
 	 */
@@ -638,7 +628,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 *
 	 * @param source the source object.
 	 * @param target the target document.
-	 * @param type the type information for the document.
+	 * @param type   the type information for the document.
 	 * @return the written couchbase document.
 	 */
 	private CouchbaseDocument writeMapInternal(final Map<Object, Object> source, final CouchbaseDocument target,
@@ -653,8 +643,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				if (val == null || conversions.isSimpleType(val.getClass())) {
 					writeSimpleInternal(val, target, simpleKey);
 				} else if (val instanceof Collection || val.getClass().isArray()) {
-					target.put(simpleKey, writeCollectionInternal(asCollection(val),
-							new CouchbaseList(conversions.getSimpleTypeHolder()), type.getMapValueType()));
+					target.put(simpleKey,
+							writeCollectionInternal(asCollection(val), new CouchbaseList(conversions.getSimpleTypeHolder()),
+									type.getMapValueType()));
 				} else {
 					CouchbaseDocument embeddedDoc = new CouchbaseDocument();
 					TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
@@ -673,7 +664,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Helper method to create the underlying collection/list.
 	 *
 	 * @param collection the collection to write.
-	 * @param prop the property information.
+	 * @param prop       the property information.
 	 * @return the created couchbase list.
 	 */
 	private CouchbaseList createCollection(final Collection<?> collection, final CouchbasePersistentProperty prop) {
@@ -686,7 +677,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 *
 	 * @param source the source object.
 	 * @param target the target document.
-	 * @param type the type information for the document.
+	 * @param type   the type information for the document.
 	 * @return the created couchbase list.
 	 */
 	private CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
@@ -717,12 +708,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Read a collection from the source object.
 	 *
 	 * @param targetType the target type.
-	 * @param source the list as source.
-	 * @param parent the optional parent.
+	 * @param source     the list as source.
+	 * @param parent     the optional parent.
 	 * @return the instantiated collection.
 	 */
-	@SuppressWarnings("unchecked")
-	private Object readCollection(final TypeInformation<?> targetType, final CouchbaseList source, final Object parent) {
+	@SuppressWarnings("unchecked") private Object readCollection(final TypeInformation<?> targetType,
+			final CouchbaseList source, final Object parent) {
 		Assert.notNull(targetType, "Target type must not be null!");
 
 		Class<?> collectionType = targetType.getType();
@@ -731,8 +722,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		collectionType = Collection.class.isAssignableFrom(collectionType) ? collectionType : List.class;
-		Collection<Object> items = targetType.getType().isArray() ? new ArrayList<Object>()
-				: CollectionFactory.createCollection(collectionType, source.size(false));
+		Collection<Object> items = targetType.getType().isArray() ?
+				new ArrayList<Object>() :
+				CollectionFactory.createCollection(collectionType, source.size(false));
 		TypeInformation<?> componentType = targetType.getComponentType();
 		Class<?> rawComponentType = componentType == null ? null : componentType.getType();
 
@@ -757,7 +749,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 *
 	 * @param source the source object.
 	 * @param target the target document.
-	 * @param key the key of the object.
+	 * @param key    the key of the object.
 	 */
 	private void writeSimpleInternal(final Object source, final CouchbaseDocument target, final String key) {
 		target.put(key, getPotentiallyConvertedSimpleWrite(source));
@@ -777,7 +769,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Add a custom type key if needed.
 	 *
-	 * @param type the type information.
+	 * @param type   the type information.
 	 * @param source th the source object.
 	 * @param target the target document.
 	 */
@@ -791,8 +783,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 	}
 
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) {
+	@Override public void setApplicationContext(ApplicationContext applicationContext) {
 		this.applicationContext = applicationContext;
 		if (entityCallbacks == null) {
 			setEntityCallbacks(EntityCallbacks.create(applicationContext));
@@ -817,14 +808,13 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * Helper method to read the value based on the value type.
 	 *
-	 * @param value the value to convert.
-	 * @param type the type information.
+	 * @param value  the value to convert.
+	 * @param type   the type information.
 	 * @param parent the optional parent.
-	 * @param <R> the target type.
+	 * @param <R>    the target type.
 	 * @return the converted object.
 	 */
-	@SuppressWarnings("unchecked")
-	private <R> R readValue(Object value, TypeInformation<?> type, Object parent) {
+	@SuppressWarnings("unchecked") private <R> R readValue(Object value, TypeInformation<?> type, Object parent) {
 		Class<?> rawType = type.getType();
 
 		if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
@@ -927,9 +917,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			this.parent = parent;
 		}
 
-		@Override
-		@SuppressWarnings("unchecked")
-		public <R> R getPropertyValue(final CouchbasePersistentProperty property) {
+		@Override @SuppressWarnings("unchecked") public <R> R getPropertyValue(final CouchbasePersistentProperty property) {
 			String expression = property.getSpelExpression();
 			Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
 
@@ -959,10 +947,190 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			this.parent = parent;
 		}
 
-		@Override
-		protected <T> T potentiallyConvertSpelValue(final Object object,
+		@Override protected <T> T potentiallyConvertSpelValue(final Object object,
 				final Parameter<T, CouchbasePersistentProperty> parameter) {
 			return readValue(object, parameter.getType(), parent);
 		}
 	}
+
+	/**
+	 * Take a generated id that was set on the target, and set it on the source that is returned to the caller.
+	 * 1) id is a String and the source has a setId(String id) method.
+	 * 2) <S extends T> S id -> source.setId(T)
+	 * 3) X id -> source.setId(Y.newInstance(X))
+	 * 4) X id -> source.setId(Y.from(X));
+	 * 5) X id -> source.setId(Y.newInstance(X.toString()) this will only work if T.toString() is appropriate
+	 * 6) X id -> source.setId(Y.fromString(X))  this will only work if T.toString() is appropriate
+	 * If none of that works, try to set the id or @Id field directly
+	 *
+	 * @param source object being converted
+	 * @param id     id that was used in the target
+	 */
+	private static void setId(Object source, Object id) {
+
+		List<Exception> exceptions = new LinkedList<Exception>();
+
+		Class<?> idType = id.getClass();
+
+		// try to find a setId() method on the source
+
+		LinkedList<Method> candidates = new LinkedList<>();
+
+		for (Method m : source.getClass().getMethods()) {
+			if (m.getName().equals("setId") && m.getParameterTypes().length == 1) {
+				if (m.getParameterTypes()[0].isAssignableFrom(idType)) { // will definitely work
+					candidates.clear(); // we have an exact match, we don't need other candidates
+					candidates.add(m);
+					break;
+				} else {
+					candidates.add(m);
+				}
+			}
+		}
+
+		for (Method setIdMethod : candidates) {
+			Class argClass = setIdMethod.getParameterTypes()[0];
+			Object idArg = null;
+			// create an idArg object for setId(idArg)
+			if (argClass.isAssignableFrom(idType)) {
+				idArg = id; // (1, 2) idType is a subtype of the argument type, we're good
+			}
+			if (idArg == null) { // (3) check if there is a constructor for setIdArgClass that takes and idType
+				exceptions.add(new Exception("setId does not accept an argument of " + idType));
+				try {
+					Constructor<?> con = argClass.getConstructor(idType);
+					idArg = con.newInstance(id);
+				} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+					exceptions.add(
+							new Exception("could not find a constructor for " + argClass.getName() + " that takes an " + idType, e));
+				}
+			}
+			if (idArg == null) { // (4) try ArgClass.from( converted.getId() )
+				try {
+					Method fromString = argClass.getMethod("from", idType);
+					idArg = fromString.invoke(null, id);
+				} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+					exceptions
+							.add(new Exception("could not find a " + argClass.getName() + ".from() that takes an " + idType, e));
+				}
+			}
+			if (idArg == null) { // (5) try fromString( converted.getId() )
+				try {
+					Method fromString = argClass.getMethod("fromString", String.class);
+					idArg = fromString.invoke(null, id.toString());
+				} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+					exceptions.add(new Exception(argClass.getName() + " does not have a fromString() method", e));
+				}
+			}
+
+			if (idArg == null) { // (6) check if there is a constructor for setIdArgClass that takes and idType
+				try {
+					Constructor<?> con = argClass.getConstructor(String.class);
+					idArg = con.newInstance(id.toString());
+				} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+					exceptions.add(
+							new Exception("could not find a constructor for " + argClass.getName() + " that takes an " + idType));
+				}
+			}
+
+			if (idArg != null) {
+				try {
+					setIdMethod.invoke(source, idArg);
+					return;
+				} catch (IllegalAccessException | InvocationTargetException e) {
+					exceptions.add(new Exception(
+							"error invoking method " + setIdMethod.getName() + " " + setIdMethod.getParameterTypes()[0].getName(),
+							e));
+				}
+			}
+		}
+
+		// didn't find a setId() or it didn't work
+
+		exceptions.add(new Exception("could not find a suitable source.setId(" + idType + ") method"));
+
+		// find a public @Id or id field and set it directly
+
+		Field idField = null;
+		for (Field f : source.getClass().getFields()) {
+			if (f.getAnnotation(Id.class) != null) {
+				idField = f;
+			}
+		}
+
+		if (idField == null) {
+			exceptions.add(new Exception("source did not have an @Id field"));
+			try {
+				idField = source.getClass().getField("id");
+			} catch (NoSuchFieldException e) {
+				exceptions.add(new Exception("source did not have an id field", e));
+			}
+		}
+
+		if (idField == null) {
+			throw new RuntimeException(exceptions.toString());
+		}
+
+		Class argClass = idField.getType();
+
+		// (1, 2)
+		if (argClass.isAssignableFrom(idType)) {
+			try {
+				idField.set(source, id);
+				return;
+			} catch (IllegalAccessException e) {
+				exceptions.add(e);
+				throw new RuntimeException(exceptions.toString());
+			}
+		}
+
+		exceptions.add(new Exception(idField.getName() + " is not assignableFrom " + idType));
+
+		// (3)
+		Object idArg = null;
+		try {
+			Constructor<?> con = argClass.getConstructor(idType);
+			idArg = con.newInstance(id);
+			idField.set(source, idArg);
+			return;
+		} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+			exceptions
+					.add(new Exception("could not find a constructor for " + argClass.getName() + " that takes an " + idType, e));
+		}
+
+		// (4)
+		try {
+			Method fromString = argClass.getMethod("from", idType);
+			idArg = fromString.invoke(null, id);
+			idField.set(source, idArg);
+			return;
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			exceptions.add(new Exception("could not find a " + argClass.getName() + ".from() that takes an " + idType, e));
+		}
+
+		//(5)
+		try {
+			Method fromString = argClass.getMethod("fromString", String.class);
+			idArg = fromString.invoke(null, id.toString());
+			idField.set(source, idArg);
+			return;
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			exceptions.add(e);
+		}
+
+		// (6)
+		try {
+			Constructor<?> con = argClass.getConstructor(String.class);
+			idArg = con.newInstance(id.toString());
+			idField.set(source, idArg);
+			return;
+		} catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+			exceptions
+					.add(new Exception("could not find a constructor for " + argClass.getName() + " that takes an " + idType));
+		}
+		throw new RuntimeException(exceptions.toString());
+
+	}
+
 }
+
