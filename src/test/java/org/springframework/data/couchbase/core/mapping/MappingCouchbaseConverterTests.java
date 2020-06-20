@@ -34,9 +34,7 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
-import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
-import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
+import org.springframework.data.couchbase.core.mapping.id.*;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.mapping.MappingException;
@@ -788,89 +786,140 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	@Test
-	void idTest00() { // id does not get set
+	void idNotGenerated() {
+		class Entity {
+			public static final String ID = "mockid";
+			@Id private String id = ID;
+		}
+		Entity entity = new Entity();
 		CouchbaseDocument converted = new CouchbaseDocument();
-		IdTest00Entity entity = new IdTest00Entity();
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
-		assertThat(converted.getId()).isEqualTo(entity.getId());
-	}
-
-	public static class IdTest00Entity { // id does not get set
-		public static final String ID = "mockid";
-		@Id private String id = ID;
-
-		String getId() {
-			return id;
-		}
+		assertThat(converted.getId()).isEqualTo(entity.id);
 	}
 
 	@Test
-	void idTest02() { // id is String
+	void idIsGeneratedString() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id String id;
+		}
+		Entity entity = new Entity();
 		CouchbaseDocument converted = new CouchbaseDocument();
-		IdTest02Entity entity = new IdTest02Entity();
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
-		assertThat(converted.getId()).isEqualTo(entity.getId());
-	}
-
-	public static class IdTest02Entity { // id is String
-		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id String id;
-
-		String getId() {
-			return id;
-		}
+		assertThat(converted.getId()).isEqualTo(entity.id);
 	}
 
 	@Test
-	void idTest03() { // id is UUID
-		CouchbaseDocument converted = new CouchbaseDocument();
-		IdTest03Entity entity = new IdTest03Entity();
-		converter.write(entity, converted);
-		assertThat(converted.getId()).isEqualTo(entity.getId());
-	}
-
-	public static class IdTest03Entity { // id is UUID
-		@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id UUID id;
-
-		String getId() {
-			return id.toString();
+	void idIsGeneratedUUID() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.UNIQUE) @Id UUID id;
 		}
-
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id.toString());
 	}
 
 	@Test
-	void idTest05() { // id is Integer
-		CouchbaseDocument converted = new CouchbaseDocument();
-		IdTest05Entity entity = new IdTest05Entity();
-		converter.write(entity, converted);
-		assertThat(converted.getId()).isEqualTo(entity.getId());
-	}
-
-	public static class IdTest05Entity { // id is Integer
-		@GeneratedValue() @Id Integer id;
-		@IdPrefix public String prefix = "123";
-
-		String getId() {
-			return id.toString();
+	void idIsGeneratedInteger() {
+		class Entity {
+			@GeneratedValue() @Id Integer id; // cannot be UNIQUE since a UUID cannot be coerced into an Integer
+			@IdAttribute public String attribute = "111"; // here's my Integer
 		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id.toString());
 	}
 
 	@Test
-	void idTest07() { // id is Number
-		CouchbaseDocument converted = new CouchbaseDocument();
-		IdTest07Entity entity = new IdTest07Entity();
-		converter.write(entity, converted);
-		assertThat(converted.getId()).isEqualTo(entity.getId());
-	}
-
-	public static class IdTest07Entity { // id is Number
-		@GeneratedValue() @Id public Number id;
-		@IdPrefix public String prefix = "123";
-
-		String getId() {
-			return id.toString();
+	void idIsGeneratedNumber() {
+		class Entity {
+			@GeneratedValue() @Id public Number id; // cannot be UNIQUE since a UUID cannot be coerced into a Number
+			@IdAttribute public String attribute = "111"; // here's my number
 		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id.toString());
 	}
 
+	@Test
+	void idHasPrefix() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) @Id public String id;
+			@IdAttribute public String someId = "abc";
+			@IdPrefix public String prefix = "111";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+		assertThat(converted.getId()).isEqualTo(entity.prefix + '.' + entity.someId);
+	}
+
+	@Test
+	void idHasSuffix() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) @Id public String id;
+			@IdAttribute public String someId = "abc";
+			@IdSuffix public String suffix = "999";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+		assertThat(converted.getId()).isEqualTo(entity.someId + '.' + entity.suffix);
+	}
+
+	@Test
+	void idHasPrefixAndSuffix() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) @Id public String id;
+			@IdAttribute public String someId = "abc";
+			@IdPrefix public String prefix = "111";
+			@IdSuffix public String suffix = "999";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+		assertThat(converted.getId()).isEqualTo(entity.prefix + '.' + entity.someId + '.' + entity.suffix);
+	}
+
+	@Test
+	void idHasMultiplePrefixesAndSuffixes() {
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) @Id public String id;
+			@IdAttribute public String someId = "abc";
+			@IdPrefix(order = 1) public String prefix = "111";
+			@IdPrefix(order = 3) public String prefix1 = "333";
+			@IdSuffix(order = 4) public String suffix1 = "444";
+			@IdSuffix(order = 2) public String suffix = "222";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+		assertThat(converted.getId()).isEqualTo(
+				entity.prefix + '.' + entity.prefix1 + '.' + entity.someId + '.' + entity.suffix + '.' + entity.suffix1);
+	}
+
+	@Test
+	void idHasMultiplePrefixesAndSuffixesSameOrder() { // might want to disallow this
+		class Entity {
+			@GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) @Id public String id;
+			@IdAttribute public String someId = "abc";
+			@IdPrefix(order = 1) public String prefix = "111";
+			@IdPrefix(order = 1) public String prefix1 = "333";
+			@IdSuffix(order = 1) public String suffix1 = "444";
+			@IdSuffix(order = 1) public String suffix = "222";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+		assertThat(converted.getId()).isEqualTo(entity.prefix1 + '.' + entity.someId + '.' + entity.suffix);
+	}
 }
