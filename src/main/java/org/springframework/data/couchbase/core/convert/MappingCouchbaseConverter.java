@@ -863,6 +863,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				sb.append(delimiter);
 			}
 			appendKeyParts(sb, idAttributes.values(), delimiter);
+			isAppending = true;
 		}
 
 		if (generatedValue.strategy() == UNIQUE) {
@@ -870,6 +871,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				sb.append(delimiter);
 			}
 			sb.append(UUID.randomUUID());
+			isAppending = true;
 		}
 
 		if (suffixes.size() > 0) {
