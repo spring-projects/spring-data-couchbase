@@ -22,7 +22,7 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
-import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -173,7 +173,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	@Bean(name = "couchbaseMappingConverter")
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-			CustomConversions couchbaseCustomConversions) {
+			CouchbaseCustomConversions couchbaseCustomConversions) {
 		// MappingCouchbaseConverter relies on a SimpleInformationMapper
 		// that has an getAliasFor(info) that just returns getType().getName().
 		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
