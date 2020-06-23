@@ -163,6 +163,16 @@ public class CouchbaseQueryMethod extends QueryMethod {
 		return StringUtils.hasText(query) ? query : null;
 	}
 
+	/**
+	 * indicates if the method begins with "count"
+	 *
+	 * @return true if the method begins with "count", indicating that .count() should be called instead of one() or
+	 *         all().
+	 */
+	public boolean isCountQuery() {
+		return getName().toLowerCase().startsWith("count");
+	}
+
 	@Override
 	public String toString() {
 		return super.toString();

@@ -25,6 +25,12 @@ import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * template class for Reactive Couchbase operations
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Repository
 public interface AirportRepository extends PagingAndSortingRepository<Airport, String> {
 
@@ -36,5 +42,9 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	List<Airport> getAllByIata(String iata);
+
+	long countByIataIn(String... iata);
+
+	long countByIcaoAndIataIn(String icao, String... iata);
 
 }

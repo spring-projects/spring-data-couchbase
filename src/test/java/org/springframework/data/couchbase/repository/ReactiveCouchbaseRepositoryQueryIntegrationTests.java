@@ -19,6 +19,10 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +42,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
 
+/**
+ * template class for Reactive Couchbase operations
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @SpringJUnitConfig(ReactiveCouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegrationTests {
@@ -71,6 +81,42 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
 		// TODO
 		System.err.println(airports);
+	}
+
+	@Test
+	void count() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		Future[] future = new Future[iatas.length];
+		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
+
+		try {
+			Callable<Boolean>[] suppliers = new Callable[iatas.length];
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i].toLowerCase() /* lcao */);
+				airportRepository.save(airport).block();
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {}
+			Long airportCount = null;
+			airportCount = airportRepository.count().block();
+			assertEquals(7, airportCount);
+
+			airportCount = airportRepository.countByIataIn("JFK", "IAD", "SFO").block();
+			assertEquals(3, airportCount);
+
+			airportCount = airportRepository.countByIcaoAndIataIn("jfk", "JFK", "IAD", "SFO", "XXX").block();
+			assertEquals(1, airportCount);
+
+			airportCount = airportRepository.countByIataIn("XXX").block();
+			assertEquals(0, airportCount);
+
+		} finally {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.delete(airport);
+			}
+		}
 	}
 
 	@Configuration
