@@ -69,7 +69,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 		}
 	}
 
-	String clusterGet( String methodName, String defaultValue){
+	String clusterGet(String methodName, String defaultValue) {
 		if (clusterAware != null) {
 			try {
 				return (String) clusterAware.getMethod(methodName).invoke(null);
@@ -82,22 +82,22 @@ public class Config extends AbstractCouchbaseConfiguration {
 
 	@Override
 	public String getConnectionString() {
-		return clusterGet( "connectionString", connectionString );
+		return clusterGet("connectionString", connectionString);
 	}
 
 	@Override
 	public String getUserName() {
-		return clusterGet( "username", username );
+		return clusterGet("username", username);
 	}
 
 	@Override
 	public String getPassword() {
-		return clusterGet( "password", password );
+		return clusterGet("password", password);
 	}
 
 	@Override
 	public String getBucketName() {
-		return clusterGet( "bucketName", bucketname );
+		return clusterGet("bucketName", bucketname);
 	}
 
 	@Bean(name = "auditorAwareRef")
@@ -113,23 +113,30 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	public void configureReactiveRepositoryOperationsMapping(ReactiveRepositoryOperationsMapping baseMapping) {
 		try {
-			ReactiveCouchbaseTemplate personTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
-			baseMapping.mapEntity(Person.class,	personTemplate); // Person goes in "protected" bucket
-			ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new MappingCouchbaseConverter());
-			baseMapping.mapEntity(User.class,	userTemplate); // User goes in "mybucket"
-			// everything else goes in getBucketName() (  which is travel-sample )
+			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
+			// ReactiveCouchbaseTemplate personTemplate =
+			// myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
+			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
+			// ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new
+			// MappingCouchbaseConverter());
+			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
+			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {
 			throw e;
 		}
 	}
+
 	@Override
 	public void configureRepositoryOperationsMapping(RepositoryOperationsMapping baseMapping) {
 		try {
-			CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
-			baseMapping.mapEntity(Person.class,	personTemplate); // Person goes in "protected" bucket
-			CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new MappingCouchbaseConverter());
-			baseMapping.mapEntity(User.class,	userTemplate); // User goes in "mybucket"
-			// everything else goes in getBucketName() (  which is travel-sample )
+			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
+			// CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),new
+			// MappingCouchbaseConverter());
+			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
+			// CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new
+			// MappingCouchbaseConverter());
+			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
+			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {
 			throw e;
 		}
@@ -152,7 +159,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	// do not use couchbaseClientFactory for the name of this method, otherwise the value of that bean will
 	// will be used instead of this call being made ( bucketname is an arg here, instead of using bucketName() )
 	public CouchbaseClientFactory myCouchbaseClientFactory(String bucketName) {
-		return new SimpleCouchbaseClientFactory(getConnectionString(),authenticator(), bucketName );
+		return new SimpleCouchbaseClientFactory(getConnectionString(), authenticator(), bucketName);
 	}
 
 	// convenience constructor for tests

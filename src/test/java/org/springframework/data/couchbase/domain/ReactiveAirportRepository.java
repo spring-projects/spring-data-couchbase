@@ -21,9 +21,16 @@ import reactor.core.publisher.Flux;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * template class for Reactive Couchbase operations
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Repository
 public interface ReactiveAirportRepository extends ReactiveSortingRepository<Airport, String> {
 
@@ -33,4 +40,7 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 
 	Flux<Airport> findAllByIata(String iata);
 
+	Mono<Long> countByIataIn(String... iatas);
+
+	Mono<Long> countByIcaoAndIataIn(String icao, String... iatas);
 }

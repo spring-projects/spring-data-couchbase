@@ -63,15 +63,16 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 		Query query;
 		ReactiveFindByQueryOperation.ReactiveFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
-			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(),
-					operations.getBucketName(), QueryMethodEvaluationContextProvider.DEFAULT,
-					namedQueries).createQuery();
+			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), operations.getBucketName(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
 		q = (ReactiveFindByQueryOperation.ReactiveFindByQuery) operations.findByQuery(domainClass).matching(query);
-		if (queryMethod.isCollectionQuery()) {
+		if (queryMethod.isCountQuery()) {
+			return q.count();
+		} else if (queryMethod.isCollectionQuery()) {
 			return q.all();
 		} else {
 			return q.one();
