@@ -86,6 +86,33 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void count() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		Future[] future = new Future[iatas.length];
+		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
+
+		try {
+			Callable<Boolean>[] suppliers = new Callable[iatas.length];
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i].toLowerCase() /* lcao */);
+				airportRepository.save(airport);
+			}
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException ie) {}
+			long airportCount = 0;
+			airportCount = airportRepository.count();
+			assertEquals(7, airportCount);
+
+		} finally {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
+				airportRepository.delete(airport);
+			}
+		}
+	}
+
+	@Test
 	void threadSafeParametersTest() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];

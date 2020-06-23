@@ -22,6 +22,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 import org.springframework.data.couchbase.core.OperationInterruptedException;
+import org.springframework.data.couchbase.repository.query.CountFragment;
 
 /**
  * @author Subhashni Balakrishnan
@@ -31,7 +32,7 @@ import org.springframework.data.couchbase.core.OperationInterruptedException;
 public class TemplateUtils {
 	public static final String SELECT_ID = "__id";
 	public static final String SELECT_CAS = "__cas";
-	public static final String SELECT_COUNT = "__count";
+	public static final String SELECT_COUNT = CountFragment.COUNT_ALIAS;
 	private static PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
 	public static Throwable translateError(Throwable e) {
