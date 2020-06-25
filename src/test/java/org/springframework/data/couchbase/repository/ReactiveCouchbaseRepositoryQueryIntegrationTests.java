@@ -54,7 +54,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 	@Autowired CouchbaseClientFactory clientFactory;
 
-	@Autowired ReactiveAirportRepository airportRepository;
+	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
 
 	@BeforeEach
 	void beforeEach() {
@@ -67,20 +67,32 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 	@Test
 	void shouldSaveAndFindAll() {
-		Airport vie = new Airport("airports::vie", "vie", "loww");
-		airportRepository.save(vie).block();
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie).block();
 
-		List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
+			List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
 
-		assertFalse(all.isEmpty());
-		assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
+			assertFalse(all.isEmpty());
+			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
+		} finally {
+			airportRepository.delete(vie).block();
+		}
 	}
 
 	@Test
 	void findBySimpleProperty() {
-		List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
-		// TODO
-		System.err.println(airports);
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie).block();
+			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
+			// TODO
+			System.err.println(airports);
+		} finally {
+			airportRepository.delete(vie).block();
+		}
 	}
 
 	@Test
@@ -114,7 +126,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		} finally {
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
-				airportRepository.delete(airport);
+				airportRepository.delete(airport).block();
 			}
 		}
 	}
