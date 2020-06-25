@@ -83,6 +83,29 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
+	// "1\" or name=name or name=\"1")
+	@Test
+	void findByInjection() {
+		Airport vie = null;
+		Airport xxx = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			xxx = new Airport("airports::xxx", "xxx", "xxxx");
+			airportRepository.save(xxx);
+			sleep(1000);
+			List<Airport> airports;
+			airports = airportRepository.findAllByIata("1\" or iata=iata or iata=\"1");
+			assertEquals(0, airports.size());
+			airports = airportRepository.findAllByIata("vie");
+			assertEquals(1, airports.size());
+		} finally {
+			airportRepository.delete(vie);
+			airportRepository.delete(xxx);
+		}
+
+	}
+
 	@Test
 	void findBySimpleProperty() {
 		Airport vie = null;
