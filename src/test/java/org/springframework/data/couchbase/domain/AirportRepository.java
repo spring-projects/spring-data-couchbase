@@ -47,4 +47,6 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 
 	long countByIcaoAndIataIn(String icao, String... iata);
 
+	long countByIcaoOrIataIn(String icao, String... iata);
+
 }
