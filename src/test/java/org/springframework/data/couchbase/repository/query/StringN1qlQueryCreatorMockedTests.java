@@ -58,7 +58,6 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@IgnoreWhen(clusterTypes = ClusterType.UNMANAGED)
 class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
@@ -83,9 +82,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
 				converter.getMappingContext());
 
-		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(
-				getAccessor(getParameters(method), "Oliver", "Twist"), queryMethod, converter, "travel-sample",
-				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
+				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -102,9 +100,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
 				converter.getMappingContext());
 
-		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(
-				getAccessor(getParameters(method), "Oliver", "Twist"), queryMethod, converter, "travel-sample",
-				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
+				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -123,8 +120,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT,
-					namedQueries);
+					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -141,14 +137,12 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT,
-					namedQueries);
+					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
 		fail("should have failed with IllegalArgumentException: query has no inline Query or named Query not found");
 	}
-
 
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
 		return new ParametersParameterAccessor(params, values);

@@ -82,8 +82,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 
 	@Test
 	void findDocWhichDoesNotExist() {
-		assertThrows(DataRetrievalFailureException.class,
-				() -> couchbaseTemplate.findById(User.class).one(UUID.randomUUID().toString()));
+		assertNull(couchbaseTemplate.findById(User.class).one(UUID.randomUUID().toString()));
 	}
 
 	@Test
@@ -113,7 +112,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertTrue(removeResult.getCas() != 0);
 		assertTrue(removeResult.getMutationToken().isPresent());
 
-		assertThrows(DataRetrievalFailureException.class, () -> couchbaseTemplate.findById(User.class).one(user.getId()));
+		assertNull(couchbaseTemplate.findById(User.class).one(user.getId()));
 	}
 
 	@Test
