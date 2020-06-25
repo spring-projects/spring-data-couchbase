@@ -1,6 +1,20 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.0-M1 (2020-06-25)
+----------------------------------------
+* DATACOUCH-565 - Use standard Spring code of conduct.
+* DATACOUCH-562 - Upgrade to Couchbase SDK 3.0.5.
+* DATACOUCH-561 - Better testing for N1QL String queries.
+* DATACOUCH-548 - Release 4.1 M1 (2020.0.0).
+* DATACOUCH-545 - CouchbaseRepository.findById() throws DataRetrievalFailureException when no document is found.
+* DATACOUCH-543 - Repository can not return single values.
+* DATACOUCH-542 - @Field is ignored.
+* DATACOUCH-541 - Searching for ID that does not exist throws exception.
+* DATACOUCH-534 - add support for @Query annotation (n1ql string).
+* DATACOUCH-525 - Enable usage of custom 'type' in queries.
+
+
 Changes in version 4.0.1.RELEASE (2020-06-10)
 ---------------------------------------------
 * DATACOUCH-562 - Upgrade to Couchbase SDK 3.0.5.
@@ -1060,6 +1074,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
