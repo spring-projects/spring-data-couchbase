@@ -248,7 +248,7 @@ public class Query {
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-		appendWhere(statement, null); // criteria on this Query
+		appendWhere(statement, new int[] { 0 }); // criteria on this Query
 		appendSort(statement);
 		appendSkipAndLimit(statement);
 		return statement.toString();
