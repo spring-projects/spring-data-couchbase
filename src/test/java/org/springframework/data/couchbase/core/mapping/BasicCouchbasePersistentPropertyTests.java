@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
@@ -80,6 +81,98 @@ public class BasicCouchbasePersistentPropertyTests {
 		test.addPersistentProperty(springIdProperty);
 
 		assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
+	}
+
+	@Test
+	void testAnnotationIdFieldOnly() { // only has @springId
+		class TestIdField {
+			@org.springframework.data.couchbase.core.mapping.Field String name;
+			String description;
+			@Id private String springId;
+		}
+		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(TestIdField.class));
+		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
+		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
+		test.addPersistentProperty(springIdProperty);
+		assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
+	}
+
+	@Test
+	void testIdFieldOnly() { // only has id
+		class TestIdField {
+			@org.springframework.data.couchbase.core.mapping.Field String name;
+			String description;
+			private String id;
+		}
+		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
+		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
+		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(TestIdField.class));
+		test.addPersistentProperty(idProperty);
+		assertThat(test.getIdProperty()).isEqualTo(idProperty);
+	}
+
+	@Test
+	void testIdFieldAndAnnotationIdField() { // has @springId and id
+		class TestIdField {
+			@org.springframework.data.couchbase.core.mapping.Field String name;
+			String description;
+			@Id private String springId;
+			private String id;
+		}
+		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(TestIdField.class));
+		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
+		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
+		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
+		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
+		// here this simulates the order in which the annotations would be found
+		// when "overriding" Spring @Id with SDK's @Id...
+		test.addPersistentProperty(idProperty);
+		// replace id with springId
+		test.addPersistentProperty(springIdProperty);
+		assertThat(test.getIdProperty()).isEqualTo(springIdProperty);
+	}
+
+	@Test
+	void testTwoAnnotationIdFields() { // has @Id springId and @Id id
+		class TestIdField {
+			@org.springframework.data.couchbase.core.mapping.Field String name;
+			String description;
+			@Id private String springId;
+			@Id private String id;
+		}
+		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
+		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
+		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
+		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
+		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(TestIdField.class));
+		test.addPersistentProperty(springIdProperty);
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			test.addPersistentProperty(idProperty);
+		});
+	}
+
+	@Test
+	void testTwoIdFields() { // has @Field("id") springId and id
+		class TestIdField {
+			@org.springframework.data.couchbase.core.mapping.Field String name;
+			String description;
+			@org.springframework.data.couchbase.core.mapping.Field("id") private String springId;
+			private String id;
+		}
+		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
+		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
+		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
+		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
+		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
+				ClassTypeInformation.from(TestIdField.class));
+		test.addPersistentProperty(springIdProperty);
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			test.addPersistentProperty(idProperty);
+		});
 	}
 
 	/**

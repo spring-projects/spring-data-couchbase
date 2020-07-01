@@ -28,6 +28,8 @@ import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Locale;
+
 /**
  * Implements annotated property representations of a given {@link Field} instance.
  * <p/>
@@ -97,6 +99,7 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	// DATACOUCH-145: allows SDK's @Id annotation to be used
 	@Override
 	public boolean isIdProperty() {
-		return isAnnotationPresent(Id.class) || super.isIdProperty();
+		return isAnnotationPresent(Id.class) || super.isIdProperty()
+				|| this.getFieldName().toLowerCase(Locale.ROOT).equals("id");
 	}
 }

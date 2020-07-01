@@ -955,4 +955,104 @@ public class MappingCouchbaseConverterTests {
 		assertThat(converted.getId()).isEqualTo(entity.id);
 		assertThat(converted.getId()).isEqualTo(entity.prefix1 + '.' + entity.someId + '.' + entity.suffix);
 	}
+
+	@Test
+	void idHasIdFieldOnly() {
+		class Entity {
+			public String id = "123";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.id);
+	}
+
+	@Test
+	void idHasIdFieldAndAnnotatedId() {
+		class Entity {
+			public String id = "123";
+			@Id public String otherId = "456";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.otherId);
+	}
+
+	@Test
+	void idHasIdFieldAndAnnotatedIdReverse() {
+		class Entity {
+			@Id public String otherId = "456";
+			public String id = "123";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.otherId);
+	}
+
+	@Test
+	void idHasTwoAnnotatedIdFields() {
+		class Entity {
+			@Id public String id = "123";
+			@Id public String otherId = "456";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			converter.write(entity, converted);
+		});
+	}
+
+	@Test
+	void idHasTwoIdFields() {
+		class Entity {
+			public String id = "123";
+			@Field("id") public String otherId = "456";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			converter.write(entity, converted);
+		});
+	}
+
+	@Test
+	void idHasAnnotatedIdAndMultipleIdFields() {
+		class Entity { // @Id has precedence, multiple 'id' fields is irrelevant
+			@Id public String annotatedId = "123";
+			@Field("id") public String otherId0 = "456";
+			@Field("id") public String otherId1 = "789";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getId()).isEqualTo(entity.annotatedId);
+	}
+
+	@Test
+	void idHasAnnotatedIdAndMultipleIdFieldsReverse() {
+		class Entity { // exception will be thrown at otherId1 as it is the second 'id' before @Id has been processed
+			@Field("id") public String otherId0 = "456";
+			@Field("id") public String otherId1 = "789";
+			@Id public String annotatedId = "123";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			converter.write(entity, converted);
+		});
+	}
+
+	@Test
+	void idHasNoId() {
+		class Entity {
+			public String notId = "123";
+		}
+		Entity entity = new Entity();
+		CouchbaseDocument converted = new CouchbaseDocument();
+		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
+			converter.write(entity, converted);
+		});
+	}
 }
