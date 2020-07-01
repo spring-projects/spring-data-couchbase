@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
@@ -76,24 +78,22 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		}
 
 		// check existing ID vs new candidate
-		boolean currentCbId = this.getIdProperty().isAnnotationPresent(Id.class);
 		boolean currentSpringId = this.getIdProperty().isAnnotationPresent(org.springframework.data.annotation.Id.class);
-		boolean candidateCbId = property.isAnnotationPresent(Id.class);
 		boolean candidateSpringId = property.isAnnotationPresent(org.springframework.data.annotation.Id.class);
 
-		if (currentCbId && candidateSpringId) {
-			// spring IDs will have priority over SDK IDs
+		if (candidateSpringId && !currentSpringId) {
+			// spring IDs will have priority over fields named id
 			return property;
-		} else if (currentSpringId && candidateCbId) {
-			// ignore SDK's IDs if current is a Spring ID
+		} else if (currentSpringId && !candidateSpringId) {
+			// spring IDs will have priority over fields named id
 			return null;
+		} else {
+			// do not allow two @Id fields or two fields named id (possible via @Field)
+			throw new MappingException(String.format(
+					"Attempt to add id property %s but already have property %s registered as id. Check your mapping configuration!",
+					property.getField(), getIdProperty().getField()));
 		}
-		/* any of the following will throw:
-		  - current is a spring ID and the candidate bears another spring ID
-		  - current is a SDK ID and the candidate bears another SDK ID
-		  - any other combination involving something else than a SDK or Spring ID
-		 */
-		return super.returnPropertyIfBetterIdPropertyCandidateOrNull(property);
+
 	}
 
 	@Override
