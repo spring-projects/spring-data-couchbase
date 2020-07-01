@@ -50,16 +50,21 @@ import org.springframework.util.Assert;
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
   private final PartTree partTree;
-  private JsonValue placeHolderValues;
+  private ThreadLocal<JsonValue> placeHolderValues;
 
   public PartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
     super(queryMethod, couchbaseOperations);
     this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
+    this.placeHolderValues = new ThreadLocal<JsonValue>() {
+      @Override public JsonValue initialValue() {
+        return JsonArray.create();
+      }
+    };
   }
 
   @Override
   protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
-    return this.placeHolderValues;
+    return this.placeHolderValues.get();
   }
 
   @Override
@@ -70,7 +75,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
     N1qlCountQueryCreator queryCountCreator = new N1qlCountQueryCreator(partTree, accessor, countFrom,
         getCouchbaseOperations().getConverter(), getQueryMethod());
     Statement statement = queryCountCreator.createQuery();
-    this.placeHolderValues = queryCountCreator.getPlaceHolderValues();
+    this.placeHolderValues.set(queryCountCreator.getPlaceHolderValues());
     return statement;
   }
 
@@ -83,7 +88,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       DeleteUsePath deleteUsePath = deleteFrom(bucket);
       N1qlMutateQueryCreator  mutateQueryCreator = new N1qlMutateQueryCreator(partTree, accessor, deleteUsePath, getCouchbaseOperations().getConverter(), getQueryMethod());
       MutateLimitPath mutateFromWhereOrderBy = mutateQueryCreator.createQuery();
-      this.placeHolderValues = mutateQueryCreator.getPlaceHolderValues();
+      this.placeHolderValues.set(mutateQueryCreator.getPlaceHolderValues());
 
       if (partTree.isLimiting()) {
         return mutateFromWhereOrderBy.limit(partTree.getMaxResults());
@@ -99,9 +104,9 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
       }
       WherePath selectFrom = select.from(bucket);
       N1qlQueryCreator queryCreator = new N1qlQueryCreator(partTree, accessor, selectFrom,
-              getCouchbaseOperations().getConverter(), getQueryMethod());
+          getCouchbaseOperations().getConverter(), getQueryMethod());
       LimitPath selectFromWhereOrderBy = queryCreator.createQuery();
-      this.placeHolderValues = queryCreator.getPlaceHolderValues();
+      this.placeHolderValues.set(queryCreator.getPlaceHolderValues());
 
       if (queryMethod.isPageQuery()) {
         Pageable pageable = accessor.getPageable();
