@@ -122,6 +122,76 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void findByStringQuery() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			sleep(1000);
+			List<Airport> airports = airportRepository.getByIata("vie");
+			assertEquals(vie.getId(), airports.get(0).getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findByStringQuerySort() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			sleep(1000);
+			List<Airport> airports = airportRepository.getByIataSort("vie");
+			assertEquals(vie.getId(), airports.get(0).getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findByStringQueryNoPredSort() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			sleep(1000);
+			List<Airport> airports = airportRepository.getAllSort();
+			assertEquals(vie.getId(), airports.get(0).getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findByStringQueryNoPred() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			sleep(1000);
+			List<Airport> airports = airportRepository.getAll();
+			assertEquals(vie.getId(), airports.get(0).getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findByStringQueryNoPredExplicitly() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			airportRepository.save(vie);
+			sleep(1000);
+			List<Airport> airports = airportRepository.getAllExplicitly();
+			assertEquals(vie.getId(), airports.get(0).getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
@@ -219,7 +289,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 					final int idx = i;
 					suppliers[i] = () -> {
 						sleep(iatas.length - idx); // so they are executed out-of-order
-						String foundName = airportRepository.getAllByIata(iatas[idx]).get(0).getIata();
+						String foundName = airportRepository.getByIata(iatas[idx]).get(0).getIata();
 						assertEquals(iatas[idx], foundName);
 						return iatas[idx].equals(foundName);
 					};

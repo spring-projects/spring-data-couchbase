@@ -48,7 +48,7 @@ public class Query {
 	private int limit;
 	private Sort sort = Sort.unsorted();
 
-	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
+	protected final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
 	public Query() {}
 
@@ -220,7 +220,7 @@ public class Query {
 	 * @param querySoFar
 	 * @return true -> not quoted, false -> quoted
 	 */
-	private static boolean notQuoted(int start, int end, String querySoFar) {
+	protected static boolean notQuoted(int start, int end, String querySoFar) {
 		Matcher quoteMatcher = StringBasedN1qlQueryParser.QUOTE_DETECTION_PATTERN.matcher(querySoFar);
 		List<int[]> quotes = new ArrayList<int[]>();
 		while (quoteMatcher.find()) {

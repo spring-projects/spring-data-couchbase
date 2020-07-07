@@ -41,7 +41,19 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	List<Airport> findAllByIata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
-	List<Airport> getAllByIata(String iata);
+	List<Airport> getByIata(String iata);
+
+	@Query("#{#n1ql.selectEntity} where iata = $1  ORDER BY icao LIMIT 10")
+	List<Airport> getByIataSort(String iata);
+
+	@Query("#{#n1ql.selectEntity} ORDER BY icao LIMIT 10")
+	List<Airport> getAllSort();
+
+	@Query("#{#n1ql.selectEntity}")
+	List<Airport> getAll();
+
+	@Query("select meta(#{#n1ql.bucket}).id as __id, META(#{#n1ql.bucket}).cas as __cas, #{#n1ql.bucket}.* from #{#n1ql.bucket}")
+	List<Airport> getAllExplicitly();
 
 	long countByIataIn(String... iata);
 
