@@ -26,7 +26,7 @@ import java.util.List;
 @Repository
 public interface AirlineRepository extends PagingAndSortingRepository<Airline, String> {
 
-	@Query("#{#n1ql.selectEntity} where (name = $1)")
+	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (name = $1)")
 	List<User> getByName(@Param("airline_name")String airlineName);
 
 }
