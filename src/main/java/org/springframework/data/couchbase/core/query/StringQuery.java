@@ -21,11 +21,16 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 
 /**
- * Query created from the string in @Query annotation in the repository interface. @Query("#{#n1ql.selectEntity} where
- * firstname = $1 and lastname = $2") List<User> getByFirstnameAndLastname(String firstname, String lastname); It must
- * include the SELECT ... FROM ... preferably via the #n1ql expression In addition to any predicates in the string, a
- * predicate for the domainType (class) will be added
- *
+ * Query created from the string in @Query annotation in the repository interface.
+ * 
+ * <pre>
+ * &#64;Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
+ * List<User> getByFirstnameAndLastname(String firstname, String lastname);
+ * </pre>
+ * 
+ * It must include the SELECT ... FROM ... preferably via the #n1ql expression, in addition to any predicates required,
+ * including the n1ql.filter (for _class = className)
+ * 
  * @author Michael Reiche
  */
 public class StringQuery extends Query {
