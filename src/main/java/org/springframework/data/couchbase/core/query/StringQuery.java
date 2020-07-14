@@ -21,16 +21,12 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 
 /**
+ * Query created from the string in @Query annotation in the repository interface. @Query("#{#n1ql.selectEntity} where
+ * firstname = $1 and lastname = $2") List<User> getByFirstnameAndLastname(String firstname, String lastname); It must
+ * include the SELECT ... FROM ... preferably via the #n1ql expression In addition to any predicates in the string, a
+ * predicate for the domainType (class) will be added
+ *
  * @author Michael Reiche
- *
- * Query created from the string in @Query annotation in the repository interface.
- *
- *      @Query("#{#n1ql.selectEntity} where firstname = $1 and lastname = $2")
- * 	    List<User>  getByFirstnameAndLastname(String firstname, String lastname);
- *
- * It must include the SELECT ... FROM ... preferably via the #n1ql expression
- * In addition to any predicates in the string, a predicate for the domainType (class)
- * will be added.
  */
 public class StringQuery extends Query {
 
@@ -41,10 +37,10 @@ public class StringQuery extends Query {
 	}
 
 	/**
-	 * inlineN1qlQuery (Query Annotation)
-	 * append the string query to the provided StringBuilder.
-	 * To be used along with the other append*() methods to construct the N1QL statement
-	 * @param	sb - StringBuilder
+	 * inlineN1qlQuery (Query Annotation) append the string query to the provided StringBuilder. To be used along with the
+	 * other append*() methods to construct the N1QL statement
+	 * 
+	 * @param sb - StringBuilder
 	 */
 	private void appendInlineN1qlStatement(final StringBuilder sb) {
 		sb.append(inlineN1qlQuery);
@@ -52,11 +48,8 @@ public class StringQuery extends Query {
 
 	@Override
 	public String toN1qlString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
-		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount);
 		final StringBuilder statement = new StringBuilder();
 		appendInlineN1qlStatement(statement); // apply the string statement
-		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-
 		// To use generated parameters for literals
 		// we need to figure out if we must use positional or named parameters
 		// If we are using positional parameters, we need to start where

@@ -65,7 +65,6 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 	CouchbaseTemplate couchbaseTemplate;
 	static NamedQueries namedQueries = new PropertiesBasedNamedQueries(new Properties());
 
-
 	@BeforeEach
 	public void beforeEach() {
 		context = new CouchbaseMappingContext();
@@ -73,7 +72,6 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 	}
-
 
 	@Test
 	@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -86,24 +84,24 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 			Method method = AirlineRepository.class.getMethod(input, String.class);
 
 			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-					new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
+					new DefaultRepositoryMetadata(AirlineRepository.class), new SpelAwareProxyProjectionFactory(),
 					converter.getMappingContext());
 
-
-			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(
-					getAccessor(getParameters(method), "Continental"), queryMethod, converter, config().bucketname(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
+					queryMethod, converter, config().bucketname(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 			Query query = creator.createQuery();
-			System.out.println(query.toN1qlString(couchbaseTemplate.reactive(), User.class, false));
+			System.out.println(query.toN1qlString(couchbaseTemplate.reactive(), Airline.class, false));
 
-			try { Thread.sleep(3000); } catch (Exception e){}
-			ExecutableFindByQueryOperation.ExecutableFindByQuery q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) couchbaseTemplate.findByQuery(
-					Airline.class).matching(query);
+			try {
+				Thread.sleep(3000);
+			} catch (Exception e) {}
+			ExecutableFindByQueryOperation.ExecutableFindByQuery q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) couchbaseTemplate
+					.findByQuery(Airline.class).matching(query);
 
 			Optional<Airline> al = q.one();
 			assertEquals(airline.toString(), al.get().toString());
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
