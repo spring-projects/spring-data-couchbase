@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airport;
@@ -100,19 +101,15 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
 		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
-
 		try {
 			Callable<Boolean>[] suppliers = new Callable[iatas.length];
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i].toLowerCase() /* lcao */);
 				airportRepository.save(airport).block();
 			}
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException ie) {}
-			Long airportCount = null;
-			airportCount = airportRepository.count().block();
-			assertEquals(7, airportCount);
+
+			Long airportCount = airportCount = airportRepository.count().block();
+			assertEquals(iatas.length, airportCount);
 
 			airportCount = airportRepository.countByIataIn("JFK", "IAD", "SFO").block();
 			assertEquals(3, airportCount);
@@ -126,7 +123,11 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		} finally {
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
-				airportRepository.delete(airport).block();
+				try {
+					airportRepository.delete(airport).block();
+				} catch (DataRetrievalFailureException drfe) {
+					System.out.println("Failed to delete: " + airport);
+				}
 			}
 		}
 	}

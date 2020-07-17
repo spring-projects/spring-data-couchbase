@@ -38,9 +38,23 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAll();
 
+	@Override
+	Mono<Airport> save(Airport a);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAllByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Long> countByIataIn(String... iatas);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Long> countByIcaoAndIataIn(String icao, String... iatas);
+
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Mono<Long> count();
+
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Mono<Airport> findById(String var1);
 }

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -38,6 +39,11 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Iterable<Airport> findAll();
 
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport save(Airport airport);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAllByIata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
@@ -45,8 +51,14 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 
 	long countByIataIn(String... iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long countByIcaoAndIataIn(String icao, String... iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long countByIcaoOrIataIn(String icao, String... iata);
+
+	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	long count();
 
 }
