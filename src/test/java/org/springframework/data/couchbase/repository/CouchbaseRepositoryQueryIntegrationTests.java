@@ -134,9 +134,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);
 				airportRepository.save(airport);
 			}
-			sleep(1000);
-			long airportCount = 0;
-			airportCount = airportRepository.count();
+
+			long airportCount = airportRepository.count();
 			assertEquals(7, airportCount);
 
 			airportCount = airportRepository.countByIataIn("JFK", "IAD", "SFO");
