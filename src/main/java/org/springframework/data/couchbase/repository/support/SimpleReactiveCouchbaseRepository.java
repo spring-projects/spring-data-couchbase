@@ -181,7 +181,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@SuppressWarnings("unchecked")
 	@Override
 	public Mono<Long> count() {
-		return operations.findByQuery(entityInformation.getJavaType()).count();
+		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency()).count();
 	}
 
 	@SuppressWarnings("unchecked")
