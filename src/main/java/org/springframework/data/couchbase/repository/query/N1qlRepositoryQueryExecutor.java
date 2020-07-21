@@ -18,9 +18,13 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
@@ -65,15 +69,29 @@ public class N1qlRepositoryQueryExecutor {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
-		q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass).matching(query);
+		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation = (ExecutableFindByQueryOperation.ExecutableFindByQuery<?>) operations
+				.findByQuery(domainClass).consistentWith(buildQueryScanConsistency());
 		if (queryMethod.isCountQuery()) {
-			return q.count();
+			return operation.matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {
-			return q.all();
+			return operation.matching(query).all();
+		} else if (queryMethod.isPageQuery()) {
+			Pageable p = accessor.getPageable();
+			return new CouchbaseQueryExecution.PagedExecution(operation, p).execute(query);
 		} else {
-			return q.oneValue();
+			return operation.matching(query).oneValue();
 		}
 
+	}
+
+	private QueryScanConsistency buildQueryScanConsistency() {
+		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		if (queryMethod.hasConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getConsistencyAnnotation().value();
+		} else if (queryMethod.hasScanConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
+		}
+		return scanConsistency;
 	}
 
 }

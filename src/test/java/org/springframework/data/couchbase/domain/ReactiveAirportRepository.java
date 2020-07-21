@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -57,4 +59,8 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> findById(String var1);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
+
 }

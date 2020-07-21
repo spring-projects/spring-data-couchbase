@@ -41,6 +41,9 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -134,6 +137,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);
 				airportRepository.save(airport);
 			}
+
+			Pageable pageable =  PageRequest.of(0, 2);
+			Page<Airport> aPage = 		airportRepository.findAllByIataNot("JFK", pageable);
+			assertEquals(iatas.length-1, aPage.getTotalElements());
+			assertEquals( pageable.getPageSize(), aPage.getContent().size());
 
 			long airportCount = airportRepository.count();
 			assertEquals(7, airportCount);

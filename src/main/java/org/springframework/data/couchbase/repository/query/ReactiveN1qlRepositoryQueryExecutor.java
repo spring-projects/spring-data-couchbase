@@ -15,8 +15,10 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.*;
@@ -69,14 +71,29 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
-		q = (ReactiveFindByQueryOperation.ReactiveFindByQuery) operations.findByQuery(domainClass).matching(query);
+		ReactiveFindByQueryOperation.ReactiveFindByQuery<?> operation = (ReactiveFindByQueryOperation.ReactiveFindByQuery<?>) operations
+				.findByQuery(domainClass).consistentWith(buildQueryScanConsistency());
+
 		if (queryMethod.isCountQuery()) {
-			return q.count();
+			return operation.matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {
-			return q.all();
+			return operation.matching(query).all();
+		} else if (queryMethod.isPageQuery()) {
+			throw new RuntimeException("reactive pageable query not implemented");
+			// Pageable p = accessor.getPageable();
+			// return new CouchbaseQueryExecution.ReactivePagedExecution(operation, p).execute(query);
 		} else {
-			return q.one();
+			return operation.matching(query).one();
 		}
 	}
 
+	private QueryScanConsistency buildQueryScanConsistency() {
+		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		if (queryMethod.hasConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getConsistencyAnnotation().value();
+		} else if (queryMethod.hasScanConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
+		}
+		return scanConsistency;
+	}
 }
