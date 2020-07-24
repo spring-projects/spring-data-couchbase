@@ -32,7 +32,9 @@ import com.couchbase.client.java.json.JsonValue;
  *
  * @author Subhashni Balakrishnan
  * @since 3.0
+ * @deprecated
  */
+@Deprecated
 public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
 	private final PartTree partTree;
