@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport;
 import org.springframework.util.Assert;
 
 public class ExecutableFindFromReplicasByIdOperationSupport implements ExecutableFindFromReplicasByIdOperation {
@@ -37,14 +38,13 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 		private final CouchbaseTemplate template;
 		private final Class<T> domainType;
 		private final String collection;
-		private final ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport<T> reactiveSupport;
+		private final ReactiveFindFromReplicasByIdSupport<T> reactiveSupport;
 
 		ExecutableFindFromReplicasByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
-			this.reactiveSupport = new ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport<>(
-					template.reactive(), domainType, collection);
+			this.reactiveSupport = new ReactiveFindFromReplicasByIdSupport<>(template.reactive(), domainType, collection);
 		}
 
 		@Override

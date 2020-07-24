@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.java.query.QueryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
@@ -37,10 +38,12 @@ import org.springframework.data.repository.util.ReactiveWrappers;
 public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAccessor {
 
 	private final List<MonoProcessor<?>> subscriptions;
+	private final QueryOptions queryOptions;
 
 	public ReactiveCouchbaseParameterAccessor(CouchbaseQueryMethod method, Object[] values) {
 		super(method.getParameters(), values);
 		this.subscriptions = new ArrayList<>(values.length);
+		QueryOptions qOptions = null;
 
 		for (int i = 0; i < values.length; i++) {
 
@@ -56,7 +59,12 @@ public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAcces
 			} else {
 				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Flux.class).collectList().toProcessor());
 			}
+
+			if( value instanceof QueryOptions){
+				qOptions = (QueryOptions)value;
+			}
 		}
+		queryOptions = qOptions;
 	}
 
 	/* (non-Javadoc)
@@ -78,5 +86,9 @@ public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAcces
 	 */
 	public Object getBindableValue(int index) {
 		return getValue(getParameters().getBindableParameter(index).getIndex());
+	}
+
+	public QueryOptions getQueryOptions(){
+		return this.queryOptions;
 	}
 }

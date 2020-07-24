@@ -53,4 +53,9 @@ public class Airline {
 		sb.append(" }");
 		return sb.toString();
 	}
+
+	@Override
+	public boolean equals(Object obj){
+		return ((Airline)obj).getId().equals(getId());
+	}
 }

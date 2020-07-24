@@ -23,15 +23,19 @@ import java.util.Optional;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
-import org.springframework.data.couchbase.repository.query.*;
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.PartTreeCouchbaseQuery;
+import org.springframework.data.couchbase.repository.query.StringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.data.repository.query.DefaultParameters;
+import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
@@ -151,6 +155,11 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 		@Override
 		public RepositoryQuery resolveQuery(final Method method, final RepositoryMetadata metadata,
 				final ProjectionFactory factory, final NamedQueries namedQueries) {
+			DefaultParameters parameters = new DefaultParameters(method);
+			//System.out.println(method.getName());
+			//for(Parameter p: parameters) {
+			//		System.out.println("    "+p.getName()+" "+p.getType()+" "+p.getIndex()+" "+p.getPlaceholder());
+			//}
 			final CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
 					.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 

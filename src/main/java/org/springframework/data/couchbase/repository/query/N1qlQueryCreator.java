@@ -15,10 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import java.util.Iterator;
 
+import com.couchbase.client.java.query.QueryOptions;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -27,6 +28,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
@@ -43,6 +45,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter converter;
+	private final QueryOptions queryOptions;
 
 	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor, QueryMethod queryMethod,
 			CouchbaseConverter converter) {
@@ -51,6 +54,14 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		this.context = converter.getMappingContext();
 		this.queryMethod = queryMethod;
 		this.converter = converter;
+		QueryOptions qOptions = null;
+		for (Iterator<Object> it = accessor.iterator(); it.hasNext(); ) {
+			Object p = it.next();
+			if (p.getClass().isAssignableFrom(QueryOptions.class)){
+				qOptions = (QueryOptions)p;
+			}
+		}
+		queryOptions = qOptions;
 	}
 
 	@Override
@@ -83,7 +94,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	@Override
 	protected Query complete(QueryCriteria criteria, Sort sort) {
-		return (criteria == null ? new Query() : new Query().addCriteria(criteria)).with(sort);
+		return (criteria == null ? new Query().with(queryOptions) : new Query().addCriteria(criteria)).with(sort).with(queryOptions);
 	}
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,

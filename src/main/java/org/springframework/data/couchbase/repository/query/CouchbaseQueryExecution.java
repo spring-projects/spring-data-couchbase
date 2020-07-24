@@ -15,12 +15,17 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import org.springframework.data.couchbase.core.ExecutableFindOperation;
+import org.springframework.data.couchbase.core.ExecutableRemoveOperation;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import java.util.List;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+//import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -31,18 +36,14 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * Set of classes to contain query execution strategies. Depending (mostly) on the return type of a
  * {@link org.springframework.data.repository.query.QueryMethod} a {@link Query} can be executed in various flavors.
  * TODO: seems to be a lot of duplication with ReactiveCouchbaseQueryExecution
  *
- * @author Oliver Gierke
- * @author Mark Paluch
- * @author Christoph Strobl
  * @author Michael Reiche
+ * @since 4.1
  */
 @FunctionalInterface
 interface CouchbaseQueryExecution {
@@ -52,8 +53,6 @@ interface CouchbaseQueryExecution {
 	/**
 	 * {@link CouchbaseQueryExecution} removing documents matching the query.
 	 *
-	 * @author Mark Paluch
-	 * @author Artyom Gabeev
 	 */
 
 	final class DeleteExecution implements CouchbaseQueryExecution {
@@ -73,13 +72,12 @@ interface CouchbaseQueryExecution {
 
 		@Override
 		public Object execute(Query query, Class<?> type, String collection) {
+			ExecutableRemoveOperation.RemoveWithCollection<?> exec = operations.remove(type);
 
-			// Class<?> type = method.getEntityInformation().getJavaType();
-
-			// if (method.isCollectionQuery()) {
-			return operations.removeByQuery(type).matching(query).all();
-			// }
-
+			if (collection != null){
+				exec = exec.inCollection(collection);
+			}
+			return  exec.matching(query).all();
 		}
 
 	}
@@ -111,7 +109,6 @@ interface CouchbaseQueryExecution {
 	/**
 	 * A {@link Converter} to post-process all source objects using the given {@link ResultProcessor}.
 	 *
-	 * @author Mark Paluch
 	 */
 	final class ResultProcessingConverter implements Converter<Object, Object> {
 
@@ -173,16 +170,13 @@ interface CouchbaseQueryExecution {
 	/**
 	 * {@link CouchbaseQueryExecution} for {@link Slice} query methods.
 	 *
-	 * @author Oliver Gierke
-	 * @author Christoph Strobl
-	 * @since 1.5
 	 */
 	final class SlicedExecution implements CouchbaseQueryExecution {
 
-		private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> find;
+		private final ExecutableFindOperation.ExecutableFind<?> find;
 		private final Pageable pageable;
 
-		public SlicedExecution(ExecutableFindByQueryOperation.ExecutableFindByQuery find, Pageable pageable) {
+		public SlicedExecution(ExecutableFindOperation.ExecutableFind find, Pageable pageable) {
 
 			Assert.notNull(find, "Find must not be null!");
 			Assert.notNull(pageable, "Pageable must not be null!");
@@ -214,16 +208,13 @@ interface CouchbaseQueryExecution {
 	/**
 	 * {@link CouchbaseQueryExecution} for pagination queries.
 	 *
-	 * @author Oliver Gierke
-	 * @author Mark Paluch
-	 * @author Christoph Strobl
 	 */
 	final class PagedExecution<FindWithQuery> implements CouchbaseQueryExecution {
 
-		private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation;
+		private final ExecutableFindOperation.FindWithProjection<?> operation;
 		private final Pageable pageable;
 
-		public PagedExecution(ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation, Pageable pageable) {
+		public PagedExecution(ExecutableFindOperation.FindWithProjection<?> operation, Pageable pageable) {
 
 			Assert.notNull(operation, "Operation must not be null!");
 			Assert.notNull(pageable, "Pageable must not be null!");
@@ -241,7 +232,7 @@ interface CouchbaseQueryExecution {
 
 			int overallLimit = query.getLimit();
 
-			ExecutableFindByQueryOperation.TerminatingFindByQuery<?> matching = operation.matching(query);
+			ExecutableFindOperation.TerminatingFind<?> matching = operation.matching(query);
 
 			// Apply raw pagination
 			query.with(pageable);

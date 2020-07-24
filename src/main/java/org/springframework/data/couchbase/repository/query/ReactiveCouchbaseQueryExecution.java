@@ -20,9 +20,9 @@ import reactor.core.publisher.Mono;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.util.Assert;
@@ -33,9 +33,8 @@ import org.springframework.util.ClassUtils;
  * {@link org.springframework.data.repository.query.QueryMethod} a {@link AbstractReactiveCouchbaseQuery} can be
  * executed in various flavors.
  *
- * @author Mark Paluch
- * @author Christoph Strobl
- * @since 2.0
+ * @author Michael Reiche
+ * @since 4.1
  */
 interface ReactiveCouchbaseQueryExecution {
 
@@ -65,19 +64,7 @@ interface ReactiveCouchbaseQueryExecution {
 
 		@Override
 		public Object execute(Query query, Class<?> type, String collection) {
-
-			// if (method.isCollectionQuery()) {
-			return operations.removeByQuery(type).matching(query).all();
-			// }
-
-			/*
-						if (method.isQueryForEntity() && !ClassUtils.isPrimitiveOrWrapper(method.getReturnedObjectType())) {
-							return operations.removeByQuery(query, type);
-						}
-			
-						return operations.removeByQuery(query, type, collection)
-								.map(deleteResult -> deleteResult.wasAcknowledged() ? deleteResult.getDeletedCount() : 0L);
-			 */
+			return operations.removeByQuery(type).inScope(collection).matching(query).all();
 		}
 
 	}

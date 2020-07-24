@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValue;
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -37,7 +32,15 @@ import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
+ * Couchbase Query
+ *
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
@@ -49,6 +52,9 @@ public class Query {
 	private int limit;
 	private Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
+	private String scope;
+	private String collection;
+	private QueryOptions queryOptions;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
@@ -56,6 +62,10 @@ public class Query {
 
 	public Query(final QueryCriteria criteriaDefinition) {
 		addCriteria(criteriaDefinition);
+	}
+
+	public static Query query(QueryCriteria queryCriteria) {
+		return new Query().addCriteria(queryCriteria);
 	}
 
 	public Query addCriteria(QueryCriteria criteriaDefinition) {
@@ -147,7 +157,6 @@ public class Query {
 		return queryScanConsistency;
 	}
 
-
 	/**
 	 * Sets the given scan consistency on the {@link Query} instance.
 	 *
@@ -159,6 +168,44 @@ public class Query {
 		return this;
 	}
 
+	/**
+	 * getScope
+	 *
+	 * @return scope
+	 */
+	public String getScope() {
+		return scope;
+	}
+
+	/**
+	 * Sets the given scope on the {@link Query} instance.
+	 *
+	 * @param scope
+	 * @return this
+	 */
+	public Query scope(final String scope) {
+		this.scope = scope;
+		return this;
+	}
+	/**
+	 * getScope
+	 *
+	 * @return collection
+	 */
+	public String getCollection() {
+		return collection;
+	}
+
+	/**
+	 * Sets the given collection on the {@link Query} instance.
+	 *
+	 * @param collection
+	 * @return this
+	 */
+	public Query collection(final String collection) {
+		this.collection = collection;
+		return this;
+	}
 	/**
 	 * Adds a {@link Sort} to the {@link Query} instance.
 	 *
@@ -174,6 +221,19 @@ public class Query {
 		return this;
 	}
 
+	/**
+	 * Adds a {@link QueryOptions} to the {@link Query} instance.
+	 *
+	 * @param queryOptions
+	 * @return
+	 */
+	public Query with(final QueryOptions queryOptions) {
+		if( queryOptions == null){
+			return this;
+		}
+		this.queryOptions = queryOptions;
+		return this;
+	}
 	public void appendSkipAndLimit(final StringBuilder sb) {
 		if (limit > 0) {
 			sb.append(" LIMIT ").append(limit);
@@ -270,8 +330,15 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
-		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount);
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount, String scope, String collection ) {
+		if ( scope == null ) {
+			scope = getScope();
+			collection = getCollection();
+		} else {
+			Assert.notNull( collection, "collection must be specified for scope - " +scope);
+		}
+
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount, scope, collection);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
@@ -281,18 +348,18 @@ public class Query {
 		return statement.toString();
 	}
 
-	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, Class domainClass) {
-		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, false);
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, Class domainClass, String scope /*, String collection*/) {
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, false, scope, collection);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.delete); // delete ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-		appendWhere(statement, null, template.getConverter()); // criteria on this Query
+		appendWhere(statement, new int[] {0}, template.getConverter()); // criteria on this Query
 		appendString(statement, n1ql.returning);
 		return statement.toString();
 	}
 
 	StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template, Class domainClass,
-			boolean isCount) {
+			boolean isCount, String scope, String collection) {
 		String typeKey = template.getConverter().getTypeKey();
 		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
@@ -303,7 +370,7 @@ public class Query {
 		if (alias != null && alias.isPresent()) {
 			typeValue = alias.toString();
 		}
-		return StringBasedN1qlQueryParser.createN1qlSpelValues(template.getBucketName(), typeKey, typeValue, isCount);
+		return StringBasedN1qlQueryParser.createN1qlSpelValues(template.getBucketName(), scope, collection, typeKey, typeValue, isCount);
 	}
 
 	/**
@@ -312,8 +379,8 @@ public class Query {
 	 * @param scanConsistency
 	 * @return QueryOptions
 	 */
-	public QueryOptions buildQueryOptions(QueryScanConsistency scanConsistency) {
-		final QueryOptions options = QueryOptions.queryOptions();
+	public QueryOptions buildQueryOptions(QueryScanConsistency scanConsistency, String collection) {
+		final QueryOptions options = queryOptions != null ? queryOptions : QueryOptions.queryOptions();
 		if (getParameters() != null) {
 			if (getParameters() instanceof JsonArray) {
 				options.parameters((JsonArray) getParameters());
@@ -324,6 +391,10 @@ public class Query {
 		if (scanConsistency != null) {
 			options.scanConsistency(scanConsistency);
 		}
+		// this will override any query_context in the QueryRequest
+		//if( collection != null){
+		//	options.raw("query_context",collection);
+		//}
 
 		return options;
 	}

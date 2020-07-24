@@ -78,8 +78,18 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
-	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-		return new ExecutableFindByIdOperationSupport(this).findById(domainType);
+	public <T> ExecutableFind<T> findById(Class<T> domainType) {
+		return new ExecutableFindOperationSupport(this).findById(domainType);
+		/*
+
+		Assert.notNull(id, "Id must not be null!");
+		Assert.notNull(entityClass, "EntityClass must not be null!");
+		Assert.notNull(collectionName, "CollectionName must not be null!");
+
+		String idKey = operations.getIdPropertyName(entityClass);
+
+		return doFindOne(collectionName, new Document(idKey, id), new Document(), entityClass);
+		 */
 	}
 
 	@Override
@@ -88,8 +98,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
-	public <T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType) {
-		return new ExecutableFindByQueryOperationSupport(this).findByQuery(domainType);
+	public <T> ExecutableFind<T> query(Class<T> domainType) {
+		return new ExecutableFindOperationSupport(this).query(domainType);
 	}
 
 	@Override
@@ -98,8 +108,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
-	public ExecutableRemoveById removeById() {
-		return new ExecutableRemoveByIdOperationSupport(this).removeById();
+	public <T> ExecutableRemove removeById(Class<T> domainType) {
+		return new ExecutableRemoveOperationSupport(this).removeById(domainType);
 	}
 
 	@Override
@@ -108,8 +118,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
-	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ExecutableRemoveByQueryOperationSupport(this).removeByQuery(domainType);
+	public <T> ExecutableRemove<T> remove(Class<T> domainType) {
+		return new ExecutableRemoveOperationSupport(this).remove(domainType);
 	}
 
 	@Override

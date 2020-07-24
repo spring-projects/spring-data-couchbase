@@ -81,9 +81,9 @@ class N1qlQueryCreatorTests {
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -103,9 +103,9 @@ class N1qlQueryCreatorTests {
 		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -125,9 +125,9 @@ class N1qlQueryCreatorTests {
 
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 

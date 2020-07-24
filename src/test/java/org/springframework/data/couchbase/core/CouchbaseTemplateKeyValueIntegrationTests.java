@@ -90,7 +90,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User found = couchbaseTemplate.findById(User.class).one(user.getId());
 		assertEquals(user, found);
 
-		couchbaseTemplate.removeById().one(user.getId());
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 		reactiveCouchbaseTemplate.replaceById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.THREE).one(user);
 	}
 
@@ -102,7 +102,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertEquals(user, modified);
 		User found = couchbaseTemplate.findById(User.class).one(user.getId());
 		assertEquals(user, found);
-		couchbaseTemplate.removeById().one(user.getId());
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 
 	@Test
@@ -116,7 +116,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
-				couchbaseTemplate.removeById().one(user.getId());
+				couchbaseTemplate.removeById(User.class).one(user.getId());
 			} catch (DataRetrievalFailureException e) {
 				//
 			}
@@ -134,7 +134,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
-				couchbaseTemplate.removeById().one(user.getId());
+				couchbaseTemplate.removeById(User.class).one(user.getId());
 			} catch (DataRetrievalFailureException e) {
 				//
 			}
@@ -158,7 +158,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User loaded = couchbaseTemplate.findById(User.class).one(toReplace.getId());
 		assertEquals("some other", loaded.getFirstname());
 
-		couchbaseTemplate.removeById().one(toReplace.getId());
+		couchbaseTemplate.removeById(User.class).one(toReplace.getId());
 
 	}
 
@@ -168,7 +168,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User modified = couchbaseTemplate.upsertById(User.class).one(user);
 		assertEquals(user, modified);
 
-		RemoveResult removeResult = couchbaseTemplate.removeById().one(user.getId());
+		RemoveResult removeResult = couchbaseTemplate.removeById(User.class).one(user.getId());
 		assertEquals(user.getId(), removeResult.getId());
 		assertTrue(removeResult.getCas() != 0);
 		assertTrue(removeResult.getMutationToken().isPresent());
@@ -183,7 +183,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertEquals(user, inserted);
 
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
-		couchbaseTemplate.removeById().one(user.getId());
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 
 	}
 
@@ -195,7 +195,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertEquals(user, inserted);
 
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
-		couchbaseTemplate.removeById().one(user.getId());
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 
 	}
 
@@ -210,7 +210,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
-				couchbaseTemplate.removeById().one(user.getId());
+				couchbaseTemplate.removeById(User.class).one(user.getId());
 			} catch (DataRetrievalFailureException e) {
 				// ignore
 			}
@@ -229,7 +229,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
-				couchbaseTemplate.removeById().one(user.getId());
+				couchbaseTemplate.removeById(User.class).one(user.getId());
 			} catch (DataRetrievalFailureException e) {
 				// ignore
 			}
@@ -246,7 +246,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertEquals(user, inserted);
 
 		assertTrue(couchbaseTemplate.existsById().one(id));
-		couchbaseTemplate.removeById().one(user.getId());
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 
 	}
 

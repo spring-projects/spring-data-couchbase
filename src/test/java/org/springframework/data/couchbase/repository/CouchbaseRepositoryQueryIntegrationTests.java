@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +30,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.ReactiveCollection;
+import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.query.QueryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +44,10 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -53,6 +59,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
+import reactor.core.publisher.Flux;
 
 /**
  * Repository tests
@@ -140,6 +147,12 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
+			QueryOptions options = QueryOptions.queryOptions();
+			//options.raw("query_context", "default:`"+clientFactory.getBucket().name()+"`."+"_default");
+			// TODO options.raw("scope","_default");
+			// TODO options.raw("collection","_default");
+			List<Airport> airports_scope = airportRepository.findAllByIata("vie", options);
+			assertEquals(1, airports_scope.size());
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
 			System.out.println("findAllByIata(0): " + airports.get(0));
@@ -169,7 +182,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
-		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
 
 		try {
 			Callable<Boolean>[] suppliers = new Callable[iatas.length];
@@ -182,6 +194,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Long count = airportRepository.countFancyExpression(Arrays.asList("JFK"), Arrays.asList("jfk"), false);
 			assertEquals(1, count);
 
+			Airport aa = airportRepository.findByIdEquals("JFK");
+
+			airportRepository.deleteByIdEquals("JFK");
+			List<String> docsToFetch = Arrays.asList("airports::IAD", "airports::SFO", "airports::SJC");
+			ReactiveCollection reactiveCollection = clientFactory.getCollection("_default" /*CollectionIdentifier.DEFAULT_COLLECTION*/).reactive();
+			List<Airport> results = Flux.fromIterable(docsToFetch).flatMap(reactiveCollection::get).map((r) -> r.contentAs(Airport.class)).collectList().block();
+			//List<GetResult> results = Flux
+			//		.fromIterable(docsToFetch)
+			//		.flatMap(reactiveCollection::get)
+			//		.collectList()
+			//		.block();
+			System.out.println("results.size(): "+results.size());
 			Pageable pageable = PageRequest.of(0, 2);
 			Page<Airport> aPage = airportRepository.findAllByIataNot("JFK", pageable);
 			assertEquals(iatas.length - 1, aPage.getTotalElements());

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import com.couchbase.client.java.query.QueryOptions;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.domain.Page;
@@ -49,10 +50,10 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	List<Airport> findAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Airport findByIata(String iata);
+	List<Airport> findAllByIata(String iata, QueryOptions scope);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Page<Airport> findAllByIataNot(String iatas, Pageable pageable);
+	Airport findByIata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -71,11 +72,18 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long count();
 
-	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} " +
-			" #{#projectIds != null ? 'AND iata IN $1' : ''} " +
-			" #{#planIds != null ? 'AND icao IN $2' : ''} " +
-			" #{#active != null ? 'AND false = $3' : ''} ")
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}  #{#projectIds != null ? 'AND iata IN $1' : ''} "
+			+ " #{#planIds != null ? 'AND icao IN $2' : ''}  #{#active != null ? 'AND false = $3' : ''} ")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds, @Param("active") Boolean active);
+	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
+			@Param("active") Boolean active);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	void deleteByIdEquals(String id);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIdEquals(String id);
 }

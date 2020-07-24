@@ -15,6 +15,13 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+
+import java.lang.reflect.Method;
+import java.util.Properties;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -37,15 +44,12 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.core.support.PropertiesBasedNamedQueries;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.DefaultParameters;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.Parameters;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-
-import java.lang.reflect.Method;
-import java.util.Properties;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 /**
  * @author Michael Nitschinger
@@ -76,12 +80,13 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", new SpelExpressionParser(),QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
 				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and firstname = $1 and lastname = $2",
-				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false, null, null));
 	}
 
 	@Test
@@ -94,12 +99,13 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", new SpelExpressionParser() ,QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
 				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and (firstname = $first or lastname = $last)",
-				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false, null, null));
 	}
 
 	@Test
@@ -113,7 +119,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", new SpelExpressionParser() , QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -130,7 +137,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}

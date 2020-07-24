@@ -15,8 +15,10 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,7 +27,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.couchbase.client.core.error.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -42,11 +43,12 @@ import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
-import org.springframework.util.Assert;
 
 /**
  * @author Subhashni Balakrishnan
@@ -115,28 +117,38 @@ public class StringBasedN1qlQueryParser {
 	private final Collection<String> parameterNames = new HashSet<String>();
 	public final N1QLExpression parsedExpression;
 
-	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
-			CouchbaseConverter couchbaseConverter, String typeField, String typeValue, ParameterAccessor accessor,
+	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName, String scope,
+			String collection, CouchbaseConverter couchbaseConverter, String typeField, String typeValue, ParameterAccessor accessor,
 			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
-		this.statementContext = createN1qlSpelValues(bucketName, typeField, typeValue, false);
-		this.countContext = createN1qlSpelValues(bucketName, typeField, typeValue, true);
+		this.statementContext = createN1qlSpelValues(bucketName, scope, collection, typeField, typeValue, false);
+		this.countContext = createN1qlSpelValues(bucketName, scope, collection, typeField, typeValue, true);
 		this.couchbaseConverter = couchbaseConverter;
 		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
 		checkPlaceholders( this.parsedExpression.toString() );
 	}
 
-	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue,
+	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String scope, String collection, String typeField, String typeValue,
 			boolean isCount) {
+		//
 		String b = "`" + bucketName + "`";
-		String entity = "META(" + b + ").id AS " + SELECT_ID + ", META(" + b + ").cas AS " + SELECT_CAS;
+		// fully specifying the collection name (or just using the bucketname if there is no scope)
+		// will work on getCluster().reactive() as there is no need for query_context
+		// if getScope().
+		if ( scope != null ){
+			Assert.notNull(collection, "collection must be specified for scope - "+scope);
+			b = "default:"+b+"."+scope+"."+collection;  // alternatively, query_context could be used
+		} else {
+			collection = b;
+		}
+		String entity = "META(" + collection + ").id AS " + SELECT_ID + ", META(" + collection + ").cas AS " + SELECT_CAS;
 		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
 		String selectEntity;
 		if (isCount) {
-			selectEntity = "SELECT " + count + " FROM " + b;
+			selectEntity = "SELECT " + count + " FROM " + collection;
 		} else {
-			selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
+			selectEntity = "SELECT " + entity + ", " + collection + ".* FROM " + b;
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 

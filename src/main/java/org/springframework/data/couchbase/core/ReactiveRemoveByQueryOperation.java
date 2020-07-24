@@ -20,6 +20,9 @@ import reactor.core.publisher.Flux;
 import org.springframework.data.couchbase.core.query.Query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import reactor.core.publisher.Mono;
+
+import java.util.Collection;
 
 public interface ReactiveRemoveByQueryOperation {
 
@@ -27,6 +30,8 @@ public interface ReactiveRemoveByQueryOperation {
 
 	interface TerminatingRemoveByQuery<T> {
 		Flux<RemoveResult> all();
+		Mono<RemoveResult> one(String id);
+		Flux<RemoveResult> all(Collection<String> ids);
 	}
 
 	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
@@ -41,6 +46,12 @@ public interface ReactiveRemoveByQueryOperation {
 
 	}
 
-	interface ReactiveRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryConsistentWith<T> {
+
+		RemoveByQueryConsistentWith<T> inScope(String collection);
+
+	}
+
+	interface ReactiveRemoveByQuery<T> extends RemoveByQueryInCollection<T> {}
 
 }

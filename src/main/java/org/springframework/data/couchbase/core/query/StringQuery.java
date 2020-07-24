@@ -52,7 +52,7 @@ public class StringQuery extends Query {
 	}
 
 	@Override
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount, String scope, String collection) {
 		final StringBuilder statement = new StringBuilder();
 		appendInlineN1qlStatement(statement); // apply the string statement
 		// To use generated parameters for literals

@@ -20,6 +20,12 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+/**
+ * Airport entity
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Document
 public class Airport {
 	@Id String id;
@@ -28,24 +34,35 @@ public class Airport {
 
 	String icao;
 
-	@PersistenceConstructor
+	String _class;
+
 	public Airport(String id, String iata, String icao) {
 		this.id = id;
 		this.iata = iata;
 		this.icao = icao;
 	}
 
+	public Airport() {
+	}
+
 	public String getId() {
 		return id;
 	}
 
+	public void setId(String id) { this.id = id; }
+
 	public String getIata() {
 		return iata;
 	}
+  public void setIata(String iata) { this.iata = iata; }
 
 	public String getIcao() {
 		return icao;
 	}
+	public void setIcao(String icao) { this.icao = icao; }
+
+	public String get_class(){ return _class;}
+	public void set_class(String _class) { this._class = _class; }
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

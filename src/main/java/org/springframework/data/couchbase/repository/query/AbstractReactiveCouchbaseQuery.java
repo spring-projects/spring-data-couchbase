@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,26 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
-import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation.ReactiveFindByQuery;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.repository.core.EntityMetadata;
-import org.springframework.data.repository.query.*;
-import org.springframework.data.util.ClassTypeInformation;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.mapping.model.EntityInstantiators;
-
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
+import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation.ReactiveFindByQuery;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryExecution.DeleteExecution;
+import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryExecution.ResultProcessingConverter;
+import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryExecution.ResultProcessingExecution;
+import org.springframework.data.mapping.model.EntityInstantiators;
+import org.springframework.data.repository.core.EntityMetadata;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
+import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
@@ -38,16 +43,15 @@ import org.springframework.util.Assert;
 /**
  * Base class for reactive {@link RepositoryQuery} implementations for Couchbase.
  *
- * @author Mark Paluch
- * @author Christoph Strobl
- * @since 2.0
+ * @author Michael Reiche
+ * @since 4.1
  */
 public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery {
 
 	private final ReactiveCouchbaseQueryMethod method;
 	private final ReactiveCouchbaseOperations operations;
 	private final EntityInstantiators instantiators;
-	// private final FindWithProjection<?> findOperationWithProjection;
+	// private final FindWithProjection<?> findOperationWithProjection; // TODO
 	private final ReactiveFindByQuery<?> findOperationWithProjection;
 	private final SpelExpressionParser expressionParser;
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
@@ -143,16 +147,16 @@ public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery 
 		Query query = createQuery(accessor);
 
 		query = applyAnnotatedConsistencyIfPresent(query);
-		// query = applyAnnotatedCollationIfPresent(query, accessor);
+		// query = applyAnnotatedCollationIfPresent(query, accessor); // TODO
 
 		ReactiveFindByQueryOperation.FindByQueryWithQuery<?> find = typeToRead == null //
 				? findOperationWithProjection //
 				: findOperationWithProjection; // TODO .as(typeToRead);
 
-		String collection = "_default._default";// method.getEntityInformation().getCollectionName();
+		String collection = null;// method.getEntityInformation().getCollectionName(); // TODO
 
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
-				new ReactiveCouchbaseQueryExecution.ResultProcessingConverter(processor, getOperations(), instantiators), find);
+				new ResultProcessingConverter(processor, getOperations(), instantiators), find);
 		return execution.execute(query, processor.getReturnedType().getDomainType(), collection);
 	}
 
@@ -165,7 +169,7 @@ public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery 
 	 */
 	private ReactiveCouchbaseQueryExecution getExecution(ParameterAccessor accessor,
 			Converter<Object, Object> resultProcessing, ReactiveFindByQueryOperation.FindByQueryWithQuery<?> operation) {
-		return new ReactiveCouchbaseQueryExecution.ResultProcessingExecution(getExecutionToWrap(accessor, operation),
+		return new ResultProcessingExecution(getExecutionToWrap(accessor, operation),
 				resultProcessing);
 	}
 
@@ -174,9 +178,12 @@ public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery 
 
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), method);
-			// } else if (isTailable(method)) {
-			// return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).tail();
-		} else if (method.isCollectionQuery()) {
+			/* TODO
+		} else if (isTailable(method)) {
+			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).tail();
+			this.metadata.getReturnType(this.method).getType()
+	    */
+		} else if (method.isCollectionQuery() /*|| method.getReturnedObjectType() instanceof Flux)*/) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
 		} else if (isCountQuery()) {
 			return (q, t, c) -> operation.matching(q).count();
@@ -191,7 +198,7 @@ public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery 
 	}
 
 	private boolean isTailable(ReactiveCouchbaseQueryMethod method) {
-		return false; // method.getTailableAnnotation() != null;
+		return false; // method.getTailableAnnotation() != null; // TODO
 	}
 
 	/**
@@ -219,7 +226,7 @@ public abstract class AbstractReactiveCouchbaseQuery implements RepositoryQuery 
 	 * @return
 	 */
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		return /*applyQueryMetaAttributesWhenPresent*/(createQuery(accessor));
+		return /*applyQueryMetaAttributesWhenPresent*/(createQuery(accessor)); // TODO
 	}
 
 	/**

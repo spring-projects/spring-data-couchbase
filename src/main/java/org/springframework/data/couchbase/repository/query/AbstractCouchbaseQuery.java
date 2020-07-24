@@ -1,28 +1,54 @@
+/*
+ * Copyright 2020 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.data.couchbase.repository.query;
+
+import org.springframework.data.couchbase.core.ExecutableFindOperation;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+//import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.repository.core.EntityMetadata;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
+/**
+ * {@link RepositoryQuery} implementation for Couchbase.
+ *
+ * @author Michael Reiche
+ * @since 4.1
+ */
 public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 
 	private final CouchbaseQueryMethod method;
 	private final CouchbaseOperations operations;
 	private final EntityInstantiators instantiators;
-	// private final FindWithProjection<?> findOperationWithProjection;
-	private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> findOperationWithProjection;
+	private final ExecutableFindOperation.FindWithProjection<?> executableFind;
 	private final SpelExpressionParser expressionParser;
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
@@ -51,8 +77,8 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();
+		this.executableFind =  operations.query(type);
 
-		this.findOperationWithProjection = operations.findByQuery(type);
 	}
 
 	/*
@@ -117,13 +143,13 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 		Query query = createQuery(accessor);
 
 		query = applyAnnotatedConsistencyIfPresent(query);
-		// query = applyAnnotatedCollationIfPresent(query, accessor);
+		query = applyAnnotatedCollationIfPresent(query, accessor);
 
-		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> find = typeToRead == null //
-				? findOperationWithProjection //
-				: findOperationWithProjection; // TODO .as(typeToRead);
+		ExecutableFindOperation.FindWithProjection<?> find = typeToRead == null //
+				? executableFind //
+				: executableFind ;// TODO executableFind.as(typeToRead);
 
-		String collection = "_default._default";// method.getEntityInformation().getCollectionName();
+		String collection =  null;// method.getEntityInformation().getCollectionName(); // TODO
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new CouchbaseQueryExecution.ResultProcessingConverter(processor, getOperations(), instantiators), find);
@@ -138,18 +164,20 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 	 * @return
 	 */
 	private CouchbaseQueryExecution getExecution(ParameterAccessor accessor, Converter<Object, Object> resultProcessing,
-			ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation) {
+			ExecutableFindOperation.FindWithProjection<?> operation) {
 		return new CouchbaseQueryExecution.ResultProcessingExecution(getExecutionToWrap(accessor, operation),
 				resultProcessing);
 	}
 
 	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor,
-			ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation) {
+			ExecutableFindOperation.FindWithProjection<?> operation) {
 
 		if (isDeleteQuery()) {
 			return new CouchbaseQueryExecution.DeleteExecution(getOperations(), method);
-			// } else if (isTailable(method)) {
-			// return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).tail();
+			/* // TODO
+		} else if (isTailable(method)) {
+			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).tail();
+			*/
 		} else if (method.isCollectionQuery()) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
 		} else if (isCountQuery()) {
@@ -161,7 +189,7 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 		} else {
 			return (q, t, c) -> {
 
-				ExecutableFindByQueryOperation.TerminatingFindByQuery<?> find = operation.matching(q);
+				ExecutableFindOperation.TerminatingFind<?> find = operation.matching(q);
 
 				if (isCountQuery()) {
 					return find.count();
@@ -172,8 +200,8 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 		}
 	}
 
-	private boolean isTailable(ReactiveCouchbaseQueryMethod method) {
-		return false; // method.getTailableAnnotation() != null;
+	private boolean isTailable(CouchbaseQueryMethod method) {
+		return false; // method.getTailableAnnotation() != null; // TODO
 	}
 
 	/**
@@ -192,6 +220,21 @@ public abstract class AbstractCouchbaseQuery implements RepositoryQuery {
 		return query.scanConsistency(method.getScanConsistencyAnnotation().query());
 	}
 
+	/**
+	 * Add a scan consistency from {@link org.springframework.data.couchbase.repository.ScanConsistency} to the given
+	 * {@link Query} if present.
+	 *
+	 * @param query the {@link Query} to potentially apply the sort to.
+	 * @return the query with potential scan consistency applied.
+	 * @since 4.1
+	 */
+	Query applyAnnotatedCollationIfPresent(Query query, ParametersParameterAccessor accessor) {
+
+		if (accessor.getSort() == null) {
+			return query;
+		}
+		return query.with(accessor.getSort());
+	}
 	/**
 	 * Creates a {@link Query} instance using the given {@link ParametersParameterAccessor}. Will delegate to
 	 * {@link #createQuery(ParametersParameterAccessor)} by default but allows customization of the count query to be

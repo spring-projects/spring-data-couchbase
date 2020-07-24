@@ -33,9 +33,8 @@ import org.springframework.util.Assert;
 /**
  * {@link Converter} to instantiate DTOs from fully equipped domain objects.
  *
- * @author Oliver Gierke
- * @author Mark Paluch
  * @author Michael Reiche
+ * @since 4.1
  */
 class DtoInstantiatingConverter implements Converter<Object, Object> {
 

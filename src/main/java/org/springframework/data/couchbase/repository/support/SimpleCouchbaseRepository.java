@@ -112,33 +112,34 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 		return couchbaseOperations.existsById().one(id.toString());
 	}
 
+	// why does couchbaseOperations.removeById() need a domainType and existsById() does not?
 	@Override
 	public void deleteById(final ID id) {
 		Assert.notNull(id, "The given id must not be null!");
-		couchbaseOperations.removeById().one(id.toString());
+		couchbaseOperations.removeById(entityInformation.getJavaType()).one(id.toString());
 	}
 
 	@Override
 	public void delete(final T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		couchbaseOperations.removeById().one(entityInformation.getId(entity));
+		couchbaseOperations.removeById(entityInformation.getJavaType()).one(entityInformation.getId(entity));
 	}
 
 	@Override
 	public void deleteAll(final Iterable<? extends T> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
+		couchbaseOperations.removeById(entityInformation.getJavaType()).all(Streamable.of(entities).map(entityInformation::getId).toList());
 	}
 
 	@Override
 	public long count() {
-		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		return  couchbaseOperations.query(entityInformation.getJavaType()) // TODO.consistentWith(buildQueryScanConsistency())
 				.count();
 	}
 
 	@Override
 	public void deleteAll() {
-		couchbaseOperations.removeByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		couchbaseOperations.remove(entityInformation.getJavaType())/* TODO .consistentWith(buildQueryScanConsistency()) */
 				.all();
 	}
 
@@ -179,7 +180,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	 * @return the list of found entities, already executed.
 	 */
 	private List<T> findAll(final Query query) {
-		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		return couchbaseOperations.query(entityInformation.getJavaType()) // TODO .consistentWith(buildQueryScanConsistency())
 				.matching(query).all();
 	}
 

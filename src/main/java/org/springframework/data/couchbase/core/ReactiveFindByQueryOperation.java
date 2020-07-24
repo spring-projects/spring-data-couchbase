@@ -15,14 +15,22 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+import java.util.Collection;
+
+/**
+ * ReactiveFindByQueryOperation
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public interface ReactiveFindByQueryOperation {
 
 	/**
@@ -58,6 +66,21 @@ public interface ReactiveFindByQueryOperation {
 		 * @return never {@literal null}.
 		 */
 		Flux<T> all();
+
+		/**
+		 * Get exactly zero or one result.
+		 *
+		 * @return a mono with the match if found (an empty one otherwise).
+		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
+		 */
+		Mono<T> one(String id);
+
+		/**
+		 * Get all matching elements.
+		 *
+		 * @return never {@literal null}.
+		 */
+		Flux<? extends T> all(Collection<String> ids);
 
 		/**
 		 * Get the number of matching elements.
@@ -107,7 +130,17 @@ public interface ReactiveFindByQueryOperation {
 	/**
 	 * Collection override (optional).
 	 */
-	interface FindWithCollection<T> extends FindByQueryWithQuery<T> {
+	interface FindInScope<T> extends FindByQueryWithQuery<T> {
+
+		/**
+		 * Explicitly set the name of the collection to perform the query on. <br />
+		 * Skip this step to use the default collection derived from the domain type.
+		 *
+		 * @param scope must not be {@literal null} nor {@literal empty}.
+		 * @return new instance of {@link FindWithProjection}.
+		 * @throws IllegalArgumentException if collection is {@literal null}.
+		 */
+		FindInScope<T> inScope(String scope);
 
 		/**
 		 * Explicitly set the name of the collection to perform the query on. <br />
@@ -117,13 +150,12 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link FindWithProjection}.
 		 * @throws IllegalArgumentException if collection is {@literal null}.
 		 */
-		FindWithProjection<T> inCollection(String collection);
+		FindInScope<T> inCollection(String scope, String collection);
 	}
-
 	/**
 	 * Result type override (optional).
 	 */
-	interface FindWithProjection<T> extends FindByQueryWithQuery<T>, FindDistinct {
+	interface FindWithProjection<T> extends FindInScope<T>, FindDistinct {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
@@ -227,6 +259,6 @@ public interface ReactiveFindByQueryOperation {
 		Flux<T> all();
 	}
 
-	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindWithCollection<T>, FindDistinct {}
+	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindInScope<T>, FindDistinct {}
 
 }
