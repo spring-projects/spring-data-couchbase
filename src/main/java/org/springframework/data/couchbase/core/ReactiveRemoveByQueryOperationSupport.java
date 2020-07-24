@@ -91,6 +91,10 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
 		}
 
+		@Override
+		public RemoveByQueryConsistentWith<T> inCollection(final String collection) {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
 		private String assembleDeleteQuery() {
 			return query.toN1qlRemoveString(template, this.domainType);
 		}

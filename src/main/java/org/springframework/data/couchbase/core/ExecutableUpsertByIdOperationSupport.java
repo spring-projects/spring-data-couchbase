@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.util.Assert;
+import org.springframework.data.couchbase.core.ReactiveUpsertByIdOperationSupport.ReactiveUpsertByIdSupport;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
@@ -48,7 +49,7 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final ReactiveUpsertByIdOperationSupport.ReactiveUpsertByIdSupport<T> reactiveSupport;
+		private final ReactiveUpsertByIdSupport<T> reactiveSupport;
 
 		ExecutableUpsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String collection,
 				final PersistTo persistTo, final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel,
@@ -60,7 +61,7 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.reactiveSupport = new ReactiveUpsertByIdOperationSupport.ReactiveUpsertByIdSupport<>(template.reactive(),
+			this.reactiveSupport = new ReactiveUpsertByIdSupport<>(template.reactive(),
 					domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 

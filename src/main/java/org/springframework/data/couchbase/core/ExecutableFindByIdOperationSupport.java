@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -40,15 +42,14 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		private final Class<T> domainType;
 		private final String collection;
 		private final List<String> fields;
-		private final ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<T> reactiveSupport;
+		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
 			this.fields = fields;
-			this.reactiveSupport = new ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport<>(template.reactive(),
-					domainType, collection, fields);
+			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, collection, fields);
 		}
 
 		@Override

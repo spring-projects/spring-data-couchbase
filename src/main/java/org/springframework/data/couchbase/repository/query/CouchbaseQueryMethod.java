@@ -41,6 +41,7 @@ import org.springframework.util.StringUtils;
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Oliver Gierke
+ * @author Michael Reiche
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 

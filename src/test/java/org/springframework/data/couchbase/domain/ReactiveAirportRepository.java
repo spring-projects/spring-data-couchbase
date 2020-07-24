@@ -16,22 +16,21 @@
 
 package org.springframework.data.couchbase.domain;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
 
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import reactor.core.publisher.Flux;
-
-import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-
-import java.util.ArrayList;
 
 /**
  * template class for Reactive Couchbase operations
@@ -72,7 +71,11 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 
 	// use parameter type PageRequest instead of Pageable. Pageable requires a return type of Page<>
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Flux<Airport> findAllByIataLike(String iata, final PageRequest page);
+	Page<Flux<Airport>> findAllByIataLike(String iata, final PageRequest page);
+
+	// use parameter type PageRequest instead of Pageable. Pageable requires a return type of Page<>
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<Airport> findAllByIataLike(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> findByIata(String iata);

@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,11 +40,10 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;

@@ -41,6 +41,12 @@ public interface ReactiveRemoveByQueryOperation {
 
 	}
 
-	interface ReactiveRemoveByQuery<T> extends RemoveByQueryConsistentWith<T> {}
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryConsistentWith<T> {
+
+		RemoveByQueryConsistentWith<T> inCollection(String collection);
+
+	}
+
+	interface ReactiveRemoveByQuery<T> extends RemoveByQueryInCollection<T> {}
 
 }

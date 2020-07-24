@@ -15,12 +15,9 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -28,6 +25,8 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Michael Nitschinger
@@ -48,6 +47,7 @@ public class N1qlRepositoryQueryExecutor {
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
 		this.evaluationContextProvider = evaluationContextProvider;
+		throw new RuntimeException("Deprecated");
 	}
 
 	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
@@ -73,8 +73,8 @@ public class N1qlRepositoryQueryExecutor {
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
 
-		//q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass)
-		//		.consistentWith(buildQueryScanConsistency()).matching(query);
+		// q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass)
+		// .consistentWith(buildQueryScanConsistency()).matching(query);
 
 		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation = (ExecutableFindByQueryOperation.ExecutableFindByQuery<?>) operations
 				.findByQuery(domainClass).consistentWith(buildQueryScanConsistency());

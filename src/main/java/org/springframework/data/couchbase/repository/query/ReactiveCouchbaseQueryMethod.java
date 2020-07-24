@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.repository.util.ClassUtils.*;
+import static org.springframework.data.repository.util.ClassUtils.hasParameterOfType;
 
 import java.lang.reflect.Method;
 
@@ -38,9 +38,8 @@ import org.springframework.util.ClassUtils;
 /**
  * Reactive specific implementation of {@link CouchbaseQueryMethod}.
  *
- * @author Mark Paluch
- * @author Christoph Strobl
- * @since 2.0
+ * @author Michael Reiche
+ * @since 4.1
  */
 public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 
@@ -48,7 +47,7 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 	private static final ClassTypeInformation<Slice> SLICE_TYPE = ClassTypeInformation.from(Slice.class);
 
 	private final Method method;
-	private final Lazy<Boolean> isCollectionQuery;
+	private final Lazy<Boolean> isCollectionQueryCouchbase; // not to be confused with QueryMethod.isCollectionQuery
 
 	/**
 	 * Creates a new {@link ReactiveCouchbaseQueryMethod} from the given {@link Method}.
@@ -91,8 +90,11 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 		}
 
 		this.method = method;
-		this.isCollectionQuery = Lazy.of(() -> !(isPageQuery() || isSliceQuery())
-				&& ReactiveWrappers.isMultiValueType(metadata.getReturnType(method).getType()));
+		this.isCollectionQueryCouchbase = Lazy.of(() -> {
+			boolean result = !(isPageQuery() || isSliceQuery())
+					&& ReactiveWrappers.isMultiValueType(metadata.getReturnType(method).getType());
+			return result;
+		});
 	}
 
 	/*
@@ -133,4 +135,14 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 		return true;
 	}
 
+	/*
+	 * does this query return a collection?
+	 *
+	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.query.QueryMethod#isCollection()
+	 */
+	@Override
+	public boolean isCollectionQuery() {
+		return (Boolean) this.isCollectionQueryCouchbase.get();
+	}
 }

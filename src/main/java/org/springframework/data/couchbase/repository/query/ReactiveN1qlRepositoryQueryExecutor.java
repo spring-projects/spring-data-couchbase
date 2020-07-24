@@ -15,21 +15,10 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
-import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.repository.core.NamedQueries;
-import org.springframework.data.repository.query.*;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import reactor.core.publisher.Flux;
-
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.repository.query.parser.PartTree;
-
-import java.util.List;
+import org.springframework.data.repository.core.NamedQueries;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * @author Michael Nitschinger
@@ -51,6 +40,7 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
 		this.evaluationContextProvider = evaluationContextProvider;
+		throw new RuntimeException("Deprecated");
 	}
 
 	/**
@@ -60,12 +50,11 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 	 * @return
 	 */
 	public Object execute(final Object[] parameters) {
-
 		// counterpart to N1qlRespositoryQueryExecutor,
 
 		if (queryMethod.hasN1qlAnnotation()) {
-			return new ReactiveStringBasedCouchbaseQuery(queryMethod, operations,
-					new SpelExpressionParser(), evaluationContextProvider, namedQueries).execute(parameters);
+			return new ReactiveStringBasedCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
+					evaluationContextProvider, namedQueries).execute(parameters);
 		} else {
 			return new ReactivePartTreeCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
 					evaluationContextProvider).execute(parameters);

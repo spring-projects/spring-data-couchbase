@@ -15,14 +15,20 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * ReactiveFindByQueryOperation
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public interface ReactiveFindByQueryOperation {
 
 	/**
@@ -107,7 +113,7 @@ public interface ReactiveFindByQueryOperation {
 	/**
 	 * Collection override (optional).
 	 */
-	interface FindWithCollection<T> extends FindByQueryWithQuery<T> {
+	interface FindInCollection<T> extends FindByQueryWithQuery<T> {
 
 		/**
 		 * Explicitly set the name of the collection to perform the query on. <br />
@@ -117,13 +123,13 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link FindWithProjection}.
 		 * @throws IllegalArgumentException if collection is {@literal null}.
 		 */
-		FindWithProjection<T> inCollection(String collection);
+		FindInCollection<T> inCollection(String collection);
 	}
 
 	/**
 	 * Result type override (optional).
 	 */
-	interface FindWithProjection<T> extends FindByQueryWithQuery<T>, FindDistinct {
+	interface FindWithProjection<T> extends FindInCollection<T>, FindDistinct {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
@@ -227,6 +233,6 @@ public interface ReactiveFindByQueryOperation {
 		Flux<T> all();
 	}
 
-	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindWithCollection<T>, FindDistinct {}
+	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindInCollection<T>, FindDistinct {}
 
 }

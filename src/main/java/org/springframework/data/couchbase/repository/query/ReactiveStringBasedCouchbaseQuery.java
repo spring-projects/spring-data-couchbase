@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package org.springframework.data.couchbase.repository.query;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
@@ -30,10 +29,8 @@ import org.springframework.util.Assert;
 /**
  * Query to use a plain JSON String to create the {@link Query} to actually execute.
  *
- * @author Mark Paluch
- * @author Christoph Strobl
  * @author Michael Reiche
- * @since 2.0
+ * @since 4.1
  */
 public class ReactiveStringBasedCouchbaseQuery extends AbstractReactiveCouchbaseQuery {
 

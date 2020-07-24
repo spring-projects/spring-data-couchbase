@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,19 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ResultProcessor;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * {@link RepositoryQuery} implementation for Couchbase.
  *
- * @author Oliver Gierke
- * @author Christoph Strobl
- * @author Thomas Darimont
- * @author Mark Paluch
+ * @author Michael Reiche
+ * @since 4.1
  */
 public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 
@@ -55,11 +57,8 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 		super(method, operations, expressionParser, evaluationContextProvider);
 
 		this.processor = method.getResultProcessor();
-		// TODO - why the for loop? Why not just :
-		// this.tree = new PartTree(method.getName(),	processor.getReturnedType().getDomainType())
 		for (PartTree.OrPart parts : this.tree = new PartTree(method.getName(),
-				processor.getReturnedType().getDomainType())) {
-		}
+				processor.getReturnedType().getDomainType())) {}
 
 		this.context = operations.getConverter().getMappingContext();
 		this.converter = operations.getConverter();

@@ -20,6 +20,12 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+/**
+ * Airport entity
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 @Document
 public class Airport {
 	@Id String id;

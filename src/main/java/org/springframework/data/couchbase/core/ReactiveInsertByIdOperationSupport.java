@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -23,6 +22,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
