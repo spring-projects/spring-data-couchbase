@@ -60,7 +60,13 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public TerminatingFindByQuery<T> matching(Query query) {
-			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanConsistency);
+			QueryScanConsistency scanCons;
+			if (query.getConsistency() != null) {
+				scanCons = query.getConsistency();
+			} else {
+				scanCons = scanConsistency;
+			}
+			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanCons);
 		}
 
 		@Override
@@ -94,6 +100,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							long cas = row.getLong(TemplateUtils.SELECT_CAS);
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
+							System.out.println("Row -> " + row.toString());
 							return template.support().decodeEntity(id, row.toString(), cas, domainType);
 						});
 			});
@@ -110,8 +117,10 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							} else {
 								return throwable;
 							}
-						}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(TemplateUtils.SELECT_COUNT))
-						.next();
+						}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
+							System.out.println("count: " + row.getLong(TemplateUtils.SELECT_COUNT));
+							return row.getLong(TemplateUtils.SELECT_COUNT);
+						}).next();
 			});
 		}
 
@@ -124,6 +133,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return query.toN1qlString(template, this.domainType, count);
 		}
 
+		@Override
+		public FindWithProjection<T> inCollection(String collection) {
+			throw new RuntimeException(("not implemented"));
+		}
+
+		@Override
+		public TerminatingDistinct<Object> distinct(String field) {
+			throw new RuntimeException(("not implemented"));
+		}
 	}
 
 }

@@ -47,6 +47,7 @@ public class Query {
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
+	private QueryScanConsistency queryScanConsistency;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
@@ -104,11 +105,20 @@ public class Query {
 	 * Limit the number of returned documents to {@code limit}.
 	 *
 	 * @param limit
-	 * @return
+	 * @return this
 	 */
 	public Query limit(int limit) {
 		this.limit = limit;
 		return this;
+	}
+
+	/**
+	 * limit
+	 *
+	 * @return limit
+	 */
+	public int getLimit() {
+		return limit;
 	}
 
 	/**
@@ -125,6 +135,27 @@ public class Query {
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
 		return with(pageable.getSort());
+	}
+
+	/**
+	 * queryScanconsistency
+	 *
+	 * @return queryScanConsistency
+	 */
+	public QueryScanConsistency getConsistency() {
+		return queryScanConsistency;
+	}
+
+	/**
+	 * Sets the given pagination information on the {@link Query} instance. Will transparently set {@code skip} and
+	 * {@code limit} as well as applying the {@link Sort} instance defined with the {@link Pageable}.
+	 *
+	 * @param queryScanConsistency
+	 * @return
+	 */
+	public Query with(final QueryScanConsistency queryScanConsistency) {
+		this.queryScanConsistency = queryScanConsistency;
+		return this;
 	}
 
 	/**

@@ -56,10 +56,9 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 	private final StringBasedN1qlQueryParser queryParser;
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
-	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
-			CouchbaseConverter couchbaseConverter, String bucketName,
+			CouchbaseConverter couchbaseConverter, String bucketName, SpelExpressionParser spelExpressionParser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
 
 		// AbstractQueryCreator needs a PartTree, so we give it a dummy one.
@@ -84,7 +83,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		}
 		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
 				getTypeField(), getTypeValue());
-		this.parser = SPEL_PARSER;
+		this.parser = spelExpressionParser;
 	}
 
 	protected QueryMethod getQueryMethod() {
@@ -101,8 +100,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 	@Override
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 		return from(part, property, where(path.toDotPath()), iterator);
 	}
@@ -113,8 +111,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			return create(part, iterator);
 		}
 
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
 		return from(part, property, base.and(path.toDotPath()), iterator);
@@ -138,23 +135,23 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		return q;
 	}
 
-	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property,
-			final QueryCriteria criteria, final Iterator<Object> parameters) {
+	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
+			final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
 		switch (type) {
-		case SIMPLE_PROPERTY:
-			return criteria; //.eq(parameters.next()); // this will be the dummy from PartTree
-		default:
-			throw new IllegalArgumentException("Unsupported keyword!");
+			case SIMPLE_PROPERTY:
+				return criteria; // .eq(parameters.next()); // this will be the dummy from PartTree
+			default:
+				throw new IllegalArgumentException("Unsupported keyword!");
 		}
 	}
 
 	// copied from StringN1qlBasedQuery
 	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
 			ReturnedType returnedType) {
-		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(
-				getQueryMethod().getParameters(), runtimeParameters);
+		EvaluationContext evaluationContext = evaluationContextProvider
+				.getEvaluationContext(getQueryMethod().getParameters(), runtimeParameters);
 		N1QLExpression parsedStatement = x(this.queryParser.doParse(parser, evaluationContext, false));
 
 		Sort sort = accessor.getSort();
@@ -165,13 +162,11 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		if (queryMethod.isPageQuery()) {
 			Pageable pageable = accessor.getPageable();
 			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(
-					Math.toIntExact(pageable.getOffset()));
+			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
 		} else if (queryMethod.isSliceQuery()) {
 			Pageable pageable = accessor.getPageable();
 			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(
-					Math.toIntExact(pageable.getOffset()));
+			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
 		}
 		return parsedStatement;
 	}
@@ -185,5 +180,3 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		return params.toArray();
 	}
 }
-
-

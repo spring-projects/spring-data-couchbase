@@ -21,6 +21,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
@@ -46,9 +48,13 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAllByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIata(String iata);
+
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	List<Airport> getAllByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long countByIataIn(String... iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -61,4 +67,6 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long count();
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
 }

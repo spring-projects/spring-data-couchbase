@@ -39,7 +39,9 @@ import com.couchbase.client.java.json.JsonValue;
  *
  * @author Subhashni Balakrishnan
  * @since 3.0
+ * @deprecated
  */
+@Deprecated
 public class ReactiveStringN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
 	private final StringBasedN1qlQueryParser queryParser;
