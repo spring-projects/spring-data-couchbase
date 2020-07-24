@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -42,9 +43,14 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * template class for Reactive Couchbase operations
@@ -96,6 +102,16 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 			assertEquals(1,airports1.size());
 			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1,airports2.size());
+			vie = airportRepository.save(vie).block();
+			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
+			assertEquals(1, airports.size());
+			System.out.println("findAllByIata(0): " + airports.get(0));
+			Airport airport1 = airportRepository.findById(airports.get(0).getId()).block();
+			assertEquals(airport1.getIata(), vie.getIata());
+			System.out.println("findById: " + airport1);
+			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata()).block();
+			assertEquals(airport1.getId(), vie.getId());
+			System.out.println("findByIata: " + airport2);
 		} finally {
 			airportRepository.delete(vie).block();
 		}
@@ -124,6 +140,20 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 				airportRepository.save(airport).block();
 			}
 
+			int page = 0;
+			for (; page < 10; ) {
+				PageRequest pageable = PageRequest.of(page++, 2);
+				Flux<Airport> airportFlux = airportRepository.findAllByIataLike("S%", pageable);
+				List<Airport> airportList = airportFlux.collectList().block();
+				if (airportList.isEmpty()) {
+					break;
+				}
+				for (Airport a : airportList) {
+					System.out.println(a.getIata() + " " + a.getIcao());
+				}
+				System.out.println("-----");
+			}
+
 			Long airportCount = airportCount = airportRepository.count().block();
 			assertEquals(iatas.length, airportCount);
 
@@ -135,6 +165,9 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 			airportCount = airportRepository.countByIataIn("XXX").block();
 			assertEquals(0, airportCount);
+		} catch (Exception e){
+			e.printStackTrace();
+			throw e;
 
 		} finally {
 			for (int i = 0; i < iatas.length; i++) {

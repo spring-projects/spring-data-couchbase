@@ -38,6 +38,7 @@ import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.core.support.PropertiesBasedNamedQueries;
 import org.springframework.data.repository.query.*;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.lang.reflect.Method;
 import java.util.Properties;
@@ -75,7 +76,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -93,7 +94,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser() ,QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -112,7 +113,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser() , QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -129,7 +130,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}

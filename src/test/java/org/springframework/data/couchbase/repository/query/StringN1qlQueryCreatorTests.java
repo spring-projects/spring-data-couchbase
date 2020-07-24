@@ -49,6 +49,7 @@ import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.core.support.PropertiesBasedNamedQueries;
 import org.springframework.data.repository.query.*;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -87,7 +88,7 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 					converter.getMappingContext());
 
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, config().bucketname(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 			Query query = creator.createQuery();
 			System.out.println(query.toN1qlSelectString(couchbaseTemplate.reactive(), Airline.class, false));
