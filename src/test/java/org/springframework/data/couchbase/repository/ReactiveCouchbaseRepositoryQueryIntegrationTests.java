@@ -22,10 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,14 +50,10 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * template class for Reactive Couchbase operations
@@ -88,16 +82,21 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 	@Test
 	void shouldSaveAndFindAll() {
 		Airport vie = null;
+		Airport jfk = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie).block();
+			jfk = new Airport("airports::jfk", "JFK", "xxxx");
+			airportRepository.save(jfk).block();
 
 			List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
 
 			assertFalse(all.isEmpty());
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
+			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::jfk")));
 		} finally {
 			airportRepository.delete(vie).block();
+			airportRepository.delete(jfk).block();
 		}
 	}
 
@@ -110,7 +109,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1, airports1.size());
 			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(1,airports2.size());
+			assertEquals(1, airports2.size());
 			vie = airportRepository.save(vie).block();
 			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1, airports.size());
@@ -161,7 +160,6 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 			airportRepository.findAllByIataLike("S%", PageRequest.of(page++, 2)).as(StepVerifier::create) //
 					.expectNextMatches(a -> {
-						System.out.println(a);
 						return iatas.contains(a.getIata());
 					}).expectNextMatches(a -> iatas.contains(a.getIata())).verifyComplete();
 

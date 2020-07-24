@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -48,7 +49,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport<T> reactiveSupport;
+		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String collection,
 				final PersistTo persistTo, final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel,
@@ -60,8 +61,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.reactiveSupport = new ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport<>(template.reactive(),
-					domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
+			this.reactiveSupport = new ReactiveInsertByIdSupport<>(template.reactive(), domainType, collection, persistTo,
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override

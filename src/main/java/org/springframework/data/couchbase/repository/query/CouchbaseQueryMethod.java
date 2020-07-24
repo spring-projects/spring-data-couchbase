@@ -43,34 +43,18 @@ import org.springframework.util.StringUtils;
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Oliver Gierke
+ * @author Michael Reiche
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
 	private final Method method;
-	private final Lazy<Boolean> isCollectionQueryCouchbase; // not to be confused with QueryMethod.isCollectionQuery
 
 	public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
 			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
 		super(method, metadata, factory);
 
 		this.method = method;
-		this.isCollectionQueryCouchbase = Lazy.of(() -> {
-			boolean result = !(isPageQuery() || isSliceQuery())
-					&& ReactiveWrappers.isMultiValueType(metadata.getReturnType(method).getType());
-			return result;
-		});
-	}
 
-	/*
-	 * does this query return a collection?
-	 * This must override QueryMethod.isCollection() as isCollectionQueryCouchbase is different from isCollectionQuery
-	 *
-	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.query.QueryMethod#isCollection()
-	 */
-	@Override
-	public boolean isCollectionQuery() {
-		return (Boolean) this.isCollectionQueryCouchbase.get();
 	}
 
 	/**

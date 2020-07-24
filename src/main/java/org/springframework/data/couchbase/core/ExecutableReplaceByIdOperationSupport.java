@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.util.Assert;
+import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
@@ -48,7 +49,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport<T> reactiveSupport;
+		private final ReactiveReplaceByIdSupport<T> reactiveSupport;
 
 		ExecutableReplaceByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String collection,
 				final PersistTo persistTo, final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel,
@@ -60,7 +61,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.reactiveSupport = new ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport<>(template.reactive(),
+			this.reactiveSupport = new ReactiveReplaceByIdSupport<>(template.reactive(),
 					domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 

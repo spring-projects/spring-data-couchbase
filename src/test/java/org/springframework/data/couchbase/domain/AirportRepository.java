@@ -51,9 +51,6 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(String iata);
 
-	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Page<Airport> findAllByIataNot(String iatas, Pageable pageable);
-
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIata(String iata);
@@ -71,11 +68,12 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long count();
 
-	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} " +
-			" #{#projectIds != null ? 'AND iata IN $1' : ''} " +
-			" #{#planIds != null ? 'AND icao IN $2' : ''} " +
-			" #{#active != null ? 'AND false = $3' : ''} ")
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}  #{#projectIds != null ? 'AND iata IN $1' : ''} "
+			+ " #{#planIds != null ? 'AND icao IN $2' : ''}  #{#active != null ? 'AND false = $3' : ''} ")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds, @Param("active") Boolean active);
+	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
+			@Param("active") Boolean active);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
 }

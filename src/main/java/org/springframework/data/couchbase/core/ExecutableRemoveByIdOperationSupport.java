@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -44,7 +45,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
-		private final ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
+		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String collection, final PersistTo persistTo,
 				final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel) {
@@ -53,8 +54,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
-			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport(
-					template.reactive(), collection, persistTo, replicateTo, durabilityLevel);
+			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), collection, persistTo,
+					replicateTo, durabilityLevel);
 		}
 
 		@Override

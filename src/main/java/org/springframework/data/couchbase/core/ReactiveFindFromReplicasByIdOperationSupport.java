@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import static com.couchbase.client.java.kv.GetAnyReplicaOptions.*;
+import static com.couchbase.client.java.kv.GetAnyReplicaOptions.getAnyReplicaOptions;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2020 the original author or authors.
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.repository.util.ClassUtils.*;
+import static org.springframework.data.repository.util.ClassUtils.hasParameterOfType;
 
 import java.lang.reflect.Method;
 
@@ -38,9 +38,8 @@ import org.springframework.util.ClassUtils;
 /**
  * Reactive specific implementation of {@link CouchbaseQueryMethod}.
  *
- * @author Mark Paluch
- * @author Christoph Strobl
- * @since 2.0
+ * @author Michael Reiche
+ * @since 4.1
  */
 public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 
@@ -48,7 +47,7 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 	private static final ClassTypeInformation<Slice> SLICE_TYPE = ClassTypeInformation.from(Slice.class);
 
 	private final Method method;
-	//private final Lazy<Boolean> isCollectionQuery;
+	private final Lazy<Boolean> isCollectionQueryCouchbase; // not to be confused with QueryMethod.isCollectionQuery
 
 	/**
 	 * Creates a new {@link ReactiveCouchbaseQueryMethod} from the given {@link Method}.
@@ -91,35 +90,11 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 		}
 
 		this.method = method;
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod#createParameters(java.lang.reflect.Method)
-	 */
-	/*
-	@Override
-	protected CouchbaseParameters createParameters(Method method) {
-		return new CouchbaseParameters(method, isGeoNearQuery(method));
-	}*/
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.query.QueryMethod#isModifyingQuery()
-	 */
-	@Override
-	public boolean isModifyingQuery() {
-		return super.isModifyingQuery();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.repository.query.QueryMethod#isQueryForEntity()
-	 */
-	@Override
-	public boolean isQueryForEntity() {
-		return super.isQueryForEntity();
+		this.isCollectionQueryCouchbase = Lazy.of(() -> {
+			boolean result = !(isPageQuery() || isSliceQuery())
+					&& ReactiveWrappers.isMultiValueType(metadata.getReturnType(method).getType());
+			return result;
+		});
 	}
 
 	/*
@@ -132,4 +107,15 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 		return true;
 	}
 
+	/*
+	 * does this query return a collection?
+	 * This must override QueryMethod.isCollection() as isCollectionQueryCouchbase is different from isCollectionQuery
+	 *
+	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.query.QueryMethod#isCollection()
+	 */
+	@Override
+	public boolean isCollectionQuery() {
+		return (Boolean) this.isCollectionQueryCouchbase.get();
+	}
 }
