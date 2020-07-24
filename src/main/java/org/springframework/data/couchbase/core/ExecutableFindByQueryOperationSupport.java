@@ -51,7 +51,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
-			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency);
+			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(),
+					domainType, query, scanConsistency);
 			this.scanConsistency = scanConsistency;
 		}
 

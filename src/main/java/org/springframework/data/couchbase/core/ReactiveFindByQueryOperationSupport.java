@@ -130,6 +130,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return query.toN1qlSelectString(template, this.domainType, count);
 		}
 
+		@Override
+		public FindWithProjection<T> inCollection(String collection) {
+			throw new RuntimeException(("not implemented"));
+		}
+
+		@Override
+		public TerminatingDistinct<Object> distinct(String field) {
+			throw new RuntimeException(("not implemented"));
+		}
 	}
 
 }

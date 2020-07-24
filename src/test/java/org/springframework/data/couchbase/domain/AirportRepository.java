@@ -18,12 +18,15 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * template class for Reactive Couchbase operations
@@ -39,6 +42,7 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	Iterable<Airport> findAll();
 
 	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport save(Airport airport);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -46,6 +50,9 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Page<Airport> findAllByIataNot(String iatas, Pageable pageable);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
