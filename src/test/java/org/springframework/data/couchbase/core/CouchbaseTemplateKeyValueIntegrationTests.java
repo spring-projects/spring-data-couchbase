@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.dao.DataIntegrityViolationException;;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
@@ -77,6 +77,12 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User modified = couchbaseTemplate.upsertById(User.class).one(user);
 		assertEquals(user, modified);
+
+		modified = couchbaseTemplate.replaceById(User.class).one(user);
+		assertEquals(user, modified);
+
+		user.setVersion(12345678);
+		assertThrows(DataIntegrityViolationException.class, () -> couchbaseTemplate.replaceById(User.class).one(user));
 
 		User found = couchbaseTemplate.findById(User.class).one(user.getId());
 		assertEquals(user, found);

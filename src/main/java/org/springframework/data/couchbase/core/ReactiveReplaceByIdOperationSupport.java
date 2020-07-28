@@ -68,8 +68,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.replace(converted.getId(), converted.export(), buildReplaceOptions()).map(result -> {
-							template.support().applyUpdatedCas(object, result.cas());
+						.replace(converted.getId(), converted.export(), buildReplaceOptions(o)).map(result -> {
+							template.support().applyUpdatedCas(o, result.cas());
 							return o;
 						});
 			}).onErrorMap(throwable -> {
@@ -86,13 +86,15 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Flux.fromIterable(objects).flatMap(this::one);
 		}
 
-		private ReplaceOptions buildReplaceOptions() {
+		private ReplaceOptions buildReplaceOptions(T object) {
 			final ReplaceOptions options = ReplaceOptions.replaceOptions();
 			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
 				options.durability(persistTo, replicateTo);
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
+			long cas = template.support().getCas(object);
+			options.cas(cas);
 			return options;
 		}
 
