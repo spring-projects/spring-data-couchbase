@@ -96,6 +96,21 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		}
 	}
 
+	public long getCas(final Object entity) {
+		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+
+		long cas = 0;
+		if (versionProperty != null) {
+			Object casObject  =  (Number)accessor.getProperty(versionProperty);
+			if (casObject instanceof Number){
+				cas = ((Number)casObject).longValue();
+			}
+		}
+		return cas;
+	}
+
 	public String getJavaNameForEntity(final Class<?> clazz) {
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
