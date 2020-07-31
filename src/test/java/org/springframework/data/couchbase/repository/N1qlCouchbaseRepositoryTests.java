@@ -25,67 +25,57 @@ import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
-//import org.springframework.data.couchbase.ContainerResourceRunner;
+
+import org.springframework.data.couchbase.ContainerResourceRunner;
 import org.springframework.data.couchbase.IntegrationTestApplicationConfig;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-// must not be in same package as CouchbaseRepository, otherwise AutoWired will fail on couchbaseRepository
-import org.springframework.data.couchbase.repo.ItemRepository;
-import org.springframework.data.couchbase.repo.PartyRepository;
-import org.springframework.data.couchbase.repo.PartyPagingRepository;
+import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory;
+import org.springframework.data.couchbase.repository.support.IndexManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.model.MappingInstantiationException;
+import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
- * This has been copied from 3.2.x for testing backport of fix in DATACOUCH-484
- * This and dependent class have been copied from src/integration to src/test
- * and the repository classes have been moved from org.springframework.data.couchbase.repository
- * to org.springframework.data.couchbase.repo so that
- * org.springframework.data.couchbase.repository.CouchbaseRepository is not instantiated by
- * @Autowired
- *
  * This tests PaginAndSortingRepository features in the Couchbase connector.
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
- * @author Michael Reiche
  */
-// @RunWith(ContainerResourceRunner.class)
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(ContainerResourceRunner.class)
 @ContextConfiguration(classes = IntegrationTestApplicationConfig.class)
-@SpringJUnitConfig(IntegrationTestApplicationConfig.class)
 @TestExecutionListeners(PartyPopulatorListener.class)
-@EnableCouchbaseRepositories
-public class N1qlCouchbaseRepositoryIntegrationTests {
+public class N1qlCouchbaseRepositoryTests {
 
-	@Autowired private PartyPagingRepository repository;
+	@Autowired private RepositoryOperationsMapping operationsMapping;
 
-	@Autowired private PartyRepository partyRepository;
+	@Autowired private IndexManager indexManager;
 
-	@Autowired private ItemRepository itemRepository;
+	private PartyPagingRepository repository;
+
+	private PartyRepository partyRepository;
+
+	private ItemRepository itemRepository;
 
 	private final String KEY_PARTY = "Party1";
 	private final String KEY_ITEM = "Item1";
 
 	@Before
 	public void setup() throws Exception {
+		RepositoryFactorySupport factory = new CouchbaseRepositoryFactory(operationsMapping, indexManager);
+		repository = factory.getRepository(PartyPagingRepository.class);
+		partyRepository = factory.getRepository(PartyRepository.class);
+		itemRepository = factory.getRepository(ItemRepository.class);
 		partyRepository.save(new Party(KEY_PARTY, "partyName", "MatchingDescription", null, 1, null));
 		itemRepository.save(new Item(KEY_ITEM, "MatchingDescription"));
 	}
@@ -144,7 +134,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldFindAllWithSort() {
-		Iterable<Party> allByAttendanceDesc = repository.findAll(Sort.by(Sort.Direction.DESC, "attendees"));
+		Iterable<Party> allByAttendanceDesc = repository.findAll(new Sort(Sort.Direction.DESC, "attendees"));
 		long previousAttendance = Long.MAX_VALUE;
 		for (Party party : allByAttendanceDesc) {
 			assertTrue(party.getAttendees() <= previousAttendance);
@@ -155,7 +145,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldSortOnRenamedFieldIfJsonNameIsProvidedInSort() {
-		Iterable<Party> parties = repository.findAll(Sort.by(Sort.Direction.DESC, "desc"));
+		Iterable<Party> parties = repository.findAll(new Sort(Sort.Direction.DESC, "desc"));
 		String previousDesc = null;
 		for (Party party : parties) {
 			if (previousDesc != null) {
@@ -168,7 +158,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldSortWithoutCaseSensitivity() {
-		Iterable<Party> parties = repository.findAll(Sort.by(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase()));
+		Iterable<Party> parties = repository.findAll(new Sort(new Sort.Order(Sort.Direction.DESC, "desc").ignoreCase()));
 		String previousDesc = null;
 		for (Party party : parties) {
 			if (previousDesc != null) {
@@ -181,7 +171,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldPageThroughEntities() {
-		Pageable pageable = PageRequest.of(0, 8);
+		Pageable pageable = new PageRequest(0, 8);
 
 		Page<Party> page1 = repository.findAll(pageable);
 		assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
@@ -190,7 +180,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldPageThroughSortedEntities() {
-		Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
+		Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
 
 		Page<Party> page1 = repository.findAll(pageable);
 		assertTrue("Query for parties should be atleast 12", page1.getTotalElements() >= 12);
@@ -214,7 +204,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 
 	@Test
 	public void shouldPageWithStringBasedQuery() {
-		Pageable pageable = PageRequest.of(0, 8, Sort.Direction.DESC, "attendees");
+		Pageable pageable = new PageRequest(0, 8, Sort.Direction.DESC, "attendees");
 		Page<Party> page1 = partyRepository.findPartiesWithAttendee(1, pageable);
 		assertTrue("Query for parties with attendees should be atleast 12", page1.getTotalElements() >= 12);
 		assertEquals(8, page1.getNumberOfElements());
@@ -241,7 +231,7 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 	// Fails on deserialization as a different entity item is also present
 	@Test(expected = MappingInstantiationException.class)
 	public void shouldFailWithMissingFilterStringBasedQuery() {
-		Sort sort = Sort.by(Sort.Direction.DESC, "attendees");
+		Sort sort = new Sort(Sort.Direction.DESC, "attendees");
 		partyRepository.findParties(sort);
 	}
 
@@ -273,5 +263,4 @@ public class N1qlCouchbaseRepositoryIntegrationTests {
 		List<Party> partyList = partyRepository.findByDescriptionStartingWith(description);
 		assertTrue(partyList.size() == 0);
 	}
-
 }
