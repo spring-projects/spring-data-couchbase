@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.3.RELEASE (2020-08-12)
+---------------------------------------------
+* DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
+* DATACOUCH-593 - Release 4.0.3 (Neumann SR3).
+
+
 Changes in version 4.1.0-M2 (2020-08-12)
 ----------------------------------------
 * DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
@@ -1114,6 +1120,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
