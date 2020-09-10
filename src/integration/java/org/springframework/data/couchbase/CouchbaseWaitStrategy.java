@@ -19,7 +19,7 @@ import org.testcontainers.containers.wait.WaitStrategy;
  */
 public class CouchbaseWaitStrategy implements WaitStrategy {
 
-    private Duration startupTimeout = Duration.of(180, SECONDS);
+    private Duration startupTimeout = Duration.of(600, SECONDS);
     private final Boolean rbacEnabled;
 
     public CouchbaseWaitStrategy(String serverVersion) {
