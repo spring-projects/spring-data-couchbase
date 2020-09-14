@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
@@ -27,8 +26,6 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Locale;
 
 /**
  * Implements annotated property representations of a given {@link Field} instance.
@@ -99,7 +96,13 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	// DATACOUCH-145: allows SDK's @Id annotation to be used
 	@Override
 	public boolean isIdProperty() {
-		return isAnnotationPresent(Id.class) || super.isIdProperty()
-				|| this.getFieldName().toLowerCase(Locale.ROOT).equals("id");
+		if (super.isIdProperty()){
+			return true;
+		}
+		// is field named "id"
+		if(getName().equals("id")){
+			return true;
+		}
+		return false;
 	}
 }
