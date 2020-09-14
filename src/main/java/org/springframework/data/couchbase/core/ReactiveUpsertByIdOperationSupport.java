@@ -15,9 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.kv.Expiry;
+import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -40,7 +43,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 	public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE);
+				DurabilityLevel.NONE, Duration.ofSeconds(0));
 	}
 
 	static class ReactiveUpsertByIdSupport<T> implements ReactiveUpsertById<T> {
@@ -51,16 +54,18 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
+		private final Duration expiry;
 
 		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
 				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel) {
+				final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
+			this.expiry = expiry;
 		}
 
 		@Override
@@ -93,28 +98,44 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
+			if (expiry != null) {
+				options.expiry(expiry);
+			} else if (domainType.isAnnotationPresent(Document.class)) {
+				Document documentAnn = domainType.getAnnotation(Document.class);
+				long durationSeconds = documentAnn.expiryUnit().toSeconds(documentAnn.expiry());
+				options.expiry(Duration.ofSeconds(durationSeconds));
+			}
 			return options;
 		}
 
 		@Override
 		public TerminatingUpsertById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public UpsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public UpsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
+		@Override
+		public UpsertByIdWithDurability<T> withExpiry(final Duration expiry) {
+			Assert.notNull(expiry, "expiry must not be null.");
+			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
+		}
 	}
 
 }
