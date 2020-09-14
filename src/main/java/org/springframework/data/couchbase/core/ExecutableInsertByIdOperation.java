@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -46,6 +47,11 @@ public interface ExecutableInsertByIdOperation {
 
 	}
 
-	interface ExecutableInsertById<T> extends InsertByIdWithDurability<T> {}
+	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T> {
+
+		InsertByIdWithDurability<T> withExpiry(Duration expiry);
+	}
+
+	interface ExecutableInsertById<T> extends InsertByIdWithExpiry<T> {}
 
 }
