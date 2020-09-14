@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -49,6 +50,11 @@ public interface ReactiveInsertByIdOperation {
 
 	}
 
-	interface ReactiveInsertById<T> extends InsertByIdWithDurability<T> {}
+	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T> {
+
+		InsertByIdWithDurability<T> withExpiry(Duration expiry);
+	}
+
+	interface ReactiveInsertById<T> extends InsertByIdWithExpiry<T> {}
 
 }
