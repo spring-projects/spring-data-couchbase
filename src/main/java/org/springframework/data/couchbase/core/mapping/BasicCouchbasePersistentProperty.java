@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
