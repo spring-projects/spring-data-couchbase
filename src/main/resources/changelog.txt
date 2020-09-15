@@ -1,6 +1,52 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.3.RELEASE (2020-08-12)
+---------------------------------------------
+* DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
+* DATACOUCH-593 - Release 4.0.3 (Neumann SR3).
+
+
+Changes in version 4.1.0-M2 (2020-08-12)
+----------------------------------------
+* DATACOUCH-599 - Upgrade to Couchbase SDK 3.0.7.
+* DATACOUCH-586 - Upgrade to Couchbase Driver 3.0.6.
+* DATACOUCH-578 - Release 4.1 M2 (2020.0.0).
+
+
+Changes in version 4.0.2.RELEASE (2020-07-22)
+---------------------------------------------
+* DATACOUCH-590 - Using LIMIT within @Query.
+* DATACOUCH-586 - Upgrade to Couchbase Driver 3.0.6.
+* DATACOUCH-580 - ambiguous reference to field _class (predicate following LIMIT).
+* DATACOUCH-576 - MappingInstantiationException: Failed to instantiate java.util.List using constructor NO_CONSTRUCTOR with arguments.
+* DATACOUCH-574 - add countBy... to repository queries.
+* DATACOUCH-573 - count() "_count" is projected, but get("count") used to retrieve.
+* DATACOUCH-572 - fix compile error introduced in DATACOUCH-571.
+* DATACOUCH-571 - generated key delimiter not used in suffix if there was no prefix.
+* DATACOUCH-569 - Add tests for fix to DATACOUCH-560.
+* DATACOUCH-568 - Release 4.0.2 (Neumann SR2).
+* DATACOUCH-560 - Unexpected serialization of List<Object> fields.
+* DATACOUCH-557 - Spring Data Couchbase doesn't create PersistentEntity for MyClass.
+* DATACOUCH-546 - Entities persisted and returned by  CouchbaseRepository.save() and CouchbaseRepository.saveAll() do not have an id.
+* DATACOUCH-535 - Add support for TypeAlias.
+* DATACOUCH-533 - Promote Attribute called id when @Id is not present.
+* DATACOUCH-532 - queries use literals instead of parameters, preventing the re-use of query plans.
+* DATACOUCH-486 - @Query parameter collection to array.
+* DATACOUCH-484 - Thread safety issue using findByXXX.
+
+
+Changes in version 3.2.9.RELEASE (2020-07-22)
+---------------------------------------------
+* DATACOUCH-587 - Upgrade to Couchbase Driver 2.7.16.
+* DATACOUCH-567 - Release 3.2.9 (Moore SR9).
+
+
+Changes in version 3.1.19.RELEASE (2020-07-22)
+----------------------------------------------
+* DATACOUCH-566 - Release 3.1.19 (Lovelace SR19).
+
+
 Changes in version 4.1.0-M1 (2020-06-25)
 ----------------------------------------
 * DATACOUCH-565 - Use standard Spring code of conduct.
@@ -1083,6 +1129,11 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
+
+
+
+
 
 
 

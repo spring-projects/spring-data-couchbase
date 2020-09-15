@@ -85,6 +85,10 @@ public class User {
 		return version;
 	}
 
+	public void setVersion(long version) {
+		this.version = version;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
