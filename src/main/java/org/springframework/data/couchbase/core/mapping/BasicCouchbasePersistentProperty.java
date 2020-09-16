@@ -99,7 +99,13 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	// DATACOUCH-145: allows SDK's @Id annotation to be used
 	@Override
 	public boolean isIdProperty() {
-		return isAnnotationPresent(Id.class) || super.isIdProperty()
-				|| this.getFieldName().toLowerCase(Locale.ROOT).equals("id");
+		if (super.isIdProperty()){
+			return true;
+		}
+		// is field named "id"
+		if(getField() != null && this.getFieldName().toLowerCase(Locale.ROOT).equals("id")){
+			return true;
+		}
+		return false;
 	}
 }
