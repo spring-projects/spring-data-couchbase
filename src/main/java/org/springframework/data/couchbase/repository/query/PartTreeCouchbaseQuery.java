@@ -24,6 +24,7 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.util.StringUtils;
 
 /**
  * {@link RepositoryQuery} implementation for Couchbase.
