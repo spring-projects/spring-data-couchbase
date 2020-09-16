@@ -15,6 +15,9 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import com.couchbase.client.java.json.JsonValue;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+
 /**
  * @author Oliver Gierke
  * @author Christoph Strobl
@@ -25,13 +28,15 @@ public interface QueryCriteriaDefinition {
 	/**
 	 * This exports the query criteria into a string to be appended to the beginning of an N1QL statement
 	 *
-	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters
-	 *                      There may already be positional parameters in the beginning of the statement,
-	 *                      so it may not always start at 1.  If it has the value -1, the query is using
-	 *                      named parameters. If the pointer is null, the query is not using parameters.
+	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters There may
+	 *          already be positional parameters in the beginning of the statement, so it may not always start at 1. If it
+	 *          has the value -1, the query is using named parameters. If the pointer is null, the query is not using
+	 *          parameters.
+	 * @param parameters - query parameters. Criteria values that are converted to arguments are added to parameters
+	 * @param converter - converter to use for converting criteria values
 	 * @return string containing part of N1QL query
 	 */
-	String export(int[] paramIndexPtr);
+	String export(int[] paramIndexPtr, JsonValue parameters, CouchbaseConverter converter);
 
 	/**
 	 * Export the query criteria to a string without using positional or named parameters.

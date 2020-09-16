@@ -19,7 +19,13 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -63,6 +69,69 @@ class N1qlQueryCreatorTests {
 	}
 
 	@Test
+	void queryParametersArray() throws Exception {
+		String input = "findByFirstnameIn";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String[].class);
+		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
+				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), null, converter);
+		Query query = creator.createQuery();
+
+		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		JsonObject expectedOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		JsonObject actualOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+	}
+
+	@Test
+	void queryParametersJsonArray() throws Exception {
+		String input = "findByFirstnameIn";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, JsonArray.class);
+
+		JsonArray jsonArray = JsonArray.create();
+		jsonArray.add("Oliver");
+		jsonArray.add("Charles");
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), jsonArray), null,
+				converter);
+		Query query = creator.createQuery();
+
+		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		JsonObject expectedOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		JsonObject actualOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+	}
+
+	@Test
+	void queryParametersList() throws Exception {
+		String input = "findByFirstnameIn";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String[].class);
+		List<String> list = new LinkedList<>();
+		list.add("Oliver");
+		list.add("Charles");
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), new Object[] { list }),
+				null, converter);
+		Query query = creator.createQuery();
+
+		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+
+		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		JsonObject expectedOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		JsonObject actualOptions = JsonObject.create();
+		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+	}
+
+	@Test
 	void createsAndQueryCorrectly() throws Exception {
 		String input = "findByFirstnameAndLastname";
 		PartTree tree = new PartTree(input, User.class);
@@ -71,7 +140,7 @@ class N1qlQueryCreatorTests {
 				converter);
 		Query query = creator.createQuery();
 
-		assertEquals(query.export(), " WHERE " + where("firstname").is("John").and("lastname").is("Doe").export());
+		assertEquals(" WHERE " + where("firstname").is("John").and("lastname").is("Doe").export(), query.export());
 	}
 
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
