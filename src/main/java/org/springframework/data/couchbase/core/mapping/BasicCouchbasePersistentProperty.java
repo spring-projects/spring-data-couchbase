@@ -27,6 +27,8 @@ import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Locale;
+
 /**
  * Implements annotated property representations of a given {@link Field} instance.
  * <p/>
@@ -100,7 +102,7 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 			return true;
 		}
 		// is field named "id"
-		if(getName().equals("id")){
+		if(getField() != null && this.getFieldName().toLowerCase(Locale.ROOT).equals("id")){
 			return true;
 		}
 		return false;
