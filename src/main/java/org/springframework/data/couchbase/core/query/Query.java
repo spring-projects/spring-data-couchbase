@@ -243,7 +243,7 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
