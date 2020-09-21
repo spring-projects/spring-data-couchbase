@@ -254,6 +254,16 @@ public class Query {
 		return statement.toString();
 	}
 
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, Class domainClass) {
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, false);
+		final StringBuilder statement = new StringBuilder();
+		appendString(statement, n1ql.delete); // delete ...
+		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+		appendWhere(statement, null); // criteria on this Query
+		appendString(statement, n1ql.returning);
+		return statement.toString();
+	}
+
 	StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template, Class domainClass,
 			boolean isCount) {
 		String typeKey = template.getConverter().getTypeKey();
