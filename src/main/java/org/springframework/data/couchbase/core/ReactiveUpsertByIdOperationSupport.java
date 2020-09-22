@@ -98,7 +98,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
-			if (expiry != null) {
+			if (expiry != null && ! expiry.isZero()) {
 				options.expiry(expiry);
 			} else if (domainType.isAnnotationPresent(Document.class)) {
 				Document documentAnn = domainType.getAnnotation(Document.class);

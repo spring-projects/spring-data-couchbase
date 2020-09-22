@@ -23,7 +23,6 @@ import java.lang.annotation.Target;
 
 import org.springframework.data.annotation.QueryAnnotation;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery;
 
 /**
  * Annotation to support the use of N1QL queries with Couchbase.
