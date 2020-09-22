@@ -33,7 +33,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
  * @author Michael Reiche
  */
 
-@Document(expiry = 5)
+@Document(expiry = 1)
 public class UserAnnotated extends User {
 
 	public UserAnnotated(String id, String firstname, String lastname) {
