@@ -57,6 +57,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
 	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
+	private final N1QLExpression parsedExpression;
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
 			CouchbaseConverter couchbaseConverter, String bucketName,
@@ -83,8 +84,9 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			throw new IllegalArgumentException("query has no inline Query or named Query not found");
 		}
 		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
-				getTypeField(), getTypeValue());
+				getTypeField(), getTypeValue(), accessor, SPEL_PARSER, evaluationContextProvider);
 		this.parser = SPEL_PARSER;
+		this.parsedExpression = this.queryParser.parsedExpression;
 	}
 
 	protected QueryMethod getQueryMethod() {
@@ -127,7 +129,6 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 	@Override
 	protected Query complete(QueryCriteria criteria, Sort sort) {
-		N1QLExpression parsedExpression = getExpression(accessor, getParameters(accessor), null /* returnedType */);
 		Query q = new StringQuery(parsedExpression.toString()).with(sort);
 		JsonValue params = queryParser.getPlaceholderValues(accessor);
 		if (params instanceof JsonArray) {
@@ -150,40 +151,4 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		}
 	}
 
-	// copied from StringN1qlBasedQuery
-	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
-			ReturnedType returnedType) {
-		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(
-				getQueryMethod().getParameters(), runtimeParameters);
-		N1QLExpression parsedStatement = x(this.queryParser.doParse(parser, evaluationContext, false));
-
-		Sort sort = accessor.getSort();
-		if (sort.isSorted()) {
-			N1QLExpression[] cbSorts = N1qlUtils.createSort(sort);
-			parsedStatement = parsedStatement.orderBy(cbSorts);
-		}
-		if (queryMethod.isPageQuery()) {
-			Pageable pageable = accessor.getPageable();
-			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(
-					Math.toIntExact(pageable.getOffset()));
-		} else if (queryMethod.isSliceQuery()) {
-			Pageable pageable = accessor.getPageable();
-			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(
-					Math.toIntExact(pageable.getOffset()));
-		}
-		return parsedStatement;
-	}
-
-	// getExpression() could do this itself, but pass as an arg to be consistent with StringN1qlBasedQuery
-	private static Object[] getParameters(ParameterAccessor accessor) {
-		ArrayList<Object> params = new ArrayList<>();
-		for (Object o : accessor) {
-			params.add(o);
-		}
-		return params.toArray();
-	}
 }
-
-

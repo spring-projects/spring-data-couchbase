@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -130,6 +131,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);
 				airportRepository.save(airport);
 			}
+
+			Long count = airportRepository.countFancyExpression( Arrays.asList("JFK"), Arrays.asList("jfk"), false);
+			assertEquals( 1, count);
 
 			long airportCount = airportRepository.count();
 			assertEquals(7, airportCount);
