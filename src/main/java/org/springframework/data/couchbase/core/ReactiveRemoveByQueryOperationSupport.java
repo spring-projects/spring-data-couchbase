@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -68,7 +69,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 								return throwable;
 							}
 						}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-						.map(row -> new RemoveResult(row.getString("__id"), row.getLong("__cas"), Optional.empty()));
+						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
 			});
 		}
 
