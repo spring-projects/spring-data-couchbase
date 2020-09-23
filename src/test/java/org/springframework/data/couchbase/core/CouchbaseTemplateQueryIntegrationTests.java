@@ -88,7 +88,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 	}
 
 	@Test
-	void findByQuery() {
+	void findByQueryAll() {
 		try {
 			User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
 			User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
@@ -128,6 +128,21 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 		User userz = reactiveCouchbaseTemplate.findById(User.class).one("userx").block();
 		assertNull(userz, "uz should be null");
 
+	}
+
+	@Test
+	void findByMatchingQuery() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+		User specialUser = new User(UUID.randomUUID().toString(), "special", "special");
+
+		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
+
+		Query specialUsers = new Query(QueryCriteria.where("firstname").like("special"));
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
+				.consistentWith(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+
+		assertEquals(1, foundUsers.size());
 	}
 
 	@Test
