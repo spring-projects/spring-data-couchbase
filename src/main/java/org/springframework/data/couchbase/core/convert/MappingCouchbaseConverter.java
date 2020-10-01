@@ -402,7 +402,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			typeMapper.writeType(type, target);
 		}
 
-		writeInternal(source, target, type);
+		writeInternal(source, target, type, true);
 		if (target.getId() == null) {
 			throw new MappingException("An ID property is needed, but not found/could not be generated on this entity.");
 		}
@@ -416,7 +416,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param typeHint the type information for the source.
 	 */
 	@SuppressWarnings("unchecked")
-	protected void writeInternal(final Object source, CouchbaseDocument target, final TypeInformation<?> typeHint) {
+	protected void writeInternal(final Object source, CouchbaseDocument target, final TypeInformation<?> typeHint,
+			boolean withId) {
 		if (source == null) {
 			return;
 		}
@@ -437,7 +438,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
-		writeInternal(source, target, entity);
+		writeInternal(source, target, entity, withId);
 		addCustomTypeKeyIfNecessary(typeHint, source, target);
 	}
 
@@ -471,9 +472,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param source the source object.
 	 * @param target the target document.
 	 * @param entity the persistent entity to convert from.
+	 * @param withId one of the top-level properties is the id for the document
 	 */
 	protected void writeInternal(final Object source, final CouchbaseDocument target,
-			final CouchbasePersistentEntity<?> entity) {
+			final CouchbasePersistentEntity<?> entity, boolean withId) {
 		if (source == null) {
 			return;
 		}
@@ -483,7 +485,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(source);
-		final CouchbasePersistentProperty idProperty = entity.getIdProperty();
+		final CouchbasePersistentProperty idProperty = withId ? entity.getIdProperty() : null;
 		final CouchbasePersistentProperty versionProperty = entity.getVersionProperty();
 
 		GeneratedValue generatedValueInfo = null;
@@ -525,7 +527,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 					}
 
 					if (!conversions.isSimpleType(propertyObj.getClass())) {
-						writePropertyInternal(propertyObj, target, prop);
+						writePropertyInternal(propertyObj, target, prop, false);
 					} else {
 						writeSimpleInternal(propertyObj, target, prop.getFieldName());
 					}
@@ -552,7 +554,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				Class<?> type = inverseProp.getType();
 				Object propertyObj = accessor.getProperty(inverseProp, type);
 				if (null != propertyObj) {
-					writePropertyInternal(propertyObj, target, inverseProp);
+					writePropertyInternal(propertyObj, target, inverseProp, false);
 				}
 			}
 		});
@@ -568,7 +570,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	@SuppressWarnings("unchecked")
 	private void writePropertyInternal(final Object source, final CouchbaseDocument target,
-			final CouchbasePersistentProperty prop) {
+			final CouchbasePersistentProperty prop, boolean withId) {
 		if (source == null) {
 			return;
 		}
@@ -617,7 +619,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass())
 				? mappingContext.getRequiredPersistentEntity(source.getClass())
 				: mappingContext.getRequiredPersistentEntity(type);
-		writeInternal(source, propertyDoc, entity);
+		writeInternal(source, propertyDoc, entity, false);
 		target.put(name, propertyDoc);
 	}
 
@@ -660,7 +662,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				} else {
 					CouchbaseDocument embeddedDoc = new CouchbaseDocument();
 					TypeInformation<?> valueTypeInfo = type.isMap() ? type.getMapValueType() : ClassTypeInformation.OBJECT;
-					writeInternal(val, embeddedDoc, valueTypeInfo);
+					writeInternal(val, embeddedDoc, valueTypeInfo, false);
 					target.put(simpleKey, embeddedDoc);
 				}
 			} else {
@@ -706,7 +708,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			} else {
 
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-				writeInternal(element, embeddedDoc, componentType);
+				writeInternal(element, embeddedDoc, componentType, false);
 				target.put(embeddedDoc);
 			}
 
@@ -937,7 +939,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			String expression = property.getSpelExpression();
 			Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
 
-			if (property.isIdProperty()) {
+			if (property.isIdProperty() && parent == null) {
 				return (R) source.getId();
 			}
 			if (value == null) {
