@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.springframework.data.couchbase.core.query.Query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
 
 public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQueryOperation {
 
@@ -50,8 +51,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
-			this.reactiveSupport = new ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T>(
-					template.reactive(), domainType, query, scanConsistency);
+			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency);
 			this.scanConsistency = scanConsistency;
 		}
 
@@ -72,11 +72,17 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public TerminatingFindByQuery<T> matching(final Query query) {
-			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
+			QueryScanConsistency scanCons;
+			if (query.getScanConsistency() != null) {
+				scanCons = query.getScanConsistency();
+			} else {
+				scanCons = scanConsistency;
+			}
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanCons);
 		}
 
 		@Override
-		public FindByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+		public FindByQueryConsistentWith<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
 		}
 

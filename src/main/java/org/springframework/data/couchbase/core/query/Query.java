@@ -47,6 +47,7 @@ public class Query {
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
+	private QueryScanConsistency queryScanConsistency;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
@@ -125,6 +126,27 @@ public class Query {
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
 		return with(pageable.getSort());
+	}
+
+	/**
+	 * queryScanConsistency
+	 *
+	 * @return queryScanConsistency
+	 */
+	public QueryScanConsistency getScanConsistency() {
+		return queryScanConsistency;
+	}
+
+
+	/**
+	 * Sets the given scan consistency on the {@link Query} instance.
+	 *
+	 * @param queryScanConsistency
+	 * @return this
+	 */
+	public Query scanConsistency(final QueryScanConsistency queryScanConsistency) {
+		this.queryScanConsistency = queryScanConsistency;
+		return this;
 	}
 
 	/**
@@ -270,7 +292,7 @@ public class Query {
 	}
 
 	/**
-	 * build QueryOptions forom parameters and scanConsistency
+	 * build QueryOptions from parameters and scanConsistency
 	 *
 	 * @param scanConsistency
 	 * @return QueryOptions
