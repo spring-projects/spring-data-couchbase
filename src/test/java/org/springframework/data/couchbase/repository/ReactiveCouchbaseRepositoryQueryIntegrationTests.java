@@ -88,9 +88,10 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie).block();
-			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
-			// TODO
-			System.err.println(airports);
+			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
+			assertEquals(1,airports1.size());
+			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
+			assertEquals(1,airports2.size());
 		} finally {
 			airportRepository.delete(vie).block();
 		}
