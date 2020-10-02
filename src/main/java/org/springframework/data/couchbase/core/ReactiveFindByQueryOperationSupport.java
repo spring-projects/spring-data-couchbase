@@ -60,11 +60,17 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public TerminatingFindByQuery<T> matching(Query query) {
-			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanConsistency);
+			QueryScanConsistency scanCons;
+			if (query.getScanConsistency() != null) {
+				scanCons = query.getScanConsistency();
+			} else {
+				scanCons = scanConsistency;
+			}
+			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanCons);
 		}
 
 		@Override
-		public FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency) {
+		public FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanConsistency);
 		}
 
