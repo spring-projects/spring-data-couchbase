@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -58,14 +59,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public Flux<RemoveResult> all() {
 			return Flux.defer(() -> {
-				String bucket = "`" + template.getBucketName() + "`";
-
-				String typeKey = template.getConverter().getTypeKey();
-				String typeValue = template.support().getJavaNameForEntity(domainType);
-				String where = " WHERE `" + typeKey + "` = \"" + typeValue + "\"";
-
-				String returning = " RETURNING meta().*";
-				String statement = "DELETE FROM " + bucket + " " + where + returning;
+				String statement = assembleDeleteQuery();
 
 				return template.getCouchbaseClientFactory().getCluster().reactive().query(statement, buildQueryOptions())
 						.onErrorMap(throwable -> {
@@ -75,7 +69,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 								return throwable;
 							}
 						}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-						.map(row -> new RemoveResult(row.getString("id"), row.getLong("cas"), Optional.empty()));
+						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
 			});
 		}
 
@@ -95,6 +89,10 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+		}
+
+		private String assembleDeleteQuery() {
+			return query.toN1qlRemoveString(template, this.domainType);
 		}
 
 	}

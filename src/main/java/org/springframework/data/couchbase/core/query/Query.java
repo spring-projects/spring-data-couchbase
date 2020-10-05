@@ -243,7 +243,7 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
@@ -251,6 +251,16 @@ public class Query {
 		appendWhere(statement, new int[] { 0 }); // criteria on this Query
 		appendSort(statement);
 		appendSkipAndLimit(statement);
+		return statement.toString();
+	}
+
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, Class domainClass) {
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, false);
+		final StringBuilder statement = new StringBuilder();
+		appendString(statement, n1ql.delete); // delete ...
+		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+		appendWhere(statement, null); // criteria on this Query
+		appendString(statement, n1ql.returning);
 		return statement.toString();
 	}
 

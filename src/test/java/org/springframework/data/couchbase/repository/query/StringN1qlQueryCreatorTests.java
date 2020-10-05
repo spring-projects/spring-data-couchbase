@@ -25,7 +25,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
@@ -91,7 +90,7 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 					queryMethod, converter, config().bucketname(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 			Query query = creator.createQuery();
-			System.out.println(query.toN1qlString(couchbaseTemplate.reactive(), Airline.class, false));
+			System.out.println(query.toN1qlSelectString(couchbaseTemplate.reactive(), Airline.class, false));
 
 			try {
 				Thread.sleep(3000);
