@@ -121,7 +121,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		private String assembleEntityQuery(final boolean count) {
-			return query.toN1qlString(template, this.domainType, count);
+			return query.toN1qlSelectString(template, this.domainType, count);
 		}
 
 	}

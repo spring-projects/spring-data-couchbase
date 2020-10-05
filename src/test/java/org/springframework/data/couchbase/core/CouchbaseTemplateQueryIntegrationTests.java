@@ -32,9 +32,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
@@ -46,13 +47,13 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import reactor.core.publisher.Mono;
 
 /**
  * Query tests Theses tests rely on a cb server running
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Haris Alesevic
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTests {
@@ -82,10 +83,12 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		// ensure each test starts with clean state
+		couchbaseTemplate.removeByQuery(User.class).all();
 	}
 
 	@Test
-	void findByQuery() {
+	void findByQueryAll() {
 		try {
 			User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
 			User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
@@ -128,7 +131,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 	}
 
 	@Test
-	void removeByQuery() {
+	void removeByQueryAll() {
 		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
 		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
 
@@ -141,6 +144,30 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
+
+	}
+
+	@Test
+	void removeByMatchingQuery() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+		User specialUser = new User(UUID.randomUUID().toString(), "special", "special");
+
+		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
+
+		assertTrue(couchbaseTemplate.existsById().one(user1.getId()));
+		assertTrue(couchbaseTemplate.existsById().one(user2.getId()));
+		assertTrue(couchbaseTemplate.existsById().one(specialUser.getId()));
+
+		Query nonSpecialUsers = new Query(QueryCriteria.where("firstname").notLike("special"));
+
+		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS)
+				.matching(nonSpecialUsers)
+				.all();
+
+		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
+		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
+		assertNotNull(couchbaseTemplate.findById(User.class).one(specialUser.getId()));
 
 	}
 
