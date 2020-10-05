@@ -92,7 +92,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.save(vie);
 			xxx = new Airport("airports::xxx", "xxx", "xxxx");
 			airportRepository.save(xxx);
-			sleep(1000);
 			List<Airport> airports;
 			airports = airportRepository.findAllByIata("1\" or iata=iata or iata=\"1");
 			assertEquals(0, airports.size());
@@ -111,7 +110,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie);
-			sleep(1000);
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(vie.getId(), airports.get(0).getId());
 		} finally {
@@ -172,7 +170,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);
 				airportRepository.save(airport);
 			}
-			sleep(1000);
+
 			for (int k = 0; k < 50; k++) {
 				Callable<Boolean>[] suppliers = new Callable[iatas.length];
 				for (int i = 0; i < iatas.length; i++) {
@@ -213,7 +211,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i].toLowerCase() /* lcao */);
 				airportRepository.save(airport);
 			}
-			sleep(1000);
+
 			for (int k = 0; k < 100; k++) {
 				Callable<Boolean>[] suppliers = new Callable[iatas.length];
 				for (int i = 0; i < iatas.length; i++) {

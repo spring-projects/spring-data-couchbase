@@ -39,15 +39,19 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	Iterable<Airport> findAll();
 
 	@Override
-	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport save(Airport airport);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAllByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIata(String iata);
+
 	@Query("#{#n1ql.selectEntity} where iata = $1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long countByIataIn(String... iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

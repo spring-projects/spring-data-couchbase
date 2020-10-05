@@ -22,22 +22,16 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.domain.Airline;
-import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
-import org.springframework.data.couchbase.util.ClusterType;
-import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -46,9 +40,7 @@ import org.springframework.data.repository.core.support.PropertiesBasedNamedQuer
 import org.springframework.data.repository.query.*;
 
 import java.lang.reflect.Method;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -88,7 +80,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 		Query query = creator.createQuery();
 		assertEquals(
 				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and firstname = $1 and lastname = $2",
-				query.toN1qlString(couchbaseTemplate.reactive(), User.class, false));
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
 	@Test
@@ -106,7 +98,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 		Query query = creator.createQuery();
 		assertEquals(
 				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and (firstname = $first or lastname = $last)",
-				query.toN1qlString(couchbaseTemplate.reactive(), User.class, false));
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
 	@Test

@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.kv.Expiry;
 import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
