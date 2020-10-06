@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -75,15 +76,19 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	@SuppressWarnings("unchecked")
 	public <S extends T> S save(final S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return (S) couchbaseOperations.upsertById(entityInformation.getJavaType()).one(entity);
+		// if entity has non-null, non-zero version property, then replace()
+		if (hasNonZeroVersionProperty(entity, couchbaseOperations.getConverter())) {
+			return (S) couchbaseOperations.replaceById(entityInformation.getJavaType()).one(entity);
+		} else {
+			return (S) couchbaseOperations.upsertById(entityInformation.getJavaType()).one(entity);
+		}
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S extends T> Iterable<S> saveAll(final Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return (Iterable<S>) couchbaseOperations.upsertById(entityInformation.getJavaType())
-				.all(Streamable.of(entities).toList());
+		return Streamable.of(entities).stream().map((e) -> save(e)).collect(StreamUtils.toUnmodifiableList());
 	}
 
 	@Override
