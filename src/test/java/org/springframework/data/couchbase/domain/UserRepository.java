@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import com.couchbase.client.java.json.JsonArray;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +34,10 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends PagingAndSortingRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
+
+	List<User> findByFirstnameIn(String... firstnames);
+
+	List<User> findByFirstnameIn(JsonArray firstnames);
 
 	List<User> findByFirstnameAndLastname(String firstname, String lastname);
 

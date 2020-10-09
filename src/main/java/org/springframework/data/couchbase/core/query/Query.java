@@ -26,6 +26,7 @@ import com.couchbase.client.java.json.JsonValue;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
@@ -189,7 +190,7 @@ public class Query {
 		sb.deleteCharAt(sb.length() - 1);
 	}
 
-	public void appendWhere(final StringBuilder sb, int[] paramIndexPtr) {
+	public void appendWhere(final StringBuilder sb, int[] paramIndexPtr, CouchbaseConverter converter) {
 		if (!criteria.isEmpty()) {
 			appendWhereOrAnd(sb);
 			boolean first = true;
@@ -199,14 +200,9 @@ public class Query {
 				} else {
 					sb.append(" AND ");
 				}
-				sb.append(c.export(paramIndexPtr));
+				sb.append(c.export(paramIndexPtr, parameters, converter));
 			}
 		}
-	}
-
-	public void appendCriteria(StringBuilder sb, QueryCriteria criteria) {
-		appendWhereOrAnd(sb);
-		sb.append(criteria.export());
 	}
 
 	public void appendWhereString(StringBuilder sb, String whereString) {
@@ -257,9 +253,9 @@ public class Query {
 		return true; // is not quoted
 	}
 
-	public String export() {
+	public String export(int[]... paramIndexPtrHolder) { // used only by tests
 		StringBuilder sb = new StringBuilder();
-		appendWhere(sb, null);
+		appendWhere(sb, paramIndexPtrHolder.length > 0 ? paramIndexPtrHolder[0] : null, null);
 		appendSort(sb);
 		appendSkipAndLimit(sb);
 		return sb.toString();
@@ -270,7 +266,7 @@ public class Query {
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-		appendWhere(statement, new int[] { 0 }); // criteria on this Query
+		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
 		appendSort(statement);
 		appendSkipAndLimit(statement);
 		return statement.toString();
