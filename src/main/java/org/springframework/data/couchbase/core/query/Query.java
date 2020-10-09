@@ -48,6 +48,7 @@ public class Query {
 	private long skip;
 	private int limit;
 	private Sort sort = Sort.unsorted();
+	private QueryScanConsistency queryScanConsistency;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 
@@ -126,6 +127,27 @@ public class Query {
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
 		return with(pageable.getSort());
+	}
+
+	/**
+	 * queryScanConsistency
+	 *
+	 * @return queryScanConsistency
+	 */
+	public QueryScanConsistency getScanConsistency() {
+		return queryScanConsistency;
+	}
+
+
+	/**
+	 * Sets the given scan consistency on the {@link Query} instance.
+	 *
+	 * @param queryScanConsistency
+	 * @return this
+	 */
+	public Query scanConsistency(final QueryScanConsistency queryScanConsistency) {
+		this.queryScanConsistency = queryScanConsistency;
+		return this;
 	}
 
 	/**
@@ -239,7 +261,7 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, isCount);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
@@ -247,6 +269,16 @@ public class Query {
 		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
 		appendSort(statement);
 		appendSkipAndLimit(statement);
+		return statement.toString();
+	}
+
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, Class domainClass) {
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, domainClass, false);
+		final StringBuilder statement = new StringBuilder();
+		appendString(statement, n1ql.delete); // delete ...
+		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+		appendWhere(statement, null); // criteria on this Query
+		appendString(statement, n1ql.returning);
 		return statement.toString();
 	}
 

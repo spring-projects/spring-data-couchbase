@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.repository.Query;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -43,6 +44,10 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAllByIata(String iata);
+
+	@Query("#{#n1ql.selectEntity} where iata = $1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<Airport> getAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Long> countByIataIn(String... iatas);

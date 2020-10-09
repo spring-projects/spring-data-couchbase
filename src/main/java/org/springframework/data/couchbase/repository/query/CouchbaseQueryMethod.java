@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -150,6 +151,24 @@ public class CouchbaseQueryMethod extends QueryMethod {
 
 	public WithConsistency getConsistencyAnnotation() {
 		return method.getAnnotation(WithConsistency.class);
+	}
+
+	/**
+	 * If the method has a @ScanConsistency annotation
+	 *
+	 * @return true if this has the @ScanConsistency annotation
+	 */
+	public boolean hasScanConsistencyAnnotation() {
+		return getScanConsistencyAnnotation() != null;
+	}
+
+	/**
+	 * ScanConsistency annotation
+	 *
+	 * @return the @ScanConsistency annotation
+	 */
+	public ScanConsistency getScanConsistencyAnnotation() {
+		return method.getAnnotation(ScanConsistency.class);
 	}
 
 	/**

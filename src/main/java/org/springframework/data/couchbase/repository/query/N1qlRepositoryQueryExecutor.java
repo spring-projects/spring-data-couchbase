@@ -15,9 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
@@ -65,7 +63,8 @@ public class N1qlRepositoryQueryExecutor {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
-		q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass).matching(query);
+		q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass)
+				.consistentWith(buildQueryScanConsistency()).matching(query);
 		if (queryMethod.isCountQuery()) {
 			return q.count();
 		} else if (queryMethod.isCollectionQuery()) {
@@ -74,6 +73,16 @@ public class N1qlRepositoryQueryExecutor {
 			return q.oneValue();
 		}
 
+	}
+
+	private QueryScanConsistency buildQueryScanConsistency() {
+		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		if (queryMethod.hasConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getConsistencyAnnotation().value();
+		} else if (queryMethod.hasScanConsistencyAnnotation()) {
+			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
+		}
+		return scanConsistency;
 	}
 
 }

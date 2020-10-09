@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.kv.Expiry;
 import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -98,7 +97,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
-			if (expiry != null) {
+			if (expiry != null && !expiry.isZero()) {
 				options.expiry(expiry);
 			} else if (domainType.isAnnotationPresent(Document.class)) {
 				Document documentAnn = domainType.getAnnotation(Document.class);

@@ -100,7 +100,7 @@ public interface ReactiveFindByQueryOperation {
 		 *
 		 * @param scanConsistency the custom scan consistency to use for this query.
 		 */
-		FindByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
+		FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency);
 
 	}
 

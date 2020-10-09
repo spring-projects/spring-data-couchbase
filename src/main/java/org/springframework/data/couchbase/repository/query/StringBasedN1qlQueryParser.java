@@ -32,9 +32,13 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -42,6 +46,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
+import org.springframework.util.Assert;
 
 /**
  * @author Subhashni Balakrishnan
@@ -103,20 +108,23 @@ public class StringBasedN1qlQueryParser {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringBasedN1qlQueryParser.class);
 	private final String statement;
 	private final QueryMethod queryMethod;
-	private final PlaceholderType placeHolderType;
+	private  PlaceholderType placeHolderType;
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
 	private final Collection<String> parameterNames = new HashSet<String>();
+	public final N1QLExpression parsedExpression;
 
 	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
-			CouchbaseConverter couchbaseConverter, String typeField, String typeValue) {
+			CouchbaseConverter couchbaseConverter, String typeField, String typeValue, ParameterAccessor accessor,
+			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
-		this.placeHolderType = checkPlaceholders(statement);
 		this.statementContext = createN1qlSpelValues(bucketName, typeField, typeValue, false);
 		this.countContext = createN1qlSpelValues(bucketName, typeField, typeValue, true);
 		this.couchbaseConverter = couchbaseConverter;
+		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
+		checkPlaceholders( this.parsedExpression.toString() );
 	}
 
 	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue,
@@ -151,7 +159,7 @@ public class StringBasedN1qlQueryParser {
 		return parsedExpression.getValue(evaluationContext, String.class);
 	}
 
-	private PlaceholderType checkPlaceholders(String statement) {
+	private void checkPlaceholders(String statement) {
 
 		Matcher quoteMatcher = QUOTE_DETECTION_PATTERN.matcher(statement);
 		Matcher positionMatcher = POSITIONAL_PLACEHOLDER_PATTERN.matcher(statement);
@@ -192,11 +200,11 @@ public class StringBasedN1qlQueryParser {
 		}
 
 		if (posCount > 0) {
-			return PlaceholderType.POSITIONAL;
+			placeHolderType = PlaceholderType.POSITIONAL;
 		} else if (namedCount > 0) {
-			return PlaceholderType.NAMED;
+			placeHolderType = PlaceholderType.NAMED;
 		} else {
-			return PlaceholderType.NONE;
+			placeHolderType = PlaceholderType.NONE;
 		}
 	}
 
@@ -397,5 +405,39 @@ public class StringBasedN1qlQueryParser {
 			this.returning = returning;
 		}
 	}
+	// copied from StringN1qlBasedQuery
+	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+																			 ReturnedType returnedType, SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+		boolean isCountQuery = queryMethod.getName().toLowerCase().startsWith("count"); // should be queryMethod.isCountQuery()
+		EvaluationContext evaluationContext = evaluationContextProvider
+				.getEvaluationContext(queryMethod.getParameters(), runtimeParameters);
+		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
 
+		Sort sort = accessor.getSort();
+		if (sort.isSorted()) {
+			N1QLExpression[] cbSorts = N1qlUtils.createSort(sort);
+			parsedStatement = parsedStatement.orderBy(cbSorts);
+		}
+		if (queryMethod.isPageQuery()) {
+			Pageable pageable = accessor.getPageable();
+			Assert.notNull(pageable, "Pageable must not be null!");
+			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(
+					Math.toIntExact(pageable.getOffset()));
+		} else if (queryMethod.isSliceQuery()) {
+			Pageable pageable = accessor.getPageable();
+			Assert.notNull(pageable, "Pageable must not be null!");
+			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(
+					Math.toIntExact(pageable.getOffset()));
+		}
+		return parsedStatement;
+	}
+
+	// getExpression() could do this itself, but pass as an arg to be consistent with StringN1qlBasedQuery
+	private static Object[] getParameters(ParameterAccessor accessor) {
+		ArrayList<Object> params = new ArrayList<>();
+		for (Object o : accessor) {
+			params.add(o);
+		}
+		return params.toArray();
+	}
 }

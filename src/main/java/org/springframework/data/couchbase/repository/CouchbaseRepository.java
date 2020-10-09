@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import java.util.List;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -33,6 +34,8 @@ public interface CouchbaseRepository<T, ID> extends PagingAndSortingRepository<T
 
 	@Override
 	List<T> findAll(Sort sort);
+
+	List<T> findAll(QueryScanConsistency queryScanConsistency);
 
 	@Override
 	List<T> findAll();

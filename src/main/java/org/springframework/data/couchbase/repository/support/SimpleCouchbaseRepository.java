@@ -148,6 +148,11 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	}
 
 	@Override
+	public List<T> findAll(final QueryScanConsistency queryScanConsistency) {
+		return findAll(new Query().scanConsistency(queryScanConsistency));
+	}
+
+	@Override
 	public Page<T> findAll(final Pageable pageable) {
 		List<T> results = findAll(new Query().with(pageable));
 		return new PageImpl<>(results, pageable, count());
