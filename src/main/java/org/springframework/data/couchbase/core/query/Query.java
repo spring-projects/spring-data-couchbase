@@ -277,7 +277,7 @@ public class Query {
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.delete); // delete ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-		appendWhere(statement, null); // criteria on this Query
+		appendWhere(statement, null, template.getConverter()); // criteria on this Query
 		appendString(statement, n1ql.returning);
 		return statement.toString();
 	}
