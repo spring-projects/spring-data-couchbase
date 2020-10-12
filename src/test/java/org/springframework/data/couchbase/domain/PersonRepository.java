@@ -15,7 +15,9 @@
  */
 package org.springframework.data.couchbase.domain;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
@@ -105,4 +107,6 @@ public interface PersonRepository extends CrudRepository<Person, String> {
 
 	void deleteAll();
 
+	@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
+	List<Person> findByAddressStreet(String street);
 }

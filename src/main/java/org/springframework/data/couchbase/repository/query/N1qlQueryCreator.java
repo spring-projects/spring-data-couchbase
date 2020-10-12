@@ -19,6 +19,7 @@ import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
 import java.util.Iterator;
 
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
@@ -56,8 +57,12 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(path.toDotPath()), iterator);
+		return from(part, property, where(path.toDotPath(cvtr)), iterator);
 	}
+
+	static Converter<? super CouchbasePersistentProperty, String> cvtr = (
+			source) -> new StringBuilder(source.getName().length() + 2).append('`').append(source.getName()).append('`')
+					.toString();
 
 	@Override
 	protected QueryCriteria and(final Part part, final QueryCriteria base, final Iterator<Object> iterator) {

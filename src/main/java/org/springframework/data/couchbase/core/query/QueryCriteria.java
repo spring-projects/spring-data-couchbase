@@ -343,7 +343,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 */
 	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr, JsonValue parameters,
 			CouchbaseConverter converter) {
-		String fieldName = maybeQuote(key);
+		String fieldName = maybeBackTic(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
 		v[0] = fieldName;
@@ -445,8 +445,8 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		posValues.add(ja);
 	}
 
-	private String maybeQuote(String value) {
-		if (value == null || (value.startsWith("\"") && value.endsWith("\""))) {
+	private String maybeBackTic(String value) {
+		if (value == null || (value.startsWith("`") && value.endsWith("`"))) {
 			return value;
 		} else {
 			return "`" + value + "`";
