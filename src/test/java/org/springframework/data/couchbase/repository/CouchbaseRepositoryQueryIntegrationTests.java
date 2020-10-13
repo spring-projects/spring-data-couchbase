@@ -31,11 +31,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveUserRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -60,6 +64,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired AirportRepository airportRepository;
+
+	@Autowired UserRepository userRepository;
 
 	@BeforeEach
 	void beforeEach() {
@@ -140,6 +146,17 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	public void testCas() {
+		User user = new User("1", "Dave", "Wilson");
+		userRepository.save(user);
+		user.setVersion(user.getVersion() - 1);
+		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
+		user.setVersion(0);
+		userRepository.save(user);
+		userRepository.delete(user);
+	}
+
+	@Test
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
@@ -153,8 +170,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				airportRepository.save(airport);
 			}
 
-			Long count = airportRepository.countFancyExpression( Arrays.asList("JFK"), Arrays.asList("jfk"), false);
-			assertEquals( 1, count);
+			Long count = airportRepository.countFancyExpression(Arrays.asList("JFK"), Arrays.asList("jfk"), false);
+			assertEquals(1, count);
 
 			long airportCount = airportRepository.count();
 			assertEquals(7, airportCount);

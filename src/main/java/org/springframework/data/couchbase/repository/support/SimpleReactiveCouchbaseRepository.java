@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
@@ -75,9 +76,15 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	@SuppressWarnings("unchecked")
+	@Override
 	public <S extends T> Mono<S> save(final S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
+		// if entity has non-null version property, then replace()
+		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
+			return (Mono<S>) operations.replaceById(entityInformation.getJavaType()).one(entity);
+		} else {
+			return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
+		}
 	}
 
 	@Override
@@ -89,7 +96,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public <S extends T> Flux<S> saveAll(final Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return (Flux<S>) operations.upsertById(entityInformation.getJavaType()).all(Streamable.of(entities).toList());
+		return Flux.fromIterable(entities).flatMap(this::save);
 	}
 
 	@SuppressWarnings("unchecked")
