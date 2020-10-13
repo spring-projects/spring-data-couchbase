@@ -24,14 +24,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.couchbase.client.java.kv.GetResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
 import org.springframework.data.couchbase.domain.Submission;
+import org.springframework.data.couchbase.domain.SubscriptionToken;
+import org.springframework.data.couchbase.domain.SubscriptionTokenRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.UserSubmission;
@@ -54,7 +58,20 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 
 	@Autowired UserRepository userRepository;
 	@Autowired LibraryRepository libraryRepository;
+	@Autowired SubscriptionTokenRepository subscriptionTokenRepository;
 	@Autowired UserSubmissionRepository userSubmissionRepository;
+	@Autowired CouchbaseTemplate couchbaseTemplate;
+
+	@Test
+	void subscriptionToken() {
+		SubscriptionToken st = new SubscriptionToken("id", 0, "type", "Dave Smith", "app123", "dev123", 0);
+		st = subscriptionTokenRepository.save(st);
+		st = subscriptionTokenRepository.findById(st.getId()).get();
+
+		GetResult jdkResult = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().get(st.getId());
+		assertNotEquals(0, st.getVersion());
+		assertEquals(jdkResult.cas(), st.getVersion());
+	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
