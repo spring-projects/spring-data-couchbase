@@ -29,11 +29,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveUserRepository;
+import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -56,6 +59,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
+	@Autowired ReactiveUserRepository userRepository; // intellij flags "Could not Autowire", but it runs ok.
 
 	@BeforeEach
 	void beforeEach() {
@@ -95,6 +99,17 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 		} finally {
 			airportRepository.delete(vie).block();
 		}
+	}
+
+	@Test
+	public void testCas() {
+		User user = new User("1", "Dave", "Wilson");
+		userRepository.save(user).block();
+		user.setVersion(user.getVersion() - 1);
+		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
+		user.setVersion(0);
+		userRepository.save(user).block();
+		userRepository.delete(user).block();
 	}
 
 	@Test
