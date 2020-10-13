@@ -19,7 +19,18 @@ package org.springframework.data.couchbase.core.query;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.repository.query.N1qlQueryCreator;
+import org.springframework.data.repository.query.parser.PartTree;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 class QueryCriteriaTests {
 
@@ -56,21 +67,25 @@ class QueryCriteriaTests {
 	@Test
 	void testNestedAndCriteria() {
 		QueryCriteria c = where("name").is("Bubba").and(where("age").gt(12).or("country").is("Austria"));
-		assertEquals("`name` = \"Bubba\" and (`age` > 12 or `country` = \"Austria\")", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` = $1 and (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
+		assertEquals("[\"Bubba\",12,\"Austria\"]", parameters.toString());
 	}
 
 	@Test
 	void testNestedOrCriteria() {
 		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria"));
-		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\")", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
+		assertEquals("[\"Bubba\",12,\"Austria\"]", parameters.toString());
 	}
 
 	@Test
 	void testNestedNotIn() {
-		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria")).and(
-				where("state").notIn(new String[] { "Alabama", "Florida" }));
+		QueryCriteria c = where("name").is("Bubba").or(where("age").gt(12).or("country").is("Austria"))
+				.and(where("state").notIn(new String[] { "Alabama", "Florida" }));
 		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and "
-				+ "(not( (`state` in ( [ \"Alabama\", \"Florida\" ] )) ))", c.export());
+				+ "(not( (`state` in ( [\"Alabama\",\"Florida\"] )) ))", c.export());
 	}
 
 	@Test
@@ -110,13 +125,13 @@ class QueryCriteriaTests {
 	}
 
 	/* cannot do this properly yet because in arg to when() in
-         * startingWith()  cannot be a QueryCriteria
+	       * startingWith()  cannot be a QueryCriteria
 	@Test
 	void testStartingWithExpr() {
 		QueryCriteria c = where("name").startingWith(where("name").plus("xxx"));
 		assertEquals("`name` like (((`name` || "xxx") || ""%""))", c.export());
 	}
-        */
+	      */
 
 	@Test
 	void testEndingWith() {
@@ -204,14 +219,22 @@ class QueryCriteriaTests {
 
 	@Test
 	void testIn() {
-		QueryCriteria c = where("name").in(new String[] { "gump", "davis" });
-		assertEquals("`name` in ( [ \"gump\", \"davis\" ] )", c.export());
+		String[] args = new String[] { "gump", "davis" };
+		QueryCriteria c = where("name").in(args);
+		assertEquals("`name` in ( [\"gump\",\"davis\"] )", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` in ( $1 )", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
 	@Test
 	void testNotIn() {
-		QueryCriteria c = where("name").notIn(new String[] { "gump", "davis" });
-		assertEquals("not( (`name` in ( [ \"gump\", \"davis\" ] )) )", c.export());
+		String[] args = new String[] { "gump", "davis" };
+		QueryCriteria c = where("name").notIn(args);
+		assertEquals("not( (`name` in ( [\"gump\",\"davis\"] )) )", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("not( (`name` in ( $1 )) )", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
 	@Test
@@ -225,4 +248,28 @@ class QueryCriteriaTests {
 		QueryCriteria c = where("name").FALSE();
 		assertEquals("not( (`name`) )", c.export());
 	}
+
+	private String arrayToString(Object[] array) {
+		StringBuilder sb = new StringBuilder();
+		if (array != null) {
+			sb.append("[");
+			boolean first = true;
+			for (Object e : array) {
+				if (!first) {
+					sb.append(",");
+				}
+				first = false;
+				if (e instanceof Number)
+					sb.append(e);
+				else {
+					sb.append("\"");
+					sb.append(e);
+					sb.append("\"");
+				}
+			}
+			sb.append("]");
+		}
+		return sb.toString();
+	}
+
 }

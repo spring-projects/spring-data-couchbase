@@ -20,6 +20,11 @@ import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.couchbase.client.core.error.InvalidArgumentException;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.lang.Nullable;
 
 /**
@@ -60,6 +65,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		this.format = format;
 	}
 
+	Object[] getValue() {
+		return value;
+	}
+
 	/**
 	 * Static factory method to create a Criteria using the provided key.
 	 */
@@ -68,8 +77,8 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	private static QueryCriteria wrap(QueryCriteria criteria) {
-		QueryCriteria qc = new QueryCriteria(new LinkedList<QueryCriteria>(), criteria.key, criteria.value, null,
-				criteria.operator, criteria.format);
+		QueryCriteria qc = new QueryCriteria(new LinkedList<>(), criteria.key, criteria.value, null, criteria.operator,
+				criteria.format);
 		return qc;
 	}
 
@@ -167,7 +176,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	public QueryCriteria notContaining(@Nullable Object o) {
 		value = new QueryCriteria[] { wrap(containing(o)) };
 		operator = "NOT";
-		format = format = "not( %3$s )";
+		format = "not( %3$s )";
 		return this;
 	}
 
@@ -196,7 +205,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		operator = "IS_NOT_NULL";
 		value = null;
 		format = "%1$s is not null";
-		return (QueryCriteria) this;
+		return this;
 	}
 
 	public QueryCriteria isMissing() {
@@ -210,7 +219,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		operator = "IS_NOT_MiSSING";
 		value = null;
 		format = "%1$s is not missing";
-		return (QueryCriteria) this;
+		return this;
 	}
 
 	public QueryCriteria isValued() {
@@ -224,68 +233,74 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		operator = "IS_NOT_VALUED";
 		value = null;
 		format = "%1$s is not valued";
-		return (QueryCriteria) this;
+		return this;
 	}
 
 	public QueryCriteria within(@Nullable Object o) {
 		operator = "WITHIN";
 		value = new Object[] { o };
-		format = "%1$s within $3$s";
-		return (QueryCriteria) this;
+		format = "%1$s within %3$s";
+		return this;
 	}
 
 	public QueryCriteria between(@Nullable Object o1, @Nullable Object o2) {
 		operator = "BETWEEN";
 		value = new Object[] { o1, o2 };
 		format = "%1$s between %3$s and %4$s";
-		return (QueryCriteria) this;
+		return this;
 	}
 
 	public QueryCriteria in(@Nullable Object... o) {
 		operator = "IN";
-		value = o;
-		StringBuilder sb = new StringBuilder("%1$s in ( [ ");
-		for (int i = 1; i <= value.length; i++) { // format indices start at 1
-			if (i > 1)
-				sb.append(", ");
-			sb.append("%" + (i + 2) + "$s"); // the first is fieldName, second is operator, args start at 3
+		format = "%1$s in ( %3$s )";
+		// IN takes a single argument that is a list
+		if (o.length > 0) {
+			if (o[0] instanceof JsonArray || o[0] instanceof List || o[0] instanceof Object[]) {
+				if (o.length != 1) {
+					throw new RuntimeException("IN cannot take multiple lists");
+				}
+				value = o;
+			} else {
+				value = new Object[1];
+				value[0] = o; // JsonArray.from(o);
+			}
 		}
-		format = sb.append(" ] )").toString();
-		return (QueryCriteria) this;
+		return this;
 	}
 
 	public QueryCriteria notIn(@Nullable Object... o) {
 		value = new QueryCriteria[] { wrap(in(o)) };
 		operator = "NOT";
-		format = format = "not( %3$s )"; // field = 1$, operator = 2$, value=$3, $4, ...
-		return (QueryCriteria) this;
+		format = "not( %3$s )"; // field = 1$, operator = 2$, value=$3, $4, ...
+		return this;
 	}
 
 	public QueryCriteria TRUE() { // true/false are reserved, use TRUE/FALSE
 		value = null;
 		operator = null;
-		format = format = "%1$s"; // field = 1$, operator = 2$, value=$3, $4, ...
-		return (QueryCriteria) this;
+		format = "%1$s"; // field = 1$, operator = 2$, value=$3, $4, ...
+		return this;
 	}
 
 	public QueryCriteria FALSE() {
 		value = new QueryCriteria[] { wrap(TRUE()) };
 		operator = "not";
-		format = format = "not( %3$s )";
-		return (QueryCriteria) this;
+		format = "not( %3$s )";
+		return this;
 	}
 
 	/**
-	 * This exports the query criteria into a string to be appended to the beginning of an N1QL statement
+	 * This exports the query criteria chain into a string to be appended to the beginning of an N1QL statement
 	 *
-	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters
-	 *                      There may already be positional parameters in the beginning of the statement,
-	 *                      so it may not always start at 1.  If it has the value -1, the query is using
-	 *                      named parameters. If the pointer is null, the query is not using parameters.
+	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters There may
+	 *          already be positional parameters in the beginning of the statement, so it may not always start at 1. If it
+	 *          has the value -1, the query is using named parameters. If the pointer is null, the query is not using
+	 *          parameters.
+	 * @param parameters - parameters of the query. If operands are parameterized, their values are added to parameters
 	 * @return string containing part of N1QL query
 	 */
 	@Override
-	public String export(int[] paramIndexPtr) {
+	public String export(int[] paramIndexPtr, JsonValue parameters, CouchbaseConverter converter) {
 		StringBuilder output = new StringBuilder();
 		boolean first = true;
 		for (QueryCriteria c : this.criteriaChain) {
@@ -298,7 +313,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 			} else {
 				first = false;
 			}
-			c.exportSingle(output, paramIndexPtr);
+			c.exportSingle(output, paramIndexPtr, parameters, converter);
 		}
 
 		return output.toString();
@@ -310,22 +325,34 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 * @return string containing part of N1QL query
 	 */
 	@Override
-	public String export() {
-		return export(null);
+	public String export() { // used only by tests
+		return export(null, null, null);
 
 	}
 
-	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr) {
-		String fieldName = maybeQuote(key);
+	/**
+	 * Appends the query criteria to a StringBuilder which will be appended to a N1QL statement
+	 *
+	 * @param sb - the string builder
+	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters There may
+	 *          already be positional parameters in the beginning of the statement, so it may not always start at 1. If it
+	 *          has the value -1, the query is using named parameters. If the pointer is null, the query is not using
+	 *          parameters.
+	 * @param parameters - parameters of the query. If operands are parameterized, their values are added to parameters
+	 * @return string containing part of N1QL query
+	 */
+	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr, JsonValue parameters,
+			CouchbaseConverter converter) {
+		String fieldName = maybeBackTic(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
 		v[0] = fieldName;
 		v[1] = operator;
 		for (int i = 0; i < valueLen; i++) {
 			if (value[i] instanceof QueryCriteria) {
-				v[i + 2] = "(" + ((QueryCriteria) value[i]).export(paramIndexPtr) + ")";
+				v[i + 2] = "(" + ((QueryCriteria) value[i]).export(paramIndexPtr, parameters, converter) + ")";
 			} else {
-				v[i + 2] = maybeWrapValue(key, value[i], paramIndexPtr);
+				v[i + 2] = maybeWrapValue(key, value[i], paramIndexPtr, parameters, converter);
 			}
 		}
 
@@ -340,26 +367,86 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return sb;
 	}
 
-	private String maybeWrapValue(String key, Object value, int[] paramIndexPtr) {
+	/**
+	 * Possibly convert an operand to a positional or named parameter
+	 *
+	 * @param paramIndexPtr - this is a reference to the parameter index to be used for positional parameters There may
+	 *          already be positional parameters in the beginning of the statement, so it may not always start at 1. If it
+	 *          has the value -1, the query is using named parameters. If the pointer is null, the query is not using
+	 *          parameters.
+	 * @param parameters - parameters of the query. If operands are parameterized, their values are added to parameters
+	 * @return string containing part of N1QL query
+	 */
+	private String maybeWrapValue(String key, Object value, int[] paramIndexPtr, JsonValue parameters,
+			CouchbaseConverter converter) {
 		if (paramIndexPtr != null) {
 			if (paramIndexPtr[0] >= 0) {
+				JsonArray params = (JsonArray) parameters;
+				// from StringBasedN1qlQueryParser.getPositionalPlaceholderValues()
+				try {
+					params.add(convert(converter, value));
+				} catch (InvalidArgumentException iae) {
+					if (value instanceof Object[]) {
+						addAsArray(params, value, converter);
+					} else {
+						throw iae;
+					}
+				}
 				return "$" + (++paramIndexPtr[0]); // these are generated in order
 			} else {
+				JsonObject params = (JsonObject) parameters;
+				// from StringBasedN1qlQueryParser.getNamedPlaceholderValues()
+				try {
+					params.put(key, convert(converter, value));
+				} catch (InvalidArgumentException iae) {
+					if (value instanceof Object[]) {
+						params.put(key, JsonArray.from((Object[]) value));
+					} else {
+						throw iae;
+					}
+				}
 				return "$" + key;
 			}
 		}
+
+		// Did not convert to a parameter. Add quotes or whatever it might need.
 
 		if (value instanceof String) {
 			return "\"" + value + "\"";
 		} else if (value == null) {
 			return "null";
+		} else if (value instanceof Object[]) { // convert array into sequence of comma-separated values
+			StringBuffer l = new StringBuffer();
+			l.append("[");
+			Object[] array = (Object[]) value;
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					l.append(",");
+				}
+				l.append(maybeWrapValue(null, array[i], null, null, converter));
+			}
+			l.append("]");
+			return l.toString();
 		} else {
 			return value.toString();
 		}
 	}
 
-	private String maybeQuote(String value) {
-		if (value == null || (value.startsWith("\"") && value.endsWith("\""))) {
+	private static Object convert(CouchbaseConverter converter, Object value) {
+		return converter != null ? converter.convertForWriteIfNeeded(value) : value;
+	}
+
+	private void addAsArray(JsonArray posValues, Object o, CouchbaseConverter converter) {
+		Object[] array = (Object[]) o;
+		JsonArray ja = JsonValue.ja();
+		for (Object e : array) {
+			ja.add(String.valueOf(convert(converter, e)));
+		}
+		posValues.add(ja);
+	}
+
+	private String maybeBackTic(String value) {
+		if (value == null || (value.startsWith("`") && value.endsWith("`"))) {
 			return value;
 		} else {
 			return "`" + value + "`";

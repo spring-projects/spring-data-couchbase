@@ -34,11 +34,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveUserRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -85,6 +88,24 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 		} finally {
 			airportRepository.delete(vie);
+		}
+	}
+
+	@Autowired PersonRepository personRepository;
+
+	@Test
+	void nestedFind() {
+		Person person = null;
+		try {
+			person = new Person(1, "first", "last");
+			Address address = new Address();
+			address.setStreet("Maple");
+			person.setAddress(address);
+			personRepository.save(person);
+			List<Person> persons = personRepository.findByAddressStreet("Maple");
+			assertEquals(1, persons.size());
+		} finally {
+			personRepository.deleteById(person.getId().toString());
 		}
 	}
 

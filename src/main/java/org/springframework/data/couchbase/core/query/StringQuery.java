@@ -66,7 +66,8 @@ public class StringQuery extends Query {
 		} else { // named parameters or no parameters, no index required
 			paramIndexPtr = new int[] { -1 };
 		}
-		appendWhere(statement, paramIndexPtr); // criteria on this Query - should be empty for StringQuery
+		appendWhere(statement, paramIndexPtr, template.getConverter()); // criteria on this Query - should be empty for
+																																		// StringQuery
 		appendSort(statement);
 		appendSkipAndLimit(statement);
 		return statement.toString();

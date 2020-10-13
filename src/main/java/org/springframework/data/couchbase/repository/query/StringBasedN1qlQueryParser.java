@@ -189,14 +189,14 @@ public class StringBasedN1qlQueryParser {
 			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes)) {
 				LOGGER.trace("{}: Found named placeholder {}", this.queryMethod.getName(), placeholder);
 				namedCount++;
-				parameterNames.add(placeholder.substring(1));//save without the leading $
+				parameterNames.add(placeholder.substring(1));// save without the leading $
 			}
 		}
 
 		if (posCount > 0 && namedCount > 0) { // actual values from parameterNames might be more useful
 			throw new IllegalArgumentException("Using both named (" + namedCount + ") and positional (" + posCount
-					+ ") placeholders is not supported, please choose one over the other in "
-					+ queryMethod.getClass().getName() + "." + this.queryMethod.getName() + "()");
+					+ ") placeholders is not supported, please choose one over the other in " + queryMethod.getClass().getName()
+					+ "." + this.queryMethod.getName() + "()");
 		}
 
 		if (posCount > 0) {
@@ -211,8 +211,7 @@ public class StringBasedN1qlQueryParser {
 	private boolean checkNotQuoted(String item, int start, int end, List<int[]> quotes) {
 		for (int[] quote : quotes) {
 			if (quote[0] <= start && quote[1] >= end) {
-				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", this.queryMethod.getName(),
-						item);
+				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", this.queryMethod.getName(), item);
 				return false;
 			}
 		}
@@ -220,7 +219,7 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	/**
-	 * Get Postional argument placeholders to use for parameters.  $1, $2 etc.
+	 * Get Postional argument placeholders to use for parameters. $1, $2 etc.
 	 *
 	 * @param accessor
 	 * @return - JsonValue holding parameters.
@@ -230,7 +229,7 @@ public class StringBasedN1qlQueryParser {
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
 			Object rawValue = accessor.getBindableValue(parameter.getIndex());
 			Object value = couchbaseConverter.convertForWriteIfNeeded(rawValue);
-			putPositionalValue(accessor, parameter, posValues, value);
+			putPositionalValue(posValues, value);
 		}
 		return posValues;
 	}
@@ -251,22 +250,20 @@ public class StringBasedN1qlQueryParser {
 
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
-				putNamedValue(accessor, parameter, namedValues, placeholder, value);
+				putNamedValue(namedValues, placeholder, value);
 				if (pNames.contains(placeholder)) {
 					pNames.remove(placeholder);
 				} else {
-					throw new RuntimeException(
-							"parameter named " + placeholder + " does not match any named parameter " + parameterNames
-									+ " in " + statement);
+					throw new RuntimeException("parameter named " + placeholder + " does not match any named parameter "
+							+ parameterNames + " in " + statement);
 				}
 			} else {
 				if (parameter.getName().isPresent()) {
-					putNamedValue(accessor, parameter, namedValues, parameter.getName().get(), value);
+					putNamedValue(namedValues, parameter.getName().get(), value);
 				} else {
-					throw new RuntimeException(
-							"cannot determine argument for named parameter. " + "Argument " + parameter.getIndex()
-									+ " to " + queryMethod.getClass().getName() + "." + queryMethod.getName()
-									+ "() needs @Param(\"name\") that matches a named parameter in " + statement);
+					throw new RuntimeException("cannot determine argument for named parameter. " + "Argument "
+							+ parameter.getIndex() + " to " + queryMethod.getClass().getName() + "." + queryMethod.getName()
+							+ "() needs @Param(\"name\") that matches a named parameter in " + statement);
 				}
 			}
 		}
@@ -278,18 +275,17 @@ public class StringBasedN1qlQueryParser {
 
 	protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
 		switch (this.placeHolderType) {
-		case NAMED:
-			return getNamedPlaceholderValues(accessor);
-		case POSITIONAL:
-			return getPositionalPlaceholderValues(accessor);
-		case NONE:
-		default:
-			return JsonArray.create();
+			case NAMED:
+				return getNamedPlaceholderValues(accessor);
+			case POSITIONAL:
+				return getPositionalPlaceholderValues(accessor);
+			case NONE:
+			default:
+				return JsonArray.create();
 		}
 	}
 
-	private void putPositionalValue(ParameterAccessor accessor, Parameter parameter, JsonArray posValues,
-			Object value) {
+	private void putPositionalValue(JsonArray posValues, Object value) {
 		try {
 			posValues.add(value);
 		} catch (InvalidArgumentException iae) {
@@ -310,8 +306,7 @@ public class StringBasedN1qlQueryParser {
 		posValues.add(ja);
 	}
 
-	private void putNamedValue(ParameterAccessor accessor, Parameter parameter, JsonObject namedValues,
-			String placeholder, Object value) {
+	private void putNamedValue(JsonObject namedValues, String placeholder, Object value) {
 		try {
 			namedValues.put(placeholder, value);
 		} catch (InvalidArgumentException iae) {

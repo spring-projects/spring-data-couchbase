@@ -145,7 +145,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		final Part.Type type = part.getType();
 		switch (type) {
 		case SIMPLE_PROPERTY:
-			return criteria; //.eq(parameters.next()); // this will be the dummy from PartTree
+			return criteria; // this will be the dummy from PartTree
 		default:
 			throw new IllegalArgumentException("Unsupported keyword!");
 		}
