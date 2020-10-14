@@ -75,10 +75,13 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
+		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entityClass);
+		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
+			converted.put(persistentEntity.getVersionProperty().getName(), cas);
+		}
 
 		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
 		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
-		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readEntity.getClass());
 
 		if (persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
