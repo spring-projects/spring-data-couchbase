@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.CrudRepository;
 
 /**
- * UserSubmission Repository for tests
- * 
+ * PersonValue repository for tests
+ *
  * @author Michael Reiche
  */
-@Repository
-public interface UserSubmissionRepository extends PagingAndSortingRepository<UserSubmission, String> {
+public interface PersonValueRepository extends CrudRepository<PersonValue, String> {
 
 }

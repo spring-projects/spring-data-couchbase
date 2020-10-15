@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +35,8 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
+import org.springframework.data.couchbase.domain.PersonValue;
+import org.springframework.data.couchbase.domain.PersonValueRepository;
 import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.SubscriptionToken;
 import org.springframework.data.couchbase.domain.SubscriptionTokenRepository;
@@ -60,6 +64,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Autowired LibraryRepository libraryRepository;
 	@Autowired SubscriptionTokenRepository subscriptionTokenRepository;
 	@Autowired UserSubmissionRepository userSubmissionRepository;
+	@Autowired PersonValueRepository personValueRepository;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
 
 	@Test
@@ -88,6 +93,21 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 
 		assertTrue(userRepository.existsById(user.getId()));
 		userRepository.delete(user);
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveAndFindImmutableById() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+		PersonValue personValue = new PersonValue(null, 0, "f", "l");
+		//assertFalse(personValueRepository.existsById(personValue.getId()));
+		personValue = personValueRepository.save(personValue);
+		Optional<PersonValue> found = personValueRepository.findById(personValue.getId());
+		assertTrue(found.isPresent());
+		Method m = PersonValue.class.getMethod("equals", Object.class);
+		m.invoke(personValue, new Object[] { found.get() });
+		personValue.equals(found.get());
+		assertEquals(personValue, found.get());
+		personValueRepository.delete(personValue);
 	}
 
 	@Test // DATACOUCH-564

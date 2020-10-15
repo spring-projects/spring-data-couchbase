@@ -89,14 +89,28 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return accessor.getBean();
 	}
 
-	public void applyUpdatedCas(final Object entity, final long cas) {
+	public Object applyUpdatedCas(final Object entity, final long cas) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 
 		if (versionProperty != null) {
 			accessor.setProperty(versionProperty, cas);
+			return accessor.getBean();
 		}
+		return entity;
+	}
+
+	public Object applyUpdatedId(final Object entity, Object id) {
+		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+
+		if (idProperty != null) {
+			accessor.setProperty(idProperty, id);
+			return accessor.getBean();
+		}
+		return entity;
 	}
 
 	public long getCas(final Object entity) {
@@ -106,9 +120,9 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 
 		long cas = 0;
 		if (versionProperty != null) {
-			Object casObject  =  (Number)accessor.getProperty(versionProperty);
-			if (casObject instanceof Number){
-				cas = ((Number)casObject).longValue();
+			Object casObject = (Number) accessor.getProperty(versionProperty);
+			if (casObject instanceof Number) {
+				cas = ((Number) casObject).longValue();
 			}
 		}
 		return cas;
