@@ -73,8 +73,8 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
 						.insert(converted.getId(), converted.export(), buildInsertOptions()).map(result -> {
-							template.support().applyUpdatedCas(object, result.cas());
-							return o;
+							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
+							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
 						});
 			}).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -97,7 +97,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
-			if (expiry != null && ! expiry.isZero()) {
+			if (expiry != null && !expiry.isZero()) {
 				options.expiry(expiry);
 			} else if (domainType.isAnnotationPresent(Document.class)) {
 				Document documentAnn = domainType.getAnnotation(Document.class);
@@ -110,26 +110,30 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		@Override
 		public TerminatingInsertById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
+			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public InsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
+			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public InsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
+			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel, expiry);
+			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 	}
 

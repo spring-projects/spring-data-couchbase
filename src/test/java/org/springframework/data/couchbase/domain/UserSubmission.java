@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2020 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.List;
 @Document
 @TypeAlias("user")
 @CompositeQueryIndex(fields = { "id", "username", "email" })
-public class UserSubmission {
+public class UserSubmission extends ComparableEntity {
 	private String id;
 	private String username;
 	private String email;
@@ -52,42 +52,4 @@ public class UserSubmission {
 		this.courses = courses;
 	}
 
-	@Override
-	public boolean equals(Object that) throws RuntimeException {
-		if (this == that)
-			return true;
-		if (that == null || getClass() != that.getClass())
-			return false;
-		for (Field f : getClass().getFields()) {
-			if (!same(f, this, that))
-				return false;
-		}
-		for (Field f : getClass().getDeclaredFields()) {
-			if (!same(f, this, that))
-				return false;
-		}
-		return true;
-	}
-
-	private static boolean same(Field f, Object a, Object b) {
-		Object thisField = null;
-		Object thatField = null;
-
-		try {
-			f.get(a);
-			f.get(b);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-		if (thisField == null && thatField == null) {
-			return true;
-		}
-		if (thisField == null && thatField != null) {
-			return false;
-		}
-		if (!thisField.equals(thatField)) {
-			return false;
-		}
-		return true;
-	}
 }
