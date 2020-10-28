@@ -1,6 +1,24 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.5.RELEASE (2020-10-28)
+---------------------------------------------
+* DATACOUCH-634 - upgrade to couchbase java sdk 3.0.9.
+* DATACOUCH-626 - all-arguments constructor incompatible with '@Version private long version'.
+* DATACOUCH-625 - save() doesn't return updated entity if immutable properties used for @id or @version.
+* DATACOUCH-623 - CAS not working with @Version.
+* DATACOUCH-620 - fix issue with id in nested objects caused by DATACOUCH-533.
+* DATACOUCH-616 - Positional parameters not detected inside SpEL expressions.
+* DATACOUCH-615 - (Reactive)CouchbaseTemplate - removeByQuery always remove all data.
+* DATACOUCH-611 - Release 4.0.5 (Neumann SR5).
+* DATACOUCH-608 - expiry Document annotation, option not processed during upsert, insert.
+* DATACOUCH-605 - @ScanConsistency ignored for n1ql queries.
+* DATACOUCH-604 - Error creating repository.
+* DATACOUCH-603 - N1qlQueryCreator - IN, NOT IN should not cast parameter to Object[].
+* DATACOUCH-595 - Replace does not add cas to options if present.
+* DATACOUCH-583 - find by nested properties doesn't work.
+
+
 Changes in version 3.2.11.RELEASE (2020-10-28)
 ----------------------------------------------
 * DATACOUCH-610 - Release 3.2.11 (Moore SR11).
@@ -1158,6 +1176,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
