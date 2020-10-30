@@ -25,14 +25,13 @@ pipeline {
 						docker {
 							image 'adoptopenjdk/openjdk8:latest'
 							label 'data'
-							args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
-							// root but with no maven caching
+							args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
 						}
 					}
 					options { timeout(time: 30, unit: 'MINUTES') }
 					steps {
 						sh 'rm -rf ?'
-						sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci clean dependency:list test -Dsort -Dbundlor.enabled=false -U -B'
+						sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci clean dependency:list test -Dsort -Dbundlor.enabled=false -U -B -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase'
 						sh "chown -R 1001:1001 target"
 					}
 				}
@@ -50,7 +49,7 @@ pipeline {
 				docker {
 					image 'adoptopenjdk/openjdk8:latest'
 					label 'data'
-					args '-v $HOME:/tmp/jenkins-home'
+					args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
 				}
 			}
 			options { timeout(time: 20, unit: 'MINUTES') }
@@ -60,8 +59,7 @@ pipeline {
 			}
 
 			steps {
-				sh 'rm -rf ?'
-				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci,artifactory ' +
+				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci,artifactory -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase ' +
 						'-Dartifactory.server=https://repo.spring.io ' +
 						"-Dartifactory.username=${ARTIFACTORY_USR} " +
 						"-Dartifactory.password=${ARTIFACTORY_PSW} " +
@@ -80,7 +78,7 @@ pipeline {
 				docker {
 					image 'adoptopenjdk/openjdk8:latest'
 					label 'data'
-					args '-v $HOME:/tmp/jenkins-home'
+					args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
 				}
 			}
 			options { timeout(time: 20, unit: 'MINUTES') }
@@ -90,7 +88,7 @@ pipeline {
 			}
 
 			steps {
-				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci,distribute ' +
+				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -Pci,distribute -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase ' +
 						'-Dartifactory.server=https://repo.spring.io ' +
 						"-Dartifactory.username=${ARTIFACTORY_USR} " +
 						"-Dartifactory.password=${ARTIFACTORY_PSW} " +
