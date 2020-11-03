@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,16 +40,18 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -136,13 +141,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
-			airportRepository.save(vie);
+			vie = airportRepository.save(vie);
 			List<Airport> airports = airportRepository.findAllByIata("vie");
-			assertEquals(vie.getId(), airports.get(0).getId());
+			assertEquals(1, airports.size());
+			System.out.println("findAllByIata(0): " + airports.get(0));
+			Airport airport1 = airportRepository.findById(airports.get(0).getId()).get();
+			assertEquals(airport1.getIata(), vie.getIata());
+			System.out.println("findById: " + airport1);
+			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata());
+			assertEquals(airport1.getId(), vie.getId());
+			System.out.println("findByIata: " + airport2);
 		} finally {
 			airportRepository.delete(vie);
 		}
-
 	}
 
 	@Test
@@ -172,6 +183,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 			Long count = airportRepository.countFancyExpression(Arrays.asList("JFK"), Arrays.asList("jfk"), false);
 			assertEquals(1, count);
+
+			Pageable pageable = PageRequest.of(0, 2);
+			Page<Airport> aPage = airportRepository.findAllByIataNot("JFK", pageable);
+			assertEquals(iatas.length - 1, aPage.getTotalElements());
+			assertEquals(pageable.getPageSize(), aPage.getContent().size());
 
 			long airportCount = airportRepository.count();
 			assertEquals(7, airportCount);

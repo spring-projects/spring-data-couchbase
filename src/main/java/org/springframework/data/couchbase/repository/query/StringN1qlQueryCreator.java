@@ -15,52 +15,49 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValue;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.StringQuery;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.util.Assert;
+
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
 
 /**
  * @author Michael Reiche
+ * @since 4.1
  */
 public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 	private final SpelExpressionParser parser;
-	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 	private final StringBasedN1qlQueryParser queryParser;
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
-	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
 	private final N1QLExpression parsedExpression;
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
-			CouchbaseConverter couchbaseConverter, String bucketName,
+
+			CouchbaseConverter couchbaseConverter, String bucketName, SpelExpressionParser spelExpressionParser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
 
 		// AbstractQueryCreator needs a PartTree, so we give it a dummy one.
@@ -73,7 +70,6 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		this.context = couchbaseConverter.getMappingContext();
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
-		this.evaluationContextProvider = evaluationContextProvider;
 		final String namedQueryName = queryMethod.getNamedQueryName();
 		String queryString;
 		if (queryMethod.hasInlineN1qlQuery()) {
@@ -84,9 +80,9 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			throw new IllegalArgumentException("query has no inline Query or named Query not found");
 		}
 		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
-				getTypeField(), getTypeValue(), accessor, SPEL_PARSER, evaluationContextProvider);
-		this.parser = SPEL_PARSER;
+				getTypeField(), getTypeValue(), accessor, spelExpressionParser, evaluationContextProvider);
 		this.parsedExpression = this.queryParser.parsedExpression;
+		this.parser = spelExpressionParser;
 	}
 
 	protected QueryMethod getQueryMethod() {
@@ -103,8 +99,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 	@Override
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 		return from(part, property, where(path.toDotPath()), iterator);
 	}
@@ -115,8 +110,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			return create(part, iterator);
 		}
 
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
 		return from(part, property, base.and(path.toDotPath()), iterator);
@@ -139,15 +133,15 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		return q;
 	}
 
-	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property,
-			final QueryCriteria criteria, final Iterator<Object> parameters) {
+	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
+			final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
 		switch (type) {
-		case SIMPLE_PROPERTY:
-			return criteria; // this will be the dummy from PartTree
-		default:
-			throw new IllegalArgumentException("Unsupported keyword!");
+			case SIMPLE_PROPERTY:
+				return criteria; // .eq(parameters.next()); // this will be the dummy from PartTree
+			default:
+				throw new IllegalArgumentException("Unsupported keyword!");
 		}
 	}
 

@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -42,6 +45,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -73,16 +77,21 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 	@Test
 	void shouldSaveAndFindAll() {
 		Airport vie = null;
+		Airport jfk = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie).block();
+			jfk = new Airport("airports::jfk", "JFK", "xxxx");
+			airportRepository.save(jfk).block();
 
 			List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
 
 			assertFalse(all.isEmpty());
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
+			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::jfk")));
 		} finally {
 			airportRepository.delete(vie).block();
+			airportRepository.delete(jfk).block();
 		}
 	}
 
@@ -93,9 +102,19 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie).block();
 			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(1,airports1.size());
+			assertEquals(1, airports1.size());
 			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(1,airports2.size());
+			assertEquals(1, airports2.size());
+			vie = airportRepository.save(vie).block();
+			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
+			assertEquals(1, airports.size());
+			System.out.println("findAllByIata(0): " + airports.get(0));
+			Airport airport1 = airportRepository.findById(airports.get(0).getId()).block();
+			assertEquals(airport1.getIata(), vie.getIata());
+			System.out.println("findById: " + airport1);
+			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata()).block();
+			assertEquals(airport1.getId(), vie.getId());
+			System.out.println("findByIata: " + airport2);
 		} finally {
 			airportRepository.delete(vie).block();
 		}
@@ -124,6 +143,23 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 				airportRepository.save(airport).block();
 			}
 
+			int page = 0;
+			for (; page < 10;) {
+				PageRequest pageable = PageRequest.of(page++, 2);
+				System.out.println("findAllByIataLike: " + "%S");
+				// java.lang.IndexOutOfBoundsException: Source emitted more than one item
+				// Flux<Airport> airportFlux = airportRepository.findAllByIataLike("S%");
+				// List<Airport> airportList = airportFlux.collectList().block();
+				List<Airport> airportList = airportRepository.findAllByIataLike("S%").toStream().collect(Collectors.toList());
+				if (airportList.isEmpty()) {
+					break;
+				}
+				for (Airport a : airportList) {
+					System.out.println(a.getIata() + " " + a.getIcao());
+				}
+				System.out.println("-----");
+			}
+
 			Long airportCount = airportCount = airportRepository.count().block();
 			assertEquals(iatas.length, airportCount);
 
@@ -135,7 +171,10 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 			airportCount = airportRepository.countByIataIn("XXX").block();
 			assertEquals(0, airportCount);
-
+		} catch (Exception e) {
+			RuntimeException rte = new RuntimeException(e);
+			rte.printStackTrace(System.out);
+			throw rte;
 		} finally {
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);

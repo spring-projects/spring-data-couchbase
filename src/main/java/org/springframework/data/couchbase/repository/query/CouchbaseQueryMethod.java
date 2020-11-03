@@ -29,7 +29,9 @@ import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.StringUtils;
 
 /**
@@ -39,6 +41,7 @@ import org.springframework.util.StringUtils;
  * @author Michael Nitschinger
  * @author Simon Baslé
  * @author Oliver Gierke
+ * @author Michael Reiche
  */
 public class CouchbaseQueryMethod extends QueryMethod {
 
@@ -183,6 +186,24 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
+	 * is this a 'delete'?
+	 *
+	 * @return is this a 'delete'?
+	 */
+	public boolean isDeleteQuery() {
+		return getName().toLowerCase().startsWith("delete");
+	}
+
+	/**
+	 * is this an 'exists' query?
+	 *
+	 * @return is this an 'exists' query?
+	 */
+	public boolean isExistsQuery() {
+		return getName().toLowerCase().startsWith("exists");
+	}
+
+	/**
 	 * indicates if the method begins with "count"
 	 *
 	 * @return true if the method begins with "count", indicating that .count() should be called instead of one() or
@@ -196,4 +217,14 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	public String toString() {
 		return super.toString();
 	}
+
+	public boolean hasReactiveWrapperParameter() {
+		for (Parameter p : getParameters()) {
+			if (ReactiveWrapperConverters.supports(p.getType())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

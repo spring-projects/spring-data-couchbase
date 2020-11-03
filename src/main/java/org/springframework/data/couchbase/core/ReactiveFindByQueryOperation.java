@@ -15,14 +15,20 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * ReactiveFindByQueryOperation
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public interface ReactiveFindByQueryOperation {
 
 	/**
@@ -104,6 +110,124 @@ public interface ReactiveFindByQueryOperation {
 
 	}
 
-	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T> {}
+	/**
+	 * Collection override (optional).
+	 */
+	interface FindInCollection<T> extends FindByQueryWithQuery<T> {
+
+		/**
+		 * Explicitly set the name of the collection to perform the query on. <br />
+		 * Skip this step to use the default collection derived from the domain type.
+		 *
+		 * @param collection must not be {@literal null} nor {@literal empty}.
+		 * @return new instance of {@link FindWithProjection}.
+		 * @throws IllegalArgumentException if collection is {@literal null}.
+		 */
+		FindInCollection<T> inCollection(String collection);
+	}
+
+	/**
+	 * Result type override (optional).
+	 */
+	interface FindWithProjection<T> extends FindInCollection<T>, FindDistinct {
+
+		/**
+		 * Define the target type fields should be mapped to. <br />
+		 * Skip this step if you are anyway only interested in the original domain type.
+		 *
+		 * @param resultType must not be {@literal null}.
+		 * @param <R> result type.
+		 * @return new instance of {@link FindWithProjection}.
+		 * @throws IllegalArgumentException if resultType is {@literal null}.
+		 */
+		<R> FindByQueryWithQuery<R> as(Class<R> resultType);
+	}
+
+	/**
+	 * Distinct Find support.
+	 *
+ 	 * @author Michael Reiche
+	 */
+	interface FindDistinct {
+
+		/**
+		 * Finds the distinct values for a specified {@literal field} across a single {@link } or view.
+		 *
+		 * @param field name of the field. Must not be {@literal null}.
+		 * @return new instance of {@link TerminatingDistinct}.
+		 * @throws IllegalArgumentException if field is {@literal null}.
+		 */
+		TerminatingDistinct<Object> distinct(String field);
+	}
+
+	/**
+	 * Result type override. Optional.
+	 *
+ 	 * @author Michael Reiche
+	 */
+	interface DistinctWithProjection {
+
+		/**
+		 * Define the target type the result should be mapped to. <br />
+		 * Skip this step if you are anyway fine with the default conversion.
+		 * <dl>
+		 * <dt>{@link Object} (the default)</dt>
+		 * <dd>Result is mapped according to the {@link } converting eg. {@link } into plain {@link String}, {@link } to
+		 * {@link Long}, etc. always picking the most concrete type with respect to the domain types property.<br />
+		 * Any {@link } is run through the {@link org.springframework.data.convert.EntityReader} to obtain the domain type.
+		 * <br />
+		 * Using {@link Object} also works for non strictly typed fields. Eg. a mixture different types like fields using
+		 * {@link String} in one {@link } while {@link Long} in another.</dd>
+		 * <dt>Any Simple type like {@link String}, {@link Long}, ...</dt>
+		 * <dd>The result is mapped directly by the Couchbase Java driver and the {@link } in place. This works only for
+		 * results where all documents considered for the operation use the very same type for the field.</dd>
+		 * <dt>Any Domain type</dt>
+		 * <dd>Domain types can only be mapped if the if the result of the actual {@code distinct()} operation returns
+		 * {@link }.</dd>
+		 * <dt>{@link }</dt>
+		 * <dd>Using {@link } allows retrieval of the raw driver specific format, which returns eg. {@link }.</dd>
+		 * </dl>
+		 *
+		 * @param resultType must not be {@literal null}.
+		 * @param <R> result type.
+		 * @return new instance of {@link TerminatingDistinct}.
+		 * @throws IllegalArgumentException if resultType is {@literal null}.
+		 */
+		<R> TerminatingDistinct<R> as(Class<R> resultType);
+	}
+
+	/**
+	 * Result restrictions. Optional.
+	 *
+ 	 * @author Michael Reiche
+	 */
+	interface DistinctWithQuery<T> extends DistinctWithProjection {
+
+		/**
+		 * Set the filter {@link Query criteria} to be used.
+		 *
+		 * @param query must not be {@literal null}.
+		 * @return new instance of {@link TerminatingDistinct}.
+		 * @throws IllegalArgumentException if criteria is {@literal null}.
+		 */
+		TerminatingDistinct<T> matching(Query query);
+	}
+
+	/**
+	 * Terminating distinct find operations.
+	 *
+ 	 * @author Michael Reiche
+	 */
+	interface TerminatingDistinct<T> extends DistinctWithQuery<T> {
+
+		/**
+		 * Get all matching distinct field values.
+		 *
+		 * @return empty {@link Flux} if not match found. Never {@literal null}.
+		 */
+		Flux<T> all();
+	}
+
+	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindInCollection<T>, FindDistinct {}
 
 }

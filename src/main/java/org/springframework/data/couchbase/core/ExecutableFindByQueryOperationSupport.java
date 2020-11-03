@@ -23,6 +23,12 @@ import org.springframework.data.couchbase.core.query.Query;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
 
+/**
+ * {@link ExecutableFindByQueryOperation} implementations for Couchbase.
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQueryOperation {
 
 	private static final Query ALL_QUERY = new Query();
@@ -35,7 +41,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 	@Override
 	public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-		return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
+		return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED, null);
 	}
 
 	static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
@@ -45,14 +51,16 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		private final Query query;
 		private final ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport<T> reactiveSupport;
 		private final QueryScanConsistency scanConsistency;
+		private final String collection;
 
 		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency) {
+				final QueryScanConsistency scanConsistency, final String collection) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
-			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency);
+			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency, collection);
 			this.scanConsistency = scanConsistency;
+			this.collection = collection;
 		}
 
 		@Override
@@ -78,12 +86,17 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			} else {
 				scanCons = scanConsistency;
 			}
-			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanCons);
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanCons, collection);
 		}
 
 		@Override
 		public FindByQueryConsistentWith<T> consistentWith(final QueryScanConsistency scanConsistency) {
-			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency);
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+		}
+
+		@Override
+		public FindByQueryInCollection<T> inCollection(final String collection) {
+			return new ExecutableFindByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		@Override
