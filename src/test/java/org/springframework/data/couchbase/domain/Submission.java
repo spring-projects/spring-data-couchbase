@@ -16,14 +16,12 @@
 
 package org.springframework.data.couchbase.domain;
 
-import java.lang.reflect.Field;
-
 /**
  * Submission entity for tests
  *
  * @author Michael Reiche
  */
-public class Submission {
+public class Submission extends ComparableEntity {
 	private final String id;
 	private final String userId;
 	private final String talkId;
@@ -58,42 +56,4 @@ public class Submission {
 		return sb.toString();
 	}
 
-	@Override
-	public boolean equals(Object that) throws RuntimeException {
-		if (this == that)
-			return true;
-		if (that == null || getClass() != that.getClass())
-			return false;
-		for (Field f : getClass().getFields()) {
-			if (!same(f, this, that))
-				return false;
-		}
-		for (Field f : getClass().getDeclaredFields()) {
-			if (!same(f, this, that))
-				return false;
-		}
-		return true;
-	}
-
-	private static boolean same(Field f, Object a, Object b) {
-		Object thisField = null;
-		Object thatField = null;
-
-		try {
-			f.get(a);
-			f.get(b);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		}
-		if (thisField == null && thatField == null) {
-			return true;
-		}
-		if (thisField == null && thatField != null) {
-			return false;
-		}
-		if (!thisField.equals(thatField)) {
-			return false;
-		}
-		return true;
-	}
 }

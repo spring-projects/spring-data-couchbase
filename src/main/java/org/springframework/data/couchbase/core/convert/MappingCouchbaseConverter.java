@@ -547,6 +547,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
 				String generatedId = generateId(generatedValueInfo, prefixes, suffixes, idAttributes);
 				target.setId(generatedId);
+				// this is not effective if id is Immutable, and accessor.setProperty() returns a new object in getBean()
 				accessor.setProperty(idProperty, generatedId);
 			} else {
 				target.setId(id);

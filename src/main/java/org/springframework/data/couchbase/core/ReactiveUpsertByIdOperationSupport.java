@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -73,8 +75,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
 						.upsert(converted.getId(), converted.export(), buildUpsertOptions()).map(result -> {
-							template.support().applyUpdatedCas(object, result.cas());
-							return o;
+							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
+							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
 						});
 			}).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
