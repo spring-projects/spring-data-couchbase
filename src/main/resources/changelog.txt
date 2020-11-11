@@ -1,6 +1,12 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.1 (2020-11-11)
+-------------------------------------
+* DATACOUCH-641 - Enable Maven caching for Jenkins jobs.
+* DATACOUCH-639 - Release 4.1.1 (2020.0.1).
+
+
 Changes in version 4.1.0 (2020-10-28)
 -------------------------------------
 * DATACOUCH-635 - Release 4.1 GA (2020.0.0).
@@ -1202,6 +1208,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
