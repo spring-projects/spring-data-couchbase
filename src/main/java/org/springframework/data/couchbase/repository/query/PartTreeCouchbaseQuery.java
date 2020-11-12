@@ -18,9 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
@@ -30,7 +28,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
- * {@link RepositoryQuery} implementation for Couchbase.
+ * {@link RepositoryQuery} implementation for Couchbase. Replaces PartTreeN1qlBasedQuery
  *
  * @author Michael Reiche
  * @since 4.1
@@ -38,9 +36,6 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 
 	private final PartTree tree;
-	// private final boolean isGeoNearQuery;
-	private final MappingContext<?, CouchbasePersistentProperty> context;
-	private final ResultProcessor processor;
 	private final CouchbaseConverter converter;
 
 	/**
@@ -56,11 +51,8 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 
 		super(method, operations, expressionParser, evaluationContextProvider);
 
-		this.processor = method.getResultProcessor();
-		for (PartTree.OrPart parts : this.tree = new PartTree(method.getName(),
-				processor.getReturnedType().getDomainType())) {}
-
-		this.context = operations.getConverter().getMappingContext();
+		ResultProcessor processor = method.getResultProcessor();
+		this.tree = new PartTree(method.getName(), processor.getReturnedType().getDomainType());
 		this.converter = operations.getConverter();
 	}
 

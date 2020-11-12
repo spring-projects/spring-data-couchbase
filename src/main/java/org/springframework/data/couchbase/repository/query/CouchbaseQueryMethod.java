@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import java.lang.reflect.Method;
+import java.util.Locale;
 
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -24,6 +25,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
+import org.springframework.data.couchbase.repository.Meta;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.mapping.context.MappingContext;
@@ -32,8 +34,8 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import org.springframework.data.repository.util.ReactiveWrappers;
-import org.springframework.data.util.Lazy;
+import org.springframework.lang.Nullable;
+import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -178,6 +180,38 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
+	 * @return return true if {@link Meta} annotation is available.
+	 */
+	public boolean hasQueryMetaAttributes() {
+		return getMetaAnnotation() != null;
+	}
+
+	/**
+	 * @return return {@link Meta} annotation
+	 */
+	private Meta getMetaAnnotation() {
+		return method.getAnnotation(Meta.class);
+	}
+
+	/**
+	 * Returns the {@link org.springframework.data.couchbase.core.query.Meta} attributes to be applied.
+	 *
+	 * @return never {@literal null}.
+	 */
+	@Nullable
+	public org.springframework.data.couchbase.core.query.Meta getQueryMetaAttributes() {
+
+		Meta meta = getMetaAnnotation();
+		if (meta == null) {
+			return new org.springframework.data.couchbase.core.query.Meta();
+		}
+
+		org.springframework.data.couchbase.core.query.Meta metaAttributes = new org.springframework.data.couchbase.core.query.Meta();
+
+		return metaAttributes;
+	}
+
+	/**
 	 * Returns the query string declared in a {@link Query} annotation or {@literal null} if neither the annotation found
 	 * nor the attribute was specified.
 	 *
@@ -194,7 +228,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 * @return is this a 'delete'?
 	 */
 	public boolean isDeleteQuery() {
-		return getName().toLowerCase().startsWith("delete");
+		return getName().toLowerCase(Locale.ROOT).startsWith("delete");
 	}
 
 	/**
@@ -203,7 +237,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 * @return is this an 'exists' query?
 	 */
 	public boolean isExistsQuery() {
-		return getName().toLowerCase().startsWith("exists");
+		return getName().toLowerCase(Locale.ROOT).startsWith("exists");
 	}
 
 	/**
@@ -213,7 +247,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 *         all().
 	 */
 	public boolean isCountQuery() {
-		return getName().toLowerCase().startsWith("count");
+		return getName().toLowerCase(Locale.ROOT).startsWith("count");
 	}
 
 	@Override

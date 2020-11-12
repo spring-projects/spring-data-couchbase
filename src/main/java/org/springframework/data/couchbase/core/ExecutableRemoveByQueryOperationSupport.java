@@ -34,7 +34,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 	@Override
 	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED, "_default._default");
+		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
+				"_default._default");
 	}
 
 	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
@@ -51,8 +52,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
-			this.reactiveSupport = new ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query,
-					scanConsistency);
+			this.reactiveSupport = new ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query, scanConsistency,
+					collection);
 			this.scanConsistency = scanConsistency;
 			this.collection = collection;
 		}
@@ -71,6 +72,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
+
 		@Override
 		public RemoveByQueryInCollection<T> inCollection(final String collection) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);

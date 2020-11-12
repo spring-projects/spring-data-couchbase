@@ -146,13 +146,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = airportRepository.save(vie);
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
-			System.out.println("findAllByIata(0): " + airports.get(0));
 			Airport airport1 = airportRepository.findById(airports.get(0).getId()).get();
 			assertEquals(airport1.getIata(), vie.getIata());
-			System.out.println("findById: " + airport1);
 			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata());
 			assertEquals(airport1.getId(), vie.getId());
-			System.out.println("findByIata: " + airport2);
 		} finally {
 			airportRepository.delete(vie);
 		}
@@ -172,11 +169,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
-		Future[] future = new Future[iatas.length];
-		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
 
 		try {
-			Callable<Boolean>[] suppliers = new Callable[iatas.length];
 			for (int i = 0; i < iatas.length; i++) {
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/,
 						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);

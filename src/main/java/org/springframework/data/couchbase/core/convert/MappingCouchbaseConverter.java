@@ -267,7 +267,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
 				}
-				Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, instance);
+				Object obj = prop.isIdProperty() && parent == null ? source.getId() : getValueInternal(prop, source, instance);
 				accessor.setProperty(prop, obj);
 			}
 

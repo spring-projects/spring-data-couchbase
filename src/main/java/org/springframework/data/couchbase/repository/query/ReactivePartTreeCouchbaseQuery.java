@@ -29,10 +29,10 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
- * Reactive PartTree {@link RepositoryQuery} implementation for Couchbase.
+ * Reactive PartTree {@link RepositoryQuery} implementation for Couchbase. Replaces ReactivePartN1qlBasedQuery
  *
  * @author Michael Reiche
- * @since 4.1 
+ * @since 4.1
  */
 public class ReactivePartTreeCouchbaseQuery extends AbstractReactiveCouchbaseQuery {
 

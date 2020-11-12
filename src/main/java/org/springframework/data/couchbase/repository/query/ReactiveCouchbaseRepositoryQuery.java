@@ -53,6 +53,11 @@ public class ReactiveCouchbaseRepositoryQuery extends AbstractReactiveCouchbaseQ
 	}
 
 	@Override
+	protected Query createCountQuery(ParametersParameterAccessor accessor) {
+		return null;
+	}
+
+	@Override
 	protected Query createQuery(ParametersParameterAccessor accessor) {
 		return null;
 	}

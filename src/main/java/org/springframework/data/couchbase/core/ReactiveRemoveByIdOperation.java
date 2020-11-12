@@ -49,7 +49,6 @@ public interface ReactiveRemoveByIdOperation {
 
 	}
 
-
 	interface ReactiveRemoveById extends RemoveByIdWithDurability {}
 
 }

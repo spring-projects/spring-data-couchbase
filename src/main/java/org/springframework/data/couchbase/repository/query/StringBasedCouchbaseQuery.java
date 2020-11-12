@@ -38,10 +38,6 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 
 	private final SpelExpressionParser expressionParser;
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
-
-	private final boolean isCountQuery;
-	private final boolean isExistsQuery;
-	private final boolean isDeleteQuery;
 	private final NamedQueries namedQueries;
 
 	/**
@@ -51,8 +47,8 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 	 * @param method must not be {@literal null}.
 	 * @param couchbaseOperations must not be {@literal null}.
 	 * @param expressionParser must not be {@literal null}.
-	 * @param evaluationContextProvider must not be {@literal null}
-	 * @param namedQueries
+	 * @param evaluationContextProvider must not be {@literal null}.
+	 * @param namedQueries must not be {@literal null}.
 	 */
 	public StringBasedCouchbaseQuery(CouchbaseQueryMethod method, CouchbaseOperations couchbaseOperations,
 			SpelExpressionParser expressionParser, QueryMethodEvaluationContextProvider evaluationContextProvider,
@@ -64,11 +60,8 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 
 		this.expressionParser = expressionParser;
 		this.evaluationContextProvider = evaluationContextProvider;
-		this.isCountQuery = method.isCountQuery();
-		this.isExistsQuery = method.isExistsQuery();
-		this.isDeleteQuery = method.isDeleteQuery();
 
-		if (hasAmbiguousProjectionFlags(this.isCountQuery, this.isExistsQuery, this.isDeleteQuery)) {
+		if (hasAmbiguousProjectionFlags(isCountQuery(), isExistsQuery(), isDeleteQuery())) {
 			throw new IllegalArgumentException(String.format(COUNT_EXISTS_AND_DELETE, method));
 		}
 		this.namedQueries = namedQueries;
@@ -87,37 +80,15 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 		Query query = creator.createQuery();
 
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("Created query %s for * fields.", query.export() /*, query.getFieldsObject()*/));
+			LOG.debug("Created query " + query.export());
 		}
 
 		return query;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery#isCountQuery()
-	 */
 	@Override
-	protected boolean isCountQuery() {
-		return isCountQuery;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery#isExistsQuery()
-	 */
-	@Override
-	protected boolean isExistsQuery() {
-		return isExistsQuery;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery#isDeleteQuery()
-	 */
-	@Override
-	protected boolean isDeleteQuery() {
-		return this.isDeleteQuery;
+	protected Query createCountQuery(ParametersParameterAccessor accessor) {
+		return applyQueryMetaAttributesWhenPresent(createQuery(accessor));
 	}
 
 	/*
@@ -126,11 +97,7 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 	 */
 	@Override
 	protected boolean isLimiting() {
-		return false;
+		return false; // not yet implemented
 	}
 
-	private static boolean hasAmbiguousProjectionFlags(boolean isCountQuery, boolean isExistsQuery,
-			boolean isDeleteQuery) {
-		return BooleanUtil.countBooleanTrueValues(isCountQuery, isExistsQuery, isDeleteQuery) > 1;
-	}
 }

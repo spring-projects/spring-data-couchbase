@@ -113,7 +113,7 @@ public interface ReactiveFindByQueryOperation {
 	/**
 	 * Collection override (optional).
 	 */
-	interface FindInCollection<T> extends FindByQueryWithQuery<T> {
+	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T> {
 
 		/**
 		 * Explicitly set the name of the collection to perform the query on. <br />
@@ -123,13 +123,13 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link FindWithProjection}.
 		 * @throws IllegalArgumentException if collection is {@literal null}.
 		 */
-		FindInCollection<T> inCollection(String collection);
+		FindByQueryInCollection<T> inCollection(String collection);
 	}
 
 	/**
 	 * Result type override (optional).
 	 */
-	interface FindWithProjection<T> extends FindInCollection<T>, FindDistinct {
+	interface FindWithProjection<T> extends FindByQueryInCollection<T>, FindDistinct {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
@@ -233,6 +233,6 @@ public interface ReactiveFindByQueryOperation {
 		Flux<T> all();
 	}
 
-	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindInCollection<T>, FindDistinct {}
+	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindByQueryInCollection<T>, FindDistinct {}
 
 }

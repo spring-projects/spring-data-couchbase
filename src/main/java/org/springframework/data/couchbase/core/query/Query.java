@@ -39,8 +39,6 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * Couchbase Query
- *
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
@@ -109,20 +107,11 @@ public class Query {
 	 * Limit the number of returned documents to {@code limit}.
 	 *
 	 * @param limit
-	 * @return this
+	 * @return
 	 */
 	public Query limit(int limit) {
 		this.limit = limit;
 		return this;
-	}
-
-	/**
-	 * limit
-	 *
-	 * @return limit
-	 */
-	public int getLimit() {
-		return limit;
 	}
 
 	/**
@@ -330,4 +319,7 @@ public class Query {
 		return options;
 	}
 
+	public void setMeta(Meta metaAnnotation) {
+		Meta meta = metaAnnotation;
+	}
 }

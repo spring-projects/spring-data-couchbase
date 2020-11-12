@@ -97,7 +97,6 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 			Query query = creator.createQuery();
-			System.out.println(query.toN1qlSelectString(couchbaseTemplate.reactive(), Airline.class, false));
 
 			try {
 				Thread.sleep(3000);

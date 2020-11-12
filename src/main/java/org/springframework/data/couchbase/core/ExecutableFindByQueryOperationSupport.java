@@ -41,7 +41,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 	@Override
 	public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-		return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED, "_default._default");
+		return new ExecutableFindByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
+				"_default._default");
 	}
 
 	static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
@@ -58,7 +59,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
-			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency, collection);
+			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, query, scanConsistency,
+					collection);
 			this.scanConsistency = scanConsistency;
 			this.collection = collection;
 		}

@@ -42,7 +42,6 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	Iterable<Airport> findAll();
 
 	@Override
-	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport save(Airport airport);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

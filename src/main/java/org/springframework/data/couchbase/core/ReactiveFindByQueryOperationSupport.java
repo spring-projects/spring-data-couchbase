@@ -80,7 +80,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		@Override
-		public FindInCollection<T> inCollection(String collection) {
+		public FindByQueryInCollection<T> inCollection(String collection) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 

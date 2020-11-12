@@ -13,37 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.repository.query;
+package org.springframework.data.couchbase.repository;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+import org.springframework.data.annotation.QueryAnnotation;
 
 /**
- * Utility class containing methods to interact with boolean values.
- *
  * @author Michael Reiche
  * @since 4.1
  */
-final class BooleanUtil {
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
+@Documented
+@QueryAnnotation
+public @interface Meta {
 
-	private BooleanUtil() {
-		throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
-	}
-
-	/**
-	 * Count the number of {@literal true} values.
-	 *
-	 * @param values
-	 * @return the number of values that are {@literal true}.
-	 */
-	static int countBooleanTrueValues(boolean... values) {
-
-		int count = 0;
-
-		for (boolean value : values) {
-
-			if (value) {
-				count++;
-			}
-		}
-
-		return count;
-	}
 }
