@@ -20,7 +20,7 @@
     <properties>
         <couchbase>3.0.10</couchbase>
         <couchbase.osgi>3.0.10</couchbase.osgi>
-        <springdata.commons>2.4.3-SNAPSHOT</springdata.commons>
+        <springdata.commons>2.4.0-DATACMNS-800-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
 
@@ -158,6 +158,12 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.4.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
 
