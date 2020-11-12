@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
+import static java.util.Arrays.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.util.StreamUtils;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -56,6 +60,7 @@ import com.couchbase.client.core.error.IndexExistsException;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Jens Schauder
  */
 @SpringJUnitConfig(CouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -170,7 +175,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				airportRepository.save(airport);
 			}
 
-			Long count = airportRepository.countFancyExpression(Arrays.asList("JFK"), Arrays.asList("jfk"), false);
+			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
 			long airportCount = airportRepository.count();
@@ -274,6 +279,25 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
 				airportRepository.delete(airport);
 			}
+		}
+	}
+
+	@Test // DATACOUCH-650
+	void deleteAllById() {
+
+		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
+		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
+
+		try {
+			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
+
+			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
+
+
+			assertThat(airportRepository.findAll()).containsExactly(frankfurt);
+		} finally {
+			airportRepository.deleteAll();
 		}
 	}
 
