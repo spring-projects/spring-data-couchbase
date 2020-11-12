@@ -42,6 +42,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  *
  * @author Michael Nitschinger
  * @author Mark Paluch
+ * @author Jens Schauder
  */
 public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, ID> {
 
@@ -128,6 +129,12 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	public void deleteAll(final Iterable<? extends T> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
 		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
+	}
+
+	@Override
+	public void deleteAllById(Iterable<? extends ID> ids) {
+		Assert.notNull(ids, "The given Iterable of ids must not be null!");
+		couchbaseOperations.removeById().all(Streamable.of(ids).map(Objects::toString).toList());
 	}
 
 	@Override
