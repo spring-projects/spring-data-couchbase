@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import static org.springframework.data.couchbase.repository.support.Util.*;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -26,7 +28,6 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -64,8 +65,8 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	 * @param entityInformation the Metadata for the entity.
 	 * @param couchbaseOperations the reference to the template used.
 	 */
-	public SimpleCouchbaseRepository(final CouchbaseEntityInformation<T, String> entityInformation,
-			final CouchbaseOperations couchbaseOperations) {
+	public SimpleCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
+			CouchbaseOperations couchbaseOperations) {
 		Assert.notNull(entityInformation, "CouchbaseEntityInformation must not be null!");
 		Assert.notNull(couchbaseOperations, "CouchbaseOperations must not be null!");
 
@@ -75,7 +76,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <S extends T> S save(final S entity) {
+	public <S extends T> S save(S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
 		// if entity has non-null, non-zero version property, then replace()
 		if (hasNonZeroVersionProperty(entity, couchbaseOperations.getConverter())) {
@@ -86,21 +87,19 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public <S extends T> Iterable<S> saveAll(final Iterable<S> entities) {
+	public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
 		return Streamable.of(entities).stream().map((e) -> save(e)).collect(StreamUtils.toUnmodifiableList());
 	}
 
 	@Override
-	public Optional<T> findById(final ID id) {
+	public Optional<T> findById(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		return Optional.ofNullable(couchbaseOperations.findById(entityInformation.getJavaType()).one(id.toString()));
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public List<T> findAllById(final Iterable<ID> ids) {
+	public List<T> findAllById(Iterable<ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
 		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
 		Collection<? extends T> all = couchbaseOperations.findById(entityInformation.getJavaType()).all(convertedIds);
@@ -108,33 +107,33 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	}
 
 	@Override
-	public boolean existsById(final ID id) {
+	public boolean existsById(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		return couchbaseOperations.existsById().one(id.toString());
 	}
 
 	@Override
-	public void deleteById(final ID id) {
+	public void deleteById(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		couchbaseOperations.removeById().one(id.toString());
 	}
 
 	@Override
-	public void delete(final T entity) {
+	public void delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
 		couchbaseOperations.removeById().one(entityInformation.getId(entity));
-	}
-
-	@Override
-	public void deleteAll(final Iterable<? extends T> entities) {
-		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
 	}
 
 	@Override
 	public void deleteAllById(Iterable<? extends ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
 		couchbaseOperations.removeById().all(Streamable.of(ids).map(Objects::toString).toList());
+	}
+
+	@Override
+	public void deleteAll(Iterable<? extends T> entities) {
+		Assert.notNull(entities, "The given Iterable of entities must not be null!");
+		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
 	}
 
 	@Override
@@ -155,17 +154,17 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	}
 
 	@Override
-	public List<T> findAll(final Sort sort) {
+	public List<T> findAll(Sort sort) {
 		return findAll(new Query().with(sort));
 	}
 
 	@Override
-	public List<T> findAll(final QueryScanConsistency queryScanConsistency) {
+	public List<T> findAll(QueryScanConsistency queryScanConsistency) {
 		return findAll(new Query().scanConsistency(queryScanConsistency));
 	}
 
 	@Override
-	public Page<T> findAll(final Pageable pageable) {
+	public Page<T> findAll(Pageable pageable) {
 		List<T> results = findAll(new Query().with(pageable));
 		return new PageImpl<>(results, pageable, count());
 	}
@@ -185,7 +184,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	 * @param query the originating query.
 	 * @return the list of found entities, already executed.
 	 */
-	private List<T> findAll(final Query query) {
+	private List<T> findAll(Query query) {
 		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
 				.matching(query).all();
 	}
@@ -203,7 +202,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	 *
 	 * @param crudMethodMetadata the injected repository metadata.
 	 */
-	void setRepositoryMethodMetadata(final CrudMethodMetadata crudMethodMetadata) {
+	void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
 		this.crudMethodMetadata = crudMethodMetadata;
 	}
 
