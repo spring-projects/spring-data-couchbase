@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -46,6 +47,11 @@ public interface ExecutableReplaceByIdOperation {
 
 	}
 
-	interface ExecutableReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T> {
+
+		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
+	}
+
+	interface ExecutableReplaceById<T> extends ReplaceByIdWithExpiry<T> {}
 
 }
