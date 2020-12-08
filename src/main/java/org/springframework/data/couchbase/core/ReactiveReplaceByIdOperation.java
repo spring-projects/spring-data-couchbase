@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -49,6 +50,11 @@ public interface ReactiveReplaceByIdOperation {
 
 	}
 
-	interface ReactiveReplaceById<T> extends ReplaceByIdWithDurability<T> {}
+	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T> {
+
+		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
+	}
+
+	interface ReactiveReplaceById<T> extends ReplaceByIdWithExpiry<T> {}
 
 }
