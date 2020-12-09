@@ -18,9 +18,11 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -40,7 +42,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 	public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveReplaceByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE);
+				DurabilityLevel.NONE, Duration.ZERO);
 	}
 
 	static class ReactiveReplaceByIdSupport<T> implements ReactiveReplaceById<T> {
@@ -51,16 +53,18 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
+		private final Duration expiry;
 
 		ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
 				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel) {
+				final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
+			this.expiry = expiry;
 		}
 
 		@Override
@@ -93,6 +97,13 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
+			if (expiry != null && !expiry.isZero()) {
+				options.expiry(expiry);
+			} else if (domainType.isAnnotationPresent(Document.class)) {
+				Document documentAnn = domainType.getAnnotation(Document.class);
+				long durationSeconds = documentAnn.expiryUnit().toSeconds(documentAnn.expiry());
+				options.expiry(Duration.ofSeconds(durationSeconds));
+			}
 			long cas = template.support().getCas(object);
 			options.cas(cas);
 			return options;
@@ -101,23 +112,30 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		@Override
 		public TerminatingReplaceById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
-					durabilityLevel);
+			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public ReplaceByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
-					durabilityLevel);
+			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 		@Override
 		public ReplaceByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
-					durabilityLevel);
+			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
+		}
+
+		@Override
+		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
+			Assert.notNull(expiry, "expiry must not be null.");
+			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
+					expiry);
 		}
 
 	}
