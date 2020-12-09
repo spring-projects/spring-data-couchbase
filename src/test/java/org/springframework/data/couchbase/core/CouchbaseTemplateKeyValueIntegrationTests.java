@@ -16,23 +16,25 @@
 
 package org.springframework.data.couchbase.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.dao.DataIntegrityViolationException;;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -43,6 +45,9 @@ import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -131,6 +136,44 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertEquals(user, modified);
 			sleepSecs(6);
 			User found = couchbaseTemplate.findById(User.class).one(user.getId());
+			assertNull(found, "found should have been null as document should be expired");
+		} finally {
+			try {
+				couchbaseTemplate.removeById().one(user.getId());
+			} catch (DataRetrievalFailureException e) {
+				//
+			}
+		}
+	}
+
+	@Test
+	void replaceWithExpiry() {
+		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		try {
+			User modified = couchbaseTemplate.upsertById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
+			couchbaseTemplate.replaceById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
+			assertEquals(user, modified);
+			sleepSecs(2);
+			User found = couchbaseTemplate.findById(User.class).one(user.getId());
+			assertNull(found, "found should have been null as document should be expired");
+		} finally {
+			try {
+				couchbaseTemplate.removeById().one(user.getId());
+			} catch (DataRetrievalFailureException e) {
+				//
+			}
+		}
+	}
+
+	@Test
+	void replaceWithExpiryAnnotation() {
+		UserAnnotated user = new UserAnnotated(UUID.randomUUID().toString(), "firstname", "lastname");
+		try {
+			UserAnnotated modified = couchbaseTemplate.upsertById(UserAnnotated.class).one(user);
+			modified = couchbaseTemplate.replaceById(UserAnnotated.class).one(user);
+			assertEquals(user, modified);
+			sleepSecs(6);
+			User found = couchbaseTemplate.findById(UserAnnotated.class).one(user.getId());
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
