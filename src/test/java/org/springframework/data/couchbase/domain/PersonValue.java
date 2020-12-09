@@ -35,7 +35,8 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
 public class PersonValue {
 	@Id @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
 	@With String id;
-//	@Version @With
+  @Version
+	@With
 	long version;
 	@Field String firstname;
 	@Field String lastname;

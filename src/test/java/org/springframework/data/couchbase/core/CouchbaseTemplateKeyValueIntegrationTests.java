@@ -16,34 +16,43 @@
 
 package org.springframework.data.couchbase.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.UUID;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.dao.DataIntegrityViolationException;;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
+
+;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -249,6 +258,50 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertTrue(couchbaseTemplate.existsById().one(id));
 		couchbaseTemplate.removeById().one(user.getId());
 
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveAndFindImmutableById() {
+		PersonValue personValue = new PersonValue(null, 123, "f", "l");
+		System.out.println("personValue: " + personValue);
+		// personValue = personValue.withVersion(123);
+		PersonValue inserted = null;
+		PersonValue upserted = null;
+		PersonValue replaced = null;
+
+		try {
+
+			inserted = couchbaseTemplate.insertById(PersonValue.class).one(personValue);
+			assertNotEquals(0, inserted.getVersion());
+			PersonValue foundInserted = couchbaseTemplate.findById(PersonValue.class).one(inserted.getId());
+			assertNotNull(foundInserted, "inserted personValue not found");
+			assertEquals(inserted, foundInserted);
+
+			// upsert will be inserted
+			couchbaseTemplate.removeById().one(inserted.getId());
+			upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+			assertNotEquals(0, upserted.getVersion());
+			PersonValue foundUpserted = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
+			assertNotNull(foundUpserted, "upserted personValue not found");
+			assertEquals(upserted, foundUpserted);
+
+			// upsert will be replaced
+			upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+			assertNotEquals(0, upserted.getVersion());
+			PersonValue foundUpserted2 = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
+			assertNotNull(foundUpserted2, "upserted personValue not found");
+			assertEquals(upserted, foundUpserted2);
+
+			replaced = couchbaseTemplate.replaceById(PersonValue.class).one(upserted);
+			assertNotEquals(0, replaced.getVersion());
+			PersonValue foundReplaced = couchbaseTemplate.findById(PersonValue.class).one(replaced.getId());
+			assertNotNull(foundReplaced, "replaced personValue not found");
+			assertEquals(replaced, foundReplaced);
+
+		} finally {
+			couchbaseTemplate.removeById().one(inserted.getId());
+		}
 	}
 
 	private void sleepSecs(int i) {
