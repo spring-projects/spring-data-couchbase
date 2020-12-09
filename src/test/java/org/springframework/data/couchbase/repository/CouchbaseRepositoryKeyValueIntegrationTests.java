@@ -99,13 +99,9 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 		PersonValue personValue = new PersonValue(null, 0, "f", "l");
-		//assertFalse(personValueRepository.existsById(personValue.getId()));
 		personValue = personValueRepository.save(personValue);
 		Optional<PersonValue> found = personValueRepository.findById(personValue.getId());
 		assertTrue(found.isPresent());
-		Method m = PersonValue.class.getMethod("equals", Object.class);
-		m.invoke(personValue, new Object[] { found.get() });
-		personValue.equals(found.get());
 		assertEquals(personValue, found.get());
 		personValueRepository.delete(personValue);
 	}
