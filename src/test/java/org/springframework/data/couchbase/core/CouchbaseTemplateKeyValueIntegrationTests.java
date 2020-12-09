@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -137,6 +139,44 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			assertEquals(user, modified);
 			sleepSecs(6);
 			User found = couchbaseTemplate.findById(User.class).one(user.getId());
+			assertNull(found, "found should have been null as document should be expired");
+		} finally {
+			try {
+				couchbaseTemplate.removeById().one(user.getId());
+			} catch (DataRetrievalFailureException e) {
+				//
+			}
+		}
+	}
+
+	@Test
+	void replaceWithExpiry() {
+		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		try {
+			User modified = couchbaseTemplate.upsertById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
+			couchbaseTemplate.replaceById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
+			assertEquals(user, modified);
+			sleepSecs(2);
+			User found = couchbaseTemplate.findById(User.class).one(user.getId());
+			assertNull(found, "found should have been null as document should be expired");
+		} finally {
+			try {
+				couchbaseTemplate.removeById().one(user.getId());
+			} catch (DataRetrievalFailureException e) {
+				//
+			}
+		}
+	}
+
+	@Test
+	void replaceWithExpiryAnnotation() {
+		UserAnnotated user = new UserAnnotated(UUID.randomUUID().toString(), "firstname", "lastname");
+		try {
+			UserAnnotated modified = couchbaseTemplate.upsertById(UserAnnotated.class).one(user);
+			modified = couchbaseTemplate.replaceById(UserAnnotated.class).one(user);
+			assertEquals(user, modified);
+			sleepSecs(6);
+			User found = couchbaseTemplate.findById(UserAnnotated.class).one(user.getId());
 			assertNull(found, "found should have been null as document should be expired");
 		} finally {
 			try {
