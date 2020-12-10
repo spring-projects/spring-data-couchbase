@@ -49,8 +49,8 @@ public class N1qlJoinResolver {
 		}
 		String useLKS = useLKSBuilder.length() > 0 ? "USE " + useLKSBuilder.toString() + " " : "";
 
-		String from = "FROM `" + template.getBucketName() + "` lks " + useLKS + joinType + " " + template.getBucketName()
-				+ " rks";
+		String from = "FROM `" + template.getBucketName() + "` lks " + useLKS + joinType + " `" + template.getBucketName()
+				+ "` rks";
 		String onLks = "lks." + template.getConverter().getTypeKey() + " = \""
 				+ parameters.getEntityTypeInfo().getType().getName() + "\"";
 		String onRks = "rks." + template.getConverter().getTypeKey() + " = \""
