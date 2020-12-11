@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.data.couchbase.core;
 
-package org.springframework.data.couchbase.domain;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import org.springframework.data.couchbase.core.mapping.Document;
+import java.util.Collection;
 
 /**
- * Annotated User entity for tests
+ * A common interface for all of Insert, Replace, Upsert
  *
  * @author Michael Reiche
+ *
+ * @param <T> - the entity class
  */
 
-@Document(expiry = 1)
-public class UserAnnotated extends User {
+public interface OneAndAllReactive<T> {
+  Mono<T> one(T object);
 
-	public UserAnnotated(String id, String firstname, String lastname) {
-		super(id, firstname, lastname);
-	}
+  Flux<? extends T> all(Collection<? extends T> objects);
 }

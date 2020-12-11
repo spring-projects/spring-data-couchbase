@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -72,8 +71,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.replace(converted.getId(), converted.export(), buildReplaceOptions(o)).map(result ->
-								(T)template.support().applyUpdatedCas(o, result.cas()));
+						.replace(converted.getId(), converted.export(), buildReplaceOptions(o, converted))
+						.map(result -> (T) template.support().applyUpdatedCas(o, result.cas()));
 			}).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -88,7 +87,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Flux.fromIterable(objects).flatMap(this::one);
 		}
 
-		private ReplaceOptions buildReplaceOptions(T object) {
+		private ReplaceOptions buildReplaceOptions(T object, CouchbaseDocument doc) {
 			final ReplaceOptions options = ReplaceOptions.replaceOptions();
 			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
 				options.durability(persistTo, replicateTo);
@@ -97,10 +96,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			}
 			if (expiry != null && !expiry.isZero()) {
 				options.expiry(expiry);
-			} else if (domainType.isAnnotationPresent(Document.class)) {
-				Document documentAnn = domainType.getAnnotation(Document.class);
-				long durationSeconds = documentAnn.expiryUnit().toSeconds(documentAnn.expiry());
-				options.expiry(Duration.ofSeconds(durationSeconds));
+			} else if (doc.getExpiration() != 0) {
+				options.expiry(Duration.ofSeconds(doc.getExpiration()));
 			}
 			long cas = template.support().getCas(object);
 			options.cas(cas);

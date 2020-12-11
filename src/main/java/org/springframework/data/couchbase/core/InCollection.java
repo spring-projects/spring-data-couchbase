@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.springframework.data.couchbase.domain;
-
-import org.springframework.data.couchbase.core.mapping.Document;
+package org.springframework.data.couchbase.core;
 
 /**
- * Annotated User entity for tests
+ * A common interface for all of Insert, Replace, Upsert that take collection
  *
  * @author Michael Reiche
+ *
+ * @param <T> - the entity class
  */
-
-@Document(expiry = 1)
-public class UserAnnotated extends User {
-
-	public UserAnnotated(String id, String firstname, String lastname) {
-		super(id, firstname, lastname);
-	}
+public interface InCollection<T> {
+ Object inCollection(String collection);
 }

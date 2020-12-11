@@ -26,20 +26,22 @@ public interface ExecutableInsertByIdOperation {
 
 	<T> ExecutableInsertById<T> insertById(Class<T> domainType);
 
-	interface TerminatingInsertById<T> {
+	interface TerminatingInsertById<T> extends OneAndAll<T>{
 
+		@Override
 		T one(T object);
 
+		@Override
 		Collection<? extends T> all(Collection<? extends T> objects);
 
 	}
 
-	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T> {
+	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T>, InCollection<T> {
 
 		TerminatingInsertById<T> inCollection(String collection);
 	}
 
-	interface InsertByIdWithDurability<T> extends InsertByIdWithCollection<T> {
+	interface InsertByIdWithDurability<T> extends InsertByIdWithCollection<T>, WithDurability<T> {
 
 		InsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
@@ -47,8 +49,9 @@ public interface ExecutableInsertByIdOperation {
 
 	}
 
-	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T> {
+	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
 
+		@Override
 		InsertByIdWithDurability<T> withExpiry(Duration expiry);
 	}
 

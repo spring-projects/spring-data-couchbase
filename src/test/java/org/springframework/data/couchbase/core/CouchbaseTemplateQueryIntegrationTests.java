@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,12 +66,8 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 	@BeforeAll
 	static void beforeAll() {
 		couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
-
-		try {
-			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
+		couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	@AfterAll
@@ -177,8 +174,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 		Query nonSpecialUsers = new Query(QueryCriteria.where("firstname").notLike("special"));
 
 		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS)
-				.matching(nonSpecialUsers)
-				.all();
+				.matching(nonSpecialUsers).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));

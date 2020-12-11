@@ -15,9 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -74,7 +71,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.upsert(converted.getId(), converted.export(), buildUpsertOptions()).map(result -> {
+						.upsert(converted.getId(), converted.export(), buildUpsertOptions(converted)).map(result -> {
 							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
 							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
 						});
@@ -92,7 +89,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			return Flux.fromIterable(objects).flatMap(this::one);
 		}
 
-		private UpsertOptions buildUpsertOptions() {
+		private UpsertOptions buildUpsertOptions(CouchbaseDocument doc) {
 			final UpsertOptions options = UpsertOptions.upsertOptions();
 			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
 				options.durability(persistTo, replicateTo);
@@ -101,10 +98,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			}
 			if (expiry != null && !expiry.isZero()) {
 				options.expiry(expiry);
-			} else if (domainType.isAnnotationPresent(Document.class)) {
-				Document documentAnn = domainType.getAnnotation(Document.class);
-				long durationSeconds = documentAnn.expiryUnit().toSeconds(documentAnn.expiry());
-				options.expiry(Duration.ofSeconds(durationSeconds));
+			} else if (doc.getExpiration() != 0) {
+				options.expiry(Duration.ofSeconds(doc.getExpiration()));
 			}
 			return options;
 		}

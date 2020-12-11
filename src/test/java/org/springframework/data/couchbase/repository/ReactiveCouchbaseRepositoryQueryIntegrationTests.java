@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
@@ -70,11 +71,8 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 	@BeforeEach
 	void beforeEach() {
-		try {
-			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
+		clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	@Test

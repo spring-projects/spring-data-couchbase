@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,11 +75,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@BeforeEach
 	void beforeEach() {
-		try {
-			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
+		clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	@Test

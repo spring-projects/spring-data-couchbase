@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.domain;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -24,10 +26,13 @@ import org.springframework.data.couchbase.core.mapping.Document;
  * @author Michael Reiche
  */
 
-@Document(expiry = 1)
-public class UserAnnotated extends User {
+@Document(expiryExpression = "${myExpiryExpression}", expiryUnit = TimeUnit.SECONDS)
+public class UserAnnotated2 extends User {
+	static {
+		System.setProperty("myExpiryExpression", "2");
+	}
 
-	public UserAnnotated(String id, String firstname, String lastname) {
+	public UserAnnotated2(String id, String firstname, String lastname) {
 		super(id, firstname, lastname);
 	}
 }

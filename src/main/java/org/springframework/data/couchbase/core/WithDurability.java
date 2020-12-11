@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.data.couchbase.core;
 
-package org.springframework.data.couchbase.domain;
-
-import org.springframework.data.couchbase.core.mapping.Document;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 
 /**
- * Annotated User entity for tests
+ * A common interface for all of Insert, Replace, Upsert that take Durability
  *
  * @author Michael Reiche
+ *
+ * @param <T> - the entity class
  */
+public interface WithDurability<T> {
+  Object withDurability(DurabilityLevel durabilityLevel);
 
-@Document(expiry = 1)
-public class UserAnnotated extends User {
-
-	public UserAnnotated(String id, String firstname, String lastname) {
-		super(id, firstname, lastname);
-	}
+  Object withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 }
