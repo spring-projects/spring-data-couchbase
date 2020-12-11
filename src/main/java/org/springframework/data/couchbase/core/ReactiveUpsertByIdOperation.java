@@ -29,7 +29,7 @@ public interface ReactiveUpsertByIdOperation {
 
 	<T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
 
-	interface TerminatingUpsertById<T> {
+	interface TerminatingUpsertById<T> extends OneAndAllReactive<T>{
 
 		Mono<T> one(T object);
 
@@ -37,12 +37,12 @@ public interface ReactiveUpsertByIdOperation {
 
 	}
 
-	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
+	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, InCollection<T> {
 
 		TerminatingUpsertById<T> inCollection(String collection);
 	}
 
-	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
+	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T>, WithDurability<T> {
 
 		UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
@@ -50,7 +50,7 @@ public interface ReactiveUpsertByIdOperation {
 
 	}
 
-	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T> {
+	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T>, WithExpiry<T> {
 
 		UpsertByIdWithDurability<T> withExpiry(Duration expiry);
 	}
