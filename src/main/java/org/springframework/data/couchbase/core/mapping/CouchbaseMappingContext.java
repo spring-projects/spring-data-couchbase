@@ -19,18 +19,23 @@ package org.springframework.data.couchbase.core.mapping;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mapping.context.AbstractMappingContext;
+import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.data.util.TypeInformation;
 
+import java.util.Optional;
+
 /**
  * Default implementation of a {@link org.springframework.data.mapping.context.MappingContext} for Couchbase using
  * {@link BasicCouchbasePersistentEntity} and {@link BasicCouchbasePersistentProperty} as primary abstractions.
  *
  * @author Michael Nitschinger
+ * @author Michael Reiche
  */
 public class CouchbaseMappingContext
 		extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
@@ -50,6 +55,7 @@ public class CouchbaseMappingContext
 	private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
 
 	private boolean autoIndexCreation = true;
+	private ApplicationEventPublisher eventPublisher;
 
 	/**
 	 * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
@@ -101,6 +107,15 @@ public class CouchbaseMappingContext
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		context = applicationContext;
+		super.setApplicationContext(applicationContext);
+	}
+
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+		eventPublisher = applicationEventPublisher;
+		if (this.eventPublisher == null) {
+			this.eventPublisher = context;
+		}
 	}
 
 	public boolean isAutoIndexCreation() {
@@ -111,4 +126,26 @@ public class CouchbaseMappingContext
 		this.autoIndexCreation = autoCreateIndexes;
 	}
 
+	// this override is not sufficient
+	@Override
+	protected Optional<BasicCouchbasePersistentEntity<?>> addPersistentEntity(TypeInformation<?> typeInformation) {
+		Optional<BasicCouchbasePersistentEntity<?>> entity = super.addPersistentEntity(typeInformation);
+
+		if (this.eventPublisher != null && entity.isPresent()) {
+			this.eventPublisher.publishEvent(new MappingContextEvent(this, entity.get()));
+		}
+
+		return entity;
+	}
+
+	@Override
+	public BasicCouchbasePersistentEntity<?> getPersistentEntity(TypeInformation<?> typeInformation) {
+		Optional<BasicCouchbasePersistentEntity<?>> entity = super.addPersistentEntity(typeInformation);
+
+		if (this.eventPublisher != null && entity.isPresent()) {
+			this.eventPublisher.publishEvent(new MappingContextEvent(this, entity.get()));
+		}
+
+		return entity.isPresent() ? entity.get() : null;
+	}
 }
