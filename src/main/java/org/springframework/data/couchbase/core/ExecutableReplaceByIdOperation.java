@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.IncrementOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 
@@ -26,20 +27,22 @@ public interface ExecutableReplaceByIdOperation {
 
 	<T> ExecutableReplaceById<T> replaceById(Class<T> domainType);
 
-	interface TerminatingReplaceById<T> {
+	interface TerminatingReplaceById<T> extends OneAndAll<T> {
 
+		@Override
 		T one(T object);
 
+		@Override
 		Collection<? extends T> all(Collection<? extends T> objects);
 
 	}
 
-	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
+	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> , InCollection<T> {
 
 		TerminatingReplaceById<T> inCollection(String collection);
 	}
 
-	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
+	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T>, WithDurability<T> {
 
 		ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
@@ -47,8 +50,9 @@ public interface ExecutableReplaceByIdOperation {
 
 	}
 
-	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T> {
+	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T>, WithExpiry<T> {
 
+		@Override
 		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
 	}
 

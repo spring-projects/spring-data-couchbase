@@ -34,12 +34,12 @@ public interface ExecutableRemoveByIdOperation {
 
 	}
 
-	interface RemoveByIdWithCollection extends TerminatingRemoveById {
+	interface RemoveByIdWithCollection extends TerminatingRemoveById, InCollection {
 
 		TerminatingRemoveById inCollection(String collection);
 	}
 
-	interface RemoveByIdWithDurability extends RemoveByIdWithCollection {
+	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability {
 
 		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
 

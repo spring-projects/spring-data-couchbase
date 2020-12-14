@@ -26,20 +26,22 @@ public interface ExecutableUpsertByIdOperation {
 
 	<T> ExecutableUpsertById<T> upsertById(Class<T> domainType);
 
-	interface TerminatingUpsertById<T> {
+	interface TerminatingUpsertById<T> extends OneAndAll<T>{
 
+		@Override
 		T one(T object);
 
+		@Override
 		Collection<? extends T> all(Collection<? extends T> objects);
 
 	}
 
-	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T> {
+	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, InCollection<T> {
 
 		TerminatingUpsertById<T> inCollection(String collection);
 	}
 
-	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T> {
+	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T>, WithDurability<T> {
 
 		UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
@@ -47,8 +49,9 @@ public interface ExecutableUpsertByIdOperation {
 
 	}
 
-	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T> {
+	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T>, WithExpiry<T> {
 
+		@Override
 		UpsertByIdWithDurability<T> withExpiry(Duration expiry);
 	}
 
