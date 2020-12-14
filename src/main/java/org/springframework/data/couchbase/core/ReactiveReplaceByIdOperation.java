@@ -29,7 +29,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
-	interface TerminatingReplaceById<T> {
+	interface TerminatingReplaceById<T> extends OneAndAllReactive<T> {
 
 		Mono<T> one(T object);
 
@@ -37,12 +37,12 @@ public interface ReactiveReplaceByIdOperation {
 
 	}
 
-	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> {
+	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T>, InCollection<T> {
 
 		TerminatingReplaceById<T> inCollection(String collection);
 	}
 
-	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T> {
+	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T>, WithDurability<T> {
 
 		ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
 
@@ -50,7 +50,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	}
 
-	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T> {
+	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T>, WithExpiry<T> {
 
 		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
 	}
