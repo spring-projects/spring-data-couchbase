@@ -16,13 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -39,11 +36,15 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.Assert;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Internal encode/decode support for CouchbaseTemplate.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Jorge Rodriguez Martin
  * @since 3.0
  */
 class CouchbaseTemplateSupport implements ApplicationContextAware {
@@ -56,10 +57,10 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 	private EntityCallbacks entityCallbacks;
 	private ApplicationContext applicationContext;
 
-	public CouchbaseTemplateSupport(final CouchbaseConverter converter) {
+	public CouchbaseTemplateSupport(final CouchbaseConverter converter, final TranslationService translationService) {
 		this.converter = converter;
 		this.mappingContext = converter.getMappingContext();
-		this.translationService = new JacksonTranslationService();
+		this.translationService = translationService;
 	}
 
 	public CouchbaseDocument encodeEntity(final Object entityToEncode) {

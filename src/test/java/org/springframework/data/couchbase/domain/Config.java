@@ -43,6 +43,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Jorge Rodriguez Martin
  * @since 3.0
  */
 @Configuration
