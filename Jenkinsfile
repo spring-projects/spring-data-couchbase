@@ -19,23 +19,23 @@ pipeline {
 					not { triggeredBy 'UpstreamCause' }
 				}
 			}
-			parallel {
-				stage("test: baseline") {
-					agent {
-						docker {
-							image 'adoptopenjdk/openjdk8:latest'
-							label 'data'
-							args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
+			agent {
+				label 'data'
+			}
+			options { timeout(time: 30, unit: 'MINUTES') }
+
+			environment {
+				DOCKER_HUB = credentials('hub.docker.com-springbuildmaster')
+			}
+
+			steps {
+				script {
+					docker.withRegistry('', 'hub.docker.com-springbuildmaster') {
+						docker.image('adoptopenjdk/openjdk8:latest').inside('-u root -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v $HOME:/tmp/jenkins-home') {
+							sh "docker login --username ${DOCKER_HUB_USR} --password ${DOCKER_HUB_PSW}"
+							sh 'PROFILE=ci ci/test.sh'
+							sh "ci/clean.sh"
 						}
-					}
-					options { timeout(time: 30, unit: 'MINUTES') }
-					environment {
-						ARTIFACTORY = credentials('02bd1690-b54f-4c9f-819d-a77cb7a9822c')
-					}
-					steps {
-						sh 'rm -rf ?'
-						sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -s settings.xml -Pci clean dependency:list test -Dsort -Dbundlor.enabled=false -U -B -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase'
-						sh "chown -R 1001:1001 target"
 					}
 				}
 			}
@@ -49,11 +49,7 @@ pipeline {
 				}
 			}
 			agent {
-				docker {
-					image 'adoptopenjdk/openjdk8:latest'
-					label 'data'
-					args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
-				}
+				label 'data'
 			}
 			options { timeout(time: 20, unit: 'MINUTES') }
 
@@ -62,14 +58,20 @@ pipeline {
 			}
 
 			steps {
-				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -s settings.xml -Pci,artifactory -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase ' +
-						'-Dartifactory.server=https://repo.spring.io ' +
-						"-Dartifactory.username=${ARTIFACTORY_USR} " +
-						"-Dartifactory.password=${ARTIFACTORY_PSW} " +
-						"-Dartifactory.staging-repository=libs-snapshot-local " +
-						"-Dartifactory.build-name=spring-data-couchbase " +
-						"-Dartifactory.build-number=${BUILD_NUMBER} " +
-						'-Dmaven.test.skip=true clean deploy -U -B'
+				script {
+					docker.withRegistry('', 'hub.docker.com-springbuildmaster') {
+						docker.image('adoptopenjdk/openjdk8:latest').inside('-v $HOME:/tmp/jenkins-home') {
+							sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -s settings.xml -Pci,artifactory -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase-non-root ' +
+									'-Dartifactory.server=https://repo.spring.io ' +
+									"-Dartifactory.username=${ARTIFACTORY_USR} " +
+									"-Dartifactory.password=${ARTIFACTORY_PSW} " +
+									"-Dartifactory.staging-repository=libs-snapshot-local " +
+									"-Dartifactory.build-name=spring-data-couchbase " +
+									"-Dartifactory.build-number=${BUILD_NUMBER} " +
+									'-Dmaven.test.skip=true clean deploy -U -B'
+						}
+					}
+				}
 			}
 		}
 
@@ -78,11 +80,7 @@ pipeline {
 				branch '3.2.x'
 			}
 			agent {
-				docker {
-					image 'adoptopenjdk/openjdk8:latest'
-					label 'data'
-					args '-u root -v /var/run/docker.sock:/var/run/docker.sock -v $HOME:/tmp/jenkins-home'
-				}
+				label 'data'
 			}
 			options { timeout(time: 20, unit: 'MINUTES') }
 
@@ -91,12 +89,18 @@ pipeline {
 			}
 
 			steps {
-				sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -s settings.xml -Pci,distribute -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase ' +
-						'-Dartifactory.server=https://repo.spring.io ' +
-						"-Dartifactory.username=${ARTIFACTORY_USR} " +
-						"-Dartifactory.password=${ARTIFACTORY_PSW} " +
-						"-Dartifactory.distribution-repository=temp-private-local " +
-						'-Dmaven.test.skip=true clean deploy -U -B'
+				script {
+					docker.withRegistry('', 'hub.docker.com-springbuildmaster') {
+						docker.image('adoptopenjdk/openjdk8:latest').inside('-v $HOME:/tmp/jenkins-home') {
+							sh 'MAVEN_OPTS="-Duser.name=jenkins -Duser.home=/tmp/jenkins-home" ./mvnw -s settings.xml -Pci,distribute -Dmaven.repo.local=/tmp/jenkins-home/.m2/spring-data-couchbase-non-root ' +
+									'-Dartifactory.server=https://repo.spring.io ' +
+									"-Dartifactory.username=${ARTIFACTORY_USR} " +
+									"-Dartifactory.password=${ARTIFACTORY_PSW} " +
+									"-Dartifactory.distribution-repository=temp-private-local " +
+									'-Dmaven.test.skip=true clean deploy -U -B'
+						}
+					}
+				}
 			}
 		}
 	}
