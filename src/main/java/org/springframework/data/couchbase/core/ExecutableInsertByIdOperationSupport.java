@@ -36,7 +36,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 	public <T> ExecutableInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ExecutableInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, Duration.ofSeconds(0));
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ExecutableInsertByIdSupport<T> implements ExecutableInsertById<T> {
