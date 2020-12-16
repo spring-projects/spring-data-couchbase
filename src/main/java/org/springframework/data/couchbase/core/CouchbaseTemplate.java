@@ -166,10 +166,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 		if (context instanceof ConfigurableApplicationContext && indexCreator != null) {
 			((ConfigurableApplicationContext) context).addApplicationListener(indexCreator);
-			if (mappingContext instanceof CouchbaseMappingContext) {
-				CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
-				cmc.setIndexCreator(indexCreator);
-			}
 		}
 	}
 }

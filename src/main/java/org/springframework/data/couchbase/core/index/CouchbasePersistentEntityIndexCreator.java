@@ -121,7 +121,4 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 		return this.mappingContext.equals(context);
 	}
 
-	public boolean hasSeen(CouchbasePersistentEntity<?> entity) {
-		return classesSeen.containsKey(entity.getType());
-	}
 }
