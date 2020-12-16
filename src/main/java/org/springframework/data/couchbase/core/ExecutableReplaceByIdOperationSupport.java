@@ -36,7 +36,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 	public <T> ExecutableReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ExecutableReplaceByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, Duration.ZERO);
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ExecutableReplaceByIdSupport<T> implements ExecutableReplaceById<T> {

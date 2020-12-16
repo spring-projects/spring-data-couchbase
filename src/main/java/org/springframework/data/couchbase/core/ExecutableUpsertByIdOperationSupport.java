@@ -36,7 +36,7 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 	public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ExecutableUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE,  Duration.ofSeconds(0));
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ExecutableUpsertByIdSupport<T> implements ExecutableUpsertById<T> {
