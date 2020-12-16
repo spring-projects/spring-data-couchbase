@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.Document;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -42,7 +41,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 	public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, Duration.ofSeconds(0));
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ReactiveInsertByIdSupport<T> implements ReactiveInsertById<T> {
@@ -72,7 +71,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
 				return template.getCollection(collection).reactive()
-						.insert(converted.getId(), converted.export(), buildInsertOptions()).map(result -> {
+						.insert(converted.getId(), converted.export(), buildInsertOptions(converted)).map(result -> {
 							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
 							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
 						});
@@ -90,19 +89,17 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			return Flux.fromIterable(objects).flatMap(this::one);
 		}
 
-		private InsertOptions buildInsertOptions() {
+		private InsertOptions buildInsertOptions(CouchbaseDocument doc) { // CouchbaseDocument converted
 			final InsertOptions options = InsertOptions.insertOptions();
 			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
 				options.durability(persistTo, replicateTo);
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
 				options.durability(durabilityLevel);
 			}
-			if (expiry != null && !expiry.isZero()) {
+			if (expiry != null) {
 				options.expiry(expiry);
-			} else if (domainType.isAnnotationPresent(Document.class)) {
-				Document documentAnn = domainType.getAnnotation(Document.class);
-				long durationSeconds = documentAnn.expiryUnit().toSeconds(documentAnn.expiry());
-				options.expiry(Duration.ofSeconds(durationSeconds));
+			} else if (doc.getExpiration() != 0) {
+				options.expiry(Duration.ofSeconds(doc.getExpiration()));
 			}
 			return options;
 		}

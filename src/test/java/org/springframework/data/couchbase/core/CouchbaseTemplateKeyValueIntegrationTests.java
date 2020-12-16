@@ -27,9 +27,14 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,14 +42,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
+import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
+import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
+
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
+import org.springframework.data.couchbase.domain.UserAnnotated2;
+import org.springframework.data.couchbase.domain.UserAnnotated3;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -69,6 +78,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 	static void beforeAll() {
 		couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
 		couchbaseClientFactory.getBucket().waitUntilReady(Duration.ofSeconds(10));
+		couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	@AfterAll
@@ -81,6 +92,9 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		couchbaseTemplate.removeByQuery(User.class).all();
+		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
+		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 	}
 
 	@Test
@@ -103,88 +117,84 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 	}
 
 	@Test
-	void upsertWithDurability() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		User modified = couchbaseTemplate.upsertById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE)
-				.one(user);
-		assertEquals(user, modified);
-		User found = couchbaseTemplate.findById(User.class).one(user.getId());
-		assertEquals(user, found);
-		couchbaseTemplate.removeById().one(user.getId());
-	}
+	void withDurability()
+			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+		Class clazz = User.class; // for now, just User.class. There is no Durability annotation.
+		// insert, replace, upsert
+		for (OneAndAll<User> operator : new OneAndAll[] { couchbaseTemplate.insertById(clazz),
+				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
+			// create an entity of type clazz
+			Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
+			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+					"firstname", "lastname");
 
-	@Test
-	void upsertWithExpiry() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			User modified = couchbaseTemplate.upsertById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
-			assertEquals(user, modified);
-			sleepSecs(2);
+			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
+				operator = (OneAndAll) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE);
+			}
+
+			// if replace, we need to insert a document to replace
+			if (operator instanceof ExecutableReplaceById) {
+				couchbaseTemplate.insertById(User.class).one(user);
+			}
+			// call to insert/replace/update
+			User returned = (User) operator.one(user);
+			assertEquals(user, returned);
 			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				//
+			assertEquals(user, found);
+
+			if (operator instanceof ExecutableReplaceById) {
+				couchbaseTemplate.removeById().withDurability(PersistTo.ACTIVE, ReplicateTo.NONE).one(user.getId());
+				User removed = (User) couchbaseTemplate.findById(user.getClass()).one(user.getId());
+				assertNull(removed, "found should have been null as document should be removed");
 			}
 		}
+
 	}
 
 	@Test
-	void upsertWithExpiryAnnotation() {
-		UserAnnotated user = new UserAnnotated(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			UserAnnotated modified = couchbaseTemplate.upsertById(UserAnnotated.class).one(user);
-			assertEquals(user, modified);
-			sleepSecs(6);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				//
-			}
-		}
-	}
+	void withExpiryAndExpiryAnnotation()
+			throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+		// ( withExpiry()<User>, expiry=1<UserAnnotated>, expiryExpression=${myExpiry}<UserAnnotated2> ) X ( insert,
+		// replace, upsert )
+		Set<User> users = new HashSet<>(); // set of all documents we will insert
+		// Entity classes
+		for (Class clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
+			// insert, replace, upsert
+			for (OneAndAll<User> operator : new OneAndAll[] { couchbaseTemplate.insertById(clazz),
+					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
 
-	@Test
-	void replaceWithExpiry() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			User modified = couchbaseTemplate.upsertById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
-			couchbaseTemplate.replaceById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
-			assertEquals(user, modified);
-			sleepSecs(2);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				//
-			}
-		}
-	}
+				// create an entity of type clazz
+				Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
+				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+						"firstname", "lastname");
 
-	@Test
-	void replaceWithExpiryAnnotation() {
-		UserAnnotated user = new UserAnnotated(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			UserAnnotated modified = couchbaseTemplate.upsertById(UserAnnotated.class).one(user);
-			modified = couchbaseTemplate.replaceById(UserAnnotated.class).one(user);
-			assertEquals(user, modified);
-			sleepSecs(6);
-			User found = couchbaseTemplate.findById(UserAnnotated.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				//
+				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation
+					operator = (OneAndAll) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
+				} else if (clazz.equals(UserAnnotated3.class)) { // override the expiry from the annotation with no expiry
+					operator = (OneAndAll) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
+				}
+
+				// if replace or remove, we need to insert a document to replace
+				if (operator instanceof ExecutableReplaceById || operator instanceof ExecutableRemoveById) {
+					couchbaseTemplate.insertById(User.class).one(user);
+				}
+				// call to insert/replace/update
+				User returned = operator.one(user);
+				assertEquals(user, returned);
+				users.add(user);
 			}
 		}
+		// check that they are gone after a few seconds.
+		sleepSecs(4);
+		for (User user : users) {
+			User found = couchbaseTemplate.findById(user.getClass()).one(user.getId());
+			if (found instanceof UserAnnotated3) {
+				assertNotNull(found, "found should be non null as it was set to have no expirty");
+			} else {
+				assertNull(found, "found should have been null as document should be expired");
+			}
+		}
+
 	}
 
 	@Test
@@ -227,10 +237,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User inserted = couchbaseTemplate.insertById(User.class).one(user);
 		assertEquals(user, inserted);
-
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
-		couchbaseTemplate.removeById().one(user.getId());
-
 	}
 
 	@Test
@@ -239,47 +246,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		User inserted = couchbaseTemplate.insertById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE)
 				.one(user);
 		assertEquals(user, inserted);
-
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
-		couchbaseTemplate.removeById().one(user.getId());
-
-	}
-
-	@Test
-	void insertByIdwithExpiry() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			User inserted = couchbaseTemplate.insertById(User.class).withExpiry(Duration.ofSeconds(1)).one(user);
-			assertEquals(user, inserted);
-			sleepSecs(2);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				// ignore
-			}
-		}
-
-	}
-
-	@Test
-	void insertWithExpiryAnnotation() {
-		UserAnnotated user = new UserAnnotated(UUID.randomUUID().toString(), "firstname", "lastname");
-		try {
-			UserAnnotated inserted = couchbaseTemplate.insertById(UserAnnotated.class).one(user);
-			assertEquals(user, inserted);
-			sleepSecs(6);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertNull(found, "found should have been null as document should be expired");
-		} finally {
-			try {
-				couchbaseTemplate.removeById().one(user.getId());
-			} catch (DataRetrievalFailureException e) {
-				// ignore
-			}
-		}
 	}
 
 	@Test
@@ -292,52 +259,44 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertEquals(user, inserted);
 
 		assertTrue(couchbaseTemplate.existsById().one(id));
-		couchbaseTemplate.removeById().one(user.getId());
 
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() {
-		PersonValue personValue = new PersonValue(null, 123, "f", "l");
-		System.out.println("personValue: " + personValue);
-		// personValue = personValue.withVersion(123);
+		PersonValue personValue = new PersonValue(UUID.randomUUID().toString(), 123, "f", "l");
 		PersonValue inserted = null;
 		PersonValue upserted = null;
 		PersonValue replaced = null;
 
-		try {
+		inserted = couchbaseTemplate.insertById(PersonValue.class).one(personValue);
+		assertNotEquals(0, inserted.getVersion());
+		PersonValue foundInserted = couchbaseTemplate.findById(PersonValue.class).one(inserted.getId());
+		assertNotNull(foundInserted, "inserted personValue not found");
+		assertEquals(inserted, foundInserted);
 
-			inserted = couchbaseTemplate.insertById(PersonValue.class).one(personValue);
-			assertNotEquals(0, inserted.getVersion());
-			PersonValue foundInserted = couchbaseTemplate.findById(PersonValue.class).one(inserted.getId());
-			assertNotNull(foundInserted, "inserted personValue not found");
-			assertEquals(inserted, foundInserted);
+		// upsert will insert
+		couchbaseTemplate.removeById().one(inserted.getId());
+		upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+		assertNotEquals(0, upserted.getVersion());
+		PersonValue foundUpserted = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
+		assertNotNull(foundUpserted, "upserted personValue not found");
+		assertEquals(upserted, foundUpserted);
 
-			// upsert will be inserted
-			couchbaseTemplate.removeById().one(inserted.getId());
-			upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
-			assertNotEquals(0, upserted.getVersion());
-			PersonValue foundUpserted = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
-			assertNotNull(foundUpserted, "upserted personValue not found");
-			assertEquals(upserted, foundUpserted);
+		// upsert will replace
+		upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+		assertNotEquals(0, upserted.getVersion());
+		PersonValue foundUpserted2 = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
+		assertNotNull(foundUpserted2, "upserted personValue not found");
+		assertEquals(upserted, foundUpserted2);
 
-			// upsert will be replaced
-			upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
-			assertNotEquals(0, upserted.getVersion());
-			PersonValue foundUpserted2 = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
-			assertNotNull(foundUpserted2, "upserted personValue not found");
-			assertEquals(upserted, foundUpserted2);
+		replaced = couchbaseTemplate.replaceById(PersonValue.class).one(upserted);
+		assertNotEquals(0, replaced.getVersion());
+		PersonValue foundReplaced = couchbaseTemplate.findById(PersonValue.class).one(replaced.getId());
+		assertNotNull(foundReplaced, "replaced personValue not found");
+		assertEquals(replaced, foundReplaced);
 
-			replaced = couchbaseTemplate.replaceById(PersonValue.class).one(upserted);
-			assertNotEquals(0, replaced.getVersion());
-			PersonValue foundReplaced = couchbaseTemplate.findById(PersonValue.class).one(replaced.getId());
-			assertNotNull(foundReplaced, "replaced personValue not found");
-			assertEquals(replaced, foundReplaced);
-
-		} finally {
-			couchbaseTemplate.removeById().one(inserted.getId());
-		}
 	}
 
 	private void sleepSecs(int i) {
