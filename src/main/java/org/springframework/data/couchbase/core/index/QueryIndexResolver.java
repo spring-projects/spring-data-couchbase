@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core.index;
 
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -43,9 +42,9 @@ public interface QueryIndexResolver {
 	 */
 	static QueryIndexResolver create(
 			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
-			CouchbaseOperations operations) {
+			String typeKey) {
 		Assert.notNull(mappingContext, "CouchbaseMappingContext must not be null!");
-		return new CouchbasePersistentEntityIndexResolver(mappingContext, operations);
+		return new CouchbasePersistentEntityIndexResolver(mappingContext, typeKey);
 	}
 
 	/**
