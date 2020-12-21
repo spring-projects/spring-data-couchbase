@@ -18,28 +18,35 @@ package org.springframework.data.couchbase.repository.query;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @deprecated
  */
+@Deprecated
 public class CouchbaseRepositoryQuery implements RepositoryQuery {
 
 	private final CouchbaseOperations operations;
 	private final CouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
+	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public CouchbaseRepositoryQuery(final CouchbaseOperations operations, final CouchbaseQueryMethod queryMethod,
-			final NamedQueries namedQueries) {
+			final NamedQueries namedQueries, final QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
+		this.evaluationContextProvider = evaluationContextProvider;
+		throw new RuntimeException("Deprecated");
 	}
 
 	@Override
 	public Object execute(final Object[] parameters) {
-		return new N1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries).execute(parameters);
+		return new N1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries, evaluationContextProvider)
+				.execute(parameters);
 	}
 
 	@Override

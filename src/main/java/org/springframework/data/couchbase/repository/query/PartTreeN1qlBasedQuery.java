@@ -16,8 +16,12 @@
 
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
-import static org.springframework.data.couchbase.repository.query.support.N1qlUtils.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.count;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.delete;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+import static org.springframework.data.couchbase.repository.query.support.N1qlUtils.createReturningExpressionForDelete;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -37,7 +41,9 @@ import com.couchbase.client.java.json.JsonValue;
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Michael Reiche
  */
+@Deprecated
 public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 
 	private final PartTree partTree;
@@ -46,6 +52,7 @@ public class PartTreeN1qlBasedQuery extends AbstractN1qlBasedQuery {
 	public PartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, CouchbaseOperations couchbaseOperations) {
 		super(queryMethod, couchbaseOperations);
 		this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
+		throw new RuntimeException("Deprecated");
 	}
 
 	@Override

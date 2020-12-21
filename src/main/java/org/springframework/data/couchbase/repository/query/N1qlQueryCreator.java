@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import java.util.Iterator;
 

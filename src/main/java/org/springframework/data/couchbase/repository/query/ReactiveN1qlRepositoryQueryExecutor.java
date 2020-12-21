@@ -15,36 +15,32 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
-import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
-import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.repository.core.NamedQueries;
-import org.springframework.data.repository.query.*;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import reactor.core.publisher.Flux;
-
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.repository.query.parser.PartTree;
-
-import java.util.List;
+import org.springframework.data.repository.core.NamedQueries;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @deprecated
  */
+@Deprecated
 public class ReactiveN1qlRepositoryQueryExecutor {
 
 	private final ReactiveCouchbaseOperations operations;
-	private final CouchbaseQueryMethod queryMethod;
+	private final ReactiveCouchbaseQueryMethod queryMethod;
 	private final NamedQueries namedQueries;
+	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public ReactiveN1qlRepositoryQueryExecutor(final ReactiveCouchbaseOperations operations,
-			final CouchbaseQueryMethod queryMethod, final NamedQueries namedQueries) {
+			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries,
+			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
+		this.evaluationContextProvider = evaluationContextProvider;
+		throw new RuntimeException("Deprecated");
 	}
 
 	/**
@@ -54,41 +50,16 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 	 * @return
 	 */
 	public Object execute(final Object[] parameters) {
-		final Class<?> domainClass = queryMethod.getResultProcessor().getReturnedType().getDomainType();
-		final ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
-		final String namedQueryName = queryMethod.getNamedQueryName();
+		// counterpart to N1qlRespositoryQueryExecutor,
 
-		// this is identical to ExecutableN1qlRespositoryQueryExecutor,
-		// except for the type of 'q', and the call to one() vs oneValue()
-
-		Query query;
-		ReactiveFindByQueryOperation.ReactiveFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
-			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), operations.getBucketName(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries).createQuery();
+			return new ReactiveStringBasedCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
+					evaluationContextProvider, namedQueries).execute(parameters);
 		} else {
-			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
+			return new ReactivePartTreeCouchbaseQuery(queryMethod, operations, new SpelExpressionParser(),
+					evaluationContextProvider).execute(parameters);
 		}
-		q = (ReactiveFindByQueryOperation.ReactiveFindByQuery) operations.findByQuery(domainClass)
-				.consistentWith(buildQueryScanConsistency()).matching(query);
-		if (queryMethod.isCountQuery()) {
-			return q.count();
-		} else if (queryMethod.isCollectionQuery()) {
-			return q.all();
-		} else {
-			return q.one();
-		}
-	}
 
-	private QueryScanConsistency buildQueryScanConsistency() {
-		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
-		if (queryMethod.hasConsistencyAnnotation()) {
-			scanConsistency = queryMethod.getConsistencyAnnotation().value();
-		} else if (queryMethod.hasScanConsistencyAnnotation()) {
-			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
-		}
-		return scanConsistency;
 	}
 
 }

@@ -16,13 +16,19 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.couchbase.repository.Query;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -62,4 +68,25 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> findById(String var1);
+
+	// use parameter type PageRequest instead of Pageable. Pageable requires a return type of Page<>
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<Airport> findAllByIataLike(String iata, final PageRequest page);
+
+	// use parameter type PageRequest instead of Pageable. Pageable requires a return type of Page<>
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<Airport> findAllByIataLike(String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Mono<Airport> findByIata(String iata);
+
+	// This is not efficient. See findAllByIataLike for efficient reactive paging
+	default public Mono<Page<Airport>> findAllAirportsPaged(Pageable pageable) {
+		return count().flatMap(airportCount -> {
+			return findAll(pageable.getSort())
+					.buffer(pageable.getPageSize(), (pageable.getPageNumber() * pageable.getPageSize()))
+					.elementAt(pageable.getPageNumber(), new ArrayList<>())
+					.map(airports -> new PageImpl<Airport>(airports, pageable, airportCount));
+		});
+	}
 }

@@ -17,7 +17,6 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import com.couchbase.client.java.query.QueryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

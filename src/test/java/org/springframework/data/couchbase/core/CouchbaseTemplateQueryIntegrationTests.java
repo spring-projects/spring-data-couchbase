@@ -16,8 +16,12 @@
 
 package org.springframework.data.couchbase.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -99,7 +103,6 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 					.consistentWith(QueryScanConsistency.REQUEST_PLUS).all();
 
 			for (User u : foundUsers) {
-				System.out.println(u);
 				if (!(u.equals(user1) || u.equals(user2))) {
 					// somebody didn't clean up after themselves.
 					couchbaseTemplate.removeById().one(u.getId());
@@ -177,8 +180,7 @@ class CouchbaseTemplateQueryIntegrationTests extends ClusterAwareIntegrationTest
 		Query nonSpecialUsers = new Query(QueryCriteria.where("firstname").notLike("special"));
 
 		couchbaseTemplate.removeByQuery(User.class).consistentWith(QueryScanConsistency.REQUEST_PLUS)
-				.matching(nonSpecialUsers)
-				.all();
+				.matching(nonSpecialUsers).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));

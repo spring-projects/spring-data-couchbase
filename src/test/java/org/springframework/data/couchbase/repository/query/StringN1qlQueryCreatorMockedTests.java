@@ -15,6 +15,13 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+
+import java.lang.reflect.Method;
+import java.util.Properties;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -37,14 +44,12 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.core.support.PropertiesBasedNamedQueries;
-import org.springframework.data.repository.query.*;
-
-import java.lang.reflect.Method;
-import java.util.Properties;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import org.springframework.data.repository.query.DefaultParameters;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.Parameters;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 /**
  * @author Michael Nitschinger
@@ -75,7 +80,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -93,7 +99,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 				converter.getMappingContext());
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 
 		Query query = creator.createQuery();
 		assertEquals(
@@ -112,7 +119,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}
@@ -129,7 +137,8 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		try {
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, "travel-sample", QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
 		} catch (IllegalArgumentException e) {
 			return;
 		}

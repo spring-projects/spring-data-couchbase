@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.*;
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE;
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +46,13 @@ import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
-import org.springframework.data.mapping.*;
+import org.springframework.data.mapping.Alias;
+import org.springframework.data.mapping.Association;
+import org.springframework.data.mapping.AssociationHandler;
+import org.springframework.data.mapping.MappingException;
+import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PreferredConstructor.Parameter;
+import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -261,7 +267,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
 				}
-				Object obj = prop.isIdProperty() ? source.getId() : getValueInternal(prop, source, instance);
+				Object obj = prop.isIdProperty() && parent == null ? source.getId() : getValueInternal(prop, source, instance);
 				accessor.setProperty(prop, obj);
 			}
 
