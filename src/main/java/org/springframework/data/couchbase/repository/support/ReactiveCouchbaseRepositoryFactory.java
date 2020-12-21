@@ -24,8 +24,9 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
-import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseRepositoryQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.ReactivePartTreeCouchbaseQuery;
+import org.springframework.data.couchbase.repository.query.ReactiveStringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -151,8 +152,16 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 				NamedQueries namedQueries) {
 			final ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
 					metadata.getRepositoryInterface(), metadata.getDomainType());
-			return new ReactiveCouchbaseRepositoryQuery(couchbaseOperations,
-					new CouchbaseQueryMethod(method, metadata, factory, mappingContext), namedQueries);
+			ReactiveCouchbaseQueryMethod queryMethod = new ReactiveCouchbaseQueryMethod(method, metadata, factory,
+					mappingContext);
+
+			if (queryMethod.hasN1qlAnnotation()) {
+				return new ReactiveStringBasedCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
+						evaluationContextProvider, namedQueries);
+			} else {
+				return new ReactivePartTreeCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
+						evaluationContextProvider);
+			}
 		}
 	}
 

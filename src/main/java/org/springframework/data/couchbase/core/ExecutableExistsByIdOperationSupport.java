@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -36,12 +38,11 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 	static class ExecutableExistsByIdSupport implements ExecutableExistsById {
 
 		private final CouchbaseTemplate template;
-		private final ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport reactiveSupport;
+		private final ReactiveExistsByIdSupport reactiveSupport;
 
 		ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String collection) {
 			this.template = template;
-			this.reactiveSupport = new ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport(template.reactive(),
-					collection);
+			this.reactiveSupport = new ReactiveExistsByIdSupport(template.reactive(), collection);
 		}
 
 		@Override

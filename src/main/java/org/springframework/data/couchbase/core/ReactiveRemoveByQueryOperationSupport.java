@@ -38,7 +38,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED);
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
+				"_default._default");
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -47,13 +48,15 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final Class<T> domainType;
 		private final Query query;
 		private final QueryScanConsistency scanConsistency;
+		private final String collection;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency) {
+				final QueryScanConsistency scanConsistency, String collection) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
 			this.scanConsistency = scanConsistency;
+			this.collection = collection;
 		}
 
 		@Override
@@ -69,7 +72,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 								return throwable;
 							}
 						}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
+						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
+								Optional.empty()));
 			});
 		}
 
@@ -83,12 +87,17 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public TerminatingRemoveByQuery<T> matching(final Query query) {
-			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		@Override
 		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
-			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency);
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+		}
+
+		@Override
+		public RemoveByQueryInCollection<T> inCollection(final String collection) {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		private String assembleDeleteQuery() {

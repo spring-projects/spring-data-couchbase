@@ -15,7 +15,9 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.count;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -31,8 +33,11 @@ import com.couchbase.client.java.json.JsonValue;
  * A reactive {@link RepositoryQuery} for Couchbase, based on query derivation
  *
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  * @since 3.0
+ * @deprecated
  */
+@Deprecated
 public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQuery {
 
 	private final PartTree partTree;
@@ -41,6 +46,7 @@ public class ReactivePartTreeN1qlBasedQuery extends ReactiveAbstractN1qlBasedQue
 	public ReactivePartTreeN1qlBasedQuery(CouchbaseQueryMethod queryMethod, ReactiveCouchbaseOperations operations) {
 		super(queryMethod, operations);
 		this.partTree = new PartTree(queryMethod.getName(), queryMethod.getEntityInformation().getJavaType());
+		throw new RuntimeException("deprecated");
 	}
 
 	@Override

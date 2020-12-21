@@ -26,7 +26,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
-import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
+import org.springframework.data.couchbase.repository.query.PartTreeCouchbaseQuery;
+import org.springframework.data.couchbase.repository.query.StringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -156,25 +157,14 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 					metadata.getRepositoryInterface(), metadata.getDomainType());
 
 			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-			return new CouchbaseRepositoryQuery(couchbaseOperations, queryMethod, namedQueries);
 
-			/*CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method, metadata, factory, mappingContext);
-			String namedQueryName = queryMethod.getNamedQueryName();
-			
 			if (queryMethod.hasN1qlAnnotation()) {
-			
-				if (queryMethod.hasInlineN1qlQuery()) {
-					return new StringN1qlBasedQuery(queryMethod.getInlineN1qlQuery(), queryMethod, couchbaseOperations,
-							SPEL_PARSER, evaluationContextProvider);
-				} else if (namedQueries.hasQuery(namedQueryName)) {
-					String namedQuery = namedQueries.getQuery(namedQueryName);
-					return new StringN1qlBasedQuery(namedQuery, queryMethod, couchbaseOperations, SPEL_PARSER,
-							evaluationContextProvider);
-				}
-			
+				return new StringBasedCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
+						evaluationContextProvider, namedQueries);
+			} else {
+				return new PartTreeCouchbaseQuery(queryMethod, couchbaseOperations, new SpelExpressionParser(),
+						evaluationContextProvider);
 			}
-			
-			return new PartTreeN1qlBasedQuery(queryMethod, couchbaseOperations);*/
 		}
 	}
 

@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.couchbase.repository.support.Util.*;
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 import java.util.Collection;
 import java.util.List;

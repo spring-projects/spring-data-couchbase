@@ -15,12 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
@@ -30,19 +24,21 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.StringQuery;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethod;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.util.Assert;
+
+import java.util.Iterator;
+
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 /**
  * @author Michael Reiche
@@ -56,11 +52,10 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 	private final StringBasedN1qlQueryParser queryParser;
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
-	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
 	private final N1QLExpression parsedExpression;
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
-			CouchbaseConverter couchbaseConverter, String bucketName,
+			CouchbaseConverter couchbaseConverter, String bucketName, SpelExpressionParser spelExpressionParser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
 
 		// AbstractQueryCreator needs a PartTree, so we give it a dummy one.
@@ -84,8 +79,8 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			throw new IllegalArgumentException("query has no inline Query or named Query not found");
 		}
 		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
-				getTypeField(), getTypeValue(), accessor, SPEL_PARSER, evaluationContextProvider);
-		this.parser = SPEL_PARSER;
+				getTypeField(), getTypeValue(), accessor, spelExpressionParser, evaluationContextProvider);
+		this.parser = spelExpressionParser;
 		this.parsedExpression = this.queryParser.parsedExpression;
 	}
 
@@ -139,8 +134,8 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		return q;
 	}
 
-	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property,
-			final QueryCriteria criteria, final Iterator<Object> parameters) {
+	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
+			final Iterator<Object> parameters) {
 
 		final Part.Type type = part.getType();
 		switch (type) {
