@@ -40,20 +40,4 @@ public class Submission extends ComparableEntity {
 		return id;
 	}
 
-	public String toString() {
-		StringBuffer sb = new StringBuffer("Submission(");
-		sb.append("id=");
-		sb.append(id);
-		sb.append(", userId=");
-		sb.append(userId);
-		sb.append(", talkId=");
-		sb.append(talkId);
-		sb.append(", status=");
-		sb.append(status);
-		sb.append(", number=");
-		sb.append(number);
-		sb.append(")");
-		return sb.toString();
-	}
-
 }

@@ -18,6 +18,10 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
+import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithConsistency;
+import org.springframework.data.couchbase.core.support.WithQuery;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -29,24 +33,34 @@ public interface ReactiveRemoveByQueryOperation {
 		Flux<RemoveResult> all();
 	}
 
-	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T> {
+	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T>, WithQuery<RemoveResult> {
 
 		TerminatingRemoveByQuery<T> matching(Query query);
 
+		default TerminatingRemoveByQuery<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
 	}
 
-	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithQuery<T> {
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithQuery<T>, WithCollection<RemoveResult> {
 
-		RemoveByQueryWithQuery<T> consistentWith(QueryScanConsistency scanConsistency);
-
-	}
-
-	interface RemoveByQueryInCollection<T> extends RemoveByQueryConsistentWith<T> {
-
-		RemoveByQueryConsistentWith<T> inCollection(String collection);
+		RemoveByQueryWithQuery<T> inCollection(String collection);
 
 	}
 
-	interface ReactiveRemoveByQuery<T> extends RemoveByQueryInCollection<T> {}
+	@Deprecated
+	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryInCollection<T> {
+		@Deprecated
+		RemoveByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>, WithConsistency<RemoveResult> {
+
+		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface ReactiveRemoveByQuery<T> extends RemoveByQueryWithConsistency<T> {}
 
 }

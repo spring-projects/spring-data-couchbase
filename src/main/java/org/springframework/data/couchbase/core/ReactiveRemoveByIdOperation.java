@@ -20,6 +20,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -28,7 +31,7 @@ public interface ReactiveRemoveByIdOperation {
 
 	ReactiveRemoveById removeById();
 
-	interface TerminatingRemoveById {
+	interface TerminatingRemoveById extends OneAndAllIdReactive<RemoveResult> {
 
 		Mono<RemoveResult> one(String id);
 
@@ -36,12 +39,12 @@ public interface ReactiveRemoveByIdOperation {
 
 	}
 
-	interface RemoveByIdWithCollection extends TerminatingRemoveById, InCollection {
+	interface RemoveByIdWithCollection extends TerminatingRemoveById, WithCollection<RemoveResult> {
 
 		TerminatingRemoveById inCollection(String collection);
 	}
 
-	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability {
+	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability<RemoveResult> {
 
 		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
 

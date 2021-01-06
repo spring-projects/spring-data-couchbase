@@ -30,21 +30,25 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 	@Override
 	public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, null);
+		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, domainType, null);
 	}
 
 	static class ExecutableFindFromReplicasByIdSupport<T> implements ExecutableFindFromReplicasById<T> {
 
 		private final CouchbaseTemplate template;
-		private final Class<T> domainType;
+		private final Class<?> domainType;
+		private final Class<T> returnType;
 		private final String collection;
 		private final ReactiveFindFromReplicasByIdSupport<T> reactiveSupport;
 
-		ExecutableFindFromReplicasByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection) {
+		ExecutableFindFromReplicasByIdSupport(CouchbaseTemplate template, Class<?> domainType, Class<T> returnType,
+				String collection) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
-			this.reactiveSupport = new ReactiveFindFromReplicasByIdSupport<>(template.reactive(), domainType, collection);
+			this.returnType = returnType;
+			this.reactiveSupport = new ReactiveFindFromReplicasByIdSupport<>(template.reactive(), domainType, returnType,
+					collection);
 		}
 
 		@Override
@@ -60,7 +64,7 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 		@Override
 		public TerminatingFindFromReplicasById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, collection);
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, collection);
 		}
 
 	}

@@ -15,13 +15,13 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.analytics.AnalyticsOptions;
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 
+import com.couchbase.client.java.analytics.AnalyticsOptions;
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import com.couchbase.client.java.analytics.ReactiveAnalyticsResult;
 
 public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAnalyticsOperation {
@@ -60,7 +60,13 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		}
 
 		@Override
+		@Deprecated
 		public FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency) {
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+		}
+
+		@Override
+		public FindByAnalyticsWithQuery<T> withConsistency(AnalyticsScanConsistency scanConsistency) {
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
 		}
 

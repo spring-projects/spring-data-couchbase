@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.core;
+package org.springframework.data.couchbase.core.support;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
- * A common interface for all of Insert, Replace, Upsert
+ * A common interface for those that support one(T), all(Collection<T>)
  *
  * @author Michael Reiche
  *
  * @param <T> - the entity class
  */
-public interface OneAndAll<T> {
+public interface OneAndAllExists {
+  boolean one(String id);
 
-	T one(T object);
-
-  Collection<? extends T> all(Collection<? extends T> objects);
+  Map<String,Boolean> all(Collection<String> ids);
 }

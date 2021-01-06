@@ -33,7 +33,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -47,13 +46,11 @@ import org.springframework.data.couchbase.domain.ReactiveUserRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-import com.couchbase.client.core.error.IndexExistsException;
 
 /**
  * template class for Reactive Couchbase operations
@@ -63,21 +60,12 @@ import com.couchbase.client.core.error.IndexExistsException;
  */
 @SpringJUnitConfig(ReactiveCouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegrationTests {
+public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
 	@Autowired ReactiveUserRepository userRepository; // intellij flags "Could not Autowire", but it runs ok.
-
-	@BeforeEach
-	void beforeEach() {
-		try {
-			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
-	}
 
 	@Test
 	void shouldSaveAndFindAll() {

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.PagedExecution;
@@ -82,8 +83,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 
-		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> find = typeToRead == null
-				? findOperationWithProjection //
+		ExecutableFindByQuery<?> find = typeToRead == null ? findOperationWithProjection //
 				: findOperationWithProjection; // not yet implemented in core .as(typeToRead);
 
 		String collection = "_default._default";// method.getEntityInformation().getCollectionName(); // not yet implemented

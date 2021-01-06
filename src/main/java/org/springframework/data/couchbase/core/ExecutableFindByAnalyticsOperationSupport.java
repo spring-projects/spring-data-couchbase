@@ -15,11 +15,10 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport;
-
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.data.couchbase.core.ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
@@ -79,7 +78,13 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 		}
 
 		@Override
+		@Deprecated
 		public FindByAnalyticsWithQuery<T> consistentWith(final AnalyticsScanConsistency scanConsistency) {
+			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+		}
+
+		@Override
+		public FindByAnalyticsWithConsistency<T> withConsistency(final AnalyticsScanConsistency scanConsistency) {
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
 		}
 
