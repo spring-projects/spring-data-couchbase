@@ -15,9 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
-import static com.couchbase.client.java.kv.GetOptions.*;
+import static com.couchbase.client.java.kv.GetOptions.getOptions;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,6 +26,7 @@ import java.util.List;
 
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetOptions;
 

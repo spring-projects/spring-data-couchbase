@@ -138,13 +138,13 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 
 	@Override
 	public long count() {
-		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency())
 				.count();
 	}
 
 	@Override
 	public void deleteAll() {
-		couchbaseOperations.removeByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		couchbaseOperations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency())
 				.all();
 	}
 
@@ -185,7 +185,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	 * @return the list of found entities, already executed.
 	 */
 	private List<T> findAll(Query query) {
-		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		return couchbaseOperations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency())
 				.matching(query).all();
 	}
 

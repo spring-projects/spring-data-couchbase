@@ -20,6 +20,9 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.data.couchbase.core.support.OneAndAllExistsReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 public interface ReactiveExistsByIdOperation {
 
 	/**
@@ -27,7 +30,7 @@ public interface ReactiveExistsByIdOperation {
 	 */
 	ReactiveExistsById existsById();
 
-	interface TerminatingExistsById {
+	interface TerminatingExistsById extends OneAndAllExistsReactive {
 
 		/**
 		 * Performs the operation on the ID given.
@@ -47,7 +50,7 @@ public interface ReactiveExistsByIdOperation {
 
 	}
 
-	interface ExistsByIdWithCollection extends TerminatingExistsById {
+	interface ExistsByIdWithCollection extends TerminatingExistsById, WithCollection {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.

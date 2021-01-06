@@ -184,7 +184,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Long> count() {
-		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency()).count();
+		return operations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).count();
 	}
 
 	@Override
@@ -202,7 +202,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	private Flux<T> findAll(Query query) {
-		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
+		return operations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency())
 				.matching(query).all();
 	}
 

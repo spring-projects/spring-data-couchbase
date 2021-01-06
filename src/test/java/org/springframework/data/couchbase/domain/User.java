@@ -35,7 +35,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
  */
 
 @Document
-public class User {
+public class User extends ComparableEntity {
 
 	@Version long version;
 	@Id private String id;
@@ -90,25 +90,8 @@ public class User {
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
-		User user = (User) o;
-		return Objects.equals(id, user.id) && Objects.equals(firstname, user.firstname)
-				&& Objects.equals(lastname, user.lastname);
-	}
-
-	@Override
 	public int hashCode() {
 		return Objects.hash(id, firstname, lastname);
 	}
 
-	@Override
-	public String toString() {
-		return "User{" + "id='" + id + '\'' + ", firstname='" + firstname + '\'' + ", lastname='" + lastname + '\''
-				+ ", createdBy='" + createdBy + '\'' + ", createdDate='" + createdDate + '\'' + ", lastModifiedBy='"
-				+ lastModifiedBy + '\'' + ", lastModifiedDate='" + lastModifiedDate + '\'' + '}';
-	}
 }

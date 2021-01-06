@@ -20,6 +20,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithProjectionId;
+
 public interface ReactiveFindByIdOperation {
 
 	/**
@@ -29,7 +33,7 @@ public interface ReactiveFindByIdOperation {
 	 */
 	<T> ReactiveFindById<T> findById(Class<T> domainType);
 
-	interface TerminatingFindById<T> {
+	interface TerminatingFindById<T> extends OneAndAllIdReactive<T> {
 
 		/**
 		 * Finds one document based on the given ID.
@@ -49,7 +53,7 @@ public interface ReactiveFindByIdOperation {
 
 	}
 
-	interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
+	interface FindByIdWithCollection<T> extends TerminatingFindById<T>, WithCollection<T> {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.
@@ -59,7 +63,7 @@ public interface ReactiveFindByIdOperation {
 		TerminatingFindById<T> inCollection(String collection);
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
+	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T>, WithProjectionId<T> {
 
 		/**
 		 * Load only certain fields for the document.

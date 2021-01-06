@@ -17,11 +17,14 @@ package org.springframework.data.couchbase.core;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.AnyId;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 public interface ExecutableFindFromReplicasByIdOperation {
 
 	<T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
 
-	interface TerminatingFindFromReplicasById<T> {
+	interface TerminatingFindFromReplicasById<T> extends AnyId<T> {
 
 		T any(String id);
 
@@ -29,7 +32,7 @@ public interface ExecutableFindFromReplicasByIdOperation {
 
 	}
 
-	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {
+	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T>, WithCollection<T> {
 
 		TerminatingFindFromReplicasById<T> inCollection(String collection);
 	}

@@ -56,6 +56,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
+import reactor.core.publisher.Flux;
 
 /**
  * Repository tests
@@ -75,7 +76,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired UserRepository userRepository;
 
 	@BeforeEach
-	void beforeEach() {
+	public void beforeEach() {
 		try {
 			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
 		} catch (IndexExistsException ex) {
@@ -171,12 +172,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
 		try {
-			for (int i = 0; i < iatas.length; i++) {
-				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/,
-						iatas[i].toLowerCase(Locale.ROOT) /* lcao */);
-				airportRepository.save(airport);
-			}
 
+			airportRepository.saveAll( Arrays.stream(iatas).map((iata) -> new Airport("airports::"+iata, iata, iata.toLowerCase(Locale.ROOT))).collect(Collectors.toSet()));
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
@@ -201,10 +198,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(0, airportCount);
 
 		} finally {
-			for (int i = 0; i < iatas.length; i++) {
-				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
-				airportRepository.delete(airport);
-			}
+				airportRepository.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::"+iata).collect(Collectors.toSet()));
 		}
 	}
 

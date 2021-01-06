@@ -36,9 +36,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
- * {@link RepositoryQuery} implementation for Couchbase.
- *
- * CouchbaseOperationsType is either CouchbaseOperations or ReactiveCouchbaseOperations
+ * {@link RepositoryQuery} implementation for Couchbase. CouchbaseOperationsType is either CouchbaseOperations or
+ * ReactiveCouchbaseOperations
+ * 
  * @author Michael Reiche
  * @since 4.1
  */
@@ -105,6 +105,7 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 
 	/**
 	 * Execute the query with the provided parameters
+	 * 
 	 * @see org.springframework.data.repository.query.RepositoryQuery#execute(java.lang.Object[])
 	 */
 	public Object execute(Object[] parameters) {
