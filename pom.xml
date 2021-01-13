@@ -20,7 +20,7 @@
     <properties>
         <couchbase>3.0.10</couchbase>
         <couchbase.osgi>3.0.10</couchbase.osgi>
-        <springdata.commons>2.5.0-SNAPSHOT</springdata.commons>
+        <springdata.commons>2.4.3-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
 

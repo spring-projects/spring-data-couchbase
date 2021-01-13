@@ -167,11 +167,6 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	@Override
-	public Mono<Void> deleteAllById(Iterable<? extends ID> ids) {
-		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
-	}
-
-	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
 		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
 	}

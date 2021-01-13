@@ -16,14 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import reactor.core.publisher.Flux;
-import reactor.test.StepVerifier;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -152,27 +146,6 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 					System.out.println("Failed to delete: " + airport);
 				}
 			}
-		}
-	}
-
-	@Test
-	// DATACOUCH-650
-	void deleteAllById() {
-
-		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
-		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
-
-		try {
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).as(StepVerifier::create)
-					.expectNext(vienna, frankfurt, losAngeles).verifyComplete();
-
-			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId())).as(StepVerifier::create)
-					.verifyComplete();
-
-			airportRepository.findAll().as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
-		} finally {
-			airportRepository.deleteAll().block();
 		}
 	}
 

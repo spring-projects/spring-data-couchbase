@@ -17,21 +17,19 @@
 package org.springframework.data.couchbase.repository;
 
 import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,17 +38,15 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.util.StreamUtils;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -282,30 +278,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
-	@Test // DATACOUCH-650
-	void deleteAllById() {
-
-		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
-		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
-
-		try {
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
-
-			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
-
-
-			assertThat(airportRepository.findAll()).containsExactly(frankfurt);
-		} finally {
-			airportRepository.deleteAll();
-		}
-	}
-
 	private void sleep(int millis) {
 		try {
 			Thread.sleep(millis); // so they are executed out-of-order
 		} catch (InterruptedException ie) {
-			;
 		}
 	}
 
