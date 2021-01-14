@@ -20,39 +20,56 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexResolver.IndexDefinitionHolder;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.mapping.context.MappingContextEvent;
 
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.Cluster;
+import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.context.MappingContextEvent;
 
-public class CouchbasePersistentEntityIndexCreator implements ApplicationListener<MappingContextEvent<?, ?>> {
+/**
+ * Encapsulates the logic of creating indices.
+ *
+ * @author Michael Nitschinger
+ * @author Aaron Whiteside
+ */
+public class CouchbasePersistentEntityIndexCreator implements InitializingBean, ApplicationListener<MappingContextEvent<?, ?>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbasePersistentEntityIndexCreator.class);
 
 	private final Map<Class<?>, Boolean> classesSeen = new ConcurrentHashMap<>();
 	private final CouchbaseMappingContext mappingContext;
 	private final QueryIndexResolver indexResolver;
-	private final CouchbaseOperations couchbaseOperations;
+	private final CouchbaseClientFactory clientFactory;
+	private final boolean enabled;
 
 	public CouchbasePersistentEntityIndexCreator(final CouchbaseMappingContext mappingContext,
-			final CouchbaseOperations operations) {
+			final CouchbaseClientFactory clientFactory, final String typeKey, final boolean enabled) {
 		this.mappingContext = mappingContext;
-		this.couchbaseOperations = operations;
-		this.indexResolver = QueryIndexResolver.create(mappingContext, operations);
+		this.clientFactory = clientFactory;
+		this.enabled = enabled;
+		this.indexResolver = QueryIndexResolver.create(mappingContext, typeKey);
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		if (enabled) {
+			mappingContext.getPersistentEntities().forEach(this::checkForIndexes);
+		} else {
+			LOGGER.debug("Automatic index creation not enabled.");
+		}
 	}
 
 	@Override
 	public void onApplicationEvent(final MappingContextEvent<?, ?> event) {
-		if (!event.wasEmittedBy(mappingContext)) {
+		if (!enabled || !event.wasEmittedBy(mappingContext)) {
 			return;
 		}
 
@@ -71,7 +88,7 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 			this.classesSeen.put(type, Boolean.TRUE);
 
 			if (LOGGER.isDebugEnabled()) {
-				LOGGER.debug("Analyzing class " + type + " for index information.");
+				LOGGER.debug("Analyzing class {} for index information.", type);
 			}
 
 			checkForAndCreateIndexes(entity);
@@ -93,10 +110,10 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 	}
 
 	private void createIndex(final IndexDefinitionHolder indexToCreate) {
-		Cluster cluster = couchbaseOperations.getCouchbaseClientFactory().getCluster();
+		Cluster cluster = clientFactory.getCluster();
 
 		StringBuilder statement = new StringBuilder("CREATE INDEX ").append(indexToCreate.getIndexName()).append(" ON `")
-				.append(couchbaseOperations.getBucketName()).append("` (")
+				.append(clientFactory.getBucket().name()).append("` (")
 				.append(String.join(",", indexToCreate.getIndexFields())).append(")");
 
 		if (indexToCreate.getIndexPredicate() != null && !indexToCreate.getIndexPredicate().isEmpty()) {
@@ -107,21 +124,10 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 			cluster.query(statement.toString());
 		} catch (IndexExistsException ex) {
 			// ignored on purpose, rest is propagated
-			LOGGER.debug("Index \"" + indexToCreate.getIndexName() + "\" already exists, ignoring.");
+			LOGGER.debug("Index \"{}\" already exists, ignoring.", indexToCreate.getIndexName());
 		} catch (Exception ex) {
 			throw new DataIntegrityViolationException("Could not auto-create index with statement: " + statement.toString(),
 					ex);
 		}
-	}
-
-	/**
-	 * Returns whether the current index creator was registered for the given {@link MappingContext}.
-	 */
-	public boolean isIndexCreatorFor(final MappingContext<?, ?> context) {
-		return this.mappingContext.equals(context);
-	}
-
-	public boolean hasSeen(CouchbasePersistentEntity<?> entity) {
-		return classesSeen.containsKey(entity.getType());
 	}
 }

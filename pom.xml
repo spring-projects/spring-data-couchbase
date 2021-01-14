@@ -157,9 +157,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.Couchbase</groupId>
+            <groupId>com.couchbase.mock</groupId>
             <artifactId>CouchbaseMock</artifactId>
-            <version>73e493d259</version>
+            <version>1.5.25</version>
             <scope>test</scope>
         </dependency>
 

@@ -37,6 +37,7 @@ import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversion
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
@@ -268,7 +269,6 @@ public abstract class AbstractCouchbaseConfiguration {
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
 		mappingContext.setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
-		mappingContext.setAutoIndexCreation(autoIndexCreation());
 
 		return mappingContext;
 	}
@@ -278,6 +278,18 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	protected boolean autoIndexCreation() {
 		return false;
+	}
+
+	/**
+	 * Creates a {@link CouchbasePersistentEntityIndexCreator} bean that takes on the responsibility of automatically
+	 * creating indices.
+	 *
+	 * Does nothing if {@link #autoIndexCreation()} returns false.
+	 */
+	@Bean
+	public CouchbasePersistentEntityIndexCreator couchbasePersistentEntityIndexCreator(CouchbaseMappingContext couchbaseMappingContext,
+   			CouchbaseClientFactory clientFactory) {
+		return new CouchbasePersistentEntityIndexCreator(couchbaseMappingContext, clientFactory, typeKey(), autoIndexCreation());
 	}
 
 	/**
