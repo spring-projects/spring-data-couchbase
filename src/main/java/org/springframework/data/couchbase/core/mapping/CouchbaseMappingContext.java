@@ -16,15 +16,10 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.util.Optional;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
 import org.springframework.data.mapping.context.AbstractMappingContext;
-import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -37,6 +32,7 @@ import org.springframework.data.util.TypeInformation;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Aaron Whiteside
  */
 public class CouchbaseMappingContext
 		extends AbstractMappingContext<BasicCouchbasePersistentEntity<?>, CouchbasePersistentProperty>
@@ -54,10 +50,6 @@ public class CouchbaseMappingContext
 	 * The field naming strategy to use.
 	 */
 	private FieldNamingStrategy fieldNamingStrategy = DEFAULT_NAMING_STRATEGY;
-
-	private boolean autoIndexCreation = true;
-	private ApplicationEventPublisher eventPublisher;
-	private CouchbasePersistentEntityIndexCreator indexCreator = null;
 
 	/**
 	 * Configures the {@link FieldNamingStrategy} to be used to determine the field name if no manual mapping is applied.
@@ -108,65 +100,8 @@ public class CouchbaseMappingContext
 	 */
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-		context = applicationContext;
 		super.setApplicationContext(applicationContext);
+		context = applicationContext;
 	}
 
-	@Override
-	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-		eventPublisher = applicationEventPublisher;
-		if (this.eventPublisher == null) {
-			this.eventPublisher = context;
-		}
-	}
-
-	public boolean isAutoIndexCreation() {
-		return autoIndexCreation;
-	}
-
-	public void setAutoIndexCreation(boolean autoCreateIndexes) {
-		this.autoIndexCreation = autoCreateIndexes;
-	}
-
-	/**
-	 * override method from AbstractMappingContext as that method will not publishEvent() if it finds the entity has
-	 * already been cached
-	 * 
-	 * @param typeInformation - entity type
-	 */
-	@Override
-	protected Optional<BasicCouchbasePersistentEntity<?>> addPersistentEntity(TypeInformation<?> typeInformation) {
-		Optional<BasicCouchbasePersistentEntity<?>> entity = super.addPersistentEntity(typeInformation);
-
-		if (this.eventPublisher != null && entity.isPresent()) {
-			if (this.indexCreator != null) {
-				if (!indexCreator.hasSeen(entity.get())) {
-					this.eventPublisher.publishEvent(new MappingContextEvent(this, entity.get()));
-				}
-			}
-		}
-		return entity;
-	}
-
-	/**
-	 * override method from AbstractMappingContext as that method will not publishEvent() if it finds the entity has
-	 * already been cached. Instead, user our own addPersistEntity that will.
-	 * 
-	 * @param typeInformation - entity type
-	 */
-	@Override
-	public BasicCouchbasePersistentEntity<?> getPersistentEntity(TypeInformation<?> typeInformation) {
-		Optional<BasicCouchbasePersistentEntity<?>> entity = addPersistentEntity(typeInformation);
-		return entity.isPresent() ? entity.get() : null;
-	}
-
-	/**
-	 * capture the indexCreator when it has been added as a listener. only publishEvent() if the indexCreator hasn't
-	 * already seen the class.
-	 * 
-	 * @param indexCreator
-	 */
-	public void setIndexCreator(CouchbasePersistentEntityIndexCreator indexCreator) {
-		this.indexCreator = indexCreator;
-	}
 }

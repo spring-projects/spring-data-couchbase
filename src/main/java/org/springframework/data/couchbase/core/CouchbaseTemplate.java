@@ -19,15 +19,8 @@ package org.springframework.data.couchbase.core;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.Collection;
 
@@ -36,6 +29,7 @@ import com.couchbase.client.java.Collection;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Aaron Whiteside
  * @since 3.0
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
@@ -43,23 +37,13 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final CouchbaseClientFactory clientFactory;
 	private final CouchbaseConverter converter;
 	private final CouchbaseTemplateSupport templateSupport;
-	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
-	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(converter);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter);
-
-		this.mappingContext = this.converter.getMappingContext();
-		if (mappingContext instanceof CouchbaseMappingContext) {
-			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
-			if (cmc.isAutoIndexCreation()) {
-				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
-			}
-		}
 	}
 
 	@Override
@@ -148,28 +132,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
-		prepareIndexCreator(applicationContext);
 		templateSupport.setApplicationContext(applicationContext);
 		reactiveCouchbaseTemplate.setApplicationContext(applicationContext);
-	}
-
-	private void prepareIndexCreator(final ApplicationContext context) {
-		String[] indexCreators = context.getBeanNamesForType(CouchbasePersistentEntityIndexCreator.class);
-
-		for (String creator : indexCreators) {
-			CouchbasePersistentEntityIndexCreator creatorBean = context.getBean(creator,
-					CouchbasePersistentEntityIndexCreator.class);
-			if (creatorBean.isIndexCreatorFor(mappingContext)) {
-				return;
-			}
-		}
-
-		if (context instanceof ConfigurableApplicationContext && indexCreator != null) {
-			((ConfigurableApplicationContext) context).addApplicationListener(indexCreator);
-			if (mappingContext instanceof CouchbaseMappingContext) {
-				CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
-				cmc.setIndexCreator(indexCreator);
-			}
-		}
 	}
 }
