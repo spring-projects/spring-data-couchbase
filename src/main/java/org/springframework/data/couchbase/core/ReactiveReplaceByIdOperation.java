@@ -21,6 +21,9 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -29,7 +32,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
-	interface TerminatingReplaceById<T> extends OneAndAllReactive<T> {
+	interface TerminatingReplaceById<T> extends OneAndAllEntityReactive<T> {
 
 		Mono<T> one(T object);
 
@@ -37,7 +40,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	}
 
-	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T>, InCollection<T> {
+	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T>, WithCollection<T> {
 
 		TerminatingReplaceById<T> inCollection(String collection);
 	}

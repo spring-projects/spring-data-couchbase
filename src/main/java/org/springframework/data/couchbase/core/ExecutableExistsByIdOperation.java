@@ -18,6 +18,9 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.data.couchbase.core.support.OneAndAllExists;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 public interface ExecutableExistsByIdOperation {
 
 	/**
@@ -25,7 +28,7 @@ public interface ExecutableExistsByIdOperation {
 	 */
 	ExecutableExistsById existsById();
 
-	interface TerminatingExistsById {
+	interface TerminatingExistsById extends OneAndAllExists {
 
 		/**
 		 * Performs the operation on the ID given.
@@ -45,7 +48,7 @@ public interface ExecutableExistsByIdOperation {
 
 	}
 
-	interface ExistsByIdWithCollection extends TerminatingExistsById {
+	interface ExistsByIdWithCollection extends TerminatingExistsById, WithCollection {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.

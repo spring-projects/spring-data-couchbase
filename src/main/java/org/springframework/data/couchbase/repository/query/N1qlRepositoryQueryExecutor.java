@@ -73,11 +73,8 @@ public class N1qlRepositoryQueryExecutor {
 			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
 		}
 
-		// q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass)
-		// .consistentWith(buildQueryScanConsistency()).matching(query);
-
 		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation = (ExecutableFindByQueryOperation.ExecutableFindByQuery<?>) operations
-				.findByQuery(domainClass).consistentWith(buildQueryScanConsistency());
+				.findByQuery(domainClass).withConsistency(buildQueryScanConsistency());
 		if (queryMethod.isCountQuery()) {
 			return operation.matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {

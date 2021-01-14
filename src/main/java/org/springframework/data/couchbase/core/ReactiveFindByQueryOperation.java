@@ -20,6 +20,13 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
+import org.springframework.data.couchbase.core.support.OneAndAllReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithConsistency;
+import org.springframework.data.couchbase.core.support.WithDistinct;
+import org.springframework.data.couchbase.core.support.WithProjection;
+import org.springframework.data.couchbase.core.support.WithQuery;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -41,7 +48,7 @@ public interface ReactiveFindByQueryOperation {
 	/**
 	 * Compose find execution by calling one of the terminating methods.
 	 */
-	interface TerminatingFindByQuery<T> {
+	interface TerminatingFindByQuery<T> extends OneAndAllReactive<T> {
 
 		/**
 		 * Get exactly zero or one result.
@@ -87,7 +94,7 @@ public interface ReactiveFindByQueryOperation {
 	 * @author Christoph Strobl
 	 * @since 2.0
 	 */
-	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
+	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T>, WithQuery<T> {
 
 		/**
 		 * Set the filter for the query to be used.
@@ -97,142 +104,96 @@ public interface ReactiveFindByQueryOperation {
 		 */
 		TerminatingFindByQuery<T> matching(Query query);
 
-	}
-
-	interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
-
 		/**
-		 * Allows to override the default scan consistency.
+		 * Set the filter {@link QueryCriteriaDefinition criteria} to be used.
 		 *
-		 * @param scanConsistency the custom scan consistency to use for this query.
+		 * @param criteria must not be {@literal null}.
+		 * @return new instance of {@link ExecutableFindByQueryOperation.ExecutableFindByQuery}.
+		 * @throws IllegalArgumentException if criteria is {@literal null}.
 		 */
-		FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency);
+		default TerminatingFindByQuery<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
 
 	}
 
 	/**
 	 * Collection override (optional).
 	 */
-	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T> {
+	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T>, WithCollection<T> {
 
 		/**
 		 * Explicitly set the name of the collection to perform the query on. <br />
 		 * Skip this step to use the default collection derived from the domain type.
 		 *
 		 * @param collection must not be {@literal null} nor {@literal empty}.
-		 * @return new instance of {@link FindWithProjection}.
+		 * @return new instance of {@link FindByQueryWithProjection}.
 		 * @throws IllegalArgumentException if collection is {@literal null}.
 		 */
-		FindByQueryInCollection<T> inCollection(String collection);
+		FindByQueryWithQuery<T> inCollection(String collection);
+	}
+
+	/**
+	 * @deprecated
+	 * @see FindByQueryWithConsistency
+	 */
+	@Deprecated
+	interface FindByQueryConsistentWith<T> extends FindByQueryInCollection<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
+		@Deprecated
+		FindByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface FindByQueryWithConsistency<T> extends FindByQueryConsistentWith<T>, WithConsistency<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
+		FindByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
+
 	}
 
 	/**
 	 * Result type override (optional).
 	 */
-	interface FindWithProjection<T> extends FindByQueryInCollection<T>, FindDistinct {
+	interface FindByQueryWithProjection<T> extends FindByQueryWithConsistency<T> {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
 		 * Skip this step if you are anyway only interested in the original domain type.
 		 *
-		 * @param resultType must not be {@literal null}.
-		 * @param <R> result type.
-		 * @return new instance of {@link FindWithProjection}.
-		 * @throws IllegalArgumentException if resultType is {@literal null}.
+		 * @param returnType must not be {@literal null}.
+		 * @return new instance of {@link FindByQueryWithProjection}.
+		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
-		<R> FindByQueryWithQuery<R> as(Class<R> resultType);
+		<R> FindByQueryWithConsistency<R> as(Class<R> returnType);
 	}
 
 	/**
 	 * Distinct Find support.
 	 *
-	 * @author Christoph Strobl
-	 * @since 2.1
+	 * @author Michael Reiche
 	 */
-	interface FindDistinct {
+	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjection<T>, WithDistinct<T> {
 
 		/**
 		 * Finds the distinct values for a specified {@literal field} across a single {@link } or view.
 		 *
-		 * @param field name of the field. Must not be {@literal null}.
-		 * @return new instance of {@link TerminatingDistinct}.
+		 * @param distinctFields name of the field. Must not be {@literal null}.
+		 * @return new instance of {@link ReactiveFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
-		TerminatingDistinct<Object> distinct(String field);
+		FindByQueryWithProjection<T> distinct(String[] distinctFields);
 	}
 
-	/**
-	 * Result type override. Optional.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.1
-	 */
-	interface DistinctWithProjection {
-
-		/**
-		 * Define the target type the result should be mapped to. <br />
-		 * Skip this step if you are anyway fine with the default conversion.
-		 * <dl>
-		 * <dt>{@link Object} (the default)</dt>
-		 * <dd>Result is mapped according to the {@link } converting eg. {@link } into plain {@link String}, {@link } to
-		 * {@link Long}, etc. always picking the most concrete type with respect to the domain types property.<br />
-		 * Any {@link } is run through the {@link org.springframework.data.convert.EntityReader} to obtain the domain type.
-		 * <br />
-		 * Using {@link Object} also works for non strictly typed fields. Eg. a mixture different types like fields using
-		 * {@link String} in one {@link } while {@link Long} in another.</dd>
-		 * <dt>Any Simple type like {@link String}, {@link Long}, ...</dt>
-		 * <dd>The result is mapped directly by the Couchbase Java driver and the {@link } in place. This works only for
-		 * results where all documents considered for the operation use the very same type for the field.</dd>
-		 * <dt>Any Domain type</dt>
-		 * <dd>Domain types can only be mapped if the if the result of the actual {@code distinct()} operation returns
-		 * {@link }.</dd>
-		 * <dt>{@link }</dt>
-		 * <dd>Using {@link } allows retrieval of the raw driver specific format, which returns eg. {@link }.</dd>
-		 * </dl>
-		 *
-		 * @param resultType must not be {@literal null}.
-		 * @param <R> result type.
-		 * @return new instance of {@link TerminatingDistinct}.
-		 * @throws IllegalArgumentException if resultType is {@literal null}.
-		 */
-		<R> TerminatingDistinct<R> as(Class<R> resultType);
-	}
-
-	/**
-	 * Result restrictions. Optional.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.1
-	 */
-	interface DistinctWithQuery<T> extends DistinctWithProjection {
-
-		/**
-		 * Set the filter {@link Query criteria} to be used.
-		 *
-		 * @param query must not be {@literal null}.
-		 * @return new instance of {@link TerminatingDistinct}.
-		 * @throws IllegalArgumentException if criteria is {@literal null}.
-		 * @since 3.0
-		 */
-		TerminatingDistinct<T> matching(Query query);
-	}
-
-	/**
-	 * Terminating distinct find operations.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.1
-	 */
-	interface TerminatingDistinct<T> extends DistinctWithQuery<T> {
-
-		/**
-		 * Get all matching distinct field values.
-		 *
-		 * @return empty {@link Flux} if not match found. Never {@literal null}.
-		 */
-		Flux<T> all();
-	}
-
-	interface ReactiveFindByQuery<T> extends FindByQueryConsistentWith<T>, FindByQueryInCollection<T>, FindDistinct {}
+	interface ReactiveFindByQuery<T> extends FindByQueryWithDistinct<T> {}
 
 }

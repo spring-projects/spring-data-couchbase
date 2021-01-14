@@ -81,7 +81,7 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 
-		ReactiveFindByQueryOperation.FindByQueryWithQuery<?> find = typeToRead == null //
+		ReactiveFindByQuery<?> find = typeToRead == null //
 				? findOperationWithProjection //
 				: findOperationWithProjection; // note yet implemented in core .as(typeToRead);
 

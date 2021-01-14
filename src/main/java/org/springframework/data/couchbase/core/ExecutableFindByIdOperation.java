@@ -17,6 +17,10 @@ package org.springframework.data.couchbase.core;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllId;
+import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithProjectionId;
+
 public interface ExecutableFindByIdOperation {
 
 	/**
@@ -26,7 +30,7 @@ public interface ExecutableFindByIdOperation {
 	 */
 	<T> ExecutableFindById<T> findById(Class<T> domainType);
 
-	interface TerminatingFindById<T> {
+	interface TerminatingFindById<T> extends OneAndAllId<T> {
 
 		/**
 		 * Finds one document based on the given ID.
@@ -46,7 +50,7 @@ public interface ExecutableFindByIdOperation {
 
 	}
 
-	interface FindByIdWithCollection<T> extends TerminatingFindById<T> {
+	interface FindByIdWithCollection<T> extends TerminatingFindById<T>, WithCollection<T> {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.
@@ -57,7 +61,7 @@ public interface ExecutableFindByIdOperation {
 
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T> {
+	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T>, WithProjectionId<T> {
 
 		/**
 		 * Load only certain fields for the document.

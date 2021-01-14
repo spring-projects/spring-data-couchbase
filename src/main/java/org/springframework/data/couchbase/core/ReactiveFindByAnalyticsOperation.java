@@ -15,14 +15,16 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.support.OneAndAllReactive;
+import org.springframework.data.couchbase.core.support.WithAnalyticsConsistency;
+import org.springframework.data.couchbase.core.support.WithAnalyticsQuery;
 
-import java.util.Optional;
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 
 public interface ReactiveFindByAnalyticsOperation {
 
@@ -36,7 +38,7 @@ public interface ReactiveFindByAnalyticsOperation {
 	/**
 	 * Compose find execution by calling one of the terminating methods.
 	 */
-	interface TerminatingFindByAnalytics<T> {
+	interface TerminatingFindByAnalytics<T> extends OneAndAllReactive {
 
 		/**
 		 * Get exactly zero or one result.
@@ -76,7 +78,7 @@ public interface ReactiveFindByAnalyticsOperation {
 
 	}
 
-	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T> {
+	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T>, WithAnalyticsQuery<T> {
 
 		/**
 		 * Set the filter for the analytics query to be used.
@@ -88,6 +90,7 @@ public interface ReactiveFindByAnalyticsOperation {
 
 	}
 
+	@Deprecated
 	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsWithQuery<T> {
 
 		/**
@@ -95,10 +98,22 @@ public interface ReactiveFindByAnalyticsOperation {
 		 *
 		 * @param scanConsistency the custom scan consistency to use for this analytics query.
 		 */
+		@Deprecated
 		FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency);
 
 	}
 
-	interface ReactiveFindByAnalytics<T> extends FindByAnalyticsConsistentWith<T> {}
+	interface FindByAnalyticsWithConsistency<T> extends FindByAnalyticsConsistentWith<T>, WithAnalyticsConsistency<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		FindByAnalyticsWithQuery<T> withConsistency(AnalyticsScanConsistency scanConsistency);
+
+	}
+
+	interface ReactiveFindByAnalytics<T> extends FindByAnalyticsWithConsistency<T> {}
 
 }

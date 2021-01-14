@@ -20,11 +20,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.AnyIdReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 public interface ReactiveFindFromReplicasByIdOperation {
 
 	<T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
 
-	interface TerminatingFindFromReplicasById<T> {
+	interface TerminatingFindFromReplicasById<T> extends AnyIdReactive<T> {
 
 		Mono<T> any(String id);
 
@@ -32,7 +35,7 @@ public interface ReactiveFindFromReplicasByIdOperation {
 
 	}
 
-	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T> {
+	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T>, WithCollection<T> {
 
 		TerminatingFindFromReplicasById<T> inCollection(String collection);
 	}

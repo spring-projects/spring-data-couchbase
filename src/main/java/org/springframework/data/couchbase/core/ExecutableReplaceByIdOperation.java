@@ -18,8 +18,10 @@ package org.springframework.data.couchbase.core;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.IncrementOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 
@@ -27,7 +29,7 @@ public interface ExecutableReplaceByIdOperation {
 
 	<T> ExecutableReplaceById<T> replaceById(Class<T> domainType);
 
-	interface TerminatingReplaceById<T> extends OneAndAll<T> {
+	interface TerminatingReplaceById<T> extends OneAndAllEntity<T> {
 
 		@Override
 		T one(T object);
@@ -37,7 +39,7 @@ public interface ExecutableReplaceByIdOperation {
 
 	}
 
-	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T> , InCollection<T> {
+	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T>, WithCollection<T> {
 
 		TerminatingReplaceById<T> inCollection(String collection);
 	}

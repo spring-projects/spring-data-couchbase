@@ -23,10 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
@@ -34,32 +31,26 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
-import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
-
-import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
+import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import org.springframework.data.couchbase.util.JavaIntegrationTests;
+
+;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -68,30 +59,12 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
-
-	private static CouchbaseClientFactory couchbaseClientFactory;
-	private CouchbaseTemplate couchbaseTemplate;
-	private ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
-
-	@BeforeAll
-	static void beforeAll() {
-		couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(), authenticator(), bucketName());
-		couchbaseClientFactory.getBucket().waitUntilReady(Duration.ofSeconds(10));
-		couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
-	}
-
-	@AfterAll
-	static void afterAll() throws IOException {
-		couchbaseClientFactory.close();
-	}
+class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	@BeforeEach
-	void beforeEach() {
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+	@Override
+	public void beforeEach() {
+		super.beforeEach();
 		couchbaseTemplate.removeByQuery(User.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
@@ -110,6 +83,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		assertThrows(DataIntegrityViolationException.class, () -> couchbaseTemplate.replaceById(User.class).one(user));
 
 		User found = couchbaseTemplate.findById(User.class).one(user.getId());
+		user.setVersion(found.getVersion());
 		assertEquals(user, found);
 
 		couchbaseTemplate.removeById().one(user.getId());
@@ -121,7 +95,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 		Class clazz = User.class; // for now, just User.class. There is no Durability annotation.
 		// insert, replace, upsert
-		for (OneAndAll<User> operator : new OneAndAll[] { couchbaseTemplate.insertById(clazz),
+		for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
 				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
 			// create an entity of type clazz
 			Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
@@ -129,7 +103,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 					"firstname", "lastname");
 
 			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
-				operator = (OneAndAll) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE);
+				operator = (OneAndAllEntity) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE);
 			}
 
 			// if replace, we need to insert a document to replace
@@ -160,7 +134,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 		// Entity classes
 		for (Class clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
 			// insert, replace, upsert
-			for (OneAndAll<User> operator : new OneAndAll[] { couchbaseTemplate.insertById(clazz),
+			for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
 					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
 
 				// create an entity of type clazz
@@ -169,9 +143,9 @@ class CouchbaseTemplateKeyValueIntegrationTests extends ClusterAwareIntegrationT
 						"firstname", "lastname");
 
 				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation
-					operator = (OneAndAll) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
+					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
 				} else if (clazz.equals(UserAnnotated3.class)) { // override the expiry from the annotation with no expiry
-					operator = (OneAndAll) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
+					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
 				}
 
 				// if replace or remove, we need to insert a document to replace

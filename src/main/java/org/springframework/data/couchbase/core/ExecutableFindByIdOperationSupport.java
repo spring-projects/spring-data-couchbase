@@ -15,12 +15,11 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.data.couchbase.core.ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport;
 import org.springframework.util.Assert;
 
 public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOperation {

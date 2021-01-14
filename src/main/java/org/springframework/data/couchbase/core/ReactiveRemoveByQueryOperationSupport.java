@@ -15,12 +15,14 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.support.TemplateUtils;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -38,8 +40,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
-				"_default._default");
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED, null);
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -63,15 +64,16 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		public Flux<RemoveResult> all() {
 			return Flux.defer(() -> {
 				String statement = assembleDeleteQuery();
-
-				return template.getCouchbaseClientFactory().getCluster().reactive().query(statement, buildQueryOptions())
-						.onErrorMap(throwable -> {
-							if (throwable instanceof RuntimeException) {
-								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-							} else {
-								return throwable;
-							}
-						}).flatMapMany(ReactiveQueryResult::rowsAsObject)
+				Mono<ReactiveQueryResult> allResult = this.collection == null
+						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement, buildQueryOptions())
+						: template.getCouchbaseClientFactory().getScope().reactive().query(statement, buildQueryOptions());
+				return allResult.onErrorMap(throwable -> {
+					if (throwable instanceof RuntimeException) {
+						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+					} else {
+						return throwable;
+					}
+				}).flatMapMany(ReactiveQueryResult::rowsAsObject)
 						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
 								Optional.empty()));
 			});
@@ -91,17 +93,24 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		@Override
-		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		@Override
-		public RemoveByQueryInCollection<T> inCollection(final String collection) {
+		@Deprecated
+		public RemoveByQueryInCollection<T> consistentWith(final QueryScanConsistency scanConsistency) {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+		}
+
+		@Override
+		public RemoveByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		private String assembleDeleteQuery() {
-			return query.toN1qlRemoveString(template, this.domainType);
+			return query.toN1qlRemoveString(template, collection, this.domainType);
 		}
 
 	}
