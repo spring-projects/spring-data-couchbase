@@ -15,10 +15,10 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonValue;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 
 /**
  * Query created from the string in @Query annotation in the repository interface.
@@ -52,7 +52,8 @@ public class StringQuery extends Query {
 	}
 
 	@Override
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collection, Class domainClass,
+			Class resultClass, boolean isCount, String[] distinctFields) {
 		final StringBuilder statement = new StringBuilder();
 		appendInlineN1qlStatement(statement); // apply the string statement
 		// To use generated parameters for literals

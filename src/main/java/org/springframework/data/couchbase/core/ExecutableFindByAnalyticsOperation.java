@@ -19,11 +19,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.support.OneAndAll;
+import org.springframework.data.couchbase.core.support.WithAnalyticsConsistency;
+import org.springframework.data.couchbase.core.support.WithAnalyticsQuery;
 import org.springframework.lang.Nullable;
+
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 
 public interface ExecutableFindByAnalyticsOperation {
 
@@ -34,7 +37,7 @@ public interface ExecutableFindByAnalyticsOperation {
 	 */
 	<T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType);
 
-	interface TerminatingFindByAnalytics<T> {
+	interface TerminatingFindByAnalytics<T> extends OneAndAll<T> {
 
 		/**
 		 * Get exactly zero or one result.
@@ -102,7 +105,7 @@ public interface ExecutableFindByAnalyticsOperation {
 
 	}
 
-	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T> {
+	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T>, WithAnalyticsQuery<T> {
 
 		/**
 		 * Set the filter for the analytics query to be used.
@@ -114,6 +117,7 @@ public interface ExecutableFindByAnalyticsOperation {
 
 	}
 
+	@Deprecated
 	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsWithQuery<T> {
 
 		/**
@@ -121,10 +125,22 @@ public interface ExecutableFindByAnalyticsOperation {
 		 *
 		 * @param scanConsistency the custom scan consistency to use for this analytics query.
 		 */
+		@Deprecated
 		FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency);
 
 	}
 
-	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsConsistentWith<T> {}
+	interface FindByAnalyticsWithConsistency<T> extends FindByAnalyticsConsistentWith<T>, WithAnalyticsConsistency<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		FindByAnalyticsConsistentWith<T> withConsistency(AnalyticsScanConsistency scanConsistency);
+
+	}
+
+	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsWithConsistency<T> {}
 
 }

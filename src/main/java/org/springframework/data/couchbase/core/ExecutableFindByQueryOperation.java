@@ -21,6 +21,13 @@ import java.util.stream.Stream;
 
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
+import org.springframework.data.couchbase.core.support.OneAndAll;
+import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithConsistency;
+import org.springframework.data.couchbase.core.support.WithDistinct;
+import org.springframework.data.couchbase.core.support.WithProjection;
+import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -34,7 +41,7 @@ public interface ExecutableFindByQueryOperation {
 	 */
 	<T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType);
 
-	interface TerminatingFindByQuery<T> {
+	interface TerminatingFindByQuery<T> extends OneAndAll<T> {
 		/**
 		 * Get exactly zero or one result.
 		 *
@@ -107,7 +114,7 @@ public interface ExecutableFindByQueryOperation {
 	 * @author Christoph Strobl
 	 * @since 2.0
 	 */
-	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T> {
+	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T>, WithQuery<T> {
 
 		/**
 		 * Set the filter for the query to be used.
@@ -117,30 +124,90 @@ public interface ExecutableFindByQueryOperation {
 		 */
 		TerminatingFindByQuery<T> matching(Query query);
 
-	}
-
-	interface FindByQueryConsistentWith<T> extends FindByQueryWithQuery<T> {
-
 		/**
-		 * Allows to override the default scan consistency.
+		 * Set the filter {@link QueryCriteriaDefinition criteria} to be used.
 		 *
-		 * @param scanConsistency the custom scan consistency to use for this query.
+		 * @param criteria must not be {@literal null}.
+		 * @return new instance of {@link ExecutableFindByQuery}.
+		 * @throws IllegalArgumentException if criteria is {@literal null}.
 		 */
-		FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency);
+		default TerminatingFindByQuery<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
 
 	}
 
-	interface FindByQueryInCollection<T> extends FindByQueryConsistentWith<T> {
+	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T>, WithCollection<T> {
 
 		/**
 		 * Allows to override the default scan consistency.
 		 *
 		 * @param collection the collection to use for this query.
 		 */
-		FindByQueryInCollection<T> inCollection(String collection);
+		FindByQueryWithQuery<T> inCollection(String collection);
 
 	}
 
-	interface ExecutableFindByQuery<T> extends FindByQueryInCollection<T> {}
+	@Deprecated
+	interface FindByQueryConsistentWith<T> extends FindByQueryInCollection<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
+		@Deprecated
+		FindByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface FindByQueryWithConsistency<T> extends FindByQueryConsistentWith<T>, WithConsistency<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this query.
+		 */
+		FindByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
+
+	}
+
+	/**
+	 * Result type override (Optional).
+	 */
+	interface FindByQueryWithProjection<T> extends FindByQueryWithConsistency<T> {
+
+		/**
+		 * Define the target type fields should be mapped to. <br />
+		 * Skip this step if you are anyway only interested in the original domain type.
+		 *
+		 * @param returnType must not be {@literal null}.
+		 * @return new instance of {@link FindByQueryWithProjection}.
+		 * @throws IllegalArgumentException if returnType is {@literal null}.
+		 */
+		<R> FindByQueryWithConsistency<R> as(Class<R> returnType);
+	}
+
+	/**
+	 * Distinct Find support.
+	 */
+	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjection<T>, WithDistinct<T> {
+
+		/**
+		 * Finds the distinct values for a specified {@literal field} across a single collection
+		 *
+		 * @param distinctFields name of the field. Must not be {@literal null}.
+		 * @return new instance of {@link ExecutableFindByQuery}.
+		 * @throws IllegalArgumentException if field is {@literal null}.
+		 */
+		FindByQueryWithProjection<T> distinct(String[] distinctFields);
+
+	}
+
+	/**
+	 * {@link ExecutableFindByQuery} provides methods for constructing lookup operations in a fluent way.
+	 */
+
+	interface ExecutableFindByQuery<T> extends FindByQueryWithDistinct<T> {}
 
 }

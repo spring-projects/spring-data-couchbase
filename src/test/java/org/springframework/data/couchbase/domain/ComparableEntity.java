@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.domain;
 
-import java.lang.reflect.Field;
+import com.couchbase.mock.deps.com.google.gson.Gson;
+import com.couchbase.mock.deps.com.google.gson.GsonBuilder;
 
 /**
  * Comparable entity base class for tests
@@ -26,7 +27,7 @@ import java.lang.reflect.Field;
 public class ComparableEntity {
 
 	/**
-	 * equals() method that recursively calls equals on on fields
+	 * equals() method that relies on toString()
 	 * 
 	 * @param that
 	 * @return
@@ -41,54 +42,12 @@ public class ComparableEntity {
 				|| !(this.getClass().isAssignableFrom(that.getClass()) || that.getClass().isAssignableFrom(this.getClass()))) {
 			return false;
 		}
-		// check that all the fields in this have an equal field in that
-		for (Field f : this.getClass().getFields()) {
-			if (!same(f, this, that)) {
-				return false;
-			}
-		}
-		// check that all the fields in that have an equal field in this
-		for (Field f : that.getClass().getFields()) {
-			if (!same(f, that, this)) {
-				return false;
-			}
-		}
-		// check that all the declared fields in this have an equal field in that
-		for (Field f : this.getClass().getDeclaredFields()) {
-			if (!same(f, this, that)) {
-				return false;
-			}
-		}
-		// check that all the declared fields in that have an equal field in this
-		for (Field f : that.getClass().getDeclaredFields()) {
-			if (!same(f, that, this)) {
-				return false;
-			}
-		}
-		return true;
+		return this.toString().equals(that.toString());
+
 	}
 
-	private static boolean same(Field f, Object a, Object b) {
-		Object thisField = null;
-		Object thatField = null;
-
-		try {
-			thisField = f.get(a);
-			thatField = f.get(b);
-		} catch (IllegalAccessException e) {
-			// assume that the important fields are in toString()
-			thisField = a.toString();
-			thatField = b.toString();
-		}
-		if (thisField == null && thatField == null) {
-			return true;
-		}
-		if (thisField == null && thatField != null) {
-			return false;
-		}
-		if (!thisField.equals(thatField)) {
-			return false;
-		}
-		return true;
+	public String toString() throws RuntimeException {
+		Gson gson = new GsonBuilder().create();
+		return gson.toJson(this);
 	}
 }

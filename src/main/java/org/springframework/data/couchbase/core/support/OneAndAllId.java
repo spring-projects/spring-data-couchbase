@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.core;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+package org.springframework.data.couchbase.core.support;
 
 import java.util.Collection;
 
 /**
- * A common interface for all of Insert, Replace, Upsert
+ * A common interface for those that support one(String), all(Collection<String>)
  *
  * @author Michael Reiche
+ *
  * @param <T> - the entity class
  */
+public interface OneAndAllId<T> {
 
-public interface OneAndAllReactive<T> {
-	Mono<T> one(T object);
+	T one(String id);
 
-	Flux<? extends T> all(Collection<? extends T> objects);
+  Collection<? extends T> all(Collection<String> ids);
 }

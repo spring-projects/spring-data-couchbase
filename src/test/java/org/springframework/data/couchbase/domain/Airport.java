@@ -27,7 +27,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
  * @author Michael Reiche
  */
 @Document
-public class Airport {
+public class Airport extends ComparableEntity {
 	@Id String id;
 
 	String iata;
@@ -53,42 +53,4 @@ public class Airport {
 		return icao;
 	}
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{ id: ");
-		sb.append(getId());
-		sb.append(", iata: ");
-		sb.append(iata);
-		sb.append(", icao: ");
-		sb.append(icao);
-		sb.append(" }");
-		return sb.toString();
-	}
-
-	public boolean equals(Object o) {
-		if (o == null) {
-			return false;
-		}
-		if (!(o instanceof Airport)) {
-			return false;
-		}
-		Airport that = (Airport) o;
-		if (diff(this.id,that.id)) {
-			return false;
-		}
-		if (diff(this.iata,that.iata)) {
-			return false;
-		}
-		if (diff(this.icao,that.icao)) {
-			return false;
-		}
-		return true;
-	}
-
-	private boolean diff(String s1, String s2){
-		if ((s1 == null && s2 != null) || !s1.equals(s2)) {
-			return true;
-		}
-		return false;
-	}
 }

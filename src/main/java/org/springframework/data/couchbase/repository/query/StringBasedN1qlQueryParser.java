@@ -22,6 +22,7 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -29,17 +30,24 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReturnedType;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -109,43 +117,115 @@ public class StringBasedN1qlQueryParser {
 	public static final Pattern QUOTE_DETECTION_PATTERN = Pattern.compile("[\"'](?:[^\"'\\\\]*(?:\\\\.)?)*[\"']");
 	private static final Logger LOGGER = LoggerFactory.getLogger(StringBasedN1qlQueryParser.class);
 	private final String statement;
-	private final QueryMethod queryMethod;
-	private  PlaceholderType placeHolderType;
+	private final CouchbaseQueryMethod queryMethod;
+	private PlaceholderType placeHolderType;
 	private final N1qlSpelValues statementContext;
 	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
 	private final Collection<String> parameterNames = new HashSet<String>();
 	public final N1QLExpression parsedExpression;
 
-	public StringBasedN1qlQueryParser(String statement, QueryMethod queryMethod, String bucketName,
+	private GenericConversionService conversionService = new DefaultConversionService();
+	private CustomConversions conversions = new CouchbaseCustomConversions(Collections.emptyList());
+
+	public StringBasedN1qlQueryParser(String statement, CouchbaseQueryMethod queryMethod, String bucketName,
 			CouchbaseConverter couchbaseConverter, String typeField, String typeValue, ParameterAccessor accessor,
 			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
-		this.statementContext = createN1qlSpelValues(bucketName, typeField, typeValue, false);
-		this.countContext = createN1qlSpelValues(bucketName, typeField, typeValue, true);
 		this.couchbaseConverter = couchbaseConverter;
+		this.statementContext = createN1qlSpelValues(bucketName, null, null, null, typeField, typeValue, false, null);
+		this.countContext = createN1qlSpelValues(bucketName, null, null, null, typeField, typeValue, true, null);
 		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
-		checkPlaceholders( this.parsedExpression.toString() );
+		checkPlaceholders(this.parsedExpression.toString());
 	}
 
-	public static N1qlSpelValues createN1qlSpelValues(String bucketName, String typeField, String typeValue,
-			boolean isCount) {
-		String b = "`" + bucketName + "`";
-		String entity = "META(" + b + ").id AS " + SELECT_ID + ", META(" + b + ").cas AS " + SELECT_CAS;
+	public StringBasedN1qlQueryParser(String bucketName, String collection, CouchbaseConverter couchbaseConverter,
+			Class domainClass, Class resultClass, String typeField, String typeValue, String[] distinctFields) {
+		this.statement = null;
+		this.queryMethod = null;
+		this.couchbaseConverter = couchbaseConverter;
+		this.statementContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
+				false, distinctFields);
+		this.countContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
+				true, distinctFields);
+		this.parsedExpression = null;
+	}
+
+	public N1qlSpelValues createN1qlSpelValues(String bucketName, String collection, Class domainClass, Class resultClass,
+			String typeField, String typeValue, boolean isCount, String[] distinctFields) {
+		String b = collection != null ? collection : bucketName;
+		String projectedFields = getProjectedFields(b, resultClass);
+		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS;
 		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
 		String selectEntity;
-		if (isCount) {
-			selectEntity = "SELECT " + count + " FROM " + b;
+		if (distinctFields != null) {
+			String distinctFieldsStr = distinctFields.length == 0 ? projectedFields : getDistinctFields(distinctFields);
+			if (isCount) {
+				selectEntity = "SELECT COUNT( DISTINCT {" + distinctFieldsStr + "} ) " + CountFragment.COUNT_ALIAS + " FROM "
+						+ i(b);
+			} else {
+				selectEntity = "SELECT DISTINCT " + distinctFieldsStr + " FROM " + i(b);
+			}
+		} else if (isCount) {
+			selectEntity = "SELECT " + count + " FROM " + i(b);
 		} else {
-			selectEntity = "SELECT " + entity + ", " + b + ".* FROM " + b;
+			selectEntity = "SELECT " + entity + ", " + projectedFields + " FROM " + i(b);
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
-		String delete = N1QLExpression.delete().from(i(bucketName)).toString();
-		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(bucketName).toString();
+		String delete = N1QLExpression.delete().from(b).toString();
+		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(b).toString();
 
 		return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);
+	}
+
+	private String getDistinctFields(String... distinctFields) {
+		return i(distinctFields).toString();
+	}
+
+	private String getProjectedFields(String b, Class resultClass) {
+
+		String projectedFields = i(b) + ".*";
+		if (resultClass != null) {
+			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+			StringBuilder sb = new StringBuilder();
+			getProjectedFieldsInternal(null, sb, persistentEntity.getTypeInformation(), "");
+			projectedFields = sb.toString();
+		}
+		return projectedFields;
+	}
+
+	private void getProjectedFieldsInternal(CouchbasePersistentProperty parent, StringBuilder sb,
+			TypeInformation resultClass, String path) {
+
+		PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+		persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+			@Override
+			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+				if (prop.isIdProperty() && parent == null) {
+					return;
+				}
+				// The current limitation is that only top-level properties can be projected
+				// This traversing of nested data structures would need to replicate the processing done by
+				// MappingCouchbaseConverter. Either the read or write
+				// And the n1ql to project lower-level properties is complex
+
+				// if (!conversions.isSimpleType(prop.getType())) {
+				// getProjectedFieldsInternal(prop, sb, prop.getTypeInformation(), path+prop.getName()+".");
+				// } else {
+				if (sb.length() > 0) {
+					sb.append(", ");
+				}
+				sb.append('`');
+				if (path != null && path.length() != 0) {
+					sb.append(path);
+				}
+				sb.append(prop.getName());
+				sb.append('`');
+				// }
+			}
+		});
 	}
 
 	// this static method can be used to test the parsing behavior for Couchbase specific spel variables
@@ -407,12 +487,14 @@ public class StringBasedN1qlQueryParser {
 			this.returning = returning;
 		}
 	}
+
 	// copied from StringN1qlBasedQuery
 	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
-																			 ReturnedType returnedType, SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		boolean isCountQuery = queryMethod.getName().toLowerCase().startsWith("count"); // should be queryMethod.isCountQuery()
-		EvaluationContext evaluationContext = evaluationContextProvider
-				.getEvaluationContext(queryMethod.getParameters(), runtimeParameters);
+			ReturnedType returnedType, SpelExpressionParser parser,
+			QueryMethodEvaluationContextProvider evaluationContextProvider) {
+		boolean isCountQuery = queryMethod.isCountQuery();
+		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(queryMethod.getParameters(),
+				runtimeParameters);
 		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
 
 		Sort sort = accessor.getSort();
@@ -423,13 +505,11 @@ public class StringBasedN1qlQueryParser {
 		if (queryMethod.isPageQuery()) {
 			Pageable pageable = accessor.getPageable();
 			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(
-					Math.toIntExact(pageable.getOffset()));
+			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
 		} else if (queryMethod.isSliceQuery()) {
 			Pageable pageable = accessor.getPageable();
 			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(
-					Math.toIntExact(pageable.getOffset()));
+			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
 		}
 		return parsedStatement;
 	}

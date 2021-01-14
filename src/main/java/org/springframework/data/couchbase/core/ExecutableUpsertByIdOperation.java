@@ -18,6 +18,9 @@ package org.springframework.data.couchbase.core;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -26,7 +29,7 @@ public interface ExecutableUpsertByIdOperation {
 
 	<T> ExecutableUpsertById<T> upsertById(Class<T> domainType);
 
-	interface TerminatingUpsertById<T> extends OneAndAll<T>{
+	interface TerminatingUpsertById<T> extends OneAndAllEntity<T> {
 
 		@Override
 		T one(T object);
@@ -36,7 +39,7 @@ public interface ExecutableUpsertByIdOperation {
 
 	}
 
-	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, InCollection<T> {
+	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, WithCollection<T> {
 
 		TerminatingUpsertById<T> inCollection(String collection);
 	}

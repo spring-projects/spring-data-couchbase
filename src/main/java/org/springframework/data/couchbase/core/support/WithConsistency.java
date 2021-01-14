@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.core;
+package org.springframework.data.couchbase.core.support;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * A common interface for all of Insert, Replace, Upsert that take collection
+ * A common interface for all of Insert, Replace, Upsert that take consistency
  *
  * @author Michael Reiche
  * @param <T> - the entity class
  */
-public interface InCollection<T> {
-	Object inCollection(String collection);
+public interface WithConsistency<T> {
+	Object withConsistency(QueryScanConsistency scanConsistency);
 }
