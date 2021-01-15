@@ -21,6 +21,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 
 import com.couchbase.client.java.Collection;
 
@@ -30,6 +32,7 @@ import com.couchbase.client.java.Collection;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Aaron Whiteside
+ * @author Jorge Rodriguez Martin
  * @since 3.0
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
@@ -40,10 +43,15 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
+		this(clientFactory, converter, new JacksonTranslationService());
+	}
+
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+		final TranslationService translationService) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
-		this.templateSupport = new CouchbaseTemplateSupport(converter);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter);
+		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
 	}
 
 	@Override
