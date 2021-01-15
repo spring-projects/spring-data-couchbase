@@ -47,7 +47,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableCouchbaseAuditing // this activates auditing
+@EnableCouchbaseAuditing(auditorAwareRef="auditorAwareRef", dateTimeProviderRef="dateTimeProviderRef")  // this activates auditing
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";
