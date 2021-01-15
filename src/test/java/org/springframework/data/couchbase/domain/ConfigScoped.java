@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.domain;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 
 /**
@@ -28,7 +27,6 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableCouchbaseAuditing // this activates auditing
 public class ConfigScoped extends Config {
 
 	static String scopeName = null;

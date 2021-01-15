@@ -44,7 +44,7 @@ public @interface EnableCouchbaseAuditing {
 	/**
 	 * Configures the {@link AuditorAware} bean to be used to lookup the current principal.
 	 */
-	String auditorAwareRef() default "auditorAwareRef";
+	String auditorAwareRef() default "";
 
 	/**
 	 * Configures whether the creation and modification dates are set. Defaults to {@literal true}.
@@ -60,5 +60,5 @@ public @interface EnableCouchbaseAuditing {
 	 * Configures a {@link DateTimeProvider} bean name that allows customizing the {@link org.joda.time.DateTime} to be
 	 * used for setting creation and modification dates.
 	 */
-	String dateTimeProviderRef() default "dateTimeProviderRef";
+	String dateTimeProviderRef() default "";
 }
