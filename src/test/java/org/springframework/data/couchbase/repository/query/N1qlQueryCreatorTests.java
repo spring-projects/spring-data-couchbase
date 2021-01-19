@@ -32,6 +32,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
@@ -73,6 +75,19 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where(i("firstname")).is("Oliver").export());
+	}
+
+	@Test
+	void createsQueryFieldAnnotationCorrectly() throws Exception {
+		String input = "findByMiddlename";
+		PartTree tree = new PartTree(input, Person.class);
+		Method method = PersonRepository.class.getMethod(input, String.class);
+
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null,
+				converter, bucketName);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export(), " WHERE " + where("nickname").is("Oliver").export());
 	}
 
 	@Test

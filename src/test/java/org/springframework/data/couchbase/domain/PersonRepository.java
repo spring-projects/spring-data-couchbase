@@ -15,15 +15,16 @@
  */
 package org.springframework.data.couchbase.domain;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Michael Reiche
@@ -107,6 +108,9 @@ public interface PersonRepository extends CrudRepository<Person, String> {
 
 	void deleteAll();
 
-	@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Person> findByAddressStreet(String street);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Person> findByMiddlename(String nickName);
 }
