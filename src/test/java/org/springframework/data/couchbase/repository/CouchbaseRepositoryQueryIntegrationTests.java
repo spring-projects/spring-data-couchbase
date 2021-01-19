@@ -76,6 +76,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Repository tests
@@ -133,6 +135,22 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			personRepository.save(person);
 			List<Person> persons = personRepository.findByAddressStreet("Maple");
 			assertEquals(1, persons.size());
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
+		} finally {
+			personRepository.deleteById(person.getId().toString());
+		}
+	}
+
+	@Test
+	void annotatedFieldFind() {
+		Person person = null;
+		try {
+			person = new Person(1, "first", "last");
+			person.setMiddlename("Nick"); // middlename is stored as nickname
+			personRepository.save(person);
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -166,12 +184,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
+			Airport airport2 = airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED)).findByIata(vie.getIata());
+			assertEquals(airport2.getId(), vie.getId());
+
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
 			Airport airport1 = airportRepository.findById(airports.get(0).getId()).get();
 			assertEquals(airport1.getIata(), vie.getIata());
-			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata());
-			assertEquals(airport1.getId(), vie.getId());
+
 		} finally {
 			airportRepository.delete(vie);
 		}
@@ -401,7 +421,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	private void sleep(int millis) {
 		try {
 			Thread.sleep(millis); // so they are executed out-of-order
-		} catch (InterruptedException ie) {}
+		} catch (InterruptedException ie) {
+			;
+		}
 	}
 
 	@Configuration

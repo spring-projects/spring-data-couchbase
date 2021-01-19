@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -53,6 +52,7 @@ public class Person extends AbstractEntity {
 		this();
 		setFirstname(firstname);
 		setLastname(lastname);
+		setMiddlename("Nick");
 	}
 
 	public Person(int id, String firstname, String lastname) {
