@@ -16,9 +16,12 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,14 +52,14 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.util.StreamUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
-import reactor.core.publisher.Flux;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Repository tests
@@ -112,6 +115,22 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			personRepository.save(person);
 			List<Person> persons = personRepository.findByAddressStreet("Maple");
 			assertEquals(1, persons.size());
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
+		} finally {
+			personRepository.deleteById(person.getId().toString());
+		}
+	}
+
+	@Test
+	void annotatedFieldFind() {
+		Person person = null;
+		try {
+			person = new Person(1, "first", "last");
+			person.setMiddlename("Nick"); // middlename is stored as nickname
+			personRepository.save(person);
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -145,12 +164,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
+			Airport airport2 = airportRepository.findByIata(vie.getIata(),
+					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED));
+			assertEquals(airport2.getId(), vie.getId());
+
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
 			Airport airport1 = airportRepository.findById(airports.get(0).getId()).get();
 			assertEquals(airport1.getIata(), vie.getIata());
-			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata());
-			assertEquals(airport1.getId(), vie.getId());
+
 		} finally {
 			airportRepository.delete(vie);
 		}
@@ -173,7 +195,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		try {
 
-			airportRepository.saveAll( Arrays.stream(iatas).map((iata) -> new Airport("airports::"+iata, iata, iata.toLowerCase(Locale.ROOT))).collect(Collectors.toSet()));
+			airportRepository.saveAll(
+					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
+							.collect(Collectors.toSet()));
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
@@ -198,7 +222,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(0, airportCount);
 
 		} finally {
-				airportRepository.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::"+iata).collect(Collectors.toSet()));
+			airportRepository
+					.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
 	}
 
@@ -294,7 +319,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
 
 			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
-
 
 			assertThat(airportRepository.findAll()).containsExactly(frankfurt);
 		} finally {

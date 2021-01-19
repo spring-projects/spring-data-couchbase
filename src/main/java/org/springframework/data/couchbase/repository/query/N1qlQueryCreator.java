@@ -61,8 +61,8 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	}
 
 	static Converter<? super CouchbasePersistentProperty, String> cvtr = (
-			source) -> new StringBuilder(source.getName().length() + 2).append('`').append(source.getName()).append('`')
-					.toString();
+			source) -> new StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName())
+					.append('`').toString();
 
 	@Override
 	protected QueryCriteria and(final Part part, final QueryCriteria base, final Iterator<Object> iterator) {

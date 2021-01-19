@@ -15,17 +15,13 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -34,11 +30,19 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.repository.query.*;
+import org.springframework.data.repository.query.DefaultParameters;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.Parameters;
+import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
+
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
 
 /**
  * @author Michael Nitschinger
@@ -66,6 +70,19 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where("firstname").is("Oliver").export());
+	}
+
+	@Test
+	void createsQueryFieldAnnotationCorrectly() throws Exception {
+		String input = "findByMiddlename";
+		PartTree tree = new PartTree(input, Person.class);
+		Method method = PersonRepository.class.getMethod(input, String.class);
+
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null,
+				converter);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export(), " WHERE " + where("nickname").is("Oliver").export());
 	}
 
 	@Test
