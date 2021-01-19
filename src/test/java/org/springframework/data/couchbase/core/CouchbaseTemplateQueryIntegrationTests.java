@@ -109,9 +109,9 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			couchbaseTemplate.removeByQuery(User.class).all();
 		}
 
-		User usery = couchbaseTemplate.findById(User.class).one("userx");
+		User usery = couchbaseTemplate.findById(User.class).one(UUID.randomUUID());
 		assertNull(usery, "usery should be null");
-		User userz = reactiveCouchbaseTemplate.findById(User.class).one("userx").block();
+		User userz = reactiveCouchbaseTemplate.findById(User.class).one(UUID.randomUUID()).block();
 		assertNull(userz, "uz should be null");
 
 	}

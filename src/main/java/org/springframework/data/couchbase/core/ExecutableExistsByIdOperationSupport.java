@@ -35,10 +35,10 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 		return new ExecutableExistsByIdSupport(template, null);
 	}
 
-	static class ExecutableExistsByIdSupport implements ExecutableExistsById {
+	static class ExecutableExistsByIdSupport<T,I> implements ExecutableExistsById<T,I> {
 
 		private final CouchbaseTemplate template;
-		private final ReactiveExistsByIdSupport reactiveSupport;
+		private final ReactiveExistsByIdSupport<T,I> reactiveSupport;
 
 		ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String collection) {
 			this.template = template;
@@ -46,12 +46,12 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 		}
 
 		@Override
-		public boolean one(final String id) {
+		public boolean one(final I id) {
 			return reactiveSupport.one(id).block();
 		}
 
 		@Override
-		public Map<String, Boolean> all(final Collection<String> ids) {
+		public Map<I, Boolean> all(final Collection<I> ids) {
 			return reactiveSupport.all(ids).block();
 		}
 

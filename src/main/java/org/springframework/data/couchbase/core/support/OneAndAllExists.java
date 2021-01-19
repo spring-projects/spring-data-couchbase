@@ -27,8 +27,8 @@ import java.util.stream.Stream;
  *
  * @param <T> - the entity class
  */
-public interface OneAndAllExists {
-  boolean one(String id);
+public interface OneAndAllExists<T,I> {
+  boolean one(I id);
 
-  Map<String,Boolean> all(Collection<String> ids);
+  Map<I,Boolean> all(Collection<I> ids);
 }

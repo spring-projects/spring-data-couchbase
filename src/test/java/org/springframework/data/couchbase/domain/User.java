@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
@@ -38,7 +39,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 public class User extends ComparableEntity {
 
 	@Version long version;
-	@Id private String id;
+	@Id private UUID id;
 	private String firstname;
 	private String lastname;
 	@CreatedBy private String createdBy;
@@ -46,14 +47,20 @@ public class User extends ComparableEntity {
 	@LastModifiedBy private String lastModifiedBy;
 	@LastModifiedDate private long lastModifiedDate;
 
-	@PersistenceConstructor
-	public User(final String id, final String firstname, final String lastname) {
+
+	public User(final UUID id, final String firstname, final String lastname) {
 		this.id = id;
 		this.firstname = firstname;
 		this.lastname = lastname;
 	}
 
-	public String getId() {
+	@PersistenceConstructor
+	public User(final String id, final String firstname, final String lastname) {
+		this.id = UUID.fromString(id);
+		this.firstname = firstname;
+		this.lastname = lastname;
+	}
+	public UUID getId() {
 		return id;
 	}
 

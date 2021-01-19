@@ -21,7 +21,7 @@ package org.springframework.data.couchbase.core.support;
  * @author Michael Reiche
  * @param <R> - the entity class
  */
-public interface WithProjection<R> {
+public interface WithProjection<R,I> {
 	Object as(Class<R> returnType);
 
 }

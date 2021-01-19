@@ -29,29 +29,29 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 public interface ReactiveRemoveByIdOperation {
 
-	ReactiveRemoveById removeById();
+	<T,I> ReactiveRemoveById<T,I> removeById();
 
-	interface TerminatingRemoveById extends OneAndAllIdReactive<RemoveResult> {
+	interface TerminatingRemoveById<T,I> extends OneAndAllIdReactive<RemoveResult<I>,I> {
 
-		Mono<RemoveResult> one(String id);
+		Mono<RemoveResult<I>> one(I id);
 
-		Flux<RemoveResult> all(Collection<String> ids);
-
-	}
-
-	interface RemoveByIdWithCollection extends TerminatingRemoveById, WithCollection<RemoveResult> {
-
-		TerminatingRemoveById inCollection(String collection);
-	}
-
-	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability<RemoveResult> {
-
-		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
-
-		RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		Flux<RemoveResult<I>> all(Collection<I> ids);
 
 	}
 
-	interface ReactiveRemoveById extends RemoveByIdWithDurability {}
+	interface RemoveByIdWithCollection<T,I> extends TerminatingRemoveById<T,I>, WithCollection<RemoveResult> {
+
+		TerminatingRemoveById<T,I> inCollection(String collection);
+	}
+
+	interface RemoveByIdWithDurability<T,I> extends RemoveByIdWithCollection<T,I>, WithDurability<RemoveResult> {
+
+		RemoveByIdWithCollection<T,I> withDurability(DurabilityLevel durabilityLevel);
+
+		RemoveByIdWithCollection<T,I> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+	}
+
+	interface ReactiveRemoveById<T,I> extends RemoveByIdWithDurability<T,I> {}
 
 }

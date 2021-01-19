@@ -55,7 +55,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	@Override
-	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
+	public <T,I> ReactiveFindById<T,I> findById(Class<T> domainType) {
 		return new ReactiveFindByIdOperationSupport(this).findById(domainType);
 	}
 
@@ -75,7 +75,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	@Override
-	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+	public <T,I> ReactiveFindFromReplicasById<T,I> findFromReplicasById(Class<T> domainType) {
 		return new ReactiveFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
 	}
 

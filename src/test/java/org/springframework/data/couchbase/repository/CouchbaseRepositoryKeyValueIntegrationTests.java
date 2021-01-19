@@ -122,35 +122,35 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertTrue(found.isPresent());
 		found.ifPresent(l -> assertEquals(library, l));
 
-		assertTrue(userRepository.existsById(library.getId()));
+		assertTrue(libraryRepository.existsById(library.getId()));
 		libraryRepository.delete(library);
 
-		assertFalse(userRepository.existsById(library.getId()));
+		assertFalse(libraryRepository.existsById(library.getId()));
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindByWithNestedId() {
-		UserSubmission user = new UserSubmission();
-		user.setId(UUID.randomUUID().toString());
-		user.setSubmissions(
-				Arrays.asList(new Submission(UUID.randomUUID().toString(), user.getId(), "tid", "status", 123)));
-		user.setCourses(Arrays.asList(new Course(UUID.randomUUID().toString(), user.getId(), "581")));
+		UserSubmission userSubmission = new UserSubmission();
+		userSubmission.setId(UUID.randomUUID().toString());
+		userSubmission.setSubmissions(
+				Arrays.asList(new Submission(UUID.randomUUID().toString(), userSubmission.getId(), "tid", "status", 123)));
+		userSubmission.setCourses(Arrays.asList(new Course(UUID.randomUUID().toString(), userSubmission.getId(), "581")));
 
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
-		assertFalse(userRepository.existsById(user.getId()));
+		assertFalse(userSubmissionRepository.existsById(userSubmission.getId()));
 
-		userSubmissionRepository.save(user);
+		userSubmissionRepository.save(userSubmission);
 
-		Optional<UserSubmission> found = userSubmissionRepository.findById(user.getId());
+		Optional<UserSubmission> found = userSubmissionRepository.findById(userSubmission.getId());
 		assertTrue(found.isPresent());
-		found.ifPresent(u -> assertEquals(user, u));
+		found.ifPresent(u -> assertEquals(userSubmission, u));
 
-		assertTrue(userRepository.existsById(user.getId()));
-		assertEquals(user.getSubmissions().get(0).getId(), found.get().getSubmissions().get(0).getId());
-		assertEquals(user.getCourses().get(0).getId(), found.get().getCourses().get(0).getId());
-		assertEquals(user, found.get());
-		userSubmissionRepository.delete(user);
+		assertTrue(userSubmissionRepository.existsById(userSubmission.getId()));
+		assertEquals(userSubmission.getSubmissions().get(0).getId(), found.get().getSubmissions().get(0).getId());
+		assertEquals(userSubmission.getCourses().get(0).getId(), found.get().getCourses().get(0).getId());
+		assertEquals(userSubmission, found.get());
+		userSubmissionRepository.delete(userSubmission);
 	}
 
 	@Configuration

@@ -38,11 +38,11 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 	}
 
 	@Override
-	public ReactiveExistsById existsById() {
+	public <T,I> ReactiveExistsById<T,I> existsById() {
 		return new ReactiveExistsByIdSupport(template, null);
 	}
 
-	static class ReactiveExistsByIdSupport implements ReactiveExistsById {
+	static class ReactiveExistsByIdSupport<T,I> implements ReactiveExistsById<T,I> {
 
 		private final ReactiveCouchbaseTemplate template;
 		private final String collection;
@@ -53,9 +53,9 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		}
 
 		@Override
-		public Mono<Boolean> one(final String id) {
+		public Mono<Boolean> one(final I id) {
 			return Mono.just(id).flatMap(
-					docId -> template.getCollection(collection).reactive().exists(id, existsOptions()).map(ExistsResult::exists))
+					docId -> template.getCollection(collection).reactive().exists(id.toString(), existsOptions()).map(ExistsResult::exists))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -66,7 +66,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		}
 
 		@Override
-		public Mono<Map<String, Boolean>> all(final Collection<String> ids) {
+		public Mono<Map<I, Boolean>> all(final Collection<I> ids) {
 			return Flux.fromIterable(ids).flatMap(id -> one(id).map(result -> Tuples.of(id, result)))
 					.collectMap(Tuple2::getT1, Tuple2::getT2);
 		}

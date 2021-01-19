@@ -26,9 +26,9 @@ public interface ExecutableExistsByIdOperation {
 	/**
 	 * Checks if the document exists in the bucket.
 	 */
-	ExecutableExistsById existsById();
+	<T,I> ExecutableExistsById<T,I> existsById();
 
-	interface TerminatingExistsById extends OneAndAllExists {
+	interface TerminatingExistsById<T,I> extends OneAndAllExists<T,I> {
 
 		/**
 		 * Performs the operation on the ID given.
@@ -36,7 +36,7 @@ public interface ExecutableExistsByIdOperation {
 		 * @param id the ID to perform the operation on.
 		 * @return true if the document exists, false otherwise.
 		 */
-		boolean one(String id);
+		boolean one(I id);
 
 		/**
 		 * Performs the operation on the collection of ids.
@@ -44,20 +44,20 @@ public interface ExecutableExistsByIdOperation {
 		 * @param ids the ids to check.
 		 * @return a map consisting of the document IDs as the keys and if they exist as the value.
 		 */
-		Map<String, Boolean> all(Collection<String> ids);
+		Map<I, Boolean> all(Collection<I> ids);
 
 	}
 
-	interface ExistsByIdWithCollection extends TerminatingExistsById, WithCollection {
+	interface ExistsByIdWithCollection<T,I> extends TerminatingExistsById<T,I>, WithCollection<T> {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.
 		 *
 		 * @param collection the collection to use in this scope.
 		 */
-		TerminatingExistsById inCollection(String collection);
+		TerminatingExistsById<T,I> inCollection(String collection);
 	}
 
-	interface ExecutableExistsById extends ExistsByIdWithCollection {}
+	interface ExecutableExistsById<T,I> extends ExistsByIdWithCollection<T,I> {}
 
 }

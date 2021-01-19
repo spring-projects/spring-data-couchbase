@@ -22,23 +22,23 @@ import java.util.Optional;
 import com.couchbase.client.core.msg.kv.MutationToken;
 import com.couchbase.client.java.kv.MutationResult;
 
-public class RemoveResult {
+public class RemoveResult<I> {
 
-	private final String id;
+	private final I id;
 	private final long cas;
 	private final Optional<MutationToken> mutationToken;
 
-	public RemoveResult(String id, long cas, Optional<MutationToken> mutationToken) {
+	public RemoveResult(I id, long cas, Optional<MutationToken> mutationToken) {
 		this.id = id;
 		this.cas = cas;
 		this.mutationToken = mutationToken;
 	}
 
-	public static RemoveResult from(final String id, final MutationResult result) {
-		return new RemoveResult(id, result.cas(), result.mutationToken());
+	public static <I> RemoveResult<I> from(final I id, final MutationResult result) {
+		return new RemoveResult<I>(id, result.cas(), result.mutationToken());
 	}
 
-	public String getId() {
+	public I getId() {
 		return id;
 	}
 

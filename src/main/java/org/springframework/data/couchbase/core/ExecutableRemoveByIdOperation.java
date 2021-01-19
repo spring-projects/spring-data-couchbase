@@ -27,29 +27,29 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 public interface ExecutableRemoveByIdOperation {
 
-	ExecutableRemoveById removeById();
+	<T,I> ExecutableRemoveById<T,I> removeById();
 
-	interface TerminatingRemoveById extends OneAndAllId<RemoveResult> {
+	interface TerminatingRemoveById<T,I> extends OneAndAllId<RemoveResult,I> {
 
-		RemoveResult one(String id);
+		RemoveResult<I> one(I id);
 
-		List<RemoveResult> all(Collection<String> ids);
+		List<RemoveResult<I>> all(Collection<I> ids);
 
 	}
 
-	interface RemoveByIdWithCollection extends TerminatingRemoveById, WithCollection<RemoveResult> {
+	interface RemoveByIdWithCollection<T,I> extends TerminatingRemoveById<T,I>, WithCollection<RemoveResult> {
 
 		TerminatingRemoveById inCollection(String collection);
 	}
 
-	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability<RemoveResult> {
+	interface RemoveByIdWithDurability<T,I> extends RemoveByIdWithCollection<T,I>, WithDurability<RemoveResult> {
 
-		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
+		RemoveByIdWithCollection<T,I> withDurability(DurabilityLevel durabilityLevel);
 
-		RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		RemoveByIdWithCollection<T,I> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
-	interface ExecutableRemoveById extends RemoveByIdWithDurability {}
+	interface ExecutableRemoveById<T,I> extends RemoveByIdWithDurability<T,I> {}
 
 }

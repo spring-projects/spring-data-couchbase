@@ -23,9 +23,9 @@ import java.util.Collection;
  * @author Michael Reiche
  * @param <T> - the entity class
  */
-public interface AnyId<T> {
+public interface AnyId<T,I> {
 
-	T any(String id);
+	T any(I id);
 
-	Collection<? extends T> any(Collection<String> ids);
+	Collection<? extends T> any(Collection<I> ids);
 }

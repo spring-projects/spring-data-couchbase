@@ -69,13 +69,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		return new ExecutableReplaceByIdOperationSupport(this).replaceById(domainType);
 	}
 
-	@Override
-	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
+	public <T,I> ExecutableFindById<T,I> findById(Class<T> domainType) {
 		return new ExecutableFindByIdOperationSupport(this).findById(domainType);
 	}
 
 	@Override
-	public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+	public <T,I> ExecutableFindFromReplicasById<T,I> findFromReplicasById(Class<T> domainType) {
 		return new ExecutableFindFromReplicasByIdOperationSupport(this).findFromReplicasById(domainType);
 	}
 

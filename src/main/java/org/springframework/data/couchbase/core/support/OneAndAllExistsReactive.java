@@ -27,8 +27,8 @@ import java.util.Map;
  *
  * @param <T> - the entity class
  */
-public interface OneAndAllExistsReactive {
-  Mono<Boolean> one(String id);
+public interface OneAndAllExistsReactive<T,I> {
+  Mono<Boolean> one(I id);
 
-  Mono<Map<String,Boolean>> all(Collection<String> ids);
+  Mono<Map<I,Boolean>> all(Collection<I> ids);
 }

@@ -25,21 +25,21 @@ import org.springframework.data.couchbase.core.support.WithCollection;
 
 public interface ReactiveFindFromReplicasByIdOperation {
 
-	<T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
+	<T,I> ReactiveFindFromReplicasById<T,I> findFromReplicasById(Class<T> domainType);
 
-	interface TerminatingFindFromReplicasById<T> extends AnyIdReactive<T> {
+	interface TerminatingFindFromReplicasById<T,I> extends AnyIdReactive<T,I> {
 
-		Mono<T> any(String id);
+		Mono<T> any(I id);
 
-		Flux<? extends T> any(Collection<String> ids);
+		Flux<? extends T> any(Collection<I> ids);
 
 	}
 
-	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T>, WithCollection<T> {
+	interface FindFromReplicasByIdWithCollection<T,I> extends TerminatingFindFromReplicasById<T,I>, WithCollection<T> {
 
-		TerminatingFindFromReplicasById<T> inCollection(String collection);
+		TerminatingFindFromReplicasById<T,I> inCollection(String collection);
 	}
 
-	interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
+	interface ReactiveFindFromReplicasById<T,I> extends FindFromReplicasByIdWithCollection<T,I> {}
 
 }

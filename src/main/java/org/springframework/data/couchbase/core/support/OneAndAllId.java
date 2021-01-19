@@ -24,9 +24,9 @@ import java.util.Collection;
  *
  * @param <T> - the entity class
  */
-public interface OneAndAllId<T> {
+public interface OneAndAllId<T,I> {
 
-	T one(String id);
+	T one(I id);
 
-  Collection<? extends T> all(Collection<String> ids);
+  Collection<? extends T> all(Collection<I> ids);
 }
