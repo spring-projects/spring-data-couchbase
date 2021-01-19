@@ -36,11 +36,11 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 	}
 
 	@Override
-	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
+	public <T,I> ReactiveFindFromReplicasById<T,I> findFromReplicasById(Class<T> domainType) {
 		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null);
 	}
 
-	static class ReactiveFindFromReplicasByIdSupport<T> implements ReactiveFindFromReplicasById<T> {
+	static class ReactiveFindFromReplicasByIdSupport<T,I> implements ReactiveFindFromReplicasById<T,I> {
 
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<?> domainType;
@@ -56,11 +56,11 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		}
 
 		@Override
-		public Mono<T> any(final String id) {
+		public Mono<T> any(final I id) {
 			return Mono.just(id).flatMap(docId -> {
 				GetAnyReplicaOptions options = getAnyReplicaOptions().transcoder(RawJsonTranscoder.INSTANCE);
-				return template.getCollection(collection).reactive().getAnyReplica(docId, options);
-			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
+				return template.getCollection(collection).reactive().getAnyReplica(docId.toString(), options);
+			}).map(result -> template.support().decodeEntity(id.toString(), result.contentAs(String.class), result.cas(), returnType))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -71,12 +71,12 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		}
 
 		@Override
-		public Flux<? extends T> any(Collection<String> ids) {
+		public Flux<? extends T> any(Collection<I> ids) {
 			return Flux.fromIterable(ids).flatMap(this::any);
 		}
 
 		@Override
-		public TerminatingFindFromReplicasById<T> inCollection(final String collection) {
+		public TerminatingFindFromReplicasById<T,I> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, collection);
 		}

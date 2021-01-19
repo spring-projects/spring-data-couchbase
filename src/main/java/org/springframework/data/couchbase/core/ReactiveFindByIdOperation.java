@@ -31,9 +31,9 @@ public interface ReactiveFindByIdOperation {
 	 *
 	 * @param domainType the entity type to use for the results.
 	 */
-	<T> ReactiveFindById<T> findById(Class<T> domainType);
+	<T,I> ReactiveFindById<T,I> findById(Class<T> domainType);
 
-	interface TerminatingFindById<T> extends OneAndAllIdReactive<T> {
+	interface TerminatingFindById<T,I> extends OneAndAllIdReactive<T,I> {
 
 		/**
 		 * Finds one document based on the given ID.
@@ -41,7 +41,7 @@ public interface ReactiveFindByIdOperation {
 		 * @param id the document ID.
 		 * @return the entity if found.
 		 */
-		Mono<T> one(String id);
+		Mono<T> one(I id);
 
 		/**
 		 * Finds a list of documents based on the given IDs.
@@ -49,31 +49,31 @@ public interface ReactiveFindByIdOperation {
 		 * @param ids the document ID ids.
 		 * @return the list of found entities.
 		 */
-		Flux<? extends T> all(Collection<String> ids);
+		Flux<? extends T> all(Collection<I> ids);
 
 	}
 
-	interface FindByIdWithCollection<T> extends TerminatingFindById<T>, WithCollection<T> {
+	interface FindByIdWithCollection<T,I> extends TerminatingFindById<T,I>, WithCollection<T> {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.
 		 *
 		 * @param collection the collection to use in this scope.
 		 */
-		TerminatingFindById<T> inCollection(String collection);
+		TerminatingFindById<T,I> inCollection(String collection);
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T>, WithProjectionId<T> {
+	interface FindByIdWithProjection<T,I> extends FindByIdWithCollection<T,I>, WithProjectionId<T,I> {
 
 		/**
 		 * Load only certain fields for the document.
 		 *
 		 * @param fields the projected fields to load.
 		 */
-		FindByIdWithCollection<T> project(String... fields);
+		FindByIdWithCollection<T,I> project(String... fields);
 
 	}
 
-	interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
+	interface ReactiveFindById<T,I> extends FindByIdWithProjection<T,I> {}
 
 }

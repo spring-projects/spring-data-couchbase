@@ -21,8 +21,10 @@ import reactor.core.publisher.Flux;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.UUID;
+
 @Repository
-public interface ReactiveUserRepository extends ReactiveSortingRepository<User, String> {
+public interface ReactiveUserRepository extends ReactiveSortingRepository<User, UUID> {
 
 	Flux<User> findByFirstname(String firstname);
 

@@ -139,7 +139,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public Flux<T> findAllById(Iterable<ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
-		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
+		List<Object> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
 		return (Flux<T>) operations.findById(entityInformation.getJavaType()).all(convertedIds);
 	}
 
@@ -168,12 +168,12 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Void> deleteAllById(Iterable<? extends ID> ids) {
-		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
+		return operations.removeById().all(Streamable.of(ids).map(Object::toString).map(id -> (Object)id).toList()).then();
 	}
 
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
-		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
+		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).map(id -> (Object)id).toList()).then();
 	}
 
 	@Override

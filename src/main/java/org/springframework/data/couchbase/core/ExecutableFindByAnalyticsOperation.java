@@ -37,7 +37,7 @@ public interface ExecutableFindByAnalyticsOperation {
 	 */
 	<T> ExecutableFindByAnalytics<T> findByAnalytics(Class<T> domainType);
 
-	interface TerminatingFindByAnalytics<T> extends OneAndAll<T> {
+	interface TerminatingFindByAnalytics<T> {
 
 		/**
 		 * Get exactly zero or one result.

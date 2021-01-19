@@ -48,7 +48,7 @@ public interface ReactiveFindByQueryOperation {
 	/**
 	 * Compose find execution by calling one of the terminating methods.
 	 */
-	interface TerminatingFindByQuery<T> extends OneAndAllReactive<T> {
+	interface TerminatingFindByQuery<T>  {
 
 		/**
 		 * Get exactly zero or one result.

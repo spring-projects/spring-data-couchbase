@@ -22,21 +22,21 @@ import org.springframework.data.couchbase.core.support.WithCollection;
 
 public interface ExecutableFindFromReplicasByIdOperation {
 
-	<T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
+	<T,I> ExecutableFindFromReplicasById<T,I> findFromReplicasById(Class<T> domainType);
 
-	interface TerminatingFindFromReplicasById<T> extends AnyId<T> {
+	interface TerminatingFindFromReplicasById<T,I> extends AnyId<T,I> {
 
-		T any(String id);
+		T any(I id);
 
-		Collection<? extends T> any(Collection<String> ids);
+		Collection<? extends T> any(Collection<I> ids);
 
 	}
 
-	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T>, WithCollection<T> {
+	interface FindFromReplicasByIdWithCollection<T,I> extends TerminatingFindFromReplicasById<T,I>, WithCollection<T> {
 
-		TerminatingFindFromReplicasById<T> inCollection(String collection);
+		TerminatingFindFromReplicasById<T,I> inCollection(String collection);
 	}
 
-	interface ExecutableFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
+	interface ExecutableFindFromReplicasById<T,I> extends FindFromReplicasByIdWithCollection<T,I> {}
 
 }

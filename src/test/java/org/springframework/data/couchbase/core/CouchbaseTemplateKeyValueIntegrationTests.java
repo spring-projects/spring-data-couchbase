@@ -98,8 +98,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
 				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
 			// create an entity of type clazz
-			Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
-			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+			Constructor cons = clazz.getConstructor(UUID.class, String.class, String.class);
+			User user = (User) cons.newInstance(UUID.randomUUID(),
 					"firstname", "lastname");
 
 			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
@@ -139,7 +139,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 				// create an entity of type clazz
 				Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
-				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+				User user = (User) cons.newInstance(UUID.randomUUID().toString(),
 						"firstname", "lastname");
 
 				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation

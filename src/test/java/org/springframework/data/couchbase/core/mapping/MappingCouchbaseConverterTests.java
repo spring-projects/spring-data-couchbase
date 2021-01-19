@@ -195,9 +195,10 @@ public class MappingCouchbaseConverterTests {
 
 	@Test
 	void readsID() {
-		CouchbaseDocument document = new CouchbaseDocument("001");
+		UUID id = UUID.randomUUID();
+		CouchbaseDocument document = new CouchbaseDocument(id.toString());
 		User user = converter.read(User.class, document);
-		assertThat(user.getId()).isEqualTo("001");
+		assertThat(user.getId()).isEqualTo(id);
 	}
 
 	@Test

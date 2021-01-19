@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
@@ -41,7 +42,7 @@ public class UserJustLastName extends ComparableEntity {
 	public UserJustLastName(final String id, final String lastname) {
 		this.id = id;
 		this.lastname = lastname;
-		this.user = new User("1", "first", "last");
+		this.user = new User(UUID.randomUUID(), "first", "last");
 	}
 
 	public String getId() {

@@ -31,17 +31,17 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 	}
 
 	@Override
-	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-		return new ExecutableFindByIdSupport<>(template, domainType, null, null);
+	public <T,I> ExecutableFindById<T,I> findById(Class<T> domainType) {
+		return new ExecutableFindByIdSupport<T,I>(template, domainType, null, null);
 	}
 
-	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
+	static class ExecutableFindByIdSupport<T,I> implements ExecutableFindById<T,I> {
 
 		private final CouchbaseTemplate template;
 		private final Class<T> domainType;
 		private final String collection;
 		private final List<String> fields;
-		private final ReactiveFindByIdSupport<T> reactiveSupport;
+		private final ReactiveFindByIdSupport<T,I> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
 			this.template = template;
@@ -52,23 +52,23 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		}
 
 		@Override
-		public T one(final String id) {
+		public T one(final I id) {
 			return reactiveSupport.one(id).block();
 		}
 
 		@Override
-		public Collection<? extends T> all(final Collection<String> ids) {
+		public Collection<? extends T> all(final Collection<I> ids) {
 			return reactiveSupport.all(ids).collectList().block();
 		}
 
 		@Override
-		public TerminatingFindById<T> inCollection(final String collection) {
+		public TerminatingFindById<T,I> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindByIdSupport<>(template, domainType, collection, fields);
 		}
 
 		@Override
-		public FindByIdWithCollection<T> project(String... fields) {
+		public FindByIdWithCollection<T,I> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null nor empty.");
 			return new ExecutableFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
 		}

@@ -27,8 +27,8 @@ import java.util.Collection;
  * @param <T> - the entity class
  */
 
-public interface AnyIdReactive<T> {
-	Mono<T> any(String id);
+public interface AnyIdReactive<T,I> {
+	Mono<T> any(I id);
 
-	Flux<? extends T> any(Collection<String> ids);
+	Flux<? extends T> any(Collection<I> ids);
 }

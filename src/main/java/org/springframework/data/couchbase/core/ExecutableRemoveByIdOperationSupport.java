@@ -38,14 +38,14 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		return new ExecutableRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE);
 	}
 
-	static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
+	static class ExecutableRemoveByIdSupport<T,I> implements ExecutableRemoveById<T,I> {
 
 		private final CouchbaseTemplate template;
 		private final String collection;
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
-		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
+		private final ReactiveRemoveByIdSupport<RemoveResult,I> reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String collection, final PersistTo persistTo,
 				final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel) {
@@ -54,17 +54,17 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
-			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), collection, persistTo,
+			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport<RemoveResult,I>(template.reactive(), collection, persistTo,
 					replicateTo, durabilityLevel);
 		}
 
 		@Override
-		public RemoveResult one(final String id) {
+		public RemoveResult<I> one(final I id) {
 			return reactiveRemoveByIdSupport.one(id).block();
 		}
 
 		@Override
-		public List<RemoveResult> all(final Collection<String> ids) {
+		public List<RemoveResult<I>> all(final Collection<I> ids) {
 			return reactiveRemoveByIdSupport.all(ids).collectList().block();
 		}
 

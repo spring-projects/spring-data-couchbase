@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * @param <T> - the entity class
  */
 
-public interface OneAndAllReactive<T> {
+public interface OneAndAllReactive<T,I> {
 	Mono<T> one();
 
 	Mono<T> first();

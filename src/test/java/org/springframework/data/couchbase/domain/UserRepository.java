@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import com.couchbase.client.java.json.JsonArray;
@@ -32,7 +33,7 @@ import org.springframework.stereotype.Repository;
  * @author Michael Reiche
  */
 @Repository
-public interface UserRepository extends CouchbaseRepository<User, String> {
+public interface UserRepository extends CouchbaseRepository<User, UUID> {
 
 	List<User> findByFirstname(String firstname);
 

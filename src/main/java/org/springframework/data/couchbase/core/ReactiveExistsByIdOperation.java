@@ -28,9 +28,9 @@ public interface ReactiveExistsByIdOperation {
 	/**
 	 * Checks if the document exists in the bucket.
 	 */
-	ReactiveExistsById existsById();
+	<T,I> ReactiveExistsById<T,I> existsById();
 
-	interface TerminatingExistsById extends OneAndAllExistsReactive {
+	interface TerminatingExistsById<T,I> extends OneAndAllExistsReactive<T,I> {
 
 		/**
 		 * Performs the operation on the ID given.
@@ -38,7 +38,7 @@ public interface ReactiveExistsByIdOperation {
 		 * @param id the ID to perform the operation on.
 		 * @return true if the document exists, false otherwise.
 		 */
-		Mono<Boolean> one(String id);
+		Mono<Boolean> one(I id);
 
 		/**
 		 * Performs the operation on the collection of ids.
@@ -46,21 +46,21 @@ public interface ReactiveExistsByIdOperation {
 		 * @param ids the ids to check.
 		 * @return a map consisting of the document IDs as the keys and if they exist as the value.
 		 */
-		Mono<Map<String, Boolean>> all(Collection<String> ids);
+		Mono<Map<I, Boolean>> all(Collection<I> ids);
 
 	}
 
-	interface ExistsByIdWithCollection extends TerminatingExistsById, WithCollection {
+	interface ExistsByIdWithCollection<T,I> extends TerminatingExistsById<T,I>, WithCollection<T> {
 
 		/**
 		 * Allows to specify a different collection than the default one configured.
 		 *
 		 * @param collection the collection to use in this scope.
 		 */
-		TerminatingExistsById inCollection(String collection);
+		TerminatingExistsById<T,I> inCollection(String collection);
 
 	}
 
-	interface ReactiveExistsById extends ExistsByIdWithCollection {}
+	interface ReactiveExistsById<T,I> extends ExistsByIdWithCollection<T,I> {}
 
 }

@@ -40,7 +40,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		return new ReactiveRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE);
 	}
 
-	static class ReactiveRemoveByIdSupport implements ReactiveRemoveById {
+	static class ReactiveRemoveByIdSupport<T,I> implements ReactiveRemoveById<RemoveResult,I> {
 
 		private final ReactiveCouchbaseTemplate template;
 		private final String collection;
@@ -58,9 +58,9 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		@Override
-		public Mono<RemoveResult> one(final String id) {
+		public Mono<RemoveResult<I>> one(final I id) {
 			return Mono.just(id).flatMap(docId -> template.getCollection(collection).reactive()
-					.remove(id, buildRemoveOptions()).map(r -> RemoveResult.from(docId, r))).onErrorMap(throwable -> {
+					.remove(id.toString(), buildRemoveOptions()).map(r -> RemoveResult.from(docId, r))).onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 						} else {
@@ -70,7 +70,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		@Override
-		public Flux<RemoveResult> all(final Collection<String> ids) {
+		public Flux<RemoveResult<I>> all(final Collection<I> ids) {
 			return Flux.fromIterable(ids).flatMap(this::one);
 		}
 

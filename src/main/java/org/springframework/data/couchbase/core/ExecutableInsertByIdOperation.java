@@ -27,9 +27,9 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 public interface ExecutableInsertByIdOperation {
 
-	<T> ExecutableInsertById<T> insertById(Class<T> domainType);
+	<T> ExecutableInsertById<T>insertById(Class<T> domainType);
 
-	interface TerminatingInsertById<T> extends OneAndAllEntity<T> {
+	interface TerminatingInsertById<T>  extends OneAndAllEntity<T>  {
 
 		@Override
 		T one(T object);

@@ -57,7 +57,7 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 		User modified = operations.upsertById(User.class).one(user);
 		assertEquals(user, modified);
 
-		GetResult getResult = clientFactory.getCollection(null).get(user.getId());
+		GetResult getResult = clientFactory.getCollection(null).get(user.getId().toString());
 		assertEquals("org.springframework.data.couchbase.domain.User",
 				getResult.contentAsObject().getString(CUSTOM_TYPE_KEY));
 		assertFalse(getResult.contentAsObject().containsKey(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY));

@@ -39,11 +39,11 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 	}
 
 	@Override
-	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
+	public <T,I> ReactiveFindById<T,I> findById(Class<T> domainType) {
 		return new ReactiveFindByIdSupport<>(template, domainType, null, null);
 	}
 
-	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
+	static class ReactiveFindByIdSupport<T,I> implements ReactiveFindById<T,I> {
 
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<T> domainType;
@@ -59,14 +59,14 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public Mono<T> one(final String id) {
+		public Mono<T> one(final I id) {
 			return Mono.just(id).flatMap(docId -> {
 				GetOptions options = getOptions().transcoder(RawJsonTranscoder.INSTANCE);
 				if (fields != null && !fields.isEmpty()) {
 					options.project(fields);
 				}
-				return template.getCollection(collection).reactive().get(docId, options);
-			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
+				return template.getCollection(collection).reactive().get(docId.toString(), options);
+			}).map(result -> template.support().decodeEntity(id.toString(), result.contentAs(String.class), result.cas(), domainType))
 					.onErrorResume(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							if (throwable instanceof DocumentNotFoundException) {
@@ -84,18 +84,18 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public Flux<? extends T> all(final Collection<String> ids) {
+		public Flux<? extends T> all(final Collection<I> ids) {
 			return Flux.fromIterable(ids).flatMap(this::one);
 		}
 
 		@Override
-		public TerminatingFindById<T> inCollection(final String collection) {
+		public TerminatingFindById<T,I> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, collection, fields);
 		}
 
 		@Override
-		public FindByIdWithCollection<T> project(String... fields) {
+		public FindByIdWithCollection<T,I> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
 		}

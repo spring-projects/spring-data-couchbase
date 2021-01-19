@@ -101,7 +101,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	@Override
 	public List<T> findAllById(Iterable<ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
-		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
+		List<Object> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
 		Collection<? extends T> all = couchbaseOperations.findById(entityInformation.getJavaType()).all(convertedIds);
 		return Streamable.of(all).stream().collect(StreamUtils.toUnmodifiableList());
 	}
@@ -127,13 +127,13 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	@Override
 	public void deleteAllById(Iterable<? extends ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
-		couchbaseOperations.removeById().all(Streamable.of(ids).map(Objects::toString).toList());
+		couchbaseOperations.removeById().all(Streamable.of(ids).map(Objects::toString).map(id -> (Object)id).toList());
 	}
 
 	@Override
 	public void deleteAll(Iterable<? extends T> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList());
+		couchbaseOperations.removeById().all(Streamable.of(entities).map(entityInformation::getId).map(id -> (Object)id).toList());
 	}
 
 	@Override

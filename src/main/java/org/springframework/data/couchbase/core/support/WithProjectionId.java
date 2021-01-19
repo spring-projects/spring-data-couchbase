@@ -21,7 +21,7 @@ package org.springframework.data.couchbase.core.support;
  * @author Michael Reiche
  * @param <R> - the entity class
  */
-public interface WithProjectionId<R> {
+public interface WithProjectionId<R,I> {
 	Object project(String[] fields);
 
 }
