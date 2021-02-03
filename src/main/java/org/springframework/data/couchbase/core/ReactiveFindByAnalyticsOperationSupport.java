@@ -15,12 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.query.ReactiveQueryResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
@@ -39,41 +39,60 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 	@Override
 	public <T> ReactiveFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ReactiveFindByAnalyticsSupport<>(template, domainType, ALL_QUERY, AnalyticsScanConsistency.NOT_BOUNDED,
+		return new ReactiveFindByAnalyticsSupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null,
 				template.support());
 	}
 
 	static class ReactiveFindByAnalyticsSupport<T> implements ReactiveFindByAnalytics<T> {
 
 		private final ReactiveCouchbaseTemplate template;
-		private final Class<T> domainType;
+		private final Class<?> domainType;
+		private final Class<T> returnType;
 		private final AnalyticsQuery query;
 		private final AnalyticsScanConsistency scanConsistency;
+		private final String scope;
+		private final String collection;
+		private final AnalyticsOptions options;
 		private final ReactiveTemplateSupport support;
 
-		ReactiveFindByAnalyticsSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-				final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency, ReactiveTemplateSupport support) {
+		ReactiveFindByAnalyticsSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
+				final Class<T> returnType, final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency,
+				String scope, String collection, AnalyticsOptions options, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
+			this.returnType = returnType;
 			this.query = query;
 			this.scanConsistency = scanConsistency;
+			this.scope = scope;
+			this.collection = collection;
+			this.options = options;
 			this.support = support;
 		}
 
 		@Override
 		public TerminatingFindByAnalytics<T> matching(AnalyticsQuery query) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
 		}
 
 		@Override
 		@Deprecated
 		public FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
 		}
 
 		@Override
 		public FindByAnalyticsWithQuery<T> withConsistency(AnalyticsScanConsistency scanConsistency) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
+		}
+
+		@Override
+		public <R> FindByAnalyticsWithConsistency<R> as(final Class<R> returnType) {
+			Assert.notNull(returnType, "returnType must not be null!");
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
 		}
 
 		@Override
@@ -114,7 +133,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							cas = row.getLong(TemplateUtils.SELECT_CAS);
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
-							return template.support().decodeEntity(id, row.toString(), cas, domainType);
+							return support.decodeEntity(id, row.toString(), cas, returnType);
 						});
 			});
 		}
@@ -137,6 +156,27 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		@Override
 		public Mono<Boolean> exists() {
 			return count().map(count -> count > 0);
+		}
+
+		@Override
+		public TerminatingFindByAnalytics<T> withOptions(final AnalyticsOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
+		}
+
+		@Override
+		public FindByAnalyticsInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
+		}
+
+		@Override
+		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, support);
 		}
 
 		private String assembleEntityQuery(final boolean count) {

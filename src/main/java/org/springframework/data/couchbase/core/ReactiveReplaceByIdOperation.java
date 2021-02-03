@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,35 +21,102 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithReplaceOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
 
+/**
+ * Insert Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveReplaceByIdOperation {
 
+	/**
+	 * Replace using the KV service.
+	 *
+	 * @param domainType the entity type to replace.
+	 */
 	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingReplaceById<T> extends OneAndAllEntityReactive<T> {
 
+		/**
+		 * Replace one entity.
+		 *
+		 * @return Replaced entity.
+		 */
 		Mono<T> one(T object);
 
+		/**
+		 * Replace a collection of entities.
+		 *
+		 * @return Replaced entities
+		 */
 		Flux<? extends T> all(Collection<? extends T> objects);
 
 	}
 
-	interface ReplaceByIdWithCollection<T> extends TerminatingReplaceById<T>, WithCollection<T> {
-
-		TerminatingReplaceById<T> inCollection(String collection);
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface ReplaceByIdWithOptions<T> extends TerminatingReplaceById<T>, WithReplaceOptions<RemoveResult> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options to use for execution
+		 */
+		@Override
+		TerminatingReplaceById<T> withOptions(ReplaceOptions options);
 	}
 
-	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithCollection<T>, WithDurability<T> {
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface ReplaceByIdInCollection<T> extends ReplaceByIdWithOptions<T>, InCollection<Object> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		ReplaceByIdWithOptions<T> inCollection(String collection);
+	}
 
-		ReplaceByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface ReplaceByIdInScope<T> extends ReplaceByIdInCollection<T>, InScope<Object> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		ReplaceByIdInCollection<T> inScope(String scope);
+	}
 
-		ReplaceByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+	interface ReplaceByIdWithDurability<T> extends ReplaceByIdInScope<T>, WithDurability<T> {
+
+		ReplaceByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+
+		ReplaceByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
@@ -58,6 +125,11 @@ public interface ReactiveReplaceByIdOperation {
 		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
 	}
 
+	/**
+	 * Provides methods for constructing KV replace operations in a fluent way.
+	 *
+	 * @param <T> the entity type to replace
+	 */
 	interface ReactiveReplaceById<T> extends ReplaceByIdWithExpiry<T> {}
 
 }

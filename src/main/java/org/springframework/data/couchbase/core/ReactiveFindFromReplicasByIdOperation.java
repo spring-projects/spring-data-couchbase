@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,25 +21,100 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.support.AnyIdReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
+import org.springframework.data.couchbase.core.support.WithGetAnyReplicaOptions;
 
+import com.couchbase.client.java.kv.GetAnyReplicaOptions;
+
+/**
+ * Query Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveFindFromReplicasByIdOperation {
 
+	/**
+	 * Loads a document from a replica.
+	 *
+	 * @param domainType the entity type to use for the results.
+	 */
 	<T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual get execution.
+	 */
 	interface TerminatingFindFromReplicasById<T> extends AnyIdReactive<T> {
 
+		/**
+		 * Finds one document based on the given ID.
+		 *
+		 * @param id the document ID.
+		 * @return the entity if found.
+		 */
 		Mono<T> any(String id);
 
+		/**
+		 * Finds a list of documents based on the given IDs.
+		 *
+		 * @param ids the document ID ids.
+		 * @return the list of found entities.
+		 */
 		Flux<? extends T> any(Collection<String> ids);
 
 	}
 
-	interface FindFromReplicasByIdWithCollection<T> extends TerminatingFindFromReplicasById<T>, WithCollection<T> {
-
-		TerminatingFindFromReplicasById<T> inCollection(String collection);
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindFromReplicasByIdWithOptions<T> extends TerminatingFindFromReplicasById<T>, WithGetAnyReplicaOptions<T> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options options to use for execution
+		 */
+		@Override
+		TerminatingFindFromReplicasById<T> withOptions(GetAnyReplicaOptions options);
 	}
 
-	interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdWithCollection<T> {}
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindFromReplicasByIdInCollection<T> extends FindFromReplicasByIdWithOptions<T>, InCollection<T> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		FindFromReplicasByIdWithOptions<T> inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindFromReplicasByIdInScope<T> extends FindFromReplicasByIdInCollection<T>, InScope<T> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		FindFromReplicasByIdInCollection<T> inScope(String scope);
+	}
+
+	/**
+	 * Provides methods for constructing get operations in a fluent way.
+	 *
+	 * @param <T> the entity type to use for the results
+	 */
+	interface ReactiveFindFromReplicasById<T> extends FindFromReplicasByIdInScope<T> {}
 
 }

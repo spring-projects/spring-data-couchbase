@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -52,6 +54,7 @@ public class Query {
 	private QueryScanConsistency queryScanConsistency;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
+	private static final Logger LOG = LoggerFactory.getLogger(Query.class);
 
 	public Query() {}
 
@@ -265,13 +268,13 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
-		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
-	}
-
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
 			boolean isCount) {
 		return toN1qlSelectString(template, collectionName, domainClass, null, isCount, null);
+	}
+
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
+		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
 	}
 
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
@@ -322,8 +325,10 @@ public class Query {
 	 * @param scanConsistency
 	 * @return QueryOptions
 	 */
-	public QueryOptions buildQueryOptions(QueryScanConsistency scanConsistency) {
-		final QueryOptions options = QueryOptions.queryOptions();
+	public QueryOptions buildQueryOptions(QueryOptions options, QueryScanConsistency scanConsistency) {
+		if (options == null) { // add/override what we got from PseudoArgs
+			options = QueryOptions.queryOptions();
+		}
 		if (getParameters() != null) {
 			if (getParameters() instanceof JsonArray) {
 				options.parameters((JsonArray) getParameters());
@@ -331,10 +336,12 @@ public class Query {
 				options.parameters((JsonObject) getParameters());
 			}
 		}
+		if (scanConsistency == null && getScanConsistency() != null) {
+				scanConsistency = getScanConsistency();
+		}
 		if (scanConsistency != null) {
 			options.scanConsistency(scanConsistency);
 		}
-
 		return options;
 	}
 

@@ -30,7 +30,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -101,7 +101,7 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 			try {
 				Thread.sleep(3000);
 			} catch (Exception e) {}
-			ExecutableFindByQueryOperation.ExecutableFindByQuery q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) couchbaseTemplate
+			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate
 					.findByQuery(Airline.class).matching(query);
 
 			Optional<Airline> al = q.one();

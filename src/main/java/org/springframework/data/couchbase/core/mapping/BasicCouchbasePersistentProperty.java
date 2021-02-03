@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.util.Locale;
+
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.AnnotationBasedPersistentProperty;
@@ -23,11 +25,10 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
+import org.springframework.data.util.Lazy;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
-
-import java.util.Locale;
 
 /**
  * Implements annotated property representations of a given {@link Field} instance.
@@ -98,13 +99,22 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	// DATACOUCH-145: allows SDK's @Id annotation to be used
 	@Override
 	public boolean isIdProperty() {
-		if (super.isIdProperty()){
+		if (super.isIdProperty()) {
 			return true;
 		}
 		// is field named "id"
-		if(getField() != null && this.getFieldName().toLowerCase(Locale.ROOT).equals("id")){
+		if (getField() != null && this.getFieldName().toLowerCase(Locale.ROOT).equals("id")) {
 			return true;
 		}
 		return false;
 	}
+
+	public Boolean isExpirationProperty() {
+		return isExpiration.get();
+	}
+
+	private final Lazy<Boolean> isExpiration = Lazy.of(() -> {
+		return this.isAnnotationPresent(Expiration.class);
+	});
+
 }

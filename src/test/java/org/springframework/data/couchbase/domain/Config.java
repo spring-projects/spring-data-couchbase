@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableCouchbaseAuditing(auditorAwareRef="auditorAwareRef", dateTimeProviderRef="dateTimeProviderRef")  // this activates auditing
+@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";
@@ -203,6 +203,17 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	public String typeKey() {
 		return "t"; // this will override '_class', is passed in to new CustomMappingCouchbaseConverter
+	}
+
+	static String scopeName = null;
+
+	@Override
+	protected String getScopeName() {
+		return scopeName;
+	}
+
+	public static void setScopeName(String scopeName) {
+		Config.scopeName = scopeName;
 	}
 
 }
