@@ -219,7 +219,7 @@ class QueryCriteriaTests {
 	@Test
 	void testIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).in(args);
+		QueryCriteria c = where(i("name")).in((Object) args);
 		assertEquals("`name` in ( [\"gump\",\"davis\"] )", c.export());
 		JsonArray parameters = JsonArray.create();
 		assertEquals("`name` in ( $1 )", c.export(new int[1], parameters, null));
@@ -229,7 +229,7 @@ class QueryCriteriaTests {
 	@Test
 	void testNotIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).notIn(args);
+		QueryCriteria c = where(i("name")).notIn((Object) args);
 		assertEquals("not( (`name` in ( [\"gump\",\"davis\"] )) )", c.export());
 		JsonArray parameters = JsonArray.create();
 		assertEquals("not( (`name` in ( $1 )) )", c.export(new int[1], parameters, null));

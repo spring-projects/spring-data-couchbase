@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -33,6 +34,8 @@ public class Airport extends ComparableEntity {
 	String iata;
 
 	String icao;
+
+	@Version Number version;
 
 	@PersistenceConstructor
 	public Airport(String id, String iata, String icao) {
@@ -53,4 +56,16 @@ public class Airport extends ComparableEntity {
 		return icao;
 	}
 
+	public Airport withId(String id) {
+		return new Airport(id, this.iata, this.icao);
+	}
+
+	public Airport withIcao(String icao) {
+		return new Airport(this.getId(), this.iata, icao);
+	}
+
+	public Airport clearVersion() {
+		version = Long.valueOf(0);
+		return this;
+	}
 }

@@ -189,7 +189,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Void> deleteAll() {
-		return operations.removeByQuery(entityInformation.getJavaType()).all().then();
+		return operations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).all().then();
 	}
 
 	/**

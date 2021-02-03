@@ -16,11 +16,16 @@
 package org.springframework.data.couchbase.core.support;
 
 /**
- * A common interface for all of Insert, Replace, Upsert that take Distinct
+ * Interface for operations that take distinct fields
  *
  * @author Michael Reiche
  * @param <T> - the entity class
  */
 public interface WithDistinct<T> {
+	/**
+	 * Specify distinct field names
+	 *
+	 * @param distinctFields - distinct fields
+	 */
 	Object distinct(String[] distinctFields);
 }

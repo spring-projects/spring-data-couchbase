@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -40,7 +41,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 	@Override
 	public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ReactiveUpsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+		return new ReactiveUpsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
 				DurabilityLevel.NONE, null);
 	}
 
@@ -48,18 +49,22 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<T> domainType;
+		private final String scope;
 		private final String collection;
+		private final UpsertOptions options;
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
 
-		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
+		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
+				final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
 				final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
@@ -70,8 +75,13 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		public Mono<T> one(T object) {
 			return Mono.just(object).flatMap(o -> {
 				CouchbaseDocument converted = template.support().encodeEntity(o);
-				return template.getCollection(collection).reactive()
-						.upsert(converted.getId(), converted.export(), buildUpsertOptions(converted)).map(result -> {
+				// using collection works fine for collection == null or "_default", when scope is not set in clientFactory
+				// but if scope is set, then the collection must be specified as well.
+				PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection,
+						options != null ? options : UpsertOptions.upsertOptions());
+				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
+						.reactive().upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+						.map(result -> {
 							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
 							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
 						});
@@ -89,8 +99,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			return Flux.fromIterable(objects).flatMap(this::one);
 		}
 
-		private UpsertOptions buildUpsertOptions(CouchbaseDocument doc) {
-			final UpsertOptions options = UpsertOptions.upsertOptions();
+		private UpsertOptions buildUpsertOptions(UpsertOptions options, CouchbaseDocument doc) {
+			options = options != null ? options : UpsertOptions.upsertOptions();
 			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
 				options.durability(persistTo, replicateTo);
 			} else if (durabilityLevel != DurabilityLevel.NONE) {
@@ -105,32 +115,46 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		}
 
 		@Override
-		public TerminatingUpsertById<T> inCollection(final String collection) {
+		public TerminatingUpsertById<T> withOptions(final UpsertOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ReactiveUpsertByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
+		}
+
+		@Override
+		public UpsertByIdWithDurability<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
 		}
 
 		@Override
-		public UpsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
+		public UpsertByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
+		}
+
+		@Override
+		public UpsertByIdInCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
 		}
 
 		@Override
-		public UpsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
+		public UpsertByIdInCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
 		}
 
 		@Override
 		public UpsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ReactiveUpsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
 		}
 	}
 

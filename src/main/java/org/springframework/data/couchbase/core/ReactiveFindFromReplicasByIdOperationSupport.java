@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAnyReplicaOptions.getAnyReplicaOptions;
 
+import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
-import org.springframework.util.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -37,29 +40,40 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 	@Override
 	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null);
+		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null, null, null);
 	}
 
 	static class ReactiveFindFromReplicasByIdSupport<T> implements ReactiveFindFromReplicasById<T> {
 
+		private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindFromReplicasByIdOperationSupport.class);
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<?> domainType;
 		private final Class<T> returnType;
+		private final String scope;
 		private final String collection;
+		private final GetAnyReplicaOptions options;
 
 		ReactiveFindFromReplicasByIdSupport(ReactiveCouchbaseTemplate template, Class<?> domainType, Class<T> returnType,
-				String collection) {
+				String scope, String collection, GetAnyReplicaOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 		}
 
 		@Override
 		public Mono<T> any(final String id) {
 			return Mono.just(id).flatMap(docId -> {
-				GetAnyReplicaOptions options = getAnyReplicaOptions().transcoder(RawJsonTranscoder.INSTANCE);
-				return template.getCollection(collection).reactive().getAnyReplica(docId, options);
+				GetAnyReplicaOptions garOptions = options != null ? options : getAnyReplicaOptions();
+				if (garOptions.build().transcoder() == null) {
+					garOptions.transcoder(RawJsonTranscoder.INSTANCE);
+				}
+				PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions);
+				LOG.debug("statement: {} scope: {} collection: {}", "getAnyReplica", pArgs.getScope(), pArgs.getCollection());
+				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
+						.reactive().getAnyReplica(docId, pArgs.getOptions());
 			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
@@ -76,9 +90,21 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		}
 
 		@Override
-		public TerminatingFindFromReplicasById<T> inCollection(final String collection) {
+		public TerminatingFindFromReplicasById<T> withOptions(final GetAnyReplicaOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+		}
+
+		@Override
+		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, collection);
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+		}
+
+		@Override
+		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
 		}
 
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -60,14 +61,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
-		
+
 		this.mappingContext = this.converter.getMappingContext();
- 		if (mappingContext instanceof CouchbaseMappingContext) {
- 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
- 			if (cmc.isAutoIndexCreation()) {
- 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
- 			}
- 		}
+		if (mappingContext instanceof CouchbaseMappingContext) {
+			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
+			if (cmc.isAutoIndexCreation()) {
+				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
+			}
+		}
 	}
 
 	@Override
@@ -180,4 +181,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 			}
 		}
 	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void setThreadLocalArgs(PseudoArgs pseudoArgs) {
+		reactiveCouchbaseTemplate.setThreadLocalArgs(pseudoArgs);
+	}
+
 }

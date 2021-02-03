@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,24 @@ import java.util.stream.Stream;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAll;
-import org.springframework.data.couchbase.core.support.WithCollection;
 import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithDistinct;
-import org.springframework.data.couchbase.core.support.WithProjection;
 import org.springframework.data.couchbase.core.support.WithQuery;
+import org.springframework.data.couchbase.core.support.WithQueryOptions;
 import org.springframework.lang.Nullable;
 
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * Query Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ExecutableFindByQueryOperation {
 
 	/**
@@ -41,13 +49,18 @@ public interface ExecutableFindByQueryOperation {
 	 */
 	<T> ExecutableFindByQuery<T> findByQuery(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingFindByQuery<T> extends OneAndAll<T> {
+
 		/**
 		 * Get exactly zero or one result.
 		 *
 		 * @return {@link Optional#empty()} if no match found.
 		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
+		@Override
 		default Optional<T> one() {
 			return Optional.ofNullable(oneValue());
 		}
@@ -59,6 +72,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IncorrectResultSizeDataAccessException if more than one match found.
 		 */
 		@Nullable
+		@Override
 		T oneValue();
 
 		/**
@@ -66,6 +80,7 @@ public interface ExecutableFindByQueryOperation {
 		 *
 		 * @return {@link Optional#empty()} if no match found.
 		 */
+		@Override
 		default Optional<T> first() {
 			return Optional.ofNullable(firstValue());
 		}
@@ -76,13 +91,15 @@ public interface ExecutableFindByQueryOperation {
 		 * @return {@literal null} if no match found.
 		 */
 		@Nullable
+		@Override
 		T firstValue();
 
 		/**
-		 * Get all matching elements.
+		 * Get all matching documents.
 		 *
 		 * @return never {@literal null}.
 		 */
+		@Override
 		List<T> all();
 
 		/**
@@ -90,6 +107,7 @@ public interface ExecutableFindByQueryOperation {
 		 *
 		 * @return a {@link Stream} of results. Never {@literal null}.
 		 */
+		@Override
 		Stream<T> stream();
 
 		/**
@@ -97,6 +115,7 @@ public interface ExecutableFindByQueryOperation {
 		 *
 		 * @return total number of matching elements.
 		 */
+		@Override
 		long count();
 
 		/**
@@ -104,15 +123,15 @@ public interface ExecutableFindByQueryOperation {
 		 *
 		 * @return {@literal true} if at least one matching element exists.
 		 */
+		@Override
 		boolean exists();
 
 	}
 
 	/**
-	 * Terminating operations invoking the actual query execution.
+	 * Fluent methods to specify the query
 	 *
-	 * @author Christoph Strobl
-	 * @since 2.0
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T>, WithQuery<T> {
 
@@ -122,6 +141,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @param query must not be {@literal null}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
+		@Override
 		TerminatingFindByQuery<T> matching(Query query);
 
 		/**
@@ -131,25 +151,65 @@ public interface ExecutableFindByQueryOperation {
 		 * @return new instance of {@link ExecutableFindByQuery}.
 		 * @throws IllegalArgumentException if criteria is {@literal null}.
 		 */
+		@Override
 		default TerminatingFindByQuery<T> matching(QueryCriteriaDefinition criteria) {
 			return matching(Query.query(criteria));
 		}
 
 	}
 
-	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T>, WithCollection<T> {
-
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryWithOptions<T> extends FindByQueryWithQuery<T>, WithQueryOptions<T> {
 		/**
-		 * Allows to override the default scan consistency.
+		 * Fluent method to specify options to use for execution
 		 *
-		 * @param collection the collection to use for this query.
+		 * @param options to use for execution
 		 */
-		FindByQueryWithQuery<T> inCollection(String collection);
-
+		@Override
+		TerminatingFindByQuery<T> withOptions(QueryOptions options);
 	}
 
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryInCollection<T> extends FindByQueryWithOptions<T>, InCollection<T> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		FindByQueryWithOptions<T> inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryInScope<T> extends FindByQueryInCollection<T>, InScope<T> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		FindByQueryInCollection<T> inScope(String scope);
+	}
+
+	/**
+	 * To be removed at the next major release. use WithConsistency instead
+	 * 
+	 * @param <T> the entity type to use for the results.
+	 */
 	@Deprecated
-	interface FindByQueryConsistentWith<T> extends FindByQueryInCollection<T> {
+	interface FindByQueryConsistentWith<T> extends FindByQueryInScope<T> {
 
 		/**
 		 * Allows to override the default scan consistency.
@@ -157,10 +217,14 @@ public interface ExecutableFindByQueryOperation {
 		 * @param scanConsistency the custom scan consistency to use for this query.
 		 */
 		@Deprecated
-		FindByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
-
+		FindByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
 	}
 
+	/**
+	 * Fluent method to specify scan consistency.  Scan consistency may also come from an annotation.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
 	interface FindByQueryWithConsistency<T> extends FindByQueryConsistentWith<T>, WithConsistency<T> {
 
 		/**
@@ -168,18 +232,20 @@ public interface ExecutableFindByQueryOperation {
 		 *
 		 * @param scanConsistency the custom scan consistency to use for this query.
 		 */
+		@Override
 		FindByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
-
 	}
 
 	/**
-	 * Result type override (Optional).
+	 * Fluent method to specify a return type different than the the entity type to use for the results.
+	 *
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithProjection<T> extends FindByQueryWithConsistency<T> {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
-		 * Skip this step if you are anyway only interested in the original domain type.
+		 * Skip this step if you are only interested in the original the entity type to use for the results.
 		 *
 		 * @param returnType must not be {@literal null}.
 		 * @return new instance of {@link FindByQueryWithProjection}.
@@ -189,7 +255,9 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
-	 * Distinct Find support.
+	 * Fluent method to specify DISTINCT fields
+	 *
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjection<T>, WithDistinct<T> {
 
@@ -200,14 +268,15 @@ public interface ExecutableFindByQueryOperation {
 		 * @return new instance of {@link ExecutableFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
+		@Override
 		FindByQueryWithProjection<T> distinct(String[] distinctFields);
-
 	}
 
 	/**
-	 * {@link ExecutableFindByQuery} provides methods for constructing lookup operations in a fluent way.
+	 * Provides methods for constructing query operations in a fluent way.
+	 *
+	 * @param <T> the entity type to use for the results
 	 */
-
 	interface ExecutableFindByQuery<T> extends FindByQueryWithDistinct<T> {}
 
 }

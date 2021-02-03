@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,13 @@ public class ReactiveCouchbaseRepositoryQuery extends AbstractReactiveCouchbaseQ
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public ReactiveCouchbaseRepositoryQuery(final ReactiveCouchbaseOperations operations,
-			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries,
-			final QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		super(queryMethod, operations, new SpelExpressionParser(), evaluationContextProvider);
+			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries) {
+		super(queryMethod, operations, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT);
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = evaluationContextProvider;
-		throw new RuntimeException("Deprecated");
+		this.evaluationContextProvider = QueryMethodEvaluationContextProvider.DEFAULT;
+		//throw new RuntimeException("Deprecated");
 	}
 
 	@Override

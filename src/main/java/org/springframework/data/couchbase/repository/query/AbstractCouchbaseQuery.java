@@ -15,10 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.PagedExecution;
@@ -41,7 +42,7 @@ import org.springframework.util.Assert;
 public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<CouchbaseOperations>
 		implements RepositoryQuery {
 
-	private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> findOperationWithProjection;
+	private final ExecutableFindByQuery<?> findOperationWithProjection;
 
 	/**
 	 * Creates a new {@link AbstractCouchbaseQuery} from the given {@link ReactiveCouchbaseQueryMethod} and
@@ -86,7 +87,8 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		ExecutableFindByQuery<?> find = typeToRead == null ? findOperationWithProjection //
 				: findOperationWithProjection; // not yet implemented in core .as(typeToRead);
 
-		String collection = "_default._default";// method.getEntityInformation().getCollectionName(); // not yet implemented
+		// TODO (maybe) // method.getEntityInformation().getCollectionName(); // not yet implemented
+		String collection = CollectionIdentifier.DEFAULT_SCOPE + "." + CollectionIdentifier.DEFAULT_COLLECTION;
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
@@ -101,7 +103,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	 * @return
 	 */
 	private CouchbaseQueryExecution getExecution(ParameterAccessor accessor, Converter<Object, Object> resultProcessing,
-			ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation) {
+			ExecutableFindByQuery<?> operation) {
 		return new CouchbaseQueryExecution.ResultProcessingExecution(getExecutionToWrap(accessor, operation),
 				resultProcessing);
 	}
@@ -114,7 +116,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	 * @return
 	 */
 	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor,
-			ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation) {
+			ExecutableFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), getQueryMethod());
@@ -130,7 +132,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			return new PagedExecution(operation, accessor.getPageable());
 		} else {
 			return (q, t, c) -> {
-				ExecutableFindByQueryOperation.TerminatingFindByQuery<?> find = operation.matching(q);
+				TerminatingFindByQuery<?> find = operation.matching(q);
 				if (isCountQuery()) {
 					return find.count();
 				}

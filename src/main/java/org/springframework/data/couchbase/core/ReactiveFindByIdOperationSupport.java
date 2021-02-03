@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -34,38 +37,50 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 	private final ReactiveCouchbaseTemplate template;
 
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindByIdOperationSupport.class);
+
 	ReactiveFindByIdOperationSupport(ReactiveCouchbaseTemplate template) {
 		this.template = template;
 	}
 
 	@Override
 	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
-		return new ReactiveFindByIdSupport<>(template, domainType, null, null);
+		return new ReactiveFindByIdSupport<>(template, domainType, null, null, null, null);
 	}
 
 	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
 
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<T> domainType;
+		private final String scope;
 		private final String collection;
+		private final GetOptions options;
 		private final List<String> fields;
 
-		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String collection,
-				List<String> fields) {
+		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
+				GetOptions options, List<String> fields) {
 			this.template = template;
 			this.domainType = domainType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 			this.fields = fields;
 		}
 
 		@Override
 		public Mono<T> one(final String id) {
 			return Mono.just(id).flatMap(docId -> {
-				GetOptions options = getOptions().transcoder(RawJsonTranscoder.INSTANCE);
-				if (fields != null && !fields.isEmpty()) {
-					options.project(fields);
+				GetOptions gOptions = options != null ? options : getOptions();
+				if (gOptions.build().transcoder() == null) {
+					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
 				}
-				return template.getCollection(collection).reactive().get(docId, options);
+				if (fields != null && !fields.isEmpty()) {
+					gOptions.project(fields);
+				}
+				PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions);
+				LOG.debug("statement: {} scope: {} collection: {}", "findById", pArgs.getScope(), pArgs.getCollection());
+				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
+						.reactive().get(docId, pArgs.getOptions());
 			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
 					.onErrorResume(throwable -> {
 						if (throwable instanceof RuntimeException) {
@@ -89,15 +104,27 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public TerminatingFindById<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveFindByIdSupport<>(template, domainType, collection, fields);
+		public TerminatingFindById<T> withOptions(final GetOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields);
 		}
 
 		@Override
-		public FindByIdWithCollection<T> project(String... fields) {
+		public FindByIdWithOptions<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields);
+		}
+
+		@Override
+		public FindByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields);
+		}
+
+		@Override
+		public FindByIdInScope<T> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null nor empty.");
-			return new ReactiveFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields));
 		}
 	}
 

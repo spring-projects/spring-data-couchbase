@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.core.RemoveResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
@@ -46,10 +48,23 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 	Flux<Airport> findAll();
 
 	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Mono<Void> deleteAll();
+
+	@Override
 	Mono<Airport> save(Airport a);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAllByIata(String iata);
+
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
+	Flux<Airport> findAllPoliciesByApplicableTypes(String state, JsonArray applicableTypes);
+
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} and icao != $1 ORDER BY effectiveDateTime DESC LIMIT 1")
+	Mono<Airport> findPolicySnapshotByPolicyIdAndEffectiveDateTime(String policyId, long effectiveDateTime);
+
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} ORDER BY effectiveDateTime DESC")
+	Flux<Airport> findPolicySnapshotAll();
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

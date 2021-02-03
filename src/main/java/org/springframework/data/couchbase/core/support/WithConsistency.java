@@ -18,11 +18,16 @@ package org.springframework.data.couchbase.core.support;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * A common interface for all of Insert, Replace, Upsert that take consistency
+ * A common interface operations that take scan consistency
  *
  * @author Michael Reiche
  * @param <T> - the entity class
  */
 public interface WithConsistency<T> {
+	/**
+	 * Specify scan consistency
+	 *
+	 * @param scanConsistency - scan consistency
+	 */
 	Object withConsistency(QueryScanConsistency scanConsistency);
 }

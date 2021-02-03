@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,20 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithGetOptions;
 import org.springframework.data.couchbase.core.support.WithProjectionId;
 
+import com.couchbase.client.java.kv.GetOptions;
+
+/**
+ * Get Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveFindByIdOperation {
 
 	/**
@@ -33,6 +43,11 @@ public interface ReactiveFindByIdOperation {
 	 */
 	<T> ReactiveFindById<T> findById(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
 	interface TerminatingFindById<T> extends OneAndAllIdReactive<T> {
 
 		/**
@@ -53,27 +68,67 @@ public interface ReactiveFindByIdOperation {
 
 	}
 
-	interface FindByIdWithCollection<T> extends TerminatingFindById<T>, WithCollection<T> {
-
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByIdWithOptions<T> extends TerminatingFindById<T>, WithGetOptions<T> {
 		/**
-		 * Allows to specify a different collection than the default one configured.
+		 * Fluent method to specify options to use for execution
 		 *
-		 * @param collection the collection to use in this scope.
+		 * @param options options to use for execution
 		 */
-		TerminatingFindById<T> inCollection(String collection);
+		@Override
+		TerminatingFindById<T> withOptions(GetOptions options);
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithCollection<T>, WithProjectionId<T> {
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByIdInCollection<T> extends FindByIdWithOptions<T>, InCollection<T> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		FindByIdWithOptions<T> inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByIdInScope<T> extends FindByIdInCollection<T>, InScope<T> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		FindByIdInCollection<T> inScope(String scope);
+	}
+
+	interface FindByIdWithProjection<T> extends FindByIdInScope<T>, WithProjectionId<T> {
 
 		/**
 		 * Load only certain fields for the document.
 		 *
 		 * @param fields the projected fields to load.
 		 */
-		FindByIdWithCollection<T> project(String... fields);
+		FindByIdInCollection<T> project(String... fields);
 
 	}
 
+	/**
+	 * Provides methods for constructing query operations in a fluent way.
+	 *
+	 * @param <T> the entity type to use for the results
+	 */
 	interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
 
 }

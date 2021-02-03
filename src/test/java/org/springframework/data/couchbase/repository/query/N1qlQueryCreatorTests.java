@@ -83,11 +83,11 @@ class N1qlQueryCreatorTests {
 		PartTree tree = new PartTree(input, Person.class);
 		Method method = PersonRepository.class.getMethod(input, String.class);
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null,
-				converter, bucketName);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
+				bucketName);
 		Query query = creator.createQuery();
 
-		assertEquals(query.export(), " WHERE " + where("nickname").is("Oliver").export());
+		assertEquals(query.export(), " WHERE " + where(i("nickname")).is("Oliver").export());
 	}
 
 	@Test
@@ -104,9 +104,9 @@ class N1qlQueryCreatorTests {
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -126,9 +126,9 @@ class N1qlQueryCreatorTests {
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -148,9 +148,9 @@ class N1qlQueryCreatorTests {
 
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 

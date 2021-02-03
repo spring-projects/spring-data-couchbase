@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.List;
 import org.springframework.data.couchbase.core.ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.java.kv.GetOptions;
+
 public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOperation {
 
 	private final CouchbaseTemplate template;
@@ -32,23 +34,29 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 	@Override
 	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-		return new ExecutableFindByIdSupport<>(template, domainType, null, null);
+		return new ExecutableFindByIdSupport<>(template, domainType, null, null, null, null);
 	}
 
 	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
 
 		private final CouchbaseTemplate template;
 		private final Class<T> domainType;
+		private final String scope;
 		private final String collection;
+		private final GetOptions options;
 		private final List<String> fields;
 		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
-		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String collection, List<String> fields) {
+		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String scope, String collection,
+				GetOptions options, List<String> fields) {
 			this.template = template;
 			this.domainType = domainType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 			this.fields = fields;
-			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, collection, fields);
+			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, scope, collection, options,
+					fields);
 		}
 
 		@Override
@@ -62,16 +70,29 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		}
 
 		@Override
-		public TerminatingFindById<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableFindByIdSupport<>(template, domainType, collection, fields);
+		public TerminatingFindById<T> withOptions(final GetOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields);
 		}
 
 		@Override
-		public FindByIdWithCollection<T> project(String... fields) {
-			Assert.notEmpty(fields, "Fields must not be null nor empty.");
-			return new ExecutableFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
+		public FindByIdWithOptions<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields);
 		}
+
+		@Override
+		public FindByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields);
+		}
+
+		@Override
+		public FindByIdInScope<T> project(String... fields) {
+			Assert.notEmpty(fields, "Fields must not be null nor empty.");
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields));
+		}
+
 	}
 
 }

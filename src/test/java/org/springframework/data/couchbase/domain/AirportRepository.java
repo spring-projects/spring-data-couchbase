@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,38 +17,42 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * template class for Reactive Couchbase operations
+ * Airport repository for testing <br>
+ * The DynamicProxyable interface exposes airportRepository.withScope(scope), withCollection() and withOptions() It's
+ * necessary on the repository object itself because the withScope() etc methods need to return an object of type
+ * AirportRepository so that one can code... airportRepository = airportRepository.withScope(scopeName) without having
+ * to cast the result.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
 @Repository
-public interface AirportRepository extends PagingAndSortingRepository<Airport, String> {
+public interface AirportRepository extends CouchbaseRepository<Airport, String> {
 
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Iterable<Airport> findAll();
-
-	@Override
-	Airport save(Airport airport);
+	List<Airport> findAll();
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(String iata);
+
+	Airport iata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -75,4 +79,8 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Optional<Airport> findByIdAndIata(String id, String iata);
+
 }

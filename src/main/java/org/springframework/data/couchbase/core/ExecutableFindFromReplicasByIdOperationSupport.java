@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport;
+
+import com.couchbase.client.java.kv.GetAnyReplicaOptions;
 import org.springframework.util.Assert;
 
 public class ExecutableFindFromReplicasByIdOperationSupport implements ExecutableFindFromReplicasByIdOperation {
@@ -30,7 +32,7 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 	@Override
 	public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, domainType, null);
+		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, domainType, null, null, null);
 	}
 
 	static class ExecutableFindFromReplicasByIdSupport<T> implements ExecutableFindFromReplicasById<T> {
@@ -38,17 +40,21 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 		private final CouchbaseTemplate template;
 		private final Class<?> domainType;
 		private final Class<T> returnType;
+		private final String scope;
 		private final String collection;
+		private final GetAnyReplicaOptions options;
 		private final ReactiveFindFromReplicasByIdSupport<T> reactiveSupport;
 
 		ExecutableFindFromReplicasByIdSupport(CouchbaseTemplate template, Class<?> domainType, Class<T> returnType,
-				String collection) {
+				String scope, String collection, GetAnyReplicaOptions options) {
 			this.template = template;
 			this.domainType = domainType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 			this.returnType = returnType;
 			this.reactiveSupport = new ReactiveFindFromReplicasByIdSupport<>(template.reactive(), domainType, returnType,
-					collection);
+					scope, collection, options);
 		}
 
 		@Override
@@ -62,9 +68,21 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 		}
 
 		@Override
-		public TerminatingFindFromReplicasById<T> inCollection(final String collection) {
+		public TerminatingFindFromReplicasById<T> withOptions(final GetAnyReplicaOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+		}
+
+		@Override
+		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, collection);
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+		}
+
+		@Override
+		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
 		}
 
 	}

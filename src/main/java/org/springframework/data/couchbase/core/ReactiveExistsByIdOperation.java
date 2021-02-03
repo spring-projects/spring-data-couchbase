@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,18 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllExistsReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithExistsOptions;
 
+import com.couchbase.client.java.kv.ExistsOptions;
+/**
+ * Insert Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveExistsByIdOperation {
 
 	/**
@@ -30,6 +39,9 @@ public interface ReactiveExistsByIdOperation {
 	 */
 	ReactiveExistsById existsById();
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingExistsById extends OneAndAllExistsReactive {
 
 		/**
@@ -38,6 +50,7 @@ public interface ReactiveExistsByIdOperation {
 		 * @param id the ID to perform the operation on.
 		 * @return true if the document exists, false otherwise.
 		 */
+		@Override
 		Mono<Boolean> one(String id);
 
 		/**
@@ -46,21 +59,53 @@ public interface ReactiveExistsByIdOperation {
 		 * @param ids the ids to check.
 		 * @return a map consisting of the document IDs as the keys and if they exist as the value.
 		 */
+		@Override
 		Mono<Map<String, Boolean>> all(Collection<String> ids);
 
 	}
 
-	interface ExistsByIdWithCollection extends TerminatingExistsById, WithCollection {
-
+	/**
+	 * Fluent method to specify options.
+	 */
+	interface ExistsByIdWithOptions extends TerminatingExistsById, WithExistsOptions {
 		/**
-		 * Allows to specify a different collection than the default one configured.
+		 * Fluent method to specify options to use for execution.
 		 *
-		 * @param collection the collection to use in this scope.
+		 * @param options to use for execution
 		 */
-		TerminatingExistsById inCollection(String collection);
-
+		@Override
+		TerminatingExistsById withOptions(ExistsOptions options);
 	}
 
-	interface ReactiveExistsById extends ExistsByIdWithCollection {}
+	/**
+	 * Fluent method to specify the collection.
+	 */
+	interface ExistsByIdInCollection extends ExistsByIdWithOptions, InCollection {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		ExistsByIdWithOptions inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 */
+	interface ExistsByIdInScope extends ExistsByIdInCollection, InScope {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		ExistsByIdInCollection inScope(String scope);
+	}
+
+	/**
+	 * Provides methods for constructing KV exists operations in a fluent way.
+	 */
+	interface ReactiveExistsById extends ExistsByIdInScope {}
 
 }

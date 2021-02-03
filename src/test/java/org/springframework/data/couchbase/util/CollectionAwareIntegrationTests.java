@@ -19,6 +19,8 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,7 +36,8 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.collection.CollectionManager;
-import org.springframework.data.couchbase.domain.ConfigScoped;
+import com.couchbase.client.java.manager.collection.CollectionSpec;
+import com.couchbase.client.java.manager.collection.ScopeSpec;
 
 /**
  * Provides Collection support for integration tests
@@ -43,8 +46,10 @@ import org.springframework.data.couchbase.domain.ConfigScoped;
  */
 public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 
-	public static String scopeName = "scope_" + randomString();
-	public static String collectionName = "collection_" + randomString();
+	public static String scopeName = "my_scope";// + randomString();
+	public static String otherScope = "other_scope";
+	public static String collectionName = "my_collection";// + randomString();
+	public static String otherCollection = "other_collection";// + randomString();
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -57,20 +62,27 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 		waitForService(bucket, ServiceType.QUERY);
 		waitForQueryIndexerToHaveBucket(cluster, config().bucketname());
 		CollectionManager collectionManager = bucket.collections();
-		if (scopeName != null || collectionName != null) {
-			setupScopeCollection(cluster, scopeName, collectionName, collectionManager);
+
+		setupScopeCollection(cluster, scopeName, collectionName, collectionManager);
+		if (otherScope != null || otherCollection != null) {
+			// afterAll should be undoing the creation of scope etc
+			setupScopeCollection(cluster, otherScope, otherCollection, collectionManager);
 		}
 
-		ConfigScoped.setScopeName(scopeName);
-		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigScoped.class);
+		Config.setScopeName(scopeName);
+		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		// the Config class has been modified, these need to be loaded again
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	@AfterAll
-	public static void afterAll(){
-		System.out.println("CollectionAwareIntegrationTests.afterAll()");
-		ConfigScoped.setScopeName(null);
-		callSuperBeforeAll(new Object() {});
+	public static void afterAll() {
+		Config.setScopeName(null);
+		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		// the Config class has been modified, these need to be loaded again
+		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		callSuperAfterAll(new Object() {});
 	}
 }

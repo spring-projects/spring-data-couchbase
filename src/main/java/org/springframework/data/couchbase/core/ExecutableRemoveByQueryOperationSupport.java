@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.util.Assert;
 
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.util.Assert;
 
 public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemoveByQueryOperation {
 
@@ -35,8 +36,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 	@Override
 	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
-				null);
+		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null,
+				null, null);
 	}
 
 	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
@@ -46,17 +47,21 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final Query query;
 		private final ReactiveRemoveByQuerySupport<T> reactiveSupport;
 		private final QueryScanConsistency scanConsistency;
+		private final String scope;
 		private final String collection;
+		private final QueryOptions options;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency, String collection) {
+				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query, scanConsistency,
-					collection);
+					scope, collection, options);
 			this.scanConsistency = scanConsistency;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 		}
 
 		@Override
@@ -66,26 +71,43 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 		@Override
 		public TerminatingRemoveByQuery<T> matching(final Query query) {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
 		}
 
 		@Override
 		@Deprecated
-		public RemoveByQueryInCollection<T> consistentWith(final QueryScanConsistency scanConsistency) {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+		public RemoveByQueryInScope<T> consistentWith(final QueryScanConsistency scanConsistency) {
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
 		}
 
 		@Override
 		public RemoveByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
 		}
 
 		@Override
 		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
 		}
 
+		@Override
+		public RemoveByQueryWithQuery<T> withOptions(final QueryOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
+		}
+
+		@Override
+		public RemoveByQueryInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
+		}
 	}
 
 }
