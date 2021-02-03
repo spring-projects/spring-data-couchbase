@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -113,31 +114,57 @@ public abstract class ClusterAwareIntegrationTests {
 	public void afterEach() {}
 
 	/**
-	 * This should probably be the first call in the @BeforeAll method of a test class.
-	 * This will call super.beforeAll() when called as callSuperBeforeAll(new Object() {}); this trickery is necessary
-	 * because super.beforeAll() cannot be used because it is a static method. it is possible and likely that the
-	 * beforeAll() method of should still be called even when a test class defines its own beforeAll() method which would
-	 * hide the beforeAll() of the super class.
-	 * This trickery is not necessary for before/AfterEach, as those are not static methods
+	 * This should probably be the first call in the @BeforeAll method of a test class. This will call super @BeforeAll
+	 * methods when called as callSuperBeforeAll(new Object() {}); this trickery is necessary because super.beforeAll()
+	 * cannot be used because it is a static method. it is possible and likely that the beforeAll() method of should still
+	 * be called even when a test class defines its own beforeAll() method which would hide the beforeAll() of the super
+	 * class. This trickery is not necessary for before/AfterEach, as those are not static methods
 	 *
 	 * @Author Michael Reiche
-	 *
 	 * @param createdHere - an object from a class defined in the calling class
 	 */
 	public static void callSuperBeforeAll(Object createdHere) {
-		callSuper(createdHere, "beforeAll");
+		callSuper(createdHere, BeforeAll.class);
 	}
 
 	// see comments for callSuperBeforeAll()
 	public static void callSuperAfterAll(Object createdHere) {
-		callSuper(createdHere, "afterAll");
+		callSuper(createdHere, AfterAll.class);
 	}
 
-	private static void callSuper(Object createdHere, String methodName) {
+	private static void callSuper(Object createdHere, Class annotationClass) {
 		try {
-			Method method = createdHere.getClass().getEnclosingClass().getSuperclass().getMethod(methodName);
-			method.invoke(null);
-		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			Class<?> encClass = createdHere.getClass().getEnclosingClass();
+			Class<?> theClass = encClass;
+			Annotation annotation = null;
+			Method invokedSuper = null;
+			if (annotationClass != BeforeAll.class && annotationClass != AfterAll.class) {
+				throw new RuntimeException("can only call super for BeforeAll and AfterAll " + annotationClass);
+			}
+			// look recursively for @BeforeAll or @AfterAll methods
+			// when one is found and executed, do not continue the recursive search
+			// as it is expected that the @BeforeAll or @AfterAll methods call
+			// any super methods explicitly - perhaps using callSuperBeforeAll() or callSuperAfterAll()
+			// Note that if the @BeforeAll and @AfterAll methods have different names, they will be
+			// called twice - once by this callSuper() mechanism and once by junit as the method will not be hidden
+			while ((theClass = theClass.getSuperclass()) != null) {
+				Method[] methods = theClass.getMethods();
+				for (Method m : methods) {
+					annotation = m.getAnnotation(annotationClass);
+					if (annotation != null) {
+						if (annotation != null) {
+							m.invoke(null);
+							invokedSuper = m;
+						}
+					}
+				}
+				if (invokedSuper != null) { // called method is responsible for calling any super methods
+					return;
+				}
+
+			}
+
+		} catch (IllegalAccessException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
 	}

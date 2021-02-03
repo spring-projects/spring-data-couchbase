@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,43 +21,118 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithUpsertOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.UpsertOptions;
 
+/**
+ * Insert Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveUpsertByIdOperation {
 
+
+	/**
+	 * Upsert using the KV service.
+	 *
+	 * @param domainType the entity type to upsert.
+	 */
 	<T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingUpsertById<T> extends OneAndAllEntityReactive<T> {
 
+		/**
+		 * Upsert one entity.
+		 *
+		 * @return Upserted entity.
+		 */
+		@Override
 		Mono<T> one(T object);
 
+		/**
+		 * Insert a collection of entities.
+		 *
+		 * @return Inserted entities
+		 */
+		@Override
 		Flux<? extends T> all(Collection<? extends T> objects);
 
 	}
 
-	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, WithCollection<T> {
-
-		TerminatingUpsertById<T> inCollection(String collection);
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use.
+	 */
+	interface UpsertByIdWithOptions<T> extends TerminatingUpsertById<T>, WithUpsertOptions<T> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options to use for execution
+		 */
+		@Override
+		TerminatingUpsertById<T> withOptions(UpsertOptions options);
 	}
 
-	interface UpsertByIdWithDurability<T> extends UpsertByIdWithCollection<T>, WithDurability<T> {
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface UpsertByIdInCollection<T> extends UpsertByIdWithOptions<T>, InCollection<Object> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		UpsertByIdWithOptions<T> inCollection(String collection);
+	}
 
-		UpsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface UpsertByIdInScope<T> extends UpsertByIdInCollection<T>, InScope<Object> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		UpsertByIdInCollection<T> inScope(String scope);
+	}
 
-		UpsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+	interface UpsertByIdWithDurability<T> extends UpsertByIdInScope<T>, WithDurability<T> {
+		@Override
+		UpsertByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+		@Override
+		UpsertByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
 	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T>, WithExpiry<T> {
-
+		@Override
 		UpsertByIdWithDurability<T> withExpiry(Duration expiry);
 	}
 
+	/**
+	 * Provides methods for constructing KV operations in a fluent way.
+	 *
+	 * @param <T> the entity type to upsert
+	 */
 	interface ReactiveUpsertById<T> extends UpsertByIdWithExpiry<T> {}
 
 }

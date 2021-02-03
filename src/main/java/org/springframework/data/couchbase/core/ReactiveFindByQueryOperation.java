@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,17 +21,20 @@ import reactor.core.publisher.Mono;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
 import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithDistinct;
-import org.springframework.data.couchbase.core.support.WithProjection;
 import org.springframework.data.couchbase.core.support.WithQuery;
+import org.springframework.data.couchbase.core.support.WithQueryOptions;
 
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * ReactiveFindByQueryOperation
+ * ReactiveFindByQueryOperation<br>
+ * Queries the N1QL service.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -39,7 +42,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 public interface ReactiveFindByQueryOperation {
 
 	/**
-	 * Queries the N1QL service.
+	 * Create the operation for the domainType
 	 *
 	 * @param domainType the entity type to use for the results.
 	 */
@@ -86,18 +89,19 @@ public interface ReactiveFindByQueryOperation {
 		 */
 		Mono<Boolean> exists();
 
+		QueryOptions buildOptions(QueryOptions options);
+
 	}
 
 	/**
-	 * Terminating operations invoking the actual query execution.
+	 * Fluent methods to filter by query
 	 *
-	 * @author Christoph Strobl
-	 * @since 2.0
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T>, WithQuery<T> {
 
 		/**
-		 * Set the filter for the query to be used.
+		 * Set the filter {@link Query} to be used.
 		 *
 		 * @param query must not be {@literal null}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
@@ -108,7 +112,7 @@ public interface ReactiveFindByQueryOperation {
 		 * Set the filter {@link QueryCriteriaDefinition criteria} to be used.
 		 *
 		 * @param criteria must not be {@literal null}.
-		 * @return new instance of {@link ExecutableFindByQueryOperation.ExecutableFindByQuery}.
+		 * @return new instance of {@link TerminatingFindByQuery}.
 		 * @throws IllegalArgumentException if criteria is {@literal null}.
 		 */
 		default TerminatingFindByQuery<T> matching(QueryCriteriaDefinition criteria) {
@@ -118,27 +122,42 @@ public interface ReactiveFindByQueryOperation {
 	}
 
 	/**
-	 * Collection override (optional).
+	 * Fluent method to specify options.
+	 * 
+	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByQueryInCollection<T> extends FindByQueryWithQuery<T>, WithCollection<T> {
-
+	interface FindByQueryWithOptions<T> extends FindByQueryWithQuery<T>, WithQueryOptions<T> {
 		/**
-		 * Explicitly set the name of the collection to perform the query on. <br />
-		 * Skip this step to use the default collection derived from the domain type.
-		 *
-		 * @param collection must not be {@literal null} nor {@literal empty}.
-		 * @return new instance of {@link FindByQueryWithProjection}.
-		 * @throws IllegalArgumentException if collection is {@literal null}.
+		 * @param options options to use for execution
 		 */
-		FindByQueryWithQuery<T> inCollection(String collection);
+		TerminatingFindByQuery<T> withOptions(QueryOptions options);
 	}
 
 	/**
-	 * @deprecated
-	 * @see FindByQueryWithConsistency
+	 * Fluent method to specify the collection
+	 * 
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryInCollection<T> extends FindByQueryWithOptions<T>, InCollection<T> {
+		FindByQueryWithOptions<T> inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryInScope<T> extends FindByQueryInCollection<T>, InScope<T> {
+		FindByQueryInCollection<T> inScope(String scope);
+	}
+
+	/**
+	 * To be removed at the next major release. use WithConsistency instead
+	 *
+	 * @param <T> the entity type to use for the results.
 	 */
 	@Deprecated
-	interface FindByQueryConsistentWith<T> extends FindByQueryInCollection<T> {
+	interface FindByQueryConsistentWith<T> extends FindByQueryInScope<T> {
 
 		/**
 		 * Allows to override the default scan consistency.
@@ -146,10 +165,15 @@ public interface ReactiveFindByQueryOperation {
 		 * @param scanConsistency the custom scan consistency to use for this query.
 		 */
 		@Deprecated
-		FindByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
+		FindByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
 
 	}
 
+	/**
+	 * Fluent method to specify scan consistency.  Scan consistency may also come from an annotation.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
 	interface FindByQueryWithConsistency<T> extends FindByQueryConsistentWith<T>, WithConsistency<T> {
 
 		/**
@@ -162,7 +186,9 @@ public interface ReactiveFindByQueryOperation {
 	}
 
 	/**
-	 * Result type override (optional).
+	 * Fluent method to specify a return type different than the the entity type to use for the results.
+	 *
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithProjection<T> extends FindByQueryWithConsistency<T> {
 
@@ -178,9 +204,9 @@ public interface ReactiveFindByQueryOperation {
 	}
 
 	/**
-	 * Distinct Find support.
+	 * Fluent method to specify DISTINCT fields
 	 *
-	 * @author Michael Reiche
+	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjection<T>, WithDistinct<T> {
 
@@ -194,6 +220,11 @@ public interface ReactiveFindByQueryOperation {
 		FindByQueryWithProjection<T> distinct(String[] distinctFields);
 	}
 
+	/**
+	 * provides methods for constructing query operations in a fluent way.
+	 *
+	 * @param <T> the entity type to use for the results
+	 */
 	interface ReactiveFindByQuery<T> extends FindByQueryWithDistinct<T> {}
 
 }

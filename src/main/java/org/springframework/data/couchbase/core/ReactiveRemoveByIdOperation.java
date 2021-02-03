@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,45 +20,105 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithRemoveOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
 
+/**
+ * Remove Operations on KV service.
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveRemoveByIdOperation {
-
+	/**
+	 * Removes a document.
+	 */
 	ReactiveRemoveById removeById();
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingRemoveById extends OneAndAllIdReactive<RemoveResult> {
 
+		/**
+		 * Remove one document based on the given ID.
+		 *
+		 * @param id the document ID.
+		 * @return result of the remove
+		 */
+		@Override
 		Mono<RemoveResult> one(String id);
 
+		/**
+		 * Remove the documents in the collection.
+		 *
+		 * @param ids the document IDs.
+		 * @return result of the removes.
+		 */
+		@Override
 		Flux<RemoveResult> all(Collection<String> ids);
 
 	}
 
-	interface RemoveByIdWithCollection extends TerminatingRemoveById, WithCollection<RemoveResult> {
-
-		TerminatingRemoveById inCollection(String collection);
-
+	/**
+	 * Fluent method to specify options.
+	 */
+	interface RemoveByIdWithOptions extends TerminatingRemoveById, WithRemoveOptions<RemoveResult> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options options to use for execution
+		 */
+		TerminatingRemoveById withOptions(RemoveOptions options);
 	}
 
-	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability<RemoveResult> {
+	/**
+	 * Fluent method to specify the collection.
+	 */
+	interface RemoveByIdInCollection extends RemoveByIdWithOptions, InCollection<Object> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		RemoveByIdWithOptions inCollection(String collection);
+	}
 
-		RemoveByIdWithCollection withDurability(DurabilityLevel durabilityLevel);
+	/**
+	 * Fluent method to specify the scope.
+	 */
+	interface RemoveByIdInScope extends RemoveByIdInCollection, InScope<Object> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		RemoveByIdInCollection inScope(String scope);
+	}
 
-		RemoveByIdWithCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+	interface RemoveByIdWithDurability extends RemoveByIdInScope, WithDurability<RemoveResult> {
+		@Override
+		RemoveByIdInCollection withDurability(DurabilityLevel durabilityLevel);
+		@Override
+		RemoveByIdInCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
 	interface RemoveByIdWithCas extends RemoveByIdWithDurability {
 
 		RemoveByIdWithDurability withCas(Long cas);
-
 	}
 
+	/**
+	 * Provides methods for constructing remove operations in a fluent way.
+	 */
 	interface ReactiveRemoveById extends RemoveByIdWithCas {}
 
 }
