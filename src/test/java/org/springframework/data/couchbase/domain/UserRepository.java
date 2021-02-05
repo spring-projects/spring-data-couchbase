@@ -49,4 +49,6 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	List<User> getByFirstnameOrLastname(@Param("first") String firstname, @Param("last") String lastname);
 
 	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
+
+	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
 }

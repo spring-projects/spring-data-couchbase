@@ -42,6 +42,9 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
+	private static final String META_ID_PROPERTY = "id";
+	private static final String META_CAS_PROPERTY = "cas";
+
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 	private final QueryMethod queryMethod;
@@ -156,8 +159,11 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	private N1QLExpression addMetaIfRequired(final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
 											 final CouchbasePersistentProperty property) {
-		if (property.isIdProperty() || property.isVersionProperty()) {
-			return path(meta(i(bucketName)), persistentPropertyPath.toDotPath(cvtr));
+		if (property.isIdProperty()) {
+			return path(meta(i(bucketName)), i(META_ID_PROPERTY));
+		}
+		if (property.isVersionProperty()) {
+			return path(meta(i(bucketName)), i(META_CAS_PROPERTY));
 		}
 		return x(persistentPropertyPath.toDotPath(cvtr));
 	}

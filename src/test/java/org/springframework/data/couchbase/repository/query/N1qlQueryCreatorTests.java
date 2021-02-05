@@ -158,6 +158,19 @@ class N1qlQueryCreatorTests {
 		assertEquals(query.export()," WHERE " + where(x("META(`"+bucketName+"`).`id`")).isNotNull().and(i("firstname")).is("Oliver").export());
 	}
 
+	@Test // https://github.com/spring-projects/spring-data-couchbase/issues/1072
+	void createsQueryFindByVersionEqualsAndAndFirstname() throws Exception {
+		String input = "findByVersionEqualsAndFirstnameEquals";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, Long.class, String.class);
+
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), 1611287177404088320L, "Oliver"), null, converter,
+				bucketName);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export()," WHERE " + where(x("META(`"+bucketName+"`).`cas`")).is(1611287177404088320L).and(i("firstname")).is("Oliver").export());
+	}
+
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
 		return new ParametersParameterAccessor(params, values);
 	}
