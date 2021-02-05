@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import java.util.Iterator;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.domain.Sort;
@@ -36,6 +38,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
@@ -43,25 +46,27 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter converter;
+	private final String bucketName;
 
-	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor, QueryMethod queryMethod,
-			CouchbaseConverter converter) {
+	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor, final QueryMethod queryMethod,
+			final CouchbaseConverter converter, final String bucketName) {
 		super(tree, accessor);
 		this.accessor = accessor;
 		this.context = converter.getMappingContext();
 		this.queryMethod = queryMethod;
 		this.converter = converter;
+		this.bucketName = bucketName;
 	}
 
 	@Override
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(path.toDotPath(cvtr)), iterator);
+		return from(part, property, where(addMetaIfRequired(path, property)), iterator);
 	}
 
 	static Converter<? super CouchbasePersistentProperty, String> cvtr = (
-			source) -> new StringBuilder(source.getName().length() + 2).append('`').append(source.getName()).append('`')
+			source) -> new StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName()).append('`')
 					.toString();
 
 	@Override
@@ -73,7 +78,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(path.toDotPath()), iterator);
+		return from(part, property, base.and(addMetaIfRequired(path, property)), iterator);
 	}
 
 	@Override
@@ -147,6 +152,14 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 			default:
 				throw new IllegalArgumentException("Unsupported keyword!");
 		}
+	}
+
+	private N1QLExpression addMetaIfRequired(final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
+											 final CouchbasePersistentProperty property) {
+		if (property.isIdProperty() || property.isVersionProperty()) {
+			return path(meta(i(bucketName)), persistentPropertyPath.toDotPath(cvtr));
+		}
+		return x(persistentPropertyPath.toDotPath(cvtr));
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,19 @@
 package org.springframework.data.couchbase.repository.query;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.query.*;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.repository.query.parser.PartTree;
 
-import java.util.List;
 
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class ReactiveN1qlRepositoryQueryExecutor {
 
@@ -68,7 +64,7 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName()).createQuery();
 		}
 		q = (ReactiveFindByQueryOperation.ReactiveFindByQuery) operations.findByQuery(domainClass)
 				.consistentWith(buildQueryScanConsistency()).matching(query);

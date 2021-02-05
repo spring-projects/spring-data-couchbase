@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class N1qlRepositoryQueryExecutor {
 
@@ -61,7 +62,7 @@ public class N1qlRepositoryQueryExecutor {
 					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter()).createQuery();
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName()).createQuery();
 		}
 		q = (ExecutableFindByQueryOperation.ExecutableFindByQuery) operations.findByQuery(domainClass)
 				.consistentWith(buildQueryScanConsistency()).matching(query);

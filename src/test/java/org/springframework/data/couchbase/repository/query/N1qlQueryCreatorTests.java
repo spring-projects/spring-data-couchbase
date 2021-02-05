@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -43,16 +42,19 @@ import org.springframework.data.repository.query.parser.PartTree;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 class N1qlQueryCreatorTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
 	CouchbaseConverter converter;
+	String bucketName;
 
 	@BeforeEach
 	public void beforeEach() {
 		context = new CouchbaseMappingContext();
 		converter = new MappingCouchbaseConverter(context);
+		bucketName = "sample-bucket";
 	}
 
 	@Test
@@ -62,10 +64,10 @@ class N1qlQueryCreatorTests {
 		Method method = UserRepository.class.getMethod(input, String.class);
 
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null,
-				converter);
+				converter, bucketName);
 		Query query = creator.createQuery();
 
-		assertEquals(query.export(), " WHERE " + where("firstname").is("Oliver").export());
+		assertEquals(query.export(), " WHERE " + where(i("firstname")).is("Oliver").export());
 	}
 
 	@Test
@@ -73,9 +75,9 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameIn";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String[].class);
-		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
-				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), null, converter);
+				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), null, converter, bucketName);
 		Query query = creator.createQuery();
 
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
@@ -97,10 +99,10 @@ class N1qlQueryCreatorTests {
 		jsonArray.add("Oliver");
 		jsonArray.add("Charles");
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), jsonArray), null,
-				converter);
+				converter, bucketName);
 		Query query = creator.createQuery();
 
-		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
@@ -118,10 +120,10 @@ class N1qlQueryCreatorTests {
 		list.add("Oliver");
 		list.add("Charles");
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), new Object[] { list }),
-				null, converter);
+				null, converter, bucketName);
 		Query query = creator.createQuery();
 
-		Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
+		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
@@ -137,10 +139,23 @@ class N1qlQueryCreatorTests {
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class, String.class);
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), null,
-				converter);
+				converter, bucketName);
 		Query query = creator.createQuery();
 
-		assertEquals(" WHERE " + where("firstname").is("John").and("lastname").is("Doe").export(), query.export());
+		assertEquals(" WHERE " + where(i("firstname")).is("John").and(i("lastname")).is("Doe").export(), query.export());
+	}
+
+	@Test // https://github.com/spring-projects/spring-data-couchbase/issues/1072
+	void createsQueryFindByIdIsNotNullAndFirstname() throws Exception {
+		String input = "findByIdIsNotNullAndFirstnameEquals";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String.class);
+
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
+				bucketName);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export()," WHERE " + where(x("META(`"+bucketName+"`).`id`")).isNotNull().and(i("firstname")).is("Oliver").export());
 	}
 
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {

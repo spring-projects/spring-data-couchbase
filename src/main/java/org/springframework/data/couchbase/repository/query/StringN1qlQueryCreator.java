@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.repository.query;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.*;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -30,8 +29,6 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.StringQuery;
-import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
@@ -40,12 +37,11 @@ import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.util.Assert;
 
 /**
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
@@ -106,7 +102,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
 				part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(path.toDotPath()), iterator);
+		return from(part, property, where(x(path.toDotPath())), iterator);
 	}
 
 	@Override
@@ -119,7 +115,7 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 				part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(path.toDotPath()), iterator);
+		return from(part, property, base.and(x(path.toDotPath())), iterator);
 	}
 
 	@Override
