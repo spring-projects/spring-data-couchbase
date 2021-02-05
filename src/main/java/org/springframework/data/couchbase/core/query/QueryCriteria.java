@@ -27,6 +27,8 @@ import com.couchbase.client.java.json.JsonValue;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.lang.Nullable;
 
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
+
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -71,7 +73,14 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	/**
-	 * Static factory method to create a Criteria using the provided key.
+	 * Static factory method to create a Criteria using the provided String key.
+	 */
+	public static QueryCriteria where(String key) {
+		return where(x(key));
+	}
+
+	/**
+	 * Static factory method to create a Criteria using the provided N1QLExpression key.
 	 */
 	public static QueryCriteria where(N1QLExpression key) {
 		return new QueryCriteria(new ArrayList<>(), key, null, null);
@@ -83,12 +92,20 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return qc;
 	}
 
+	public QueryCriteria and(String key) {
+		return and(x(key));
+	}
+
 	public QueryCriteria and(N1QLExpression key) {
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
 	}
 
 	public QueryCriteria and(QueryCriteria criteria) {
 		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.AND);
+	}
+
+	public QueryCriteria or(String key) {
+		return or(x(key));
 	}
 
 	public QueryCriteria or(N1QLExpression key) {
