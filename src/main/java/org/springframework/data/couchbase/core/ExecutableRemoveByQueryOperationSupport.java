@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -35,7 +36,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 	@Override
 	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
 		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, QueryScanConsistency.NOT_BOUNDED,
-				"_default._default");
+				null);
 	}
 
 	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
@@ -69,12 +70,19 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		}
 
 		@Override
-		public RemoveByQueryWithQuery<T> consistentWith(final QueryScanConsistency scanConsistency) {
+		@Deprecated
+		public RemoveByQueryInCollection<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 
 		@Override
-		public RemoveByQueryInCollection<T> inCollection(final String collection) {
+		public RemoveByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
+		}
+
+		@Override
+		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, collection);
 		}
 

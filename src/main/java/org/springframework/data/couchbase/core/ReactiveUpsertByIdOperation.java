@@ -21,6 +21,9 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -29,7 +32,7 @@ public interface ReactiveUpsertByIdOperation {
 
 	<T> ReactiveUpsertById<T> upsertById(Class<T> domainType);
 
-	interface TerminatingUpsertById<T> extends OneAndAllReactive<T>{
+	interface TerminatingUpsertById<T> extends OneAndAllEntityReactive<T> {
 
 		Mono<T> one(T object);
 
@@ -37,7 +40,7 @@ public interface ReactiveUpsertByIdOperation {
 
 	}
 
-	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, InCollection<T> {
+	interface UpsertByIdWithCollection<T> extends TerminatingUpsertById<T>, WithCollection<T> {
 
 		TerminatingUpsertById<T> inCollection(String collection);
 	}

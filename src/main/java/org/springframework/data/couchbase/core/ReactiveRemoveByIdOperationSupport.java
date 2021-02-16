@@ -85,12 +85,6 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		@Override
-		public TerminatingRemoveById inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
-		}
-
-		@Override
 		public RemoveByIdWithCollection withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
@@ -100,6 +94,12 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		public RemoveByIdWithCollection withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
+			return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+		}
+
+		@Override
+		public RemoveByIdWithDurability inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
 		}
 

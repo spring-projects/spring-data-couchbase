@@ -40,16 +40,4 @@ public class Course extends ComparableEntity {
 		return id;
 	}
 
-	public String toString() {
-		StringBuffer sb = new StringBuffer("Course(");
-		sb.append("id=");
-		sb.append(id);
-		sb.append(", userId=");
-		sb.append(userId);
-		sb.append(", room=");
-		sb.append(room);
-		sb.append(")");
-		return sb.toString();
-	}
-
 }

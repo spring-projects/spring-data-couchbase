@@ -1,17 +1,12 @@
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
-import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
-
-import java.util.UUID;
 
 @Document
-public class Address extends AbstractEntity {
+public class Address extends ComparableEntity {
 
-	private	String street;
+	private String street;
+	private String city;
 
 	public Address() {}
 
@@ -23,11 +18,12 @@ public class Address extends AbstractEntity {
 		this.street = street;
 	}
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("{\"street\"=\"");
-		sb.append(getStreet());
-		sb.append("\"}");
-		return sb.toString();
+	public String getCity() {
+		return city;
 	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
 }

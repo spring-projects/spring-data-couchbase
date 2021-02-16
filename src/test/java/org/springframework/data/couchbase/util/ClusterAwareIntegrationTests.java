@@ -15,11 +15,16 @@
  */
 package org.springframework.data.couchbase.util;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.couchbase.client.core.env.Authenticator;
@@ -48,12 +53,18 @@ public abstract class ClusterAwareIntegrationTests {
 		return testClusterConfig;
 	}
 
-	public static Authenticator authenticator() {
+	protected static Authenticator authenticator() {
 		return PasswordAuthenticator.create(config().adminUsername(), config().adminPassword());
 	}
 
-	public static String username() { return config().adminUsername(); }
-	public static String password() { return config().adminPassword(); }
+	public static String username() {
+		return config().adminUsername();
+	}
+
+	public static String password() {
+		return config().adminPassword();
+	}
+
 	public static String bucketName() {
 		return config().bucketname();
 	}
@@ -64,39 +75,71 @@ public abstract class ClusterAwareIntegrationTests {
 	 * @return the connection string to connect.
 	 */
 	public static String connectionString() {
-		/*
-		return seedNodes().stream().map(s -> {
-			if (s.kvPort().isPresent()) {
-				return s.address() + ":" + s.kvPort().get() + "=" + Services.KV;
-			} else if (s.clusterManagerPort().isPresent()) {
-				return s.address() + ":" + s.clusterManagerPort().get() + "=" + Services.MANAGER;
-			} else {
-				return s.address() ;
-			}
-		}).collect(Collectors.joining(","));
-		*/
 		StringBuffer sb = new StringBuffer();
-		for(SeedNode s:seedNodes()) {
+		for (SeedNode s : seedNodes()) {
 			if (s.kvPort().isPresent()) {
-				if(sb.length() > 0 ) sb.append(",");
-				sb.append (s.address() + ":" + s.kvPort().get() + "=" + Services.KV);
+				if (sb.length() > 0)
+					sb.append(",");
+				sb.append(s.address() + ":" + s.kvPort().get() + "=" + Services.KV);
 			}
 			if (s.clusterManagerPort().isPresent()) {
 				if (sb.length() > 0)
 					sb.append(",");
 				sb.append(s.address() + ":" + s.clusterManagerPort().get() + "=" + Services.MANAGER);
 			}
-			if(sb.length() == 0 ){
+			if (sb.length() == 0) {
 				sb.append(s.address());
 			}
 		}
 		return sb.toString();
 	}
 
-	public static Set<SeedNode> seedNodes() {
+	protected static Set<SeedNode> seedNodes() {
 		return config().nodes().stream().map(cfg -> SeedNode.create(cfg.hostname(),
 				Optional.ofNullable(cfg.ports().get(Services.KV)), Optional.ofNullable(cfg.ports().get(Services.MANAGER))))
 				.collect(Collectors.toSet());
+	}
+
+	@BeforeAll()
+	public static void beforeAll() {}
+
+	@AfterAll
+	public static void afterAll() {}
+
+	@BeforeEach
+	public void beforeEach() {}
+
+	@AfterEach
+	public void afterEach() {}
+
+	/**
+	 * This should probably be the first call in the @BeforeAll method of a test class.
+	 * This will call super.beforeAll() when called as callSuperBeforeAll(new Object() {}); this trickery is necessary
+	 * because super.beforeAll() cannot be used because it is a static method. it is possible and likely that the
+	 * beforeAll() method of should still be called even when a test class defines its own beforeAll() method which would
+	 * hide the beforeAll() of the super class.
+	 * This trickery is not necessary for before/AfterEach, as those are not static methods
+	 *
+	 * @Author Michael Reiche
+	 *
+	 * @param createdHere - an object from a class defined in the calling class
+	 */
+	public static void callSuperBeforeAll(Object createdHere) {
+		callSuper(createdHere, "beforeAll");
+	}
+
+	// see comments for callSuperBeforeAll()
+	public static void callSuperAfterAll(Object createdHere) {
+		callSuper(createdHere, "afterAll");
+	}
+
+	private static void callSuper(Object createdHere, String methodName) {
+		try {
+			Method method = createdHere.getClass().getEnclosingClass().getSuperclass().getMethod(methodName);
+			method.invoke(null);
+		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

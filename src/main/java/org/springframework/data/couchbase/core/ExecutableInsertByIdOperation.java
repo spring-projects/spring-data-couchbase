@@ -18,6 +18,9 @@ package org.springframework.data.couchbase.core;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.core.support.WithCollection;
+
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -26,7 +29,7 @@ public interface ExecutableInsertByIdOperation {
 
 	<T> ExecutableInsertById<T> insertById(Class<T> domainType);
 
-	interface TerminatingInsertById<T> extends OneAndAll<T>{
+	interface TerminatingInsertById<T> extends OneAndAllEntity<T> {
 
 		@Override
 		T one(T object);
@@ -36,7 +39,7 @@ public interface ExecutableInsertByIdOperation {
 
 	}
 
-	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T>, InCollection<T> {
+	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T>, WithCollection<T> {
 
 		TerminatingInsertById<T> inCollection(String collection);
 	}
