@@ -199,7 +199,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(0, airportCount);
 
 		} finally {
-				airportRepository.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::"+iata).collect(Collectors.toSet()));
+				airportRepository.deleteAll();
 		}
 	}
 
