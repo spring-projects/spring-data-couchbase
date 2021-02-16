@@ -42,6 +42,7 @@ public interface ReactiveRemoveByIdOperation {
 	interface RemoveByIdWithCollection extends TerminatingRemoveById, WithCollection<RemoveResult> {
 
 		TerminatingRemoveById inCollection(String collection);
+
 	}
 
 	interface RemoveByIdWithDurability extends RemoveByIdWithCollection, WithDurability<RemoveResult> {
@@ -52,6 +53,12 @@ public interface ReactiveRemoveByIdOperation {
 
 	}
 
-	interface ReactiveRemoveById extends RemoveByIdWithDurability {}
+	interface RemoveByIdWithCas extends RemoveByIdWithDurability {
+
+		RemoveByIdWithDurability withCas(Long cas);
+
+	}
+
+	interface ReactiveRemoveById extends RemoveByIdWithCas {}
 
 }

@@ -45,10 +45,10 @@ import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 ;
 
@@ -103,7 +103,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 					"firstname", "lastname");
 
 			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
-				operator = (OneAndAllEntity) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE);
+				operator = (OneAndAllEntity) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
+						ReplicateTo.NONE);
 			}
 
 			// if replace, we need to insert a document to replace
@@ -194,16 +195,34 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	@Test
 	void upsertAndRemoveById() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		User modified = couchbaseTemplate.upsertById(User.class).one(user);
-		assertEquals(user, modified);
+		{
+			User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+			User modified = couchbaseTemplate.upsertById(User.class).one(user);
+			assertEquals(user, modified);
 
-		RemoveResult removeResult = couchbaseTemplate.removeById().one(user.getId());
-		assertEquals(user.getId(), removeResult.getId());
-		assertTrue(removeResult.getCas() != 0);
-		assertTrue(removeResult.getMutationToken().isPresent());
+			RemoveResult removeResult = couchbaseTemplate.removeById().one(user.getId());
+			assertEquals(user.getId(), removeResult.getId());
+			assertTrue(removeResult.getCas() != 0);
+			assertTrue(removeResult.getMutationToken().isPresent());
 
-		assertNull(couchbaseTemplate.findById(User.class).one(user.getId()));
+			assertNull(couchbaseTemplate.findById(User.class).one(user.getId()));
+		}
+		{
+			User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+			User modified = couchbaseTemplate.upsertById(User.class).one(user);
+			System.out.println(reactiveCouchbaseTemplate.support().getCas(user));
+			System.out.println(reactiveCouchbaseTemplate.support().getCas(modified));
+			assertEquals(user, modified);
+
+			// careful now - user and modified are the same object. The object has the new cas (@Version version)
+			Long savedCas = modified.getVersion();
+			modified.setVersion(123);
+			assertThrows(DataIntegrityViolationException.class, () -> couchbaseTemplate.removeById()
+					.withCas(reactiveCouchbaseTemplate.support().getCas(modified)).one(modified.getId()));
+			modified.setVersion(savedCas);
+			couchbaseTemplate.removeById().withCas(reactiveCouchbaseTemplate.support().getCas(modified))
+					.one(modified.getId());
+		}
 	}
 
 	@Test

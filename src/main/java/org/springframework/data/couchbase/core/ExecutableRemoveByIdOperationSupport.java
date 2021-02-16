@@ -35,7 +35,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 	@Override
 	public ExecutableRemoveById removeById() {
-		return new ExecutableRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE);
+		return new ExecutableRemoveByIdSupport(template, null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
@@ -45,17 +46,19 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
+		private final Long cas;
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String collection, final PersistTo persistTo,
-				final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel) {
+				final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel, Long cas) {
 			this.template = template;
 			this.collection = collection;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
+			this.cas = cas;
 			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), collection, persistTo,
-					replicateTo, durabilityLevel);
+					replicateTo, durabilityLevel, cas);
 		}
 
 		@Override
@@ -71,20 +74,26 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		@Override
 		public TerminatingRemoveById inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel, null);
 		}
 
 		@Override
 		public RemoveByIdWithCollection withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel, null);
 		}
 
 		@Override
 		public RemoveByIdWithCollection withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel);
+			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel, null);
+		}
+
+		@Override
+		public RemoveByIdWithCas withCas(final Long cas) {
+			Assert.notNull(cas, "CAS must not be null.");
+			return new ExecutableRemoveByIdSupport(template, collection, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 	}

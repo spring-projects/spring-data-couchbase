@@ -50,6 +50,11 @@ public interface ExecutableRemoveByIdOperation {
 
 	}
 
-	interface ExecutableRemoveById extends RemoveByIdWithDurability {}
+	interface RemoveByIdWithCas extends RemoveByIdWithDurability {
+
+		RemoveByIdWithDurability withCas(Long cas);
+	}
+
+	interface ExecutableRemoveById extends RemoveByIdWithCas {}
 
 }
