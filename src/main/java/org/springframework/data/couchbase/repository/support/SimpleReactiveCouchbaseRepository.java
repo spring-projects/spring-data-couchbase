@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.couchbase.repository.support.Util.*;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,12 +24,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
-
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
@@ -69,8 +67,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	 * @param entityInformation the Metadata for the entity.
 	 * @param operations the reference to the reactive template used.
 	 */
-	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations) {
+	public SimpleReactiveCouchbaseRepository(final CouchbaseEntityInformation<T, String> entityInformation,
+			final ReactiveCouchbaseOperations operations) {
 		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
 		Assert.notNull(entityInformation, "CouchbaseEntityInformation must not be null!");
 
@@ -80,7 +78,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends T> Mono<S> save(S entity) {
+	public <S extends T> Mono<S> save(final S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
 		// if entity has non-null version property, then replace()
 		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
@@ -91,45 +89,52 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	@Override
-	public Flux<T> findAll(Sort sort) {
+	public Flux<T> findAll(final Sort sort) {
 		return findAll(new Query().with(sort));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
+	public <S extends T> Flux<S> saveAll(final Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
 		return Flux.fromIterable(entities).flatMap(this::save);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
+	public <S extends T> Flux<S> saveAll(final Publisher<S> entityStream) {
 		Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
 		return Flux.from(entityStream).flatMap(this::save);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<T> findById(ID id) {
+	public Mono<T> findById(final ID id) {
 		return operations.findById(entityInformation.getJavaType()).one(id.toString());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<T> findById(Publisher<ID> publisher) {
+	public Mono<T> findById(final Publisher<ID> publisher) {
 		Assert.notNull(publisher, "The given Publisher must not be null!");
 		return Mono.from(publisher).flatMap(this::findById);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<Boolean> existsById(ID id) {
+	public Mono<Boolean> existsById(final ID id) {
 		Assert.notNull(id, "The given id must not be null!");
 		return operations.existsById().one(id.toString());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<Boolean> existsById(Publisher<ID> publisher) {
+	public Mono<Boolean> existsById(final Publisher<ID> publisher) {
 		Assert.notNull(publisher, "The given Publisher must not be null!");
 		return Mono.from(publisher).flatMap(this::existsById);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Flux<T> findAll() {
 		return findAll(new Query());
@@ -137,56 +142,62 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public Flux<T> findAllById(Iterable<ID> ids) {
+	public Flux<T> findAllById(final Iterable<ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
 		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
 		return (Flux<T>) operations.findById(entityInformation.getJavaType()).all(convertedIds);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Flux<T> findAllById(Publisher<ID> entityStream) {
+	public Flux<T> findAllById(final Publisher<ID> entityStream) {
 		Assert.notNull(entityStream, "The given entityStream must not be null!");
 		return Flux.from(entityStream).flatMap(this::findById);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<Void> deleteById(ID id) {
+	public Mono<Void> deleteById(final ID id) {
 		return operations.removeById().one(id.toString()).then();
 	}
 
 	@Override
-	public Mono<Void> deleteById(Publisher<ID> publisher) {
+	public Mono<Void> deleteById(final Publisher<ID> publisher) {
 		Assert.notNull(publisher, "The given id must not be null!");
 		return Mono.from(publisher).flatMap(this::deleteById);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<Void> delete(T entity) {
+	public Mono<Void> delete(final T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
 		return operations.removeById().one(entityInformation.getId(entity)).then();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public Mono<Void> deleteAllById(Iterable<? extends ID> ids) {
-		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
-	}
-
-	@Override
-	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
+	public Mono<Void> deleteAll(final Iterable<? extends T> entities) {
 		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
 	}
 
 	@Override
-	public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
+	public Mono<Void> deleteAll(final Publisher<? extends T> entityStream) {
 		Assert.notNull(entityStream, "The given publisher of entities must not be null!");
 		return Flux.from(entityStream).flatMap(this::delete).single();
 	}
 
 	@Override
+	public Mono<Void> deleteAllById(final Iterable<? extends ID> ids) {
+		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
 	public Mono<Long> count() {
 		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency()).count();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Mono<Void> deleteAll() {
 		return operations.removeByQuery(entityInformation.getJavaType()).all().then();
@@ -201,7 +212,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 		return entityInformation;
 	}
 
-	private Flux<T> findAll(Query query) {
+	private Flux<T> findAll(final Query query) {
 		return operations.findByQuery(entityInformation.getJavaType()).consistentWith(buildQueryScanConsistency())
 				.matching(query).all();
 	}
@@ -219,7 +230,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	 *
 	 * @param crudMethodMetadata the injected repository metadata.
 	 */
-	void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
+	void setRepositoryMethodMetadata(final CrudMethodMetadata crudMethodMetadata) {
 		this.crudMethodMetadata = crudMethodMetadata;
 	}
 

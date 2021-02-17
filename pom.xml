@@ -20,7 +20,7 @@
     <properties>
         <couchbase>3.0.10</couchbase>
         <couchbase.osgi>3.0.10</couchbase.osgi>
-        <springdata.commons>2.5.0-SNAPSHOT</springdata.commons>
+        <springdata.commons>2.4.0-DATACMNS-800-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
 
@@ -41,12 +41,10 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-tx</artifactId>
@@ -176,14 +174,12 @@
             <version>${kotlin}</version>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
             <version>${kotlin}</version>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-test</artifactId>
