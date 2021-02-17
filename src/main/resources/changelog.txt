@@ -1,6 +1,17 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.4 (2021-02-17)
+-------------------------------------
+* DATACOUCH-675 - factor out interfaces for common methods to facilitate easier testing.
+* DATACOUCH-653 - Docs still shows version 4.0.0.RELEASE.
+* DATACOUCH-652 - CouchbaseTemplateSupport does not allow a TranslationService bean to be injected.
+* DATACOUCH-645 - expiryExpression ignored, but expiry works.
+* DATACOUCH-588 - ParameterOutOfBoundsException: Invalid parameter index.
+* DATACOUCH-550 - AutoIndexing is not Working properly.
+* DATACOUCH-526 - N1QL Join resolver doesn't resolver bucket name with special characters.
+
+
 Changes in version 4.0.7.RELEASE (2021-02-17)
 ---------------------------------------------
 * DATACOUCH-672 - reinstate "replace" expiry tests inadvertently removed in DATACOUCH-666.
@@ -1269,6 +1280,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
