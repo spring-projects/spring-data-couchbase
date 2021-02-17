@@ -72,7 +72,8 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 	@Override
 	protected Query createQuery(ParametersParameterAccessor accessor) {
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter,
+				getOperations().getBucketName());
 		Query query = creator.createQuery();
 
 		if (tree.isLimiting()) {
@@ -88,7 +89,8 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 	 */
 	@Override
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		return new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter).createQuery();
+		return new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter, getOperations().getBucketName())
+				.createQuery();
 	}
 
 	/*

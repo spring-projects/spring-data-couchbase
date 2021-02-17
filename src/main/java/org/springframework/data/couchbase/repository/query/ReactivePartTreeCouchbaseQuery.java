@@ -73,7 +73,8 @@ public class ReactivePartTreeCouchbaseQuery extends AbstractReactiveCouchbaseQue
 	@Override
 	protected Query createQuery(ParametersParameterAccessor accessor) {
 
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter,
+				getOperations().getBucketName());
 		Query query = creator.createQuery();
 
 		if (tree.isLimiting()) {
@@ -91,7 +92,8 @@ public class ReactivePartTreeCouchbaseQuery extends AbstractReactiveCouchbaseQue
 	 */
 	@Override
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		Query query = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter).createQuery();
+		Query query = new N1qlQueryCreator(tree, accessor, getQueryMethod(), converter, getOperations().getBucketName())
+				.createQuery();
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Created query {} for * fields.", query.export());
 		}

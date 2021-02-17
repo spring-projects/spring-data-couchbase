@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValue;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
+
+import java.util.Iterator;
+
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -36,12 +38,13 @@ import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import java.util.Iterator;
-
-import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValue;
 
 /**
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
@@ -98,10 +101,9 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 	@Override
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(path.toDotPath()), iterator);
+		return from(part, property, where(x(path.toDotPath())), iterator);
 	}
 
 	@Override
@@ -110,11 +112,10 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 			return create(part, iterator);
 		}
 
-		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(
-				part.getProperty());
+		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(path.toDotPath()), iterator);
+		return from(part, property, base.and(x(path.toDotPath())), iterator);
 	}
 
 	@Override
@@ -139,10 +140,10 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 		final Part.Type type = part.getType();
 		switch (type) {
-		case SIMPLE_PROPERTY:
-			return criteria; // this will be the dummy from PartTree
-		default:
-			throw new IllegalArgumentException("Unsupported keyword!");
+			case SIMPLE_PROPERTY:
+				return criteria; // this will be the dummy from PartTree
+			default:
+				throw new IllegalArgumentException("Unsupported keyword!");
 		}
 	}
 
