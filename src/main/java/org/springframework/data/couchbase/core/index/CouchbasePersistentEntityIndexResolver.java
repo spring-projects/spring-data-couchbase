@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -34,13 +35,13 @@ import org.springframework.util.StringUtils;
 public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolver {
 
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
-	private final String typeKey;
+	private final CouchbaseOperations operations;
 
 	public CouchbasePersistentEntityIndexResolver(
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
-			final String typeKey) {
+			CouchbaseOperations operations) {
 		this.mappingContext = mappingContext;
-		this.typeKey = typeKey;
+		this.operations = operations;
 	}
 
 	@Override
@@ -134,6 +135,7 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 	}
 
 	private String getPredicate(final MappingCouchbaseEntityInformation<?, Object> entityInfo) {
+		String typeKey = operations.getConverter().getTypeKey();
 		String typeValue = entityInfo.getJavaType().getName();
 		return "`" + typeKey + "` = \"" + typeValue + "\"";
 	}
