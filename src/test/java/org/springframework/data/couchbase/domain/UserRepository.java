@@ -19,11 +19,11 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
-import com.couchbase.client.java.json.JsonArray;
 import org.springframework.data.couchbase.repository.Query;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import com.couchbase.client.java.json.JsonArray;
 
 /**
  * User Repository for tests
@@ -47,4 +47,8 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (firstname = $first or lastname = $last)")
 	List<User> getByFirstnameOrLastname(@Param("first") String firstname, @Param("last") String lastname);
+
+	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
+
+	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
 }
