@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.config.BeanNames.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
 
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
@@ -60,6 +63,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Haris Alesevic
+ * @author Mauro Monti
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
@@ -124,7 +128,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
 
-		Query specialUsers = new Query(QueryCriteria.where("firstname").like("special"));
+		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
 		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
 
@@ -206,7 +210,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		assertTrue(couchbaseTemplate.existsById().one(user2.getId()));
 		assertTrue(couchbaseTemplate.existsById().one(specialUser.getId()));
 
-		Query nonSpecialUsers = new Query(QueryCriteria.where("firstname").notLike("special"));
+		Query nonSpecialUsers = new Query(QueryCriteria.where(i("firstname")).notLike("special"));
 
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.matching(nonSpecialUsers).all();
