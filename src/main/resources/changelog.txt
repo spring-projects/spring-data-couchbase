@@ -1,6 +1,16 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.0.7.RELEASE (2021-02-17)
+---------------------------------------------
+* DATACOUCH-672 - reinstate "replace" expiry tests inadvertently removed in DATACOUCH-666.
+* DATACOUCH-666 - ReplaceById needs change that is in UpsertById in DATACOUCH-625 for immutable entities.
+* DATACOUCH-664 - Update CI jobs with Docker Login.
+* DATACOUCH-661 - Fix integrations tests for datacouch-650.
+* DATACOUCH-650 - Implement CrudRepository.delete(Iterable<ID> ids).
+* DATACOUCH-630 - Expiry of document not working at all?.
+
+
 Changes in version 3.2.13.RELEASE (2021-02-17)
 ----------------------------------------------
 
@@ -1259,6 +1269,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
