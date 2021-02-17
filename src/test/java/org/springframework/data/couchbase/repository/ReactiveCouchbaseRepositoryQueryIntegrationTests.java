@@ -16,7 +16,15 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.core.error.IndexExistsException;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,18 +43,8 @@ import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import reactor.test.StepVerifier;
 
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import com.couchbase.client.core.error.IndexExistsException;
 
 /**
  * template class for Reactive Couchbase operations
@@ -58,13 +56,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired
-	CouchbaseClientFactory clientFactory;
+	@Autowired CouchbaseClientFactory clientFactory;
 
-	@Autowired
-	ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
-	@Autowired
-	ReactiveUserRepository userRepository; // intellij flags "Could not Autowire", but it runs ok.
+	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
+	@Autowired ReactiveUserRepository userRepository; // intellij flags "Could not Autowire", but it runs ok.
 
 	@BeforeEach
 	void beforeEach() {
@@ -98,9 +93,9 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 			vie = new Airport("airports::vie", "vie", "loww");
 			airportRepository.save(vie).block();
 			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(1, airports1.size());
+			assertEquals(1,airports1.size());
 			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(1, airports2.size());
+			assertEquals(1,airports2.size());
 		} finally {
 			airportRepository.delete(vie).block();
 		}
@@ -119,7 +114,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 
 	@Test
 	void count() {
-		String[] iatas = {"JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX"};
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
 		ExecutorService executorService = Executors.newFixedThreadPool(iatas.length);
 		try {
@@ -150,25 +145,6 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends ClusterAwa
 					System.out.println("Failed to delete: " + airport);
 				}
 			}
-		}
-	}
-
-	@Test
-		// DATACOUCH-650
-	void deleteAllById() {
-
-		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
-		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
-
-		try {
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).as(StepVerifier::create).verifyComplete();
-
-			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId())).as(StepVerifier::create).verifyComplete();
-
-			airportRepository.findAll().as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
-		} finally {
-			airportRepository.deleteAll();
 		}
 	}
 

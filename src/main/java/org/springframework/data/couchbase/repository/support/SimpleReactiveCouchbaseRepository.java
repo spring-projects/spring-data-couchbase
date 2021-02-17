@@ -44,7 +44,6 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Christoph Strobl
  * @author David Kelly
  * @author Douglas Six
- * @author Jens Schauder
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {
@@ -184,11 +183,6 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	public Mono<Void> deleteAll(final Publisher<? extends T> entityStream) {
 		Assert.notNull(entityStream, "The given publisher of entities must not be null!");
 		return Flux.from(entityStream).flatMap(this::delete).single();
-	}
-
-	@Override
-	public Mono<Void> deleteAllById(final Iterable<? extends ID> ids) {
-		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
 	}
 
 	@SuppressWarnings("unchecked")
