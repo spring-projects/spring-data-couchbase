@@ -48,7 +48,7 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 
 	@Test
 	void saveSimpleEntityCorrectlyWithDifferentTypeKey() {
-		clientFactory.getBucket().waitUntilReady(Duration.ofSeconds(5));
+		clientFactory.getBucket().waitUntilReady(Duration.ofSeconds(10));
 
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		// When using 'mocked', this call runs fine when the test class is ran by itself,
