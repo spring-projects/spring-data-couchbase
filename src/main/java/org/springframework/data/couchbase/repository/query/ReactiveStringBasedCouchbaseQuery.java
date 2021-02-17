@@ -79,6 +79,7 @@ public class ReactiveStringBasedCouchbaseQuery extends AbstractReactiveCouchbase
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(accessor, getQueryMethod(),
 				getOperations().getConverter(), getOperations().getBucketName(), expressionParser, evaluationContextProvider,
 				namedQueries);
+
 		Query query = creator.createQuery();
 
 		if (LOG.isDebugEnabled()) {

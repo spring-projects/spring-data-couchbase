@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,29 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.lang.Nullable;
+
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
-import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.lang.Nullable;
 
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Mauro Monti
  */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
-	private final String key;
+	private final N1QLExpression key;
 	/**
 	 * Holds the chain itself, the current operator being always the last one.
 	 */
@@ -46,16 +50,16 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	private Object[] value;
 	private String format;
 
-	QueryCriteria(List<QueryCriteria> chain, String key, Object[] value, ChainOperator chainOperator) {
+	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object[] value, ChainOperator chainOperator) {
 		this(chain, key, value, chainOperator, null, null);
 	}
 
-	QueryCriteria(List<QueryCriteria> chain, String key, Object value, ChainOperator chainOperator) {
+	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object value, ChainOperator chainOperator) {
 		this(chain, key, new Object[] { value }, chainOperator, null, null);
 	}
 
-	QueryCriteria(List<QueryCriteria> chain, String key, Object[] value, ChainOperator chainOperator, String operator,
-			String format) {
+	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object[] value, ChainOperator chainOperator,
+			String operator, String format) {
 		this.criteriaChain = chain;
 		criteriaChain.add(this);
 		this.key = key;
@@ -70,9 +74,16 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	/**
-	 * Static factory method to create a Criteria using the provided key.
+	 * Static factory method to create a Criteria using the provided String key.
 	 */
 	public static QueryCriteria where(String key) {
+		return where(x(key));
+	}
+
+	/**
+	 * Static factory method to create a Criteria using the provided N1QLExpression key.
+	 */
+	public static QueryCriteria where(N1QLExpression key) {
 		return new QueryCriteria(new ArrayList<>(), key, null, null);
 	}
 
@@ -83,6 +94,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria and(String key) {
+		return and(x(key));
+	}
+
+	public QueryCriteria and(N1QLExpression key) {
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
 	}
 
@@ -90,12 +105,16 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.AND);
 	}
 
-	public QueryCriteria or(QueryCriteria criteria) {
-		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.OR);
+	public QueryCriteria or(String key) {
+		return or(x(key));
 	}
 
-	public QueryCriteria or(String key) {
+	public QueryCriteria or(N1QLExpression key) {
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.OR);
+	}
+
+	public QueryCriteria or(QueryCriteria criteria) {
+		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.OR);
 	}
 
 	public QueryCriteria eq(@Nullable Object o) {
@@ -343,7 +362,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 */
 	private StringBuilder exportSingle(StringBuilder sb, int[] paramIndexPtr, JsonValue parameters,
 			CouchbaseConverter converter) {
-		String fieldName = maybeBackTic(key);
+		String fieldName = key == null ? null : key.toString(); // maybeBackTic(key);
 		int valueLen = value == null ? 0 : value.length;
 		Object[] v = new Object[valueLen + 2];
 		v[0] = fieldName;
@@ -377,7 +396,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 * @param parameters - parameters of the query. If operands are parameterized, their values are added to parameters
 	 * @return string containing part of N1QL query
 	 */
-	private String maybeWrapValue(String key, Object value, int[] paramIndexPtr, JsonValue parameters,
+	private String maybeWrapValue(N1QLExpression key, Object value, int[] paramIndexPtr, JsonValue parameters,
 			CouchbaseConverter converter) {
 		if (paramIndexPtr != null) {
 			if (paramIndexPtr[0] >= 0) {
@@ -397,10 +416,10 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 				JsonObject params = (JsonObject) parameters;
 				// from StringBasedN1qlQueryParser.getNamedPlaceholderValues()
 				try {
-					params.put(key, convert(converter, value));
+					params.put(key.toString(), convert(converter, value));
 				} catch (InvalidArgumentException iae) {
 					if (value instanceof Object[]) {
-						params.put(key, JsonArray.from((Object[]) value));
+						params.put(key.toString(), JsonArray.from((Object[]) value));
 					} else {
 						throw iae;
 					}
@@ -416,7 +435,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		} else if (value == null) {
 			return "null";
 		} else if (value instanceof Object[]) { // convert array into sequence of comma-separated values
-			StringBuffer l = new StringBuffer();
+			StringBuilder l = new StringBuilder();
 			l.append("[");
 			Object[] array = (Object[]) value;
 			for (int i = 0; i < array.length; i++) {
