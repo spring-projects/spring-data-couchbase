@@ -1,6 +1,10 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.5 (2021-02-18)
+-------------------------------------
+
+
 Changes in version 4.2.0-M3 (2021-02-17)
 ----------------------------------------
 * DATACOUCH-652 - CouchbaseTemplateSupport does not allow a TranslationService bean to be injected.
@@ -1287,6 +1291,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
