@@ -37,7 +37,6 @@ import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversion
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
@@ -62,7 +61,6 @@ import com.couchbase.client.java.json.JacksonTransformers;
  * @author Simon Baslé
  * @author Stephane Nicoll
  * @author Subhashni Balakrishnan
- * @author Jorge Rodriguez Martin
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
@@ -147,26 +145,14 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService);
-	}
-
-	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return couchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService());
+		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
-				couchbaseTranslationService);
-	}
-
-	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return reactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
-				new JacksonTranslationService());
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
 	}
 
 	@Bean(name = BeanNames.COUCHBASE_OPERATIONS_MAPPING)
@@ -282,6 +268,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
 		mappingContext.setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		mappingContext.setFieldNamingStrategy(fieldNamingStrategy());
+		mappingContext.setAutoIndexCreation(autoIndexCreation());
 
 		return mappingContext;
 	}
@@ -291,18 +278,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	protected boolean autoIndexCreation() {
 		return false;
-	}
-
-	/**
-	 * Creates a {@link CouchbasePersistentEntityIndexCreator} bean that takes on the responsibility of automatically
-	 * creating indices.
-	 *
-	 * Does nothing if {@link #autoIndexCreation()} returns false.
-	 */
-	@Bean
-	public CouchbasePersistentEntityIndexCreator couchbasePersistentEntityIndexCreator(CouchbaseMappingContext couchbaseMappingContext,
-   			CouchbaseClientFactory clientFactory) {
-		return new CouchbasePersistentEntityIndexCreator(couchbaseMappingContext, clientFactory, typeKey(), autoIndexCreation());
 	}
 
 	/**

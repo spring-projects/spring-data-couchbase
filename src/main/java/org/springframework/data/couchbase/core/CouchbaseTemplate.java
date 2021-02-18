@@ -38,7 +38,6 @@ import com.couchbase.client.java.Collection;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
- * @author Aaron Whiteside
  * @author Jorge Rodriguez Martin
  * @since 3.0
  */
@@ -56,19 +55,19 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-		final TranslationService translationService) {
+			final TranslationService translationService) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
-
+		
 		this.mappingContext = this.converter.getMappingContext();
-		if (mappingContext instanceof CouchbaseMappingContext) {
-			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
-			if (cmc.isAutoIndexCreation()) {
-				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
-			}
-		}
+ 		if (mappingContext instanceof CouchbaseMappingContext) {
+ 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
+ 			if (cmc.isAutoIndexCreation()) {
+ 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
+ 			}
+ 		}
 	}
 
 	@Override
