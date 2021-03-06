@@ -47,7 +47,6 @@ public class N1qlRepositoryQueryExecutor {
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
 		this.evaluationContextProvider = evaluationContextProvider;
-		throw new RuntimeException("Deprecated");
 	}
 
 	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
@@ -70,7 +69,8 @@ public class N1qlRepositoryQueryExecutor {
 					SPEL_PARSER, evaluationContextProvider, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName()).createQuery();
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName())
+					.createQuery();
 		}
 
 		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation = (ExecutableFindByQueryOperation.ExecutableFindByQuery<?>) operations
