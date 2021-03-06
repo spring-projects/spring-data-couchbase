@@ -35,12 +35,11 @@ public class CouchbaseRepositoryQuery implements RepositoryQuery {
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public CouchbaseRepositoryQuery(final CouchbaseOperations operations, final CouchbaseQueryMethod queryMethod,
-			final NamedQueries namedQueries, final QueryMethodEvaluationContextProvider evaluationContextProvider) {
+			final NamedQueries namedQueries) {
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = evaluationContextProvider;
-		throw new RuntimeException("Deprecated");
+		this.evaluationContextProvider = QueryMethodEvaluationContextProvider.DEFAULT;
 	}
 
 	@Override

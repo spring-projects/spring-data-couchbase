@@ -36,14 +36,12 @@ public class ReactiveCouchbaseRepositoryQuery extends AbstractReactiveCouchbaseQ
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 
 	public ReactiveCouchbaseRepositoryQuery(final ReactiveCouchbaseOperations operations,
-			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries,
-			final QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		super(queryMethod, operations, new SpelExpressionParser(), evaluationContextProvider);
+			final ReactiveCouchbaseQueryMethod queryMethod, final NamedQueries namedQueries) {
+		super(queryMethod, operations, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT);
 		this.operations = operations;
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
-		this.evaluationContextProvider = evaluationContextProvider;
-		throw new RuntimeException("Deprecated");
+		this.evaluationContextProvider = QueryMethodEvaluationContextProvider.DEFAULT;
 	}
 
 	@Override

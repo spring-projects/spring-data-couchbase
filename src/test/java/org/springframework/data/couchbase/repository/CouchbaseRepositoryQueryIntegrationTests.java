@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
@@ -48,6 +50,8 @@ import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -55,6 +59,8 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
+import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -75,6 +81,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired AirportRepository airportRepository;
 
 	@Autowired UserRepository userRepository;
+
+	@Autowired CouchbaseTemplate couchbaseTemplate;
 
 	@BeforeEach
 	public void beforeEach() {
@@ -303,6 +311,21 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		} finally {
 			airportRepository.deleteAll();
 		}
+	}
+
+	@Test
+	void couchbaseRepositoryQuery() throws Exception {
+		User user = new User("1", "Dave", "Wilson");
+		userRepository.save(user);
+		String input = "findByFirstname";
+		Method method = UserRepository.class.getMethod(input, String.class);
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
+				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
+				couchbaseTemplate.getConverter().getMappingContext());
+
+		CouchbaseRepositoryQuery query = new CouchbaseRepositoryQuery(couchbaseTemplate, queryMethod, null);
+		List<User> users = (List<User>)query.execute(new String[] { "Dave" });
+		assertEquals(user, users.get(0));
 	}
 
 	private void sleep(int millis) {

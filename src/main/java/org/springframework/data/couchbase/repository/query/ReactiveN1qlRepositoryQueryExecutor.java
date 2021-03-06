@@ -40,7 +40,6 @@ public class ReactiveN1qlRepositoryQueryExecutor {
 		this.queryMethod = queryMethod;
 		this.namedQueries = namedQueries;
 		this.evaluationContextProvider = evaluationContextProvider;
-		throw new RuntimeException("Deprecated");
 	}
 
 	/**
