@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
@@ -295,28 +297,12 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
-	@Test // DATACOUCH-650
-	void deleteAllById() {
-
-		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
-		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
-
-		try {
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
-
-			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
-
-			assertThat(airportRepository.findAll()).containsExactly(frankfurt);
-		} finally {
-			airportRepository.deleteAll();
-		}
-	}
-
 	@Test
 	void couchbaseRepositoryQuery() throws Exception {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
+		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(
+			QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
 		String input = "findByFirstname";
 		Method method = UserRepository.class.getMethod(input, String.class);
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
