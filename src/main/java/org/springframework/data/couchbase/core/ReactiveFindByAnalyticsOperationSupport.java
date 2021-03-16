@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 	@Override
 	public <T> ReactiveFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ReactiveFindByAnalyticsSupport<>(template, domainType, ALL_QUERY, AnalyticsScanConsistency.NOT_BOUNDED);
+		return new ReactiveFindByAnalyticsSupport<>(template, domainType, ALL_QUERY, AnalyticsScanConsistency.NOT_BOUNDED,
+			template.support());
 	}
 
 	static class ReactiveFindByAnalyticsSupport<T> implements ReactiveFindByAnalytics<T> {
@@ -45,29 +46,31 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		private final Class<T> domainType;
 		private final AnalyticsQuery query;
 		private final AnalyticsScanConsistency scanConsistency;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByAnalyticsSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
-				final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency) {
+				final AnalyticsQuery query, final AnalyticsScanConsistency scanConsistency, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
 			this.scanConsistency = scanConsistency;
+			this.support = support;
 		}
 
 		@Override
 		public TerminatingFindByAnalytics<T> matching(AnalyticsQuery query) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
 		}
 
 		@Override
 		@Deprecated
 		public FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
 		}
 
 		@Override
 		public FindByAnalyticsWithQuery<T> withConsistency(AnalyticsScanConsistency scanConsistency) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, query, scanConsistency, support);
 		}
 
 		@Override
@@ -91,12 +94,12 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							} else {
 								return throwable;
 							}
-						}).flatMapMany(ReactiveAnalyticsResult::rowsAsObject).map(row -> {
+						}).flatMapMany(ReactiveAnalyticsResult::rowsAsObject).flatMap(row -> {
 							String id = row.getString("__id");
 							long cas = row.getLong("__cas");
 							row.removeKey("__id");
 							row.removeKey("__cas");
-							return template.support().decodeEntity(id, row.toString(), cas, domainType);
+							return support.decodeEntity(id, row.toString(), cas, domainType);
 						});
 			});
 		}
@@ -131,7 +134,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 				statement.append("meta().id as __id, meta().cas as __cas, ").append(bucket).append(".*");
 			}
 
-			final String dataset = template.support().getJavaNameForEntity(domainType);
+			final String dataset = support.getJavaNameForEntity(domainType);
 			statement.append(" FROM ").append(dataset);
 
 			query.appendSort(statement);

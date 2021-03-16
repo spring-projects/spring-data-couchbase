@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 	public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveReplaceByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+				DurabilityLevel.NONE, null, template.support());
 	}
 
 	static class ReactiveReplaceByIdSupport<T> implements ReactiveReplaceById<T> {
@@ -53,10 +53,11 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
 				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry) {
+				final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
@@ -64,15 +65,15 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
+			this.support = support;
 		}
 
 		@Override
 		public Mono<T> one(T object) {
-			return Mono.just(object).flatMap(o -> {
-				CouchbaseDocument converted = template.support().encodeEntity(o);
+			return (Mono<T>) Mono.just(object).flatMap(support::encodeEntity).flatMap(converted -> {
 				return template.getCollection(collection).reactive()
-						.replace(converted.getId(), converted.export(), buildReplaceOptions(o, converted))
-						.map(result -> (T) template.support().applyUpdatedCas(o, result.cas()));
+						.replace(converted.getId(), converted.export(), buildReplaceOptions(object, converted))
+						.flatMap(result ->  support.applyUpdatedCas(object, result.cas()));
 			}).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -99,7 +100,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			} else if (doc.getExpiration() != 0) {
 				options.expiry(Duration.ofSeconds(doc.getExpiration()));
 			}
-			long cas = template.support().getCas(object);
+			long cas = support.getCas(object);
 			options.cas(cas);
 			return options;
 		}
@@ -108,14 +109,14 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		public TerminatingReplaceById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
 		public ReplaceByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
@@ -123,14 +124,14 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
 		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 	}

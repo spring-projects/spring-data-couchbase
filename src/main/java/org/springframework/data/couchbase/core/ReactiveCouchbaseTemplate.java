@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,14 @@ import com.couchbase.client.java.Collection;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
+ * @author Carlos Espinaco
  */
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
 	private final CouchbaseClientFactory clientFactory;
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
-	private final CouchbaseTemplateSupport templateSupport;
+	private final ReactiveCouchbaseTemplateSupport templateSupport;
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -51,7 +52,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
-		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
+		this.templateSupport = new ReactiveCouchbaseTemplateSupport(converter, translationService);
 	}
 
 	@Override
@@ -134,7 +135,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return converter;
 	}
 
-	CouchbaseTemplateSupport support() {
+	ReactiveTemplateSupport support() {
 		return templateSupport;
 	}
 

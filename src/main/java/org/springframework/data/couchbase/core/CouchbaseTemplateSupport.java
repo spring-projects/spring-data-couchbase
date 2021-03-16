@@ -1,5 +1,6 @@
 /*
- * Copyright 2012-2020 the original author or authors
+/*
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +46,10 @@ import org.slf4j.LoggerFactory;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
+ * @author Carlos Espinaco
  * @since 3.0
  */
-class CouchbaseTemplateSupport implements ApplicationContextAware {
+class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSupport {
 
 	private static final Logger LOG = LoggerFactory.getLogger(CouchbaseTemplateSupport.class);
 
@@ -63,6 +65,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		this.translationService = translationService;
 	}
 
+	@Override
 	public CouchbaseDocument encodeEntity(final Object entityToEncode) {
 		maybeEmitEvent(new BeforeConvertEvent<>(entityToEncode));
 		Object maybeNewEntity = maybeCallBeforeConvert(entityToEncode, "");
@@ -73,6 +76,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return converted;
 	}
 
+	@Override
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
@@ -90,6 +94,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return accessor.getBean();
 	}
 
+	@Override
 	public Object applyUpdatedCas(final Object entity, final long cas) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
@@ -102,6 +107,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return entity;
 	}
 
+	@Override
 	public Object applyUpdatedId(final Object entity, Object id) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
@@ -114,6 +120,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return entity;
 	}
 
+	@Override
 	public long getCas(final Object entity) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
@@ -129,6 +136,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware {
 		return cas;
 	}
 
+	@Override
 	public String getJavaNameForEntity(final Class<?> clazz) {
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(clazz);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);

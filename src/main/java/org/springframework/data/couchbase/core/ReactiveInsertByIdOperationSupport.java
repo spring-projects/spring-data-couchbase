@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 	public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+				DurabilityLevel.NONE, null, template.support());
 	}
 
 	static class ReactiveInsertByIdSupport<T> implements ReactiveInsertById<T> {
@@ -54,10 +54,11 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType,
 				final String collection, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Duration expiry) {
+				final DurabilityLevel durabilityLevel, Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
@@ -65,18 +66,19 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
+			this.support = support;
 		}
 
 		@Override
 		public Mono<T> one(T object) {
-			return Mono.just(object).flatMap(o -> {
-				CouchbaseDocument converted = template.support().encodeEntity(o);
-				return template.getCollection(collection).reactive()
-						.insert(converted.getId(), converted.export(), buildInsertOptions(converted)).map(result -> {
-							Object updatedObject = template.support().applyUpdatedId(o, converted.getId());
-							return (T) template.support().applyUpdatedCas(updatedObject, result.cas());
-						});
-			}).onErrorMap(throwable -> {
+			return (Mono<T>) Mono.just(object).flatMap(support::encodeEntity).flatMap(converted ->
+					template.getCollection(collection).reactive()
+							.insert(converted.getId(), converted.export(), buildInsertOptions(converted))
+							.flatMap(result ->
+									support.applyUpdatedId(object, converted.getId())
+											.flatMap(
+													updatedObject -> support.applyUpdatedCas(updatedObject, result.cas())))
+			).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
@@ -109,14 +111,14 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		public TerminatingInsertById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
 		public InsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
@@ -124,14 +126,14 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo, durabilityLevel,
-					expiry);
+					expiry, support);
 		}
 	}
 

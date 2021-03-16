@@ -18,15 +18,22 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.ReactiveUserRepository;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -39,23 +46,40 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 
 	@Autowired ReactiveUserRepository userRepository;
 
+	@Autowired ReactiveAirportRepository airportRepository;
+
 	@Test
 	void saveAndFindById() {
 		User user = new User(UUID.randomUUID().toString(), "f", "l");
 
 		assertFalse(userRepository.existsById(user.getId()).block());
 
-		userRepository.save(user).block();
+		final User save = userRepository.save(user).block();
 
 		Optional<User> found = userRepository.findById(user.getId()).blockOptional();
 		assertTrue(found.isPresent());
-		found.ifPresent(u -> assertEquals(user, u));
+		found.ifPresent(u -> assertEquals(save, u));
 
 		assertTrue(userRepository.existsById(user.getId()).block());
 	}
 
+	@Test
+	void findBySimplePropertyAudited() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low2");
+			Airport saved = airportRepository.save(vie).block();
+			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
+			assertEquals(saved, airports1.get(0));
+			assertEquals(saved.getCreatedBy(), "auditor"); // NaiveAuditorAware will provide this
+		} finally {
+			airportRepository.delete(vie).block();
+		}
+	}
+
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+  @EnableReactiveCouchbaseAuditing
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override
@@ -76,6 +100,16 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Bean(name = "auditorAwareRef")
+		public ReactiveNaiveAuditorAware testAuditorAware() {
+			return new ReactiveNaiveAuditorAware();
+		}
+
+		@Bean(name = "dateTimeProviderRef")
+		public DateTimeProvider testDateTimeProvider() {
+			return new AuditingDateTimeProvider();
 		}
 
 	}

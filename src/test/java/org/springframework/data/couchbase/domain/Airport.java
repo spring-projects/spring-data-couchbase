@@ -16,8 +16,10 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -33,6 +35,11 @@ public class Airport extends ComparableEntity {
 	String iata;
 
 	String icao;
+
+	@CreatedBy private String createdBy;
+
+	@Version long version;
+
 
 	@PersistenceConstructor
 	public Airport(String id, String iata, String icao) {
@@ -53,4 +60,7 @@ public class Airport extends ComparableEntity {
 		return icao;
 	}
 
+	public String getCreatedBy() {
+		return createdBy;
+	}
 }
