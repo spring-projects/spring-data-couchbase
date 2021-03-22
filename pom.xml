@@ -216,11 +216,11 @@
             <id>sonatype-snapshot</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
+                <enabled>true</enabled>
+            </snapshots>
             <releases>
-        <enabled>false</enabled>
-      </releases>
+                <enabled>false</enabled>
+            </releases>
         </repository>
         <repository>
             <id>jitpack.io</id>
