@@ -195,6 +195,25 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		}
 	}
 
+	@Test
+	void deleteAll() {
+
+		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
+		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
+
+		try {
+			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).as(StepVerifier::create)
+					.expectNext(vienna, frankfurt, losAngeles).verifyComplete();
+
+			airportRepository.deleteAll().as(StepVerifier::create).verifyComplete();
+
+			airportRepository.findAll().as(StepVerifier::create).verifyComplete();
+		} finally {
+			airportRepository.deleteAll().block();
+		}
+	}
+
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {

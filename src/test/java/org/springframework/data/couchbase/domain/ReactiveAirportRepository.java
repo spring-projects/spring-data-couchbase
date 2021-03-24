@@ -46,6 +46,10 @@ public interface ReactiveAirportRepository extends ReactiveSortingRepository<Air
 	Flux<Airport> findAll();
 
 	@Override
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Mono<Void> deleteAll();
+
+	@Override
 	Mono<Airport> save(Airport a);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
