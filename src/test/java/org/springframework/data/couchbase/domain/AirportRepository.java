@@ -50,6 +50,9 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIata(Iata iata);
+
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIata(String iata);
