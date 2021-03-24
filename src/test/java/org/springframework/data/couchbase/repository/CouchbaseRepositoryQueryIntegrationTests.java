@@ -47,6 +47,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
+import org.springframework.data.couchbase.domain.Iata;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
@@ -167,6 +168,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
+	@Test
+	void findByEnum() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			vie = airportRepository.save(vie);
+			Airport airport2 = airportRepository.findByIata(Iata.vie);
+			assertEquals(airport2.getId(), vie.getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
 	@Test
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");

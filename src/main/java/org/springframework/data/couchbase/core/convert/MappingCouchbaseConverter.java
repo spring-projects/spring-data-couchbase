@@ -774,15 +774,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		target.put(key, getPotentiallyConvertedSimpleWrite(source));
 	}
 
-	private Object getPotentiallyConvertedSimpleWrite(final Object value) {
-		if (value == null) {
-			return null;
-		}
-
-		Optional<Class<?>> customTarget = conversions.getCustomWriteTarget(value.getClass());
-
-		return customTarget.map(it -> (Object) conversionService.convert(value, it))
-				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
+	public Object getPotentiallyConvertedSimpleWrite(final Object value) {
+		return convertForWriteIfNeeded(value);
 	}
 
 	/**
