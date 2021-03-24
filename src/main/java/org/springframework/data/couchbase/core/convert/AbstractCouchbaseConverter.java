@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core.convert;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
@@ -100,7 +101,8 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 
 		return this.conversions.getCustomWriteTarget(value.getClass()) //
 				.map(it -> (Object) this.conversionService.convert(value, it)) //
-				.orElse(value);
+				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
+
 	}
 
 	@Override
