@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.couchbase.repository.support.Util.*;
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.reactivestreams.Publisher;
-
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.query.Query;
@@ -189,7 +188,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Void> deleteAll() {
-		return operations.removeByQuery(entityInformation.getJavaType()).all().then();
+		return operations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).all()
+				.then();
 	}
 
 	/**
