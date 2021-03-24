@@ -192,6 +192,13 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return this;
 	}
 
+	public QueryCriteria arrayContaining(@Nullable Object o) {
+		operator = "ARRAY_CONTAINING";
+		value = new Object[] { o };
+		format = "array_containing(%1$s, %3$s)";
+		return this;
+	}
+
 	public QueryCriteria notContaining(@Nullable Object o) {
 		value = new QueryCriteria[] { wrap(containing(o)) };
 		operator = "NOT";

@@ -123,14 +123,11 @@ class QueryCriteriaTests {
 		assertEquals("`name` like (\"Cou\"||\"%\")", c.export());
 	}
 
-	/* cannot do this properly yet because in arg to when() in
-	       * startingWith()  cannot be a QueryCriteria
 	@Test
 	void testStartingWithExpr() {
 		QueryCriteria c = where(i("name")).startingWith(where(i("name")).plus("xxx"));
-		assertEquals("`name` like (((`name` || "xxx") || ""%""))", c.export());
+		assertEquals("`name` like (((`name` || \"xxx\"))||\"%\")", c.export());
 	}
-	      */
 
 	@Test
 	void testEndingWith() {
@@ -160,6 +157,12 @@ class QueryCriteriaTests {
 	void testNotContaining() {
 		QueryCriteria c = where(i("name")).notContaining("Elvis");
 		assertEquals("not( (contains(`name`, \"Elvis\")) )", c.export());
+	}
+
+	@Test
+	void testArrayContaining() {
+		QueryCriteria c = where(i("name")).arrayContaining("Elvis");
+		assertEquals("array_containing(`name`, \"Elvis\")", c.export());
 	}
 
 	@Test
