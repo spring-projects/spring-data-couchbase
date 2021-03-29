@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
 
@@ -147,7 +148,17 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					String id = "";
 					long cas = 0;
 					if (distinctFields == null) {
+						if (row.getString(TemplateUtils.SELECT_ID) == null) {
+							throw new CouchbaseException(
+									"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
+											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS  + " : " + statement);
+						}
 						id = row.getString(TemplateUtils.SELECT_ID);
+						if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
+							throw new CouchbaseException(
+									"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
+											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement);
+						}
 						cas = row.getLong(TemplateUtils.SELECT_CAS);
 						row.removeKey(TemplateUtils.SELECT_ID);
 						row.removeKey(TemplateUtils.SELECT_CAS);
