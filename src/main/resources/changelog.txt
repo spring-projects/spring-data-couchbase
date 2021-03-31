@@ -1,6 +1,15 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.2.0-RC1 (2021-03-31)
+-----------------------------------------
+* #1105 - Readme lists artifacts with .RELEASE and .BUILD-SNAPSHOT suffixes.
+* #1096 - SimpleReactiveCouchbaseRepository.deleteAll() missing scan consistency.
+* #1073 - Support for ARRAY_CONTAINS.
+* #1069 - Enums can't be used as method parameters in Repository.
+* #1064 - N1QLExpression#keys is broken.
+
+
 Changes in version 4.2.0-M5 (2021-03-17)
 ----------------------------------------
 * #1092 - regression - changes to public API CouchbaseRepositoryQuery and ReactiveCouchbaseRepositoryQuery.
@@ -1312,6 +1321,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
