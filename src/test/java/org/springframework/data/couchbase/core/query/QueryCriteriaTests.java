@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 
 import com.couchbase.client.java.json.JsonArray;
 
+import java.util.Arrays;
+
 /**
  * @author Mauro Monti
  */
@@ -250,6 +252,15 @@ class QueryCriteriaTests {
 		QueryCriteria c = where(i("name")).FALSE();
 		assertEquals("not( (`name`) )", c.export());
 	}
+
+	@Test
+	void testKeys() {
+		N1QLExpression expression = N1QLExpression.x("");
+		assertEquals(" USE KEYS [\"a\",\"b\"]", expression.keys(Arrays.asList("a", "b")).toString());
+		assertEquals(" USE KEYS [\"a\"]", expression.keys(Arrays.asList("a")).toString());
+		assertEquals(" USE KEYS []", expression.keys(Arrays.asList()).toString());
+	}
+
 
 	@Test // https://github.com/spring-projects/spring-data-couchbase/issues/1066
 	void testCriteriaCorrectlyEscapedWhenUsingMetaOnLHS() {
