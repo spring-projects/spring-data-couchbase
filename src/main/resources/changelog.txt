@@ -1,6 +1,11 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.7 (2021-03-31)
+-------------------------------------
+* #1103 - revert 4.1.x to sdk 3.0.x.
+
+
 Changes in version 4.2.0-RC1 (2021-03-31)
 -----------------------------------------
 * #1105 - Readme lists artifacts with .RELEASE and .BUILD-SNAPSHOT suffixes.
@@ -1321,6 +1326,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
