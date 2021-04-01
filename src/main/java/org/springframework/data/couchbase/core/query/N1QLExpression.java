@@ -262,13 +262,14 @@ public class N1QLExpression {
 	public N1QLExpression keys(Iterable<? extends Serializable> ids) {
 		StringBuilder sb = new StringBuilder();
 		Iterator<?> it = ids.iterator();
-		// TODO: really? Lets do better.
+		sb.append("[");
 		while (it.hasNext()) {
-			sb.append(i(it.next().toString()));
+			sb.append(s(it.next().toString()));
 			if (it.hasNext()) {
 				sb.append(",");
 			}
 		}
+		sb.append("]");
 		return infix("USE KEYS", toString(), sb.toString());
 	}
 
