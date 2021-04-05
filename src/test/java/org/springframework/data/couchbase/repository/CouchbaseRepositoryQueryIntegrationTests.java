@@ -34,7 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +42,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
@@ -67,6 +68,7 @@ import org.springframework.data.repository.core.support.DefaultRepositoryMetadat
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Repository tests
@@ -169,6 +171,20 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void findByTypeAlias() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			vie = airportRepository.save(vie);
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
+					.matching(new Query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport"))).all();
+			assertFalse(airports.isEmpty(), "should have found aiport");
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
 	void findByEnum() {
 		Airport vie = null;
 		try {
@@ -180,6 +196,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.delete(vie);
 		}
 	}
+
 	@Test
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");
@@ -200,6 +217,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
+			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
@@ -332,14 +350,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void couchbaseRepositoryQuery() throws Exception {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
-		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
+		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+				.matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
 		String input = "findByFirstname";
 		Method method = UserRepository.class.getMethod(input, String.class);
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
 				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
 				couchbaseTemplate.getConverter().getMappingContext());
 		CouchbaseRepositoryQuery query = new CouchbaseRepositoryQuery(couchbaseTemplate, queryMethod, null);
-		List<User> users = (List<User>)query.execute(new String[] { "Dave" });
+		List<User> users = (List<User>) query.execute(new String[] { "Dave" });
 		assertEquals(user, users.get(0));
 	}
 
