@@ -19,7 +19,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import com.couchbase.client.java.analytics.ReactiveAnalyticsResult;
@@ -92,10 +94,22 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 								return throwable;
 							}
 						}).flatMapMany(ReactiveAnalyticsResult::rowsAsObject).map(row -> {
-							String id = row.getString("__id");
-							long cas = row.getLong("__cas");
-							row.removeKey("__id");
-							row.removeKey("__cas");
+							String id = "";
+							long cas = 0;
+							if (row.getString(TemplateUtils.SELECT_ID) == null) {
+								throw new CouchbaseException("analytics query did not project " + TemplateUtils.SELECT_ID
+										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
+										+ TemplateUtils.SELECT_CAS + " : " + statement);
+							}
+							id = row.getString(TemplateUtils.SELECT_ID);
+							if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
+								throw new CouchbaseException("analytics query did not project " + TemplateUtils.SELECT_CAS
+										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
+										+ TemplateUtils.SELECT_CAS + " : " + statement);
+							}
+							cas = row.getLong(TemplateUtils.SELECT_CAS);
+							row.removeKey(TemplateUtils.SELECT_ID);
+							row.removeKey(TemplateUtils.SELECT_CAS);
 							return template.support().decodeEntity(id, row.toString(), cas, domainType);
 						});
 			});
