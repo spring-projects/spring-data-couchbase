@@ -57,6 +57,14 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIata(String iata);
 
+	@Query("SELECT __cas, * from `#{#n1ql.bucket}` where iata = $1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> getAllByIataNoID(String iata);
+
+	@Query("SELECT __id, * from `#{#n1ql.bucket}` where iata = $1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> getAllByIataNoCAS(String iata);
+
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	long countByIataIn(String... iata);
 

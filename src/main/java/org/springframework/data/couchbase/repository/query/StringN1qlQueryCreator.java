@@ -27,6 +27,7 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.StringQuery;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
@@ -36,6 +37,8 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -81,8 +84,15 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		} else {
 			throw new IllegalArgumentException("query has no inline Query or named Query not found");
 		}
+		Class javaType = getType();
+		String typeValue = javaType.getName();
+		TypeInformation<?> typeInfo = ClassTypeInformation.from(javaType);
+		Alias alias = couchbaseConverter.getTypeAlias(typeInfo);
+		if (alias != null && alias.isPresent()) {
+			typeValue = alias.toString();
+		}
 		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
-				getTypeField(), getTypeValue(), accessor, spelExpressionParser, evaluationContextProvider);
+				getTypeField(), typeValue, accessor, spelExpressionParser, evaluationContextProvider);
 		this.parser = spelExpressionParser;
 		this.parsedExpression = this.queryParser.parsedExpression;
 	}
@@ -95,8 +105,8 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		return couchbaseConverter.getTypeKey();
 	}
 
-	protected String getTypeValue() {
-		return getQueryMethod().getEntityInformation().getJavaType().getName();
+	protected Class getType() {
+		return getQueryMethod().getEntityInformation().getJavaType();
 	}
 
 	@Override

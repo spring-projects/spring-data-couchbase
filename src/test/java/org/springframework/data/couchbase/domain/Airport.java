@@ -20,6 +20,7 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
@@ -29,6 +30,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
  * @author Michael Reiche
  */
 @Document
+@TypeAlias("airport")
 public class Airport extends ComparableEntity {
 	@Id String id;
 
