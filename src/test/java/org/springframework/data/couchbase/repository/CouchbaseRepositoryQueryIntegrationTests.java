@@ -43,6 +43,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
@@ -171,6 +173,20 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void findByTypeAlias() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "loww");
+			vie = airportRepository.save(vie);
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
+					.matching(new Query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport"))).all();
+			assertFalse(airports.isEmpty(), "should have found aiport");
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
 	void findByEnum() {
 		Airport vie = null;
 		try {
@@ -204,6 +220,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
+			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 

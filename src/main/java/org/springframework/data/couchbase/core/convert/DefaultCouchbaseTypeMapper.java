@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.Collections;
+
 import org.springframework.data.convert.DefaultTypeMapper;
 import org.springframework.data.convert.TypeAliasAccessor;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.Alias;
+import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.util.TypeInformation;
 
 /**
@@ -27,6 +30,7 @@ import org.springframework.data.util.TypeInformation;
  *
  * @author Michael Nitschinger
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocument> implements CouchbaseTypeMapper {
 
@@ -43,7 +47,8 @@ public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocum
 	 * @param typeKey the typeKey to use.
 	 */
 	public DefaultCouchbaseTypeMapper(final String typeKey) {
-		super(new CouchbaseDocumentTypeAliasAccessor(typeKey));
+		super(new CouchbaseDocumentTypeAliasAccessor(typeKey), (MappingContext) null,
+				Collections.singletonList(new TypeAwareTypeInformationMapper()));
 		this.typeKey = typeKey;
 	}
 
