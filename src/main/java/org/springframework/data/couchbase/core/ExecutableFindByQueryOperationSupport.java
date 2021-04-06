@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.returnType = returnType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, returnType, query,
-					scanConsistency, collection, distinctFields);
+					scanConsistency, collection, distinctFields, new NonReactiveSupportWrapper(template.support()));
 			this.scanConsistency = scanConsistency;
 			this.collection = collection;
 			this.distinctFields = distinctFields;

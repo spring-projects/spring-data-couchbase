@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 	@Override
 	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
-		return new ReactiveFindByIdSupport<>(template, domainType, null, null);
+		return new ReactiveFindByIdSupport<>(template, domainType, null, null, template.support());
 	}
 
 	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
@@ -49,13 +49,15 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final Class<T> domainType;
 		private final String collection;
 		private final List<String> fields;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String collection,
-				List<String> fields) {
+				List<String> fields, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.collection = collection;
 			this.fields = fields;
+			this.support = support;
 		}
 
 		@Override
@@ -66,7 +68,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					options.project(fields);
 				}
 				return template.getCollection(collection).reactive().get(docId, options);
-			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
+			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
 					.onErrorResume(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							if (throwable instanceof DocumentNotFoundException) {
@@ -91,13 +93,13 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		@Override
 		public TerminatingFindById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveFindByIdSupport<>(template, domainType, collection, fields);
+			return new ReactiveFindByIdSupport<>(template, domainType, collection, fields, support);
 		}
 
 		@Override
 		public FindByIdWithCollection<T> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null nor empty.");
-			return new ReactiveFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields));
+			return new ReactiveFindByIdSupport<>(template, domainType, collection, Arrays.asList(fields), support);
 		}
 	}
 

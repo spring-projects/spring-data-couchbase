@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 	@Override
 	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null);
+		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null, template.support());
 	}
 
 	static class ReactiveFindFromReplicasByIdSupport<T> implements ReactiveFindFromReplicasById<T> {
@@ -46,13 +46,15 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		private final Class<?> domainType;
 		private final Class<T> returnType;
 		private final String collection;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveFindFromReplicasByIdSupport(ReactiveCouchbaseTemplate template, Class<?> domainType, Class<T> returnType,
-				String collection) {
+				String collection, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;
 			this.collection = collection;
+			this.support = support;
 		}
 
 		@Override
@@ -60,7 +62,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			return Mono.just(id).flatMap(docId -> {
 				GetAnyReplicaOptions options = getAnyReplicaOptions().transcoder(RawJsonTranscoder.INSTANCE);
 				return template.getCollection(collection).reactive().getAnyReplica(docId, options);
-			}).map(result -> template.support().decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
+			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -78,7 +80,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 		@Override
 		public TerminatingFindFromReplicasById<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, collection);
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, collection, support);
 		}
 
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY,
-				QueryScanConsistency.NOT_BOUNDED, null, null);
+				QueryScanConsistency.NOT_BOUNDED, null, null, template.support());
 	}
 
 	static class ReactiveFindByQuerySupport<T> implements ReactiveFindByQuery<T> {
@@ -57,10 +57,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final QueryScanConsistency scanConsistency;
 		private final String collection;
 		private final String[] distinctFields;
+		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
 				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency,
-				final String collection, final String[] distinctFields) {
+				final String collection, final String[] distinctFields, final ReactiveTemplateSupport support) {
+			this.support = support;
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 
@@ -82,41 +84,41 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				scanCons = scanConsistency;
 			}
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanCons, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
 		public FindByQueryInCollection<T> inCollection(String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
 		@Deprecated
 		public FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> withConsistency(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
 		public <R> FindByQueryWithConsistency<R> as(Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
 		public FindByQueryWithDistinct<T> distinct(String[] distinctFields) {
 			Assert.notNull(distinctFields, "distinctFields must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, collection,
-					distinctFields);
+					distinctFields, support);
 		}
 
 		@Override
@@ -144,26 +146,26 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					} else {
 						return throwable;
 					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
+				}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
 					String id = "";
 					long cas = 0;
 					if (distinctFields == null) {
 						if (row.getString(TemplateUtils.SELECT_ID) == null) {
-							throw new CouchbaseException(
+							return Flux.error(new CouchbaseException(
 									"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
-											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS  + " : " + statement);
+											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 						}
 						id = row.getString(TemplateUtils.SELECT_ID);
 						if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
-							throw new CouchbaseException(
+							return Flux.error(new CouchbaseException(
 									"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
-											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement);
+											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 						}
 						cas = row.getLong(TemplateUtils.SELECT_CAS);
 						row.removeKey(TemplateUtils.SELECT_ID);
 						row.removeKey(TemplateUtils.SELECT_CAS);
 					}
-					return template.support().decodeEntity(id, row.toString(), cas, returnType);
+					return support.decodeEntity(id, row.toString(), cas, returnType);
 				});
 			});
 		}

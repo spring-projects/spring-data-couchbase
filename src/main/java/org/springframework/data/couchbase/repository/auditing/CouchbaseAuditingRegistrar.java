@@ -30,6 +30,7 @@ import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.core.mapping.event.AuditingEntityCallback;
 import org.springframework.data.couchbase.core.mapping.event.AuditingEventListener;
 import org.springframework.util.Assert;
 
@@ -41,6 +42,7 @@ import org.springframework.util.Assert;
  * @author Oliver Gierke
  * @author Simon Baslé
  * @author Michael Reiche
+ * @author Jorge Rodríguez Martín
  */
 public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarSupport {
 
@@ -84,7 +86,7 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
 
 		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder.getBeanDefinition(),
-				AuditingEventListener.class.getName(), registry);
+				AuditingEntityCallback.class.getName(), registry);
 	}
 
 	private void ensureMappingContext(BeanDefinitionRegistry registry, Object source) {

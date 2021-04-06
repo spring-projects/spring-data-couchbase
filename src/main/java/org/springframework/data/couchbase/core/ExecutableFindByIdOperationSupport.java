@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 			this.domainType = domainType;
 			this.collection = collection;
 			this.fields = fields;
-			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, collection, fields);
+			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, collection, fields, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override

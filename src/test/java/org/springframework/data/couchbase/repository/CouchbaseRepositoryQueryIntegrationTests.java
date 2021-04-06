@@ -38,8 +38,10 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -50,10 +52,13 @@ import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.Iata;
+import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
@@ -378,6 +383,21 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		assertEquals(user, users.get(0));
 	}
 
+	@Test
+	void findBySimplePropertyAudited() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low2");
+			Airport saved = airportRepository.save(vie);
+			List<Airport> airports1 = airportRepository.findAllByIata("vie");
+			assertEquals(saved, airports1.get(0));
+			assertEquals(saved.getCreatedBy(), "auditor"); // NaiveAuditorAware will provide this
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+
 	private void sleep(int millis) {
 		try {
 			Thread.sleep(millis); // so they are executed out-of-order
@@ -386,6 +406,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override
@@ -408,6 +429,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			return bucketName();
 		}
 
+		@Bean(name = "auditorAwareRef")
+		public NaiveAuditorAware testAuditorAware() {
+			return new NaiveAuditorAware();
+		}
+
+		@Bean(name = "dateTimeProviderRef")
+		public DateTimeProvider testDateTimeProvider() {
+			return new AuditingDateTimeProvider();
+		}
 	}
 
 }
