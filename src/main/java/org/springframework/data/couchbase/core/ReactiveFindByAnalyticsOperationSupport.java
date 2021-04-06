@@ -97,13 +97,13 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							String id = "";
 							long cas = 0;
 							if (row.getString(TemplateUtils.SELECT_ID) == null) {
-								throw new CouchbaseException("query did not project " + TemplateUtils.SELECT_ID
+								throw new CouchbaseException("analytics query did not project " + TemplateUtils.SELECT_ID
 										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
 										+ TemplateUtils.SELECT_CAS + " : " + statement);
 							}
 							id = row.getString(TemplateUtils.SELECT_ID);
 							if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
-								throw new CouchbaseException("query did not project " + TemplateUtils.SELECT_CAS
+								throw new CouchbaseException("analytics query did not project " + TemplateUtils.SELECT_CAS
 										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
 										+ TemplateUtils.SELECT_CAS + " : " + statement);
 							}
