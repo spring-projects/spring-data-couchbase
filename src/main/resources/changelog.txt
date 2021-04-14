@@ -1,6 +1,10 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.1.8 (2021-04-14)
+-------------------------------------
+
+
 Changes in version 4.0.9.RELEASE (2021-04-14)
 ---------------------------------------------
 
@@ -1339,6 +1343,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
