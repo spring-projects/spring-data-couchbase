@@ -1,6 +1,6 @@
 image:https://spring.io/badges/spring-data-couchbase/ga.svg[Spring Data Couchbase,link=https://projects.spring.io/spring-data-couchbase#quick-start] image:https://spring.io/badges/spring-data-couchbase/snapshot.svg[Spring Data Couchbase,link=https://projects.spring.io/spring-data-couchbase#quick-start]
 
-= Spring Data Couchbase image:https://jenkins.spring.io/buildStatus/icon?job=spring-data-couchbase%2Fmaster&subject=Build[link=https://jenkins.spring.io/view/SpringData/job/spring-data-couchbase/] https://gitter.im/spring-projects/spring-data[image:https://badges.gitter.im/spring-projects/spring-data.svg[Gitter]]
+= Spring Data Couchbase image:https://jenkins.spring.io/buildStatus/icon?job=spring-data-couchbase%2Fmain&subject=Build[link=https://jenkins.spring.io/view/SpringData/job/spring-data-couchbase/] https://gitter.im/spring-projects/spring-data[image:https://badges.gitter.im/spring-projects/spring-data.svg[Gitter]]
 
 The primary goal of the https://www.springsource.org/spring-data[Spring Data] project is to make it easier to build
 Spring-powered applications that use new data access technologies such as non-relational databases, map-reduce
