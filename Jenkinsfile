@@ -136,7 +136,7 @@ pipeline {
 
 		stage('Publish documentation') {
 			when {
-				branch 'master'
+				branch '4.2.x'
 			}
 			agent {
 				label 'data'
