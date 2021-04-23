@@ -16,12 +16,13 @@
 
 package org.springframework.data.couchbase.config;
 
-import static com.couchbase.client.java.ClusterOptions.*;
+import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -48,11 +49,19 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.Module;
+import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.codec.JacksonJsonSerializer;
+import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
+import com.couchbase.client.java.json.JsonValueModule;
+import com.couchbase.client.java.json.RepackagedJsonValueModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Base class for Spring Data Couchbase configuration using JavaConfig.
@@ -65,12 +74,13 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
+	@Autowired ObjectMapper couchbaseObjectMapper;
+
 	/**
 	 * The connection string which allows the SDK to connect to the cluster.
 	 * <p>
-	 * Note that the connection string can take many forms, in its simplest it is just a single hostname
-	 * like "127.0.0.1". Please refer to the couchbase Java SDK documentation for all the different
-	 * possibilities and options.
+	 * Note that the connection string can take many forms, in its simplest it is just a single hostname like "127.0.0.1".
+	 * Please refer to the couchbase Java SDK documentation for all the different possibilities and options.
 	 */
 	public abstract String getConnectionString();
 
@@ -130,6 +140,10 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(destroyMethod = "shutdown")
 	public ClusterEnvironment couchbaseClusterEnvironment() {
 		ClusterEnvironment.Builder builder = ClusterEnvironment.builder();
+		if (!nonShadowedJacksonPresent()) {
+			throw new CouchbaseException("non-shadowed Jackson not present");
+		}
+		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper));
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -274,6 +288,25 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
+	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
+	 *
+	 * @throws Exception on Bean construction failure.
+	 * @return ObjectMapper
+	 */
+
+	@Bean
+	public ObjectMapper couchbaseObjectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.registerModule(new JsonValueModule());
+		CryptoManager cryptoManager = null;
+		if (cryptoManager != null) {
+			mapper.registerModule(new EncryptionModule(cryptoManager));
+		}
+		return mapper;
+	}
+
+	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.
 	 */
 	protected boolean autoIndexCreation() {
@@ -327,4 +360,14 @@ public abstract class AbstractCouchbaseConfiguration {
 		return abbreviateFieldNames() ? new CamelCaseAbbreviatingFieldNamingStrategy()
 				: PropertyNameFieldNamingStrategy.INSTANCE;
 	}
+
+	private boolean nonShadowedJacksonPresent() {
+		try {
+			JacksonJsonSerializer.preflightCheck();
+			return true;
+		} catch (Throwable t) {
+			return false;
+		}
+	}
+
 }

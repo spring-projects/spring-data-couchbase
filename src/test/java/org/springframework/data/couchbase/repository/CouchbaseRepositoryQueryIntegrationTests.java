@@ -184,6 +184,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
 			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 					.matching(new Query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport"))).all();
 			assertFalse(airports.isEmpty(), "should have found aiport");
 		} finally {
@@ -198,7 +199,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
 			Airport airport2 = airportRepository.findByIata(Iata.vie);
-			assertNotNull(airport2, "should have found "+vie);
+			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
 		} finally {
 			airportRepository.delete(vie);
@@ -396,7 +397,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.delete(vie);
 		}
 	}
-
 
 	private void sleep(int millis) {
 		try {
