@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ public class Airport extends ComparableEntity {
 
 	String icao;
 
-	@CreatedBy private String createdBy;
+	@Version Number version;
 
-	@Version long version;
+	@CreatedBy private String createdBy;
 
 
 	@PersistenceConstructor
@@ -62,6 +62,22 @@ public class Airport extends ComparableEntity {
 		return icao;
 	}
 
+	public Airport withId(String id) {
+		return new Airport(id, this.iata, this.icao);
+	}
+
+	public Airport withIcao(String icao) {
+		return new Airport(this.getId(), this.iata, icao);
+	}
+
+	public Airport withIata(String iata) {
+		return new Airport(this.getId(), iata, this.icao);
+	}
+
+	public Airport clearVersion() {
+		version = Long.valueOf(0);
+		return this;
+	}
 	public String getCreatedBy() {
 		return createdBy;
 	}
