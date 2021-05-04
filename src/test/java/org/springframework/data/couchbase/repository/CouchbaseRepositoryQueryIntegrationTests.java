@@ -198,7 +198,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
 			Airport airport2 = airportRepository.findByIata(Iata.vie);
-			assertNotNull(airport2, "should have found "+vie);
+			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
 		} finally {
 			airportRepository.delete(vie);
@@ -311,6 +311,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void stringDeleteTest() throws Exception {
+		Airport airport = new Airport("airports::vie", "vie", "lowx");
+		Airport otherAirport = new Airport("airports::xxx", "xxx", "lxxx");
+		try {
+			airportRepository.save(airport);
+			airportRepository.save(otherAirport);
+			assertEquals(1, airportRepository.deleteByIata("vie").size()); // gets exactly one with no exception
+		} finally {
+			airportRepository.deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test
 	void threadSafeStringParametersTest() throws Exception {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		Future[] future = new Future[iatas.length];
@@ -396,7 +409,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.delete(vie);
 		}
 	}
-
 
 	private void sleep(int millis) {
 		try {
