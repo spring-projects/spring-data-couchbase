@@ -73,4 +73,16 @@ public class StringQuery extends Query {
 		appendSkipAndLimit(statement);
 		return statement.toString();
 	}
+
+	/**
+	 * toN1qlRemoveString - use toN1qlSelectString
+	 * 
+	 * @param template
+	 * @param collectionName
+	 * @param domainClass
+	 */
+	@Override
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
+		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null);
+	}
 }

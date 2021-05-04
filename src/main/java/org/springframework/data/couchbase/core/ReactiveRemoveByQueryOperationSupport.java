@@ -80,11 +80,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		private QueryOptions buildQueryOptions() {
-			final QueryOptions options = QueryOptions.queryOptions();
-			if (scanConsistency != null) {
-				options.scanConsistency(scanConsistency);
-			}
-			return options;
+			return query.buildQueryOptions(scanConsistency);
 		}
 
 		@Override

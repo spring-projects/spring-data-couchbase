@@ -323,7 +323,10 @@ public class Query {
 	 * @return QueryOptions
 	 */
 	public QueryOptions buildQueryOptions(QueryScanConsistency scanConsistency) {
-		final QueryOptions options = QueryOptions.queryOptions();
+		QueryOptions options = QueryOptions.queryOptions();
+		if (options == null) { // add/override what we got from PseudoArgs
+			options = QueryOptions.queryOptions();
+		}
 		if (getParameters() != null) {
 			if (getParameters() instanceof JsonArray) {
 				options.parameters((JsonArray) getParameters());
@@ -331,10 +334,13 @@ public class Query {
 				options.parameters((JsonObject) getParameters());
 			}
 		}
+		if (scanConsistency == null
+				|| scanConsistency == QueryScanConsistency.NOT_BOUNDED && getScanConsistency() != null) {
+			scanConsistency = getScanConsistency();
+		}
 		if (scanConsistency != null) {
 			options.scanConsistency(scanConsistency);
 		}
-
 		return options;
 	}
 
