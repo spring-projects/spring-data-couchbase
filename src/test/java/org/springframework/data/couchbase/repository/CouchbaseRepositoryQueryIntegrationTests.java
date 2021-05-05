@@ -184,6 +184,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
 			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 					.matching(new Query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport"))).all();
 			assertFalse(airports.isEmpty(), "should have found aiport");
 		} finally {
