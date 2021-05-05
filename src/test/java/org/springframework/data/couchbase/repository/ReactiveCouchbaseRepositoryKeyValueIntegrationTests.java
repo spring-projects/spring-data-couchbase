@@ -16,11 +16,13 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -64,13 +66,13 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 	}
 
 	@Test
-	void findBySimplePropertyAudited() {
+	void findByIdAudited() {
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "low2");
 			Airport saved = airportRepository.save(vie).block();
-			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
-			assertEquals(saved, airports1.get(0));
+			Airport airport1 = airportRepository.findById(saved.getId()).block();
+			assertEquals(airport1, saved);
 			assertEquals(saved.getCreatedBy(), "auditor"); // NaiveAuditorAware will provide this
 		} finally {
 			airportRepository.delete(vie).block();
@@ -79,7 +81,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-  @EnableReactiveCouchbaseAuditing
+	@EnableReactiveCouchbaseAuditing
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override
