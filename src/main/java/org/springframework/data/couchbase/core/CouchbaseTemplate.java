@@ -186,11 +186,4 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		return templateSupport;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 */
-	public void setThreadLocalArgs(PseudoArgs pseudoArgs) {
-		reactiveCouchbaseTemplate.setThreadLocalArgs(pseudoArgs);
-	}
-
 }

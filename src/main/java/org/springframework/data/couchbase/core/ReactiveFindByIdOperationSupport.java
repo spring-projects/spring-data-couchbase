@@ -80,7 +80,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					gOptions.project(fields);
 				}
 				PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions);
-				LOG.debug("statement: {} scope: {} collection: {}", "findById", pArgs.getScope(), pArgs.getCollection());
+				LOG.trace("statement: {} scope: {} collection: {}", "findById", pArgs.getScope(), pArgs.getCollection());
 				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 						.reactive().get(docId, pArgs.getOptions());
 			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))

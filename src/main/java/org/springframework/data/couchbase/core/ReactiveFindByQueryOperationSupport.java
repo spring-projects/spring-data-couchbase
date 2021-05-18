@@ -163,7 +163,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return Flux.defer(() -> {
 				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options);
 				String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
-				LOG.debug("statement: {} {}", "findByQuery", statement);
+				LOG.trace("statement: {} {}", "findByQuery", statement);
 				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
 						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
 								buildOptions(pArgs.getOptions()))
@@ -210,7 +210,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return Mono.defer(() -> {
 				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options);
 				String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
-				LOG.debug("statement: {} {}", "findByQuery", statement);
+				LOG.trace("statement: {} {}", "findByQuery", statement);
 				Mono<ReactiveQueryResult> countResult = this.collection == null
 						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
 								buildOptions(pArgs.getOptions()))

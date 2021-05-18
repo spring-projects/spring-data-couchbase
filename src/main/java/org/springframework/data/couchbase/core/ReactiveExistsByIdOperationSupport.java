@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -27,6 +26,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.ExistsResult;
@@ -34,6 +34,7 @@ import com.couchbase.client.java.kv.ExistsResult;
 public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveExistsByIdOperationSupport.class);
 
 	ReactiveExistsByIdOperationSupport(ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -46,7 +47,6 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 	static class ReactiveExistsByIdSupport implements ReactiveExistsById {
 
-		private static final Logger LOG = LoggerFactory.getLogger(ReactiveExistsByIdOperationSupport.class);
 		private final ReactiveCouchbaseTemplate template;
 		private final String scope;
 		private final String collection;
@@ -64,7 +64,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		public Mono<Boolean> one(final String id) {
 			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection,
 					options != null ? options : ExistsOptions.existsOptions());
-			LOG.debug("statement: {} scope: {} collection: {}", "exitsById", pArgs.getScope(), pArgs.getCollection());
+			LOG.trace("statement: {} scope: {} collection: {}", "exitsById", pArgs.getScope(), pArgs.getCollection());
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().exists(id, pArgs.getOptions()).map(ExistsResult::exists))

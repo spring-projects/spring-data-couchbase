@@ -43,7 +43,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
-	private ThreadLocal<PseudoArgs<?>> thrdLocalArgs = new ThreadLocal<>();
+	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -161,16 +161,8 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * {@inheritDoc}
 	 */
 	@Override
-	public PseudoArgs<?> getThreadLocalArgs() {
-		return thrdLocalArgs == null ? null : thrdLocalArgs.get();
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void setThreadLocalArgs(PseudoArgs<?> pseudoArgs) {
-		this.thrdLocalArgs.set(pseudoArgs);
+	public PseudoArgs<?> getPseudoArgs() {
+		return threadLocalArgs == null ? null : threadLocalArgs.get();
 	}
 
 }

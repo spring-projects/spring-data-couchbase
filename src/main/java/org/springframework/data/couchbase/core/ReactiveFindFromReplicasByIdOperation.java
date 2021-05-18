@@ -28,7 +28,7 @@ import org.springframework.data.couchbase.core.support.WithGetAnyReplicaOptions;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
 
 /**
- * Query Operations
+ * Find by id from replicas Operations
  *
  * @author Christoph Strobl
  * @since 2.0

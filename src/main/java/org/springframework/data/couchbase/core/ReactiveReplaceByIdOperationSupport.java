@@ -80,7 +80,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		public Mono<T> one(T object) {
 			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
 					options != null ? options : ReplaceOptions.replaceOptions());
-			LOG.debug("statement: {} pArgs: {}", "replaceById", pArgs);
+			LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity).flatMap(converted -> template.getCouchbaseClientFactory()
 					.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).reactive()
 					.replace(converted.getId(), converted.export(), buildReplaceOptions(pArgs.getOptions(), object, converted))

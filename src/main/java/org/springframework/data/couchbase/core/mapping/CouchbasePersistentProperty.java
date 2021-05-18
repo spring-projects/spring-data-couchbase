@@ -32,5 +32,5 @@ public interface CouchbasePersistentProperty extends PersistentProperty<Couchbas
 	 */
 	String getFieldName();
 
-	Boolean isExpirationProperty();
+	boolean isExpirationProperty();
 }

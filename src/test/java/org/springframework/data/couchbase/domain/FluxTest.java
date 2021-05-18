@@ -44,6 +44,7 @@ import com.couchbase.client.java.kv.GetResult;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringJUnitConfig(FluxTest.Config.class)
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class FluxTest extends JavaIntegrationTests {
 
 	@BeforeAll

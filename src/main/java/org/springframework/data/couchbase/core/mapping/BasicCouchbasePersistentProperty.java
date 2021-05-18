@@ -109,12 +109,10 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 		return false;
 	}
 
-	public Boolean isExpirationProperty() {
+	public boolean isExpirationProperty() {
 		return isExpiration.get();
 	}
 
-	private final Lazy<Boolean> isExpiration = Lazy.of(() -> {
-		return this.isAnnotationPresent(Expiration.class);
-	});
+	private final Lazy<Boolean> isExpiration = Lazy.of(() -> this.isAnnotationPresent(Expiration.class));
 
 }

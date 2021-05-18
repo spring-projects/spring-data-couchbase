@@ -32,7 +32,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 
 /**
- * Insert Operations
+ * Upsert Operations
  *
  * @author Christoph Strobl
  * @since 2.0

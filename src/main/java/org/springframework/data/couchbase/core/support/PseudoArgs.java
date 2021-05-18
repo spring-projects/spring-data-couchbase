@@ -98,20 +98,20 @@ public class PseudoArgs<OPTS> {
 	 * @@return the options from the ThreadLocal field of the template
 	 */
 	private OPTS getThreadLocalOptions(ReactiveCouchbaseTemplate template) {
-		return template.getThreadLocalArgs() == null ? null : (OPTS) (template.getThreadLocalArgs().getOptions());
+		return template.getPseudoArgs() == null ? null : (OPTS) (template.getPseudoArgs().getOptions());
 	}
 
 	/**
 	 * @@return the scope name from the ThreadLocal field of the template
 	 */
 	private String getThreadLocalScopeName(ReactiveCouchbaseTemplate template) {
-		return template.getThreadLocalArgs() == null ? null : template.getThreadLocalArgs().getScope();
+		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getScope();
 	}
 
 	/**
 	 * @@return the collection name from the ThreadLocal field of the template
 	 */
 	private String getThreadLocalCollectionName(ReactiveCouchbaseTemplate template) {
-		return template.getThreadLocalArgs() == null ? null : template.getThreadLocalArgs().getCollection();
+		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getCollection();
 	}
 }

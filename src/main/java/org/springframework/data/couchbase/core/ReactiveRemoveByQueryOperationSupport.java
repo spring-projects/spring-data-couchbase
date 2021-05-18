@@ -75,7 +75,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			return Flux.defer(() -> {
 				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options);
 				String statement = assembleDeleteQuery(pArgs.getCollection());
-				LOG.debug("statement: {}", statement);
+				LOG.trace("statement: {}", statement);
 				Mono<ReactiveQueryResult> allResult = pArgs.getCollection() == null
 						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
 								buildQueryOptions(pArgs.getOptions()))

@@ -47,13 +47,8 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	CouchbaseClientFactory getCouchbaseClientFactory();
 
 	/**
-	 * @param pseudoArgs - the metaArgs to set on the ThreadLocal field of the CouchbaseOperations
+	 * @@return the pseudoArgs from the ThreadLocal field of the CouchbaseOperations
 	 */
-	void setThreadLocalArgs(PseudoArgs<?> pseudoArgs);
-
-	/**
-	 * @@return the metaArgs from the ThreadLocal field of the CouchbaseOperations
-	 */
-	PseudoArgs<?> getThreadLocalArgs();
+	PseudoArgs<?> getPseudoArgs();
 
 }

@@ -80,7 +80,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection,
 					options != null ? options : InsertOptions.insertOptions());
-			LOG.debug("statement: {} scope: {} collection: {} options: {}", "insertById", pArgs.getScope(),
+			LOG.trace("statement: {} scope: {} collection: {} options: {}", "insertById", pArgs.getScope(),
 					pArgs.getCollection(), pArgs.getOptions());
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())

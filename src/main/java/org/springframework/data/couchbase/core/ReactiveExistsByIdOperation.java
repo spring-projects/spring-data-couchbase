@@ -27,7 +27,7 @@ import org.springframework.data.couchbase.core.support.WithExistsOptions;
 
 import com.couchbase.client.java.kv.ExistsOptions;
 /**
- * Insert Operations
+ * Exists Operations
  *
  * @author Christoph Strobl
  * @since 2.0

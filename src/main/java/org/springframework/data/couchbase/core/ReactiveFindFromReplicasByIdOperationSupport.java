@@ -33,6 +33,7 @@ import com.couchbase.client.java.kv.GetAnyReplicaOptions;
 public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFindFromReplicasByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindFromReplicasByIdOperationSupport.class);
 
 	ReactiveFindFromReplicasByIdOperationSupport(ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -46,7 +47,6 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 	static class ReactiveFindFromReplicasByIdSupport<T> implements ReactiveFindFromReplicasById<T> {
 
-		private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindFromReplicasByIdOperationSupport.class);
 		private final ReactiveCouchbaseTemplate template;
 		private final Class<?> domainType;
 		private final Class<T> returnType;
@@ -74,7 +74,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 					garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 				}
 				PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions);
-				LOG.debug("statement: {} scope: {} collection: {}", "getAnyReplica", pArgs.getScope(), pArgs.getCollection());
+				LOG.trace("statement: {} scope: {} collection: {}", "getAnyReplica", pArgs.getScope(), pArgs.getCollection());
 				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 						.reactive().getAnyReplica(docId, pArgs.getOptions());
 			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
