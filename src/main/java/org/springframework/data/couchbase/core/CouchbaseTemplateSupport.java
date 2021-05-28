@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.event.AfterConvertCallback;
+import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallback;
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
@@ -95,16 +96,21 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 	}
 
 	@Override
-	public Object applyUpdatedCas(final Object entity, final long cas) {
+	public Object applyUpdatedCas(final Object entity, CouchbaseDocument converted, final long cas) {
+		Object returnValue;
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 
 		if (versionProperty != null) {
 			accessor.setProperty(versionProperty, cas);
-			return accessor.getBean();
+			returnValue = accessor.getBean();
+		} else {
+			returnValue = entity;
 		}
-		return entity;
+		maybeEmitEvent(new AfterSaveEvent(returnValue, converted));
+
+		return returnValue;
 	}
 
 	@Override
@@ -172,7 +178,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 		this.entityCallbacks = entityCallbacks;
 	}
 
-	void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
+	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
 		if (canPublishEvent()) {
 			try {
 				this.applicationContext.publishEvent(event);

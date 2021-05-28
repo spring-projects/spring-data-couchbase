@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,13 +80,26 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 		Assert.notNull(auditingHandlerDefinition, "BeanDefinition must not be null!");
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
 
+		// Register the AuditEntityCallback
+
 		BeanDefinitionBuilder listenerBeanDefinitionBuilder = BeanDefinitionBuilder
-				.rootBeanDefinition(AuditingEventListener.class);
+				.rootBeanDefinition(AuditingEntityCallback.class);
 		listenerBeanDefinitionBuilder
 				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
 
 		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder.getBeanDefinition(),
 				AuditingEntityCallback.class.getName(), registry);
+
+		// Register the AuditingEventListener
+
+		BeanDefinitionBuilder listenerBeanDefinitionBuilder2 = BeanDefinitionBuilder
+				.rootBeanDefinition(AuditingEventListener.class);
+		listenerBeanDefinitionBuilder2
+				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
+
+		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder2.getBeanDefinition(),
+				AuditingEventListener.class.getName(), registry);
+
 	}
 
 	private void ensureMappingContext(BeanDefinitionRegistry registry, Object source) {

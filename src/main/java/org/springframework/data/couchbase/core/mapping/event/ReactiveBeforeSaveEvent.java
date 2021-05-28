@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.domain.ReactiveAuditorAware;
-import reactor.core.publisher.Mono;
+package org.springframework.data.couchbase.core.mapping.event;
 
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
 /**
- * This class returns a string that represents the current user
- *
- * @author Jorge Rodríguez Martín
- * @since 4.2
+ * @author Michael Reiche
  */
-public class ReactiveNaiveAuditorAware implements ReactiveAuditorAware<String> {
+public class ReactiveBeforeSaveEvent<E> extends CouchbaseMappingEvent<E> {
 
-	public static final String AUDITOR = "reactive_auditor";
-	@Override
-	public Mono<String> getCurrentAuditor() {
-		return Mono.just(AUDITOR);
+	public ReactiveBeforeSaveEvent(E source, CouchbaseDocument document) {
+		super(source, document);
 	}
 
 }

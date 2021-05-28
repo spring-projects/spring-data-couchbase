@@ -1,8 +1,9 @@
 package org.springframework.data.couchbase.repository.auditing;
 
-import static org.springframework.data.couchbase.config.BeanNames.*;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_AUDITING_HANDLER;
 
 import java.lang.annotation.Annotation;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -12,14 +13,16 @@ import org.springframework.data.auditing.config.AuditingBeanDefinitionRegistrarS
 import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEntityCallback;
+import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEventListener;
 import org.springframework.util.Assert;
 
-
 /**
- * A support registrar that allows to set up reactive auditing for Couchbase (including {@link org.springframework.data.auditing.ReactiveAuditingHandler} and {
- * IsNewStrategyFactory} set up). See {@link EnableReactiveCouchbaseAuditing} for the associated annotation.
+ * A support registrar that allows to set up reactive auditing for Couchbase (including
+ * {@link org.springframework.data.auditing.ReactiveAuditingHandler} and { IsNewStrategyFactory} set up). See
+ * {@link EnableReactiveCouchbaseAuditing} for the associated annotation.
  *
  * @author Jorge Rodríguez Martín
+ * @author Michael Reiche
  * @since 4.2
  */
 class ReactiveCouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarSupport {
@@ -69,13 +72,27 @@ class ReactiveCouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrar
 		Assert.notNull(auditingHandlerDefinition, "BeanDefinition must not be null!");
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
 
+		// Register the AuditingEntityCallback
+
 		BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(ReactiveAuditingEntityCallback.class);
 
 		builder.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
 		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
 
-		registerInfrastructureBeanWithId(builder.getBeanDefinition(),
-				ReactiveAuditingEntityCallback.class.getName(), registry);
+		registerInfrastructureBeanWithId(builder.getBeanDefinition(), ReactiveAuditingEntityCallback.class.getName(),
+				registry);
+
+		// Register the AuditingEventListener
+
+		BeanDefinitionBuilder builder2 = BeanDefinitionBuilder.rootBeanDefinition(ReactiveAuditingEventListener.class);
+
+		builder2
+				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
+		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
+
+		registerInfrastructureBeanWithId(builder2.getBeanDefinition(), ReactiveAuditingEventListener.class.getName(),
+				registry);
+
 	}
 
 }

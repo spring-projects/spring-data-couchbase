@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 
 public interface TemplateSupport {
 
@@ -23,11 +24,13 @@ public interface TemplateSupport {
 
     <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass);
 
-    Object applyUpdatedCas(Object entity, long cas);
+    <T> T applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
 
-    Object applyUpdatedId(Object entity, Object id);
+    <T> T applyUpdatedId(T entity, Object id);
 
     long getCas(Object entity);
 
     String getJavaNameForEntity(Class<?> clazz);
+
+    void maybeEmitEvent(CouchbaseMappingEvent<?> event);
 }
