@@ -32,7 +32,7 @@ import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
 
 /**
- * Insert Operations
+ * ReplaceOperations
  *
  * @author Christoph Strobl
  * @since 2.0

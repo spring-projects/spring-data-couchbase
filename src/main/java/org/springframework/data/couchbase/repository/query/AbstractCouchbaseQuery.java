@@ -87,8 +87,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		ExecutableFindByQuery<?> find = typeToRead == null ? findOperationWithProjection //
 				: findOperationWithProjection; // not yet implemented in core .as(typeToRead);
 
-		// TODO (maybe) // method.getEntityInformation().getCollectionName(); // not yet implemented
-		String collection = CollectionIdentifier.DEFAULT_SCOPE + "." + CollectionIdentifier.DEFAULT_COLLECTION;
+		String collection = null;
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
