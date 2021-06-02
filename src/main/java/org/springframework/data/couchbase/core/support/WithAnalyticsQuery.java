@@ -18,11 +18,16 @@ package org.springframework.data.couchbase.core.support;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 
 /**
- * A common interface for all of Insert, Replace, Upsert that take Query
+ * Interface for operations that take AnalyticsQuery
  *
  * @author Michael Reiche
  * @param <T> - the entity class
  */
 public interface WithAnalyticsQuery<T> {
+	/**
+	 * Specify query
+	 *
+	 * @param query - query
+	 */
 	Object matching(AnalyticsQuery query);
 }

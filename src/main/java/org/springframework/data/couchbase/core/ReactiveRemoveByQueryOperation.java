@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,45 @@ import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithQuery;
+import org.springframework.data.couchbase.core.support.WithQueryOptions;
 
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * RemoveBy Query Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveRemoveByQueryOperation {
 
+	/**
+	 * Remove via the query service.
+	 */
 	<T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingRemoveByQuery<T> {
+		/**
+		 * Remove all matching documents.
+		 *
+		 * @return RemoveResult for each matching document
+		 */
 		Flux<RemoveResult> all();
 	}
 
+	/**
+	 * Fluent methods to specify the query
+	 *
+	 * @param <T> the entity type.
+	 */
 	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T>, WithQuery<RemoveResult> {
 
 		TerminatingRemoveByQuery<T> matching(Query query);
@@ -42,25 +67,67 @@ public interface ReactiveRemoveByQueryOperation {
 		}
 	}
 
-	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithQuery<T>, WithCollection<RemoveResult> {
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface RemoveByQueryWithOptions<T> extends RemoveByQueryWithQuery<T>, WithQueryOptions<RemoveResult> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options to use for execution
+		 */
+		RemoveByQueryWithQuery<T> withOptions(QueryOptions options);
+	}
 
-		RemoveByQueryWithQuery<T> inCollection(String collection);
+	/**
+	 * Fluent method to specify the collection.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithOptions<T>, InCollection<Object> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		RemoveByQueryWithOptions<T> inCollection(String collection);
+	}
 
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface RemoveByQueryInScope<T> extends RemoveByQueryInCollection<T>, InScope<Object> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		RemoveByQueryInCollection<T> inScope(String scope);
 	}
 
 	@Deprecated
-	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryInCollection<T> {
+	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryInScope<T> {
+
 		@Deprecated
-		RemoveByQueryInCollection<T> consistentWith(QueryScanConsistency scanConsistency);
+		RemoveByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
 
 	}
 
 	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>, WithConsistency<RemoveResult> {
-
+		@Override
 		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
 
 	}
 
+	/**
+	 * Provides methods for constructing query operations in a fluent way.
+	 *
+	 * @param <T> the entity type.
+	 */
 	interface ReactiveRemoveByQuery<T> extends RemoveByQueryWithConsistency<T> {}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -68,6 +69,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(User.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
+		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
 	}
 
 	@Test
@@ -93,12 +95,12 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void withDurability()
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-		Class clazz = User.class; // for now, just User.class. There is no Durability annotation.
+		Class<?> clazz = User.class; // for now, just User.class. There is no Durability annotation.
 		// insert, replace, upsert
 		for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
 				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
 			// create an entity of type clazz
-			Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
+			Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
 			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
 					"firstname", "lastname");
 
@@ -112,7 +114,22 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 				couchbaseTemplate.insertById(User.class).one(user);
 			}
 			// call to insert/replace/update
-			User returned = (User) operator.one(user);
+			User returned = null;
+
+			// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+			for (int i = 1; i != 5; i++) {
+				try {
+					returned = (User) operator.one(user);
+					break;
+				} catch (Exception ofe) {
+					System.out.println(""+i+" caught: "+ofe);
+					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					if (i == 4) {
+						throw ofe;
+					}
+					sleepSecs(1);
+				}
+			}
 			assertEquals(user, returned);
 			User found = couchbaseTemplate.findById(User.class).one(user.getId());
 			assertEquals(user, found);
@@ -210,8 +227,6 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		{
 			User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 			User modified = couchbaseTemplate.upsertById(User.class).one(user);
-			System.out.println(reactiveCouchbaseTemplate.support().getCas(user));
-			System.out.println(reactiveCouchbaseTemplate.support().getCas(modified));
 			assertEquals(user, modified);
 
 			// careful now - user and modified are the same object. The object has the new cas (@Version version)
@@ -236,8 +251,23 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void insertByIdwithDurability() {
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
-		User inserted = couchbaseTemplate.insertById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE)
-				.one(user);
+		User inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println(""+i+" caught: "+ofe);
+				couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
 	}

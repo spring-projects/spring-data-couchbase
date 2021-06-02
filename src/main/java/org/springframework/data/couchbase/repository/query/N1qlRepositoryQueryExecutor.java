@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.core.NamedQueries;
@@ -63,17 +63,16 @@ public class N1qlRepositoryQueryExecutor {
 
 		// counterpart to ReactiveN1qlRespositoryQueryExecutor,
 		Query query;
-		ExecutableFindByQueryOperation.ExecutableFindByQuery q;
+		ExecutableFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
 			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), operations.getBucketName(),
 					SPEL_PARSER, evaluationContextProvider, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName())
-					.createQuery();
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName()).createQuery();
 		}
 
-		ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation = (ExecutableFindByQueryOperation.ExecutableFindByQuery<?>) operations
+		ExecutableFindByQuery<?> operation = (ExecutableFindByQuery<?>) operations
 				.findByQuery(domainClass).withConsistency(buildQueryScanConsistency());
 		if (queryMethod.isCountQuery()) {
 			return operation.matching(query).count();

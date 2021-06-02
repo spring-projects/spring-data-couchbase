@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.domain;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -53,6 +52,7 @@ public class Person extends AbstractEntity {
 		this();
 		setFirstname(firstname);
 		setLastname(lastname);
+		setMiddlename("Nick");
 	}
 
 	public Person(int id, String firstname, String lastname) {

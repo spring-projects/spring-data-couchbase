@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 
 import java.time.Instant;
@@ -33,13 +31,10 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -69,11 +64,15 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 	@BeforeEach
 	@Override
 	public void beforeEach() {
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		super.beforeEach();
+		// already setup by JavaIntegrationTests.beforeAll()
+		// ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		// couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		// reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 		// ensure each test starts with clean state
+
 		couchbaseTemplate.removeByQuery(User.class).all();
+		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 	}
 
 	@Test
@@ -108,13 +107,13 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			couchbaseTemplate.findById(User.class).one(user1.getId());
 			reactiveCouchbaseTemplate.findById(User.class).one(user1.getId()).block();
 		} finally {
-			couchbaseTemplate.removeByQuery(User.class).all();
+			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 		}
 
-		User usery = couchbaseTemplate.findById(User.class).one("userx");
-		assertNull(usery, "usery should be null");
-		User userz = reactiveCouchbaseTemplate.findById(User.class).one("userx").block();
-		assertNull(userz, "uz should be null");
+		User usery = couchbaseTemplate.findById(User.class).one("user1");
+		assertNull(usery, "user1 should have been deleted");
+		User userz = reactiveCouchbaseTemplate.findById(User.class).one("user2").block();
+		assertNull(userz, "user2 should have been deleted");
 
 	}
 
@@ -135,6 +134,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 	@Test
 	void findByMatchingQueryProjected() {
+
+		couchbaseTemplate.removeByQuery(UserSubmission.class).all();
 
 		UserSubmission user = new UserSubmission();
 		user.setId(UUID.randomUUID().toString());

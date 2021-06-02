@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.ReactiveInsertByIdOperationSuppor
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 
@@ -36,7 +37,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 	@Override
 	public <T> ExecutableInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ExecutableInsertByIdSupport<>(template, domainType, null, PersistTo.NONE, ReplicateTo.NONE,
+		return new ExecutableInsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
 				DurabilityLevel.NONE, null);
 	}
 
@@ -44,25 +45,29 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 
 		private final CouchbaseTemplate template;
 		private final Class<T> domainType;
+		private final String scope;
 		private final String collection;
+		private final InsertOptions options;
 		private final PersistTo persistTo;
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
-		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String collection,
-				final PersistTo persistTo, final ReplicateTo replicateTo, final DurabilityLevel durabilityLevel,
-				final Duration expiry) {
+		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
+				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+				final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
+			this.scope = scope;
 			this.collection = collection;
+			this.options = options;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.reactiveSupport = new ReactiveInsertByIdSupport<>(template.reactive(), domainType, collection, persistTo,
-					replicateTo, durabilityLevel, expiry, new NonReactiveSupportWrapper(template.support()));
+			this.reactiveSupport = new ReactiveInsertByIdSupport<>(template.reactive(), domainType, scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -76,31 +81,45 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		}
 
 		@Override
-		public TerminatingInsertById<T> inCollection(final String collection) {
+		public TerminatingInsertById<T> withOptions(final InsertOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
+		}
+
+		@Override
+		public InsertByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
+		}
+
+		@Override
+		public InsertByIdWithOptions<T> inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 
 		@Override
-		public InsertByIdWithCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
+		public InsertByIdInCollection<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 
 		@Override
-		public InsertByIdWithCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
+		public InsertByIdInCollection<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, collection, persistTo, replicateTo,
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 

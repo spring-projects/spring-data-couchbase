@@ -71,9 +71,23 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		return from(part, property, where(addMetaIfRequired(path, property)), iterator);
 	}
 
-	static Converter<? super CouchbasePersistentProperty, String> cvtr = (
-			source) -> new StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName())
-					.append('`').toString();
+	static Converter<? super CouchbasePersistentProperty, String> cvtr = new MyConverter();
+
+	static class MyConverter implements Converter<CouchbasePersistentProperty, String> {
+		@Override
+		public String convert(CouchbasePersistentProperty source) {
+			if (source.isIdProperty()) {
+				return "META().id";
+			} else if (source.isVersionProperty()) {
+				return "META().cas";
+			} else if (source.isExpirationProperty()) {
+				return "META().expiration";
+			} else {
+				return new StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName())
+						.append('`').toString();
+			}
+		}
+	}
 
 	@Override
 	protected QueryCriteria and(final Part part, final QueryCriteria base, final Iterator<Object> iterator) {

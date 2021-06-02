@@ -109,7 +109,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void shouldSaveAndFindAll() {
 		Airport vie = null;
 		try {
-			vie = new Airport("airports::vie", "vie", "loww");
+			vie = new Airport("airports::vie", "vie", "low4");
 			airportRepository.save(vie);
 			List<Airport> all = new ArrayList<>();
 			airportRepository.findAll().forEach(all::add);
@@ -133,6 +133,22 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			personRepository.save(person);
 			List<Person> persons = personRepository.findByAddressStreet("Maple");
 			assertEquals(1, persons.size());
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
+		} finally {
+			personRepository.deleteById(person.getId().toString());
+		}
+	}
+
+	@Test
+	void annotatedFieldFind() {
+		Person person = null;
+		try {
+			person = new Person(1, "first", "last");
+			person.setMiddlename("Nick"); // middlename is stored as nickname
+			personRepository.save(person);
+			List<Person> persons2 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons2.size());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -144,7 +160,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport vie = null;
 		Airport xxx = null;
 		try {
-			vie = new Airport("airports::vie", "vie", "loww");
+			vie = new Airport("airports::vie", "vie", "low5");
 			airportRepository.save(vie);
 			xxx = new Airport("airports::xxx", "xxx", "xxxx");
 			airportRepository.save(xxx);
@@ -164,7 +180,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void findBySimpleProperty() {
 		Airport vie = null;
 		try {
-			vie = new Airport("airports::vie", "vie", "loww");
+			vie = new Airport("airports::vie", "vie", "low6");
 			vie = airportRepository.save(vie);
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
