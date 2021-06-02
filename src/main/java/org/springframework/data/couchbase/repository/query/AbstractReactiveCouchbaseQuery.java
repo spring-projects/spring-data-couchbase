@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
@@ -85,7 +86,7 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 				? findOperationWithProjection //
 				: findOperationWithProjection; // note yet implemented in core .as(typeToRead);
 
-		String collection = "_default._default";// method.getEntityInformation().getCollectionName(); // not yet implemented
+		String collection = null;
 
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);

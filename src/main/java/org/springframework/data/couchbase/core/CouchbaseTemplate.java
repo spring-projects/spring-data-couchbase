@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -60,14 +61,14 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
-		
+
 		this.mappingContext = this.converter.getMappingContext();
- 		if (mappingContext instanceof CouchbaseMappingContext) {
- 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
- 			if (cmc.isAutoIndexCreation()) {
- 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
- 			}
- 		}
+		if (mappingContext instanceof CouchbaseMappingContext) {
+			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
+			if (cmc.isAutoIndexCreation()) {
+				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
+			}
+		}
 	}
 
 	@Override
@@ -184,4 +185,5 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	TemplateSupport support() {
 		return templateSupport;
 	}
+
 }

@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 
 import com.couchbase.client.java.Collection;
 
@@ -42,13 +43,14 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
+	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
 	}
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-		final TranslationService translationService) {
+			final TranslationService translationService) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
@@ -153,6 +155,14 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
 		templateSupport.setApplicationContext(applicationContext);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public PseudoArgs<?> getPseudoArgs() {
+		return threadLocalArgs == null ? null : threadLocalArgs.get();
 	}
 
 }

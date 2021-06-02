@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,15 +39,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import com.couchbase.client.core.io.CollectionIdentifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.Config;
 
 import com.couchbase.client.core.diagnostics.PingResult;
 import com.couchbase.client.core.diagnostics.PingState;
@@ -80,7 +81,6 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
-import org.springframework.data.couchbase.domain.Config;
 
 /**
  * Extends the {@link ClusterAwareIntegrationTests} with java-client specific code.
@@ -91,8 +91,9 @@ import org.springframework.data.couchbase.domain.Config;
 @Timeout(value = 10, unit = TimeUnit.MINUTES) // Safety timer so tests can't block CI executors
 public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired static public CouchbaseTemplate couchbaseTemplate;
-	@Autowired static public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+	// Autowired annotation is not supported on static fields
+	static public CouchbaseTemplate couchbaseTemplate;
+	static public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -141,15 +142,28 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		ScopeSpec scopeSpec = ScopeSpec.create(scopeName);
 		CollectionSpec collSpec = CollectionSpec.create(collectionName, scopeName);
 
-		if (!scopeName.equals("_default")) {
-			collectionManager.createScope(scopeName);
+		if (!scopeName.equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+			try {
+				collectionManager.createScope(scopeName);
+				waitUntilCondition(() -> scopeExists(collectionManager, scopeName));
+				ScopeSpec found = collectionManager.getScope(scopeName);
+				assertEquals(scopeSpec, found);
+			} catch (CouchbaseException e) {
+				if (!e.toString().contains("already exists")) {
+					e.printStackTrace();
+					throw e;
+				}
+			}
 		}
 
-		waitUntilCondition(() -> scopeExists(collectionManager, scopeName));
-		ScopeSpec found = collectionManager.getScope(scopeName);
-		assertEquals(scopeSpec, found);
-
-		collectionManager.createCollection(collSpec);
+		try {
+			collectionManager.createCollection(collSpec);
+		} catch (CouchbaseException e) {
+			if (!e.toString().contains("already exists")) {
+				e.printStackTrace();
+				throw e;
+			}
+		}
 		waitUntilCondition(() -> collectionExists(collectionManager, collSpec));
 		waitUntilCondition(
 				() -> collectionReady(cluster.bucket(config().bucketname()).scope(scopeName).collection(collectionName)));
@@ -258,6 +272,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			String collectionName) {
 		CreatePrimaryQueryIndexOptions options = CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions();
 		options.timeout(Duration.ofSeconds(300));
+		options.ignoreIfExists(true);
 		final CreatePrimaryQueryIndexOptions.Built builtOpts = options.build();
 		final String indexName = builtOpts.indexName().orElse(null);
 
@@ -335,7 +350,6 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 				break;
 			} catch (CouchbaseException | IllegalStateException ex) {
 				// this is a pretty dirty hack to avoid a race where we don't know if the index is ready yet
-				System.out.println("createFtsCollectionIndex: " + i + " " + ex);
 				if (i < (maxTries - 1) && (ex.getMessage().contains("no planPIndexes for indexName")
 						|| ex.getMessage().contains("pindex_consistency mismatched partition")
 						|| ex.getMessage().contains("pindex not available"))) {

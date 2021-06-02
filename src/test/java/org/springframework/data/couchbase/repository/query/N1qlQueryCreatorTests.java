@@ -32,6 +32,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
@@ -76,6 +78,19 @@ class N1qlQueryCreatorTests {
 	}
 
 	@Test
+	void createsQueryFieldAnnotationCorrectly() throws Exception {
+		String input = "findByMiddlename";
+		PartTree tree = new PartTree(input, Person.class);
+		Method method = PersonRepository.class.getMethod(input, String.class);
+
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
+				bucketName);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export(), " WHERE " + where(i("nickname")).is("Oliver").export());
+	}
+
+	@Test
 	void queryParametersArray() throws Exception {
 		String input = "findByFirstnameIn";
 		PartTree tree = new PartTree(input, User.class);
@@ -89,9 +104,9 @@ class N1qlQueryCreatorTests {
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -111,9 +126,9 @@ class N1qlQueryCreatorTests {
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 
@@ -133,9 +148,9 @@ class N1qlQueryCreatorTests {
 
 		assertEquals(expected.export(new int[1]), query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(expectedOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null).build().injectParams(actualOptions);
+		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
 		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
 	}
 

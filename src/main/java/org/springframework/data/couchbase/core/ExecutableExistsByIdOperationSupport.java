@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,13 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport;
-
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.data.couchbase.core.ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport;
 import org.springframework.util.Assert;
+
+import com.couchbase.client.java.kv.ExistsOptions;
 
 public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByIdOperation {
 
@@ -32,17 +33,25 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 
 	@Override
 	public ExecutableExistsById existsById() {
-		return new ExecutableExistsByIdSupport(template, null);
+		return new ExecutableExistsByIdSupport(template, null, null, null);
 	}
 
 	static class ExecutableExistsByIdSupport implements ExecutableExistsById {
 
 		private final CouchbaseTemplate template;
+		private final String scope;
+		private final String collection;
+		private final ExistsOptions options;
+
 		private final ReactiveExistsByIdSupport reactiveSupport;
 
-		ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String collection) {
+		ExecutableExistsByIdSupport(final CouchbaseTemplate template, final String scope, final String collection,
+				final ExistsOptions options) {
 			this.template = template;
-			this.reactiveSupport = new ReactiveExistsByIdSupport(template.reactive(), collection);
+			this.scope = scope;
+			this.collection = collection;
+			this.options = options;
+			this.reactiveSupport = new ReactiveExistsByIdSupport(template.reactive(), scope, collection, options);
 		}
 
 		@Override
@@ -56,11 +65,22 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 		}
 
 		@Override
-		public TerminatingExistsById inCollection(final String collection) {
+		public ExistsByIdWithOptions inCollection(final String collection) {
 			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableExistsByIdSupport(template, collection);
+			return new ExecutableExistsByIdSupport(template, scope, collection, options);
 		}
 
+		@Override
+		public TerminatingExistsById withOptions(final ExistsOptions options) {
+			Assert.notNull(options, "Options must not be null.");
+			return new ExecutableExistsByIdSupport(template, scope, collection, options);
+		}
+
+		@Override
+		public ExistsByIdInCollection inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ExecutableExistsByIdSupport(template, scope, collection, options);
+		}
 	}
 
 }

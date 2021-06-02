@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import okhttp3.Credentials;
 import okhttp3.FormBody;
@@ -43,6 +43,7 @@ public class UnmanagedTestCluster extends TestCluster {
 	private final String adminPassword;
 	private final int numReplicas;
 	private volatile String bucketname;
+	private long startTime = System.currentTimeMillis();
 
 	UnmanagedTestCluster(final Properties properties) {
 		seedHost = properties.getProperty("cluster.unmanaged.seed").split(":")[0];
@@ -69,8 +70,9 @@ public class UnmanagedTestCluster extends TestCluster {
 						.build())
 				.execute();
 
-		if (postResponse.code() != 202) {
-			throw new Exception("Could not create bucket: " + postResponse + ", Reason: " + postResponse.body().string());
+		String reason = postResponse.body().string();
+		if (postResponse.code() != 202 && !(reason.contains("Bucket with given name already exists"))) {
+			throw new Exception("Could not create bucket: " + postResponse + ", Reason: " + reason);
 		}
 
 		Response getResponse = httpClient
@@ -140,10 +142,13 @@ public class UnmanagedTestCluster extends TestCluster {
 	@Override
 	public void close() {
 		try {
-			httpClient
-					.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-							.url("http://" + seedHost + ":" + seedPort + "/pools/default/buckets/" + bucketname).delete().build())
-					.execute();
+			if (!bucketname.equals("my_bucket")) {
+				httpClient
+						.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
+								.url("http://" + seedHost + ":" + seedPort + "/pools/default/buckets/" + bucketname).delete().build())
+						.execute();
+			}
+			System.out.println("elapsed: " + (System.currentTimeMillis() - startTime));
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}

@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.repository.core.EntityMetadata;
@@ -47,7 +47,7 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	private final CouchbaseQueryMethod method;
 	private final CouchbaseOperationsType operations;
 	private final EntityInstantiators instantiators;
-	private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> findOperationWithProjection;
+	private final ExecutableFindByQuery<?> findOperationWithProjection;
 	private final SpelExpressionParser expressionParser;
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
 

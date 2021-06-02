@@ -19,7 +19,8 @@ import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -92,10 +93,10 @@ interface CouchbaseQueryExecution {
 	 */
 	final class SlicedExecution implements CouchbaseQueryExecution {
 
-		private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> find;
+		private final ExecutableFindByQuery<?> find;
 		private final Pageable pageable;
 
-		public SlicedExecution(ExecutableFindByQueryOperation.ExecutableFindByQuery find, Pageable pageable) {
+		public SlicedExecution(ExecutableFindByQuery find, Pageable pageable) {
 			Assert.notNull(find, "Find must not be null!");
 			Assert.notNull(pageable, "Pageable must not be null!");
 			this.find = find;
@@ -123,10 +124,10 @@ interface CouchbaseQueryExecution {
 	 */
 	final class PagedExecution<FindWithQuery> implements CouchbaseQueryExecution {
 
-		private final ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation;
+		private final ExecutableFindByQuery<?> operation;
 		private final Pageable pageable;
 
-		public PagedExecution(ExecutableFindByQueryOperation.ExecutableFindByQuery<?> operation, Pageable pageable) {
+		public PagedExecution(ExecutableFindByQuery<?> operation, Pageable pageable) {
 			Assert.notNull(operation, "Operation must not be null!");
 			Assert.notNull(pageable, "Pageable must not be null!");
 			this.operation = operation;
@@ -140,7 +141,7 @@ interface CouchbaseQueryExecution {
 		@Override
 		public Object execute(Query query, Class<?> type, String collection) {
 			int overallLimit = 0; // query.getLimit();
-			ExecutableFindByQueryOperation.TerminatingFindByQuery<?> matching = operation.matching(query);
+			TerminatingFindByQuery<?> matching = operation.matching(query);
 			// Apply raw pagination
 			query.with(pageable);
 			// Adjust limit if page would exceed the overall limit

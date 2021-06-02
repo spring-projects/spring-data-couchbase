@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,43 +21,117 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.support.InCollection;
+import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
-import org.springframework.data.couchbase.core.support.WithCollection;
+import org.springframework.data.couchbase.core.support.WithInsertOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 
+/**
+ * Insert Operations
+ *
+ * @author Christoph Strobl
+ * @since 2.0
+ */
 public interface ReactiveInsertByIdOperation {
 
+	/**
+	 * Insert using the KV service.
+	 *
+	 * @param domainType the entity type to insert.
+	 */
 	<T> ReactiveInsertById<T> insertById(Class<T> domainType);
 
+	/**
+	 * Terminating operations invoking the actual execution.
+	 */
 	interface TerminatingInsertById<T> extends OneAndAllEntityReactive<T> {
 
+		/**
+		 * Insert one entity.
+		 *
+		 * @return Inserted entity.
+		 */
+		@Override
 		Mono<T> one(T object);
 
+		/**
+		 * Insert a collection of entities.
+		 *
+		 * @return Inserted entities
+		 */
+		@Override
 		Flux<? extends T> all(Collection<? extends T> objects);
 
+		InsertOptions buildOptions(InsertOptions options, CouchbaseDocument doc);
+
 	}
 
-	interface InsertByIdWithCollection<T> extends TerminatingInsertById<T>, WithCollection<T> {
-
-		TerminatingInsertById<T> inCollection(String collection);
+	/**
+	 * Fluent method to specify options.
+	 */
+	interface InsertByIdWithOptions<T> extends TerminatingInsertById<T>, WithInsertOptions<T> {
+		/**
+		 * Fluent method to specify options to use for execution.
+		 *
+		 * @param options to use for execution
+		 */
+		@Override
+		TerminatingInsertById<T> withOptions(InsertOptions options);
 	}
 
-	interface InsertByIdWithDurability<T> extends InsertByIdWithCollection<T>, WithDurability<T> {
+	/**
+	 * Fluent method to specify the collection.
+	 */
+	interface InsertByIdInCollection<T> extends InsertByIdWithOptions<T>, InCollection<T> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		InsertByIdWithOptions<T> inCollection(String collection);
+	}
 
-		InsertByIdWithCollection<T> withDurability(DurabilityLevel durabilityLevel);
+	/**
+	 * Fluent method to specify the scope.
+	 */
+	interface InsertByIdInScope<T> extends InsertByIdInCollection<T>, InScope<T> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		InsertByIdInCollection<T> inScope(String scope);
+	}
 
-		InsertByIdWithCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+	interface InsertByIdWithDurability<T> extends InsertByIdInScope<T>, WithDurability<T> {
+
+		@Override
+		InsertByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		InsertByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
 	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
 
+		@Override
 		InsertByIdWithDurability<T> withExpiry(Duration expiry);
 	}
 
+	/**
+	 * Provides methods for constructing KV insert operations in a fluent way.
+	 *
+	 * @param <T> the entity type to insert
+	 */
 	interface ReactiveInsertById<T> extends InsertByIdWithExpiry<T> {}
 
 }
