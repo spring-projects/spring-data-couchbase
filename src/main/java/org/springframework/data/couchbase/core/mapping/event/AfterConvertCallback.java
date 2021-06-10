@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,27 @@
  */
 package org.springframework.data.couchbase.core.mapping.event;
 
-import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.callback.EntityCallback;
 
 /**
- * Callback being invoked after a domain object is materialized from a {@link Document} when reading results.
+ * Callback being invoked after a domain object is materialized from a {@link CouchbaseDocument} when reading results.
  *
- * @author Roman Puchkovskiy
- * @author Mark Paluch
  * @author Michael Reiche
  * @see org.springframework.data.mapping.callback.EntityCallbacks
- * @since 3.0
+ * @since 4.2
  */
 @FunctionalInterface
 public interface AfterConvertCallback<T> extends EntityCallback<T> {
 
 	/**
-	 * Entity callback method invoked after a domain object is materialized from a {@link Document}. Can return either the
-	 * same or a modified instance of the domain object.
+	 * Entity callback method invoked after a domain object is materialized from a {@link CouchbaseDocument}. Can return
+	 * either the same or a modified instance of the domain object.
 	 *
 	 * @param entity the domain object (the result of the conversion).
 	 * @param document must not be {@literal null}.
 	 * @param collection name of the collection.
-	 * @return the domain object that is the result of reading it from the {@link Document}.
+	 * @return the domain object that is the result of reading it from the {@link CouchbaseDocument}.
 	 */
-	T onAfterConvert(T entity, Document document, String collection);
+	T onAfterConvert(T entity, CouchbaseDocument document, String collection);
 }

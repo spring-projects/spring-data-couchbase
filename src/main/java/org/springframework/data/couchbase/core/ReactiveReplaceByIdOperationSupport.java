@@ -78,14 +78,14 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
-					options != null ? options : ReplaceOptions.replaceOptions());
-			LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity).flatMap(converted -> template.getCouchbaseClientFactory()
-					.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).reactive()
-					.replace(converted.getId(), converted.export(), buildReplaceOptions(pArgs.getOptions(), object, converted))
-					.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-							.flatMap(replacedObject -> (Mono<T>) support.applyUpdatedCas(replacedObject, result.cas()))))
+                        PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
+                                        options != null ? options : ReplaceOptions.replaceOptions());
+                        LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
+			return Mono.just(object).flatMap(support::encodeEntity)
+            .flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+                     .getCollection(pArgs.getCollection()).reactive()
+                     .replace(converted.getId(), converted.export(), buildReplaceOptions(pArgs.getOptions(), object, converted))
+							.flatMap(result -> support.applyUpdatedCas(object, converted, result.cas())))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
