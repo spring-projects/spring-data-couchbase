@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
@@ -82,15 +81,11 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 
-		ReactiveFindByQuery<?> find = typeToRead == null //
-				? findOperationWithProjection //
-				: findOperationWithProjection; // note yet implemented in core .as(typeToRead);
-
-		String collection = null;
+		ReactiveFindByQuery<?> find = findOperationWithProjection;
 
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), collection);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
 	}
 
 	/**

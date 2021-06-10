@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author David Kelly
  * @author Douglas Six
  * @author Jens Schauder
+ * @author Michael Reiche
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {
@@ -81,12 +82,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		// if entity has non-null version property, then replace()
+		// if entity has non-null, non-zero version property, then replace()
+		Mono<S> result;
 		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
-			return (Mono<S>) operations.replaceById(entityInformation.getJavaType()).one(entity);
+			result = (Mono<S>) operations.replaceById(entityInformation.getJavaType()).one(entity);
 		} else {
-			return (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
+			result = (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
 		}
+		return result;
 	}
 
 	@Override
@@ -188,7 +191,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Void> deleteAll() {
-		return operations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).all().then();
+		return operations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).all()
+				.then();
 	}
 
 	/**
@@ -196,8 +200,14 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	 *
 	 * @return the underlying entity information.
 	 */
-	protected CouchbaseEntityInformation<T, String> getEntityInformation() {
+	@Override
+	public CouchbaseEntityInformation<T, String> getEntityInformation() {
 		return entityInformation;
+	}
+
+	@Override
+	public ReactiveCouchbaseOperations getOperations() {
+		return operations;
 	}
 
 	private Flux<T> findAll(Query query) {

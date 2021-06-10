@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.domain.Page;
@@ -41,7 +42,8 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-public interface AirportRepository extends CouchbaseRepository<Airport, String> {
+@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+public interface AirportRepository extends CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository> {
 
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -55,6 +57,8 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String> 
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(Iata iata);
+
+	Airport iata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

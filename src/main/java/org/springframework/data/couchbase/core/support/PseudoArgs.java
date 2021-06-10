@@ -74,42 +74,42 @@ public class PseudoArgs<OPTS> {
 	}
 
 	/**
-	 * @@return the options
+	 * @return the options
 	 */
 	public OPTS getOptions() {
 		return this.options;
 	}
 
 	/**
-	 * @@return the scope name
+	 * @return the scope name
 	 */
 	public String getScope() {
 		return this.scopeName;
 	}
 
 	/**
-	 * @@return the collection name
+	 * @return the collection name
 	 */
 	public String getCollection() {
 		return this.collectionName;
 	}
 
 	/**
-	 * @@return the options from the ThreadLocal field of the template
+	 * @return the options from the ThreadLocal field of the template
 	 */
 	private OPTS getThreadLocalOptions(ReactiveCouchbaseTemplate template) {
 		return template.getPseudoArgs() == null ? null : (OPTS) (template.getPseudoArgs().getOptions());
 	}
 
 	/**
-	 * @@return the scope name from the ThreadLocal field of the template
+	 * @return the scope name from the ThreadLocal field of the template
 	 */
 	private String getThreadLocalScopeName(ReactiveCouchbaseTemplate template) {
 		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getScope();
 	}
 
 	/**
-	 * @@return the collection name from the ThreadLocal field of the template
+	 * @return the collection name from the ThreadLocal field of the template
 	 */
 	private String getThreadLocalCollectionName(ReactiveCouchbaseTemplate template) {
 		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getCollection();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
@@ -84,14 +83,11 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 
-		ExecutableFindByQuery<?> find = typeToRead == null ? findOperationWithProjection //
-				: findOperationWithProjection; // not yet implemented in core .as(typeToRead);
-
-		String collection = null;
+		ExecutableFindByQuery<?> find = findOperationWithProjection;
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), collection);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
 	}
 
 	/**
@@ -114,8 +110,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	 * @param operation must not be {@literal null}.
 	 * @return
 	 */
-	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor,
-			ExecutableFindByQuery<?> operation) {
+	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor, ExecutableFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), getQueryMethod());

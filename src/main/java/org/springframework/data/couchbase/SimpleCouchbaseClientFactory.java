@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase;
 
 import java.util.function.Supplier;
@@ -33,6 +32,9 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 
 /**
  * The default implementation of a {@link CouchbaseClientFactory}.
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
  */
 public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
@@ -74,7 +76,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	@Override
 	public CouchbaseClientFactory withScope(final String scopeName) {
-		return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName);
+		return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scopeName != null ? scopeName : getScope().name());
 	}
 
 	@Override

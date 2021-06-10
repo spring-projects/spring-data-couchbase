@@ -158,11 +158,17 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * @return the pseudoArgs from the ThreadLocal field
 	 */
-	@Override
 	public PseudoArgs<?> getPseudoArgs() {
 		return threadLocalArgs == null ? null : threadLocalArgs.get();
+	}
+
+	/**
+	 * set the ThreadLocal field
+	 */
+	public void setPseudoArgs(PseudoArgs<?> threadLocalArgs) {
+		this.threadLocalArgs.set(threadLocalArgs);
 	}
 
 }

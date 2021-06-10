@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 * @param couchbaseOperationsMapping the template for the underlying actions.
 	 */
 	public ReactiveCouchbaseRepositoryFactory(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping) {
-		Assert.notNull(couchbaseOperationsMapping);
+		Assert.notNull(couchbaseOperationsMapping, "couchbaseOperationsMapping");
 
 		this.couchbaseOperationsMapping = couchbaseOperationsMapping;
 		this.crudMethodMetadataPostProcessor = new CrudMethodMetadataPostProcessor();
@@ -85,14 +85,14 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 * Returns entity information based on the domain class.
 	 *
 	 * @param domainClass the class for the entity.
-	 * @param <T>         the value type
-	 * @param <ID>        the id type.
+	 * @param <T> the value type
+	 * @param <ID> the id type.
 	 * @return entity information for that domain class.
 	 */
 	@Override
 	public <T, ID> CouchbaseEntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
-		CouchbasePersistentEntity<T> entity = (CouchbasePersistentEntity<T>) mappingContext.getRequiredPersistentEntity(
-				domainClass);
+		CouchbasePersistentEntity<T> entity = (CouchbasePersistentEntity<T>) mappingContext
+				.getRequiredPersistentEntity(domainClass);
 		return new MappingCouchbaseEntityInformation<>(entity);
 	}
 
@@ -107,8 +107,8 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 */
 	@Override
 	protected final Object getTargetRepository(final RepositoryInformation metadata) {
-		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
-				metadata.getRepositoryInterface(), metadata.getDomainType());
+		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
+				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
 		SimpleReactiveCouchbaseRepository repository = getTargetRepositoryViaReflection(metadata, entityInformation,
 				couchbaseOperations);
@@ -150,8 +150,8 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 		@Override
 		public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
 				NamedQueries namedQueries) {
-			final ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(
-					metadata.getRepositoryInterface(), metadata.getDomainType());
+			final ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
+					.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 			ReactiveCouchbaseQueryMethod queryMethod = new ReactiveCouchbaseQueryMethod(method, metadata, factory,
 					mappingContext);
 
