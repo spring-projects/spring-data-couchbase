@@ -18,9 +18,12 @@ package org.springframework.data.couchbase.domain;
 
 import java.lang.reflect.InvocationTargetException;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -33,6 +36,7 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
@@ -48,7 +52,12 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef") // this
+																																																						// activates
+																																																						// auditing
+@EnableReactiveCouchbaseAuditing(auditorAwareRef = "reactiveAuditorAwareRef",
+		dateTimeProviderRef = "dateTimeProviderRef") // this activates auditing
+
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";
@@ -104,6 +113,11 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return new NaiveAuditorAware();
 	}
 
+	@Bean(name = "reactiveAuditorAwareRef")
+	public ReactiveNaiveAuditorAware testReactiveAuditorAware() {
+		return new ReactiveNaiveAuditorAware();
+	}
+
 	@Bean(name = "dateTimeProviderRef")
 	public DateTimeProvider testDateTimeProvider() {
 		return new AuditingDateTimeProvider();
@@ -113,12 +127,12 @@ public class Config extends AbstractCouchbaseConfiguration {
 	public void configureReactiveRepositoryOperationsMapping(ReactiveRepositoryOperationsMapping baseMapping) {
 		try {
 			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
-			// ReactiveCouchbaseTemplate personTemplate =
-			// myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
+			// ReactiveCouchbaseTemplate personTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),
+			//		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
-			// ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new
-			// MappingCouchbaseConverter());
-			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
+			// ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),
+			//		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
+			//baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
 			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {
 			throw e;
@@ -129,11 +143,12 @@ public class Config extends AbstractCouchbaseConfiguration {
 	public void configureRepositoryOperationsMapping(RepositoryOperationsMapping baseMapping) {
 		try {
 			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
-			// CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),new
-			// MappingCouchbaseConverter());
+			// CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),
+			// 		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
-			// CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new
-			// MappingCouchbaseConverter());
+			// MappingCouchbaseConverter cvtr = (MappingCouchbaseConverter)baseMapping.getDefault().getConverter();
+			// CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),
+			// 		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
 			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {
@@ -176,10 +191,11 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return converter;
 	}
 
+	/* This uses a CustomMappingCouchbaseConverter instead of MappingCouchbaseConverter */
 	@Override
-	@Bean(name = "couchbaseMappingConverter")
+	@Bean(name = "mappingCouchbaseConverter")
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-			CouchbaseCustomConversions couchbaseCustomConversions) {
+			CouchbaseCustomConversions couchbaseCustomConversions /* there is a customConversions() method bean  */) {
 		// MappingCouchbaseConverter relies on a SimpleInformationMapper
 		// that has an getAliasFor(info) that just returns getType().getName().
 		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
