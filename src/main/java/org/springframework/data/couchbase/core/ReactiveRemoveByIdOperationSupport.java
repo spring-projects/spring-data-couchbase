@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterDeleteEvent;
+import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeDeleteEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -68,19 +70,22 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 		@Override
 		public Mono<RemoveResult> one(final String id) {
-			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs(template, scope, collection,
-					options != null ? options : RemoveOptions.removeOptions());
-			return Mono.just(id)
-					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().remove(id, buildRemoveOptions(pArgs.getOptions()))
-							.map(r -> RemoveResult.from(docId, r)))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+                        PseudoArgs<RemoveOptions> pArgs = new PseudoArgs(template, scope, collection,
+                                        options != null ? options : RemoveOptions.removeOptions());
+			return Mono.just(id).map(r -> {
+				template.support().maybeEmitEvent(new ReactiveBeforeDeleteEvent<>(r));
+				return r;
+            }).flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+                       .getCollection(pArgs.getCollection()).reactive().remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> {
+				template.support().maybeEmitEvent(new ReactiveAfterDeleteEvent<>(r));
+				return RemoveResult.from(docId, r);
+			})).onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

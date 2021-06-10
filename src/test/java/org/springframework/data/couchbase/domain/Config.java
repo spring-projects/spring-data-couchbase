@@ -52,11 +52,8 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef") // this
-																																																						// activates
-																																																						// auditing
-@EnableReactiveCouchbaseAuditing(auditorAwareRef = "reactiveAuditorAwareRef",
-		dateTimeProviderRef = "dateTimeProviderRef") // this activates auditing
+@EnableCouchbaseAuditing(auditorAwareRef="auditorAwareRef", dateTimeProviderRef="dateTimeProviderRef")  // this activates auditing
+@EnableReactiveCouchbaseAuditing(auditorAwareRef="reactiveAuditorAwareRef", dateTimeProviderRef="dateTimeProviderRef")  // this activates auditing
 
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";

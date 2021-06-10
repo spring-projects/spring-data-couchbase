@@ -78,16 +78,16 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection,
-					options != null ? options : InsertOptions.insertOptions());
-			LOG.trace("statement: {} scope: {} collection: {} options: {}", "insertById", pArgs.getScope(),
-					pArgs.getCollection(), pArgs.getOptions());
+            PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection,
+                                                             options != null ? options : InsertOptions.insertOptions());
+            LOG.trace("statement: {} scope: {} collection: {} options: {}", "insertById", pArgs.getScope(),
+                      pArgs.getCollection(), pArgs.getOptions());
 			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+            .flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+                     .getCollection(pArgs.getCollection()).reactive()
+                     .insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
 							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(insertedObject -> (Mono<T>) support.applyUpdatedCas(insertedObject, result.cas()))))
+									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

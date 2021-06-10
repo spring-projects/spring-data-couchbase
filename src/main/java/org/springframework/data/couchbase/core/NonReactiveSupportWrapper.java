@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import reactor.core.publisher.Mono;
 
 /**
@@ -44,8 +45,8 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedCas(Object entity, long cas) {
-		return Mono.fromSupplier(() -> support.applyUpdatedCas(entity, cas));
+	public Mono<Object> applyUpdatedCas(Object entity, CouchbaseDocument converted, long cas) {
+		return Mono.fromSupplier(() -> support.applyUpdatedCas(entity, converted, cas));
 	}
 
 	@Override
@@ -61,5 +62,10 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	@Override
 	public String getJavaNameForEntity(Class<?> clazz) {
 		return support.getJavaNameForEntity(clazz);
+	}
+
+	@Override
+	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
+		support.maybeEmitEvent(event);
 	}
 }
