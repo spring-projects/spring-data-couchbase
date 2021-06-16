@@ -78,8 +78,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
-					options != null ? options : ReplaceOptions.replaceOptions());
+			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity).flatMap(converted -> template.getCouchbaseClientFactory()
 					.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).reactive()
@@ -126,14 +125,12 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public ReplaceByIdWithDurability<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}

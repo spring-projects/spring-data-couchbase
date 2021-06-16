@@ -29,9 +29,7 @@ import com.couchbase.client.java.CommonOptions;
  * CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository>
  * 
  * @param <REPO>
- *
  * @author Michael Reiche
- *
  */
 public interface DynamicProxyable<REPO> {
 

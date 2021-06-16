@@ -78,8 +78,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection,
-					options != null ? options : InsertOptions.insertOptions());
+			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
 			LOG.trace("statement: {} scope: {} collection: {} options: {}", "insertById", pArgs.getScope(),
 					pArgs.getCollection(), pArgs.getOptions());
 			return Mono.just(object).flatMap(support::encodeEntity)
@@ -127,14 +126,12 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public InsertByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 
 		@Override
 		public InsertByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}

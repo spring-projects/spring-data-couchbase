@@ -30,11 +30,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
-import org.springframework.data.couchbase.domain.UserColRepository;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
@@ -47,10 +47,10 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
-public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
+public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
-	@Autowired AirportRepository airportRepository;
-	@Autowired UserColRepository userColRepository;
+	@Autowired ReactiveAirportRepository airportRepository;
+	@Autowired ReactiveUserColRepository userColRepository;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -75,10 +75,11 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// then do processing for this class
 		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).all();
 		couchbaseTemplate.removeByQuery(UserCol.class).inScope(otherScope).inCollection(otherCollection).all();
+
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// seems that @Autowired is not adequate, so ...
-		airportRepository = (AirportRepository) ac.getBean("airportRepository");
-		userColRepository = (UserColRepository) ac.getBean("userColRepository");
+		airportRepository = (ReactiveAirportRepository) ac.getBean("reactiveAirportRepository");
+		userColRepository = (ReactiveUserColRepository) ac.getBean("reactiveUserColRepository");
 	}
 
 	@AfterEach
@@ -96,13 +97,13 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		try {
 			airportRepository = airportRepository.withCollection(collectionName);
-			Airport saved = airportRepository.save(vie);
-			Airport airport2 = airportRepository.save(saved);
+			Airport saved = airportRepository.save(vie).block();
+			Airport airport2 = airportRepository.save(saved).block();
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.delete(vie);
+			airportRepository.delete(vie).block();
 		}
 
 	}
@@ -120,31 +121,32 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// create proxy with scope, collection
 		airportRepository = airportRepository.withScope(scopeName).withCollection(collectionName);
 		try {
-			Airport saved = airportRepository.save(vie);
+			Airport saved = airportRepository.save(vie).block();
 
 			// valid scope, collection in options
 			Airport airport2 = airportRepository.withCollection(collectionName)
 					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+					.iata(vie.getIata()).block();
 			assertEquals(saved, airport2);
 
 			// given bad collectionName in fluent
 			assertThrows(IndexFailureException.class,
-					() -> airportRepository.withCollection("bogusCollection").iata(vie.getIata()));
+					() -> airportRepository.withCollection("bogusCollection").iata(vie.getIata()).block());
 
 			// given bad scopeName in fluent
-			assertThrows(IndexFailureException.class, () -> airportRepository.withScope("bogusScope").iata(vie.getIata()));
+			assertThrows(IndexFailureException.class,
+					() -> airportRepository.withScope("bogusScope").iata(vie.getIata()).block());
 
 			Airport airport6 = airportRepository
 					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+					.iata(vie.getIata()).block();
 			assertEquals(saved, airport6);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withScope(scopeName).withCollection(collectionName).deleteAll();
+			airportRepository.withScope(scopeName).withCollection(collectionName).deleteAll().block();
 		}
 	}
 
@@ -154,18 +156,19 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		JsonArray positionalParams = JsonArray.create().add("\"this parameter will be overridden\"");
 		try {
-			Airport saved = airportRepository.withCollection(collectionName).save(vie);
+			Airport saved = airportRepository.withCollection(collectionName).save(vie).block();
 
-			Airport airport3 = airportRepository.withCollection(collectionName).withOptions(
-					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
-					.iata(vie.getIata());
+			Airport airport3 = airportRepository
+					.withCollection(collectionName).withOptions(QueryOptions.queryOptions()
+							.scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
+					.iata(vie.getIata()).block();
 			assertEquals(saved, airport3);
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withCollection(collectionName).delete(vie);
+			airportRepository.withCollection(collectionName).delete(vie).block();
 		}
 	}
 
@@ -175,12 +178,15 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// UserCol annotation scope is other_scope
 		UserCol user = new UserCol("1", "Dave", "Wilson");
 		try {
-			UserCol saved = userColRepository.withCollection(otherCollection).save(user); // should use UserCol annotation
-																																										// scope
-			List<UserCol> found = userColRepository.withCollection(otherCollection).findByFirstname(user.getFirstname());
+			UserCol saved = userColRepository.withCollection(otherCollection).save(user).block(); // should use UserCol
+																																														// annotation
+			// scope
+			List<UserCol> found = userColRepository.withCollection(otherCollection).findByFirstname(user.getFirstname())
+					.collectList().block();
 			assertEquals(saved, found.get(0), "should have found what was saved");
 			List<UserCol> notfound = userColRepository.withScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
+					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname()).collectList()
+					.block();
 			assertEquals(0, notfound.size(), "should not have found what was saved");
 		} finally {
 			try {
@@ -195,17 +201,18 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 	public void testScopeCollectionRepoWith() {
 		UserCol user = new UserCol("1", "Dave", "Wilson");
 		try {
-			UserCol saved = userColRepository.withScope(scopeName).withCollection(collectionName).save(user);
+			UserCol saved = userColRepository.withScope(scopeName).withCollection(collectionName).save(user).block();
 			List<UserCol> found = userColRepository.withScope(scopeName).withCollection(collectionName)
-					.findByFirstname(user.getFirstname());
+					.findByFirstname(user.getFirstname()).collectList().block();
 			assertEquals(saved, found.get(0), "should have found what was saved");
 			List<UserCol> notfound = userColRepository.withScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
+					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname()).collectList()
+					.block();
 			assertEquals(0, notfound.size(), "should not have found what was saved");
-			userColRepository.withScope(scopeName).withCollection(collectionName).delete(user);
+			userColRepository.withScope(scopeName).withCollection(collectionName).delete(user).block();
 		} finally {
 			try {
-				userColRepository.withScope(scopeName).withCollection(collectionName).delete(user);
+				userColRepository.withScope(scopeName).withCollection(collectionName).delete(user).block();
 			} catch (DataRetrievalFailureException drfe) {}
 		}
 	}

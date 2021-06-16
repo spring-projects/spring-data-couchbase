@@ -79,7 +79,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				if (fields != null && !fields.isEmpty()) {
 					gOptions.project(fields);
 				}
-				PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions);
+				PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions, null);
 				LOG.trace("statement: {} scope: {} collection: {}", "findById", pArgs.getScope(), pArgs.getCollection());
 				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 						.reactive().get(docId, pArgs.getOptions());
@@ -113,13 +113,11 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, support);
 		}
 

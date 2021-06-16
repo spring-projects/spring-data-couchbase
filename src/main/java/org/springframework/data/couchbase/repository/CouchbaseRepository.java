@@ -50,4 +50,5 @@ public interface CouchbaseRepository<T, ID> extends PagingAndSortingRepository<T
 	CouchbaseEntityInformation<T, String> getEntityInformation();
 
 	CouchbaseOperations getOperations();
+
 }

@@ -317,20 +317,25 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.delete(vie);
 		}
 
+	}
+
+	@Test
+	public void saveNotBounded() {
 		// save() followed by query with NOT_BOUNDED will result in not finding the document
+		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport airport2 = null;
-		for (int i = 1; i <= 10; i++) {
+		for (int i = 1; i <= 100; i++) {
 			// set version == 0 so save() will be an upsert, not a replace
 			Airport saved = airportRepository.save(vie.clearVersion());
 			try {
-				airport2 = airportRepository.withOptions(
-						QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED).parameters(positionalParams))
+				airport2 = airportRepository
+						.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED))
 						.iata(saved.getIata());
 				if (airport2 == null) {
 					break;
 				}
 			} catch (DataRetrievalFailureException drfe) {
-				; // was expecting this
+				airport2 = null; //
 			} finally {
 				// airportRepository.delete(vie);
 				// instead of delete, use removeResult to test QueryOptions.consistentWith()
@@ -346,13 +351,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			}
 		}
 		assertNull(airport2, "airport2 should have likely been null at least once");
-
 	}
 
 	@Test
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
+		userRepository.findByFirstname("Dave");
 		user.setVersion(user.getVersion() - 1);
 		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
 		user.setVersion(0);

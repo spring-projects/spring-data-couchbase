@@ -36,13 +36,19 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 	@Override
 	public ExecutableRemoveById removeById() {
-		return new ExecutableRemoveByIdSupport(template, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
+		return removeById(null);
+	}
+
+	@Override
+	public ExecutableRemoveById removeById(Class<?> domainType) {
+		return new ExecutableRemoveByIdSupport(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
 				DurabilityLevel.NONE, null);
 	}
 
 	static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
 
 		private final CouchbaseTemplate template;
+		private final Class<?> domainType;
 		private final String scope;
 		private final String collection;
 		private final RemoveOptions options;
@@ -52,18 +58,19 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final Long cas;
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
-		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final String scope, final String collection,
-				final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final Class<?> domainType, final String scope,
+				final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
 				final DurabilityLevel durabilityLevel, Long cas) {
 			this.template = template;
+			this.domainType = domainType;
 			this.scope = scope;
 			this.collection = collection;
 			this.options = options;
 			this.persistTo = persistTo;
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
-			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), scope, collection, options,
-					persistTo, replicateTo, durabilityLevel, cas);
+			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), domainType, scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, cas);
 			this.cas = cas;
 		}
 
@@ -79,15 +86,14 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public RemoveByIdWithOptions inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdInCollection withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
@@ -95,27 +101,26 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		public RemoveByIdInCollection withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
 		@Override
 		public TerminatingRemoveById withOptions(final RemoveOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdWithDurability withCas(Long cas) {
-			return new ExecutableRemoveByIdSupport(template, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 	}

@@ -29,8 +29,8 @@ import org.springframework.lang.Nullable;
 
 @Document
 public class Person extends AbstractEntity {
-	Optional<String> firstname;
-	@Nullable Optional<String> lastname;
+	String firstname;
+	@Nullable String lastname;
 
 	@CreatedBy private String creator;
 
@@ -71,29 +71,29 @@ public class Person extends AbstractEntity {
 		return "";
 	}
 
-	public Optional<String> getFirstname() {
+	public String getFirstname() {
 		return firstname;
 	}
 
 	public void setFirstname(String firstname) {
-		this.firstname = firstname == null ? null : (Optional.ofNullable(firstname.equals("") ? null : firstname));
-	}
-
-	public void setFirstname(Optional<String> firstname) {
 		this.firstname = firstname;
 	}
 
-	public Optional<String> getLastname() {
+	// public void setFirstname(Optional<String> firstname) {
+	// this.firstname = firstname;
+	// }
+
+	public String getLastname() {
 		return lastname;
 	}
 
 	public void setLastname(String lastname) {
-		this.lastname = lastname == null ? null : (Optional.ofNullable(lastname.equals("") ? null : lastname));
-	}
-
-	public void setLastname(Optional lastname) {
 		this.lastname = lastname;
 	}
+
+	// public void setLastname(String lastname) {
+	// this.lastname = lastname;
+	// }
 
 	public String getMiddlename() {
 		return middlename;

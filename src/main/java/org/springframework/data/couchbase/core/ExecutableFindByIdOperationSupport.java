@@ -77,13 +77,11 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields);
 		}
 

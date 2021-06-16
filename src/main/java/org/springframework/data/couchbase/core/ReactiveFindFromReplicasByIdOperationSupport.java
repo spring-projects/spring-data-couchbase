@@ -73,7 +73,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 				if (garOptions.build().transcoder() == null) {
 					garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 				}
-				PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions);
+				PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, null);
 				LOG.trace("statement: {} scope: {} collection: {}", "getAnyReplica", pArgs.getScope(), pArgs.getCollection());
 				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 						.reactive().getAnyReplica(docId, pArgs.getOptions());
@@ -101,14 +101,12 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 		@Override
 		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options,
 					support);
 		}
 
 		@Override
 		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options,
 					support);
 		}

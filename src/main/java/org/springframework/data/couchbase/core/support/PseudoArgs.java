@@ -15,8 +15,10 @@
  */
 package org.springframework.data.couchbase.core.support;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.mapping.Document;
+
+import com.couchbase.client.core.io.CollectionIdentifier;
 
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
@@ -39,21 +41,50 @@ public class PseudoArgs<OPTS> {
 	 * @param scope
 	 * @param collection
 	 * @param options
+	 * @param domainType
 	 */
-	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options) {
+	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
+			Class<?> domainType) {
 
-		// 1) values from the args (fluent api)
+		// ??? 1) template - values from the args (fluent api) [ or annotations??? ]
 
-		String scopeForQuery = scope;
-		String collectionForQuery = collection;
-		OPTS optionsForQuery = options;
+		String scopeForQuery = null; // = scope;
+		String collectionForQuery = null; // = collection;
+		OPTS optionsForQuery = null; // = options;
 
-		// 2) from DynamicProxy via template threadLocal
+		// 2) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
-		scopeForQuery = scopeForQuery != null ? scopeForQuery : getThreadLocalScopeName(template);
-		collectionForQuery = collectionForQuery != null ? collectionForQuery : getThreadLocalCollectionName(template);
-		optionsForQuery = optionsForQuery != null ? optionsForQuery : getThreadLocalOptions(template);
+		PseudoArgs<OPTS> threadLocal = (PseudoArgs<OPTS>) template.getPseudoArgs();
+		template.setPseudoArgs(null);
+		if (threadLocal != null) { // repository.withScope()
+			scopeForQuery = /* scopeForQuery != null ? scopeForQuery : */ threadLocal.getScope();
+			collectionForQuery = /* collectionForQuery != null ? collectionForQuery : */ threadLocal.getCollection();
+			optionsForQuery = /* optionsForQuery != null ? optionsForQuery : */ threadLocal.getOptions();
+		}
 
+		if (scopeForQuery == null) {
+			if (scope != null /* && !CollectionIdentifier.DEFAULT_SCOPE.equals(scope) */) { // from withScope(scope)
+				scopeForQuery = scope;
+			}
+		}
+		if (collectionForQuery == null) {
+			if (collection != null /* && !CollectionIdentifier.DEFAULT_COLLECTION.equals(collection) */) { // withCollection(collection)
+				collectionForQuery = collection;
+			}
+		}
+		if (optionsForQuery == null) {
+			if (options != null) {
+				optionsForQuery = options;
+			}
+		}
+
+		if (scopeForQuery == null) { // from entity class
+			scopeForQuery = getScopeAnnotation(domainType);
+		}
+
+		if (collectionForQuery == null) {
+			collectionForQuery = getCollectionAnnotation(domainType);
+		}
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
 		if (collectionForQuery != null && scopeForQuery == null) {
@@ -62,15 +93,29 @@ public class PseudoArgs<OPTS> {
 
 		// specifying scope and collection = _default is not necessary and will fail if server doesn't have collections
 
-		if ((scopeForQuery == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scopeForQuery))
-				&& (collectionForQuery == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery))) {
-			scopeForQuery = null;
-			collectionForQuery = null;
+		if (scopeForQuery == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scopeForQuery)) {
+			if (collectionForQuery == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery)) {
+				collectionForQuery = null;
+			}
+			if (collectionForQuery == null || !CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery)) { // if
+																																																								// collection
+																																																								// isn't
+																																																								// null,
+																																																								// then
+																																																								// (maybe)
+																																																								// use
+																																																								// template.getScope(),
+																																																								// otherwise
+																																																								// null
+				scopeForQuery = null;
+			}
+
 		}
 
 		this.scopeName = scopeForQuery;
 		this.collectionName = collectionForQuery;
 		this.options = optionsForQuery;
+
 	}
 
 	/**
@@ -94,24 +139,33 @@ public class PseudoArgs<OPTS> {
 		return this.collectionName;
 	}
 
-	/**
-	 * @return the options from the ThreadLocal field of the template
-	 */
-	private OPTS getThreadLocalOptions(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : (OPTS) (template.getPseudoArgs().getOptions());
+	public String getScopeAnnotation(Class<?> domainType) {
+		// Document d = AnnotatedElementUtils.findMergedAnnotation(entityInformation.getJavaType(), Document.class);
+		if (domainType == null) {
+			return null;
+		}
+		Document documentAnnotation = domainType.getAnnotation(Document.class);
+		if (documentAnnotation != null && documentAnnotation.scope() != null
+				&& !CollectionIdentifier.DEFAULT_SCOPE.equals(documentAnnotation.scope())) {
+			return documentAnnotation.scope();
+		}
+		return null;
 	}
 
-	/**
-	 * @return the scope name from the ThreadLocal field of the template
-	 */
-	private String getThreadLocalScopeName(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getScope();
+	public String getCollectionAnnotation(Class<?> domainType) {
+		if (domainType == null) {
+			return null;
+		}
+		Document documentAnnotation = domainType.getAnnotation(Document.class);
+		if (documentAnnotation != null && documentAnnotation.collection() != null
+				&& !CollectionIdentifier.DEFAULT_COLLECTION.equals(documentAnnotation.collection())) {
+			return documentAnnotation.collection();
+		}
+		return null;
 	}
 
-	/**
-	 * @return the collection name from the ThreadLocal field of the template
-	 */
-	private String getThreadLocalCollectionName(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getCollection();
+	@Override
+	public String toString() {
+		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
 	}
 }

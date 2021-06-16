@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -45,8 +45,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY,null, null,
-				null, null);
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -73,10 +72,10 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public Flux<RemoveResult> all() {
 			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options);
+				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 				String statement = assembleDeleteQuery(pArgs.getCollection());
 				LOG.trace("statement: {}", statement);
-				Mono<ReactiveQueryResult> allResult = pArgs.getCollection() == null
+				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
 						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
 								buildQueryOptions(pArgs.getOptions()))
 						: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
@@ -105,7 +104,6 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}
@@ -136,7 +134,6 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}

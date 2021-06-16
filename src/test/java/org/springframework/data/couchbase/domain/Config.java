@@ -33,7 +33,9 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 
@@ -48,7 +50,10 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
+@EnableReactiveCouchbaseRepositories
 @EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+@EnableReactiveCouchbaseAuditing(auditorAwareRef = "reactiveAuditorAwareRef",
+		dateTimeProviderRef = "dateTimeProviderRef")
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";
@@ -102,6 +107,11 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Bean(name = "auditorAwareRef")
 	public NaiveAuditorAware testAuditorAware() {
 		return new NaiveAuditorAware();
+	}
+
+	@Bean(name = "reactiveAuditorAwareRef")
+	public ReactiveNaiveAuditorAware testReactiveAuditorAware() {
+		return new ReactiveNaiveAuditorAware();
 	}
 
 	@Bean(name = "dateTimeProviderRef")
@@ -177,7 +187,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	}
 
 	@Override
-	@Bean(name = "couchbaseMappingConverter")
+	@Bean(name = "mappingCouchbaseConverter")
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
 			CouchbaseCustomConversions couchbaseCustomConversions) {
 		// MappingCouchbaseConverter relies on a SimpleInformationMapper

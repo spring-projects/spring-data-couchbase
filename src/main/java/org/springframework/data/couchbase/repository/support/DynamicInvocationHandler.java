@@ -33,13 +33,11 @@ import com.couchbase.client.java.CommonOptions;
 /**
  * Invocation Handler for scope/collection/options proxy for repositories
  *
- * @param <T1>
- *
+ * @param <T>
  * @author Michael Reiche
- *
  */
-public class DynamicInvocationHandler<T1> implements InvocationHandler {
-	final T1 target;
+public class DynamicInvocationHandler<T> implements InvocationHandler {
+	final T target;
 	final Class<?> repositoryClass;
 	final CouchbaseEntityInformation<?, String> entityInformation;
 	final ReactiveCouchbaseTemplate reactiveTemplate;
@@ -47,7 +45,7 @@ public class DynamicInvocationHandler<T1> implements InvocationHandler {
 	String collection;
 	String scope;;
 
-	public DynamicInvocationHandler(T1 target, CommonOptions<?> options, String collection, String scope) {
+	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope) {
 		this.target = target;
 		if (target instanceof CouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
@@ -108,17 +106,15 @@ public class DynamicInvocationHandler<T1> implements InvocationHandler {
 			result = theMethod.invoke(target, args);
 		} catch (InvocationTargetException ite) {
 			throw ite.getCause();
-		} finally {
-			clearThreadLocal();
 		}
 		return result;
 	}
 
 	private void setThreadLocal() {
+		if (reactiveTemplate.getPseudoArgs() != null) {
+			throw new RuntimeException("pseudoArgs not yet consumed by previous caller");
+		}
 		reactiveTemplate.setPseudoArgs(new PseudoArgs(this.scope, this.collection, this.options));
 	}
 
-	private void clearThreadLocal() {
-		reactiveTemplate.setPseudoArgs(null);
-	}
 }

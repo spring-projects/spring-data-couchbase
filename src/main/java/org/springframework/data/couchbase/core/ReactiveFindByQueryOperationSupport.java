@@ -64,9 +64,6 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final String collection;
 		private String scope;
 		private final String[] distinctFields;
-		// this would hold scanConsistency etc. from the fluent api if they were converted from standalone fields
-		// withScope(scopeName) could put raw("query_context",default:<bucket>.<scope>)
-		// this is not the options argument in save( entity, options ). That becomes query.getCouchbaseOptions()
 		private final QueryOptions options;
 		private final ReactiveTemplateSupport support;
 
@@ -91,7 +88,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public FindByQueryWithQuery<T> matching(Query query) {
 			QueryScanConsistency scanCons;
-			if (query.getScanConsistency() != null) {
+			if (query.getScanConsistency() != null) { // redundant, since buildQueryOptions() will use
+																								// query.getScanConsistency()
 				scanCons = query.getScanConsistency();
 			} else {
 				scanCons = scanConsistency;
@@ -109,14 +107,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, support);
 		}
@@ -161,7 +157,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public Flux<T> all() {
 			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options);
+				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
 				String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 				LOG.trace("statement: {} {}", "findByQuery", statement);
 				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
@@ -208,10 +204,10 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options);
+				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
 				String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
 				LOG.trace("statement: {} {}", "findByQuery", statement);
-				Mono<ReactiveQueryResult> countResult = this.collection == null
+				Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
 						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
 								buildOptions(pArgs.getOptions()))
 						: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,

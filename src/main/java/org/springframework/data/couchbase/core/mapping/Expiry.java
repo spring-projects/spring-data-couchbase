@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
-import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -27,8 +24,6 @@ import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.annotation.Persistent;
-
-import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Identifies a domain object to be persisted to Couchbase.
@@ -40,7 +35,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
-public @interface Document {
+public @interface Expiry {
 
 	/**
 	 * An optional expiry time for the document. Default is no expiry. Only one of two might might be set at the same
@@ -67,24 +62,4 @@ public @interface Document {
 	 */
 	TimeUnit expiryUnit() default TimeUnit.SECONDS;
 
-	/**
-	 * An optional flag associated with {@link #expiry()} indicating whether the expiry timer should be reset whenever the
-	 * document is directly read (eg. findByOne, findById).
-	 */
-	boolean touchOnRead() default false;
-
-	/**
-	 * An optional string indicating the scope name
-	 */
-	String scope() default DEFAULT_SCOPE;
-
-	/**
-	 * An optional string indicating the collection name
-	 */
-	String collection() default DEFAULT_COLLECTION;
-
-	/**
-	 * An optional string indicating the query scan consistency
-	 */
-	QueryScanConsistency queryScanConsistency() default QueryScanConsistency.NOT_BOUNDED;
 }

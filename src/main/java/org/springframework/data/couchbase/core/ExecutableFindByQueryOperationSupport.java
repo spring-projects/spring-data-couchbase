@@ -68,7 +68,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.returnType = returnType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, returnType, query,
-					scanConsistency, scope, collection, options, distinctFields, new NonReactiveSupportWrapper(template.support()));
+					scanConsistency, scope, collection, options, distinctFields,
+					new NonReactiveSupportWrapper(template.support()));
 			this.scanConsistency = scanConsistency;
 			this.scope = scope;
 			this.collection = collection;
@@ -154,14 +155,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields);
 		}

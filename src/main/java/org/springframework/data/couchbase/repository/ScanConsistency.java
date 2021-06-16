@@ -28,7 +28,6 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * Scan Consistency Annotation
  *
  * @author Michael Reiche
- *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE })

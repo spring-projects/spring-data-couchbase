@@ -111,7 +111,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
 		SimpleReactiveCouchbaseRepository repository = getTargetRepositoryViaReflection(metadata, entityInformation,
-				couchbaseOperations);
+				couchbaseOperations, metadata.getRepositoryInterface());
 		repository.setRepositoryMethodMetadata(crudMethodMetadataPostProcessor.getCrudMethodMetadata());
 		return repository;
 	}

@@ -35,7 +35,6 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -176,7 +175,11 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 * @return the @ScanConsistency annotation
 	 */
 	public ScanConsistency getScanConsistencyAnnotation() {
-		return method.getAnnotation(ScanConsistency.class);
+		ScanConsistency sc = method.getAnnotation(ScanConsistency.class);
+		if (sc == null) {
+			sc = method.getDeclaringClass().getAnnotation(ScanConsistency.class);
+		}
+		return sc;
 	}
 
 	/**

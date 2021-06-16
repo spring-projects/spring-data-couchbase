@@ -75,8 +75,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs<>(template, scope, collection,
-					options != null ? options : UpsertOptions.upsertOptions());
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
@@ -121,14 +120,12 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public UpsertByIdWithDurability<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 
 		@Override
 		public UpsertByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}

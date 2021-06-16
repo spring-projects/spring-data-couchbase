@@ -28,6 +28,7 @@ import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.core.NamedThreadLocal;
+import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
@@ -36,6 +37,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.couchbase.client.core.io.CollectionIdentifier;
 
 /**
  * {@link RepositoryProxyPostProcessor} that sets up interceptors to read metadata information from the invoked method.
@@ -161,10 +164,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				try {
 					return invocation.proceed();
 				} finally {
-					TransactionSynchronizationManager.unbindResource(method);
+					// TransactionSynchronizationManager.unbindResource(method);
 				}
 			} finally {
-				currentInvocation.set(oldInvocation);
+				// currentInvocation.set(oldInvocation);
 			}
 		}
 	}
@@ -179,6 +182,9 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 		private final Method method;
 		private final ScanConsistency scanConsistency;
+		private String scope;
+		private String collection;
+		private Class<?> repositoryInterface;
 
 		/**
 		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}.
@@ -190,12 +196,25 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 			this.method = method;
 
 			ScanConsistency scanConsistency = null;
+			String scope = CollectionIdentifier.DEFAULT_SCOPE;
+			String collection = CollectionIdentifier.DEFAULT_COLLECTION;
+			for (Annotation ann : method.getDeclaringClass().getAnnotations()) {
+				if (ann instanceof ScanConsistency) {
+					scanConsistency = ((ScanConsistency) ann);
+				} else if (ann instanceof Document) {
+					scope = ((Document) ann).scope();
+					collection = ((Document) ann).collection();
+				}
+			}
 			for (Annotation ann : method.getAnnotations()) {
 				if (ann instanceof ScanConsistency) {
 					scanConsistency = ((ScanConsistency) ann);
 				}
 			}
+
 			this.scanConsistency = scanConsistency;
+			this.scope = scope;
+			this.collection = collection;
 		}
 
 		/*
@@ -210,6 +229,21 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 		@Override
 		public ScanConsistency getScanConsistency() {
 			return scanConsistency;
+		}
+
+		@Override
+		public String getScope() {
+			return scope;
+		}
+
+		@Override
+		public String getCollection() {
+			return collection;
+		}
+
+		@Override
+		public Class<?> repositoryInterface() {
+			return repositoryInterface;
 		}
 	}
 

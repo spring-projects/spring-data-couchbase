@@ -79,8 +79,8 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 				namedQueries);
 		Query query = creator.createQuery();
 
-		if (LOG.isDebugEnabled()) {
-			LOG.debug("Created query " + query.export());
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("Created query " + query.export());
 		}
 
 		return query;

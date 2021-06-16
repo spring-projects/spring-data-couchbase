@@ -35,8 +35,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-
 /**
  * Reactive repository base implementation for Couchbase.
  *
@@ -49,19 +47,13 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  * @since 3.0
  */
-public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {
+public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T, ID>
+		implements ReactiveCouchbaseRepository<T, ID> {
 
 	/**
 	 * Holds the reference to the {@link CouchbaseOperations}.
 	 */
 	private final ReactiveCouchbaseOperations operations;
-
-	/**
-	 * Contains information about the entity being used in this repository.
-	 */
-	private final CouchbaseEntityInformation<T, String> entityInformation;
-
-	private CrudMethodMetadata crudMethodMetadata;
 
 	/**
 	 * Create a new Repository.
@@ -70,11 +62,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations) {
-		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
-		Assert.notNull(entityInformation, "CouchbaseEntityInformation must not be null!");
-
-		this.entityInformation = entityInformation;
+			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+		super(entityInformation, repositoryInterface);
 		this.operations = operations;
 	}
 
@@ -85,9 +74,11 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 		// if entity has non-null, non-zero version property, then replace()
 		Mono<S> result;
 		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
-			result = (Mono<S>) operations.replaceById(entityInformation.getJavaType()).one(entity);
+			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+					.one(entity);
 		} else {
-			result = (Mono<S>) operations.upsertById(entityInformation.getJavaType()).one(entity);
+			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+					.one(entity);
 		}
 		return result;
 	}
@@ -100,7 +91,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return Flux.fromIterable(entities).flatMap(this::save);
+		return Flux.fromIterable(entities).flatMap(e -> save(e));
 	}
 
 	@Override
@@ -111,7 +102,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<T> findById(ID id) {
-		return operations.findById(entityInformation.getJavaType()).one(id.toString());
+		return operations.findById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString());
 	}
 
 	@Override
@@ -123,7 +114,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public Mono<Boolean> existsById(ID id) {
 		Assert.notNull(id, "The given id must not be null!");
-		return operations.existsById().one(id.toString());
+		return operations.existsById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString());
 	}
 
 	@Override
@@ -142,7 +133,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	public Flux<T> findAllById(Iterable<ID> ids) {
 		Assert.notNull(ids, "The given Iterable of ids must not be null!");
 		List<String> convertedIds = Streamable.of(ids).stream().map(Objects::toString).collect(Collectors.toList());
-		return (Flux<T>) operations.findById(entityInformation.getJavaType()).all(convertedIds);
+		return (Flux<T>) operations.findById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+				.all(convertedIds);
 	}
 
 	@Override
@@ -153,7 +145,8 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Void> deleteById(ID id) {
-		return operations.removeById().one(id.toString()).then();
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString())
+				.then();
 	}
 
 	@Override
@@ -165,17 +158,20 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	@Override
 	public Mono<Void> delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return operations.removeById().one(entityInformation.getId(entity)).then();
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity))
+				.then();
 	}
 
 	@Override
 	public Mono<Void> deleteAllById(Iterable<? extends ID> ids) {
-		return operations.removeById().all(Streamable.of(ids).map(Object::toString).toList()).then();
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+				.all(Streamable.of(ids).map(Object::toString).toList()).then();
 	}
 
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
-		return operations.removeById().all(Streamable.of(entities).map(entityInformation::getId).toList()).then();
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+				.all(Streamable.of(entities).map(this::getId).toList()).then();
 	}
 
 	@Override
@@ -186,50 +182,24 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	@Override
 	public Mono<Long> count() {
-		return operations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).count();
+		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+				.inCollection(getCollection()).count();
 	}
 
 	@Override
 	public Mono<Void> deleteAll() {
-		return operations.removeByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency()).all()
-				.then();
+		return operations.removeByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+				.inCollection(getCollection()).all().then();
 	}
 
-	/**
-	 * Returns the information for the underlying template.
-	 *
-	 * @return the underlying entity information.
-	 */
-	@Override
-	public CouchbaseEntityInformation<T, String> getEntityInformation() {
-		return entityInformation;
+	private Flux<T> findAll(Query query) {
+		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+				.inCollection(getCollection()).matching(query).all();
 	}
 
 	@Override
 	public ReactiveCouchbaseOperations getOperations() {
 		return operations;
-	}
-
-	private Flux<T> findAll(Query query) {
-		return operations.findByQuery(entityInformation.getJavaType()).withConsistency(buildQueryScanConsistency())
-				.matching(query).all();
-	}
-
-	private QueryScanConsistency buildQueryScanConsistency() {
-		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
-		if (crudMethodMetadata.getScanConsistency() != null) {
-			scanConsistency = crudMethodMetadata.getScanConsistency().query();
-		}
-		return scanConsistency;
-	}
-
-	/**
-	 * Setter for the repository metadata, contains annotations on the overidden methods.
-	 *
-	 * @param crudMethodMetadata the injected repository metadata.
-	 */
-	void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
-		this.crudMethodMetadata = crudMethodMetadata;
 	}
 
 }
