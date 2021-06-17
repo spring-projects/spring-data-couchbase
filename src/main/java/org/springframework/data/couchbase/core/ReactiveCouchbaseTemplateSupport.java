@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Mono;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -26,6 +28,7 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
@@ -38,7 +41,6 @@ import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Mono;
 
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
@@ -65,15 +67,12 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 
 	@Override
 	public Mono<CouchbaseDocument> encodeEntity(final Object entityToEncode) {
-		return Mono.just(entityToEncode)
-				.doOnNext(entity -> maybeEmitEvent(new BeforeConvertEvent<>(entity)))
-				.flatMap(entity -> maybeCallBeforeConvert(entity, ""))
-				.map(maybeNewEntity -> {
+		return Mono.just(entityToEncode).doOnNext(entity -> maybeEmitEvent(new BeforeConvertEvent<>(entity)))
+				.flatMap(entity -> maybeCallBeforeConvert(entity, "")).map(maybeNewEntity -> {
 					final CouchbaseDocument converted = new CouchbaseDocument();
 					converter.write(maybeNewEntity, converted);
 					return converted;
-				})
-				.flatMap(converted -> maybeCallAfterConvert(entityToEncode, converted, "").thenReturn(converted))
+				}).flatMap(converted -> maybeCallAfterConvert(entityToEncode, converted, "").thenReturn(converted))
 				.doOnNext(converted -> maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted)));
 	}
 
@@ -98,17 +97,22 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedCas(final Object entity, final long cas) {
+	public Mono<Object> applyUpdatedCas(final Object entity, CouchbaseDocument converted, final long cas) {
 		return Mono.fromSupplier(() -> {
+			Object returnValue;
 			final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-			final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+			final CouchbasePersistentEntity<?> persistentEntity = mappingContext
+					.getRequiredPersistentEntity(entity.getClass());
 			final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 
 			if (versionProperty != null) {
 				accessor.setProperty(versionProperty, cas);
-				return accessor.getBean();
+				returnValue = accessor.getBean();
+			} else {
+				returnValue = entity;
 			}
-			return entity;
+			maybeEmitEvent(new AfterSaveEvent(returnValue, converted));
+			return returnValue;
 		});
 	}
 
@@ -116,7 +120,8 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	public Mono<Object> applyUpdatedId(final Object entity, Object id) {
 		return Mono.fromSupplier(() -> {
 			final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-			final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+			final CouchbasePersistentEntity<?> persistentEntity = mappingContext
+					.getRequiredPersistentEntity(entity.getClass());
 			final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 
 			if (idProperty != null) {
@@ -130,8 +135,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	@Override
 	public Long getCas(final Object entity) {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext
-				.getRequiredPersistentEntity(entity.getClass());
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
 
 		long cas = 0;
@@ -166,9 +170,9 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	}
 
 	/**
-	 * Set the {@link ReactiveEntityCallbacks} instance to use when invoking {@link
-	 * org.springframework.data.mapping.callback.ReactiveEntityCallbacks callbacks} like the {@link
-	 * ReactiveBeforeConvertCallback}.
+	 * Set the {@link ReactiveEntityCallbacks} instance to use when invoking
+	 * {@link org.springframework.data.mapping.callback.ReactiveEntityCallbacks callbacks} like the
+	 * {@link ReactiveBeforeConvertCallback}.
 	 * <p/>
 	 * Overrides potentially existing {@link EntityCallbacks}.
 	 *
@@ -180,7 +184,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 		this.reactiveEntityCallbacks = reactiveEntityCallbacks;
 	}
 
-	void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
+	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
 		if (canPublishEvent()) {
 			try {
 				this.applicationContext.publishEvent(event);

@@ -86,7 +86,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 							.getCollection(pArgs.getCollection()).reactive()
 							.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
 							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(insertedObject -> (Mono<T>) support.applyUpdatedCas(insertedObject, result.cas()))))
+									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

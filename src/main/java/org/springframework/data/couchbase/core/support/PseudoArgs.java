@@ -37,22 +37,20 @@ public class PseudoArgs<OPTS> {
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
 	 * 
-	 * @param template to hold
-	 * @param scope
-	 * @param collection
-	 * @param options
-	 * @param domainType
+	 * @param template which holds ThreadLocal pseudo args
+	 * @param scope - from calling operation
+	 * @param collection - from calling operation
+	 * @param options - from calling operation
+	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
 			Class<?> domainType) {
 
-		// ??? 1) template - values from the args (fluent api) [ or annotations??? ]
+		String scopeForQuery = null;
+		String collectionForQuery = null;
+		OPTS optionsForQuery = null;
 
-		String scopeForQuery = null; // = scope;
-		String collectionForQuery = null; // = collection;
-		OPTS optionsForQuery = null; // = options;
-
-		// 2) repository from DynamicProxy via template threadLocal - has precedence over annotation
+		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
 		PseudoArgs<OPTS> threadLocal = (PseudoArgs<OPTS>) template.getPseudoArgs();
 		template.setPseudoArgs(null);
@@ -63,26 +61,26 @@ public class PseudoArgs<OPTS> {
 		}
 
 		if (scopeForQuery == null) {
-			if (scope != null /* && !CollectionIdentifier.DEFAULT_SCOPE.equals(scope) */) { // from withScope(scope)
+			if (scope != null) { // from calling operation - withScope(scope)
 				scopeForQuery = scope;
 			}
 		}
 		if (collectionForQuery == null) {
-			if (collection != null /* && !CollectionIdentifier.DEFAULT_COLLECTION.equals(collection) */) { // withCollection(collection)
+			if (collection != null) { // from calling operation - withCollection(collection)
 				collectionForQuery = collection;
 			}
 		}
-		if (optionsForQuery == null) {
+		if (optionsForQuery == null) { // from calling operation - withOptions(options)
 			if (options != null) {
 				optionsForQuery = options;
 			}
 		}
 
-		if (scopeForQuery == null) { // from entity class
+		if (scopeForQuery == null) { // from annotation on entity class
 			scopeForQuery = getScopeAnnotation(domainType);
 		}
 
-		if (collectionForQuery == null) {
+		if (collectionForQuery == null) { // from annotation on entity class
 			collectionForQuery = getCollectionAnnotation(domainType);
 		}
 		// if a collection was specified but no scope, use the scope from the clientFactory
@@ -96,20 +94,8 @@ public class PseudoArgs<OPTS> {
 		if (scopeForQuery == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scopeForQuery)) {
 			if (collectionForQuery == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery)) {
 				collectionForQuery = null;
-			}
-			if (collectionForQuery == null || !CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery)) { // if
-																																																								// collection
-																																																								// isn't
-																																																								// null,
-																																																								// then
-																																																								// (maybe)
-																																																								// use
-																																																								// template.getScope(),
-																																																								// otherwise
-																																																								// null
 				scopeForQuery = null;
 			}
-
 		}
 
 		this.scopeName = scopeForQuery;

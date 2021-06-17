@@ -94,7 +94,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	@Override
 	public ReactiveRemoveById removeById() {
-		return new ReactiveRemoveByIdOperationSupport(this).removeById(null);
+		return removeById(null);
 	}
 
 	@Override

@@ -28,7 +28,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
 @Document
 public class AbstractEntity {
 
-	@Id @GeneratedValue(strategy = GenerationStrategy.UNIQUE) private String id;
+	@Id @GeneratedValue(strategy = GenerationStrategy.UNIQUE) private UUID id;
 
 	public AbstractEntity() {}
 
@@ -36,14 +36,14 @@ public class AbstractEntity {
 	 * @return the id
 	 */
 	public UUID getId() {
-		return UUID.fromString(id);
+		return id;
 	}
 
 	/**
 	 * set the id
 	 */
 	public void setId(UUID id) {
-		this.id = id.toString();
+		this.id = id;
 	}
 
 	/*

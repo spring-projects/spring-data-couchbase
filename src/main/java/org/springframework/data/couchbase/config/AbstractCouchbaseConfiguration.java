@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.Module;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
@@ -60,7 +59,6 @@ import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
-import com.couchbase.client.java.json.RepackagedJsonValueModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -74,8 +72,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
-
-	@Autowired ObjectMapper couchbaseObjectMapper;
 
 	/**
 	 * The connection string which allows the SDK to connect to the cluster.
@@ -144,7 +140,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		if (!nonShadowedJacksonPresent()) {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper));
+		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
 		configureEnvironment(builder);
 		return builder.build();
 	}

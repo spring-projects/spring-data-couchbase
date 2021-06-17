@@ -157,7 +157,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public Flux<T> all() {
 			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection,
+						options != null ? options : QueryOptions.queryOptions(), domainType);
 				String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 				LOG.trace("statement: {} {}", "findByQuery", statement);
 				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null

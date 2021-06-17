@@ -72,7 +72,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public Flux<RemoveResult> all() {
 			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection,
+						options != null ? options : QueryOptions.queryOptions(), domainType);
 				String statement = assembleDeleteQuery(pArgs.getCollection());
 				LOG.trace("statement: {}", statement);
 				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null

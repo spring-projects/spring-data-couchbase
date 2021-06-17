@@ -77,11 +77,11 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+            .flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+                     .getCollection(pArgs.getCollection()).reactive()
+                     .upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> (Mono<T>) support.applyUpdatedCas(updatedObject, result.cas()))))
+									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

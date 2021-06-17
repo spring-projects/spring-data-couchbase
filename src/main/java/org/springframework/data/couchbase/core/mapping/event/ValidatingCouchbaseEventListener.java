@@ -60,7 +60,6 @@ public class ValidatingCouchbaseEventListener extends AbstractCouchbaseEventList
 		Set violations = validator.validate(source);
 
 		if (!violations.isEmpty()) {
-
 			LOG.info("During object: {} validation violations found: {}", source, violations);
 			throw new ConstraintViolationException(violations);
 		}

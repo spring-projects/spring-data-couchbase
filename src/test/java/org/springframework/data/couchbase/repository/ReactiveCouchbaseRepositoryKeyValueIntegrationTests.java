@@ -73,7 +73,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 			Airport saved = airportRepository.save(vie).block();
 			Airport airport1 = airportRepository.findById(saved.getId()).block();
 			assertEquals(airport1, saved);
-			assertEquals(saved.getCreatedBy(), "auditor"); // NaiveAuditorAware will provide this
+			assertEquals(saved.getCreatedBy(), ReactiveNaiveAuditorAware.AUDITOR); // ReactiveNaiveAuditorAware will provide this
 		} finally {
 			airportRepository.delete(vie).block();
 		}

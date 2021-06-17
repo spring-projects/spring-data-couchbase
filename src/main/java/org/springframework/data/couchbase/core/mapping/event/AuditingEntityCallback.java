@@ -15,14 +15,16 @@
  */
 package org.springframework.data.couchbase.core.mapping.event;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.core.Ordered;
 import org.springframework.data.auditing.AuditingHandler;
 import org.springframework.data.auditing.IsNewAwareAuditingHandler;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.callback.EntityCallback;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.util.Assert;
-
 
 /**
  * {@link EntityCallback} to populate auditing related fields on an entity about to be saved.
@@ -30,9 +32,10 @@ import org.springframework.util.Assert;
  * @author Jorge Rodríguez Martín
  * @since 4.2
  */
-public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Ordered {
+public class AuditingEntityCallback implements BeforeConvertCallback<Object>, AfterConvertCallback<Object>, Ordered {
 
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
+	private static final Logger LOG = LoggerFactory.getLogger(AuditingEntityCallback.class);
 
 	/**
 	 * Creates a new {@link AuditingEntityCallback} using the given {@link MappingContext} and {@link AuditingHandler}
@@ -41,7 +44,6 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Or
 	 * @param auditingHandlerFactory must not be {@literal null}.
 	 */
 	public AuditingEntityCallback(ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory) {
-
 		Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null!");
 		this.auditingHandlerFactory = auditingHandlerFactory;
 	}
@@ -52,7 +54,19 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Or
 	 */
 	@Override
 	public Object onBeforeConvert(Object entity, String collection) {
-		return auditingHandlerFactory.getObject().markAudited(entity);
+		// LOG.trace("onBeforeConvert " + entity);
+		return entity; // markAudited called in AuditingEventListener.onApplicationEvent()
+										// auditingHandlerFactory.getObject().markAudited(entity);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.couchbase.core.mapping.event.AfterConvertCallback#onAfterConvert(java.lang.Object, CouchbaseDocument, java.lang.String)
+	 */
+	@Override
+	public Object onAfterConvert(Object entity, CouchbaseDocument document, String collection) {
+		// LOG.trace("onAfterConvert " + document);
+		return entity;
 	}
 
 	/*
@@ -63,6 +77,5 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Or
 	public int getOrder() {
 		return 100;
 	}
-
 
 }

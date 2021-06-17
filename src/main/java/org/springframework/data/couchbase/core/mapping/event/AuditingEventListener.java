@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core.mapping.event;
 
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.auditing.AuditingHandler;
@@ -33,7 +35,7 @@ import org.springframework.util.Assert;
  * @author Mark Paluch
  * @author Michael Reiche
  */
-public class AuditingEventListener implements ApplicationListener<BeforeConvertEvent<Object>> {
+public class AuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<Object>> {
 
 	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
 
@@ -41,9 +43,11 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
 		this.auditingHandlerFactory = null;
 	}
 
+	private static final Logger LOG = LoggerFactory.getLogger(AuditingEventListener.class);
+
 	/**
 	 * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
-	 * provided by the given {@link ObjectFactory}.
+	 * provided by the given {@link ObjectFactory}. Registered in CouchbaseAuditingRegistrar
 	 *
 	 * @param auditingHandlerFactory must not be {@literal null}.
 	 */
@@ -57,8 +61,19 @@ public class AuditingEventListener implements ApplicationListener<BeforeConvertE
 	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
 	 */
 	@Override
-	public void onApplicationEvent(BeforeConvertEvent<Object> event) {
-		Optional.ofNullable(event.getSource())//
-				.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
+	public void onApplicationEvent(CouchbaseMappingEvent<Object> event) {
+		if (event instanceof BeforeConvertEvent) {
+			Optional.ofNullable(event.getSource())//
+					.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
+		}
+		if (event instanceof BeforeSaveEvent) {}
+		if (event instanceof AfterSaveEvent) {}
+		if (event instanceof BeforeDeleteEvent) {}
+		if (event instanceof AfterDeleteEvent) {}
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("{} {}", event.getClass().getSimpleName(), event.getSource());
+		}
 	}
+
 }

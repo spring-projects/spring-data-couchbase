@@ -54,9 +54,8 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		} else {
 			throw new RuntimeException("Unknown target type: " + target.getClass());
 		}
-		this.entityInformation = target instanceof CouchbaseRepository
-				? ((CouchbaseRepository<?, String>) target).getEntityInformation()
-				: ((ReactiveCouchbaseRepository<?, String>) target).getEntityInformation();
+		this.entityInformation = ((CouchbaseRepositoryBase<?, String>) target).getEntityInformation();
+
 		this.options = options;
 		this.collection = collection;
 		this.scope = scope;

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.UUID;
 
 public class UnmanagedTestCluster extends TestCluster {
 
@@ -59,7 +60,7 @@ public class UnmanagedTestCluster extends TestCluster {
 
 	@Override
 	TestClusterConfig _start() throws Exception {
-		bucketname = "my_bucket"; // UUID.randomUUID().toString();
+		bucketname = UUID.randomUUID().toString();
 
 		Response postResponse = httpClient
 				.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))

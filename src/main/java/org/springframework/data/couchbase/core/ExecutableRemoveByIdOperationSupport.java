@@ -35,6 +35,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 	}
 
 	@Override
+	@Deprecated
 	public ExecutableRemoveById removeById() {
 		return removeById(null);
 	}

@@ -553,7 +553,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Airport saved = airportRepository.save(vie);
 			List<Airport> airports1 = airportRepository.findAllByIata("vie");
 			assertEquals(saved, airports1.get(0));
-			assertEquals(saved.getCreatedBy(), "auditor"); // NaiveAuditorAware will provide this
+			assertEquals(saved.getCreatedBy(), NaiveAuditorAware.AUDITOR); // NaiveAuditorAware will provide this
 		} finally {
 			airportRepository.delete(vie);
 		}

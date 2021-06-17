@@ -27,9 +27,10 @@ import reactor.core.publisher.Mono;
  */
 public class ReactiveNaiveAuditorAware implements ReactiveAuditorAware<String> {
 
+	public static final String AUDITOR = "reactive_auditor";
 	@Override
 	public Mono<String> getCurrentAuditor() {
-		return Mono.just("auditor");
+		return Mono.just(AUDITOR);
 	}
 
 }

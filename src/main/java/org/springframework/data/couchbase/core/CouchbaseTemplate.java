@@ -106,6 +106,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
+	@Deprecated
 	public ExecutableRemoveById removeById() {
 		return removeById(null);
 	}
@@ -116,6 +117,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
+	@Deprecated
 	public ExecutableExistsById existsById() {
 		return existsById(null);
 	}

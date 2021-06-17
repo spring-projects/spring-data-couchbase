@@ -343,7 +343,6 @@ public class Query {
 		if (scanConsistency != null) {
 			options.scanConsistency(scanConsistency);
 		}
-
 		return options;
 	}
 

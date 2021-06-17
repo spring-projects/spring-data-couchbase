@@ -32,6 +32,7 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 	}
 
 	@Override
+	@Deprecated
 	public ExecutableExistsById existsById() {
 		return existsById(null);
 	}
