@@ -53,7 +53,7 @@ public interface PartyRepository extends CouchbaseRepository<Party, String> {
 
   long countAllByDescriptionNotNull();
 
-  @WithConsistency(ScanConsistency.NOT_BOUNDED)
+  @WithConsistency(ScanConsistency.REQUEST_PLUS)
   @Query("SELECT MAX(attendees) FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
   long findMaxAttendees();
 
