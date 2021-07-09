@@ -18,9 +18,9 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
-import org.springframework.util.Assert;
 
 public class ExecutableFindFromReplicasByIdOperationSupport implements ExecutableFindFromReplicasByIdOperation {
 
@@ -54,7 +54,7 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 			this.options = options;
 			this.returnType = returnType;
 			this.reactiveSupport = new ReactiveFindFromReplicasByIdSupport<>(template.reactive(), domainType, returnType,
-					scope, collection, options,  new NonReactiveSupportWrapper(template.support()));
+					scope, collection, options, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -75,13 +75,11 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 		@Override
 		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
 		}
 
 		@Override
 		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
 		}
 

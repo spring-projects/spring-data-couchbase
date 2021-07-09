@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterSaveEvent;
 import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
@@ -30,11 +28,12 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
+import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterConvertCallback;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeConvertCallback;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeConvertEvent;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeSaveEvent;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.callback.EntityCallbacks;
@@ -68,13 +67,13 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 
 	@Override
 	public Mono<CouchbaseDocument> encodeEntity(final Object entityToEncode) {
-		return Mono.just(entityToEncode).doOnNext(entity -> maybeEmitEvent(new ReactiveBeforeConvertEvent<>(entity)))
+		return Mono.just(entityToEncode).doOnNext(entity -> maybeEmitEvent(new BeforeConvertEvent<>(entity)))
 				.flatMap(entity -> maybeCallBeforeConvert(entity, "")).map(maybeNewEntity -> {
 					final CouchbaseDocument converted = new CouchbaseDocument();
 					converter.write(maybeNewEntity, converted);
 					return converted;
 				}).flatMap(converted -> maybeCallAfterConvert(entityToEncode, converted, "").thenReturn(converted))
-				.doOnNext(converted -> maybeEmitEvent(new ReactiveBeforeSaveEvent<>(entityToEncode, converted)));
+				.doOnNext(converted -> maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted)));
 	}
 
 	@Override
@@ -112,7 +111,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 			} else {
 				returnValue = entity;
 			}
-			maybeEmitEvent(new ReactiveAfterSaveEvent(returnValue, converted));
+			maybeEmitEvent(new AfterSaveEvent(returnValue, converted));
 			return returnValue;
 		});
 	}

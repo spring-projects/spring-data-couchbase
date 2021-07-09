@@ -13,7 +13,6 @@ import org.springframework.data.auditing.config.AuditingBeanDefinitionRegistrarS
 import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEntityCallback;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEventListener;
 import org.springframework.util.Assert;
 
 /**
@@ -80,17 +79,6 @@ class ReactiveCouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrar
 		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
 
 		registerInfrastructureBeanWithId(builder.getBeanDefinition(), ReactiveAuditingEntityCallback.class.getName(),
-				registry);
-
-		// Register the AuditingEventListener
-
-		BeanDefinitionBuilder builder2 = BeanDefinitionBuilder.rootBeanDefinition(ReactiveAuditingEventListener.class);
-
-		builder2
-				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
-		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
-
-		registerInfrastructureBeanWithId(builder2.getBeanDefinition(), ReactiveAuditingEventListener.class.getName(),
 				registry);
 
 	}

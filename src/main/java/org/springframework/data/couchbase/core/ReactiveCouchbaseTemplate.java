@@ -43,7 +43,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
-	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
+	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = null;
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -64,7 +64,12 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	@Override
 	public ReactiveExistsById existsById() {
-		return new ReactiveExistsByIdOperationSupport(this).existsById();
+		return existsById(null);
+	}
+
+	@Override
+	public ReactiveExistsById existsById(Class<?> domainType) {
+		return new ReactiveExistsByIdOperationSupport(this).existsById(domainType);
 	}
 
 	@Override
@@ -89,7 +94,12 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	@Override
 	public ReactiveRemoveById removeById() {
-		return new ReactiveRemoveByIdOperationSupport(this).removeById();
+		return removeById(null);
+	}
+
+	@Override
+	public ReactiveRemoveById removeById(Class<?> domainType) {
+		return new ReactiveRemoveByIdOperationSupport(this).removeById(domainType);
 	}
 
 	@Override
@@ -158,11 +168,18 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * @return the pseudoArgs from the ThreadLocal field
 	 */
-	@Override
 	public PseudoArgs<?> getPseudoArgs() {
 		return threadLocalArgs == null ? null : threadLocalArgs.get();
+	}
+
+	/**
+	 * set the ThreadLocal field
+	 */
+	public void setPseudoArgs(PseudoArgs<?> threadLocalArgs) {
+		this.threadLocalArgs = new ThreadLocal<>();
+		this.threadLocalArgs.set(threadLocalArgs);
 	}
 
 }

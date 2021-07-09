@@ -40,7 +40,13 @@ public interface ReactiveRemoveByIdOperation {
 	/**
 	 * Removes a document.
 	 */
+	@Deprecated
 	ReactiveRemoveById removeById();
+
+	/**
+	 * Removes a document.
+	 */
+	ReactiveRemoveById removeById(Class<?> domainType);
 
 	/**
 	 * Terminating operations invoking the actual execution.
@@ -106,6 +112,7 @@ public interface ReactiveRemoveByIdOperation {
 	interface RemoveByIdWithDurability extends RemoveByIdInScope, WithDurability<RemoveResult> {
 		@Override
 		RemoveByIdInCollection withDurability(DurabilityLevel durabilityLevel);
+
 		@Override
 		RemoveByIdInCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 

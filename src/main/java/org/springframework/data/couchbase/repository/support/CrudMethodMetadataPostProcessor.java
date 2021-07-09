@@ -15,7 +15,10 @@
  */
 package org.springframework.data.couchbase.repository.support;
 
+import static org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation;
+
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +31,9 @@ import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.core.NamedThreadLocal;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
 import org.springframework.lang.Nullable;
@@ -161,10 +166,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				try {
 					return invocation.proceed();
 				} finally {
-					TransactionSynchronizationManager.unbindResource(method);
+					// TransactionSynchronizationManager.unbindResource(method);
 				}
 			} finally {
-				currentInvocation.set(oldInvocation);
+				// currentInvocation.set(oldInvocation);
 			}
 		}
 	}
@@ -179,23 +184,46 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 		private final Method method;
 		private final ScanConsistency scanConsistency;
+		private String scope;
+		private String collection;
 
 		/**
-		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}.
-		 *
+		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}. This collects data from implemented
+		 * methods (save(), findById() etc) that would be collected in query.setMeta() for unimplemented methods. There may
+		 * be annotations if the methods were overriden in the repository.
+		 * 
 		 * @param method must not be {@literal null}.
 		 */
 		DefaultCrudMethodMetadata(Method method) {
 			Assert.notNull(method, "Method must not be null!");
 			this.method = method;
-
+			String n = method.getName();
+			// internal methods
+			if (n.equals("getEntityInformation") || n.equals("getOperations") || n.equals("withOptions")
+					|| n.equals("withOptions") || n.equals("withScope")) {
+				this.scanConsistency = null;
+				return;
+			}
 			ScanConsistency scanConsistency = null;
-			for (Annotation ann : method.getAnnotations()) {
-				if (ann instanceof ScanConsistency) {
+			String scope = null;
+			String collection = null;
+
+			for (AnnotatedElement el : new AnnotatedElement[] { method.getDeclaringClass(), method }) {
+				Annotation ann;
+				if ((ann = findMergedAnnotation(el, ScanConsistency.class)) != null) {
 					scanConsistency = ((ScanConsistency) ann);
 				}
+				if ((ann = findMergedAnnotation(el, Scope.class)) != null) {
+					scope = ((Scope) ann).value();
+				}
+				if ((ann = findMergedAnnotation(el, Collection.class)) != null) {
+					collection = ((Collection) ann).value();
+				}
 			}
+
 			this.scanConsistency = scanConsistency;
+			this.scope = scope;
+			this.collection = collection;
 		}
 
 		/*
@@ -211,6 +239,17 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 		public ScanConsistency getScanConsistency() {
 			return scanConsistency;
 		}
+
+		@Override
+		public String getScope() {
+			return scope;
+		}
+
+		@Override
+		public String getCollection() {
+			return collection;
+		}
+
 	}
 
 	private static class ThreadBoundTargetSource implements TargetSource {

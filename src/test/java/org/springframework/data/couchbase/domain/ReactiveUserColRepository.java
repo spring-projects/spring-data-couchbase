@@ -16,10 +16,12 @@
 
 package org.springframework.data.couchbase.domain;
 
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -35,24 +37,27 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  */
 @Repository
 @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-public interface UserRepository extends CouchbaseRepository<User, String> {
+public interface ReactiveUserColRepository
+		extends ReactiveCouchbaseRepository<UserCol, String>, DynamicProxyable<ReactiveUserColRepository> {
 
-	List<User> findByFirstname(String firstname);
+	<S extends UserCol> Mono<S> save(S var1);
 
-	List<User> findByFirstnameIn(String... firstnames);
+	Flux<UserCol> findByFirstname(String firstname);
 
-	List<User> findByFirstnameIn(JsonArray firstnames);
+	Flux<UserCol> findByFirstnameIn(String... firstnames);
 
-	List<User> findByFirstnameAndLastname(String firstname, String lastname);
+	Flux<UserCol> findByFirstnameIn(JsonArray firstnames);
+
+	Flux<UserCol> findByFirstnameAndLastname(String firstname, String lastname);
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
-	List<User> getByFirstnameAndLastname(String firstname, String lastname);
+	Flux<UserCol> getByFirstnameAndLastname(String firstname, String lastname);
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (firstname = $first or lastname = $last)")
-	List<User> getByFirstnameOrLastname(@Param("first") String firstname, @Param("last") String lastname);
+	Flux<UserCol> getByFirstnameOrLastname(@Param("first") String firstname, @Param("last") String lastname);
 
-	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
+	Flux<UserCol> findByIdIsNotNullAndFirstnameEquals(String firstname);
 
-	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
+	Flux<UserCol> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
 
 }

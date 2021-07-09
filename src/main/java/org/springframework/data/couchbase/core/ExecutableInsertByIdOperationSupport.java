@@ -89,14 +89,12 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 
 		@Override
 		public InsertByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 
 		@Override
 		public InsertByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}

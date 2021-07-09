@@ -54,7 +54,7 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Af
 	 */
 	@Override
 	public Object onBeforeConvert(Object entity, String collection) {
-		//LOG.debug("onBeforeConvert " + entity);
+		// LOG.trace("onBeforeConvert " + entity);
 		return entity; // markAudited called in AuditingEventListener.onApplicationEvent()
 										// auditingHandlerFactory.getObject().markAudited(entity);
 	}
@@ -65,7 +65,7 @@ public class AuditingEntityCallback implements BeforeConvertCallback<Object>, Af
 	 */
 	@Override
 	public Object onAfterConvert(Object entity, CouchbaseDocument document, String collection) {
-		//LOG.debug("onAfterConvert " + document);
+		// LOG.trace("onAfterConvert " + document);
 		return entity;
 	}
 

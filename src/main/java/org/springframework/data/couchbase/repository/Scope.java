@@ -15,37 +15,32 @@
  */
 package org.springframework.data.couchbase.repository;
 
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
-import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.data.annotation.QueryAnnotation;
 
 /**
- * Scan Consistency Annotation
+ * Scope Annotation
  *
  * @author Michael Reiche
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE })
 @Documented
-public @interface ScanConsistency {
+@QueryAnnotation
+public @interface Scope {
 
 	/**
-	 * Specifies a custom scan consistency for N1QL queries.
+	 * Specifies the scope name
 	 *
-	 * @return the scan consistency configured, defaults to not bounded.
+	 * @return the scope name configured, defaults to DEFAULT_SCOPE.
 	 */
-	QueryScanConsistency query() default QueryScanConsistency.NOT_BOUNDED;
-
-	/**
-	 * Specifies a custom scan consistency for analytics queries.
-	 *
-	 * @return the scan consistency configured, defaults to not bounded.
-	 */
-	AnalyticsScanConsistency analytics() default AnalyticsScanConsistency.NOT_BOUNDED;
+	String value() default DEFAULT_SCOPE;
 
 }

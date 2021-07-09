@@ -89,8 +89,6 @@ public interface ReactiveFindByQueryOperation {
 		 */
 		Mono<Boolean> exists();
 
-		QueryOptions buildOptions(QueryOptions options);
-
 	}
 
 	/**

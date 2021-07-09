@@ -130,17 +130,17 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		Airport vie = new Airport("airports::vie", "vie", "low3");
 		Airport saved1 = airportRepository.save(vie).block();
 		Airport saved2 = airportRepository.save(vie.withId(UUID.randomUUID().toString())).block();
-                try {
-		airportRepository.findAll().collectList().block(); // findAll has QueryScanConsistency;
-		Mono<Airport> airport = airportRepository.findPolicySnapshotByPolicyIdAndEffectiveDateTime("any", 0);
-		System.out.println("------------------------------");
-		System.out.println(airport.block());
-		System.out.println("------------------------------");
-		Flux<Airport> airports = airportRepository.findPolicySnapshotAll();
-		System.out.println(airports.collectList().block());
-		System.out.println("------------------------------");
-		Mono<Airport> ap = getPolicyByIdAndEffectiveDateTime("x", Instant.now());
-		System.out.println(ap.block());
+		try {
+			airportRepository.findAll().collectList().block(); // findAll has QueryScanConsistency;
+			Mono<Airport> airport = airportRepository.findPolicySnapshotByPolicyIdAndEffectiveDateTime("any", 0);
+			System.out.println("------------------------------");
+			System.out.println(airport.block());
+			System.out.println("------------------------------");
+			Flux<Airport> airports = airportRepository.findPolicySnapshotAll();
+			System.out.println(airports.collectList().block());
+			System.out.println("------------------------------");
+			Mono<Airport> ap = getPolicyByIdAndEffectiveDateTime("x", Instant.now());
+			System.out.println(ap.block());
 		} finally {
 			airportRepository.delete(saved1).block();
 			airportRepository.delete(saved2).block();
@@ -242,6 +242,22 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 					.expectNext(vienna, frankfurt, losAngeles).verifyComplete();
 
 			airportRepository.deleteAll().as(StepVerifier::create).verifyComplete();
+
+			airportRepository.findAll().as(StepVerifier::create).verifyComplete();
+		} finally {
+			airportRepository.deleteAll().block();
+		}
+	}
+
+	@Test
+	void deleteOne() {
+
+		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
+
+		try {
+			Airport ap = airportRepository.save(vienna).block();
+			assertEquals(vienna.getId(), ap.getId(), "should have saved what was provided");
+			airportRepository.delete(vienna).as(StepVerifier::create).verifyComplete();
 
 			airportRepository.findAll().as(StepVerifier::create).verifyComplete();
 		} finally {

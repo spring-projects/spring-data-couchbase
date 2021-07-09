@@ -65,24 +65,14 @@ public class AuditingEventListener implements ApplicationListener<CouchbaseMappi
 		if (event instanceof BeforeConvertEvent) {
 			Optional.ofNullable(event.getSource())//
 					.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
-			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (event instanceof BeforeSaveEvent) {
-			// LOG.info(event.getClass().getSimpleName() + " " + event);
-		}
-		if (event instanceof AfterSaveEvent) {
-			// LOG.info(event.getClass().getSimpleName() + " " + event);
-		}
-		if (event instanceof BeforeDeleteEvent) {
-			// LOG.info(event.getClass().getSimpleName() + " " + event);
-		}
-		if (event instanceof AfterDeleteEvent) {
-			// LOG.info(event.getClass().getSimpleName() + " " + event);
-		}
-		if (!event.getClass().getSimpleName().startsWith("Reactive")) {
-			if (LOG.isDebugEnabled()) {
-				LOG.debug(event.getClass().getSimpleName() + " " + event.getSource());
-			}
+		if (event instanceof BeforeSaveEvent) {}
+		if (event instanceof AfterSaveEvent) {}
+		if (event instanceof BeforeDeleteEvent) {}
+		if (event instanceof AfterDeleteEvent) {}
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("{} {}", event.getClass().getSimpleName(), event.getSource());
 		}
 	}
 

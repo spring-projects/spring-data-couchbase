@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllExistsReactive;
 import org.springframework.data.couchbase.core.support.WithExistsOptions;
 
 import com.couchbase.client.java.kv.ExistsOptions;
+
 /**
  * Exists Operations
  *
@@ -37,7 +38,13 @@ public interface ReactiveExistsByIdOperation {
 	/**
 	 * Checks if the document exists in the bucket.
 	 */
+	@Deprecated
 	ReactiveExistsById existsById();
+
+	/**
+	 * Checks if the document exists in the bucket.
+	 */
+	ReactiveExistsById existsById(Class<?> domainType);
 
 	/**
 	 * Terminating operations invoking the actual execution.

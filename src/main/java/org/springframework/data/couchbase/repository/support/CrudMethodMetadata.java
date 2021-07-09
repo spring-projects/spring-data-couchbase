@@ -31,4 +31,8 @@ public interface CrudMethodMetadata {
 	 */
 	ScanConsistency getScanConsistency();
 
+	String getScope();
+
+	String getCollection();
+
 }
