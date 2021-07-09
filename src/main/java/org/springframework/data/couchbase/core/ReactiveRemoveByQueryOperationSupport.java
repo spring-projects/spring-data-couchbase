@@ -36,7 +36,6 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 	private static final Query ALL_QUERY = new Query();
 
 	private final ReactiveCouchbaseTemplate template;
-
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveRemoveByQueryOperationSupport.class);
 
 	public ReactiveRemoveByQueryOperationSupport(final ReactiveCouchbaseTemplate template) {
@@ -71,26 +70,23 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public Flux<RemoveResult> all() {
-			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection,
-						options != null ? options : QueryOptions.queryOptions(), domainType);
-				String statement = assembleDeleteQuery(pArgs.getCollection());
-				LOG.trace("statement: {}", statement);
-				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
-						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-								buildQueryOptions(pArgs.getOptions()))
-						: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-								buildQueryOptions(pArgs.getOptions()));
-				return allResult.onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
-					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-						.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
-								Optional.empty()));
-			});
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			String statement = assembleDeleteQuery(pArgs.getCollection());
+			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
+			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
+					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
+							buildQueryOptions(pArgs.getOptions()))
+					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
+							buildQueryOptions(pArgs.getOptions()));
+			return Flux.defer(() -> allResult.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			}).flatMapMany(ReactiveQueryResult::rowsAsObject)
+					.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
+							Optional.empty())));
 		}
 
 		private QueryOptions buildQueryOptions(QueryOptions options) {

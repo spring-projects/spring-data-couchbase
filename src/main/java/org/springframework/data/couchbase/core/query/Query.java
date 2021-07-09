@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,7 @@ public class Query {
 	private int limit;
 	private Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
+	private Meta meta;
 
 	static private final Pattern WHERE_PATTERN = Pattern.compile("\\sWHERE\\s");
 	private static final Logger LOG = LoggerFactory.getLogger(Query.class);
@@ -326,28 +328,22 @@ public class Query {
 	 * @return QueryOptions
 	 */
 	public QueryOptions buildQueryOptions(QueryOptions options, QueryScanConsistency scanConsistency) {
-		if (options == null) { // add/override what we got from PseudoArgs
-			options = QueryOptions.queryOptions();
-		}
-		if (getParameters() != null) {
-			if (getParameters() instanceof JsonArray) {
-				options.parameters((JsonArray) getParameters());
-			} else {
-				options.parameters((JsonObject) getParameters());
-			}
-		}
-		if (scanConsistency == null
-				|| scanConsistency == QueryScanConsistency.NOT_BOUNDED && getScanConsistency() != null) {
-			scanConsistency = getScanConsistency();
-		}
-		if (scanConsistency != null) {
-			options.scanConsistency(scanConsistency);
-		}
-		return options;
+		return OptionsBuilder.buildQueryOptions(this, options, scanConsistency);
 	}
 
-	public void setMeta(Meta metaAnnotation) {
-		Meta meta = metaAnnotation;
+	/**
+	 * this collections annotations from the method, repository class and possibly the entity class to be used as options.
+	 * This will find annotations included in composed annotations as well. Ideally
+	 * 
+	 * @param method representing the query.
+	 * @return the query with the annotations applied
+	 */
+	public void setMeta(CouchbaseQueryMethod method, Class<?> typeToRead) {
+		meta = OptionsBuilder.buildMeta(method, typeToRead);
+	}
+
+	public Meta getMeta() {
+		return meta;
 	}
 
 }

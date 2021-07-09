@@ -68,8 +68,6 @@ public interface ReactiveInsertByIdOperation {
 		@Override
 		Flux<? extends T> all(Collection<? extends T> objects);
 
-		InsertOptions buildOptions(InsertOptions options, CouchbaseDocument doc);
-
 	}
 
 	/**

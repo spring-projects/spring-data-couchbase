@@ -16,16 +16,17 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Dimensional;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
-import org.springframework.data.couchbase.repository.Meta;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.mapping.context.MappingContext;
@@ -34,7 +35,6 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 /**
@@ -53,9 +53,7 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
 			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
 		super(method, metadata, factory);
-
 		this.method = method;
-
 	}
 
 	/**
@@ -183,35 +181,18 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
-	 * @return return true if {@link Meta} annotation is available.
+	 * @return annotation
 	 */
-	public boolean hasQueryMetaAttributes() {
-		return getMetaAnnotation() != null;
+	public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(method, annotationClass);
 	}
 
-	/**
-	 * @return return {@link Meta} annotation
-	 */
-	private Meta getMetaAnnotation() {
-		return method.getAnnotation(Meta.class);
+	public <A extends Annotation> A getClassAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotationClass);
 	}
 
-	/**
-	 * Returns the {@link org.springframework.data.couchbase.core.query.Meta} attributes to be applied.
-	 *
-	 * @return never {@literal null}.
-	 */
-	@Nullable
-	public org.springframework.data.couchbase.core.query.Meta getQueryMetaAttributes() {
-
-		Meta meta = getMetaAnnotation();
-		if (meta == null) {
-			return new org.springframework.data.couchbase.core.query.Meta();
-		}
-
-		org.springframework.data.couchbase.core.query.Meta metaAttributes = new org.springframework.data.couchbase.core.query.Meta();
-
-		return metaAttributes;
+	public <A extends Annotation> A getEntityAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(getEntityInformation().getJavaType(), annotationClass);
 	}
 
 	/**

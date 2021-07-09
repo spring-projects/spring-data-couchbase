@@ -87,7 +87,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public FindByIdInScope<T> project(String... fields) {
-			Assert.notEmpty(fields, "Fields must not be null nor empty.");
+			Assert.notEmpty(fields, "Fields must not be null.");
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields));
 		}
 

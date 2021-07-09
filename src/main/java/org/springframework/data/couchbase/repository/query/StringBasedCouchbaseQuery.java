@@ -88,7 +88,7 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 
 	@Override
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		return applyQueryMetaAttributesWhenPresent(createQuery(accessor));
+		return applyQueryMetaAttributesIfPresent(createQuery(accessor), null);
 	}
 
 	/*

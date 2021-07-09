@@ -127,8 +127,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		@Override
 		public FindByQueryWithProjection<T> distinct(final String[] distinctFields) {
 			Assert.notNull(distinctFields, "distinctFields must not be null!");
+			// Coming from an annotation, this cannot be null.
+			// But a non-null but empty distinctFields means distinct on all fields
+			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
+			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, dFields);
 		}
 
 		@Override

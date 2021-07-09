@@ -21,10 +21,9 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.context.EnvironmentAware;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mapping.MappingException;
-import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
@@ -98,11 +97,14 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 
 	@Override
 	public int getExpiry() {
-		Document annotation = getType().getAnnotation(Document.class);
+		return getExpiry(AnnotatedElementUtils.findMergedAnnotation(getType(), Expiry.class), environment);
+	}
+
+	public static int getExpiry(Expiry annotation, Environment environment) {
 		if (annotation == null)
 			return 0;
 
-		int expiryValue = getExpiryValue(annotation);
+		int expiryValue = getExpiryValue(annotation, environment);
 
 		long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
 		if (secondsShift > TTL_IN_SECONDS_INCLUSIVE_END) {
@@ -121,7 +123,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		}
 	}
 
-	private int getExpiryValue(Document annotation) {
+	private static int getExpiryValue(Expiry annotation, Environment environment) {
 		int expiryValue = annotation.expiry();
 		String expiryExpressionString = annotation.expiryExpression();
 		if (StringUtils.hasLength(expiryExpressionString)) {

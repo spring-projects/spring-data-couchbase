@@ -78,8 +78,8 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 			ParametersParameterAccessor accessor, @Nullable Class<?> typeToRead) {
 
 		Query query = createQuery(accessor);
-		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
+		query = applyQueryMetaAttributesIfPresent(query, typeToRead);
 
 		ReactiveFindByQuery<?> find = findOperationWithProjection;
 
@@ -116,6 +116,8 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
 		} else if (getQueryMethod().isCollectionQuery()) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+			// } else if (getQueryMethod().isStreamQuery()) {
+			// return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all().toStream();
 		} else if (isCountQuery()) {
 			return (q, t, c) -> operation.matching(q).count();
 		} else if (isExistsQuery()) {
@@ -128,18 +130,4 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 		}
 	}
 
-	/**
-	 * Apply Meta annotation to query
-	 *
-	 * @param query must not be {@literal null}.
-	 * @return Query
-	 */
-	Query applyQueryMetaAttributesWhenPresent(Query query) {
-
-		if (getQueryMethod().hasQueryMetaAttributes()) {
-			query.setMeta(getQueryMethod().getQueryMetaAttributes());
-		}
-
-		return query;
-	}
 }
