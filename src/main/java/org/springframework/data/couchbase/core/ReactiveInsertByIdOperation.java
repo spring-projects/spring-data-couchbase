@@ -21,7 +21,6 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
@@ -67,8 +66,6 @@ public interface ReactiveInsertByIdOperation {
 		 */
 		@Override
 		Flux<? extends T> all(Collection<? extends T> objects);
-
-		InsertOptions buildOptions(InsertOptions options, CouchbaseDocument doc);
 
 	}
 

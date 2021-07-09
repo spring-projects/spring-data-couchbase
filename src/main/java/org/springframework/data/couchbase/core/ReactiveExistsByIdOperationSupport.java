@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -70,12 +71,12 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public Mono<Boolean> one(final String id) {
-			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection,
-					options != null ? options : ExistsOptions.existsOptions(), domainType);
-			LOG.trace("statement: {} scope: {} collection: {}", "exitsById", pArgs.getScope(), pArgs.getCollection());
+			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			LOG.trace("existsById {}", pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().exists(id, pArgs.getOptions()).map(ExistsResult::exists))
+							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
+							.map(ExistsResult::exists))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -83,6 +84,10 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 							return throwable;
 						}
 					});
+		}
+
+		private ExistsOptions buildOptions(ExistsOptions options) {
+			return OptionsBuilder.buildExistsOptions(options);
 		}
 
 		@Override

@@ -31,4 +31,5 @@ import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepository<T, ID> {
 	ReactiveCouchbaseOperations getOperations();
 
+	CouchbaseEntityInformation<T, String> getEntityInformation();
 }

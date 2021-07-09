@@ -24,6 +24,7 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -34,8 +35,8 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ReactiveReplaceByIdOperationSupport.class);
 	private final ReactiveCouchbaseTemplate template;
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveReplaceByIdOperationSupport.class);
 
 	public ReactiveReplaceByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -79,7 +80,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
+			LOG.trace("replaceById {}", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
@@ -101,20 +102,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		}
 
 		private ReplaceOptions buildReplaceOptions(ReplaceOptions options, T object, CouchbaseDocument doc) {
-			options = options != null ? options : ReplaceOptions.replaceOptions();
-			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
-				options.durability(persistTo, replicateTo);
-			} else if (durabilityLevel != DurabilityLevel.NONE) {
-				options.durability(durabilityLevel);
-			}
-			if (expiry != null) {
-				options.expiry(expiry);
-			} else if (doc.getExpiration() != 0) {
-				options.expiry(Duration.ofSeconds(doc.getExpiration()));
-			}
-			long cas = support.getCas(object);
-			options.cas(cas);
-			return options;
+			return OptionsBuilder.buildReplaceOptions(options, persistTo, replicateTo, durabilityLevel, expiry,
+					support.getCas(object), doc);
 		}
 
 		@Override

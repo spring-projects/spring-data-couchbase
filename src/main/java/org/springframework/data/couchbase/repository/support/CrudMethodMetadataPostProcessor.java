@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.support;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,8 +28,10 @@ import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.core.NamedThreadLocal;
-import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.support.RepositoryProxyPostProcessor;
 import org.springframework.lang.Nullable;
@@ -39,6 +41,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * {@link RepositoryProxyPostProcessor} that sets up interceptors to read metadata information from the invoked method.
@@ -99,8 +102,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 		private final ConcurrentMap<Method, CrudMethodMetadata> metadataCache = new ConcurrentHashMap<>();
 		private final Set<Method> implementations = new HashSet<>();
+		private final RepositoryInformation repositoryInformation;
 
 		CrudMethodMetadataPopulatingMethodInterceptor(RepositoryInformation repositoryInformation) {
+			this.repositoryInformation = repositoryInformation;
 			ReflectionUtils.doWithMethods(repositoryInformation.getRepositoryInterface(), implementations::add,
 					method -> !repositoryInformation.isQueryMethod(method));
 		}
@@ -151,7 +156,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 				if (methodMetadata == null) {
 
-					methodMetadata = new DefaultCrudMethodMetadata(method);
+					methodMetadata = new DefaultCrudMethodMetadata(method, repositoryInformation);
 					CrudMethodMetadata tmp = metadataCache.putIfAbsent(method, methodMetadata);
 
 					if (tmp != null) {
@@ -182,39 +187,38 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 		private final Method method;
 		private final ScanConsistency scanConsistency;
-		private String scope;
-		private String collection;
-		private Class<?> repositoryInterface;
+		private final RepositoryInformation repositoryInformation;
+		private final String scope;
+		private final String collection;
 
 		/**
-		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}.
-		 *
+		 * Creates a new {@link DefaultCrudMethodMetadata} for the given {@link Method}. This collects data from implemented
+		 * methods (save(), findById() etc) that would be collected in query.setMeta() for unimplemented methods. There may
+		 * be annotations if the methods were overriden in the repository.
+		 * 
 		 * @param method must not be {@literal null}.
 		 */
-		DefaultCrudMethodMetadata(Method method) {
+		DefaultCrudMethodMetadata(Method method, RepositoryInformation repositoryInformation) {
 			Assert.notNull(method, "Method must not be null!");
 			this.method = method;
-
-			ScanConsistency scanConsistency = null;
-			String scope = CollectionIdentifier.DEFAULT_SCOPE;
-			String collection = CollectionIdentifier.DEFAULT_COLLECTION;
-			for (Annotation ann : method.getDeclaringClass().getAnnotations()) {
-				if (ann instanceof ScanConsistency) {
-					scanConsistency = ((ScanConsistency) ann);
-				} else if (ann instanceof Document) {
-					scope = ((Document) ann).scope();
-					collection = ((Document) ann).collection();
-				}
-			}
-			for (Annotation ann : method.getAnnotations()) {
-				if (ann instanceof ScanConsistency) {
-					scanConsistency = ((ScanConsistency) ann);
-				}
+			this.repositoryInformation = repositoryInformation;
+			String n = method.getName();
+			// internal methods
+			if (n.equals("getEntityInformation") || n.equals("getOperations") || n.equals("withOptions")
+					|| n.equals("withOptions") || n.equals("withScope")) {
+				this.scanConsistency = null;
+				this.scope = null;
+				this.collection = null;
+				return;
 			}
 
-			this.scanConsistency = scanConsistency;
-			this.scope = scope;
-			this.collection = collection;
+			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
+					repositoryInformation.getRepositoryInterface(), repositoryInformation.getDomainType() };
+			this.scanConsistency = OptionsBuilder.annotation(ScanConsistency.class, "query", QueryScanConsistency.NOT_BOUNDED,
+					annotated);
+			this.scope = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
+			this.collection = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
+					annotated);
 		}
 
 		/*
@@ -241,10 +245,6 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 			return collection;
 		}
 
-		@Override
-		public Class<?> repositoryInterface() {
-			return repositoryInterface;
-		}
 	}
 
 	private static class ThreadBoundTargetSource implements TargetSource {

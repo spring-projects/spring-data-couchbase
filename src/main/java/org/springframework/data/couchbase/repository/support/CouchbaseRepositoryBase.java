@@ -1,7 +1,27 @@
+/*
+ * Copyright 2021 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.data.couchbase.repository.support;
 
-import org.springframework.data.couchbase.core.mapping.Document;
+import java.lang.reflect.AnnotatedElement;
+
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
@@ -49,15 +69,10 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 */
 
 	String getScope() {
-		String entityScope = getJavaType().getAnnotation(Document.class) != null
-				? getJavaType().getAnnotation(Document.class).scope()
-				: null;
-		String interfaceScope = repositoryInterface.getAnnotation(Document.class) != null
-				? repositoryInterface.getAnnotation(Document.class).scope()
-				: null;
-		return entityScope != null && !CollectionIdentifier.DEFAULT_SCOPE.equals(entityScope) ? entityScope
-				: (interfaceScope != null && !interfaceScope.equals(CollectionIdentifier.DEFAULT_SCOPE) ? interfaceScope
-						: null);
+		String fromAnnotation = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE,
+				new AnnotatedElement[] { getJavaType(), repositoryInterface });
+		String fromMetadata = crudMethodMetadata.getScope();
+		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_SCOPE, fromMetadata, fromAnnotation);
 	}
 
 	/**
@@ -69,17 +84,10 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * 1. repository.withCollection()
 	 */
 	String getCollection() {
-		String entityCollection = getJavaType().getAnnotation(Document.class) != null
-				? getJavaType().getAnnotation(Document.class).collection()
-				: null;
-		String interfaceCollection = repositoryInterface.getAnnotation(Document.class) != null
-				? repositoryInterface.getAnnotation(Document.class).collection()
-				: null;
-		return entityCollection != null && !CollectionIdentifier.DEFAULT_COLLECTION.equals(entityCollection)
-				? entityCollection
-				: (interfaceCollection != null && !interfaceCollection.equals(CollectionIdentifier.DEFAULT_COLLECTION)
-						? interfaceCollection
-						: null);
+		String fromAnnotation = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
+				new AnnotatedElement[] { getJavaType(), repositoryInterface });
+		String fromMetadata = crudMethodMetadata.getCollection();
+		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_COLLECTION, fromMetadata, fromAnnotation);
 	}
 
 	/**
@@ -91,32 +99,17 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * This can be overriden in the operation method by<br>
 	 * 1. Options.scanConsistency (?)<br>
 	 * AbstractCouchbaseQueryBase.applyAnnotatedConsistencyIfPresent() <br>
-	 * TODO: Where can the annotation on an override in the repository interface of a method in<br>
 	 * CouchbaseRepository get picked up? If I have the following, will the annotation be picked up?<br>
 	 * Only via crudMethodMetadata<br>
 	 * \@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)<br>
 	 * List<T> findAll();<br>
 	 */
 	QueryScanConsistency buildQueryScanConsistency() {
-		try {
-			QueryScanConsistency scanConsistency;
-			ScanConsistency sc = crudMethodMetadata.getScanConsistency();
-			scanConsistency = sc != null ? sc.query() : null;
-			if (scanConsistency != null && scanConsistency != QueryScanConsistency.NOT_BOUNDED) {
-				return scanConsistency;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		QueryScanConsistency entityConsistency = getJavaType().getAnnotation(ScanConsistency.class) != null
-				? getJavaType().getAnnotation(ScanConsistency.class).query()
-				: null;
-		QueryScanConsistency interfaceCollection = repositoryInterface.getAnnotation(ScanConsistency.class) != null
-				? repositoryInterface.getAnnotation(ScanConsistency.class).query()
-				: null;
-		return entityConsistency != null && entityConsistency != QueryScanConsistency.NOT_BOUNDED ? entityConsistency
-				: (interfaceCollection != null && interfaceCollection != QueryScanConsistency.NOT_BOUNDED ? interfaceCollection
-						: null);
+		ScanConsistency sc = crudMethodMetadata.getScanConsistency();
+		QueryScanConsistency fromMeta = sc != null ? sc.query() : null;
+		QueryScanConsistency fromAnnotation = OptionsBuilder.annotationAttribute(ScanConsistency.class, "query",
+				QueryScanConsistency.NOT_BOUNDED, new AnnotatedElement[] { getJavaType(), repositoryInterface });
+		return OptionsBuilder.fromFirst(QueryScanConsistency.NOT_BOUNDED, fromMeta, fromAnnotation);
 	}
 
 	/**

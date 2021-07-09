@@ -16,20 +16,33 @@
 
 package org.springframework.data.couchbase.domain;
 
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.couchbase.core.RemoveResult;
-import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Expiry;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.DynamicProxyable;
+import org.springframework.data.couchbase.repository.Options;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
@@ -43,7 +56,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-@Document
+// @Scope("repositoryScope")
 // @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface AirportRepository extends CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository> {
 
@@ -56,6 +69,7 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	List<Airport> findAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@ComposedMetaAnnotation(collection = "_default", timeoutMs = 1000)
 	Airport findByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -106,4 +120,42 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Optional<Airport> findByIdAndIata(String id, String iata);
 
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ ElementType.METHOD, ElementType.TYPE })
+	// @Meta
+	@Scope
+	@Collection
+	@ScanConsistency
+	@Expiry
+	@Options
+	public @interface ComposedMetaAnnotation {
+
+		// @AliasFor(annotation = Meta.class, attribute = "maxExecutionTimeMs")
+		// long execTime() default -1;
+
+		@AliasFor(annotation = ScanConsistency.class, attribute = "query")
+		QueryScanConsistency query() default QueryScanConsistency.NOT_BOUNDED;
+
+		@AliasFor(annotation = ScanConsistency.class, attribute = "analytics")
+		AnalyticsScanConsistency analytics() default AnalyticsScanConsistency.NOT_BOUNDED;
+
+		@AliasFor(annotation = Scope.class, attribute = "value")
+		String scope() default DEFAULT_SCOPE;
+
+		@AliasFor(annotation = Collection.class, attribute = "value")
+		String collection() default DEFAULT_COLLECTION;
+
+		@AliasFor(annotation = Expiry.class, attribute = "expiry")
+		int expiry() default 0;
+
+		@AliasFor(annotation = Expiry.class, attribute = "expiryUnit")
+		TimeUnit expiryUnit() default TimeUnit.SECONDS;
+
+		@AliasFor(annotation = Expiry.class, attribute = "expiryExpression")
+		String expiryExpression() default "";
+
+		@AliasFor(annotation = Options.class, attribute = "timeoutMs")
+		long timeoutMs() default 0;
+
+	}
 }

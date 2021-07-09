@@ -20,6 +20,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -31,6 +34,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveRemoveByIdOperationSupport.class);
 
 	public ReactiveRemoveByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -76,7 +80,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 		@Override
 		public Mono<RemoveResult> one(final String id) {
-			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			LOG.trace("removeById {}", pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().remove(id, buildRemoveOptions(pArgs.getOptions()))
@@ -96,16 +101,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		private RemoveOptions buildRemoveOptions(RemoveOptions options) {
-			options = options != null ? options : RemoveOptions.removeOptions();
-			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
-				options.durability(persistTo, replicateTo);
-			} else if (durabilityLevel != DurabilityLevel.NONE) {
-				options.durability(durabilityLevel);
-			}
-			if (cas != null) {
-				options.cas(cas);
-			}
-			return options;
+			return OptionsBuilder.buildRemoveOptions(options, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 		@Override

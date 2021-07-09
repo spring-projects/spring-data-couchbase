@@ -91,7 +91,7 @@ public class ReactiveStringBasedCouchbaseQuery extends AbstractReactiveCouchbase
 
 	@Override
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		return applyQueryMetaAttributesWhenPresent(createQuery(accessor));
+		return applyQueryMetaAttributesIfPresent(createQuery(accessor), null);
 	}
 
 	/*

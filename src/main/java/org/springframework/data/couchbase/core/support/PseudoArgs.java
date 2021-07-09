@@ -15,8 +15,11 @@
  */
 package org.springframework.data.couchbase.core.support;
 
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.fromFirst;
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.getCollectionFrom;
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.getScopeFrom;
+
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.core.mapping.Document;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
 
@@ -54,35 +57,16 @@ public class PseudoArgs<OPTS> {
 
 		PseudoArgs<OPTS> threadLocal = (PseudoArgs<OPTS>) template.getPseudoArgs();
 		template.setPseudoArgs(null);
-		if (threadLocal != null) { // repository.withScope()
-			scopeForQuery = /* scopeForQuery != null ? scopeForQuery : */ threadLocal.getScope();
-			collectionForQuery = /* collectionForQuery != null ? collectionForQuery : */ threadLocal.getCollection();
-			optionsForQuery = /* optionsForQuery != null ? optionsForQuery : */ threadLocal.getOptions();
+		if (threadLocal != null) {
+			scopeForQuery = threadLocal.getScope();
+			collectionForQuery = threadLocal.getCollection();
+			optionsForQuery = threadLocal.getOptions();
 		}
 
-		if (scopeForQuery == null) {
-			if (scope != null) { // from calling operation - withScope(scope)
-				scopeForQuery = scope;
-			}
-		}
-		if (collectionForQuery == null) {
-			if (collection != null) { // from calling operation - withCollection(collection)
-				collectionForQuery = collection;
-			}
-		}
-		if (optionsForQuery == null) { // from calling operation - withOptions(options)
-			if (options != null) {
-				optionsForQuery = options;
-			}
-		}
+		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
+		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
+		optionsForQuery = fromFirst(null, options, optionsForQuery);
 
-		if (scopeForQuery == null) { // from annotation on entity class
-			scopeForQuery = getScopeAnnotation(domainType);
-		}
-
-		if (collectionForQuery == null) { // from annotation on entity class
-			collectionForQuery = getCollectionAnnotation(domainType);
-		}
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
 		if (collectionForQuery != null && scopeForQuery == null) {
@@ -123,31 +107,6 @@ public class PseudoArgs<OPTS> {
 	 */
 	public String getCollection() {
 		return this.collectionName;
-	}
-
-	public String getScopeAnnotation(Class<?> domainType) {
-		// Document d = AnnotatedElementUtils.findMergedAnnotation(entityInformation.getJavaType(), Document.class);
-		if (domainType == null) {
-			return null;
-		}
-		Document documentAnnotation = domainType.getAnnotation(Document.class);
-		if (documentAnnotation != null && documentAnnotation.scope() != null
-				&& !CollectionIdentifier.DEFAULT_SCOPE.equals(documentAnnotation.scope())) {
-			return documentAnnotation.scope();
-		}
-		return null;
-	}
-
-	public String getCollectionAnnotation(Class<?> domainType) {
-		if (domainType == null) {
-			return null;
-		}
-		Document documentAnnotation = domainType.getAnnotation(Document.class);
-		if (documentAnnotation != null && documentAnnotation.collection() != null
-				&& !CollectionIdentifier.DEFAULT_COLLECTION.equals(documentAnnotation.collection())) {
-			return documentAnnotation.collection();
-		}
-		return null;
 	}
 
 	@Override

@@ -41,7 +41,6 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	private static final Query ALL_QUERY = new Query();
 
 	private final ReactiveCouchbaseTemplate template;
-
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindByQueryOperationSupport.class);
 
 	public ReactiveFindByQueryOperationSupport(final ReactiveCouchbaseTemplate template) {
@@ -62,7 +61,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final Query query;
 		private final QueryScanConsistency scanConsistency;
 		private final String collection;
-		private String scope;
+		private final String scope;
 		private final String[] distinctFields;
 		private final QueryOptions options;
 		private final ReactiveTemplateSupport support;
@@ -138,10 +137,14 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		@Override
-		public FindByQueryWithDistinct<T> distinct(String[] distinctFields) {
+		public FindByQueryWithDistinct<T> distinct(final String[] distinctFields) {
 			Assert.notNull(distinctFields, "distinctFields must not be null!");
+			// Coming from an annotation, this cannot be null.
+			// But a non-null but empty distinctFields means distinct on all fields
+			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
+			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, dFields, support);
 		}
 
 		@Override
@@ -156,73 +159,65 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public Flux<T> all() {
-			return Flux.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection,
-						options != null ? options : QueryOptions.queryOptions(), domainType);
-				String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
-				LOG.trace("statement: {} {}", "findByQuery", statement);
-				Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
-						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-								buildOptions(pArgs.getOptions()))
-						: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-								buildOptions(pArgs.getOptions()));
-				return allResult.onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
+			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
+			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
+					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
+							buildOptions(pArgs.getOptions()))
+					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
+							buildOptions(pArgs.getOptions()));
+			return Flux.defer(() -> allResult.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
+				String id = "";
+				long cas = 0;
+				if (distinctFields == null) {
+					if (row.getString(TemplateUtils.SELECT_ID) == null) {
+						return Flux.error(new CouchbaseException(
+								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
+										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
-					String id = "";
-					long cas = 0;
-					if (distinctFields == null) {
-						if (row.getString(TemplateUtils.SELECT_ID) == null) {
-							return Flux.error(new CouchbaseException(
-									"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
-											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
-						}
-						id = row.getString(TemplateUtils.SELECT_ID);
-						if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
-							return Flux.error(new CouchbaseException(
-									"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
-											+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
-						}
-						cas = row.getLong(TemplateUtils.SELECT_CAS);
-						row.removeKey(TemplateUtils.SELECT_ID);
-						row.removeKey(TemplateUtils.SELECT_CAS);
+					id = row.getString(TemplateUtils.SELECT_ID);
+					if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
+						return Flux.error(new CouchbaseException(
+								"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
+										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 					}
-					return support.decodeEntity(id, row.toString(), cas, returnType);
-				});
-			});
+					cas = row.getLong(TemplateUtils.SELECT_CAS);
+					row.removeKey(TemplateUtils.SELECT_ID);
+					row.removeKey(TemplateUtils.SELECT_CAS);
+				}
+				return support.decodeEntity(id, row.toString(), cas, returnType);
+			}));
 		}
 
-		@Override
-		public QueryOptions buildOptions(QueryOptions options) {
+		private QueryOptions buildOptions(QueryOptions options) {
 			QueryOptions opts = query.buildQueryOptions(options, scanConsistency);
 			return opts;
 		}
 
 		@Override
 		public Mono<Long> count() {
-			return Mono.defer(() -> {
-				PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-				String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
-				LOG.trace("statement: {} {}", "findByQuery", statement);
-				Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
-						? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-								buildOptions(pArgs.getOptions()))
-						: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-								buildOptions(pArgs.getOptions()));
-				return countResult.onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
-					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
-					return row.getLong(TemplateUtils.SELECT_COUNT);
-				}).next();
-			});
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
+			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
+			Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
+					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
+							buildOptions(pArgs.getOptions()))
+					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
+							buildOptions(pArgs.getOptions()));
+			return Mono.defer(() -> countResult.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(TemplateUtils.SELECT_COUNT)).next());
 		}
 
 		@Override

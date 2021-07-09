@@ -21,7 +21,10 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.Collection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -33,6 +36,7 @@ import com.couchbase.client.java.kv.UpsertOptions;
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveUpsertByIdOperationSupport.class);
 
 	public ReactiveUpsertByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -75,11 +79,12 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			LOG.trace("upsertById {}", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
-            .flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-                     .getCollection(pArgs.getCollection()).reactive()
-                     .upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+							.getCollection(pArgs.getCollection()).reactive()
+							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
 									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
 					.onErrorMap(throwable -> {
@@ -97,18 +102,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		}
 
 		private UpsertOptions buildUpsertOptions(UpsertOptions options, CouchbaseDocument doc) {
-			options = options != null ? options : UpsertOptions.upsertOptions();
-			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
-				options.durability(persistTo, replicateTo);
-			} else if (durabilityLevel != DurabilityLevel.NONE) {
-				options.durability(durabilityLevel);
-			}
-			if (expiry != null) {
-				options.expiry(expiry);
-			} else if (doc.getExpiration() != 0) {
-				options.expiry(Duration.ofSeconds(doc.getExpiration()));
-			}
-			return options;
+			return OptionsBuilder.buildUpsertOptions(options, persistTo, replicateTo, durabilityLevel, expiry, doc);
 		}
 
 		@Override

@@ -35,5 +35,4 @@ public interface CrudMethodMetadata {
 
 	String getCollection();
 
-	Class<?> repositoryInterface();
 }

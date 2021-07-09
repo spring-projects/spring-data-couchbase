@@ -94,16 +94,16 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 	@Test
 	public void myTest() {
 
+		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		try {
-			airportRepository = airportRepository.withCollection(collectionName);
-			Airport saved = airportRepository.save(vie).block();
-			Airport airport2 = airportRepository.save(saved).block();
+			Airport saved = ar.save(vie).block();
+			Airport airport2 = ar.save(saved).block();
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.delete(vie).block();
+			ar.delete(vie).block();
 		}
 
 	}
@@ -119,26 +119,22 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		// create proxy with scope, collection
-		airportRepository = airportRepository.withScope(scopeName).withCollection(collectionName);
+		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		try {
-			Airport saved = airportRepository.save(vie).block();
+			Airport saved = ar.save(vie).block();
 
 			// valid scope, collection in options
-			Airport airport2 = airportRepository.withCollection(collectionName)
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
+			Airport airport2 = ar.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
 					.iata(vie.getIata()).block();
 			assertEquals(saved, airport2);
 
 			// given bad collectionName in fluent
-			assertThrows(IndexFailureException.class,
-					() -> airportRepository.withCollection("bogusCollection").iata(vie.getIata()).block());
+			assertThrows(IndexFailureException.class, () -> ar.withCollection("bogusCollection").iata(vie.getIata()).block());
 
 			// given bad scopeName in fluent
-			assertThrows(IndexFailureException.class,
-					() -> airportRepository.withScope("bogusScope").iata(vie.getIata()).block());
+			assertThrows(IndexFailureException.class, () -> ar.withScope("bogusScope").iata(vie.getIata()).block());
 
-			Airport airport6 = airportRepository
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
+			Airport airport6 = ar.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
 					.iata(vie.getIata()).block();
 			assertEquals(saved, airport6);
 
@@ -146,7 +142,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withScope(scopeName).withCollection(collectionName).deleteAll().block();
+			ar.deleteAll().block();
 		}
 	}
 
@@ -154,13 +150,13 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 	void findBySimplePropertyWithOptions() {
 
 		Airport vie = new Airport("airports::vie", "vie", "loww");
+		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		JsonArray positionalParams = JsonArray.create().add("\"this parameter will be overridden\"");
 		try {
-			Airport saved = airportRepository.withCollection(collectionName).save(vie).block();
+			Airport saved = ar.save(vie).block();
 
-			Airport airport3 = airportRepository
-					.withCollection(collectionName).withOptions(QueryOptions.queryOptions()
-							.scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
+			Airport airport3 = ar.withOptions(
+					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
 					.iata(vie.getIata()).block();
 			assertEquals(saved, airport3);
 
@@ -168,7 +164,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withCollection(collectionName).delete(vie).block();
+			ar.delete(vie).block();
 		}
 	}
 

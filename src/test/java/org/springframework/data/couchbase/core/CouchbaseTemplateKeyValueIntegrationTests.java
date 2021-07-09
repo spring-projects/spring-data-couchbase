@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -50,6 +49,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 ;
 
@@ -121,7 +121,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 					returned = (User) operator.one(user);
 					break;
 				} catch (Exception ofe) {
-					System.out.println(""+i+" caught: "+ofe);
+					System.out.println("" + i + " caught: " + ofe);
 					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 					if (i == 4) {
 						throw ofe;
@@ -259,7 +259,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 						.one(user);
 				break;
 			} catch (Exception ofe) {
-				System.out.println(""+i+" caught: "+ofe);
+				System.out.println("" + i + " caught: " + ofe);
 				couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 				if (i == 4) {
 					throw ofe;

@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.domain;
 
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.Collection;
+import org.springframework.data.couchbase.repository.Scope;
 
 /**
  * User entity for tests
@@ -26,7 +28,9 @@ import org.springframework.data.couchbase.core.mapping.Document;
  * @author Michael Reiche
  */
 
-@Document(scope = "other_scope", collection = "other_collection")
+@Document
+@Scope("other_scope")
+@Collection("other_collection")
 public class UserCol extends User {
 
 	@PersistenceConstructor

@@ -68,16 +68,16 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 		@Override
 		public Mono<T> any(final String id) {
-			return Mono.just(id).flatMap(docId -> {
-				GetAnyReplicaOptions garOptions = options != null ? options : getAnyReplicaOptions();
-				if (garOptions.build().transcoder() == null) {
-					garOptions.transcoder(RawJsonTranscoder.INSTANCE);
-				}
-				PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
-				LOG.trace("statement: {} scope: {} collection: {}", "getAnyReplica", pArgs.getScope(), pArgs.getCollection());
-				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
-						.reactive().getAnyReplica(docId, pArgs.getOptions());
-			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
+			GetAnyReplicaOptions garOptions = options != null ? options : getAnyReplicaOptions();
+			if (garOptions.build().transcoder() == null) {
+				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
+			}
+			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
+			LOG.trace("getAnyReplica {}", pArgs);
+			return Mono.just(id)
+					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
+					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

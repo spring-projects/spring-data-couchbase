@@ -39,11 +39,13 @@ public interface ExecutableRemoveByIdOperation {
 	 * Removes a document.
 	 */
 	ExecutableRemoveById removeById(Class<?> domainType);
+
 	/**
 	 * Removes a document.
 	 */
 	@Deprecated
 	ExecutableRemoveById removeById();
+
 	/**
 	 * Terminating operations invoking the actual execution.
 	 */

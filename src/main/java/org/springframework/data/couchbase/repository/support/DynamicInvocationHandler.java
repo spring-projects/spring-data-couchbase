@@ -39,6 +39,7 @@ import com.couchbase.client.java.CommonOptions;
 public class DynamicInvocationHandler<T> implements InvocationHandler {
 	final T target;
 	final Class<?> repositoryClass;
+	// needed only to detect parameters of this type to look for methods with parameter of java.lang.Object
 	final CouchbaseEntityInformation<?, String> entityInformation;
 	final ReactiveCouchbaseTemplate reactiveTemplate;
 	CommonOptions<?> options;
@@ -49,18 +50,17 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		this.target = target;
 		if (target instanceof CouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
+			this.entityInformation = ((CouchbaseRepository<?, String>) target).getEntityInformation();
 		} else if (target instanceof ReactiveCouchbaseRepository) {
 			reactiveTemplate = (ReactiveCouchbaseTemplate) ((ReactiveCouchbaseRepository) target).getOperations();
+			this.entityInformation = ((ReactiveCouchbaseRepository<?, String>) target).getEntityInformation();
 		} else {
 			throw new RuntimeException("Unknown target type: " + target.getClass());
 		}
-		this.entityInformation = ((CouchbaseRepositoryBase<?, String>) target).getEntityInformation();
-
 		this.options = options;
 		this.collection = collection;
 		this.scope = scope;
 		this.repositoryClass = target.getClass();
-
 	}
 
 	@Override
@@ -74,17 +74,17 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		 */
 
 		if (method.getName().equals("withOptions")) {
-			return Proxy.newProxyInstance(this.getClass().getClassLoader(), target.getClass().getInterfaces(),
+			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
 					new DynamicInvocationHandler<>(target, (CommonOptions) args[0], collection, scope));
 		}
 
 		if (method.getName().equals("withScope")) {
-			return Proxy.newProxyInstance(this.getClass().getClassLoader(), target.getClass().getInterfaces(),
+			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
 					new DynamicInvocationHandler<>(target, options, collection, (String) args[0]));
 		}
 
 		if (method.getName().equals("withCollection")) {
-			return Proxy.newProxyInstance(this.getClass().getClassLoader(), target.getClass().getInterfaces(),
+			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
 					new DynamicInvocationHandler<>(target, options, (String) args[0], scope));
 		}
 
@@ -95,6 +95,10 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 			paramTypes = Arrays.stream(args)
 					.map(o -> o == null ? null : (o.getClass() == entityInformation.getJavaType() ? Object.class : o.getClass()))
 					.toArray(Class<?>[]::new);
+			// the CouchbaseRepository methods - findById(id) etc - will have a parameter type of Object instead of ID
+			if (method.getName().endsWith("ById") && args.length == 1) {
+				paramTypes[0] = Object.class;
+			}
 		}
 
 		Method theMethod = repositoryClass.getMethod(method.getName(), paramTypes);

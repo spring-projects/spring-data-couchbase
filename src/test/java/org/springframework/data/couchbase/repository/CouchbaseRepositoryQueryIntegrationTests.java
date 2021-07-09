@@ -58,6 +58,7 @@ import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
@@ -194,9 +195,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "low6");
 			vie = airportRepository.save(vie);
 			Airport airport2 = airportRepository
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED))
+					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
 					.findByIata(vie.getIata());
-			assertEquals(airport2.getId(), vie.getId());
+			assertEquals(airport2, vie);
 
 			List<Airport> airports = airportRepository.findAllByIata("vie");
 			assertEquals(1, airports.size());
@@ -366,11 +367,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	public void testExpiryAnnotation() {
+		UserAnnotated user = new UserAnnotated("1", "Dave", "Wilson");
+		userRepository.save(user);
+		userRepository.findByFirstname("Dave");
+		sleep(2000);
+		assertThrows(DataRetrievalFailureException.class, () -> userRepository.delete(user));
+	}
+
+	@Test
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
 		try {
-
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
@@ -517,12 +526,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
 		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
 		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
-
 		try {
 			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
-
 			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
-
 			assertThat(airportRepository.findAll()).containsExactly(frankfurt);
 		} finally {
 			airportRepository.deleteAll();

@@ -93,16 +93,16 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 	@Test
 	public void myTest() {
 
+		AirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		try {
-			airportRepository = airportRepository.withCollection(collectionName);
-			Airport saved = airportRepository.save(vie);
-			Airport airport2 = airportRepository.save(saved);
+			Airport saved = ar.save(vie);
+			Airport airport2 = ar.save(saved);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.delete(vie);
+			ar.delete(vie);
 		}
 
 	}
@@ -118,25 +118,23 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		// create proxy with scope, collection
-		airportRepository = airportRepository.withScope(scopeName).withCollection(collectionName);
+		AirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		try {
-			Airport saved = airportRepository.save(vie);
+			Airport saved = ar.save(vie);
 
 			// valid scope, collection in options
-			Airport airport2 = airportRepository.withCollection(collectionName)
+			Airport airport2 = ar.withCollection(collectionName)
 					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
 					.iata(vie.getIata());
 			assertEquals(saved, airport2);
 
 			// given bad collectionName in fluent
-			assertThrows(IndexFailureException.class,
-					() -> airportRepository.withCollection("bogusCollection").iata(vie.getIata()));
+			assertThrows(IndexFailureException.class, () -> ar.withCollection("bogusCollection").iata(vie.getIata()));
 
 			// given bad scopeName in fluent
-			assertThrows(IndexFailureException.class, () -> airportRepository.withScope("bogusScope").iata(vie.getIata()));
+			assertThrows(IndexFailureException.class, () -> ar.withScope("bogusScope").iata(vie.getIata()));
 
-			Airport airport6 = airportRepository
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
+			Airport airport6 = ar.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
 					.iata(vie.getIata());
 			assertEquals(saved, airport6);
 
@@ -144,19 +142,20 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withScope(scopeName).withCollection(collectionName).deleteAll();
+			ar.deleteAll();
 		}
 	}
 
 	@Test
 	void findBySimplePropertyWithOptions() {
 
+		AirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		JsonArray positionalParams = JsonArray.create().add("\"this parameter will be overridden\"");
 		try {
-			Airport saved = airportRepository.withCollection(collectionName).save(vie);
+			Airport saved = ar.save(vie);
 
-			Airport airport3 = airportRepository.withCollection(collectionName).withOptions(
+			Airport airport3 = ar.withOptions(
 					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
 					.iata(vie.getIata());
 			assertEquals(saved, airport3);
@@ -165,7 +164,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			e.printStackTrace();
 			throw e;
 		} finally {
-			airportRepository.withCollection(collectionName).delete(vie);
+			ar.delete(vie);
 		}
 	}
 

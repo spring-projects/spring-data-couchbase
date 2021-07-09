@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 the original author or authors.
+ * Copyright 2013-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,32 @@
 
 package org.springframework.data.couchbase.repository.query;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Locale;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Dimensional;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.View;
 import org.springframework.data.couchbase.core.query.WithConsistency;
-import org.springframework.data.couchbase.repository.Meta;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
+
+import com.couchbase.client.core.io.CollectionIdentifier;
 
 /**
  * Represents a query method with couchbase extensions, allowing to discover if View-based query or N1QL-based query
@@ -49,13 +55,13 @@ import org.springframework.util.StringUtils;
 public class CouchbaseQueryMethod extends QueryMethod {
 
 	private final Method method;
+	private final RepositoryMetadata repositoryMetadata;
 
 	public CouchbaseQueryMethod(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
 			MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
 		super(method, metadata, factory);
-
 		this.method = method;
-
+		this.repositoryMetadata = metadata;
 	}
 
 	/**
@@ -175,43 +181,46 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 * @return the @ScanConsistency annotation
 	 */
 	public ScanConsistency getScanConsistencyAnnotation() {
-		ScanConsistency sc = method.getAnnotation(ScanConsistency.class);
-		if (sc == null) {
-			sc = method.getDeclaringClass().getAnnotation(ScanConsistency.class);
-		}
-		return sc;
+		AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
+				repositoryMetadata.getRepositoryInterface(), repositoryMetadata.getDomainType() };
+		return OptionsBuilder.annotation(ScanConsistency.class, "query", CollectionIdentifier.DEFAULT_COLLECTION,
+				annotated);
 	}
 
 	/**
-	 * @return return true if {@link Meta} annotation is available.
+	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
+	 * 
+	 * @return annotation
 	 */
-	public boolean hasQueryMetaAttributes() {
-		return getMetaAnnotation() != null;
+	public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(method, annotationClass);
 	}
 
 	/**
-	 * @return return {@link Meta} annotation
+	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
+	 * 
+	 * @return annotation
 	 */
-	private Meta getMetaAnnotation() {
-		return method.getAnnotation(Meta.class);
+	public <A extends Annotation> A getClassAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotationClass);
 	}
 
 	/**
-	 * Returns the {@link org.springframework.data.couchbase.core.query.Meta} attributes to be applied.
-	 *
-	 * @return never {@literal null}.
+	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
+	 * 
+	 * @return annotation
 	 */
-	@Nullable
-	public org.springframework.data.couchbase.core.query.Meta getQueryMetaAttributes() {
+	public <A extends Annotation> A getEntityAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(getEntityInformation().getJavaType(), annotationClass);
+	}
 
-		Meta meta = getMetaAnnotation();
-		if (meta == null) {
-			return new org.springframework.data.couchbase.core.query.Meta();
-		}
-
-		org.springframework.data.couchbase.core.query.Meta metaAttributes = new org.springframework.data.couchbase.core.query.Meta();
-
-		return metaAttributes;
+	/**
+	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
+	 * 
+	 * @return annotation
+	 */
+	public <A extends Annotation> A getRepositoryAnnotation(Class<A> annotationClass) {
+		return AnnotatedElementUtils.findMergedAnnotation(repositoryMetadata.getRepositoryInterface(), annotationClass);
 	}
 
 	/**
@@ -265,6 +274,20 @@ public class CouchbaseQueryMethod extends QueryMethod {
 			}
 		}
 		return false;
+	}
+
+	public String getCollection() {
+		// Try the repository method, then the repository class, then the entity class
+		AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
+				repositoryMetadata.getRepositoryInterface(), repositoryMetadata.getDomainType() };
+		return OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION, annotated);
+	}
+
+	public String getScope() {
+		// Try the repository method, then the repository class, then the entity class
+		AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
+				repositoryMetadata.getRepositoryInterface(), repositoryMetadata.getDomainType() };
+		return OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
 	}
 
 }
