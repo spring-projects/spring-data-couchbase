@@ -1,6 +1,18 @@
 Spring Data Couchbase Changelog
 ===============================
 
+Changes in version 4.3.0-M1 (2021-07-16)
+----------------------------------------
+* #1157 - upgrade java sdk version to 3.1.6.
+* #1141 - Custom converter for multibuckets.
+* #1140 - Feature 'Inject translation service bean in CouchbaseTemplateSupport' has been deleted.
+* #1131 - Delete N1QL query is deleting all documents instead of deleting only documents that matches the criteria.
+* #1130 - add couchbaseJsonValueModule bean to AbstractCouchbaseConfiguration.
+* #1104 - Update CI to Java 16.
+* #1074 - AfterSaveEvent is never triggered.
+* #963 - Support for Scope and Collection API Changes [DATACOUCH-655].
+
+
 Changes in version 4.1.11 (2021-07-16)
 --------------------------------------
 
@@ -1372,6 +1384,7 @@ Release Notes - Spring Data Couchbase - Version 1.0 M1 - 2013-09-11
     * [DATACOUCH-8] - Overhaul README with uptodate information
     * [DATACOUCH-9] - Add View query support to the Template
     * [DATACOUCH-10] - Upgrade parent pom to 1.1.0.RELEASE
+
 
 
 
