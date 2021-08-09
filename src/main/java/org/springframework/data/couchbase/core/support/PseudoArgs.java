@@ -15,8 +15,13 @@
  */
 package org.springframework.data.couchbase.core.support;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.fromFirst;
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.getCollectionFrom;
+import static org.springframework.data.couchbase.core.query.OptionsBuilder.getScopeFrom;
+
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+
+import com.couchbase.client.core.io.CollectionIdentifier;
 
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
@@ -35,24 +40,32 @@ public class PseudoArgs<OPTS> {
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
 	 * 
-	 * @param template to hold
-	 * @param scope
-	 * @param collection
-	 * @param options
+	 * @param template which holds ThreadLocal pseudo args
+	 * @param scope - from calling operation
+	 * @param collection - from calling operation
+	 * @param options - from calling operation
+	 * @param domainType - entity that may have annotations
 	 */
-	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options) {
+	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
+			Class<?> domainType) {
 
-		// 1) values from the args (fluent api)
+		String scopeForQuery = null;
+		String collectionForQuery = null;
+		OPTS optionsForQuery = null;
 
-		String scopeForQuery = scope;
-		String collectionForQuery = collection;
-		OPTS optionsForQuery = options;
+		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
-		// 2) from DynamicProxy via template threadLocal
+		PseudoArgs<OPTS> threadLocal = (PseudoArgs<OPTS>) template.getPseudoArgs();
+		template.setPseudoArgs(null);
+		if (threadLocal != null) {
+			scopeForQuery = threadLocal.getScope();
+			collectionForQuery = threadLocal.getCollection();
+			optionsForQuery = threadLocal.getOptions();
+		}
 
-		scopeForQuery = scopeForQuery != null ? scopeForQuery : getThreadLocalScopeName(template);
-		collectionForQuery = collectionForQuery != null ? collectionForQuery : getThreadLocalCollectionName(template);
-		optionsForQuery = optionsForQuery != null ? optionsForQuery : getThreadLocalOptions(template);
+		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
+		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
+		optionsForQuery = fromFirst(null, options, optionsForQuery);
 
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
@@ -62,56 +75,42 @@ public class PseudoArgs<OPTS> {
 
 		// specifying scope and collection = _default is not necessary and will fail if server doesn't have collections
 
-		if ((scopeForQuery == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scopeForQuery))
-				&& (collectionForQuery == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery))) {
-			scopeForQuery = null;
-			collectionForQuery = null;
+		if (scopeForQuery == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scopeForQuery)) {
+			if (collectionForQuery == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionForQuery)) {
+				collectionForQuery = null;
+				scopeForQuery = null;
+			}
 		}
 
 		this.scopeName = scopeForQuery;
 		this.collectionName = collectionForQuery;
 		this.options = optionsForQuery;
+
 	}
 
 	/**
-	 * @@return the options
+	 * @return the options
 	 */
 	public OPTS getOptions() {
 		return this.options;
 	}
 
 	/**
-	 * @@return the scope name
+	 * @return the scope name
 	 */
 	public String getScope() {
 		return this.scopeName;
 	}
 
 	/**
-	 * @@return the collection name
+	 * @return the collection name
 	 */
 	public String getCollection() {
 		return this.collectionName;
 	}
 
-	/**
-	 * @@return the options from the ThreadLocal field of the template
-	 */
-	private OPTS getThreadLocalOptions(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : (OPTS) (template.getPseudoArgs().getOptions());
-	}
-
-	/**
-	 * @@return the scope name from the ThreadLocal field of the template
-	 */
-	private String getThreadLocalScopeName(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getScope();
-	}
-
-	/**
-	 * @@return the collection name from the ThreadLocal field of the template
-	 */
-	private String getThreadLocalCollectionName(ReactiveCouchbaseTemplate template) {
-		return template.getPseudoArgs() == null ? null : template.getPseudoArgs().getCollection();
+	@Override
+	public String toString() {
+		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
 	}
 }

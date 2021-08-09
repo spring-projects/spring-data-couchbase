@@ -89,14 +89,12 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 
 		@Override
 		public UpsertByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}
 
 		@Override
 		public UpsertByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}

@@ -68,7 +68,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			this.returnType = returnType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, returnType, query,
-					scanConsistency, scope, collection, options, distinctFields, new NonReactiveSupportWrapper(template.support()));
+					scanConsistency, scope, collection, options, distinctFields,
+					new NonReactiveSupportWrapper(template.support()));
 			this.scanConsistency = scanConsistency;
 			this.scope = scope;
 			this.collection = collection;
@@ -126,8 +127,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		@Override
 		public FindByQueryWithProjection<T> distinct(final String[] distinctFields) {
 			Assert.notNull(distinctFields, "distinctFields must not be null!");
+			// Coming from an annotation, this cannot be null.
+			// But a non-null but empty distinctFields means distinct on all fields
+			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
+			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, dFields);
 		}
 
 		@Override
@@ -154,14 +159,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields);
 		}

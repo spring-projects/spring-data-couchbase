@@ -146,18 +146,14 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 			ParametersParameterAccessor accessor, @Nullable Class<?> typeToRead);
 
 	/**
-	 * Add a scan consistency from {@link org.springframework.data.couchbase.repository.ScanConsistency} to the given
-	 * {@link Query} if present.
+	 * Apply Meta annotation to query
 	 *
-	 * @param query the {@link Query} to potentially apply the sort to.
-	 * @return the query with potential scan consistency applied.
-	 * @since 4.1
+	 * @param query must not be {@literal null}.
+	 * @return Query
 	 */
-	Query applyAnnotatedConsistencyIfPresent(Query query) {
-		if (!method.hasScanConsistencyAnnotation()) {
-			return query;
-		}
-		return query.scanConsistency(method.getScanConsistencyAnnotation().query());
+	Query applyQueryMetaAttributesIfPresent(Query query, Class<?> typeToRead) {
+		query.setMeta(getQueryMethod(), typeToRead);
+		return query;
 	}
 
 	/**

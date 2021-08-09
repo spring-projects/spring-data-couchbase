@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
@@ -63,7 +62,9 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();
-		this.findOperationWithProjection = operations.findByQuery(type);
+		ReactiveFindByQuery<?> findOp = operations.findByQuery(type);
+		findOp = (ReactiveFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
+		this.findOperationWithProjection = findOp;
 	}
 
 	/**
@@ -79,18 +80,14 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 			ParametersParameterAccessor accessor, @Nullable Class<?> typeToRead) {
 
 		Query query = createQuery(accessor);
-		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
+		query = applyQueryMetaAttributesIfPresent(query, typeToRead);
 
-		ReactiveFindByQuery<?> find = typeToRead == null //
-				? findOperationWithProjection //
-				: findOperationWithProjection; // note yet implemented in core .as(typeToRead);
-
-		String collection = null;
+		ReactiveFindByQuery<?> find = findOperationWithProjection;
 
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), collection);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
 	}
 
 	/**
@@ -121,6 +118,8 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
 		} else if (getQueryMethod().isCollectionQuery()) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+			// } else if (getQueryMethod().isStreamQuery()) {
+			// return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all().toStream();
 		} else if (isCountQuery()) {
 			return (q, t, c) -> operation.matching(q).count();
 		} else if (isExistsQuery()) {
@@ -133,18 +132,4 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 		}
 	}
 
-	/**
-	 * Apply Meta annotation to query
-	 *
-	 * @param query must not be {@literal null}.
-	 * @return Query
-	 */
-	Query applyQueryMetaAttributesWhenPresent(Query query) {
-
-		if (getQueryMethod().hasQueryMetaAttributes()) {
-			query.setMeta(getQueryMethod().getQueryMetaAttributes());
-		}
-
-		return query;
-	}
 }

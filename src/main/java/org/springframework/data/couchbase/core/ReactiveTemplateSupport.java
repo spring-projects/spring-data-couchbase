@@ -15,24 +15,24 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-
-import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import reactor.core.publisher.Mono;
+
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 
 public interface ReactiveTemplateSupport {
 
-    Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
+	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
-    <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass);
+	<T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass);
 
-    <T> Mono<T> applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
+	<T> Mono<T> applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
 
-    <T> Mono<T> applyUpdatedId(T entity, Object id);
+	<T> Mono<T> applyUpdatedId(T entity, Object id);
 
-    Long getCas(Object entity);
+	Long getCas(Object entity);
 
-    String getJavaNameForEntity(Class<?> clazz);
+	String getJavaNameForEntity(Class<?> clazz);
 
-    void maybeEmitEvent(CouchbaseMappingEvent<?>  event);
+	void maybeEmitEvent(CouchbaseMappingEvent<?> event);
 }

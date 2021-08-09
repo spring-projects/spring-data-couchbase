@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.couchbase.repository.Query;
@@ -92,7 +91,7 @@ public interface PersonRepository extends CrudRepository<Person, String> {
 
 	<S extends Person> Iterable<S> saveAll(Iterable<S> var1);
 
-	Optional<Person> findById(UUID var1);
+	Person findById(UUID var1);
 
 	boolean existsById(UUID var1);
 

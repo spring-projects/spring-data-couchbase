@@ -89,8 +89,6 @@ public interface ReactiveFindByQueryOperation {
 		 */
 		Mono<Boolean> exists();
 
-		QueryOptions buildOptions(QueryOptions options);
-
 	}
 
 	/**
@@ -170,7 +168,7 @@ public interface ReactiveFindByQueryOperation {
 	}
 
 	/**
-	 * Fluent method to specify scan consistency.  Scan consistency may also come from an annotation.
+	 * Fluent method to specify scan consistency. Scan consistency may also come from an annotation.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */

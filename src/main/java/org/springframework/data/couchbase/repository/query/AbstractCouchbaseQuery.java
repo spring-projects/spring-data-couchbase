@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
@@ -60,10 +59,11 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		Assert.notNull(operations, "ReactiveCouchbaseOperations must not be null!");
 		Assert.notNull(expressionParser, "SpelExpressionParser must not be null!");
 		Assert.notNull(evaluationContextProvider, "QueryMethodEvaluationContextProvider must not be null!");
-		// this.operations = operations;
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();
-		this.findOperationWithProjection = operations.findByQuery(type);
+		ExecutableFindByQuery<?> findOp = operations.findByQuery(type);
+		findOp = (ExecutableFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
+		this.findOperationWithProjection = findOp;
 	}
 
 	/**
@@ -80,18 +80,14 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			ParametersParameterAccessor accessor, @Nullable Class<?> typeToRead) {
 
 		Query query = createQuery(accessor);
-
-		query = applyAnnotatedConsistencyIfPresent(query);
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
+		query = applyQueryMetaAttributesIfPresent(query, typeToRead);
 
-		ExecutableFindByQuery<?> find = typeToRead == null ? findOperationWithProjection //
-				: findOperationWithProjection; // not yet implemented in core .as(typeToRead);
-
-		String collection = null;
+		ExecutableFindByQuery<?> find = findOperationWithProjection;
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), collection);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
 	}
 
 	/**
@@ -114,8 +110,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	 * @param operation must not be {@literal null}.
 	 * @return
 	 */
-	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor,
-			ExecutableFindByQuery<?> operation) {
+	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor, ExecutableFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), getQueryMethod());
@@ -123,6 +118,8 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
 		} else if (getQueryMethod().isCollectionQuery()) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+		} else if (getQueryMethod().isStreamQuery()) {
+			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).stream();
 		} else if (isCountQuery()) {
 			return (q, t, c) -> operation.matching(q).count();
 		} else if (isExistsQuery()) {
@@ -140,18 +137,4 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		}
 	}
 
-	/**
-	 * Apply Meta annotation to query
-	 *
-	 * @param query must not be {@literal null}.
-	 * @return Query
-	 */
-	Query applyQueryMetaAttributesWhenPresent(Query query) {
-
-		if (getQueryMethod().hasQueryMetaAttributes()) {
-			query.setMeta(getQueryMethod().getQueryMetaAttributes());
-		}
-
-		return query;
-	}
 }
