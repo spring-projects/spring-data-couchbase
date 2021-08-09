@@ -15,10 +15,10 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-
-import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import reactor.core.publisher.Mono;
+
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.

@@ -63,7 +63,9 @@ public class ReactiveAuditingEntityCallback
 	 */
 	@Override
 	public Publisher<Object> onBeforeConvert(final Object entity, final String collection) {
-		LOG.debug("onBeforeConvert " + entity.toString());
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("onBeforeConvert {}", entity.toString());
+		}
 		return this.auditingHandlerFactory.getObject().markAudited(entity);
 	}
 
@@ -76,9 +78,12 @@ public class ReactiveAuditingEntityCallback
 	 */
 	@Override
 	public Publisher<Object> onAfterConvert(Object entity, CouchbaseDocument document, String collection) {
-		LOG.debug("onAfterConvert " + document.toString());
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("onAfterConvert {}", document.toString());
+		}
 		return Mono.just(entity);
 	}
+
 	/*
 	 * (non-Javadoc)
 	 *

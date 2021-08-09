@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.core.mapping.event;
+package org.springframework.data.couchbase.domain;
+
+import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.repository.Collection;
+import org.springframework.data.couchbase.repository.Scope;
 
 /**
+ * User entity for tests
+ *
+ * @author Michael Nitschinger
  * @author Michael Reiche
  */
-public class ReactiveBeforeDeleteEvent<E> extends CouchbaseMappingEvent<E> {
 
-	public ReactiveBeforeDeleteEvent(E source) {
-		super(source, null);
+@Document
+@Scope("other_scope")
+@Collection("other_collection")
+public class UserCol extends User {
+
+	@PersistenceConstructor
+	public UserCol(final String id, final String firstname, final String lastname) {
+		super(id, firstname, lastname);
 	}
 
 }

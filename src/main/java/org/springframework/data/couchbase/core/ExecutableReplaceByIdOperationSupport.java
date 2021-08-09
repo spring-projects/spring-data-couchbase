@@ -82,7 +82,6 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 
 		@Override
 		public ReplaceByIdWithOptions<T> inCollection(final String collection) {
-			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
 					replicateTo, durabilityLevel, expiry);
 		}
@@ -118,7 +117,6 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
-			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
 					replicateTo, durabilityLevel, expiry);
 		}

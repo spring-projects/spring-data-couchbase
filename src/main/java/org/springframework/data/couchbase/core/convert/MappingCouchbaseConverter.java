@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -530,6 +531,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						IdAttribute idAttribute = prop.findAnnotation(IdAttribute.class);
 						int order = idAttribute.order();
 						idAttributes.put(order, convertToString(propertyObj));
+					}
+
+					if (prop.isAnnotationPresent(Transient.class)) {
+						return;
 					}
 
 					if (!conversions.isSimpleType(propertyObj.getClass())) {

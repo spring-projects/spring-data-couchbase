@@ -15,9 +15,9 @@
  */
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.domain.ReactiveAuditorAware;
 import reactor.core.publisher.Mono;
 
+import org.springframework.data.domain.ReactiveAuditorAware;
 
 /**
  * This class returns a string that represents the current user
@@ -28,6 +28,7 @@ import reactor.core.publisher.Mono;
 public class ReactiveNaiveAuditorAware implements ReactiveAuditorAware<String> {
 
 	public static final String AUDITOR = "reactive_auditor";
+
 	@Override
 	public Mono<String> getCurrentAuditor() {
 		return Mono.just(AUDITOR);
