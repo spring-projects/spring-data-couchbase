@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.core.CollectionFactory;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.annotation.Transient;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.EntityInstantiator;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
@@ -117,11 +118,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	private @Nullable EntityCallbacks entityCallbacks;
 
 	public MappingCouchbaseConverter() {
-		super(new DefaultConversionService());
-
-		this.typeMapper = new DefaultCouchbaseTypeMapper(TYPEKEY_DEFAULT);
-		this.mappingContext = new CouchbaseMappingContext();
-		this.spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
+		this(new CouchbaseMappingContext(), null);
 	}
 
 	/**
@@ -131,7 +128,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	public MappingCouchbaseConverter(
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext) {
-		this(mappingContext, TYPEKEY_DEFAULT);
+		this(mappingContext, null);
 	}
 
 	/**
@@ -145,8 +142,14 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
 			final String typeKey) {
 		super(new DefaultConversionService());
-
 		this.mappingContext = mappingContext;
+		// this is how the MappingCouchbaseConverter gets the custom conversions.
+		// the conversions Service gets them in afterPropertiesSet()
+		CustomConversions customConversions = new CouchbaseCustomConversions(Collections.emptyList());
+		this.setCustomConversions(customConversions);
+		// if the mappingContext does not have the SimpleTypes, it will not know that they have converters, then it will
+		// try to access the fields of the type and (maybe) fail with InaccessibleObjectException
+		((CouchbaseMappingContext) mappingContext).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT);
 		spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
 	}

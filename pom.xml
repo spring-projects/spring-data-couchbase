@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>3.1.6</couchbase>
-        <couchbase.osgi>3.1.6</couchbase.osgi>
+        <couchbase>3.2.0</couchbase>
+        <couchbase.osgi>3.2.0</couchbase.osgi>
         <springdata.commons>2.6.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
@@ -273,6 +273,14 @@
                 <groupId>org.asciidoctor</groupId>
                 <artifactId>asciidoctor-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 </project>
