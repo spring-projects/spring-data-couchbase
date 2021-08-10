@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
@@ -421,8 +422,10 @@ public class MappingCouchbaseConverterTests {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
-		converter.setCustomConversions(new CouchbaseCustomConversions(converters));
+		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
+		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
+		((CouchbaseMappingContext) converter.getMappingContext()).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 
@@ -469,8 +472,11 @@ public class MappingCouchbaseConverterTests {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
-		converter.setCustomConversions(new CouchbaseCustomConversions(converters));
+		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
+		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
+		((CouchbaseMappingContext) converter.getMappingContext()).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
+
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 
@@ -517,8 +523,10 @@ public class MappingCouchbaseConverterTests {
 		List<Object> converters = new ArrayList<>();
 		converters.add(BigDecimalToStringConverter.INSTANCE);
 		converters.add(StringToBigDecimalConverter.INSTANCE);
-		converter.setCustomConversions(new CouchbaseCustomConversions(converters));
+		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
+		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
+		((CouchbaseMappingContext) converter.getMappingContext()).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 

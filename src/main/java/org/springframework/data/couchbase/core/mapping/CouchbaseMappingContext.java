@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.lang.reflect.InaccessibleObjectException;
 import java.util.Optional;
 
 import org.springframework.beans.BeansException;
@@ -23,6 +24,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIndexCreator;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.context.AbstractMappingContext;
 import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -131,12 +133,17 @@ public class CouchbaseMappingContext
 	/**
 	 * override method from AbstractMappingContext as that method will not publishEvent() if it finds the entity has
 	 * already been cached
-	 * 
+	 *
 	 * @param typeInformation - entity type
 	 */
 	@Override
 	protected Optional<BasicCouchbasePersistentEntity<?>> addPersistentEntity(TypeInformation<?> typeInformation) {
-		Optional<BasicCouchbasePersistentEntity<?>> entity = super.addPersistentEntity(typeInformation);
+		Optional<BasicCouchbasePersistentEntity<?>> entity = null;
+		try {
+			entity = super.addPersistentEntity(typeInformation);
+		} catch (InaccessibleObjectException ioe) {
+			throw new MappingException("due to InaccessibleObjectException", ioe);
+		}
 
 		if (this.eventPublisher != null && entity.isPresent()) {
 			if (this.indexCreator != null) {
