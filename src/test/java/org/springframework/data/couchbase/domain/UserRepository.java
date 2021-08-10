@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -25,7 +27,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * User Repository for tests
@@ -34,10 +35,12 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
 public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
+
+	Stream<User> findByLastname(String lastname);
 
 	List<User> findByFirstnameIn(String... firstnames);
 
@@ -54,5 +57,4 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
 
 	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
-
 }

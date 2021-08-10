@@ -23,6 +23,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
 @CompositeQueryIndex(fields = { "id", "name desc" })
+@CompositeQueryIndex(fields = { "id.something", "name desc" })
 public class Airline extends ComparableEntity {
 	@Id String id;
 

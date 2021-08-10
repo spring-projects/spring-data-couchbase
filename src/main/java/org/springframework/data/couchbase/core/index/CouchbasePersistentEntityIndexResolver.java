@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,10 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolver {
 
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
@@ -103,7 +107,8 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 		String fieldName = index.name().isEmpty() ? property.getFieldName() : index.name();
 		fields.add(fieldName + (index.direction() == QueryIndexDirection.DESCENDING ? " DESC" : ""));
 
-		String indexName = "idx_" + StringUtils.uncapitalize(entity.getType().getSimpleName()) + "_" + fieldName;
+		String indexName = "idx_" + StringUtils.uncapitalize(entity.getType().getSimpleName()) + "_"
+				+ fieldName.replace(".", "_");
 
 		return new IndexDefinitionHolder(fields, indexName, getPredicate(entityInfo));
 	}
@@ -126,8 +131,8 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 
 		return indexAnnotations.stream().map(ann -> {
 			List<String> fields = Arrays.asList(ann.fields());
-			String fieldsIndexName = String.join("_", fields).toLowerCase().replace(" ", "").replace("asc", "")
-					.replace("desc", "");
+			String fieldsIndexName = String.join("_", fields).toLowerCase().replace(".", "_").replace(" ", "")
+					.replace("asc", "").replace("desc", "");
 
 			String indexName = "idx_" + StringUtils.uncapitalize(entity.getType().getSimpleName()) + "_" + fieldsIndexName;
 			return new IndexDefinitionHolder(fields, indexName, predicate);
