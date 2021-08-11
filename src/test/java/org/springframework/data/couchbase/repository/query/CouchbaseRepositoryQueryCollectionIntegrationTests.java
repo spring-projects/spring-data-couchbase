@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -178,7 +179,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 																																										// scope
 			List<UserCol> found = userColRepository.withCollection(otherCollection).findByFirstname(user.getFirstname());
 			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = userColRepository.withScope(CollectionIdentifier.DEFAULT_SCOPE)
+			List<UserCol> notfound = userColRepository.withScope(DEFAULT_SCOPE)
 					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
 			assertEquals(0, notfound.size(), "should not have found what was saved");
 		} finally {
@@ -186,6 +187,20 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 				userColRepository.withScope(otherScope).withCollection(otherCollection).delete(user);
 			} catch (DataRetrievalFailureException drfe) {}
 		}
+	}
+
+	@Test
+	public void testScopeCollectionAnnotationSwap() {
+		// UserCol annotation scope is other_scope, collection is other_collection
+		// airportRepository relies on Config.setScopeName(scopeName) ("my_scope") from CollectionAwareIntegrationTests.
+		// using airportRepository without specified a collection should fail.
+		// This test ensures that airportRepository.save(airport) doesn't get the
+		// collection from CrudMethodMetadata of UserCol.save()
+		UserCol userCol = new UserCol("1", "Dave", "Wilson");
+		Airport airport = new Airport("3", "myIata", "myIcao");
+		UserCol savedCol = userColRepository.save(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
+		userColRepository.delete(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
+		assertThrows(IllegalStateException.class, () -> airportRepository.save(airport));
 	}
 
 	// template default scope is my_scope
@@ -198,7 +213,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			List<UserCol> found = userColRepository.withScope(scopeName).withCollection(collectionName)
 					.findByFirstname(user.getFirstname());
 			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = userColRepository.withScope(CollectionIdentifier.DEFAULT_SCOPE)
+			List<UserCol> notfound = userColRepository.withScope(DEFAULT_SCOPE)
 					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
 			assertEquals(0, notfound.size(), "should not have found what was saved");
 			userColRepository.withScope(scopeName).withCollection(collectionName).delete(user);
