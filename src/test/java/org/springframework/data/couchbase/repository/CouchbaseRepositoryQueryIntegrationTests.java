@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,6 +231,21 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		user.setVersion(0);
 		userRepository.save(user);
 		userRepository.delete(user);
+	}
+
+	@Test
+	public void testStreamQuery() {
+		User user1 = new User("1", "Dave", "Wilson");
+		User user2 = new User("2", "Brian", "Wilson");
+
+		userRepository.save(user1);
+		userRepository.save(user2);
+		List<User> users = userRepository.findByLastname("Wilson").collect(Collectors.toList());
+		assertEquals(2,users.size());
+		assertTrue(users.contains(user1));
+		assertTrue(users.contains(user2));
+		userRepository.delete(user1);
+		userRepository.delete(user2);
 	}
 
 	@Test
