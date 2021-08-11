@@ -19,8 +19,10 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -37,6 +39,7 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
 
+	@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
 	Stream<User> findByLastname(String lastname);
 
 	List<User> findByFirstnameIn(String... firstnames);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,10 @@ import org.springframework.data.mapping.context.MappingContextEvent;
 import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.java.Cluster;
 
+/**
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class CouchbasePersistentEntityIndexCreator implements ApplicationListener<MappingContextEvent<?, ?>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbasePersistentEntityIndexCreator.class);
@@ -95,7 +99,8 @@ public class CouchbasePersistentEntityIndexCreator implements ApplicationListene
 	private void createIndex(final IndexDefinitionHolder indexToCreate) {
 		Cluster cluster = couchbaseOperations.getCouchbaseClientFactory().getCluster();
 
-		StringBuilder statement = new StringBuilder("CREATE INDEX ").append(indexToCreate.getIndexName()).append(" ON `")
+		StringBuilder statement = new StringBuilder("CREATE INDEX `")
+				.append(indexToCreate.getIndexName()).append("` ON `")
 				.append(couchbaseOperations.getBucketName()).append("` (")
 				.append(String.join(",", indexToCreate.getIndexFields())).append(")");
 
