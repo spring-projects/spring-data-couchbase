@@ -145,6 +145,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 			currentInvocation.set(invocation);
 
 			try {
+
 				CrudMethodMetadata metadata = (CrudMethodMetadata) TransactionSynchronizationManager.getResource(method);
 
 				if (metadata != null) {
@@ -155,7 +156,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 				if (methodMetadata == null) {
 
-					methodMetadata = new DefaultCrudMethodMetadata(method);
+					methodMetadata = new DefaultCrudMethodMetadata(method, repositoryInformation);
 					CrudMethodMetadata tmp = metadataCache.putIfAbsent(method, methodMetadata);
 
 					if (tmp != null) {
@@ -186,6 +187,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 		private final Method method;
 		private final ScanConsistency scanConsistency;
+		private final RepositoryInformation repositoryInformation;
 		private final String scope;
 		private final String collection;
 
@@ -196,9 +198,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 		 * 
 		 * @param method must not be {@literal null}.
 		 */
-		DefaultCrudMethodMetadata(Method method) {
+		DefaultCrudMethodMetadata(Method method, RepositoryInformation repositoryInformation) {
 			Assert.notNull(method, "Method must not be null!");
 			this.method = method;
+			this.repositoryInformation = repositoryInformation;
 			String n = method.getName();
 			// internal methods
 			if (n.equals("getEntityInformation") || n.equals("getOperations") || n.equals("withOptions")
@@ -209,7 +212,8 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				return;
 			}
 
-			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass()};
+			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
+					repositoryInformation.getRepositoryInterface(), repositoryInformation.getDomainType() };
 			this.scanConsistency = OptionsBuilder.annotation(ScanConsistency.class, "query", QueryScanConsistency.NOT_BOUNDED,
 					annotated);
 			this.scope = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);

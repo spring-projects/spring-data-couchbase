@@ -38,9 +38,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface UserColRepository extends CouchbaseRepository<UserCol, String>, DynamicProxyable<UserColRepository> {
 
-	// CouchbaseRepositoryQueryCollectionIntegrationTests.testScopeCollectionAnnotationSwap() relies on this
-	// being commented out.
-	//<S extends UserCol> S save(S var1);
+	<S extends UserCol> S save(S var1);
 
 	List<UserCol> findByFirstname(String firstname);
 
