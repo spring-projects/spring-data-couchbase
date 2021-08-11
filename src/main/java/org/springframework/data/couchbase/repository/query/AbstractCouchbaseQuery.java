@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,8 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
 		} else if (getQueryMethod().isCollectionQuery()) {
 			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+		} else if (getQueryMethod().isStreamQuery()) {
+			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).stream();
 		} else if (isCountQuery()) {
 			return (q, t, c) -> operation.matching(q).count();
 		} else if (isExistsQuery()) {

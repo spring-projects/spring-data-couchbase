@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.domain;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
@@ -35,6 +36,8 @@ import com.couchbase.client.java.json.JsonArray;
 public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
+
+	Stream<User> findByLastname(String lastname);
 
 	List<User> findByFirstnameIn(String... firstnames);
 
