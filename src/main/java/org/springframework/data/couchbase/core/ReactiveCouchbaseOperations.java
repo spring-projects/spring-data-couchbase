@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by
  * {@link ReactiveCouchbaseTemplate}.
- *
- * @author Michael Nitschinger
- * @author Michael Reiche
  */
 public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOperations {
 
@@ -46,5 +45,10 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	 * Returns the underlying client factory.
 	 */
 	CouchbaseClientFactory getCouchbaseClientFactory();
+
+	/**
+	 * @@return the pseudoArgs from the ThreadLocal field of the CouchbaseOperations
+	 */
+	PseudoArgs<?> getPseudoArgs();
 
 }

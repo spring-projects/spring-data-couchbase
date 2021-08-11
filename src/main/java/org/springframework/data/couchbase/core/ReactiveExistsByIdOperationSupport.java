@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -42,28 +41,20 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 	}
 
 	@Override
-	@Deprecated
 	public ReactiveExistsById existsById() {
-		return existsById(null);
-	}
-
-	@Override
-	public ReactiveExistsById existsById(Class<?> domainType) {
-		return new ReactiveExistsByIdSupport(template, domainType, null, null, null);
+		return new ReactiveExistsByIdSupport(template, null, null, null);
 	}
 
 	static class ReactiveExistsByIdSupport implements ReactiveExistsById {
 
 		private final ReactiveCouchbaseTemplate template;
-		private final Class<?> domainType;
 		private final String scope;
 		private final String collection;
 		private final ExistsOptions options;
 
-		ReactiveExistsByIdSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType, final String scope,
-				final String collection, final ExistsOptions options) {
+		ReactiveExistsByIdSupport(final ReactiveCouchbaseTemplate template, final String scope, final String collection,
+				final ExistsOptions options) {
 			this.template = template;
-			this.domainType = domainType;
 			this.scope = scope;
 			this.collection = collection;
 			this.options = options;
@@ -71,12 +62,12 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public Mono<Boolean> one(final String id) {
-			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("existsById {}", pArgs);
+			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection,
+					options != null ? options : ExistsOptions.existsOptions());
+			LOG.trace("statement: {} scope: {} collection: {}", "exitsById", pArgs.getScope(), pArgs.getCollection());
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
-							.map(ExistsResult::exists))
+							.getCollection(pArgs.getCollection()).reactive().exists(id, pArgs.getOptions()).map(ExistsResult::exists))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -84,10 +75,6 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 							return throwable;
 						}
 					});
-		}
-
-		private ExistsOptions buildOptions(ExistsOptions options) {
-			return OptionsBuilder.buildExistsOptions(options);
 		}
 
 		@Override
@@ -98,18 +85,20 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public ExistsByIdWithOptions inCollection(final String collection) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			Assert.hasText(collection, "Collection must not be null nor empty.");
+			return new ReactiveExistsByIdSupport(template, scope, collection, options);
 		}
 
 		@Override
 		public TerminatingExistsById withOptions(final ExistsOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, scope, collection, options);
 		}
 
 		@Override
 		public ExistsByIdInCollection inScope(final String scope) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			Assert.hasText(scope, "Scope must not be null nor empty.");
+			return new ReactiveExistsByIdSupport(template, scope, collection, options);
 		}
 
 	}

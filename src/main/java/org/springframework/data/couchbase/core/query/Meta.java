@@ -32,9 +32,8 @@ import org.springframework.util.StringUtils;
  */
 public class Meta {
 
-	public enum MetaKey {
-		SCAN_CONSISTENCY("scan_consistency"), SCOPE("scope"), COLLECTION("collection"), EXPIRY("expiry"), EXPIRY_UNIT(
-				"expiry_unit"), EXPIRY_EXPRESSION("expiry_expression"), TIMEOUT("timeout"), RETRY_STRATEGY("retry_strategy");
+	private enum MetaKey {
+		EXAMPLE("$example");
 
 		private String key;
 
@@ -43,7 +42,7 @@ public class Meta {
 		}
 	}
 
-	private final Map<MetaKey, Object> values = new LinkedHashMap<>(2);
+	private final Map<String, Object> values = new LinkedHashMap<>(2);
 
 	public Meta() {}
 
@@ -69,7 +68,7 @@ public class Meta {
 	 *
 	 * @return
 	 */
-	public Iterable<Entry<MetaKey, Object>> values() {
+	public Iterable<Entry<String, Object>> values() {
 		return Collections.unmodifiableSet(this.values.entrySet());
 	}
 
@@ -79,25 +78,9 @@ public class Meta {
 	 * @param key must not be {@literal null} or empty.
 	 * @param value
 	 */
-	public void setValue(String key, @Nullable Object value) {
+	void setValue(String key, @Nullable Object value) {
 
 		Assert.hasText(key, "Meta key must not be 'null' or blank.");
-
-		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
-			this.values.remove(MetaKey.valueOf(key));
-		}
-		this.values.put(MetaKey.valueOf(key), value);
-	}
-
-	public void setValue(MetaKey key, @Nullable Object value) {
-
-		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
-			this.values.remove(key);
-		}
-		this.values.put(key, value);
-	}
-
-	public void set(MetaKey key, @Nullable Object value) {
 
 		if (value == null || (value instanceof String && !StringUtils.hasText((String) value))) {
 			this.values.remove(key);
@@ -107,15 +90,11 @@ public class Meta {
 
 	@Nullable
 	@SuppressWarnings("unchecked")
-	public <T> T getValue(String key) {
-		return (T) this.values.get(MetaKey.valueOf(key));
-	}
-
-	public <T> T get(MetaKey key) {
+	private <T> T getValue(String key) {
 		return (T) this.values.get(key);
 	}
 
-	public <T> T getValue(String key, T defaultValue) {
+	private <T> T getValue(String key, T defaultValue) {
 
 		T value = getValue(key);
 		return value != null ? value : defaultValue;

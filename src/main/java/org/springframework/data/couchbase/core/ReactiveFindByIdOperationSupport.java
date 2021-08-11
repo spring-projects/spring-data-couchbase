@@ -36,6 +36,7 @@ import com.couchbase.client.java.kv.GetOptions;
 public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
+
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindByIdOperationSupport.class);
 
 	ReactiveFindByIdOperationSupport(ReactiveCouchbaseTemplate template) {
@@ -70,19 +71,19 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		@Override
 		public Mono<T> one(final String id) {
-			GetOptions gOptions = options != null ? options : getOptions();
-			if (gOptions.build().transcoder() == null) {
-				gOptions.transcoder(RawJsonTranscoder.INSTANCE);
-			}
-			if (fields != null && !fields.isEmpty()) {
-				gOptions.project(fields);
-			}
-			PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
-			LOG.trace("findById {}", pArgs);
-			return Mono.just(id)
-					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().get(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
+			return Mono.just(id).flatMap(docId -> {
+				GetOptions gOptions = options != null ? options : getOptions();
+				if (gOptions.build().transcoder() == null) {
+					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
+				}
+				if (fields != null && !fields.isEmpty()) {
+					gOptions.project(fields);
+				}
+				PseudoArgs<GetOptions> pArgs = new PseudoArgs(template, scope, collection, gOptions);
+				LOG.trace("statement: {} scope: {} collection: {}", "findById", pArgs.getScope(), pArgs.getCollection());
+				return template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
+						.reactive().get(docId, pArgs.getOptions());
+			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
 					.onErrorResume(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							if (throwable instanceof DocumentNotFoundException) {
@@ -112,17 +113,19 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, support);
 		}
 
 		@Override
 		public FindByIdInScope<T> project(String... fields) {
-			Assert.notNull(fields, "Fields must not be null");
+			Assert.notEmpty(fields, "Fields must not be null nor empty.");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
 					support);
 		}

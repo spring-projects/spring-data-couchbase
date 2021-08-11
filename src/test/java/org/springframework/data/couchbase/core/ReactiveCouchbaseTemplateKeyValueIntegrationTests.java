@@ -150,8 +150,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 				}
 
 				// if replace or remove, we need to insert a document to replace
-				if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById
-						|| operator instanceof ExecutableRemoveById) {
+				if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById || operator instanceof ExecutableRemoveById) {
 					reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
 				}
 				// call to insert/replace/update

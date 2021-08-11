@@ -20,12 +20,10 @@ import java.util.List;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
-import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * User Repository for tests
@@ -34,7 +32,6 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
@@ -54,5 +51,4 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
 
 	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
-
 }

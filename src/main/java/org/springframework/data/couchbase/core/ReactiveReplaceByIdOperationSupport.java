@@ -24,7 +24,6 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -35,8 +34,8 @@ import com.couchbase.client.java.kv.ReplicateTo;
 
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
-	private final ReactiveCouchbaseTemplate template;
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveReplaceByIdOperationSupport.class);
+	private final ReactiveCouchbaseTemplate template;
 
 	public ReactiveReplaceByIdOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -79,13 +78,13 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("replaceById {}", pArgs);
+                        PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
+                                        options != null ? options : ReplaceOptions.replaceOptions());
+                        LOG.trace("statement: {} pArgs: {}", "replaceById", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.replace(converted.getId(), converted.export(),
-									buildReplaceOptions(pArgs.getOptions(), object, converted))
+            .flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+                     .getCollection(pArgs.getCollection()).reactive()
+                     .replace(converted.getId(), converted.export(), buildReplaceOptions(pArgs.getOptions(), object, converted))
 							.flatMap(result -> support.applyUpdatedCas(object, converted, result.cas())))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
@@ -102,8 +101,20 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		}
 
 		private ReplaceOptions buildReplaceOptions(ReplaceOptions options, T object, CouchbaseDocument doc) {
-			return OptionsBuilder.buildReplaceOptions(options, persistTo, replicateTo, durabilityLevel, expiry,
-					support.getCas(object), doc);
+			options = options != null ? options : ReplaceOptions.replaceOptions();
+			if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+				options.durability(persistTo, replicateTo);
+			} else if (durabilityLevel != DurabilityLevel.NONE) {
+				options.durability(durabilityLevel);
+			}
+			if (expiry != null) {
+				options.expiry(expiry);
+			} else if (doc.getExpiration() != 0) {
+				options.expiry(Duration.ofSeconds(doc.getExpiration()));
+			}
+			long cas = support.getCas(object);
+			options.cas(cas);
+			return options;
 		}
 
 		@Override
@@ -115,12 +126,14 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public ReplaceByIdWithDurability<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}

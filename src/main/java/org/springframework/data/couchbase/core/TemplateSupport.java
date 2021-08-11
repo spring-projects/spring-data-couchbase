@@ -20,17 +20,17 @@ import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEve
 
 public interface TemplateSupport {
 
-	CouchbaseDocument encodeEntity(Object entityToEncode);
+    CouchbaseDocument encodeEntity(Object entityToEncode);
 
-	<T> T decodeEntity(String id, String source, long cas, Class<T> entityClass);
+    <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass);
 
-	<T> T applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
+    <T> T applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
 
-	<T> T applyUpdatedId(T entity, Object id);
+    <T> T applyUpdatedId(T entity, Object id);
 
-	long getCas(Object entity);
+    long getCas(Object entity);
 
-	String getJavaNameForEntity(Class<?> clazz);
+    String getJavaNameForEntity(Class<?> clazz);
 
-	void maybeEmitEvent(CouchbaseMappingEvent<?> event);
+    void maybeEmitEvent(CouchbaseMappingEvent<?> event);
 }

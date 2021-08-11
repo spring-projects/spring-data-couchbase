@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.repository;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 
@@ -24,12 +22,9 @@ import org.springframework.data.repository.reactive.ReactiveSortingRepository;
  * Couchbase-specific {@link ReactiveSortingRepository} implementation.
  *
  * @author Subhashni Balakrishnan
- * @author Michael Reiche
  * @since 3.0
  */
 @NoRepositoryBean
 public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepository<T, ID> {
-	ReactiveCouchbaseOperations getOperations();
 
-	CouchbaseEntityInformation<T, String> getEntityInformation();
 }

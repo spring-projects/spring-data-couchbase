@@ -16,19 +16,19 @@
 
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.core.RemoveResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 
-import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
-import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.reactive.ReactiveSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -41,8 +41,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-public interface ReactiveAirportRepository
-		extends ReactiveCouchbaseRepository<Airport, String>, DynamicProxyable<ReactiveAirportRepository> {
+public interface ReactiveAirportRepository extends ReactiveSortingRepository<Airport, String> {
 
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -57,9 +56,6 @@ public interface ReactiveAirportRepository
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAllByIata(String iata);
-
-	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Mono<Airport> iata(String iata);
 
 	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
 	Flux<Airport> findAllPoliciesByApplicableTypes(String state, JsonArray applicableTypes);

@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *        https://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package org.springframework.data.couchbase.repository;
-
-import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -26,21 +24,13 @@ import java.lang.annotation.Target;
 import org.springframework.data.annotation.QueryAnnotation;
 
 /**
- * Collection Annotation
- *
  * @author Michael Reiche
+ * @since 4.1
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE })
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Documented
 @QueryAnnotation
-public @interface Collection {
-
-	/**
-	 * Specifies the collection name
-	 *
-	 * @return the collection name configured, defaults to not DEFAULT_COLLECTION.
-	 */
-	String value() default DEFAULT_COLLECTION;
+public @interface Meta {
 
 }

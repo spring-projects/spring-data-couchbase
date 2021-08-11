@@ -23,13 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.annotation.Persistent;
-import org.springframework.data.couchbase.repository.Collection;
-import org.springframework.data.couchbase.repository.ScanConsistency;
-import org.springframework.data.couchbase.repository.Scope;
-
-import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Identifies a domain object to be persisted to Couchbase.
@@ -41,15 +35,12 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
-@Expiry
-@ScanConsistency
 public @interface Document {
 
 	/**
 	 * An optional expiry time for the document. Default is no expiry. Only one of two might might be set at the same
 	 * time: either {@link #expiry()} or {@link #expiryExpression()}
 	 */
-	@AliasFor(annotation = Expiry.class, attribute = "expiry")
 	int expiry() default 0;
 
 	/**
@@ -64,13 +55,11 @@ public @interface Document {
 	 * <br />
 	 * SpEL is NOT supported.
 	 */
-	@AliasFor(annotation = Expiry.class, attribute = "expiryExpression")
 	String expiryExpression() default "";
 
 	/**
 	 * An optional time unit for the document's {@link #expiry()}, if set. Default is {@link TimeUnit#SECONDS}.
 	 */
-	@AliasFor(annotation = Expiry.class, attribute = "expiryUnit")
 	TimeUnit expiryUnit() default TimeUnit.SECONDS;
 
 	/**
@@ -79,9 +68,4 @@ public @interface Document {
 	 */
 	boolean touchOnRead() default false;
 
-	/**
-	 * An optional string indicating the query scan consistency
-	 */
-	@AliasFor(annotation = ScanConsistency.class, attribute = "query")
-	QueryScanConsistency queryScanConsistency() default QueryScanConsistency.NOT_BOUNDED;
 }

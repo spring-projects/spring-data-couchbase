@@ -36,13 +36,7 @@ public interface ExecutableExistsByIdOperation {
 	/**
 	 * Checks if the document exists in the bucket.
 	 */
-	@Deprecated
 	ExecutableExistsById existsById();
-
-	/**
-	 * Checks if the document exists in the bucket.
-	 */
-	ExecutableExistsById existsById(Class<?> domainType);
 
 	/**
 	 * Terminating operations invoking the actual execution.
@@ -84,6 +78,7 @@ public interface ExecutableExistsByIdOperation {
 	}
 
 	/**
+	 *
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.

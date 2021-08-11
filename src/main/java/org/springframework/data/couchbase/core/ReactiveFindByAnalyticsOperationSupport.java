@@ -167,12 +167,14 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 		@Override
 		public FindByAnalyticsInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);
 		}
 
 		@Override
 		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);
 		}

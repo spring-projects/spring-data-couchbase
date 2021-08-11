@@ -36,7 +36,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
@@ -45,19 +44,18 @@ import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserCol;
 import org.springframework.data.couchbase.domain.UserJustLastName;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.domain.UserSubmissionProjected;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.util.Capabilities;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.UnambiguousTimeoutException;
-import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -754,51 +752,4 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 				.inCollection(otherCollection).withOptions(options).one(vie));
 	}
 
-	@Test
-	public void testScopeCollectionAnnotation() {
-		UserCol user = new UserCol("1", "Dave", "Wilson");
-		Query query = Query.query(QueryCriteria.where("firstname").is(user.getFirstname()));
-		try {
-			UserCol saved = couchbaseTemplate.insertById(UserCol.class).inScope(scopeName).inCollection(collectionName)
-					.one(user);
-			List<UserCol> found = couchbaseTemplate.findByQuery(UserCol.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
-					.matching(query).all();
-			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = couchbaseTemplate.findByQuery(UserCol.class).inScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.inCollection(CollectionIdentifier.DEFAULT_COLLECTION).matching(query).all();
-			assertEquals(0, notfound.size(), "should not have found what was saved");
-			couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
-					.all();
-		} finally {
-			try {
-				couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
-						.all();
-			} catch (DataRetrievalFailureException drfe) {}
-		}
-	}
-
-	@Test
-	public void testScopeCollectionRepoWith() {
-		UserCol user = new UserCol("1", "Dave", "Wilson");
-		Query query = Query.query(QueryCriteria.where("firstname").is(user.getFirstname()));
-		try {
-			UserCol saved = couchbaseTemplate.insertById(UserCol.class).inScope(scopeName).inCollection(collectionName)
-					.one(user);
-			List<UserCol> found = couchbaseTemplate.findByQuery(UserCol.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
-					.matching(query).all();
-			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = couchbaseTemplate.findByQuery(UserCol.class).inScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.inCollection(CollectionIdentifier.DEFAULT_COLLECTION).matching(query).all();
-			assertEquals(0, notfound.size(), "should not have found what was saved");
-			couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
-					.all();
-		} finally {
-			try {
-				couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
-						.all();
-			} catch (DataRetrievalFailureException drfe) {}
-		}
-	}
 }

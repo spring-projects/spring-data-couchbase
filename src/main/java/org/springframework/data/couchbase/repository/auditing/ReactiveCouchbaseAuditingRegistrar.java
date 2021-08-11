@@ -1,18 +1,3 @@
-/*
- * Copyright 2021 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.springframework.data.couchbase.repository.auditing;
 
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_AUDITING_HANDLER;
@@ -28,6 +13,7 @@ import org.springframework.data.auditing.config.AuditingBeanDefinitionRegistrarS
 import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEntityCallback;
+import org.springframework.data.couchbase.core.mapping.event.ReactiveAuditingEventListener;
 import org.springframework.util.Assert;
 
 /**
@@ -94,6 +80,17 @@ class ReactiveCouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrar
 		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
 
 		registerInfrastructureBeanWithId(builder.getBeanDefinition(), ReactiveAuditingEntityCallback.class.getName(),
+				registry);
+
+		// Register the AuditingEventListener
+
+		BeanDefinitionBuilder builder2 = BeanDefinitionBuilder.rootBeanDefinition(ReactiveAuditingEventListener.class);
+
+		builder2
+				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
+		builder.getRawBeanDefinition().setSource(auditingHandlerDefinition.getSource());
+
+		registerInfrastructureBeanWithId(builder2.getBeanDefinition(), ReactiveAuditingEventListener.class.getName(),
 				registry);
 
 	}

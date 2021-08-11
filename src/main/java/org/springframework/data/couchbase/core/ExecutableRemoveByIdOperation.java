@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 import java.util.List;
 
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
@@ -38,12 +39,6 @@ public interface ExecutableRemoveByIdOperation {
 	/**
 	 * Removes a document.
 	 */
-	ExecutableRemoveById removeById(Class<?> domainType);
-
-	/**
-	 * Removes a document.
-	 */
-	@Deprecated
 	ExecutableRemoveById removeById();
 
 	/**

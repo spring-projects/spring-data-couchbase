@@ -79,8 +79,8 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 				namedQueries);
 		Query query = creator.createQuery();
 
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("Created query " + query.export());
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Created query " + query.export());
 		}
 
 		return query;
@@ -88,7 +88,7 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 
 	@Override
 	protected Query createCountQuery(ParametersParameterAccessor accessor) {
-		return applyQueryMetaAttributesIfPresent(createQuery(accessor), null);
+		return applyQueryMetaAttributesWhenPresent(createQuery(accessor));
 	}
 
 	/*

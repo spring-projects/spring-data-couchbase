@@ -22,6 +22,7 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -29,7 +30,11 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.core.convert.support.GenericConversionService;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
@@ -126,9 +131,8 @@ public class StringBasedN1qlQueryParser {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
-		String collection = queryMethod.getCollection();
-		this.statementContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, false, null);
-		this.countContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, true, null);
+		this.statementContext = createN1qlSpelValues(bucketName, null, null, null, typeField, typeValue, false, null);
+		this.countContext = createN1qlSpelValues(bucketName, null, null, null, typeField, typeValue, true, null);
 		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
 		checkPlaceholders(this.parsedExpression.toString());
 	}

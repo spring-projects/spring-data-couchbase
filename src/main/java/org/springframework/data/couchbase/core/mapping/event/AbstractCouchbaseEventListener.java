@@ -50,9 +50,13 @@ public class AbstractCouchbaseEventListener<E> implements ApplicationListener<Co
 
 		if (event instanceof BeforeDeleteEvent) {
 			onBeforeDelete(event.getSource(), event.getDocument());
+			return;
 		} else if (event instanceof AfterDeleteEvent) {
 			onAfterDelete(event.getSource(), event.getDocument());
-		} else if (event instanceof BeforeConvertEvent) {
+			return;
+		}
+
+		if (event instanceof BeforeConvertEvent) {
 			onBeforeConvert(source);
 		} else if (event instanceof BeforeSaveEvent) {
 			onBeforeSave(source, event.getDocument());
@@ -62,32 +66,32 @@ public class AbstractCouchbaseEventListener<E> implements ApplicationListener<Co
 	}
 
 	public void onBeforeConvert(E source) {
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("onBeforeConvert({})", source);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("onBeforeConvert({})", source);
 		}
 	}
 
 	public void onBeforeSave(E source, CouchbaseDocument doc) {
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("onBeforeSave({}, {})", source, doc);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("onBeforeSave({}, {})", source, doc);
 		}
 	}
 
 	public void onAfterSave(E source, CouchbaseDocument doc) {
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("onAfterSave({}, {})", source, doc);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("onAfterSave({}, {})", source, doc);
 		}
 	}
 
 	public void onAfterDelete(Object source, CouchbaseDocument doc) {
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("onAfterConvert({})", doc);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("onAfterConvert({})", doc);
 		}
 	}
 
 	public void onBeforeDelete(Object source, CouchbaseDocument doc) {
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("onAfterConvert({})", doc);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("onAfterConvert({})", doc);
 		}
 	}
 

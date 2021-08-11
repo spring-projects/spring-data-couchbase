@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2020 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,8 @@ import java.lang.annotation.Target;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
-/**
- * Scan Consistency Annotation
- *
- * @author Michael Reiche
- */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE })
+@Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Documented
 public @interface ScanConsistency {
 

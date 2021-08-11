@@ -97,12 +97,14 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 		@Override
 		public FindByAnalyticsInCollection<T> inScope(final String scope) {
+			Assert.hasText(scope, "Scope must not be null nor empty.");
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options);
 		}
 
 		@Override
 		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
+			Assert.hasText(collection, "Collection must not be null nor empty.");
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options);
 		}

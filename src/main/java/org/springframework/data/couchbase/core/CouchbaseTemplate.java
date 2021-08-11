@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -106,25 +107,13 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	}
 
 	@Override
-	@Deprecated
 	public ExecutableRemoveById removeById() {
-		return removeById(null);
+		return new ExecutableRemoveByIdOperationSupport(this).removeById();
 	}
 
 	@Override
-	public ExecutableRemoveById removeById(Class<?> domainType) {
-		return new ExecutableRemoveByIdOperationSupport(this).removeById(domainType);
-	}
-
-	@Override
-	@Deprecated
 	public ExecutableExistsById existsById() {
-		return existsById(null);
-	}
-
-	@Override
-	public ExecutableExistsById existsById(Class<?> domainType) {
-		return new ExecutableExistsByIdOperationSupport(this).existsById(domainType);
+		return new ExecutableExistsByIdOperationSupport(this).existsById();
 	}
 
 	@Override

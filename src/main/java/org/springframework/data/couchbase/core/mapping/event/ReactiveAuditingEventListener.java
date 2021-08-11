@@ -24,34 +24,32 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.data.auditing.AuditingHandler;
 import org.springframework.data.auditing.IsNewAwareAuditingHandler;
+import org.springframework.data.auditing.ReactiveIsNewAwareAuditingHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.util.Assert;
 
 /**
- * Event listener to populate auditing related fields on an entity about to be saved.
+ * Reactive Event listener to populate auditing related fields on an entity about to be saved.
  *
- * @author Oliver Gierke
- * @author Simon Baslé
- * @author Mark Paluch
  * @author Michael Reiche
  */
-public class AuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<Object>> {
+public class ReactiveAuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<Object>> {
 
-	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
+	private final ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory;
 
-	public AuditingEventListener() {
+	public ReactiveAuditingEventListener() {
 		this.auditingHandlerFactory = null;
 	}
 
-	private static final Logger LOG = LoggerFactory.getLogger(AuditingEventListener.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveAuditingEventListener.class);
 
 	/**
-	 * Creates a new {@link AuditingEventListener} using the given {@link MappingContext} and {@link AuditingHandler}
-	 * provided by the given {@link ObjectFactory}. Registered in CouchbaseAuditingRegistrar
+	 * Creates a new {@link ReactiveAuditingEventListener} using the given {@link MappingContext} and
+	 * {@link AuditingHandler} provided by the given {@link ObjectFactory}. Registered in CouchbaseAuditingRegistrar
 	 *
 	 * @param auditingHandlerFactory must not be {@literal null}.
 	 */
-	public AuditingEventListener(ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory) {
+	public ReactiveAuditingEventListener(ObjectFactory<ReactiveIsNewAwareAuditingHandler> auditingHandlerFactory) {
 		Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null!");
 		this.auditingHandlerFactory = auditingHandlerFactory;
 	}
@@ -62,24 +60,24 @@ public class AuditingEventListener implements ApplicationListener<CouchbaseMappi
 	 */
 	@Override
 	public void onApplicationEvent(CouchbaseMappingEvent<Object> event) {
-		if (event instanceof BeforeConvertEvent) {
+		if (event instanceof ReactiveBeforeConvertEvent) {
 			Optional.ofNullable(event.getSource())//
 					.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
 			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (event instanceof BeforeSaveEvent) {
+		if (event instanceof ReactiveBeforeSaveEvent) {
 			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (event instanceof AfterSaveEvent) {
+		if (event instanceof ReactiveAfterSaveEvent) {
 			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (event instanceof BeforeDeleteEvent) {
+		if (event instanceof ReactiveBeforeDeleteEvent) {
 			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (event instanceof AfterDeleteEvent) {
+		if (event instanceof ReactiveAfterDeleteEvent) {
 			// LOG.info(event.getClass().getSimpleName() + " " + event);
 		}
-		if (!event.getClass().getSimpleName().startsWith("Reactive")) {
+		if (event.getClass().getSimpleName().startsWith("Reactive")) {
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(event.getClass().getSimpleName() + " " + event.getSource());
 			}
