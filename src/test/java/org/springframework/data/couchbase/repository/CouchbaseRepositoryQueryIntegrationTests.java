@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -220,6 +221,16 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		} finally {
 			airportRepository.delete(vie);
 		}
+	}
+
+	@Test
+	public void testTransient() {
+		User user = new User("1", "Dave", "Wilson");
+		user.setTransientInfo("something");
+		userRepository.save(user);
+		Optional<User> foundUser = userRepository.findById(user.getId());
+		assertEquals(null, foundUser.get().getTransientInfo());
+		userRepository.delete(user);
 	}
 
 	@Test
