@@ -24,6 +24,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
@@ -41,6 +42,8 @@ public class User extends ComparableEntity {
 	@Id private String id;
 	private String firstname;
 	private String lastname;
+	@Transient
+	private String transientInfo;
 	@CreatedBy private String createdBy;
 	@CreatedDate private long createdDate;
 	@LastModifiedBy private String lastModifiedBy;
@@ -94,4 +97,10 @@ public class User extends ComparableEntity {
 		return Objects.hash(id, firstname, lastname);
 	}
 
+	public String getTransientInfo(){
+		return transientInfo;
+	}
+	public void setTransientInfo(String something) {
+		transientInfo = something;
+	}
 }
