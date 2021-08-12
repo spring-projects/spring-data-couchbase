@@ -62,6 +62,14 @@ public class CouchbaseRepositoryAutoQueryIndexIntegrationTests extends ClusterAw
 		assertTrue(foundIndex.get().condition().get().contains("_class"));
 	}
 
+	@Test
+	void createsCompositeIndexWithPath() {
+		Optional<QueryIndex> foundIndex = cluster.queryIndexes().getAllIndexes(bucketName()).stream()
+				.filter(i -> i.name().equals("idx_airline_id_something_name")).findFirst();
+
+		assertTrue(foundIndex.isPresent());
+		assertTrue(foundIndex.get().condition().get().contains("_class"));
+	}
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {

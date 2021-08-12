@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import java.lang.reflect.InaccessibleObjectException;
 import java.util.Optional;
 
 import org.springframework.beans.BeansException;
@@ -141,8 +140,12 @@ public class CouchbaseMappingContext
 		Optional<BasicCouchbasePersistentEntity<?>> entity = null;
 		try {
 			entity = super.addPersistentEntity(typeInformation);
-		} catch (InaccessibleObjectException ioe) {
-			throw new MappingException("due to InaccessibleObjectException", ioe);
+		} catch (Exception ioe) {
+			if(ioe.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")){
+				throw new MappingException("due to InaccessibleObjectException", ioe);
+			} else {
+				throw ioe;
+			}
 		}
 
 		if (this.eventPublisher != null && entity.isPresent()) {

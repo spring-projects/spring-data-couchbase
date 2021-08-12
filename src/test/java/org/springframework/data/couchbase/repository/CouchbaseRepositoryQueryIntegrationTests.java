@@ -35,6 +35,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -355,15 +356,39 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	public void testTransient() {
+		User user = new User("1", "Dave", "Wilson");
+		user.setTransientInfo("something");
+		userRepository.save(user);
+		Optional<User> foundUser = userRepository.findById(user.getId());
+		assertEquals(null, foundUser.get().getTransientInfo());
+		userRepository.delete(user);
+	}
+
+	@Test
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
-		userRepository.findByFirstname("Dave");
 		user.setVersion(user.getVersion() - 1);
 		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
 		user.setVersion(0);
 		userRepository.save(user);
 		userRepository.delete(user);
+	}
+
+	@Test
+	public void testStreamQuery() {
+		User user1 = new User("1", "Dave", "Wilson");
+		User user2 = new User("2", "Brian", "Wilson");
+
+		userRepository.save(user1);
+		userRepository.save(user2);
+		List<User> users = userRepository.findByLastname("Wilson").collect(Collectors.toList());
+		assertEquals(2,users.size());
+		assertTrue(users.contains(user1));
+		assertTrue(users.contains(user2));
+		userRepository.delete(user1);
+		userRepository.delete(user2);
 	}
 
 	@Test
