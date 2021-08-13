@@ -131,7 +131,7 @@ public class CouchbaseMappingContext
 	/**
 	 * override method from AbstractMappingContext as that method will not publishEvent() if it finds the entity has
 	 * already been cached
-	 * 
+	 *
 	 * @param typeInformation - entity type
 	 */
 	@Override
