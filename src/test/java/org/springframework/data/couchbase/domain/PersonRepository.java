@@ -112,4 +112,7 @@ public interface PersonRepository extends CrudRepository<Person, String> {
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Person> findByMiddlename(String nickName);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Person> findBySalutation(String prefix);
 }
