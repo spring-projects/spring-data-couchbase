@@ -141,7 +141,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 
 		long cas = 0;
 		if (versionProperty != null) {
-			Object casObject = (Number) accessor.getProperty(versionProperty);
+			Object casObject = accessor.getProperty(versionProperty);
 			if (casObject instanceof Number) {
 				cas = ((Number) casObject).longValue();
 			}
