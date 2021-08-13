@@ -27,7 +27,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.data.annotation.Persistent;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
@@ -68,6 +67,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Stephane Nicoll
  * @author Subhashni Balakrishnan
  * @author Jorge Rodriguez Martin
+ * @author Michael Reiche
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
@@ -230,7 +230,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			ClassPathScanningCandidateComponentProvider componentProvider = new ClassPathScanningCandidateComponentProvider(
 					false);
 			componentProvider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
-			componentProvider.addIncludeFilter(new AnnotationTypeFilter(Persistent.class));
 			for (BeanDefinition candidate : componentProvider.findCandidateComponents(basePackage)) {
 				initialEntitySet.add(
 						ClassUtils.forName(candidate.getBeanClassName(), AbstractCouchbaseConfiguration.class.getClassLoader()));
