@@ -51,33 +51,43 @@ public final class OtherConverters {
 		return converters;
 	}
 
-	@WritingConverter public enum UuidToString implements Converter<UUID,String>
-	{
-    INSTANCE;
+	@WritingConverter
+	public enum UuidToString implements Converter<UUID, String> {
+		INSTANCE;
 
-	@Override
-    public String convert(UUID source) {
-      return source == null ? null : source.toString();
-    }}
+		@Override
+		public String convert(UUID source) {
+			return source == null ? null : source.toString();
+		}
+	}
 
-	@ReadingConverter public enum StringToUuid implements Converter<String,UUID>{INSTANCE;
+	@ReadingConverter
+	public enum StringToUuid implements Converter<String, UUID> {
+		INSTANCE;
 
-	@Override
-    public UUID convert(String source) {
-      return source == null ? null : UUID.fromString(source);
-    }}
+		@Override
+		public UUID convert(String source) {
+			return source == null ? null : UUID.fromString(source);
+		}
+	}
 
-	@WritingConverter public enum BigIntegerToString implements Converter<BigInteger,String>{INSTANCE;
+	@WritingConverter
+	public enum BigIntegerToString implements Converter<BigInteger, String> {
+		INSTANCE;
 
-	@Override
-    public String convert(BigInteger source) {
-      return source == null ? null : source.toString();
-    }}
+		@Override
+		public String convert(BigInteger source) {
+			return source == null ? null : source.toString();
+		}
+	}
 
-	@ReadingConverter public enum StringToBigInteger implements Converter<String,BigInteger>{INSTANCE;
+	@ReadingConverter
+	public enum StringToBigInteger implements Converter<String, BigInteger> {
+		INSTANCE;
 
-	@Override
-    public BigInteger convert(String source) {
-      return source == null ? null : new BigInteger(source);
-    }
-}}
+		@Override
+		public BigInteger convert(String source) {
+			return source == null ? null : new BigInteger(source);
+		}
+	}
+}
