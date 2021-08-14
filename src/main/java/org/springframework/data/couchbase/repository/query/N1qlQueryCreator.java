@@ -45,8 +45,9 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
-	private static final String META_ID_PROPERTY = "id";
-	private static final String META_CAS_PROPERTY = "cas";
+	public static final String META_ID_PROPERTY = "id";
+	public static final String META_CAS_PROPERTY = "cas";
+	public static final String META_EXPIRATION_PROPERTY = "expiration";
 
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
@@ -68,7 +69,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(addMetaIfRequired(path, property)), iterator);
+		return from(part, property, where(addMetaIfRequired(bucketName, path, property)), iterator);
 	}
 
 	static Converter<? super CouchbasePersistentProperty, String> cvtr = new MyConverter();
@@ -76,16 +77,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	static class MyConverter implements Converter<CouchbasePersistentProperty, String> {
 		@Override
 		public String convert(CouchbasePersistentProperty source) {
-			if (source.isIdProperty()) {
-				return "META().id";
-			} else if (source.isVersionProperty()) {
-				return "META().cas";
-			} else if (source.isExpirationProperty()) {
-				return "META().expiration";
-			} else {
-				return new StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName())
-						.append('`').toString();
-			}
+				return new StringBuilder(source.getFieldName().length()+2).append("`").append(source.getFieldName()).append("`").toString();
 		}
 	}
 
@@ -98,7 +90,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(addMetaIfRequired(path, property)), iterator);
+		return from(part, property, base.and(addMetaIfRequired(bucketName,path, property)), iterator);
 	}
 
 	@Override
@@ -174,7 +166,8 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		}
 	}
 
-	private N1QLExpression addMetaIfRequired(
+	public static N1QLExpression addMetaIfRequired(
+			String bucketName,
 			final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
 			final CouchbasePersistentProperty property) {
 		if (property.isIdProperty()) {
@@ -182,6 +175,9 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		}
 		if (property.isVersionProperty()) {
 			return path(meta(i(bucketName)), i(META_CAS_PROPERTY));
+		}
+		if (property.isExpirationProperty()) {
+			return path(meta(i(bucketName)), i(META_EXPIRATION_PROPERTY));
 		}
 		return x(persistentPropertyPath.toDotPath(cvtr));
 	}

@@ -22,6 +22,7 @@ import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Expiration;
 
 /**
  * Airport entity
@@ -41,6 +42,7 @@ public class Airport extends ComparableEntity {
 	@Version Number version;
 
 	@CreatedBy private String createdBy;
+	@Expiration private long expiration;
 
 	@PersistenceConstructor
 	public Airport(String id, String iata, String icao) {
@@ -59,6 +61,10 @@ public class Airport extends ComparableEntity {
 
 	public String getIcao() {
 		return icao;
+	}
+
+	public long getExpiration() {
+		return expiration;
 	}
 
 	public Airport withId(String id) {

@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +39,7 @@ import java.util.concurrent.Future;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.kv.UpsertOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -374,6 +376,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		user.setVersion(0);
 		userRepository.save(user);
 		userRepository.delete(user);
+	}
+
+	@Test
+	public void testExpiration() {
+		Airport airport = new Airport("1", "iata21", "icao21");
+		airportRepository.withOptions(UpsertOptions.upsertOptions().expiry(Duration.ofSeconds(10))).save(airport);
+		Airport foundAirport = airportRepository.findByIata(airport.getIata());
+		assertNotEquals(0, foundAirport.getExpiration());
+		airportRepository.delete(airport);
 	}
 
 	@Test
