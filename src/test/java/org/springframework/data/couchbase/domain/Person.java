@@ -43,6 +43,7 @@ public class Person extends AbstractEntity {
 	@Version private long version;
 
 	@Nullable @Field("nickname") private String middlename;
+	@Nullable @Field(name = "prefix") private String salutation;
 
 	private Address address;
 
@@ -99,8 +100,16 @@ public class Person extends AbstractEntity {
 		return middlename;
 	}
 
+	public String getSalutation() {
+		return salutation;
+	}
+
 	public void setMiddlename(String middlename) {
 		this.middlename = middlename;
+	}
+
+	public void setSalutation(String salutation) {
+		this.salutation = salutation;
 	}
 
 	public long getVersion() {
@@ -141,17 +150,6 @@ public class Person extends AbstractEntity {
 		}
 		sb.append("}");
 		return sb.toString();
-	}
-
-	static String optional(String name, String obj) {
-		if (obj != null) {
-			if (obj != null /*.isPresent() */) {
-				return ("  " + name + ": '" + obj/*.get()*/ + "'\n");
-			} else {
-				return "  " + name + ": null\n";
-			}
-		}
-		return "";
 	}
 
 }

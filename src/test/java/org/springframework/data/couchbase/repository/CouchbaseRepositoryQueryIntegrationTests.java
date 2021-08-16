@@ -20,6 +20,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,13 +32,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.kv.UpsertOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +85,7 @@ import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -165,6 +168,27 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			List<Person> persons3 = personRepository.findByMiddlename("Nick");
 			assertEquals(1, persons3.size());
 			assertEquals(person.getMiddlename(), persons3.get(0).getMiddlename());
+		} finally {
+			personRepository.deleteById(person.getId().toString());
+		}
+	}
+
+	@Test
+	void annotatedFieldFindName() {
+		Person person = null;
+		try {
+			person = new Person(1, "first", "last");
+			person.setSalutation("Mrs"); // salutation is stored as prefix
+			personRepository.save(person);
+			GetResult result = couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection()
+					.get(person.getId().toString());
+			assertEquals(person.getSalutation(), result.contentAsObject().get("prefix"));
+			Person person2 = personRepository.findById(person.getId().toString()).get();
+			assertEquals(person.getSalutation(), person2.getSalutation());
+			// needs fix from datacouch_1184
+			//List<Person> persons3 = personRepository.findBySalutation("Mrs");
+			//assertEquals(1, persons3.size());
+			//assertEquals(person.getSalutation(), persons3.get(0).getSalutation());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -380,6 +404,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	public void testExpiration() {
+		Airport airport = new Airport("1", "iata21", "icao21");
+		airportRepository.withOptions(UpsertOptions.upsertOptions().expiry(Duration.ofSeconds(10))).save(airport);
+		Airport foundAirport = airportRepository.findByIata(airport.getIata());
+		assertNotEquals(0, foundAirport.getExpiration());
+		airportRepository.delete(airport);
+	}
+
+	@Test
 	public void testStreamQuery() {
 		User user1 = new User("1", "Dave", "Wilson");
 		User user2 = new User("2", "Brian", "Wilson");
@@ -387,7 +420,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		userRepository.save(user1);
 		userRepository.save(user2);
 		List<User> users = userRepository.findByLastname("Wilson").collect(Collectors.toList());
-		assertEquals(2,users.size());
+		assertEquals(2, users.size());
 		assertTrue(users.contains(user1));
 		assertTrue(users.contains(user2));
 		userRepository.delete(user1);

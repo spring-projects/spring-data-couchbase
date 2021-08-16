@@ -16,6 +16,8 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.meta;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.path;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
@@ -29,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -37,6 +40,7 @@ import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -183,22 +187,28 @@ public class StringBasedN1qlQueryParser {
 		if (resultClass != null) {
 			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
 			StringBuilder sb = new StringBuilder();
-			getProjectedFieldsInternal(null, sb, persistentEntity.getTypeInformation(), "");
+			getProjectedFieldsInternal(b, null, sb, persistentEntity.getTypeInformation()/*, ""*/);
 			projectedFields = sb.toString();
 		}
 		return projectedFields;
 	}
 
-	private void getProjectedFieldsInternal(CouchbasePersistentProperty parent, StringBuilder sb,
-			TypeInformation resultClass, String path) {
+	private void getProjectedFieldsInternal(String bucketName, CouchbasePersistentProperty parent, StringBuilder sb,
+			TypeInformation resultClass/*, String path*/) {
 
 		PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+		//CouchbasePersistentProperty property = path.getLeafProperty();
 		persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
 				if (prop.isIdProperty() && parent == null) {
 					return;
 				}
+				if (prop.isVersionProperty()) {
+					return;
+				}
+				PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext().getPersistentPropertyPath(prop.getName(), resultClass.getType());
+
 				// The current limitation is that only top-level properties can be projected
 				// This traversing of nested data structures would need to replicate the processing done by
 				// MappingCouchbaseConverter. Either the read or write
@@ -210,12 +220,7 @@ public class StringBasedN1qlQueryParser {
 				if (sb.length() > 0) {
 					sb.append(", ");
 				}
-				sb.append('`');
-				if (path != null && path.length() != 0) {
-					sb.append(path);
-				}
-				sb.append(prop.getFieldName());
-				sb.append('`');
+				sb.append(N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop)); // from N1qlQueryCreator
 				// }
 			}
 		});
