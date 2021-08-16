@@ -182,7 +182,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			try {
 				this.applicationContext.publishEvent(event);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.error("exception emitting event "+event, e);
 			}
 		} else {
 			LOG.info("maybeEmitEvent called, but CouchbaseTemplate not initialized with applicationContext");
@@ -196,11 +196,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 
 	protected <T> T maybeCallBeforeConvert(T object, String collection) {
 		if (entityCallbacks != null) {
-			try {
-				return entityCallbacks.callback(BeforeConvertCallback.class, object, collection);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			return entityCallbacks.callback(BeforeConvertCallback.class, object, collection);
 		} else {
 			LOG.info("maybeCallBeforeConvert called, but CouchbaseTemplate not initialized with applicationContext");
 		}

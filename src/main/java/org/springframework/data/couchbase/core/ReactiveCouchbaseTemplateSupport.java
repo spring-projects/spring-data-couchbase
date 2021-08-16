@@ -189,7 +189,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 			try {
 				this.applicationContext.publishEvent(event);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.error("exception emitting event "+event, e);
 			}
 		} else {
 			LOG.info("maybeEmitEvent called, but ReactiveCouchbaseTemplate not initialized with applicationContext");
@@ -203,11 +203,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 
 	protected <T> Mono<T> maybeCallBeforeConvert(T object, String collection) {
 		if (reactiveEntityCallbacks != null) {
-			try {
-				return reactiveEntityCallbacks.callback(ReactiveBeforeConvertCallback.class, object, collection);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			return reactiveEntityCallbacks.callback(ReactiveBeforeConvertCallback.class, object, collection);
 		} else {
 			LOG.info("maybeCallBeforeConvert called, but ReactiveCouchbaseTemplate not initialized with applicationContext");
 		}
