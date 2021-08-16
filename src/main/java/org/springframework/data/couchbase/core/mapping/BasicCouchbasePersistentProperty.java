@@ -45,6 +45,7 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 		implements CouchbasePersistentProperty {
 
 	private final FieldNamingStrategy fieldNamingStrategy;
+	private String fieldName;
 
 	/**
 	 * Create a new instance of the BasicCouchbasePersistentProperty class.
@@ -75,25 +76,32 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 	 */
 	@Override
 	public String getFieldName() {
+		if (fieldName != null) {
+			return fieldName;
+		}
 		Field annotationField = getField().getAnnotation(Field.class);
 
-		if (annotationField != null && StringUtils.hasText(annotationField.value())) {
-			return annotationField.value();
+		if (annotationField != null) {
+			if (StringUtils.hasText(annotationField.value())) {
+				return fieldName = annotationField.value();
+			} else if (StringUtils.hasText(annotationField.name())) {
+				return fieldName = annotationField.name();
+			}
 		}
 		JsonProperty annotation = getField().getAnnotation(JsonProperty.class);
 
 		if (annotation != null && StringUtils.hasText(annotation.value())) {
-			return annotation.value();
+			return fieldName = annotation.value();
 		}
 
-		String fieldName = fieldNamingStrategy.getFieldName(this);
+		String fName = fieldNamingStrategy.getFieldName(this);
 
-		if (!StringUtils.hasText(fieldName)) {
+		if (!StringUtils.hasText(fName)) {
 			throw new MappingException(String.format("Invalid (null or empty) field name returned for property %s by %s!",
 					this, fieldNamingStrategy.getClass()));
 		}
 
-		return fieldName;
+		return fieldName = fName;
 	}
 
 	// DATACOUCH-145: allows SDK's @Id annotation to be used
