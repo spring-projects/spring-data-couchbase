@@ -163,8 +163,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			person = new Person(1, "first", "last");
 			person.setMiddlename("Nick"); // middlename is stored as nickname
 			personRepository.save(person);
-			List<Person> persons2 = personRepository.findByMiddlename("Nick");
-			assertEquals(1, persons2.size());
+			Person person2 = personRepository.findById(person.getId().toString()).get();
+			assertEquals(person.getMiddlename(), person2.getMiddlename());
+			List<Person> persons3 = personRepository.findByMiddlename("Nick");
+			assertEquals(1, persons3.size());
+			assertEquals(person.getMiddlename(), persons3.get(0).getMiddlename());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
