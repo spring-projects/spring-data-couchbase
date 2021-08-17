@@ -32,7 +32,7 @@ import org.springframework.data.domain.AuditorAware;
  */
 public class NaiveAuditorAware implements AuditorAware<String> {
 
-	static public final String AUDITOR = "auditor";
+	static public final String AUDITOR = "nonreactive_auditor";
 	private Optional<String> auditor = Optional.of(AUDITOR);
 
 	@Override

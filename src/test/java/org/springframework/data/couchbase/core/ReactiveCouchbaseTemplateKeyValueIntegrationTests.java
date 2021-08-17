@@ -37,7 +37,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
+import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
+import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
@@ -72,17 +74,33 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User modified = reactiveCouchbaseTemplate.upsertById(User.class).one(user).block();
 		assertEquals(user, modified);
+		// create a new object so that the object returned by replaceById() is a different object from the original user
+		// don't need to copy the ModifiedDate/ModifiedTime as they are not read and are overwritten.
+		User modifying = new User(user.getId(), user.getFirstname(), user.getLastname());
+		modifying.setCreatedDate(user.getCreatedDate());
+		modifying.setCreatedBy(user.getCreatedBy());
+		modifying.setVersion(user.getVersion());
+		modified = reactiveCouchbaseTemplate.replaceById(User.class).one(modifying).block();
+		assertEquals(modifying, modified);
+		if(user == modified){
+			throw new RuntimeException ( " user == modified ");
+		}
+		assertNotEquals(user, modified);
+		assertEquals(ReactiveNaiveAuditorAware.AUDITOR, modified.getCreatedBy());
+		assertEquals(ReactiveNaiveAuditorAware.AUDITOR, modified.getLastModifiedBy());
+		assertNotEquals(0, modified.getCreatedDate());
+		assertNotEquals(0, modified.getLastModifiedDate());
+		// The FixedDateTimeService of the AuditingDateTimeProvider will guarantee these are equal
+		assertEquals(user.getLastModifiedDate(), modified.getLastModifiedDate());
 
-		modified = reactiveCouchbaseTemplate.replaceById(User.class).one(user).block();
-		assertEquals(user, modified);
-
-		user.setVersion(12345678);
+		User badUser = new User(user.getId(), user.getFirstname(), user.getLastname());
+		badUser.setVersion(12345678);
 		assertThrows(DataIntegrityViolationException.class,
-				() -> reactiveCouchbaseTemplate.replaceById(User.class).one(user).block());
+				() -> reactiveCouchbaseTemplate.replaceById(User.class).one(badUser).block());
 
 		User found = reactiveCouchbaseTemplate.findById(User.class).one(user.getId()).block();
 		user.setVersion(found.getVersion());
-		assertEquals(user, found);
+		assertEquals(modified, found);
 
 		reactiveCouchbaseTemplate.removeById().one(user.getId()).block();
 	}

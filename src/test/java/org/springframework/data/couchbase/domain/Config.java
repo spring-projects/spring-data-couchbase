@@ -54,9 +54,8 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @Configuration
 @EnableCouchbaseRepositories
 @EnableReactiveCouchbaseRepositories
-@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
-@EnableReactiveCouchbaseAuditing(auditorAwareRef = "reactiveAuditorAwareRef",
-		dateTimeProviderRef = "dateTimeProviderRef")
+@EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
+@EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
@@ -128,11 +127,11 @@ public class Config extends AbstractCouchbaseConfiguration {
 		try {
 			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
 			// ReactiveCouchbaseTemplate personTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),
-			//		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
+			// (MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
 			// ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),
-			//		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
-			//baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
+			// (MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
+			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
 			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {
 			throw e;
@@ -144,11 +143,11 @@ public class Config extends AbstractCouchbaseConfiguration {
 		try {
 			// comment out references to 'protected' and 'mybucket' - they are only to show how multi-bucket would work
 			// CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),
-			// 		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
+			// (MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(Person.class, personTemplate); // Person goes in "protected" bucket
 			// MappingCouchbaseConverter cvtr = (MappingCouchbaseConverter)baseMapping.getDefault().getConverter();
 			// CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),
-			// 		(MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
+			// (MappingCouchbaseConverter) (baseMapping.getDefault().getConverter()));
 			// baseMapping.mapEntity(User.class, userTemplate); // User goes in "mybucket"
 			// everything else goes in getBucketName() ( which is travel-sample )
 		} catch (Exception e) {

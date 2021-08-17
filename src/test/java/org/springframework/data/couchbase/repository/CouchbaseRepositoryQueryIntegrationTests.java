@@ -636,7 +636,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+	@EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override

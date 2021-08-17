@@ -99,7 +99,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 			for (User u : foundUsers) {
 				assertTrue(u.equals(user1) || u.equals(user2));
-				assertEquals(auditUser, u.getCreator());
+				assertEquals(auditUser, u.getCreatedBy());
 				assertEquals(auditMillis, u.getCreatedDate());
 				assertEquals(auditUser, u.getLastModifiedBy());
 				assertEquals(auditMillis, u.getLastModifiedDate());
