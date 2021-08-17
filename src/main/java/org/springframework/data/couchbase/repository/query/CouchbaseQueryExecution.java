@@ -19,8 +19,8 @@ import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -112,7 +112,7 @@ interface CouchbaseQueryExecution {
 		public Object execute(Query query, Class<?> type, String collection) {
 			int pageSize = pageable.getPageSize();
 			// Apply Pageable but tweak limit to peek into next page
-			Query modifiedQuery = query.with(pageable).limit(pageSize + 1);
+			Query modifiedQuery = query.skip(pageable.getOffset()).limit(pageSize + 1);
 			List result = find.matching(modifiedQuery).all();
 			boolean hasNext = result.size() > pageSize;
 			return new SliceImpl<Object>(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);
@@ -142,14 +142,12 @@ interface CouchbaseQueryExecution {
 		public Object execute(Query query, Class<?> type, String collection) {
 			int overallLimit = 0; // query.getLimit();
 			TerminatingFindByQuery<?> matching = operation.matching(query);
-			// Apply raw pagination
-			query.with(pageable);
 			// Adjust limit if page would exceed the overall limit
 			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
 				query.limit((int) (overallLimit - pageable.getOffset()));
 			}
 			return PageableExecutionUtils.getPage(matching.all(), pageable, () -> {
-				long count = operation.matching(query.skip(-1).limit(-1)).count();
+				long count = operation.matching(query.skip(-1).limit(-1).withoutSort()).count();
 				return overallLimit != 0 ? Math.min(count, overallLimit) : count;
 			});
 		}

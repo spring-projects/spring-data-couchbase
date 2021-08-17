@@ -136,7 +136,9 @@ public class Query {
 		}
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
-		return with(pageable.getSort());
+		if(!this.sort.equals(pageable.getSort()))
+			this.sort.and(pageable.getSort());
+		return this;
 	}
 
 	/**
@@ -171,6 +173,11 @@ public class Query {
 			return this;
 		}
 		this.sort = this.sort.and(sort);
+		return this;
+	}
+
+	public Query withoutSort(){
+		this.sort = Sort.unsorted();
 		return this;
 	}
 
@@ -287,8 +294,10 @@ public class Query {
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
 		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
-		appendSort(statement);
-		appendSkipAndLimit(statement);
+		if(!isCount){
+			appendSort(statement);
+			appendSkipAndLimit(statement);
+		}
 		return statement.toString();
 	}
 
