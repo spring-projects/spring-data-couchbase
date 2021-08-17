@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
+import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -142,7 +143,11 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public long count() {
-			return reactiveSupport.count().block();
+			Long l = reactiveSupport.count().block();
+			if ( l == null ){
+				throw new CouchbaseQueryExecutionException("count query did not return a count : "+query.export());
+			}
+			return l;
 		}
 
 		@Override

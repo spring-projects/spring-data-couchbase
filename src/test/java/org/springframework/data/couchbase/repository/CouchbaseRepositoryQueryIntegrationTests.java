@@ -50,6 +50,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -472,6 +473,16 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository
 					.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
+	}
+
+	@Test 
+	void badCount(){
+		assertThrows(CouchbaseQueryExecutionException.class, () -> airportRepository.countBad());
+	}
+
+	@Test 
+	void goodCount(){
+		airportRepository.countGood();
 	}
 
 	@Test
