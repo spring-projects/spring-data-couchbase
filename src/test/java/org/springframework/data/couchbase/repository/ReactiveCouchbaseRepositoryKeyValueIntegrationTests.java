@@ -82,7 +82,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableReactiveCouchbaseAuditing
+	@EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override

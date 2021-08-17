@@ -38,6 +38,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
 import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
@@ -77,16 +78,31 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User modified = couchbaseTemplate.upsertById(User.class).one(user);
 		assertEquals(user, modified);
+		// create a new object so that the object returned by replaceById() is a different object from the original user
+		// don't need to copy the ModifiedDate/ModifiedTime as they are not read and are overwritten.
+		User modifying = new User(user.getId(), user.getFirstname(), user.getLastname());
+		modifying.setCreatedDate(user.getCreatedDate());
+		modifying.setCreatedBy(user.getCreatedBy());
+		modifying.setVersion(user.getVersion());
+		modified = couchbaseTemplate.replaceById(User.class).one(modifying);
+		assertEquals(modifying, modified);
+		if(user == modified){
+			throw new RuntimeException ( " user == modified ");
+		}
+		assertNotEquals(user, modified);
+		assertEquals(NaiveAuditorAware.AUDITOR, modified.getCreatedBy());
+		assertEquals(NaiveAuditorAware.AUDITOR, modified.getLastModifiedBy());
+		assertNotEquals(0, modified.getCreatedDate());
+		assertNotEquals(0, modified.getLastModifiedDate());
+		// The FixedDateTimeService of the AuditingDateTimeProvider will guarantee these are equal
+		assertEquals(user.getLastModifiedDate(), modified.getLastModifiedDate());
 
-		modified = couchbaseTemplate.replaceById(User.class).one(user);
-		assertEquals(user, modified);
-
-		user.setVersion(12345678);
-		assertThrows(DataIntegrityViolationException.class, () -> couchbaseTemplate.replaceById(User.class).one(user));
+		User badUser = new User(user.getId(), user.getFirstname(), user.getLastname());
+		badUser.setVersion(12345678);
+		assertThrows(DataIntegrityViolationException.class, () -> couchbaseTemplate.replaceById(User.class).one(badUser));
 
 		User found = couchbaseTemplate.findById(User.class).one(user.getId());
-		user.setVersion(found.getVersion());
-		assertEquals(user, found);
+		assertEquals(modified, found);
 
 		couchbaseTemplate.removeById().one(user.getId());
 	}

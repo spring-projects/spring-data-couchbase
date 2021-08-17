@@ -71,8 +71,16 @@ public class User extends ComparableEntity {
 		return createdDate;
 	}
 
-	public String getCreator() {
+	public void setCreatedDate(long createdDate) {
+		this.createdDate = createdDate;
+	}
+
+	public String getCreatedBy() {
 		return createdBy;
+	}
+
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
 	}
 
 	public long getLastModifiedDate() {
