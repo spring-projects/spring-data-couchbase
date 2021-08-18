@@ -114,6 +114,12 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
 			@Param("active") Boolean active);
 
+	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE 0 = 1" )
+	Long countBad();
+
+	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`" )
+	Long countGood();
+
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
 
