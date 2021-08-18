@@ -22,6 +22,7 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import java.util.Iterator;
+import java.util.Optional;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -29,6 +30,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
@@ -37,6 +39,7 @@ import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
+import org.springframework.util.Assert;
 
 /**
  * @author Michael Nitschinger
@@ -72,12 +75,24 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		return from(part, property, where(addMetaIfRequired(bucketName, path, property)), iterator);
 	}
 
+	@Override
+	public Query createQuery() {
+		Query q = this.createQuery((Optional.of(this.accessor).map(ParameterAccessor::getSort).orElse(Sort.unsorted())));
+		Pageable pageable = accessor.getPageable();
+		if(pageable.isPaged()) {
+			q.skip(pageable.getOffset());
+			q.limit(pageable.getPageSize());
+		}
+		return q;
+	}
+
 	static Converter<? super CouchbasePersistentProperty, String> cvtr = new MyConverter();
 
 	static class MyConverter implements Converter<CouchbasePersistentProperty, String> {
 		@Override
 		public String convert(CouchbasePersistentProperty source) {
-				return new StringBuilder(source.getFieldName().length()+2).append("`").append(source.getFieldName()).append("`").toString();
+			return new StringBuilder(source.getFieldName().length() + 2).append("`").append(source.getFieldName()).append("`")
+					.toString();
 		}
 	}
 
@@ -90,7 +105,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(addMetaIfRequired(bucketName,path, property)), iterator);
+		return from(part, property, base.and(addMetaIfRequired(bucketName, path, property)), iterator);
 	}
 
 	@Override
@@ -100,7 +115,8 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	@Override
 	protected Query complete(QueryCriteria criteria, Sort sort) {
-		return (criteria == null ? new Query() : new Query().addCriteria(criteria)).with(sort);
+		Query q = (criteria == null ? new Query() : new Query().addCriteria(criteria)).with(sort);
+		return q;
 	}
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
@@ -166,8 +182,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		}
 	}
 
-	public static N1QLExpression addMetaIfRequired(
-			String bucketName,
+	public static N1QLExpression addMetaIfRequired(String bucketName,
 			final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
 			final CouchbasePersistentProperty property) {
 		if (property.isIdProperty()) {

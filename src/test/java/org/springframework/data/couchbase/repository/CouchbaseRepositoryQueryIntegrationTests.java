@@ -76,6 +76,7 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -449,7 +450,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
-			Pageable pageable = PageRequest.of(0, 2);
+			Pageable pageable = PageRequest.of(0, 2).withSort(Sort.by("iata"));
 			Page<Airport> aPage = airportRepository.findAllByIataNot("JFK", pageable);
 			assertEquals(iatas.length - 1, aPage.getTotalElements());
 			assertEquals(pageable.getPageSize(), aPage.getContent().size());
