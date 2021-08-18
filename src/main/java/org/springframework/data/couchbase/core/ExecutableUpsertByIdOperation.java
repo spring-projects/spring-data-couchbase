@@ -21,6 +21,8 @@ import java.util.Collection;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.core.support.WithDurability;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithUpsertOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
