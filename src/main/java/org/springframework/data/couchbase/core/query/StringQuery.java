@@ -19,6 +19,9 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonValue;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
+
+import java.util.Locale;
 
 /**
  * Query created from the string in @Query annotation in the repository interface.
@@ -35,7 +38,7 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public class StringQuery extends Query {
 
-	private String inlineN1qlQuery;
+	private final String inlineN1qlQuery;
 
 	public StringQuery(String n1qlString) {
 		inlineN1qlQuery = n1qlString;
@@ -55,6 +58,11 @@ public class StringQuery extends Query {
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collection, Class domainClass,
 			Class resultClass, boolean isCount, String[] distinctFields) {
 		final StringBuilder statement = new StringBuilder();
+		boolean makeCount = isCount && inlineN1qlQuery != null
+				&& !inlineN1qlQuery.toLowerCase(Locale.ROOT).contains("count(");
+		if (makeCount) {
+			statement.append("SELECT COUNT(*) AS " + TemplateUtils.SELECT_COUNT + " FROM (");
+		}
 		appendInlineN1qlStatement(statement); // apply the string statement
 		// To use generated parameters for literals
 		// we need to figure out if we must use positional or named parameters
@@ -68,9 +76,13 @@ public class StringQuery extends Query {
 			paramIndexPtr = new int[] { -1 };
 		}
 		appendWhere(statement, paramIndexPtr, template.getConverter()); // criteria on this Query - should be empty for
-																																		// StringQuery
-		appendSort(statement);
-		appendSkipAndLimit(statement);
+		if (!isCount) {
+			appendSort(statement);
+			appendSkipAndLimit(statement);
+		}
+		if (makeCount) {
+			statement.append(") predicate_query");
+		}
 		return statement.toString();
 	}
 

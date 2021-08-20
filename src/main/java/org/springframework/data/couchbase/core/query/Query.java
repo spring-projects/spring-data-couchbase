@@ -136,7 +136,7 @@ public class Query {
 		}
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
-		if(!this.sort.equals(pageable.getSort()))
+		if (!this.sort.equals(pageable.getSort()))
 			this.sort.and(pageable.getSort());
 		return this;
 	}
@@ -176,7 +176,7 @@ public class Query {
 		return this;
 	}
 
-	public Query withoutSort(){
+	public Query withoutSort() {
 		this.sort = Sort.unsorted();
 		return this;
 	}
@@ -277,11 +277,6 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
-			boolean isCount) {
-		return toN1qlSelectString(template, collectionName, domainClass, null, isCount, null);
-	}
-
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
 		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
 	}
@@ -294,7 +289,7 @@ public class Query {
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
 		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
-		if(!isCount){
+		if (!isCount) {
 			appendSort(statement);
 			appendSkipAndLimit(statement);
 		}
