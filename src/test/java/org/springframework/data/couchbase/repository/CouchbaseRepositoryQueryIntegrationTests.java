@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.java.kv.UpsertOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +88,7 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.MutationState;
+import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -188,9 +188,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Person person2 = personRepository.findById(person.getId().toString()).get();
 			assertEquals(person.getSalutation(), person2.getSalutation());
 			// needs fix from datacouch_1184
-			//List<Person> persons3 = personRepository.findBySalutation("Mrs");
-			//assertEquals(1, persons3.size());
-			//assertEquals(person.getSalutation(), persons3.get(0).getSalutation());
+			// List<Person> persons3 = personRepository.findBySalutation("Mrs");
+			// assertEquals(1, persons3.size());
+			// assertEquals(person.getSalutation(), persons3.get(0).getSalutation());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -476,13 +476,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
-	@Test 
-	void badCount(){
+	@Test
+	void badCount() {
 		assertThrows(CouchbaseQueryExecutionException.class, () -> airportRepository.countBad());
 	}
 
-	@Test 
-	void goodCount(){
+	@Test
+	void goodCount() {
 		airportRepository.countGood();
 	}
 
@@ -525,6 +525,38 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, iatas[i] /* lcao */);
 				airportRepository.delete(airport);
 			}
+		}
+	}
+
+	@Test
+	void distinct() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		String[] icaos = { "ic0", "ic1", "ic0", "ic1", "ic0", "ic1", "ic0" };
+
+		try {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, icaos[i] /* icao */);
+				couchbaseTemplate.insertById(Airport.class).one(airport);
+			}
+
+			// distinct icao - parser requires 'By' on the end or it does not match pattern.
+			List<Airport> airports1 = airportRepository.findDistinctIcaoBy();
+			assertEquals(2, airports1.size());
+
+			List<Airport> airports2 = airportRepository.findDistinctIcaoAndIataBy();
+			assertEquals(7, airports2.size());
+
+			// count( distinct { iata, icao } )
+			long count1 = airportRepository.countDistinctIcaoAndIataBy();
+			assertEquals(7, count1);
+
+			// count( distinct { icao } )
+			long count2 = airportRepository.countDistinctIcaoBy();
+			assertEquals(2, count2);
+
+		} finally {
+			couchbaseTemplate.removeById()
+					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
 	}
 

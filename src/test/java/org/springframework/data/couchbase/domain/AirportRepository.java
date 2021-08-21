@@ -114,10 +114,10 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
 			@Param("active") Boolean active);
 
-	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE 0 = 1" )
+	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE 0 = 1")
 	Long countBad();
 
-	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`" )
+	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`")
 	Long countGood();
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -125,6 +125,18 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Optional<Airport> findByIdAndIata(String id, String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoBy();
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target({ ElementType.METHOD, ElementType.TYPE })

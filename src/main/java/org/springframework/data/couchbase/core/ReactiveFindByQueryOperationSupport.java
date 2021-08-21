@@ -176,7 +176,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
 				String id = "";
 				long cas = 0;
-				if (distinctFields == null) {
+				if (!query.isDistinct() && distinctFields != null) {
 					if (row.getString(TemplateUtils.SELECT_ID) == null) {
 						return Flux.error(new CouchbaseException(
 								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
@@ -227,7 +227,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		private String assembleEntityQuery(final boolean count, String[] distinctFields, String collection) {
-			return query.toN1qlSelectString(template, collection, this.domainType, this.returnType, count, distinctFields);
+			return query.toN1qlSelectString(template, collection, this.domainType, this.returnType, count,
+					query.getDistinctFields() != null ? query.getDistinctFields() : distinctFields);
 		}
 	}
 }
