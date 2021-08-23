@@ -176,7 +176,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
 				String id = "";
 				long cas = 0;
-				if (!query.isDistinct() && distinctFields != null) {
+				if (!query.isDistinct() && distinctFields == null) {
 					if (row.getString(TemplateUtils.SELECT_ID) == null) {
 						return Flux.error(new CouchbaseException(
 								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
