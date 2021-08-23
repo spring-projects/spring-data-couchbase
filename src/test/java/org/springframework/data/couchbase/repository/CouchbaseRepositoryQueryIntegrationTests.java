@@ -534,6 +534,38 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void distinct() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		String[] icaos = { "ic0", "ic1", "ic0", "ic1", "ic0", "ic1", "ic0" };
+
+		try {
+			for (int i = 0; i < iatas.length; i++) {
+				Airport airport = new Airport("airports::" + iatas[i], iatas[i] /*iata*/, icaos[i] /* icao */);
+				couchbaseTemplate.insertById(Airport.class).one(airport);
+			}
+
+			// distinct icao - parser requires 'By' on the end or it does not match pattern.
+			List<Airport> airports1 = airportRepository.findDistinctIcaoBy();
+			assertEquals(2, airports1.size());
+
+			List<Airport> airports2 = airportRepository.findDistinctIcaoAndIataBy();
+			assertEquals(7, airports2.size());
+
+			// count( distinct { iata, icao } )
+			long count1 = airportRepository.countDistinctIcaoAndIataBy();
+			assertEquals(7, count1);
+
+			// count( distinct { icao } )
+			long count2 = airportRepository.countDistinctIcaoBy();
+			assertEquals(2, count2);
+
+		} finally {
+			couchbaseTemplate.removeById()
+					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
+		}
+	}
+
+	@Test
 	void stringQueryTest() throws Exception {
 		Airport airport = new Airport("airports::vie", "vie", "lowx");
 		try {

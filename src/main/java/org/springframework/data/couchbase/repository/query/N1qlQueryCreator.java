@@ -39,7 +39,6 @@ import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.util.Assert;
 
 /**
  * @author Michael Nitschinger
@@ -52,6 +51,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	public static final String META_CAS_PROPERTY = "cas";
 	public static final String META_EXPIRATION_PROPERTY = "expiration";
 
+	private final PartTree tree;
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
 	private final QueryMethod queryMethod;
@@ -61,6 +61,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor, final QueryMethod queryMethod,
 			final CouchbaseConverter converter, final String bucketName) {
 		super(tree, accessor);
+		this.tree = tree;
 		this.accessor = accessor;
 		this.context = converter.getMappingContext();
 		this.queryMethod = queryMethod;
@@ -79,10 +80,11 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	public Query createQuery() {
 		Query q = this.createQuery((Optional.of(this.accessor).map(ParameterAccessor::getSort).orElse(Sort.unsorted())));
 		Pageable pageable = accessor.getPageable();
-		if(pageable.isPaged()) {
+		if (pageable.isPaged()) {
 			q.skip(pageable.getOffset());
 			q.limit(pageable.getPageSize());
 		}
+		q.distinct(tree.isDistinct());
 		return q;
 	}
 

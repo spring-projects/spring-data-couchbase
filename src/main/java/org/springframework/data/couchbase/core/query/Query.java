@@ -51,6 +51,8 @@ public class Query {
 	private JsonValue parameters = JsonValue.ja();
 	private long skip;
 	private int limit;
+	private boolean distinct;
+	private String[] distinctFields;
 	private Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
 	private Meta meta;
@@ -121,6 +123,46 @@ public class Query {
 	public Query limit(int limit) {
 		this.limit = limit;
 		return this;
+	}
+
+	/**
+	 * Is this a DISTINCT query? {@code distinct}.
+	 *
+	 * @param distinct
+	 * @return
+	 */
+	public Query distinct(boolean distinct) {
+		this.distinct = distinct;
+		return this;
+	}
+
+	/**
+	 * Is this a DISTINCT query? {@code distinct}.
+	 *
+	 * @return distinct
+	 */
+	public boolean isDistinct() {
+		return distinct;
+	}
+
+	/**
+	 * distinctFields for query (non-null but empty means all fields) ? {@code distinctFields}.
+	 *
+	 * @param distinctFields
+	 * @return
+	 */
+	public Query distinct(String[] distinctFields) {
+		this.distinctFields = distinctFields;
+		return this;
+	}
+
+	/**
+	 * distinctFields for query (non-null but empty means all fields) ? {@code distinctFields}.
+	 *
+	 * @return distinctFields
+	 */
+	public String[] getDistinctFields() {
+		return distinctFields;
 	}
 
 	/**

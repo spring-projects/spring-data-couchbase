@@ -130,6 +130,18 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Optional<Airport> findByIdAndIata(String id, String iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoBy();
+
 	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE #{#n1ql.filter} " + " #{#projectIds != null ? 'AND blah IN $1' : ''} "
 			+ " #{#planIds != null ? 'AND blahblah IN $2' : ''} " + " #{#active != null ? 'AND false = $3' : ''} ")
 	Long countOne();
