@@ -187,10 +187,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(person.getSalutation(), result.contentAsObject().get("prefix"));
 			Person person2 = personRepository.findById(person.getId().toString()).get();
 			assertEquals(person.getSalutation(), person2.getSalutation());
-			// needs fix from datacouch_1184
-			// List<Person> persons3 = personRepository.findBySalutation("Mrs");
-			// assertEquals(1, persons3.size());
-			// assertEquals(person.getSalutation(), persons3.get(0).getSalutation());
+			List<Person> persons3 = personRepository.findBySalutation("Mrs");
+			assertEquals(1, persons3.size());
+			assertEquals(person.getSalutation(), persons3.get(0).getSalutation());
 		} finally {
 			personRepository.deleteById(person.getId().toString());
 		}
@@ -442,6 +441,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
+		airportRepository.countOne();
 		try {
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
@@ -449,6 +449,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
+
+			Pageable sPageable = PageRequest.of(0, 2).withSort(Sort.by("iata"));
+			Page<Airport> sPage = airportRepository.getAllByIataNot("JFK", sPageable);
+			assertEquals(iatas.length - 1, sPage.getTotalElements());
+			assertEquals(sPageable.getPageSize(), sPage.getContent().size());
 
 			Pageable pageable = PageRequest.of(0, 2).withSort(Sort.by("iata"));
 			Page<Airport> aPage = airportRepository.findAllByIataNot("JFK", pageable);

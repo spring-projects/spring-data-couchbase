@@ -319,11 +319,6 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
-			boolean isCount) {
-		return toN1qlSelectString(template, collectionName, domainClass, null, isCount, null);
-	}
-
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
 		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
 	}
