@@ -27,16 +27,33 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.GetOptions;
+import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.query.QueryResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
 import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
@@ -44,6 +61,11 @@ import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.CouchbaseRepositoryQueryIntegrationTests;
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -51,6 +73,8 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 ;
 
@@ -61,7 +85,10 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(CouchbaseTemplateKeyValueIntegrationTests.Config.class)
 class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired UserRepository userRepository;
 
 	@BeforeEach
 	@Override
@@ -71,6 +98,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 	}
 
 	@Test
@@ -86,8 +114,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		modifying.setVersion(user.getVersion());
 		modified = couchbaseTemplate.replaceById(User.class).one(modifying);
 		assertEquals(modifying, modified);
-		if(user == modified){
-			throw new RuntimeException ( " user == modified ");
+		if (user == modified) {
+			throw new RuntimeException(" user == modified ");
 		}
 		assertNotEquals(user, modified);
 		assertEquals(NaiveAuditorAware.AUDITOR, modified.getCreatedBy());
@@ -161,10 +189,26 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void withExpiryAndExpiryAnnotation()
 			throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+
+		// first we need to get the server's current time.
+		// we will save a document with expiration 24 hours in the future, then get the expiration time and subtract 24hours
+
+		User testUser = new User(UUID.randomUUID().toString(), "f", "l");
+		Collection collection = couchbaseTemplate.getCouchbaseClientFactory().getCluster().bucket(bucketName())
+				.defaultCollection();
+		// set expiration 1 day in the future
+		collection.insert(testUser.getId(), JsonObject.create(), InsertOptions.insertOptions().expiry(Duration.ofDays(1)));
+		GetResult o = collection.get(testUser.getId(), GetOptions.getOptions().withExpiry(true));
+		// read back expiration and subtract one day
+		long now = o.expiryTime().get().getEpochSecond() - 24 * 60 * 60;
+		// subtract from local time to get the number of seconds the server is behind the client.
+		long drift = Instant.now().getEpochSecond() - now;
+		System.err.println("drift : "+drift);
 		// ( withExpiry()<User>, expiry=1<UserAnnotated>, expiryExpression=${myExpiry}<UserAnnotated2> ) X ( insert,
 		// replace, upsert )
 		Set<User> users = new HashSet<>(); // set of all documents we will insert
 		// Entity classes
+		int i=1;
 		for (Class clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
 			// insert, replace, upsert
 			for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
@@ -172,11 +216,11 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 				// create an entity of type clazz
 				Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
-				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+				User user = (User) cons.newInstance(""+(i++)+"_"+ operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
 						"firstname", "lastname");
 
 				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation
-					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
+					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(2));
 				} else if (clazz.equals(UserAnnotated3.class)) { // override the expiry from the annotation with no expiry
 					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
 				}
@@ -192,16 +236,28 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			}
 		}
 		// check that they are gone after a few seconds.
-		sleepSecs(4);
+		sleepSecs(drift < 0 ? (int)6 : (int)drift+6 );
+		List<String> errorList = new LinkedList();
+
 		for (User user : users) {
-			User found = couchbaseTemplate.findById(user.getClass()).one(user.getId());
-			if (found instanceof UserAnnotated3) {
-				assertNotNull(found, "found should be non null as it was set to have no expirty");
+			User found = userRepository.getById(user.getId());// couchbaseTemplate.findById(user.getClass()).one(user.getId());
+			if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
+				if (found == null) {
+					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId() + " " + found);
+				}
 			} else {
-				assertNull(found, "found should have been null as document should be expired");
+				if (found != null) {
+					errorList.add("\nfound should have been null as document should be expired " + user.getId() + " "
+							+ (found.exp - Instant.now().getEpochSecond()) + " exp : " + found.exp + " now: "
+							+ Instant.now().getEpochSecond());
+				}
 			}
 		}
 
+		if (!errorList.isEmpty()) {
+			throw new RuntimeException(errorList.toString());
+		}
+		return;
 	}
 
 	@Test
@@ -341,4 +397,55 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		} catch (InterruptedException ie) {}
 	}
 
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
+	static class Config extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Bean(name = "auditorAwareRef")
+		public NaiveAuditorAware testAuditorAware() {
+			return new NaiveAuditorAware();
+		}
+
+		@Override
+		public void configureEnvironment(final ClusterEnvironment.Builder builder) {
+			builder.ioConfig().maxHttpConnections(11).idleHttpConnectionTimeout(Duration.ofSeconds(4));
+			return;
+		}
+
+		@Bean(name = "dateTimeProviderRef")
+		public DateTimeProvider testDateTimeProvider() {
+			return new AuditingDateTimeProvider();
+		}
+
+		@Bean
+		public LocalValidatorFactoryBean validator() {
+			return new LocalValidatorFactoryBean();
+		}
+
+		@Bean
+		public ValidatingCouchbaseEventListener validationEventListener() {
+			return new ValidatingCouchbaseEventListener(validator());
+		}
+	}
 }

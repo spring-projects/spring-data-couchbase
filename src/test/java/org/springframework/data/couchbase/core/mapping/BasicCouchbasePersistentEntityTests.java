@@ -43,7 +43,7 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<DefaultExpiry> entity = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(DefaultExpiry.class));
 
-		assertThat(entity.getExpiry()).isEqualTo(0);
+		assertThat(entity.getExpiryDuration().getSeconds()).isEqualTo(0);
 	}
 
 	@Test
@@ -51,14 +51,14 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<DefaultExpiryUnit> entity = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(DefaultExpiryUnit.class));
 
-		assertThat(entity.getExpiry()).isEqualTo(78);
+		assertThat(entity.getExpiryDuration().getSeconds()).isEqualTo(78);
 	}
 
 	@Test
 	void testLargeExpiry30DaysStillInSeconds() {
 		CouchbasePersistentEntity<LimitDaysExpiry> entityUnder = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(LimitDaysExpiry.class));
-		assertThat(entityUnder.getExpiry()).isEqualTo(30 * 24 * 60 * 60);
+		assertThat(entityUnder.getExpiryDuration().getSeconds()).isEqualTo(30 * 24 * 60 * 60);
 	}
 
 	@Test
@@ -66,7 +66,7 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<OverLimitDaysExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(OverLimitDaysExpiry.class));
 
-		int expiryOver = entityOver.getExpiry();
+		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 
@@ -87,7 +87,7 @@ public class BasicCouchbasePersistentEntityTests {
 				ClassTypeInformation.from(OverLimitDaysExpiryExpression.class));
 		entityOver.setEnvironment(environment);
 
-		int expiryOver = entityOver.getExpiry();
+		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 
@@ -107,7 +107,7 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<OverLimitSecondsExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(OverLimitSecondsExpiry.class));
 
-		int expiryOver = entityOver.getExpiry();
+		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 

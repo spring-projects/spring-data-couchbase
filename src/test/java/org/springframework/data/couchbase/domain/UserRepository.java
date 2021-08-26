@@ -51,6 +51,9 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
 	List<User> getByFirstnameAndLastname(String firstname, String lastname);
 
+	@Query("SELECT meta().id as __id, meta().cas as __cas, meta().expiration as exp from #{#n1ql.bucket} where meta().id = $1")
+	User getById(String id);
+
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (firstname = $first or lastname = $last)")
 	List<User> getByFirstnameOrLastname(@Param("first") String firstname, @Param("last") String lastname);
 

@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -121,6 +123,46 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		} else {
 			return (int) secondsShift;
 		}
+	}
+
+	@Override
+	public Duration getExpiryDuration() {
+		return getExpiryDuration(AnnotatedElementUtils.findMergedAnnotation(getType(), Expiry.class), environment);
+	}
+
+	private static Duration getExpiryDuration(Expiry annotation, Environment environment) {
+		if (annotation == null)
+			return Duration.ofSeconds(0);
+		int expiryValue = getExpiryValue(annotation, environment);
+		long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
+		return Duration.ofSeconds(secondsShift);
+	}
+
+	@Override
+	public Instant getExpiryInstant() {
+		return getExpiryInstant(AnnotatedElementUtils.findMergedAnnotation(getType(), Expiry.class), environment);
+	}
+
+	private static Instant getExpiryInstant(Expiry annotation, Environment environment) {
+		if (annotation == null)
+			return Instant.ofEpochSecond(0);
+		int expiryValue = getExpiryValue(annotation, environment);
+		long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
+		if(secondsShift == 0 ){
+			return Instant.ofEpochSecond(0);
+		}
+		// we want it to be represented as a UNIX timestamp style, seconds since Epoch in UTC
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		if (annotation.expiryUnit() == TimeUnit.DAYS) {
+			// makes sure we won't lose resolution
+			cal.add(Calendar.DAY_OF_MONTH, expiryValue);
+		} else {
+			// use the shift in seconds since resolution should be smaller
+			cal.add(Calendar.SECOND, (int) secondsShift);
+		}
+		return Instant.ofEpochSecond(cal.getTimeInMillis() / 1000); // note: Unix UTC time representation in int is okay
+																																// until year 2038
+
 	}
 
 	private static int getExpiryValue(Expiry annotation, Environment environment) {

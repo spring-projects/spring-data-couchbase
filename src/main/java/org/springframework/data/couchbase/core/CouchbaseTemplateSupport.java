@@ -182,7 +182,8 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			try {
 				this.applicationContext.publishEvent(event);
 			} catch (Exception e) {
-				LOG.error("exception emitting event "+event, e);
+				LOG.warn("{} thrown during {}", e, event);
+				throw e;
 			}
 		} else {
 			LOG.info("maybeEmitEvent called, but CouchbaseTemplate not initialized with applicationContext");

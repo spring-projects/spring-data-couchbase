@@ -24,6 +24,9 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Expiration;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Size;
+
 /**
  * Airport entity
  *
@@ -43,6 +46,8 @@ public class Airport extends ComparableEntity {
 
 	@CreatedBy private String createdBy;
 	@Expiration private long expiration;
+	@Max(2)
+	long size;
 
 	@PersistenceConstructor
 	public Airport(String id, String iata, String icao) {
@@ -86,5 +91,13 @@ public class Airport extends ComparableEntity {
 
 	public String getCreatedBy() {
 		return createdBy;
+	}
+
+	public long getSize(){
+		return size;
+	}
+
+	public void setSize(long size){
+		this.size = size;
 	}
 }

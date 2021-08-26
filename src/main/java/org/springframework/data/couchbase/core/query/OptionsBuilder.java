@@ -24,6 +24,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -104,7 +105,7 @@ public class OptionsBuilder {
 			options.durability(durabilityLevel);
 		}
 		if (expiry != null) {
-			options.expiry(expiry);
+			options.expiry(Duration.ofSeconds(expiry.getSeconds()));
 		} else if (doc.getExpiration() != 0) {
 			options.expiry(Duration.ofSeconds(doc.getExpiration()));
 		}
@@ -123,7 +124,7 @@ public class OptionsBuilder {
 			options.durability(durabilityLevel);
 		}
 		if (expiry != null) {
-			options.expiry(expiry);
+			options.expiry(Duration.ofSeconds(expiry.getSeconds()));
 		} else if (doc.getExpiration() != 0) {
 			options.expiry(Duration.ofSeconds(doc.getExpiration()));
 		}
@@ -142,7 +143,7 @@ public class OptionsBuilder {
 			options.durability(durabilityLevel);
 		}
 		if (expiry != null) {
-			options.expiry(expiry);
+			options.expiry(Duration.ofSeconds(expiry.getSeconds()));
 		} else if (doc.getExpiration() != 0) {
 			options.expiry(Duration.ofSeconds(doc.getExpiration()));
 		}
@@ -184,7 +185,7 @@ public class OptionsBuilder {
 
 	/**
 	 * scope annotation could be a
-	 * 
+	 *
 	 * @param domainType
 	 * @return
 	 */
@@ -330,7 +331,7 @@ public class OptionsBuilder {
 
 	/**
 	 * return the first merged annotation which does not have attribute with null/defaultValue from the listed elements.
-	 * 
+	 *
 	 * @param <A>
 	 * @param annotation
 	 * @param attributeName
@@ -396,7 +397,7 @@ public class OptionsBuilder {
 
 	/**
 	 * return the toString() of the first merged annotation which is not null/defaultValue from the listed elements.
-	 * 
+	 *
 	 * @param annotation
 	 * @param defaultValue
 	 * @param elements

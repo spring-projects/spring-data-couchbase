@@ -39,6 +39,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
+import junit.framework.AssertionFailedError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
@@ -91,6 +94,9 @@ import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+
+import javax.validation.ConstraintViolationException;
 
 /**
  * Repository tests
@@ -116,11 +122,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@BeforeEach
 	public void beforeEach() {
-		try {
-			clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName());
-		} catch (IndexExistsException ex) {
-			// ignore, all good.
-		}
+		clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 	}
 
 	@Test
@@ -135,6 +138,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 		} finally {
 			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void shouldNotSave() {
+		Airport vie = new Airport("airports::vie", "vie", "low4");
+		vie.setSize(3);
+		try {
+			assertThrows(ConstraintViolationException.class, () -> airportRepository.save(vie));
+		} catch (AssertionFailedError e) {
+			airportRepository.delete(vie);
+			throw e;
 		}
 	}
 
@@ -433,7 +448,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		UserAnnotated user = new UserAnnotated("1", "Dave", "Wilson");
 		userRepository.save(user);
 		userRepository.findByFirstname("Dave");
-		sleep(2000);
+		sleep(6000);
 		assertThrows(DataRetrievalFailureException.class, () -> userRepository.delete(user));
 	}
 
@@ -724,5 +739,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			return new AuditingDateTimeProvider();
 		}
 
+		@Bean
+		public LocalValidatorFactoryBean validator() {
+			return new LocalValidatorFactoryBean();
+		}
+
+		@Bean
+		public ValidatingCouchbaseEventListener validationEventListener() {
+			return new ValidatingCouchbaseEventListener(validator());
+		}
 	}
 }

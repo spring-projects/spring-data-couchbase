@@ -25,7 +25,9 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -127,6 +129,24 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
 		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+
+		assertEquals(1, foundUsers.size());
+	}
+
+	@Test
+	void findByAsMatchingQuery() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+		User specialUser = new User(UUID.randomUUID().toString(), "special", "special");
+
+		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
+
+		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
+		HashMap<String,HashMap<String,String>> target = new HashMap<String, HashMap<String,String>>();
+		HashMap<String,String> tt = new HashMap<String, String>();
+		target.put("x",tt);
+		final List<? extends Map> foundUsers = couchbaseTemplate.findByQuery(User.class).as(target.getClass())
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());

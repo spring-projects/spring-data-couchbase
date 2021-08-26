@@ -27,6 +27,7 @@ import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Expiration;
 
 /**
  * User entity for tests
@@ -47,6 +48,8 @@ public class User extends ComparableEntity {
 	@CreatedDate private long createdDate;
 	@LastModifiedBy private String lastModifiedBy;
 	@LastModifiedDate private long lastModifiedDate;
+	@Expiration
+	public long exp;
 
 	@PersistenceConstructor
 	public User(final String id, final String firstname, final String lastname) {

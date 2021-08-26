@@ -179,7 +179,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			}
 		}
 		// check that they are gone after a few seconds.
-		sleepSecs(4);
+		sleepSecs(6);
 		for (User user : users) {
 			User found = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
 			if (found instanceof UserAnnotated3) {
