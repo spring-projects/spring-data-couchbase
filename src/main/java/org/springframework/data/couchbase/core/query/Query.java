@@ -349,7 +349,8 @@ public class Query {
 		return statement.toString();
 	}
 
-	StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template, String collectionName,
+	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(
+			ReactiveCouchbaseTemplate template, String collectionName,
 			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields) {
 		String typeKey = template.getConverter().getTypeKey();
 		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()

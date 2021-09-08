@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package org.springframework.data.couchbase.domain;
 
 import lombok.Data;
+
+import java.util.List;
+
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.couchbase.core.index.CompositeQueryIndex;
 import org.springframework.data.couchbase.core.mapping.Document;
-
-import java.lang.reflect.Field;
-import java.util.List;
+import org.springframework.data.couchbase.core.query.FetchType;
+import org.springframework.data.couchbase.core.query.N1qlJoin;
 
 /**
  * UserSubmission entity for tests
@@ -40,6 +42,8 @@ public class UserSubmission extends ComparableEntity {
 	private String password;
 	private List<String> roles;
 	private Address address;
+	@N1qlJoin(on = "meta(lks).id=rks.parent_id", fetchType = FetchType.IMMEDIATE) List<Address> otherAddresses;
+
 	private int credits;
 	private List<Submission> submissions;
 	private List<Course> courses;

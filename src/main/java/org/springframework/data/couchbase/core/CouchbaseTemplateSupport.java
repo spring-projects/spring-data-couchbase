@@ -17,12 +17,15 @@
 
 package org.springframework.data.couchbase.core;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -33,11 +36,14 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallba
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
+import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
 /**
@@ -53,13 +59,16 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 
 	private static final Logger LOG = LoggerFactory.getLogger(CouchbaseTemplateSupport.class);
 
+	private final CouchbaseTemplate template;
 	private final CouchbaseConverter converter;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final TranslationService translationService;
 	private EntityCallbacks entityCallbacks;
 	private ApplicationContext applicationContext;
 
-	public CouchbaseTemplateSupport(final CouchbaseConverter converter, final TranslationService translationService) {
+	public CouchbaseTemplateSupport(final CouchbaseTemplate template, final CouchbaseConverter converter,
+			final TranslationService translationService) {
+		this.template = template;
 		this.converter = converter;
 		this.mappingContext = converter.getMappingContext();
 		this.translationService = translationService;
@@ -91,6 +100,22 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 		if (persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
+		persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
+			if (prop.isAnnotationPresent(N1qlJoin.class)) {
+				N1qlJoin definition = prop.findAnnotation(N1qlJoin.class);
+				TypeInformation type = prop.getTypeInformation().getActualType();
+				Class clazz = type.getType();
+				N1qlJoinResolver.N1qlJoinResolverParameters parameters = new N1qlJoinResolver.N1qlJoinResolverParameters(
+						definition, id, persistentEntity.getTypeInformation(), type);
+				if (N1qlJoinResolver.isLazyJoin(definition)) {
+					N1qlJoinResolver.N1qlJoinProxy proxy = new N1qlJoinResolver.N1qlJoinProxy(template, parameters);
+					accessor.setProperty(prop,
+							java.lang.reflect.Proxy.newProxyInstance(List.class.getClassLoader(), new Class[] { List.class }, proxy));
+				} else {
+					accessor.setProperty(prop, N1qlJoinResolver.doResolve(template, null, parameters, clazz));
+				}
+			}
+		});
 		return accessor.getBean();
 	}
 

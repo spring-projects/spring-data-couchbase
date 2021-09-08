@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors
+ * Copyright 2018-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.springframework.data.couchbase.core.convert.join;
 
-import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -25,11 +26,19 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.FetchType;
 import org.springframework.data.couchbase.core.query.HashSide;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
+
+import com.couchbase.client.core.error.InvalidArgumentException;
+import com.couchbase.client.java.query.QueryOptions;
 
 /**
  * N1qlJoinResolver resolves by converting the join definition to query statement and executing using CouchbaseTemplate
@@ -39,7 +48,8 @@ import org.springframework.util.Assert;
 public class N1qlJoinResolver {
 	private static final Logger LOGGER = LoggerFactory.getLogger(N1qlJoinResolver.class);
 
-	public static String buildQuery(CouchbaseTemplate template, N1qlJoinResolverParameters parameters) {
+	public static String buildQuery(ReactiveCouchbaseTemplate template, String collectionName,
+			N1qlJoinResolverParameters parameters) {
 		String joinType = "JOIN";
 		String selectEntity = "SELECT META(rks).id AS " + SELECT_ID + ", META(rks).cas AS " + SELECT_CAS + ", (rks).* ";
 
@@ -51,10 +61,15 @@ public class N1qlJoinResolver {
 
 		String from = "FROM `" + template.getBucketName() + "` lks " + useLKS + joinType + " `" + template.getBucketName()
 				+ "` rks";
-		String onLks = "lks." + template.getConverter().getTypeKey() + " = \""
-				+ parameters.getEntityTypeInfo().getType().getName() + "\"";
-		String onRks = "rks." + template.getConverter().getTypeKey() + " = \""
-				+ parameters.getAssociatedEntityTypeInfo().getType().getName() + "\"";
+
+		StringBasedN1qlQueryParser.N1qlSpelValues n1qlL = Query.getN1qlSpelValues(template, collectionName,
+				parameters.getEntityTypeInfo().getType(), parameters.getEntityTypeInfo().getType(), false, null);
+		String onLks = "lks." + n1qlL.filter;
+
+		StringBasedN1qlQueryParser.N1qlSpelValues n1qlR = Query.getN1qlSpelValues(template, collectionName,
+				parameters.getAssociatedEntityTypeInfo().getType(), parameters.getAssociatedEntityTypeInfo().getType(), false,
+				null);
+		String onRks = "rks." + n1qlR.filter;
 
 		StringBuilder useRKSBuilder = new StringBuilder();
 		if (parameters.getJoinDefinition().rightIndex().length() > 0) {
@@ -94,18 +109,32 @@ public class N1qlJoinResolver {
 		return statementSb.toString();
 	}
 
-	public static <R> List<R> doResolve(CouchbaseTemplate template, N1qlJoinResolverParameters parameters,
-			Class<R> associatedEntityClass) {
-		throw new UnsupportedOperationException();
-		/*
-		    String statement = buildQuery(template, parameters);
-		
-		    if (LOGGER.isDebugEnabled()) {
-		        LOGGER.debug("Join query executed " + statement);
-		    }
-		
-		    N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
-		    return template.findByN1QL(query, associatedEntityClass);*/
+	public static <R> List<R> doResolve(CouchbaseTemplate template, String collectionName,
+			N1qlJoinResolverParameters parameters, Class<R> associatedEntityClass) {
+
+		String statement = buildQuery(template.reactive(), collectionName, parameters);
+
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Join query executed " + statement);
+		}
+
+		N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
+		List<R> result = template.findByQuery(associatedEntityClass).matching(query).all();
+		return result.isEmpty() ? null : result;
+	}
+
+	public static <R> List<R> doResolve(ReactiveCouchbaseTemplate template, String collectionName,
+			N1qlJoinResolverParameters parameters, Class<R> associatedEntityClass) {
+
+		String statement = buildQuery(template, collectionName, parameters);
+
+		if (LOGGER.isDebugEnabled()) {
+			LOGGER.debug("Join query executed " + statement);
+		}
+
+		N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
+		List<R> result = template.findByQuery(associatedEntityClass).matching(query).all().collectList().block();
+		return result.isEmpty() ? null : result;
 	}
 
 	public static boolean isLazyJoin(N1qlJoin joinDefinition) {
@@ -113,11 +142,16 @@ public class N1qlJoinResolver {
 	}
 
 	static public class N1qlJoinProxy implements InvocationHandler {
-		private final CouchbaseTemplate template;
+		private final Object template;
+		private final String collectionName = null;
 		private final N1qlJoinResolverParameters params;
 		private List<?> resolved = null;
 
-		public N1qlJoinProxy(CouchbaseTemplate template, N1qlJoinResolverParameters params) {
+		public N1qlJoinProxy(Object template, N1qlJoinResolverParameters params) {
+			if (template instanceof CouchbaseTemplate && template instanceof ReactiveCouchbaseTemplate) {
+				throw InvalidArgumentException
+						.fromMessage("template must be either a CouchbaseTemplate or a ReactiveCouchbaseTemplate: " + template);
+			}
 			this.template = template;
 			this.params = params;
 		}
@@ -125,7 +159,13 @@ public class N1qlJoinResolver {
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			if (this.resolved == null) {
-				this.resolved = doResolve(this.template, this.params, this.params.associatedEntityTypeInfo.getType());
+				if (this.template instanceof CouchbaseTemplate) {
+					this.resolved = doResolve((CouchbaseTemplate) this.template, collectionName, this.params,
+							this.params.associatedEntityTypeInfo.getType());
+				} else {
+					this.resolved = doResolve((ReactiveCouchbaseTemplate) this.template, collectionName, this.params,
+							this.params.associatedEntityTypeInfo.getType());
+				}
 			}
 			return method.invoke(this.resolved, args);
 		}
