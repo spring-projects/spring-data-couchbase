@@ -28,9 +28,10 @@ import org.springframework.util.Assert;
  * @author Michael Reiche
  * @since 4.1
  */
+@FunctionalInterface
 interface ReactiveCouchbaseQueryExecution {
 
-	Object execute(Query query, Class<?> type, String collection);
+	Object execute(Query query, Class<?> type, Class<?> returnType, String collection);
 
 	/**
 	 * {@link ReactiveCouchbaseQueryExecution} removing documents matching the query.
@@ -51,7 +52,7 @@ interface ReactiveCouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery.Execution#execute(org.springframework.data.couchbase.core.query.Query, java.lang.Class, java.lang.String)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
 			return operations.removeByQuery(type)/*.inCollection(collection)*/.matching(query).all();
 		}
 
@@ -74,8 +75,8 @@ interface ReactiveCouchbaseQueryExecution {
 		}
 
 		@Override
-		public Object execute(Query query, Class<?> type, String collection) {
-			return converter.convert(delegate.execute(query, type, collection));
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
+			return converter.convert(delegate.execute(query, type, returnType, collection));
 		}
 	}
 

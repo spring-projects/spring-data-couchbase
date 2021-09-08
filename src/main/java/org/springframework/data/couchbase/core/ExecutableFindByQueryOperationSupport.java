@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
-import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -45,7 +44,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 	@Override
 	public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ExecutableFindByQuerySupport<T>(template, domainType, domainType, ALL_QUERY, null, null, null, null,
-				null);
+				null, null);
 	}
 
 	static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
@@ -60,22 +59,24 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		private final String collection;
 		private final QueryOptions options;
 		private final String[] distinctFields;
+		private final String[] fields;
 
 		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<?> domainType, final Class<T> returnType,
 				final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
-				final QueryOptions options, final String[] distinctFields) {
+				final QueryOptions options, final String[] distinctFields, final String[] fields) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveFindByQuerySupport<T>(template.reactive(), domainType, returnType, query,
-					scanConsistency, scope, collection, options, distinctFields,
+					scanConsistency, scope, collection, options, distinctFields, fields,
 					new NonReactiveSupportWrapper(template.support()));
 			this.scanConsistency = scanConsistency;
 			this.scope = scope;
 			this.collection = collection;
 			this.options = options;
 			this.distinctFields = distinctFields;
+			this.fields = fields;
 		}
 
 		@Override
@@ -102,38 +103,47 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 				scanCons = scanConsistency;
 			}
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanCons, scope, collection,
-					options, distinctFields);
+					options, distinctFields, fields);
 		}
 
 		@Override
 		@Deprecated
 		public FindByQueryInScope<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public FindByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public <R> FindByQueryWithConsistency<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
+		}
+
+		@Override
+		public FindByQueryWithProjection<T> project(String[] fields) {
+			Assert.notNull(fields, "Fields must not be null");
+			Assert.isNull(distinctFields, "only one of project(fields) and distinct(distinctFields) can be specified");
+			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public FindByQueryWithProjection<T> distinct(final String[] distinctFields) {
-			Assert.notNull(distinctFields, "distinctFields must not be null!");
+			Assert.notNull(distinctFields, "distinctFields must not be null");
+			Assert.isNull(fields, "only one of project(fields) and distinct(distinctFields) can be specified");
 			// Coming from an annotation, this cannot be null.
 			// But a non-null but empty distinctFields means distinct on all fields
 			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, dFields);
+					collection, options, dFields, fields);
 		}
 
 		@Override
@@ -144,8 +154,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		@Override
 		public long count() {
 			Long l = reactiveSupport.count().block();
-			if ( l == null ){
-				throw new CouchbaseQueryExecutionException("count query did not return a count : "+query.export());
+			if (l == null) {
+				throw new CouchbaseQueryExecutionException("count query did not return a count : " + query.export());
 			}
 			return l;
 		}
@@ -159,19 +169,19 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		public TerminatingFindByQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields);
+					collection, options, distinctFields, fields);
 		}
 
 	}
