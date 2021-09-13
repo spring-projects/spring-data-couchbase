@@ -63,12 +63,12 @@ public class N1qlJoinResolver {
 				+ "` rks";
 
 		StringBasedN1qlQueryParser.N1qlSpelValues n1qlL = Query.getN1qlSpelValues(template, collectionName,
-				parameters.getEntityTypeInfo().getType(), parameters.getEntityTypeInfo().getType(), false, null);
+				parameters.getEntityTypeInfo().getType(), parameters.getEntityTypeInfo().getType(), false, null, null);
 		String onLks = "lks." + n1qlL.filter;
 
 		StringBasedN1qlQueryParser.N1qlSpelValues n1qlR = Query.getN1qlSpelValues(template, collectionName,
 				parameters.getAssociatedEntityTypeInfo().getType(), parameters.getAssociatedEntityTypeInfo().getType(), false,
-				null);
+				null, null);
 		String onRks = "rks." + n1qlR.filter;
 
 		StringBuilder useRKSBuilder = new StringBuilder();

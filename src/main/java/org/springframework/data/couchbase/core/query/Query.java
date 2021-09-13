@@ -320,13 +320,13 @@ public class Query {
 	}
 
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
-		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
+		return toN1qlSelectString(template, null, domainClass, null, isCount, null, null);
 	}
 
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
-			Class returnClass, boolean isCount, String[] distinctFields) {
+			Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, collectionName, domainClass,
-				returnClass, isCount, distinctFields);
+				returnClass, isCount, distinctFields, fields);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
@@ -340,7 +340,7 @@ public class Query {
 
 	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, collectionName, domainClass, null,
-				false, null);
+				false, null, null);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.delete); // delete ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
@@ -351,7 +351,7 @@ public class Query {
 
 	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(
 			ReactiveCouchbaseTemplate template, String collectionName,
-			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields) {
+			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
 		String typeKey = template.getConverter().getTypeKey();
 		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
@@ -364,7 +364,7 @@ public class Query {
 		}
 
 		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(template.getBucketName(), collectionName,
-				template.getConverter(), domainClass, returnClass, typeKey, typeValue, distinctFields);
+				template.getConverter(), domainClass, returnClass, typeKey, typeValue, isCount, distinctFields, fields);
 		return isCount ? sbnqp.getCountContext() : sbnqp.getStatementContext();
 	}
 

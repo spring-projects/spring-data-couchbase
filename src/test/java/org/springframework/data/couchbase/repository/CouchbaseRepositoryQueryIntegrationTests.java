@@ -57,6 +57,7 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
@@ -243,6 +244,20 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(airport1.getIata(), vie.getIata());
 			airport2 = airportRepository.findByIata(airports.get(0).getIata());
 			assertEquals(airport2.getId(), vie.getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findBySimplePropertyReturnType() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low6");
+			vie = airportRepository.save(vie);
+			List<AirportMini> airports = airportRepository.getByIata("vie");
+			assertEquals(1, airports.size());
+			System.out.println(airports.get(0));
 		} finally {
 			airportRepository.delete(vie);
 		}

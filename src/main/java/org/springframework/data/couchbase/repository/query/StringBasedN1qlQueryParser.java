@@ -21,12 +21,15 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -127,28 +130,38 @@ public class StringBasedN1qlQueryParser {
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
 		String collection = queryMethod.getCollection();
-		this.statementContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, false, null);
-		this.countContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, true, null);
+		this.statementContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, false, null,
+				null);
+		this.countContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, true, null,
+				null);
 		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
 		checkPlaceholders(this.parsedExpression.toString());
 	}
 
 	public StringBasedN1qlQueryParser(String bucketName, String collection, CouchbaseConverter couchbaseConverter,
-			Class domainClass, Class resultClass, String typeField, String typeValue, String[] distinctFields) {
+			Class domainClass, Class resultClass, String typeField, String typeValue, boolean isCount,
+			String[] distinctFields, String[] fields) {
 		this.statement = null;
 		this.queryMethod = null;
 		this.couchbaseConverter = couchbaseConverter;
-		this.statementContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
-				false, distinctFields);
-		this.countContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
-				true, distinctFields);
+		if (!isCount) {
+			this.statementContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField,
+					typeValue, false, distinctFields, fields);
+			this.countContext = null;
+		} else {
+			this.statementContext = null;
+			this.countContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
+					true, distinctFields, fields);
+		}
 		this.parsedExpression = null;
 	}
 
 	public N1qlSpelValues createN1qlSpelValues(String bucketName, String collection, Class domainClass, Class resultClass,
-			String typeField, String typeValue, boolean isCount, String[] distinctFields) {
+			String typeField, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
 		String b = collection != null ? collection : bucketName;
-		String projectedFields = getProjectedFields(b, resultClass);
+		Assert.isTrue(!(distinctFields != null && fields != null),
+				"only one of project(fields) and distinct(distinctFields) can be specified");
+		String projectedFields = getProjectedFields(b, resultClass, fields);
 		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS;
 		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
 		String selectEntity;
@@ -163,7 +176,7 @@ public class StringBasedN1qlQueryParser {
 		} else if (isCount) {
 			selectEntity = "SELECT " + count + " FROM " + i(b);
 		} else {
-			selectEntity = "SELECT " + entity + ", " + projectedFields + " FROM " + i(b);
+			selectEntity = "SELECT " + entity + (!projectedFields.isEmpty() ? ", " : " ") + projectedFields + " FROM " + i(b);
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
@@ -177,50 +190,77 @@ public class StringBasedN1qlQueryParser {
 		return i(distinctFields).toString();
 	}
 
-	private String getProjectedFields(String b, Class resultClass) {
+	private String getProjectedFields(String b, Class resultClass, String[] fields) {
 
 		String projectedFields = i(b) + ".*";
 		if (resultClass != null) {
 			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
 			StringBuilder sb = new StringBuilder();
-			getProjectedFieldsInternal(b, null, sb, persistentEntity.getTypeInformation()/*, ""*/);
+			getProjectedFieldsInternal(b, null, sb, persistentEntity.getTypeInformation(), fields/*, ""*/);
 			projectedFields = sb.toString();
 		}
 		return projectedFields;
 	}
 
 	private void getProjectedFieldsInternal(String bucketName, CouchbasePersistentProperty parent, StringBuilder sb,
-			TypeInformation resultClass/*, String path*/) {
+			TypeInformation resultClass, String[] fields/*, String path*/) {
 
-		PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
-		// CouchbasePersistentProperty property = path.getLeafProperty();
-		persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
-			@Override
-			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-				if (prop.isIdProperty() && parent == null) {
-					return;
+		if (resultClass != null) {
+			Set<String> fieldList = fields != null ? new HashSet<>(Arrays.asList(fields)) : null;
+			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+			// CouchbasePersistentProperty property = path.getLeafProperty();
+
+			persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+				@Override
+				public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
+					if (prop.isIdProperty() && parent == null) {
+						return;
+					}
+					if (prop.isVersionProperty()) {
+						return;
+					}
+					String projectField = null;
+
+					if (fieldList == null || fieldList.contains(prop.getFieldName())) {
+						PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
+								.getPersistentPropertyPath(prop.getName(), resultClass.getType());
+						projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop).toString();
+						if (sb.length() > 0) {
+							sb.append(", ");
+						}
+						sb.append(projectField); // from N1qlQueryCreator
+					}
+
+					if (fieldList != null) {
+						fieldList.remove(prop.getFieldName());
+					}
+					// The current limitation is that only top-level properties can be projected
+					// This traversing of nested data structures would need to replicate the processing done by
+					// MappingCouchbaseConverter. Either the read or write
+					// And the n1ql to project lower-level properties is complex
+
+					// if (!conversions.isSimpleType(prop.getType())) {
+					// getProjectedFieldsInternal(prop, sb, prop.getTypeInformation(), path+prop.getName()+".");
+					// } else {
+
+					// }
 				}
-				if (prop.isVersionProperty()) {
-					return;
-				}
-				PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
-						.getPersistentPropertyPath(prop.getName(), resultClass.getType());
-
-				// The current limitation is that only top-level properties can be projected
-				// This traversing of nested data structures would need to replicate the processing done by
-				// MappingCouchbaseConverter. Either the read or write
-				// And the n1ql to project lower-level properties is complex
-
-				// if (!conversions.isSimpleType(prop.getType())) {
-				// getProjectedFieldsInternal(prop, sb, prop.getTypeInformation(), path+prop.getName()+".");
-				// } else {
+			});
+			// throw an exception if there is an request for a field not in the entity.
+			// needs further discussion as removing a field from an entity could cause this and not necessarily be an error
+			if (fieldList != null && !fieldList.isEmpty()) {
+				throw new CouchbaseException(
+				 "projected fields (" + fieldList + ") not found in entity: " + persistentEntity.getName());
+			}
+		} else {
+			for (String field : fields) {
 				if (sb.length() > 0) {
 					sb.append(", ");
 				}
-				sb.append(N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop)); // from N1qlQueryCreator
-				// }
+				sb.append(x(field));
 			}
-		});
+
+		}
 	}
 
 	// this static method can be used to test the parsing behavior for Couchbase specific spel variables
