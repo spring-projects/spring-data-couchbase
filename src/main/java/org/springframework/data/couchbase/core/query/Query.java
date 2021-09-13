@@ -51,6 +51,8 @@ public class Query {
 	private JsonValue parameters = JsonValue.ja();
 	private long skip;
 	private int limit;
+	private boolean distinct;
+	private String[] distinctFields;
 	private Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
 	private Meta meta;
@@ -124,6 +126,46 @@ public class Query {
 	}
 
 	/**
+	 * Is this a DISTINCT query? {@code distinct}.
+	 *
+	 * @param distinct
+	 * @return
+	 */
+	public Query distinct(boolean distinct) {
+		this.distinct = distinct;
+		return this;
+	}
+
+	/**
+	 * Is this a DISTINCT query? {@code distinct}.
+	 *
+	 * @return distinct
+	 */
+	public boolean isDistinct() {
+		return distinct;
+	}
+
+	/**
+	 * distinctFields for query (non-null but empty means all fields) ? {@code distinctFields}.
+	 *
+	 * @param distinctFields
+	 * @return
+	 */
+	public Query distinct(String[] distinctFields) {
+		this.distinctFields = distinctFields;
+		return this;
+	}
+
+	/**
+	 * distinctFields for query (non-null but empty means all fields) ? {@code distinctFields}.
+	 *
+	 * @return distinctFields
+	 */
+	public String[] getDistinctFields() {
+		return distinctFields;
+	}
+
+	/**
 	 * Sets the given pagination information on the {@link Query} instance. Will transparently set {@code skip} and
 	 * {@code limit} as well as applying the {@link Sort} instance defined with the {@link Pageable}.
 	 *
@@ -136,7 +178,7 @@ public class Query {
 		}
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
-		if(!this.sort.equals(pageable.getSort()))
+		if (!this.sort.equals(pageable.getSort()))
 			this.sort.and(pageable.getSort());
 		return this;
 	}
@@ -176,7 +218,7 @@ public class Query {
 		return this;
 	}
 
-	public Query withoutSort(){
+	public Query withoutSort() {
 		this.sort = Sort.unsorted();
 		return this;
 	}
@@ -277,24 +319,19 @@ public class Query {
 		return sb.toString();
 	}
 
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
-			boolean isCount) {
-		return toN1qlSelectString(template, collectionName, domainClass, null, isCount, null);
-	}
-
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, Class domainClass, boolean isCount) {
-		return toN1qlSelectString(template, null, domainClass, null, isCount, null);
+		return toN1qlSelectString(template, null, domainClass, null, isCount, null, null);
 	}
 
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
-			Class returnClass, boolean isCount, String[] distinctFields) {
+			Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, collectionName, domainClass,
-				returnClass, isCount, distinctFields);
+				returnClass, isCount, distinctFields, fields);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
 		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
-		if(!isCount){
+		if (!isCount) {
 			appendSort(statement);
 			appendSkipAndLimit(statement);
 		}
@@ -303,7 +340,7 @@ public class Query {
 
 	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, collectionName, domainClass, null,
-				false, null);
+				false, null, null);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.delete); // delete ...
 		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
@@ -312,8 +349,9 @@ public class Query {
 		return statement.toString();
 	}
 
-	StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template, String collectionName,
-			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields) {
+	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(
+			ReactiveCouchbaseTemplate template, String collectionName,
+			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
 		String typeKey = template.getConverter().getTypeKey();
 		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
@@ -326,7 +364,7 @@ public class Query {
 		}
 
 		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(template.getBucketName(), collectionName,
-				template.getConverter(), domainClass, returnClass, typeKey, typeValue, distinctFields);
+				template.getConverter(), domainClass, returnClass, typeKey, typeValue, isCount, distinctFields, fields);
 		return isCount ? sbnqp.getCountContext() : sbnqp.getStatementContext();
 	}
 

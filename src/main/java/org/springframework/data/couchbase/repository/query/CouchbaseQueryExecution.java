@@ -39,7 +39,7 @@ import org.springframework.util.Assert;
 @FunctionalInterface
 interface CouchbaseQueryExecution {
 
-	Object execute(Query query, Class<?> type, String collection);
+	Object execute(Query query, Class<?> type, Class<?> returnType, String collection);
 
 	/**
 	 * {@link CouchbaseQueryExecution} removing documents matching the query.
@@ -60,7 +60,7 @@ interface CouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery.Execution#execute(org.springframework.data.couchbase.core.query.Query, java.lang.Class, java.lang.String)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
 			return operations.removeByQuery(type).matching(query).all();
 		}
 
@@ -83,8 +83,8 @@ interface CouchbaseQueryExecution {
 		}
 
 		@Override
-		public Object execute(Query query, Class<?> type, String collection) {
-			return converter.convert(delegate.execute(query, type, collection));
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
+			return converter.convert(delegate.execute(query, type, returnType, collection));
 		}
 	}
 
@@ -109,11 +109,11 @@ interface CouchbaseQueryExecution {
 		 */
 		@Override
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		public Object execute(Query query, Class<?> type, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
 			int pageSize = pageable.getPageSize();
 			// Apply Pageable but tweak limit to peek into next page
 			Query modifiedQuery = query.skip(pageable.getOffset()).limit(pageSize + 1);
-			List result = find.matching(modifiedQuery).all();
+			List result = find.as(returnType).matching(modifiedQuery).all();
 			boolean hasNext = result.size() > pageSize;
 			return new SliceImpl<Object>(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);
 		}
@@ -139,9 +139,9 @@ interface CouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution#execute(org.springframework.data.couchbase.core.query.Query)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
 			int overallLimit = 0; // query.getLimit();
-			TerminatingFindByQuery<?> matching = operation.matching(query);
+			TerminatingFindByQuery<?> matching = operation.as(returnType).matching(query);
 			// Adjust limit if page would exceed the overall limit
 			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
 				query.limit((int) (overallLimit - pageable.getOffset()));

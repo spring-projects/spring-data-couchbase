@@ -69,6 +69,9 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	List<Airport> findAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<AirportMini> getByIata(String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	@ComposedMetaAnnotation(collection = "_default", timeoutMs = 1000)
 	Airport findByIata(String iata);
 
@@ -114,17 +117,37 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
 			@Param("active") Boolean active);
 
-	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE 0 = 1" )
+	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE anything = 'count(*)'") // looks like count query, but is not
 	Long countBad();
 
-	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`" )
+	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`")
 	Long countGood();
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Page<Airport> findAllByIataNot(String iata, Pageable pageable);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND iata != $1")
+	Page<Airport> getAllByIataNot(String iata, Pageable pageable);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Optional<Airport> findByIdAndIata(String id, String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoAndIataBy();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Long countDistinctIcaoBy();
+
+	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE #{#n1ql.filter} " + " #{#projectIds != null ? 'AND blah IN $1' : ''} "
+			+ " #{#planIds != null ? 'AND blahblah IN $2' : ''} " + " #{#active != null ? 'AND false = $3' : ''} ")
+	Long countOne();
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target({ ElementType.METHOD, ElementType.TYPE })

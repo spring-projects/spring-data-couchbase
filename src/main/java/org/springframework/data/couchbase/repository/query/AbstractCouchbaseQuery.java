@@ -87,7 +87,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 
 		CouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), typeToRead, null);
 	}
 
 	/**
@@ -115,20 +115,21 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), getQueryMethod());
 		} else if (isTailable(getQueryMethod())) {
-			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
+			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
+																																															// all()
 		} else if (getQueryMethod().isCollectionQuery()) {
-			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all();
 		} else if (getQueryMethod().isStreamQuery()) {
-			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).stream();
+			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).stream();
 		} else if (isCountQuery()) {
-			return (q, t, c) -> operation.matching(q).count();
+			return (q, t, r, c) -> operation.as(r).matching(q).count();
 		} else if (isExistsQuery()) {
-			return (q, t, c) -> operation.matching(q).exists();
+			return (q, t, r, c) -> operation.as(r).matching(q).exists();
 		} else if (getQueryMethod().isPageQuery()) {
 			return new PagedExecution(operation, accessor.getPageable());
 		} else {
-			return (q, t, c) -> {
-				TerminatingFindByQuery<?> find = operation.matching(q);
+			return (q, t, r, c) -> {
+				TerminatingFindByQuery<?> find = operation.as(r).matching(q);
 				if (isCountQuery()) {
 					return find.count();
 				}

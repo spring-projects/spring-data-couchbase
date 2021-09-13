@@ -30,9 +30,11 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,18 +46,23 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
+import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
+import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 ;
@@ -135,6 +142,52 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(modified, found);
 
 		couchbaseTemplate.removeById().one(user.getId());
+	}
+
+	@Test
+	void findProjected() {
+		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		couchbaseTemplate.insertById(User.class).one(user);
+		User found = couchbaseTemplate.findById(User.class).project(new String[] { "firstname" }).one(user.getId());
+		System.err.println(found);
+		couchbaseTemplate.removeById(User.class).one(user.getId());
+	}
+
+	@Test
+	void findProjecting() {
+		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		couchbaseTemplate.insertById(User.class).one(user);
+		List<User> found = couchbaseTemplate.findByQuery(User.class).project(new String[] { "firstname" })
+				.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS)).all();
+		assertEquals(1, found.size());
+		assertNotEquals(user, found.get(0), "should have found this document");
+		assertEquals(user.getFirstname(), found.get(0).getFirstname(), "firstname should match");
+		assertNull(found.get(0).getLastname(), "lastname should be null");
+		couchbaseTemplate.removeById(User.class).one(user.getId());
+	}
+
+	@Test
+	void findProjectingPath() {
+		UserSubmission user = new UserSubmission();
+		user.setId(UUID.randomUUID().toString());
+		user.setUsername("dave");
+		user.setRoles(Arrays.asList("role1", "role2"));
+		Address address = new Address();
+		address.setStreet("1234 Olcott Street");
+		address.setCity("Santa Clara");
+		user.setAddress(address);
+		user.setSubmissions(
+				Arrays.asList(new Submission(UUID.randomUUID().toString(), user.getId(), "tid", "status", 123)));
+		couchbaseTemplate.upsertById(UserSubmission.class).one(user);
+		assertThrows(CouchbaseException.class, () -> couchbaseTemplate.findByQuery(UserSubmission.class).project(new String[] { "address.street" })
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS).all());
+
+		List<UserSubmission> found = couchbaseTemplate.findByQuery(UserSubmission.class).project(new String[] { "address" })
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		assertEquals(found.size(), 1);
+		assertEquals(found.get(0).getAddress(), address);
+		assertNull(found.get(0).getUsername(), "username should have been null");
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 
 	@Test

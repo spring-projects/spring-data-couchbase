@@ -50,7 +50,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null, null,
-				template.support());
+				null, template.support());
 	}
 
 	static class ReactiveFindByQuerySupport<T> implements ReactiveFindByQuery<T> {
@@ -63,12 +63,13 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final String collection;
 		private final String scope;
 		private final String[] distinctFields;
+		private final String[] fields;
 		private final QueryOptions options;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
 				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-				final String collection, final QueryOptions options, final String[] distinctFields,
+				final String collection, final QueryOptions options, final String[] distinctFields, final String[] fields,
 				final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
@@ -81,6 +82,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			this.collection = collection;
 			this.options = options;
 			this.distinctFields = distinctFields;
+			this.fields = fields;
 			this.support = support;
 		}
 
@@ -94,57 +96,65 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				scanCons = scanConsistency;
 			}
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanCons, scope, collection,
-					options, distinctFields, support);
+					options, distinctFields, fields, support);
 		}
 
 		@Override
 		public TerminatingFindByQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		@Deprecated
 		public FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> withConsistency(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
 		}
 
-		@Override
 		public <R> FindByQueryWithConsistency<R> as(Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, support);
+					collection, options, distinctFields, fields, support);
+		}
+
+		@Override
+		public FindByQueryWithProjection<T> project(String[] fields) {
+			Assert.notNull(fields, "Fields must not be null");
+			Assert.isNull(distinctFields, "only one of project(fields) and distinct(distinctFields) can be specified");
+			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		public FindByQueryWithDistinct<T> distinct(final String[] distinctFields) {
-			Assert.notNull(distinctFields, "distinctFields must not be null!");
+			Assert.notNull(distinctFields, "distinctFields must not be null");
+			Assert.isNull(fields, "only one of project(fields) and distinct(distinctFields) can be specified");
 			// Coming from an annotation, this cannot be null.
 			// But a non-null but empty distinctFields means distinct on all fields
 			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, dFields, support);
+					collection, options, dFields, fields, support);
 		}
 
 		@Override
@@ -176,7 +186,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
 				String id = "";
 				long cas = 0;
-				if (distinctFields == null) {
+				if (!query.isDistinct() && distinctFields == null) {
 					if (row.getString(TemplateUtils.SELECT_ID) == null) {
 						return Flux.error(new CouchbaseException(
 								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
@@ -227,7 +237,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		private String assembleEntityQuery(final boolean count, String[] distinctFields, String collection) {
-			return query.toN1qlSelectString(template, collection, this.domainType, this.returnType, count, distinctFields);
+			return query.toN1qlSelectString(template, collection, this.domainType, this.returnType, count,
+					query.getDistinctFields() != null ? query.getDistinctFields() : distinctFields, fields);
 		}
 	}
 }

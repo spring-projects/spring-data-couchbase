@@ -15,7 +15,10 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import java.util.Locale;
+
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonValue;
@@ -35,7 +38,7 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public class StringQuery extends Query {
 
-	private String inlineN1qlQuery;
+	private final String inlineN1qlQuery;
 
 	public StringQuery(String n1qlString) {
 		inlineN1qlQuery = n1qlString;
@@ -53,8 +56,13 @@ public class StringQuery extends Query {
 
 	@Override
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collection, Class domainClass,
-			Class resultClass, boolean isCount, String[] distinctFields) {
+			Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
 		final StringBuilder statement = new StringBuilder();
+		boolean makeCount = isCount && inlineN1qlQuery != null
+				&& !inlineN1qlQuery.toLowerCase(Locale.ROOT).contains("count(");
+		if (makeCount) {
+			statement.append("SELECT COUNT(*) AS " + TemplateUtils.SELECT_COUNT + " FROM (");
+		}
 		appendInlineN1qlStatement(statement); // apply the string statement
 		// To use generated parameters for literals
 		// we need to figure out if we must use positional or named parameters
@@ -68,9 +76,13 @@ public class StringQuery extends Query {
 			paramIndexPtr = new int[] { -1 };
 		}
 		appendWhere(statement, paramIndexPtr, template.getConverter()); // criteria on this Query - should be empty for
-																																		// StringQuery
-		appendSort(statement);
-		appendSkipAndLimit(statement);
+		if (!isCount) {
+			appendSort(statement);
+			appendSkipAndLimit(statement);
+		}
+		if (makeCount) {
+			statement.append(") predicate_query");
+		}
 		return statement.toString();
 	}
 
@@ -83,6 +95,6 @@ public class StringQuery extends Query {
 	 */
 	@Override
 	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
-		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null);
+		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null, null);
 	}
 }

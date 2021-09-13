@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
  */
 public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 
-	private final PartTree tree;
+	private final CouchbasePartTree tree;
 	private final CouchbaseConverter converter;
 
 	/**
@@ -52,7 +52,7 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 		super(method, operations, expressionParser, evaluationContextProvider);
 
 		ResultProcessor processor = method.getResultProcessor();
-		this.tree = new PartTree(method.getName(), processor.getReturnedType().getDomainType());
+		this.tree = new CouchbasePartTree(method.getName(), processor.getReturnedType().getDomainType());
 		this.converter = operations.getConverter();
 	}
 
@@ -78,6 +78,9 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 
 		if (tree.isLimiting()) {
 			query.limit(tree.getMaxResults());
+		}
+		if (tree.isDistinct()) {
+			query.distinct(tree.getDistinctFields());
 		}
 		return query;
 
@@ -128,4 +131,5 @@ public class PartTreeCouchbaseQuery extends AbstractCouchbaseQuery {
 	protected boolean isLimiting() {
 		return tree.isLimiting();
 	}
+
 }
