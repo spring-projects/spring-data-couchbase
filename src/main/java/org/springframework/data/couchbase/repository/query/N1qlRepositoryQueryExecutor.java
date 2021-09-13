@@ -80,7 +80,7 @@ public class N1qlRepositoryQueryExecutor {
 			return operation.matching(query).all();
 		} else if (queryMethod.isPageQuery()) {
 			Pageable p = accessor.getPageable();
-			return new CouchbaseQueryExecution.PagedExecution(operation, p).execute(query, null, null);
+			return new CouchbaseQueryExecution.PagedExecution(operation, p).execute(query, null, null, null);
 		} else {
 			return operation.matching(query).oneValue();
 		}

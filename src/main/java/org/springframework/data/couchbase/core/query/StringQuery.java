@@ -15,13 +15,13 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import java.util.Locale;
+
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonValue;
-import org.springframework.data.couchbase.core.support.TemplateUtils;
-
-import java.util.Locale;
 
 /**
  * Query created from the string in @Query annotation in the repository interface.
@@ -56,7 +56,7 @@ public class StringQuery extends Query {
 
 	@Override
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collection, Class domainClass,
-			Class resultClass, boolean isCount, String[] distinctFields) {
+			Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
 		final StringBuilder statement = new StringBuilder();
 		boolean makeCount = isCount && inlineN1qlQuery != null
 				&& !inlineN1qlQuery.toLowerCase(Locale.ROOT).contains("count(");
@@ -95,6 +95,6 @@ public class StringQuery extends Query {
 	 */
 	@Override
 	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
-		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null);
+		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null, null);
 	}
 }

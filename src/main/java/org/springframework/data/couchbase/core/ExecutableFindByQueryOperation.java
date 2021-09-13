@@ -221,7 +221,7 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
-	 * Fluent method to specify scan consistency.  Scan consistency may also come from an annotation.
+	 * Fluent method to specify scan consistency. Scan consistency may also come from an annotation.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
@@ -255,11 +255,29 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
+	 * Fluent method to specify fields to project.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryWithProjecting<T> extends FindByQueryWithProjection<T> {
+
+		/**
+		 * Define the target type fields should be mapped to. <br />
+		 * Skip this step if you are anyway only interested in the original domain type.
+		 *
+		 * @param fields to project
+		 * @return new instance of {@link ReactiveFindByQueryOperation.FindByQueryWithConsistency}.
+		 * @throws IllegalArgumentException if returnType is {@literal null}.
+		 */
+		FindByQueryWithProjection<T> project(String[] fields);
+	}
+
+	/**
 	 * Fluent method to specify DISTINCT fields
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjection<T>, WithDistinct<T> {
+	interface FindByQueryWithDistinct<T> extends FindByQueryWithProjecting<T>, WithDistinct<T> {
 
 		/**
 		 * Finds the distinct values for a specified {@literal field} across a single collection

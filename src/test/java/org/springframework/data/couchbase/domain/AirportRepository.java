@@ -69,6 +69,9 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	List<Airport> findAllByIata(String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<AirportMini> getByIata(String iata);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	@ComposedMetaAnnotation(collection = "_default", timeoutMs = 1000)
 	Airport findByIata(String iata);
 
