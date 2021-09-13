@@ -54,7 +54,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
-		this.templateSupport = new ReactiveCouchbaseTemplateSupport(converter, translationService);
+		this.templateSupport = new ReactiveCouchbaseTemplateSupport(this, converter, translationService);
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,12 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
 
-public class N1QLQuery {
+public class N1QLQuery extends Query {
 	private N1QLExpression expression;
 	private QueryOptions options;
 
@@ -45,4 +47,9 @@ public class N1QLQuery {
 		return query;
 	}
 
+	@Override
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
+			Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
+		return expression.toString();
+	}
 }

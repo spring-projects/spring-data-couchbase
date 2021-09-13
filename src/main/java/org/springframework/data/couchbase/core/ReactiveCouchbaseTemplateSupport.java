@@ -24,6 +24,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.join.N1qlJoinResolver;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
@@ -52,14 +53,16 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 
 	private static final Logger LOG = LoggerFactory.getLogger(ReactiveCouchbaseTemplateSupport.class);
 
+	private final ReactiveCouchbaseTemplate template;
 	private final CouchbaseConverter converter;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final TranslationService translationService;
 	private ReactiveEntityCallbacks reactiveEntityCallbacks;
 	private ApplicationContext applicationContext;
 
-	public ReactiveCouchbaseTemplateSupport(final CouchbaseConverter converter,
+	public ReactiveCouchbaseTemplateSupport(final ReactiveCouchbaseTemplate template, final CouchbaseConverter converter,
 			final TranslationService translationService) {
+		this.template = template;
 		this.converter = converter;
 		this.mappingContext = converter.getMappingContext();
 		this.translationService = translationService;
@@ -92,6 +95,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 			if (persistentEntity.getVersionProperty() != null) {
 				accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 			}
+			N1qlJoinResolver.handleProperties(persistentEntity, accessor, template, id);
 			return accessor.getBean();
 		});
 	}
