@@ -954,7 +954,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				return null;
 			}
 
-			return readValue(value, property.getTypeInformation(), parent);
+			return readValue(value, property.getTypeInformation(), source);
 		}
 	}
 

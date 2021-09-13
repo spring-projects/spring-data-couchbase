@@ -40,7 +40,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -92,8 +91,6 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.UpsertOptions;
-import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
-import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -120,18 +117,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	String scopeName = "_default";
 	String collectionName = "_default";
-
-	@BeforeEach
-	public void beforeEach() {
-		clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
-		// this is for the N1qlJoin test
-		List<String> fieldList = new ArrayList<>();
-		fieldList.add("parentId");
-		clientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
-				CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
-		// .with("_class", "org.springframework.data.couchbase.domain.Address"));
-	}
 
 	@Test
 	void shouldSaveAndFindAll() {
