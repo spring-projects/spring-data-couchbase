@@ -24,7 +24,7 @@ public class Address extends ComparableEntity {
 	private String city;
 	// for N1qlJoin
 	private String id;
-	private String parent_id;
+	private String parentId;
 
 	public Address() {}
 
@@ -44,12 +44,12 @@ public class Address extends ComparableEntity {
 		this.city = city;
 	}
 
-	public String getParent_id() {
-		return parent_id;
+	public String getParentId() {
+		return parentId;
 	}
 
-	public void setParent_id(String parent_id) {
-		this.parent_id = parent_id;
+	public void setParentId(String parentId) {
+		this.parentId = parentId;
 	}
 
 	public String getId() {

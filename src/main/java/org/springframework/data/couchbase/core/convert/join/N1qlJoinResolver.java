@@ -25,8 +25,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.FetchType;
 import org.springframework.data.couchbase.core.query.HashSide;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -34,10 +35,11 @@ import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
+import org.springframework.data.mapping.PropertyHandler;
+import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.query.QueryOptions;
 
 /**
@@ -109,20 +111,6 @@ public class N1qlJoinResolver {
 		return statementSb.toString();
 	}
 
-	public static <R> List<R> doResolve(CouchbaseTemplate template, String collectionName,
-			N1qlJoinResolverParameters parameters, Class<R> associatedEntityClass) {
-
-		String statement = buildQuery(template.reactive(), collectionName, parameters);
-
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug("Join query executed " + statement);
-		}
-
-		N1QLQuery query = new N1QLQuery(N1QLExpression.x(statement), QueryOptions.queryOptions());
-		List<R> result = template.findByQuery(associatedEntityClass).matching(query).all();
-		return result.isEmpty() ? null : result;
-	}
-
 	public static <R> List<R> doResolve(ReactiveCouchbaseTemplate template, String collectionName,
 			N1qlJoinResolverParameters parameters, Class<R> associatedEntityClass) {
 
@@ -141,31 +129,42 @@ public class N1qlJoinResolver {
 		return joinDefinition.fetchType().equals(FetchType.LAZY);
 	}
 
+	public static void handleProperties(CouchbasePersistentEntity<?> persistentEntity,
+			ConvertingPropertyAccessor<?> accessor, ReactiveCouchbaseTemplate template, String id) {
+		persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
+			if (prop.isAnnotationPresent(N1qlJoin.class)) {
+				N1qlJoin definition = prop.findAnnotation(N1qlJoin.class);
+				TypeInformation type = prop.getTypeInformation().getActualType();
+				Class clazz = type.getType();
+				N1qlJoinResolver.N1qlJoinResolverParameters parameters = new N1qlJoinResolver.N1qlJoinResolverParameters(
+						definition, id, persistentEntity.getTypeInformation(), type);
+				if (N1qlJoinResolver.isLazyJoin(definition)) {
+					N1qlJoinResolver.N1qlJoinProxy proxy = new N1qlJoinResolver.N1qlJoinProxy(template, parameters);
+					accessor.setProperty(prop,
+							java.lang.reflect.Proxy.newProxyInstance(List.class.getClassLoader(), new Class[] { List.class }, proxy));
+				} else {
+					accessor.setProperty(prop, N1qlJoinResolver.doResolve(template, null, parameters, clazz));
+				}
+			}
+		});
+	}
+
 	static public class N1qlJoinProxy implements InvocationHandler {
-		private final Object template;
+		private final ReactiveCouchbaseTemplate reactiveTemplate;
 		private final String collectionName = null;
 		private final N1qlJoinResolverParameters params;
 		private List<?> resolved = null;
 
-		public N1qlJoinProxy(Object template, N1qlJoinResolverParameters params) {
-			if (template instanceof CouchbaseTemplate && template instanceof ReactiveCouchbaseTemplate) {
-				throw InvalidArgumentException
-						.fromMessage("template must be either a CouchbaseTemplate or a ReactiveCouchbaseTemplate: " + template);
-			}
-			this.template = template;
+		public N1qlJoinProxy(ReactiveCouchbaseTemplate template, N1qlJoinResolverParameters params) {
+			this.reactiveTemplate = template;
 			this.params = params;
 		}
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 			if (this.resolved == null) {
-				if (this.template instanceof CouchbaseTemplate) {
-					this.resolved = doResolve((CouchbaseTemplate) this.template, collectionName, this.params,
-							this.params.associatedEntityTypeInfo.getType());
-				} else {
-					this.resolved = doResolve((ReactiveCouchbaseTemplate) this.template, collectionName, this.params,
-							this.params.associatedEntityTypeInfo.getType());
-				}
+				this.resolved = doResolve(this.reactiveTemplate, collectionName, this.params,
+						this.params.associatedEntityTypeInfo.getType());
 			}
 			return method.invoke(this.resolved, args);
 		}

@@ -127,7 +127,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
 		// this is for the N1qlJoin test
 		List<String> fieldList = new ArrayList<>();
-		fieldList.add("parent_id");
+		fieldList.add("parentId");
 		clientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
 				CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
 		// .with("_class", "org.springframework.data.couchbase.domain.Address"));
@@ -713,15 +713,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Address address1 = new Address();
 		address1.setId(UUID.randomUUID().toString());
 		address1.setStreet("3250 Olcott Street");
-		address1.setParent_id(user.getId());
+		address1.setParentId(user.getId());
 		Address address2 = new Address();
 		address2.setId(UUID.randomUUID().toString());
 		address2.setStreet("148 Castro Street");
-		address2.setParent_id(user.getId());
+		address2.setParentId(user.getId());
 		Address address3 = new Address();
 		address3.setId(UUID.randomUUID().toString());
 		address3.setStreet("123 Sesame Street");
-		address3.setParent_id(UUID.randomUUID().toString()); // does not belong to user
+		address3.setParentId(UUID.randomUUID().toString()); // does not belong to user
 		address1 = couchbaseTemplate.insertById(Address.class).one(address1);
 		address2 = couchbaseTemplate.insertById(Address.class).one(address2);
 		address3 = couchbaseTemplate.insertById(Address.class).one(address3);

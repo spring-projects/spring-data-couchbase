@@ -50,18 +50,6 @@ public class N1QLQuery extends Query {
 	@Override
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass,
 			Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
-		/*
-		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, collectionName, domainClass,
-				returnClass, isCount, distinctFields);
-		final StringBuilder statement = new StringBuilder();
-		appendString(statement, n1ql.selectEntity); // select ...
-		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
-		appendWhere(statement, new int[] { 0 }, template.getConverter()); // criteria on this Query
-		if (!isCount) {
-			appendSort(statement);
-			appendSkipAndLimit(statement);
-		}
-		 */
 		return expression.toString();
 	}
 }

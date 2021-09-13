@@ -42,7 +42,7 @@ public class UserSubmission extends ComparableEntity {
 	private String password;
 	private List<String> roles;
 	private Address address;
-	@N1qlJoin(on = "meta(lks).id=rks.parent_id", fetchType = FetchType.IMMEDIATE) List<Address> otherAddresses;
+	@N1qlJoin(on = "meta(lks).id=rks.parentId", fetchType = FetchType.IMMEDIATE) List<Address> otherAddresses;
 
 	private int credits;
 	private List<Submission> submissions;
