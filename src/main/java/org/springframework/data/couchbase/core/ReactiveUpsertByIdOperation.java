@@ -24,6 +24,8 @@ import java.util.Collection;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
+import org.springframework.data.couchbase.core.support.WithDurability;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithUpsertOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -38,7 +40,6 @@ import com.couchbase.client.java.kv.UpsertOptions;
  * @since 2.0
  */
 public interface ReactiveUpsertByIdOperation {
-
 
 	/**
 	 * Upsert using the KV service.
@@ -118,6 +119,7 @@ public interface ReactiveUpsertByIdOperation {
 	interface UpsertByIdWithDurability<T> extends UpsertByIdInScope<T>, WithDurability<T> {
 		@Override
 		UpsertByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+
 		@Override
 		UpsertByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 

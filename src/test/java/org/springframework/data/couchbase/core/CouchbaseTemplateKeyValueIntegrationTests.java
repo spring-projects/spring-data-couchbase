@@ -28,6 +28,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,9 +39,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.couchbase.core.ExecutableFindByIdOperation.ExecutableFindById;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
 import org.springframework.data.couchbase.core.support.OneAndAllEntity;
+import org.springframework.data.couchbase.core.support.OneAndAllId;
+import org.springframework.data.couchbase.core.support.WithDurability;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
@@ -79,6 +84,30 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
+	}
+
+	@Test
+	void findByIdWithExpiry() {
+		try {
+			User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+			User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+
+			Collection<User> upserts = (Collection<User>) couchbaseTemplate.upsertById(User.class)
+					.all(Arrays.asList(user1, user2));
+
+			User foundUser = couchbaseTemplate.findById(User.class).withExpiry(Duration.ofSeconds(1)).one(user1.getId());
+			user1.setVersion(foundUser.getVersion());// version will have changed
+			assertEquals(user1, foundUser);
+			sleepMs(2000);
+
+			Collection<User> foundUsers = (Collection<User>) couchbaseTemplate.findById(User.class)
+					.all(Arrays.asList(user1.getId(), user2.getId()));
+			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
+			assertEquals(user2, foundUsers.iterator().next());
+		} finally {
+			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+
 	}
 
 	@Test
@@ -219,28 +248,34 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		// replace, upsert )
 		Set<User> users = new HashSet<>(); // set of all documents we will insert
 		// Entity classes
-		for (Class clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
+		for (Class<?> clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
 			// insert, replace, upsert
-			for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
-					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
+			for (Object operator : new Object[] { couchbaseTemplate.insertById(clazz), couchbaseTemplate.replaceById(clazz),
+					couchbaseTemplate.upsertById(clazz), couchbaseTemplate.findById(clazz) }) {
 
 				// create an entity of type clazz
-				Constructor cons = clazz.getConstructor(String.class, String.class, String.class);
+				Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
 				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
 						"firstname", "lastname");
 
 				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation
-					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
+					operator = ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
 				} else if (clazz.equals(UserAnnotated3.class)) { // override the expiry from the annotation with no expiry
-					operator = (OneAndAllEntity) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
+					operator = ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
 				}
 
-				// if replace or remove, we need to insert a document to replace
-				if (operator instanceof ExecutableReplaceById || operator instanceof ExecutableRemoveById) {
-					couchbaseTemplate.insertById(User.class).one(user);
+				// if replace, remove or find, we need to insert a document first
+				if (operator instanceof ExecutableReplaceById || operator instanceof ExecutableRemoveById
+						|| operator instanceof ExecutableFindById) {
+					user = couchbaseTemplate.insertById(User.class).one(user);
 				}
-				// call to insert/replace/update
-				User returned = operator.one(user);
+
+				// call to insert/replace/update/find
+				User returned = operator instanceof OneAndAllEntity ? ((OneAndAllEntity<User>) operator).one(user)
+						: ((OneAndAllId<User>) operator).one(user.getId());
+				if (operator instanceof OneAndAllId) { // the user.version won't be updated
+					user.setVersion(returned.getVersion());
+				}
 				assertEquals(user, returned);
 				users.add(user);
 			}
@@ -250,7 +285,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		for (User user : users) {
 			User found = couchbaseTemplate.findById(user.getClass()).one(user.getId());
 			if (found instanceof UserAnnotated3) {
-				assertNotNull(found, "found should be non null as it was set to have no expirty");
+				assertNotNull(found, "found should be non null as it was set to have no expiry");
 			} else {
 				assertNull(found, "found should have been null as document should be expired");
 			}

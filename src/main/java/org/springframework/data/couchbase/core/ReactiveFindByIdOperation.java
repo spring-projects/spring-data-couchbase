@@ -18,11 +18,13 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithGetOptions;
 import org.springframework.data.couchbase.core.support.WithProjectionId;
 
@@ -124,11 +126,21 @@ public interface ReactiveFindByIdOperation {
 
 	}
 
+	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param expiry the projected fields to load.
+		 */
+		@Override
+		FindByIdWithProjection<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type to use for the results
 	 */
-	interface ReactiveFindById<T> extends FindByIdWithProjection<T> {}
+	interface ReactiveFindById<T> extends FindByIdWithExpiry<T> {}
 
 }

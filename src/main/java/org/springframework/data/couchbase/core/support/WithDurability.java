@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.data.couchbase.core;
+package org.springframework.data.couchbase.core.support;
 
-import java.time.Duration;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 
 /**
- * A common interface for all of Insert, Replace, Upsert that take expiry
+ * A common interface for all of Insert, Replace, Upsert that take Durability
  *
  * @author Michael Reiche
  * @param <T> - the entity class
  */
-public interface WithExpiry<T> {
-	Object withExpiry(Duration expiry);
+public interface WithDurability<T> {
+	Object withDurability(DurabilityLevel durabilityLevel);
+
+	Object withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 }

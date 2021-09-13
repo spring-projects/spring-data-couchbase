@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.support.OneAndAllId;
@@ -24,6 +25,7 @@ import org.springframework.data.couchbase.core.support.WithProjectionId;
 import org.springframework.data.couchbase.core.support.InScope;
 
 import com.couchbase.client.java.kv.GetOptions;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 
 /**
  * Get Operations
@@ -120,11 +122,21 @@ public interface ExecutableFindByIdOperation {
 		FindByIdInScope<T> project(String... fields);
 	}
 
+	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param expiry the projected fields to load.
+		 */
+		@Override
+		FindByIdWithProjection<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type to use for the results
 	 */
-	interface ExecutableFindById<T> extends FindByIdWithProjection<T> {}
+	interface ExecutableFindById<T> extends FindByIdWithExpiry<T> {}
 
 }
