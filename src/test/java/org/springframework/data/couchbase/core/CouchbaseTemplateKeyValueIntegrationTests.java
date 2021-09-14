@@ -27,14 +27,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -47,7 +48,6 @@ import org.springframework.data.couchbase.core.support.OneAndAllId;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.domain.Address;
-import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.Submission;
@@ -60,6 +60,7 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.query.QueryOptions;
@@ -84,6 +85,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 	}
 
 	@Test
@@ -179,8 +181,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		user.setSubmissions(
 				Arrays.asList(new Submission(UUID.randomUUID().toString(), user.getId(), "tid", "status", 123)));
 		couchbaseTemplate.upsertById(UserSubmission.class).one(user);
-		assertThrows(CouchbaseException.class, () -> couchbaseTemplate.findByQuery(UserSubmission.class).project(new String[] { "address.street" })
-				.withConsistency(QueryScanConsistency.REQUEST_PLUS).all());
+		assertThrows(CouchbaseException.class, () -> couchbaseTemplate.findByQuery(UserSubmission.class)
+				.project(new String[] { "address.street" }).withConsistency(QueryScanConsistency.REQUEST_PLUS).all());
 
 		List<UserSubmission> found = couchbaseTemplate.findByQuery(UserSubmission.class).project(new String[] { "address" })
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
@@ -282,15 +284,23 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		}
 		// check that they are gone after a few seconds.
 		sleepSecs(4);
+		List<String> errorList = new LinkedList();
 		for (User user : users) {
 			User found = couchbaseTemplate.findById(user.getClass()).one(user.getId());
-			if (found instanceof UserAnnotated3) {
-				assertNotNull(found, "found should be non null as it was set to have no expiry");
+			if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
+				if (found == null) {
+					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId() );
+				}
 			} else {
-				assertNull(found, "found should have been null as document should be expired");
+				if (found != null) {
+					errorList.add("\nfound should have been null as document should be expired " + user.getId());
+				}
 			}
 		}
 
+		if (!errorList.isEmpty()) {
+			throw new RuntimeException(errorList.toString());
+		}
 	}
 
 	@Test

@@ -503,7 +503,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		final TreeMap<Integer, String> suffixes = new TreeMap<>();
 		final TreeMap<Integer, String> idAttributes = new TreeMap<>();
 
-		target.setExpiration(entity.getExpiry());
+		target.setExpiration((int)(entity.getExpiryDuration().getSeconds()));
 
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 			@Override
