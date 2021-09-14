@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import junit.framework.AssertionFailedError;
+
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -40,6 +42,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import javax.validation.ConstraintViolationException;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -52,6 +56,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
@@ -82,6 +87,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.CouchbaseException;
@@ -123,6 +129,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "low4");
+			vie.setSize(2);
 			airportRepository.save(vie);
 			List<Airport> all = new ArrayList<>();
 			airportRepository.findAll().forEach(all::add);
@@ -130,6 +137,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 		} finally {
 			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void shouldNotSave() {
+		Airport vie = new Airport("airports::vie", "vie", "low4");
+		vie.setSize(3);
+		try {
+			assertThrows(ConstraintViolationException.class, () -> airportRepository.save(vie));
+		} catch (AssertionFailedError e) {
+			airportRepository.delete(vie);
+			throw e;
 		}
 	}
 
@@ -780,5 +799,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			return new AuditingDateTimeProvider();
 		}
 
+		@Bean
+		public LocalValidatorFactoryBean validator() {
+			return new LocalValidatorFactoryBean();
+		}
+
+		@Bean
+		public ValidatingCouchbaseEventListener validationEventListener() {
+			return new ValidatingCouchbaseEventListener(validator());
+		}
 	}
 }
