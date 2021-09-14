@@ -16,8 +16,8 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -66,7 +66,7 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<OverLimitDaysExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(OverLimitDaysExpiry.class));
 
-		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
+		int expiryOver = (int) entityOver.getExpiry();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 
@@ -87,7 +87,7 @@ public class BasicCouchbasePersistentEntityTests {
 				ClassTypeInformation.from(OverLimitDaysExpiryExpression.class));
 		entityOver.setEnvironment(environment);
 
-		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
+		int expiryOver = (int) entityOver.getExpiry();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 
@@ -107,7 +107,7 @@ public class BasicCouchbasePersistentEntityTests {
 		CouchbasePersistentEntity<OverLimitSecondsExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
 				ClassTypeInformation.from(OverLimitSecondsExpiry.class));
 
-		int expiryOver = (int)entityOver.getExpiryInstant().getEpochSecond();
+		int expiryOver = (int) entityOver.getExpiry();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		expected.add(Calendar.DAY_OF_YEAR, 31);
 

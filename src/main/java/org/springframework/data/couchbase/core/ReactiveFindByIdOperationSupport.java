@@ -167,10 +167,10 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				if (expiryToUse == null) { // GetAndTouchOptions without specifying expiry -> get expiry from annoation
 					final CouchbasePersistentEntity<?> entity = template.getConverter().getMappingContext()
 							.getRequiredPersistentEntity(domainType);
-					expiryToUse = Duration.ofSeconds(entity.getExpiry());
+					expiryToUse = entity.getExpiryDuration();
 				}
 			}
-			return expiry;
+			return expiryToUse;
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import org.springframework.data.mapping.PersistentEntity;
-
 import java.time.Duration;
-import java.time.Instant;
+
+import org.springframework.data.mapping.PersistentEntity;
 
 /**
  * Represents an entity that can be persisted which contains 0 or more properties.
@@ -41,6 +40,7 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 *
 	 * @return the expiration time in correct Couchbase format.
 	 */
+	@Deprecated
 	int getExpiry();
 
 	/**
@@ -52,16 +52,6 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 * @return the expiration time Duration
 	 */
 	Duration getExpiryDuration();
-
-	/**
-	 * Returns the expiration time of the entity.
-	 * <p/>
-	 * The Couchbase format for expiration time is: - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in
-	 * seconds - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
-	 *
-	 * @return the expiration time Instant
-	 */
-	Instant getExpiryInstant();
 
 	/**
 	 * Flag for using getAndTouch operations for reads, resetting the expiration (if one was set) when the entity is
