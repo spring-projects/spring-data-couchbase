@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.springframework.data.couchbase.core.mapping;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -98,10 +97,12 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	}
 
 	@Override
+	@Deprecated
 	public int getExpiry() {
 		return getExpiry(AnnotatedElementUtils.findMergedAnnotation(getType(), Expiry.class), environment);
 	}
 
+	@Deprecated
 	public static int getExpiry(Expiry annotation, Environment environment) {
 		if (annotation == null) {
 			return 0;
@@ -133,38 +134,11 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 
 	private static Duration getExpiryDuration(Expiry annotation, Environment environment) {
 		if (annotation == null) {
-			return Duration.ofSeconds(0);
+			return Duration.ZERO;
 		}
 		int expiryValue = getExpiryValue(annotation, environment);
 		long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
 		return Duration.ofSeconds(secondsShift);
-	}
-
-	@Override
-	public Instant getExpiryInstant() {
-		return getExpiryInstant(AnnotatedElementUtils.findMergedAnnotation(getType(), Expiry.class), environment);
-	}
-
-	private static Instant getExpiryInstant(Expiry annotation, Environment environment) {
-		if (annotation == null) {
-			return Instant.ofEpochSecond(0);
-		}
-		int expiryValue = getExpiryValue(annotation, environment);
-		long secondsShift = annotation.expiryUnit().toSeconds(expiryValue);
-		if(secondsShift == 0 ){
-			return Instant.ofEpochSecond(0);
-		}
-		// we want it to be represented as a UNIX timestamp style, seconds since Epoch in UTC
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		if (annotation.expiryUnit() == TimeUnit.DAYS) {
-			// makes sure we won't lose resolution
-			cal.add(Calendar.DAY_OF_MONTH, expiryValue);
-		} else {
-			// use the shift in seconds since resolution should be smaller
-			cal.add(Calendar.SECOND, (int) secondsShift);
-		}
-		return Instant.ofEpochSecond(cal.getTimeInMillis() / 1000); // note: Unix UTC time representation in int is okay
-																																// until year 2038
 	}
 
 	private static int getExpiryValue(Expiry annotation, Environment environment) {
