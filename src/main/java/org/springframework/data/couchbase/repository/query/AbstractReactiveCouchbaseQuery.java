@@ -87,7 +87,7 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
 				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), null);
+		return execution.execute(query, processor.getReturnedType().getDomainType(), typeToRead, null);
 	}
 
 	/**
@@ -98,7 +98,7 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 	 * @return
 	 */
 	private ReactiveCouchbaseQueryExecution getExecution(ParameterAccessor accessor,
-			Converter<Object, Object> resultProcessing, ReactiveFindByQueryOperation.FindByQueryWithQuery<?> operation) {
+			Converter<Object, Object> resultProcessing, ReactiveFindByQuery<?> operation) {
 		return new ResultProcessingExecution(getExecutionToWrap(accessor, operation), resultProcessing);
 	}
 
@@ -110,23 +110,24 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 	 * @return
 	 */
 	private ReactiveCouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor,
-			ReactiveFindByQueryOperation.FindByQueryWithQuery<?> operation) {
+			ReactiveFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
 			return new DeleteExecution(getOperations(), getQueryMethod());
 		} else if (isTailable(getQueryMethod())) {
-			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of all()
+			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
+																																															// all()
 		} else if (getQueryMethod().isCollectionQuery()) {
-			return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all();
+			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all();
 			// } else if (getQueryMethod().isStreamQuery()) {
 			// return (q, t, c) -> operation.matching(q.with(accessor.getPageable())).all().toStream();
 		} else if (isCountQuery()) {
-			return (q, t, c) -> operation.matching(q).count();
+			return (q, t, r, c) -> operation.as(r).matching(q).count();
 		} else if (isExistsQuery()) {
-			return (q, t, c) -> operation.matching(q).exists();
+			return (q, t, r, c) -> operation.as(r).matching(q).exists();
 		} else {
-			return (q, t, c) -> {
-				ReactiveFindByQueryOperation.TerminatingFindByQuery<?> find = operation.matching(q);
+			return (q, t, r, c) -> {
+				ReactiveFindByQueryOperation.TerminatingFindByQuery<?> find = operation.as(r).matching(q);
 				return isLimiting() ? find.first() : find.one();
 			};
 		}

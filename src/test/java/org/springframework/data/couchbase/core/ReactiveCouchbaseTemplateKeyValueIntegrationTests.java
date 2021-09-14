@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,9 +38,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
+import org.springframework.data.couchbase.core.ReactiveFindByIdOperation.ReactiveFindById;
+import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperation.ReactiveRemoveById;
+import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperation.ReactiveReplaceById;
 import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
-import org.springframework.data.couchbase.domain.NaiveAuditorAware;
+import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
+import org.springframework.data.couchbase.core.support.WithDurability;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
@@ -50,6 +57,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -64,9 +72,35 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 	@Override
 	public void beforeEach() {
 		super.beforeEach();
-		reactiveCouchbaseTemplate.removeByQuery(User.class).all();
-		reactiveCouchbaseTemplate.removeByQuery(UserAnnotated.class).all();
-		reactiveCouchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
+		List<RemoveResult> r1  = reactiveCouchbaseTemplate.removeByQuery(User.class).all().collectList().block();
+		List<RemoveResult> r2 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated.class).all().collectList().block();
+		List<RemoveResult> r3 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated2.class).all().collectList().block();
+	}
+
+	@Test
+	void findByIdWithExpiry() {
+		try {
+			User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+			User user2 = new User(UUID.randomUUID().toString(), "user2", "user2");
+
+			Collection<User> upserts = (Collection<User>) reactiveCouchbaseTemplate.upsertById(User.class)
+					.all(Arrays.asList(user1, user2)).collectList().block();
+
+			User foundUser = reactiveCouchbaseTemplate.findById(User.class).withExpiry(Duration.ofSeconds(1))
+					.one(user1.getId()).block();
+			user1.setVersion(foundUser.getVersion());// version will have changed
+			assertEquals(user1, foundUser);
+			sleepMs(2000);
+
+			Collection<User> foundUsers = (Collection<User>) reactiveCouchbaseTemplate.findById(User.class)
+					.all(Arrays.asList(user1.getId(), user2.getId())).collectList().block();
+			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
+			assertEquals(user2, foundUsers.iterator().next());
+		} finally {
+			reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all()
+					.collectList().block();
+		}
+
 	}
 
 	@Test
@@ -82,8 +116,8 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		modifying.setVersion(user.getVersion());
 		modified = reactiveCouchbaseTemplate.replaceById(User.class).one(modifying).block();
 		assertEquals(modifying, modified);
-		if(user == modified){
-			throw new RuntimeException ( " user == modified ");
+		if (user == modified) {
+			throw new RuntimeException(" user == modified ");
 		}
 		assertNotEquals(user, modified);
 		assertEquals(ReactiveNaiveAuditorAware.AUDITOR, modified.getCreatedBy());
@@ -124,7 +158,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			}
 
 			// if replace, we need to insert a document to replace
-			if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById) {
+			if (operator instanceof ReactiveReplaceById) {
 				reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
 			}
 			// call to insert/replace/update
@@ -152,9 +186,9 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		// Entity classes
 		for (Class<?> clazz : new Class[] { User.class, UserAnnotated.class, UserAnnotated2.class, UserAnnotated3.class }) {
 			// insert, replace, upsert
-			for (OneAndAllEntityReactive<User> operator : new OneAndAllEntityReactive[] {
-					reactiveCouchbaseTemplate.insertById(clazz), reactiveCouchbaseTemplate.replaceById(clazz),
-					reactiveCouchbaseTemplate.upsertById(clazz) }) {
+			for (Object operator : new Object[] { reactiveCouchbaseTemplate.insertById(clazz),
+					reactiveCouchbaseTemplate.replaceById(clazz), reactiveCouchbaseTemplate.upsertById(clazz),
+					reactiveCouchbaseTemplate.findById(clazz) }) {
 
 				// create an entity of type clazz
 				Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
@@ -162,18 +196,23 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 						"firstname", "lastname");
 
 				if (clazz.equals(User.class)) { // User.java doesn't have an expiry annotation
-					operator = (OneAndAllEntityReactive<User>) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
+					operator = ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(1));
 				} else if (clazz.equals(UserAnnotated3.class)) { // override the expiry from the annotation with no expiry
-					operator = (OneAndAllEntityReactive<User>) ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
+					operator = ((WithExpiry<User>) operator).withExpiry(Duration.ofSeconds(0));
 				}
 
-				// if replace or remove, we need to insert a document to replace
-				if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById
-						|| operator instanceof ExecutableRemoveById) {
-					reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
+				// if replace, remove or find, we need to insert a document first
+				if (operator instanceof ReactiveReplaceById || operator instanceof ReactiveRemoveById
+						|| operator instanceof ReactiveFindById) {
+					user = reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
 				}
-				// call to insert/replace/update
-				User returned = operator.one(user).block();
+				// call to insert/replace/update/find
+				User returned = operator instanceof OneAndAllEntityReactive
+						? ((OneAndAllEntityReactive<User>) operator).one(user).block()
+						: ((OneAndAllIdReactive<User>) operator).one(user.getId()).block();
+				if (operator instanceof OneAndAllIdReactive) { // the user.version won't be updated
+					user.setVersion(returned.getVersion());
+				}
 				assertEquals(user, returned);
 				users.add(user);
 			}
@@ -183,7 +222,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		for (User user : users) {
 			User found = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
 			if (found instanceof UserAnnotated3) {
-				assertNotNull(found, "found should be non null as it was set to have no expirty");
+				assertNotNull(found, "found should be non null as it was set to have no expiry");
 			} else {
 				assertNull(found, "found should have been null as document should be expired");
 			}

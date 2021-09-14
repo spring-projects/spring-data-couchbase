@@ -23,6 +23,7 @@ import java.util.Collection;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
+import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithRemoveOptions;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;

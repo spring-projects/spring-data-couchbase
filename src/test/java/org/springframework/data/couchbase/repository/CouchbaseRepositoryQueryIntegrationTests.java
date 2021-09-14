@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import junit.framework.AssertionFailedError;
+
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,15 +35,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
-import junit.framework.AssertionFailedError;
-import org.junit.jupiter.api.BeforeEach;
+import javax.validation.ConstraintViolationException;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -59,6 +61,7 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
@@ -66,6 +69,8 @@ import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.UserSubmission;
+import org.springframework.data.couchbase.domain.UserSubmissionRepository;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -82,10 +87,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
@@ -94,9 +99,6 @@ import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
-
-import javax.validation.ConstraintViolationException;
 
 /**
  * Repository tests
@@ -115,16 +117,12 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Autowired UserRepository userRepository;
 
+	@Autowired UserSubmissionRepository userSubmissionRepository;
+
 	@Autowired CouchbaseTemplate couchbaseTemplate;
 
 	String scopeName = "_default";
 	String collectionName = "_default";
-
-	@BeforeEach
-	public void beforeEach() {
-		clientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-				CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
-	}
 
 	@Test
 	void shouldSaveAndFindAll() {
@@ -249,6 +247,20 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertEquals(airport1.getIata(), vie.getIata());
 			airport2 = airportRepository.findByIata(airports.get(0).getIata());
 			assertEquals(airport2.getId(), vie.getId());
+		} finally {
+			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findBySimplePropertyReturnType() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low6");
+			vie = airportRepository.save(vie);
+			List<AirportMini> airports = airportRepository.getByIata("vie");
+			assertEquals(1, airports.size());
+			System.out.println(airports.get(0));
 		} finally {
 			airportRepository.delete(vie);
 		}
@@ -688,6 +700,53 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		} finally {
 			airportRepository.delete(vie);
 		}
+	}
+
+	@Test
+	void findPlusN1qlJoin() throws Exception {
+
+		// needs an index for this N1ql Join
+		// create index ix2 on my_bucket(parent_id) where `_class` = 'org.springframework.data.couchbase.domain.Address';
+
+		UserSubmission user = new UserSubmission();
+		user.setId(UUID.randomUUID().toString());
+		user.setUsername("dave");
+		user = couchbaseTemplate.insertById(UserSubmission.class).one(user);
+
+		Address address1 = new Address();
+		address1.setId(UUID.randomUUID().toString());
+		address1.setStreet("3250 Olcott Street");
+		address1.setParentId(user.getId());
+		Address address2 = new Address();
+		address2.setId(UUID.randomUUID().toString());
+		address2.setStreet("148 Castro Street");
+		address2.setParentId(user.getId());
+		Address address3 = new Address();
+		address3.setId(UUID.randomUUID().toString());
+		address3.setStreet("123 Sesame Street");
+		address3.setParentId(UUID.randomUUID().toString()); // does not belong to user
+		address1 = couchbaseTemplate.insertById(Address.class).one(address1);
+		address2 = couchbaseTemplate.insertById(Address.class).one(address2);
+		address3 = couchbaseTemplate.insertById(Address.class).one(address3);
+
+		List<UserSubmission> users = userSubmissionRepository.findByUsername(user.getUsername());
+		assertEquals(2, users.get(0).getOtherAddresses().size());
+		for (Address a : users.get(0).getOtherAddresses()) {
+			if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+				throw new Exception("street does not match : " + a);
+			}
+		}
+
+		UserSubmission foundUser = userSubmissionRepository.findById(user.getId()).get();
+		assertEquals(2, foundUser.getOtherAddresses().size());
+		for (Address a : foundUser.getOtherAddresses()) {
+			if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+				throw new Exception("street does not match : " + a);
+			}
+		}
+
+		couchbaseTemplate.removeById(Address.class)
+				.all(Arrays.asList(address1.getId(), address2.getId(), address3.getId(), user.getId()));
 	}
 
 	private void sleep(int millis) {

@@ -58,7 +58,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 			final TranslationService translationService) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
-		this.templateSupport = new CouchbaseTemplateSupport(converter, translationService);
+		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
 
 		this.mappingContext = this.converter.getMappingContext();

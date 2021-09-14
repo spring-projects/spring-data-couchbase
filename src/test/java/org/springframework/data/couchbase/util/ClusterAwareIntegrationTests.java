@@ -15,9 +15,12 @@
  */
 package org.springframework.data.couchbase.util;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -27,10 +30,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
 import com.couchbase.client.core.env.SeedNode;
+import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
+import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
 /**
  * Parent class which drives all dynamic integration tests based on the configured cluster setup.
@@ -45,6 +52,19 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
+		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
+				authenticator(), bucketName())) {
+			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
+			// this is for the N1qlJoin test
+			List<String> fieldList = new ArrayList<>();
+			fieldList.add("parentId");
+			couchbaseClientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
+					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
+			// .with("_class", "org.springframework.data.couchbase.domain.Address"));
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
 	}
 
 	/**

@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.springframework.data.couchbase.core.support;
 
-package org.springframework.data.couchbase.domain;
-
-import java.util.List;
-
-import org.springframework.data.couchbase.repository.ScanConsistency;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.stereotype.Repository;
-
-import com.couchbase.client.java.query.QueryScanConsistency;
+import java.time.Duration;
 
 /**
- * UserSubmission Repository for tests
- * 
+ * A common interface for those that support withExpiry()
+ *
  * @author Michael Reiche
+ * @param <R> - the entity class
  */
-@Repository
-public interface UserSubmissionRepository extends PagingAndSortingRepository<UserSubmission, String> {
-
-	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	List<UserSubmission> findByUsername(String username);
+public interface WithExpiry<R> {
+	Object withExpiry(Duration expiry);
 
 }
