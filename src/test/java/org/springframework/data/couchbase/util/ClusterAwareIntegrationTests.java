@@ -30,12 +30,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
 import com.couchbase.client.core.env.SeedNode;
+import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
@@ -48,6 +51,7 @@ import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 public abstract class ClusterAwareIntegrationTests {
 
 	private static TestClusterConfig testClusterConfig;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClusterAwareIntegrationTests.class);
 
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
@@ -62,6 +66,8 @@ public abstract class ClusterAwareIntegrationTests {
 			couchbaseClientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
 					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
 			// .with("_class", "org.springframework.data.couchbase.domain.Address"));
+		} catch (IndexFailureException ife) {
+			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife);
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
