@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -72,7 +73,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 	@Override
 	public void beforeEach() {
 		super.beforeEach();
-		List<RemoveResult> r1  = reactiveCouchbaseTemplate.removeByQuery(User.class).all().collectList().block();
+		List<RemoveResult> r1 = reactiveCouchbaseTemplate.removeByQuery(User.class).all().collectList().block();
 		List<RemoveResult> r2 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated.class).all().collectList().block();
 		List<RemoveResult> r3 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated2.class).all().collectList().block();
 	}
@@ -219,15 +220,23 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		}
 		// check that they are gone after a few seconds.
 		sleepSecs(4);
+		List<String> errorList = new LinkedList();
 		for (User user : users) {
 			User found = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
-			if (found instanceof UserAnnotated3) {
-				assertNotNull(found, "found should be non null as it was set to have no expiry");
+			if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
+				if (found == null) {
+					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId());
+				}
 			} else {
-				assertNull(found, "found should have been null as document should be expired");
+				if (found != null) {
+					errorList.add("\nfound should have been null as document should be expired " + user.getId());
+				}
 			}
 		}
 
+		if (!errorList.isEmpty()) {
+			throw new RuntimeException(errorList.toString());
+		}
 	}
 
 	@Test
