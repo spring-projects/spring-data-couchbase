@@ -193,7 +193,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		}
 	}
 
-	TemplateSupport support() {
+	public TemplateSupport support() {
 		return templateSupport;
 	}
 

@@ -147,7 +147,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return converter;
 	}
 
-	ReactiveTemplateSupport support() {
+	public ReactiveTemplateSupport support() {
 		return templateSupport;
 	}
 
