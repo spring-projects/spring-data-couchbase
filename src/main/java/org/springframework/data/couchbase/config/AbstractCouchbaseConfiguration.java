@@ -301,7 +301,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return ObjectMapper
 	 */
 
-	@Bean
 	public ObjectMapper couchbaseObjectMapper() {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
