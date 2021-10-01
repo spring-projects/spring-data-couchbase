@@ -32,6 +32,7 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Implements lower-level couchbase operations on top of the SDK with entity mapping capabilities.
@@ -49,6 +50,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
+	private QueryScanConsistency scanConsistency;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -56,11 +58,17 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
 			final TranslationService translationService) {
+		this(clientFactory, converter, translationService, null);
+	}
+
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+			final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService);
-
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService,
+				scanConsistency);
+		this.scanConsistency = scanConsistency;
 		this.mappingContext = this.converter.getMappingContext();
 		if (mappingContext instanceof CouchbaseMappingContext) {
 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
@@ -145,6 +153,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	@Override
 	public CouchbaseClientFactory getCouchbaseClientFactory() {
 		return clientFactory;
+	}
+
+	@Override
+	public QueryScanConsistency getConsistency() {
+		return scanConsistency;
 	}
 
 	/**
