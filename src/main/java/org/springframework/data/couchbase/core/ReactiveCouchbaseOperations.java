@@ -20,6 +20,8 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by
  * {@link ReactiveCouchbaseTemplate}.
@@ -47,8 +49,12 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	CouchbaseClientFactory getCouchbaseClientFactory();
 
 	/**
-	 * @@return the pseudoArgs from the ThreadLocal field of the CouchbaseOperations
+	 * @return the pseudoArgs from the ThreadLocal field of the CouchbaseOperations
 	 */
 	PseudoArgs<?> getPseudoArgs();
 
+	/**
+	 * @return the default consistency to use for queries
+	 */
+	QueryScanConsistency getConsistency();
 }

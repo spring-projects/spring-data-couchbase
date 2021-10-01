@@ -43,6 +43,10 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @Repository
 public interface AirportRepository extends CouchbaseRepository<Airport, String> {
 
+	// NOT_BOUNDED to test ScanConsistency
+	// @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
+	Airport iata(String iata);
+
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAll();
