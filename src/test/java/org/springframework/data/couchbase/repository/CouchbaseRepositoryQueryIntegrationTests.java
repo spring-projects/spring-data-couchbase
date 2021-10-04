@@ -16,13 +16,17 @@
 
 package org.springframework.data.couchbase.repository;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -39,13 +43,17 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
@@ -195,13 +203,84 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	public void saveNotBounded() {
+		// save() followed by query with NOT_BOUNDED will result in not finding the document
+		Airport vie = new Airport("airports::vie", "vie", "low9");
+		Airport airport2 = null;
+		for (int i = 1; i <= 100; i++) {
+			// set version == 0 so save() will be an upsert, not a replace
+			Airport saved = airportRepository.save(vie.clearVersion());
+			try {
+				airport2 = airportRepository.iata(saved.getIata());
+				if (airport2 == null) {
+					break;
+				}
+			} catch (DataRetrievalFailureException drfe) {
+				airport2 = null; //
+			} finally {
+				// airportRepository.delete(vie);
+				// instead of delete, use removeResult to test QueryOptions.consistentWith()
+				RemoveResult removeResult = couchbaseTemplate.removeById().one(vie.getId());
+				assertEquals(vie.getId(), removeResult.getId());
+				assertTrue(removeResult.getCas() != 0);
+				assertTrue(removeResult.getMutationToken().isPresent());
+				Airport airport3 = airportRepository.iata(vie.getIata());
+				assertNull(airport3, "should have been removed");
+			}
+		}
+		assertNull(airport2, "airport2 should have likely been null at least once");
+		Airport saved = airportRepository.save(vie.clearVersion());
+		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
+		airport2 = airportRepository.iata(vie.getIata());
+		RemoveResult removeResult = couchbaseTemplate.removeById().one(saved.getId());
+		assertNotNull(airport2, "airport2 should have been found");
+	}
+
+	@Test
+	public void saveNotBoundedRequestPlus() {
+		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
+		// the Config class has been modified, these need to be loaded again
+		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		AirportRepository airportRepositoryRP = (AirportRepository) ac.getBean("airportRepository");
+
+		// save() followed by query with NOT_BOUNDED will result in not finding the document
+		Airport vie = new Airport("airports::vie", "vie", "low9");
+		Airport airport2 = null;
+		for (int i = 1; i <= 100; i++) {
+			// set version == 0 so save() will be an upsert, not a replace
+			Airport saved = airportRepositoryRP.save(vie.clearVersion());
+			try {
+				airport2 = airportRepositoryRP.iata(saved.getIata());
+				if (airport2 == null) {
+					break;
+				}
+			} catch (DataRetrievalFailureException drfe) {
+				airport2 = null; //
+			} finally {
+				// airportRepository.delete(vie);
+				// instead of delete, use removeResult to test QueryOptions.consistentWith()
+				RemoveResult removeResult = couchbaseTemplateRP.removeById().one(vie.getId());
+				assertEquals(vie.getId(), removeResult.getId());
+				assertTrue(removeResult.getCas() != 0);
+				assertTrue(removeResult.getMutationToken().isPresent());
+				Airport airport3 = airportRepositoryRP.iata(vie.getIata());
+				assertNull(airport3, "should have been removed");
+			}
+		}
+		assertNotNull(airport2, "airport2 should have never been null");
+		Airport saved = airportRepositoryRP.save(vie.clearVersion());
+		List<Airport> airports = couchbaseTemplateRP.findByQuery(Airport.class).withConsistency(NOT_BOUNDED).all();
+		RemoveResult removeResult = couchbaseTemplateRP.removeById().one(saved.getId());
+		assertFalse(!airports.isEmpty(), "airports should have been empty");
+	}
+
+	@Test
 	void findByTypeAlias() {
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS)
 					.matching(new Query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport"))).all();
 			assertFalse(airports.isEmpty(), "should have found aiport");
 		} finally {
@@ -252,7 +331,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		userRepository.save(user1);
 		userRepository.save(user2);
 		List<User> users = userRepository.findByLastname("Wilson").collect(Collectors.toList());
-		assertEquals(2,users.size());
+		assertEquals(2, users.size());
 		assertTrue(users.contains(user1));
 		assertTrue(users.contains(user2));
 		userRepository.delete(user1);
@@ -268,7 +347,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
-			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
@@ -427,7 +506,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void couchbaseRepositoryQuery() throws Exception {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
-		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
 				.matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
 		String input = "findByFirstname";
 		Method method = UserRepository.class.getMethod(input, String.class);
@@ -493,6 +572,47 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		public DateTimeProvider testDateTimeProvider() {
 			return new AuditingDateTimeProvider();
 		}
+
 	}
 
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Bean(name = "auditorAwareRef")
+		public NaiveAuditorAware testAuditorAware() {
+			return new NaiveAuditorAware();
+		}
+
+		@Bean(name = "dateTimeProviderRef")
+		public DateTimeProvider testDateTimeProvider() {
+			return new AuditingDateTimeProvider();
+		}
+
+		@Override
+		public QueryScanConsistency getDefaultConsistency() {
+			return REQUEST_PLUS;
+		}
+	}
 }

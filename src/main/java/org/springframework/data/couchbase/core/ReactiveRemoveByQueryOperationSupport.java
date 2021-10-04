@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.util.Assert;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -45,8 +45,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY,null, null,
-				null, null);
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -94,7 +93,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		private QueryOptions buildQueryOptions(QueryOptions options) {
-			return query.buildQueryOptions(options, scanConsistency);
+			QueryScanConsistency qsc = scanConsistency != null ? scanConsistency : template.getConsistency();
+			return query.buildQueryOptions(options, qsc);
 		}
 
 		@Override

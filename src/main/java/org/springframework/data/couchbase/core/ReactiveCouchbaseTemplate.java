@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 
 import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * template class for Reactive Couchbase operations
@@ -44,6 +45,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
+	private QueryScanConsistency scanConsistency;
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -51,10 +53,16 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
 			final TranslationService translationService) {
+		this(clientFactory, converter, translationService, null);
+	}
+
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+			final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
 		this.templateSupport = new ReactiveCouchbaseTemplateSupport(converter, translationService);
+		this.scanConsistency = scanConsistency;
 	}
 
 	@Override
@@ -163,6 +171,14 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public PseudoArgs<?> getPseudoArgs() {
 		return threadLocalArgs == null ? null : threadLocalArgs.get();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public QueryScanConsistency getConsistency() {
+		return scanConsistency;
 	}
 
 }
