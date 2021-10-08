@@ -218,7 +218,7 @@ public class StringBasedN1qlQueryParser {
 				if (path != null && path.length() != 0) {
 					sb.append(path);
 				}
-				sb.append(prop.getName());
+				sb.append(prop.getFieldName());
 				sb.append('`');
 				// }
 			}
