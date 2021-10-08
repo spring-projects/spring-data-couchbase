@@ -27,11 +27,13 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithInsertOptions;
+import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Insert Operations
@@ -84,17 +86,43 @@ public interface ReactiveInsertByIdOperation {
 		TerminatingInsertById<T> withOptions(InsertOptions options);
 	}
 
+	interface InsertByIdWithDurability<T> extends InsertByIdWithOptions<T>, WithDurability<T> {
+
+		@Override
+		InsertByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		InsertByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+	}
+
+	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
+
+		@Override
+		InsertByIdWithDurability<T> withExpiry(Duration expiry);
+	}
+
+	interface InsertByIdWithTransaction<T> extends TerminatingInsertById<T>, WithTransaction<T> {
+		@Override
+		InsertByIdWithDurability<T> transaction(AttemptContextReactive txCtx);
+	}
+
 	/**
 	 * Fluent method to specify the collection.
 	 */
-	interface InsertByIdInCollection<T> extends InsertByIdWithOptions<T>, InCollection<T> {
+	interface InsertByIdTxOrNot<T> extends InsertByIdWithTransaction<T>, InsertByIdWithExpiry<T> {}
+
+	/**
+	 * Fluent method to specify the collection.
+	 */
+	interface InsertByIdInCollection<T> extends InsertByIdTxOrNot<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		InsertByIdWithOptions<T> inCollection(String collection);
+		InsertByIdTxOrNot<T> inCollection(String collection);
 	}
 
 	/**
@@ -110,27 +138,11 @@ public interface ReactiveInsertByIdOperation {
 		InsertByIdInCollection<T> inScope(String scope);
 	}
 
-	interface InsertByIdWithDurability<T> extends InsertByIdInScope<T>, WithDurability<T> {
-
-		@Override
-		InsertByIdInScope<T> withDurability(DurabilityLevel durabilityLevel);
-
-		@Override
-		InsertByIdInScope<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
-
-	}
-
-	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
-
-		@Override
-		InsertByIdWithDurability<T> withExpiry(Duration expiry);
-	}
-
 	/**
 	 * Provides methods for constructing KV insert operations in a fluent way.
 	 *
 	 * @param <T> the entity type to insert
 	 */
-	interface ReactiveInsertById<T> extends InsertByIdWithExpiry<T> {}
+	interface ReactiveInsertById<T> extends InsertByIdInScope<T> {}
 
 }

@@ -61,4 +61,11 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 */
 	boolean isTouchOnRead();
 
+	/**
+	 * The property than can hold a transaction result
+	 *
+	 * @return The property than can hold a transaction result
+	 */
+	CouchbasePersistentProperty transactionResultProperty();
+
 }

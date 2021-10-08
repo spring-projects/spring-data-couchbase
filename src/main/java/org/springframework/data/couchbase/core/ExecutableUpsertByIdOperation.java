@@ -83,19 +83,32 @@ public interface ExecutableUpsertByIdOperation {
 		TerminatingUpsertById<T> withOptions(UpsertOptions options);
 	}
 
+	interface UpsertByIdWithDurability<T> extends UpsertByIdWithOptions<T>, WithDurability<T> {
+		@Override
+		UpsertByIdWithOptions<T> withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		UpsertByIdWithOptions<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+	}
+
+	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T>, WithExpiry<T> {
+		@Override
+		UpsertByIdWithDurability<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface UpsertByIdInCollection<T> extends UpsertByIdWithOptions<T>, InCollection<T> {
+	interface UpsertByIdInCollection<T> extends UpsertByIdWithExpiry<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		UpsertByIdWithOptions<T> inCollection(String collection);
+		UpsertByIdWithExpiry<T> inCollection(String collection);
 	}
 
 	/**
@@ -113,25 +126,11 @@ public interface ExecutableUpsertByIdOperation {
 		UpsertByIdInCollection<T> inScope(String scope);
 	}
 
-	interface UpsertByIdWithDurability<T> extends UpsertByIdInScope<T>, WithDurability<T> {
-		@Override
-		UpsertByIdInScope<T> withDurability(DurabilityLevel durabilityLevel);
-
-		@Override
-		UpsertByIdInScope<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
-
-	}
-
-	interface UpsertByIdWithExpiry<T> extends UpsertByIdWithDurability<T>, WithExpiry<T> {
-		@Override
-		UpsertByIdWithDurability<T> withExpiry(Duration expiry);
-	}
-
 	/**
 	 * Provides methods for constructing KV operations in a fluent way.
 	 *
 	 * @param <T> the entity type to upsert
 	 */
-	interface ExecutableUpsertById<T> extends UpsertByIdWithExpiry<T> {}
+	interface ExecutableUpsertById<T> extends UpsertByIdInScope<T> {}
 
 }

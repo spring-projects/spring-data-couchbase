@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.repository.CrudRepository;
@@ -28,7 +29,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Reiche
  */
-public interface PersonRepository extends CrudRepository<Person, String> {
+public interface PersonRepository extends CrudRepository<Person, String>, DynamicProxyable<PersonRepository> {
 
 	/*
 	 * These methods are exercised in HomeController of the test spring-boot DemoApplication

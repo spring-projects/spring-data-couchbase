@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
@@ -40,19 +41,15 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope,
-			String collection) {
-		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection));
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+			TransactionResultHolder txResultHolder) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope , collection, txResultHolder));
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedCas(Object entity, CouchbaseDocument converted, long cas) {
-		return Mono.fromSupplier(() -> support.applyUpdatedCas(entity, converted, cas));
-	}
-
-	@Override
-	public Mono<Object> applyUpdatedId(Object entity, Object id) {
-		return Mono.fromSupplier(() -> support.applyUpdatedId(entity, id));
+	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
+			TransactionResultHolder txResultHolder) {
+		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder));
 	}
 
 	@Override
@@ -66,7 +63,7 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
-		support.maybeEmitEvent(event);
+	public <T> TransactionResultHolder getTxResultHolder(T source) {
+		return support.getTxResultHolder(source);
 	}
 }

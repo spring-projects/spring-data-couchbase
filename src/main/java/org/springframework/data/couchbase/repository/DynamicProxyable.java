@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import org.springframework.data.couchbase.repository.support.DynamicInvocationHandler;
 
 import com.couchbase.client.java.CommonOptions;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * The generic parameter needs to be REPO which is either a CouchbaseRepository parameterized on T,ID or a
@@ -51,7 +52,7 @@ public interface DynamicProxyable<REPO> {
 	@SuppressWarnings("unchecked")
 	default REPO withOptions(CommonOptions<?> options) {
 		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
-				this.getClass().getInterfaces(), new DynamicInvocationHandler(this, options, null, (String) null));
+				this.getClass().getInterfaces(), new DynamicInvocationHandler(this, options, null, null, null));
 		return proxyInstance;
 	}
 
@@ -61,7 +62,7 @@ public interface DynamicProxyable<REPO> {
 	@SuppressWarnings("unchecked")
 	default REPO withScope(String scope) {
 		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
-				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, scope));
+				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, scope, null));
 		return proxyInstance;
 	}
 
@@ -71,7 +72,17 @@ public interface DynamicProxyable<REPO> {
 	@SuppressWarnings("unchecked")
 	default REPO withCollection(String collection) {
 		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
-				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, collection, null));
+				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, collection, null, null));
+		return proxyInstance;
+	}
+
+	/**
+	 * @param ctx - the AttemptContextReactive for transactions
+	 */
+	@SuppressWarnings("unchecked")
+	default REPO withTransaction(AttemptContextReactive ctx) {
+		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
+				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, null, ctx));
 		return proxyInstance;
 	}
 

@@ -24,6 +24,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -49,6 +50,9 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.transactions.TransactionInsertOptions;
+import com.couchbase.transactions.TransactionQueryOptions;
+import com.couchbase.transactions.TransactionReplaceOptions;
 
 public class OptionsBuilder {
 
@@ -90,6 +94,22 @@ public class OptionsBuilder {
 		return options;
 	}
 
+	public static TransactionQueryOptions buildTransactionQueryOptions(QueryOptions options) {
+
+		QueryOptions.Built built = options.build();
+		TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
+
+		JsonObject optsJson = getQueryOpts(built);
+		for (Map.Entry<String, Object> entry : optsJson.toMap().entrySet()) {
+			txOptions.raw(entry.getKey(), entry.getValue());
+		}
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("query options: {}", optsJson);
+		}
+		return txOptions;
+	}
+
 	public static ExistsOptions buildExistsOptions(ExistsOptions options) {
 		options = options != null ? options : ExistsOptions.existsOptions();
 		return options;
@@ -112,6 +132,13 @@ public class OptionsBuilder {
 			LOG.trace("insert options: {}" + toString(options));
 		}
 		return options;
+	}
+
+	public static TransactionInsertOptions buildTxInsertOptions(InsertOptions options) {
+		options = options != null ? options : InsertOptions.insertOptions();
+		InsertOptions.Built built = options.build();
+		TransactionInsertOptions txOptions = TransactionInsertOptions.insertOptions();
+		return txOptions;
 	}
 
 	public static UpsertOptions buildUpsertOptions(UpsertOptions options, PersistTo persistTo, ReplicateTo replicateTo,
@@ -153,6 +180,18 @@ public class OptionsBuilder {
 			LOG.trace("replace options: {}" + toString(options));
 		}
 		return options;
+	}
+
+	public static Object buildTransactionReplaceOptions(ReplaceOptions options) {
+		ReplaceOptions.Built built = options.build();
+		TransactionReplaceOptions txOptions = TransactionReplaceOptions.replaceOptions();
+		return txOptions;
+	}
+
+	public static TransactionReplaceOptions buildTransactionUpsertOptions(ReplaceOptions options) {
+		ReplaceOptions.Built built = options.build();
+		TransactionReplaceOptions txOptions = TransactionReplaceOptions.replaceOptions();
+		return txOptions;
 	}
 
 	public static RemoveOptions buildRemoveOptions(RemoveOptions options, PersistTo persistTo, ReplicateTo replicateTo,
@@ -423,4 +462,5 @@ public class OptionsBuilder {
 			AnnotatedElement[] elements) {
 		return annotationString(annotation, "value", defaultValue, elements);
 	}
+
 }

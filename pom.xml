@@ -22,6 +22,7 @@
         <couchbase.osgi>3.2.5</couchbase.osgi>
         <springdata.commons>2.7.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
+        <couchbase-transactions>1.2.2</couchbase-transactions>
     </properties>
 
     <dependencyManagement>
@@ -37,6 +38,14 @@
     </dependencyManagement>
 
     <dependencies>
+
+    <dependency>
+        <groupId>com.couchbase.client</groupId>
+        <artifactId>couchbase-transactions</artifactId>
+        <version>${couchbase-transactions}</version>
+    </dependency>
+
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>

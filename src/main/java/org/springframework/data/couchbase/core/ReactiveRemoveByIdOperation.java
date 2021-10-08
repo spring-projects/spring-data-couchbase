@@ -25,11 +25,13 @@ import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithRemoveOptions;
+import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Remove Operations on KV service.
@@ -86,36 +88,12 @@ public interface ReactiveRemoveByIdOperation {
 		TerminatingRemoveById withOptions(RemoveOptions options);
 	}
 
-	/**
-	 * Fluent method to specify the collection.
-	 */
-	interface RemoveByIdInCollection extends RemoveByIdWithOptions, InCollection<Object> {
-		/**
-		 * With a different collection
-		 *
-		 * @param collection the collection to use.
-		 */
-		RemoveByIdWithOptions inCollection(String collection);
-	}
-
-	/**
-	 * Fluent method to specify the scope.
-	 */
-	interface RemoveByIdInScope extends RemoveByIdInCollection, InScope<Object> {
-		/**
-		 * With a different scope
-		 *
-		 * @param scope the scope to use.
-		 */
-		RemoveByIdInCollection inScope(String scope);
-	}
-
-	interface RemoveByIdWithDurability extends RemoveByIdInScope, WithDurability<RemoveResult> {
+	interface RemoveByIdWithDurability extends RemoveByIdWithOptions, WithDurability<RemoveResult> {
 		@Override
-		RemoveByIdInScope withDurability(DurabilityLevel durabilityLevel);
+		RemoveByIdInCollection withDurability(DurabilityLevel durabilityLevel);
 
 		@Override
-		RemoveByIdInScope withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		RemoveByIdInCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
@@ -124,9 +102,39 @@ public interface ReactiveRemoveByIdOperation {
 		RemoveByIdWithDurability withCas(Long cas);
 	}
 
+	interface RemoveByIdWithTransaction extends RemoveByIdWithCas, WithTransaction<RemoveResult> {
+		RemoveByIdWithCas transaction(AttemptContextReactive txCtx);
+	}
+
+	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}
+
+	/**
+	 * Fluent method to specify the collection.
+	 */
+	interface RemoveByIdInCollection extends RemoveByIdTxOrNot, InCollection<RemoveResult> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		RemoveByIdTxOrNot inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 */
+	interface RemoveByIdInScope extends RemoveByIdInCollection, InScope<RemoveResult> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		RemoveByIdInCollection inScope(String scope);
+	}
+
 	/**
 	 * Provides methods for constructing remove operations in a fluent way.
 	 */
-	interface ReactiveRemoveById extends RemoveByIdWithCas {}
+	interface ReactiveRemoveById extends RemoveByIdInScope {};
 
 }

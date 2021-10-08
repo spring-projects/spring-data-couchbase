@@ -71,7 +71,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public Mono<Boolean> one(final String id) {
-			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, null, domainType);
 			LOG.trace("existsById {}", pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
@@ -102,7 +102,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		}
 
 		@Override
-		public TerminatingExistsById withOptions(final ExistsOptions options) {
+		public ExistsByIdInScope withOptions(final ExistsOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
 		}

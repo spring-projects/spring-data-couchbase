@@ -97,9 +97,9 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	@Override
 	public Collection getCollection(final String collectionName) {
 		final Scope scope = getScope();
-		if (collectionName == null) {
+		if (collectionName == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionName)) {
 			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used");
 			}
 			return getBucket().defaultCollection();
 		}

@@ -25,6 +25,7 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
 
@@ -43,7 +44,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 	@Override
 	public ExecutableRemoveById removeById(Class<?> domainType) {
 		return new ExecutableRemoveByIdSupport(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+				DurabilityLevel.NONE, null, null);
 	}
 
 	static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
@@ -57,11 +58,12 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Long cas;
+		private final AttemptContextReactive txCtx;
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final Class<?> domainType, final String scope,
 				final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Long cas) {
+				final DurabilityLevel durabilityLevel, Long cas, AttemptContextReactive txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -71,8 +73,9 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.reactiveRemoveByIdSupport = new ReactiveRemoveByIdSupport(template.reactive(), domainType, scope, collection,
-					options, persistTo, replicateTo, durabilityLevel, cas);
+					options, persistTo, replicateTo, durabilityLevel, cas, txCtx);
 			this.cas = cas;
+			this.txCtx = txCtx;
 		}
 
 		@Override
@@ -86,16 +89,16 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		}
 
 		@Override
-		public RemoveByIdWithOptions inCollection(final String collection) {
+		public RemoveByIdTxOrNot inCollection(final String collection) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
 
 		@Override
 		public RemoveByIdInScope withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
 
 		@Override
@@ -103,27 +106,34 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
 
 		@Override
 		public TerminatingRemoveById withOptions(final RemoveOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
 
 		@Override
 		public RemoveByIdWithDurability withCas(Long cas) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+					durabilityLevel, cas, txCtx);
 		}
+
+		@Override
+		public RemoveByIdWithCas transaction(AttemptContextReactive txCtx) {
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, cas, txCtx);
+		}
+
 	}
 
 }

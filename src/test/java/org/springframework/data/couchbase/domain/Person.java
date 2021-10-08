@@ -25,6 +25,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
+import org.springframework.data.couchbase.repository.TransactionResult;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.lang.Nullable;
 
 @Document
@@ -47,6 +49,11 @@ public class Person extends AbstractEntity {
 
 	private Address address;
 
+	// Required for use in transactions (??)
+	//@Transient
+	//@TransactionResult private TransactionResultHolder txResultHolder;
+
+
 	public Person() {}
 
 	public Person(String firstname, String lastname) {
@@ -61,19 +68,24 @@ public class Person extends AbstractEntity {
 		setId(new UUID(id, id));
 	}
 
+	public Person(UUID id, String firstname, String lastname) {
+		this(firstname, lastname);
+		setId(id);
+	}
+
 	static String optional(String name, Optional<String> obj) {
 		if (obj != null) {
 			if (obj.isPresent()) {
-				return ("  " + name + ": '" + obj.get() + "'\n");
+				return ("  " + name + ": '" + obj.get() + "'");
 			} else {
-				return "  " + name + ": null\n";
+				return "  " + name + ": null";
 			}
 		}
 		return "";
 	}
 
-	public Optional<String> getFirstname() {
-		return firstname;
+	public String getFirstname() {
+		return firstname.get();
 	}
 
 	public void setFirstname(String firstname) {
@@ -84,8 +96,8 @@ public class Person extends AbstractEntity {
 		this.firstname = firstname;
 	}
 
-	public Optional<String> getLastname() {
-		return lastname;
+	public String getLastname() {
+		return lastname.get();
 	}
 
 	public void setLastname(String lastname) {
@@ -131,7 +143,7 @@ public class Person extends AbstractEntity {
 		sb.append(optional(", firstname", firstname));
 		sb.append(optional(", lastname", lastname));
 		if (middlename != null)
-			sb.append(", middlename : " + middlename);
+			sb.append(", middlename : '" + middlename + "'");
 		sb.append(", version : " + version);
 		if (creator != null) {
 			sb.append(", creator : " + creator);
@@ -148,8 +160,27 @@ public class Person extends AbstractEntity {
 		if (getAddress() != null) {
 			sb.append(", address : " + getAddress().toString());
 		}
-		sb.append("}");
+		sb.append("\n}");
 		return sb.toString();
 	}
 
+	public Person withFirstName(String firstName) {
+		Person p = new Person(this.getId(), firstName, this.getLastname());
+		//p.txResultHolder = this.txResultHolder;
+		return p;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+
+		Person that = (Person) obj;
+		return this.getId().equals(that.getId()) && this.getFirstname().equals(that.getFirstname())
+				&& this.getLastname().equals(that.getLastname()) && this.getMiddlename().equals(that.getMiddlename());
+	}
 }

@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static com.couchbase.client.java.query.QueryOptions.queryOptions;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -107,6 +109,8 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.kv.MutationState;
+import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
@@ -277,8 +281,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "low6");
 			vie = airportRepository.save(vie);
-			Airport airport2 = airportRepository
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
+			Airport airport2 = airportRepository.withOptions(queryOptions().scanConsistency(REQUEST_PLUS))
 					.findByIata(vie.getIata());
 			assertEquals(airport2, vie);
 
@@ -390,9 +393,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
 			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 					.matching(org.springframework.data.couchbase.core.query.Query
 							.query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport")))
+					.withConsistency(REQUEST_PLUS)
+
 					.all();
 			assertFalse(airports.isEmpty(), "should have found aiport");
 		} finally {
@@ -452,15 +456,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Airport saved = airportRepository.withScope(scopeName).withCollection(collectionName).save(vie);
 			// given collection (on scope used by template)
 			Airport airport2 = airportRepository.withCollection(collectionName)
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+					.withOptions(queryOptions().scanConsistency(REQUEST_PLUS)).iata(vie.getIata());
 			assertEquals(saved, airport2);
 
 			// given scope and collection
 
 			Airport airport3 = airportRepository.withScope(scopeName).withCollection(collectionName)
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+					.withOptions(queryOptions().scanConsistency(REQUEST_PLUS)).iata(vie.getIata());
 			assertEquals(saved, airport3);
 
 			// given bad collection
@@ -468,7 +470,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 					() -> airportRepository.withCollection("bogusCollection").iata(vie.getIata()));
 
 			// given bad scope
-			assertThrows(IndexFailureException.class, () -> airportRepository.withScope("bogusScope").iata(vie.getIata()));
+			assertThrows(IndexFailureException.class,
+					() -> airportRepository.withScope("bogusScope").withCollection(collectionName).iata(vie.getIata()));
 
 		} finally {
 			airportRepository.delete(vie);
@@ -502,12 +505,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			Airport saved = airportRepository.save(vie);
 			// Duration of 1 nano-second will cause timeout
-			assertThrows(AmbiguousTimeoutException.class, () -> airportRepository
-					.withOptions(QueryOptions.queryOptions().timeout(Duration.ofNanos(1))).iata(vie.getIata()));
+			assertThrows(AmbiguousTimeoutException.class,
+					() -> airportRepository.withOptions(queryOptions().timeout(Duration.ofNanos(1))).iata(vie.getIata()));
 
-			Airport airport3 = airportRepository.withOptions(
-					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
-					.iata(vie.getIata());
+			Airport airport3 = airportRepository
+					.withOptions(queryOptions().scanConsistency(REQUEST_PLUS).parameters(positionalParams)).iata(vie.getIata());
 			assertEquals(saved, airport3);
 
 		} finally {
@@ -525,7 +527,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			// set version == 0 so save() will be an upsert, not a replace
 			Airport saved = airportRepository.save(vie.clearVersion());
 			try {
-				airport2 = airportRepository.iata(saved.getIata());
+				airport2 = airportRepository.withOptions(queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED))
+						.iata(saved.getIata());
 				if (airport2 == null) {
 					break;
 				}
@@ -538,7 +541,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				assertEquals(vie.getId(), removeResult.getId());
 				assertTrue(removeResult.getCas() != 0);
 				assertTrue(removeResult.getMutationToken().isPresent());
-				Airport airport3 = airportRepository.iata(vie.getIata());
+				Airport airport3 = airportRepository.withOptions(queryOptions().scanConsistency(REQUEST_PLUS)
+						.consistentWith(MutationState.from(removeResult.getMutationToken().get()))).iata(vie.getIata());
 				assertNull(airport3, "should have been removed");
 			}
 		}
@@ -706,6 +710,24 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void testGroupBy() {
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+		try {
+			airportRepository.saveAll(
+					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
+							.collect(Collectors.toSet()));
+			List<Airport> airports = airportRepository.groupByIata();
+			for (Airport a : airports) {
+				System.out.println(a);
+			}
+
+		} finally {
+			airportRepository
+					.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
+		}
+	}
+
+	@Test
 	void badCount() {
 		assertThrows(CouchbaseQueryExecutionException.class, () -> airportRepository.countBad());
 	}
@@ -860,7 +882,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void deleteAllById() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDZ");
 		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
 		try {
 			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles));
@@ -875,8 +897,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void couchbaseRepositoryQuery() throws Exception {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
-		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
-				.matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
+		couchbaseTemplate.findByQuery(User.class).matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`"))
+				.withConsistency(REQUEST_PLUS).all();
 		String input = "findByFirstname";
 		Method method = UserRepository.class.getMethod(input, String.class);
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,

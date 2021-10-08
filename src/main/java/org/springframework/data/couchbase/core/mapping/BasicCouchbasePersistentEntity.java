@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
+import org.springframework.data.couchbase.repository.TransactionResult;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.BasicPersistentEntity;
 import org.springframework.data.util.TypeInformation;
@@ -40,6 +41,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		implements CouchbasePersistentEntity<T>, EnvironmentAware {
 
 	private Environment environment;
+	private CouchbasePersistentProperty transactionResult;
 
 	/**
 	 * Create a new entity.
@@ -69,6 +71,9 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	@Override
 	protected CouchbasePersistentProperty returnPropertyIfBetterIdPropertyCandidateOrNull(
 			CouchbasePersistentProperty property) {
+
+		transactionResult = property.findAnnotation(TransactionResult.class) != null ? property : transactionResult;
+
 		if (!property.isIdProperty()) {
 			return null;
 		}
@@ -162,6 +167,11 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		org.springframework.data.couchbase.core.mapping.Document annotation = getType()
 				.getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
 		return annotation == null ? false : annotation.touchOnRead() && getExpiry() > 0;
+	}
+
+	@Override
+	public CouchbasePersistentProperty transactionResultProperty() {
+		return transactionResult;
 	}
 
 }

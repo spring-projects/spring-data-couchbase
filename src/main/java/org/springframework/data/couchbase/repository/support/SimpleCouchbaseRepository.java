@@ -151,14 +151,14 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 
 	@Override
 	public long count() {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
-				.inCollection(getCollection()).count();
+		return operations.findByQuery(getJavaType()).inScope(getScope()).inCollection(getCollection())
+				.withConsistency(buildQueryScanConsistency()).count();
 	}
 
 	@Override
 	public void deleteAll() {
-		operations.removeByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
-				.inCollection(getCollection()).all();
+		operations.removeByQuery(getJavaType()).inScope(getScope()).inCollection(getCollection())
+				.withConsistency(buildQueryScanConsistency()).all();
 	}
 
 	@Override
@@ -189,8 +189,8 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	 * @return the list of found entities, already executed.
 	 */
 	private List<T> findAll(Query query) {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
-				.inCollection(getCollection()).matching(query).all();
+		return operations.findByQuery(getJavaType()).inScope(getScope()).inCollection(getCollection()).matching(query)
+				.withConsistency(buildQueryScanConsistency()).all();
 	}
 
 	@Override

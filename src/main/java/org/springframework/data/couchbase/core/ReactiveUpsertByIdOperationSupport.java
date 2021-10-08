@@ -79,14 +79,13 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, null, domainType);
 			LOG.trace("upsertById {}", pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
 							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
+							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -113,7 +112,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		}
 
 		@Override
-		public UpsertByIdWithDurability<T> inCollection(final String collection) {
+		public UpsertByIdWithExpiry<T> inCollection(final String collection) {
 			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}

@@ -94,7 +94,7 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 		}
 
 		@Override
-		public UpsertByIdWithOptions<T> inCollection(final String collection) {
+		public UpsertByIdWithExpiry<T> inCollection(final String collection) {
 			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}

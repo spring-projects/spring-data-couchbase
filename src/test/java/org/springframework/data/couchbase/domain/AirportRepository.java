@@ -66,6 +66,7 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	List<Airport> findByIataInAndIcaoIn(java.util.Collection<String> size, java.util.Collection<String> color,
 			Pageable pageable);
 
+	// override an annotate with REQUEST_PLUS
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAll();
@@ -91,6 +92,12 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIataIn(JsonArray iatas);
+
+	@Query("Select \"\" AS __id, 0 AS __cas, substr(iata,0,1) as iata, count(*) as someNumber FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} GROUP BY substr(iata,0,1)")
+	List<Airport> groupByIata();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findArchivedByIata(Iata iata);
 
 	// NOT_BOUNDED to test ScanConsistency
 	// @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)

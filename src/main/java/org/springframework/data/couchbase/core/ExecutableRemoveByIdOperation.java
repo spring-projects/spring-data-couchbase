@@ -21,13 +21,16 @@ import java.util.List;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
+import org.springframework.data.couchbase.core.support.WithCas;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithRemoveOptions;
+import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Remove Operations on KV service.
@@ -85,17 +88,39 @@ public interface ExecutableRemoveByIdOperation {
 		TerminatingRemoveById withOptions(RemoveOptions options);
 	}
 
+	interface RemoveByIdWithDurability extends RemoveByIdWithOptions, WithDurability<RemoveResult> {
+
+		@Override
+		RemoveByIdWithOptions withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		RemoveByIdWithOptions withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+	}
+
+	interface RemoveByIdWithCas extends RemoveByIdWithDurability, WithCas<RemoveResult> {
+		@Override
+		RemoveByIdWithDurability withCas(Long cas);
+	}
+
+	interface RemoveByIdWithTransaction extends TerminatingRemoveById, WithTransaction<RemoveResult> {
+		@Override
+		TerminatingRemoveById transaction(AttemptContextReactive txCtx);
+	}
+
+	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}
+
 	/**
 	 * Fluent method to specify the collection.
 	 */
-	interface RemoveByIdInCollection extends RemoveByIdWithOptions, InCollection<Object> {
+	interface RemoveByIdInCollection extends RemoveByIdTxOrNot, InCollection<Object> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		RemoveByIdWithOptions inCollection(String collection);
+		RemoveByIdTxOrNot inCollection(String collection);
 	}
 
 	/**
@@ -111,24 +136,9 @@ public interface ExecutableRemoveByIdOperation {
 		RemoveByIdInCollection inScope(String scope);
 	}
 
-	interface RemoveByIdWithDurability extends RemoveByIdInScope, WithDurability<RemoveResult> {
-
-		@Override
-		RemoveByIdInScope withDurability(DurabilityLevel durabilityLevel);
-
-		@Override
-		RemoveByIdInScope withDurability(PersistTo persistTo, ReplicateTo replicateTo);
-
-	}
-
-	interface RemoveByIdWithCas extends RemoveByIdWithDurability {
-
-		RemoveByIdWithDurability withCas(Long cas);
-	}
-
 	/**
 	 * Provides methods for constructing remove operations in a fluent way.
 	 */
-	interface ExecutableRemoveById extends RemoveByIdWithCas {}
+	interface ExecutableRemoveById extends RemoveByIdInScope {}
 
 }

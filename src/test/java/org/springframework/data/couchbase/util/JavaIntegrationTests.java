@@ -111,9 +111,12 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		// This will result in a Transactions object being created.
+		if (couchbaseTemplate == null || reactiveCouchbaseTemplate == null) {
+			ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+			couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+			reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		}
 	}
 
 	/**

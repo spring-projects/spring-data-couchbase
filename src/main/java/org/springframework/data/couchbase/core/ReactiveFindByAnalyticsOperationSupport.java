@@ -70,7 +70,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		}
 
 		@Override
-		public TerminatingFindByAnalytics<T> matching(AnalyticsQuery query) {
+		public FindByAnalyticsWithConsistency<T> matching(AnalyticsQuery query) {
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);
 		}
@@ -89,7 +89,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		}
 
 		@Override
-		public <R> FindByAnalyticsWithConsistency<R> as(final Class<R> returnType) {
+		public <R> FindByAnalyticsWithQuery<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);
@@ -133,7 +133,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							cas = row.getLong(TemplateUtils.SELECT_CAS);
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
-							return support.decodeEntity(id, row.toString(), cas, returnType, null, null);
+							return support.decodeEntity(id, row.toString(), cas, returnType, null, null, null);
 						});
 			});
 		}
@@ -173,7 +173,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		}
 
 		@Override
-		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
+		public FindByAnalyticsWithProjection<T> inCollection(final String collection) {
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);
 		}

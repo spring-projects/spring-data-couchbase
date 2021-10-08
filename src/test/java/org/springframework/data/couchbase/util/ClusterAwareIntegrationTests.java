@@ -178,16 +178,13 @@ public abstract class ClusterAwareIntegrationTests {
 				for (Method m : methods) {
 					annotation = m.getAnnotation(annotationClass);
 					if (annotation != null) {
-						if (annotation != null) {
-							m.invoke(null);
-							invokedSuper = m;
-						}
+						m.invoke(null);
+						invokedSuper = m;
 					}
 				}
 				if (invokedSuper != null) { // called method is responsible for calling any super methods
 					return;
 				}
-
 			}
 
 		} catch (IllegalAccessException | InvocationTargetException e) {

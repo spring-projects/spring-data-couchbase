@@ -83,7 +83,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 				defaults.load(url.openStream());
 			}
 		} catch (Exception ex) {
-			throw new RuntimeException("Could not load properties", ex);
+			throw new RuntimeException("Could not load properties - maybe <packaging> is pom instead of jar?", ex);
 		}
 
 		Properties all = new Properties(System.getProperties());

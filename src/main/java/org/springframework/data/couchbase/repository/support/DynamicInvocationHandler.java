@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 
 import com.couchbase.client.java.CommonOptions;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Invocation Handler for scope/collection/options proxy for repositories
@@ -44,9 +45,11 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 	final ReactiveCouchbaseTemplate reactiveTemplate;
 	CommonOptions<?> options;
 	String collection;
-	String scope;;
+	String scope;
+	AttemptContextReactive ctx;
 
-	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope) {
+	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope,
+			AttemptContextReactive ctx) {
 		this.target = target;
 		if (target instanceof CouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
@@ -60,6 +63,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		this.options = options;
 		this.collection = collection;
 		this.scope = scope;
+		this.ctx = ctx;
 		this.repositoryClass = target.getClass();
 	}
 
@@ -75,17 +79,22 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 
 		if (method.getName().equals("withOptions")) {
 			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
-					new DynamicInvocationHandler<>(target, (CommonOptions) args[0], collection, scope));
+					new DynamicInvocationHandler<>(target, (CommonOptions) args[0], collection, scope, ctx));
 		}
 
 		if (method.getName().equals("withScope")) {
 			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
-					new DynamicInvocationHandler<>(target, options, collection, (String) args[0]));
+					new DynamicInvocationHandler<>(target, options, collection, (String) args[0], ctx));
 		}
 
 		if (method.getName().equals("withCollection")) {
 			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
-					new DynamicInvocationHandler<>(target, options, (String) args[0], scope));
+					new DynamicInvocationHandler<>(target, options, (String) args[0], scope, ctx));
+		}
+
+		if (method.getName().equals("withTransaction")) {
+			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
+					new DynamicInvocationHandler<>(target, options, collection, scope, (AttemptContextReactive) args[0]));
 		}
 
 		Class<?>[] paramTypes = null;
@@ -117,7 +126,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		if (reactiveTemplate.getPseudoArgs() != null) {
 			throw new RuntimeException("pseudoArgs not yet consumed by previous caller");
 		}
-		reactiveTemplate.setPseudoArgs(new PseudoArgs(this.scope, this.collection, this.options));
+		reactiveTemplate.setPseudoArgs(new PseudoArgs(this.scope, this.collection, this.options, this.ctx));
 	}
 
 }

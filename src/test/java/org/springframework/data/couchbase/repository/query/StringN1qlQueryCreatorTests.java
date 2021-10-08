@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +56,8 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Michael Nitschinger
@@ -99,8 +100,8 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 
 			Query query = creator.createQuery();
 
-			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate
-					.findByQuery(Airline.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query);
+			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate.findByQuery(Airline.class).matching(query)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS);
 
 			Optional<Airline> al = q.one();
 			assertEquals(airline.toString(), al.get().toString());
