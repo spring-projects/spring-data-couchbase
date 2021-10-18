@@ -206,7 +206,12 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 	}
 
 	private QueryScanConsistency buildQueryScanConsistency() {
-		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		QueryScanConsistency scanConsistency = null;
+
+		if (operations.getConsistency() != null) {
+			scanConsistency = operations.getConsistency();
+		}
+
 		if (crudMethodMetadata.getScanConsistency() != null) {
 			scanConsistency = crudMethodMetadata.getScanConsistency().query();
 		}
