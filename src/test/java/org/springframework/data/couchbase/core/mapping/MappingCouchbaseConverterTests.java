@@ -575,7 +575,7 @@ public class MappingCouchbaseConverterTests {
 		mapOfObjectsDoc.put("obj1", objectDoc);
 		source.put("mapOfObjects", mapOfObjectsDoc);
 		assertThat(converted.export()).isEqualTo(source.export());
-	
+
 		CustomObjectEntity readConverted = converter.read(CustomObjectEntity.class, source);
 		assertThat(readConverted.object.weight).isEqualTo(addy.weight);
 		assertThat(readConverted.listOfObjects.get(0).weight).isEqualTo(listOfObjects.get(0).weight);
