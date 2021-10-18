@@ -44,6 +44,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Nitschinger
  * @author Mark Paluch
  * @author Jens Schauder
+ * @author Jonathan Massuchetti
  */
 public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, ID> {
 
@@ -191,6 +192,11 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 
 	private QueryScanConsistency buildQueryScanConsistency() {
 		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+
+		if (couchbaseOperations.getConsistency() != null) {
+			scanConsistency = couchbaseOperations.getConsistency();
+		}
+
 		if (crudMethodMetadata.getScanConsistency() != null) {
 			scanConsistency = crudMethodMetadata.getScanConsistency().query();
 		}
