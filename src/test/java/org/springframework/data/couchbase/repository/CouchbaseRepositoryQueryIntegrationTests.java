@@ -274,7 +274,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		assertFalse(!airports.isEmpty(), "airports should have been empty");
 	}
 
-
 	@Test
 	public void saveNotBoundedRequestPlusWithDefaultRepository() {
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
@@ -302,7 +301,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		assertTrue(success);
 	}
-
 
 	@Test
 	void findByTypeAlias() {

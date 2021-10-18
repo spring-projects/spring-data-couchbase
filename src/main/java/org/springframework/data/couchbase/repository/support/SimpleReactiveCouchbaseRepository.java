@@ -46,6 +46,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author David Kelly
  * @author Douglas Six
  * @author Jens Schauder
+ * @author Jonathan Massuchetti
  * @since 3.0
  */
 public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchbaseRepository<T, ID> {

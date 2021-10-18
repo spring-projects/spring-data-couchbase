@@ -16,21 +16,32 @@
 
 package org.springframework.data.couchbase.repository;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.*;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,10 +55,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -61,6 +68,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Jonathan Massuchetti
  */
 @SpringJUnitConfig(ReactiveCouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -249,6 +257,34 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		}
 	}
 
+	@Test
+	public void saveNotBoundedRequestPlusWithDefaultRepository() {
+		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
+		// the Config class has been modified, these need to be loaded again
+		ReactiveCouchbaseTemplate couchbaseTemplateRP = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		ReactiveAirportDefaultConsistencyRepository airportRepositoryRP = (ReactiveAirportDefaultConsistencyRepository) ac.getBean("reactiveAirportDefaultConsistencyRepository");
+
+		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll().collectList().block();
+		assertEquals(0, sizeBeforeTest.size());
+
+		List<String> idsToRemove = new ArrayList<>(100);
+		for (int i = 1; i <= 100; i++) {
+			Airport vie = new Airport("airports::vie" + i, "vie" + i, "low9");
+			Airport saved = airportRepositoryRP.save(vie).block();
+			idsToRemove.add(saved.getId());
+		}
+
+		List<Airport> allSaved = airportRepositoryRP.findAll().collectList().block();
+
+		boolean success = allSaved.size() == 100;
+
+		for (String idToRemove : idsToRemove) {
+			couchbaseTemplateRP.removeById().one(idToRemove);
+		}
+
+		assertTrue(success);
+	}
+
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {
@@ -275,4 +311,33 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 
 	}
 
+	@Configuration
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Override
+		public QueryScanConsistency getDefaultConsistency() {
+			return REQUEST_PLUS;
+		}
+	}
 }

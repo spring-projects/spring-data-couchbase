@@ -34,8 +34,7 @@ import java.util.ArrayList;
 /**
  * template class for Reactive Couchbase operations
  *
- * @author Michael Nitschinger
- * @author Michael Reiche
+ * @author Jonathan Massuchetti
  */
 @Repository
 public interface ReactiveAirportDefaultConsistencyRepository extends ReactiveSortingRepository<Airport, String> {
