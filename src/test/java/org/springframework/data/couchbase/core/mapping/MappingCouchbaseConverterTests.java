@@ -574,11 +574,11 @@ public class MappingCouchbaseConverterTests {
 		mapOfObjectsDoc.put("obj0", objectDoc);
 		mapOfObjectsDoc.put("obj1", objectDoc);
 		source.put("mapOfObjects", mapOfObjectsDoc);
-                
+           	
 		char[] covertedString = converted.export().toString().toCharArray();
-                char[] sourceString = source.export().toString().toCharArray();
-                Arrays.sort(covertedString);
-                Arrays.sort(sourceString);
+		char[] sourceString = source.export().toString().toCharArray();
+		Arrays.sort(covertedString);
+		Arrays.sort(sourceString);
 		assertThat(String.valueOf(sourceString)).isEqualTo(String.valueOf(covertedString));	
 	
 		CustomObjectEntity readConverted = converter.read(CustomObjectEntity.class, source);
