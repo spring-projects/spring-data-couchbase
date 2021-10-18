@@ -191,7 +191,7 @@ public class SimpleCouchbaseRepository<T, ID> implements CouchbaseRepository<T, 
 	}
 
 	private QueryScanConsistency buildQueryScanConsistency() {
-		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		QueryScanConsistency scanConsistency = null;
 
 		if (couchbaseOperations.getConsistency() != null) {
 			scanConsistency = couchbaseOperations.getConsistency();
