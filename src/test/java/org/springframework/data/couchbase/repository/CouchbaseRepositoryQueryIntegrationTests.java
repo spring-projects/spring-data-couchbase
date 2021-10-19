@@ -16,30 +16,9 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +42,6 @@ import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAud
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
-import org.springframework.data.couchbase.repository.support.SimpleCouchbaseRepository;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -75,9 +53,24 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.query.QueryScanConsistency;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 /**
  * Repository tests
@@ -284,22 +277,16 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		List<String> idsToRemove = new ArrayList<>(100);
 		for (int i = 1; i <= 100; i++) {
 			Airport vie = new Airport("airports::vie" + i, "vie" + i, "low9");
-			Airport saved = airportRepositoryRP.save(vie);
-			idsToRemove.add(saved.getId());
+			airportRepositoryRP.save(vie);
 		}
 
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 
-		boolean success = allSaved.size() == 100;
+		airportRepository.deleteAll();
 
-		for (String idToRemove : idsToRemove) {
-			couchbaseTemplateRP.removeById().one(idToRemove);
-		}
-
-		assertTrue(success);
+		assertEquals(100, allSaved.size());
 	}
 
 	@Test

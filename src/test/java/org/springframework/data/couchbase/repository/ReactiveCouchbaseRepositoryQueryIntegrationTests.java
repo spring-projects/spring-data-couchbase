@@ -16,45 +16,22 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
-
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.data.auditing.DateTimeProvider;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.domain.*;
-import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
-import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.ReactiveAirportDefaultConsistencyRepository;
+import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveUserRepository;
+import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -62,6 +39,25 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 /**
  * template class for Reactive Couchbase operations
@@ -267,22 +263,16 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll().collectList().block();
 		assertEquals(0, sizeBeforeTest.size());
 
-		List<String> idsToRemove = new ArrayList<>(100);
 		for (int i = 1; i <= 100; i++) {
 			Airport vie = new Airport("airports::vie" + i, "vie" + i, "low9");
-			Airport saved = airportRepositoryRP.save(vie).block();
-			idsToRemove.add(saved.getId());
+			airportRepositoryRP.save(vie).block();
 		}
 
 		List<Airport> allSaved = airportRepositoryRP.findAll().collectList().block();
 
-		boolean success = allSaved.size() == 100;
+		airportRepository.deleteAll().block();
 
-		for (String idToRemove : idsToRemove) {
-			couchbaseTemplateRP.removeById().one(idToRemove);
-		}
-
-		assertTrue(success);
+		assertEquals(100, allSaved.size());
 	}
 
 	@Configuration
