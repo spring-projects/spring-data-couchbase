@@ -16,30 +16,9 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,15 +36,7 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
-import org.springframework.data.couchbase.domain.Address;
-import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.AirportRepository;
-import org.springframework.data.couchbase.domain.Iata;
-import org.springframework.data.couchbase.domain.NaiveAuditorAware;
-import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.domain.PersonRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.*;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -82,9 +53,24 @@ import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.query.QueryScanConsistency;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+
+import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 /**
  * Repository tests
@@ -92,6 +78,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jens Schauder
+ * @author Jonathan Massuchetti
  */
 @SpringJUnitConfig(CouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -100,6 +87,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired AirportRepository airportRepository;
+
+	@Autowired
+	AirportDefaultConsistencyRepository airportDefaultConsistencyRepository;
 
 	@Autowired UserRepository userRepository;
 
@@ -212,9 +202,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport airport2 = null;
 		for (int i = 1; i <= 100; i++) {
 			// set version == 0 so save() will be an upsert, not a replace
-			Airport saved = airportRepository.save(vie.clearVersion());
+			Airport saved = airportDefaultConsistencyRepository.save(vie.clearVersion());
 			try {
-				airport2 = airportRepository.iata(saved.getIata());
+				airport2 = airportDefaultConsistencyRepository.iata(saved.getIata());
 				if (airport2 == null) {
 					break;
 				}
@@ -227,14 +217,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				assertEquals(vie.getId(), removeResult.getId());
 				assertTrue(removeResult.getCas() != 0);
 				assertTrue(removeResult.getMutationToken().isPresent());
-				Airport airport3 = airportRepository.iata(vie.getIata());
+				Airport airport3 = airportDefaultConsistencyRepository.iata(vie.getIata());
 				assertNull(airport3, "should have been removed");
 			}
 		}
 		assertNull(airport2, "airport2 should have likely been null at least once");
-		Airport saved = airportRepository.save(vie.clearVersion());
+		Airport saved = airportDefaultConsistencyRepository.save(vie.clearVersion());
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
-		airport2 = airportRepository.iata(vie.getIata());
+		airport2 = airportDefaultConsistencyRepository.iata(vie.getIata());
 		RemoveResult removeResult = couchbaseTemplate.removeById().one(saved.getId());
 		assertNotNull(airport2, "airport2 should have been found");
 	}
@@ -244,7 +234,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		AirportRepository airportRepositoryRP = (AirportRepository) ac.getBean("airportRepository");
+		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac.getBean("airportDefaultConsistencyRepository");
 
 		// save() followed by query with NOT_BOUNDED will result in not finding the document
 		Airport vie = new Airport("airports::vie", "vie", "low9");
@@ -275,6 +265,28 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		List<Airport> airports = couchbaseTemplateRP.findByQuery(Airport.class).withConsistency(NOT_BOUNDED).all();
 		RemoveResult removeResult = couchbaseTemplateRP.removeById().one(saved.getId());
 		assertFalse(!airports.isEmpty(), "airports should have been empty");
+	}
+
+	@Test
+	public void saveNotBoundedRequestPlusWithDefaultRepository() {
+		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
+		// the Config class has been modified, these need to be loaded again
+		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac.getBean("airportDefaultConsistencyRepository");
+
+		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
+		assertEquals(0, sizeBeforeTest.size());
+
+		for (int i = 1; i <= 100; i++) {
+			Airport vie = new Airport("airports::vie" + i, "vie" + i, "low9");
+			airportRepositoryRP.save(vie);
+		}
+
+		List<Airport> allSaved = airportRepositoryRP.findAll();
+
+		airportRepository.deleteAll();
+
+		assertEquals(100, allSaved.size());
 	}
 
 	@Test

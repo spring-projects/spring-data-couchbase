@@ -16,12 +16,29 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static java.util.Arrays.asList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import com.couchbase.client.java.query.QueryScanConsistency;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.ReactiveAirportDefaultConsistencyRepository;
+import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveUserRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
+import org.springframework.data.couchbase.util.Capabilities;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -37,30 +54,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
-import org.springframework.data.couchbase.domain.ReactiveUserRepository;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
-import org.springframework.data.couchbase.util.Capabilities;
-import org.springframework.data.couchbase.util.ClusterType;
-import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.couchbase.util.JavaIntegrationTests;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 /**
  * template class for Reactive Couchbase operations
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Jonathan Massuchetti
  */
 @SpringJUnitConfig(ReactiveCouchbaseRepositoryQueryIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -249,6 +253,28 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		}
 	}
 
+	@Test
+	public void saveNotBoundedRequestPlusWithDefaultRepository() {
+		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
+		// the Config class has been modified, these need to be loaded again
+		ReactiveCouchbaseTemplate couchbaseTemplateRP = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		ReactiveAirportDefaultConsistencyRepository airportRepositoryRP = (ReactiveAirportDefaultConsistencyRepository) ac.getBean("reactiveAirportDefaultConsistencyRepository");
+
+		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll().collectList().block();
+		assertEquals(0, sizeBeforeTest.size());
+
+		for (int i = 1; i <= 100; i++) {
+			Airport vie = new Airport("airports::vie" + i, "vie" + i, "low9");
+			airportRepositoryRP.save(vie).block();
+		}
+
+		List<Airport> allSaved = airportRepositoryRP.findAll().collectList().block();
+
+		airportRepository.deleteAll().block();
+
+		assertEquals(100, allSaved.size());
+	}
+
 	@Configuration
 	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 	static class Config extends AbstractCouchbaseConfiguration {
@@ -275,4 +301,33 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 
 	}
 
+	@Configuration
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Override
+		public QueryScanConsistency getDefaultConsistency() {
+			return REQUEST_PLUS;
+		}
+	}
 }
