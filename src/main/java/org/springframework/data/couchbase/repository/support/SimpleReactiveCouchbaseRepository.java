@@ -16,15 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
-
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
@@ -34,8 +26,14 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -208,10 +206,6 @@ public class SimpleReactiveCouchbaseRepository<T, ID> implements ReactiveCouchba
 
 	private QueryScanConsistency buildQueryScanConsistency() {
 		QueryScanConsistency scanConsistency = null;
-
-		if (operations.getConsistency() != null) {
-			scanConsistency = operations.getConsistency();
-		}
 
 		if (crudMethodMetadata.getScanConsistency() != null) {
 			scanConsistency = crudMethodMetadata.getScanConsistency().query();
