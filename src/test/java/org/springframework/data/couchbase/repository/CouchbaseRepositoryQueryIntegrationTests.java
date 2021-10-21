@@ -16,42 +16,17 @@
 
 package org.springframework.data.couchbase.repository;
 
-import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.client.core.error.IndexExistsException;
-import com.couchbase.client.java.query.QueryScanConsistency;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.data.auditing.DateTimeProvider;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.RemoveResult;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.QueryCriteria;
-import org.springframework.data.couchbase.domain.*;
-import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
-import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
-import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
-import org.springframework.data.couchbase.util.Capabilities;
-import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
-import org.springframework.data.couchbase.util.ClusterType;
-import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
-import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -65,12 +40,54 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.auditing.DateTimeProvider;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseQueryExecutionException;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.AirportDefaultConsistencyRepository;
+import org.springframework.data.couchbase.domain.AirportRepository;
+import org.springframework.data.couchbase.domain.Iata;
+import org.springframework.data.couchbase.domain.NaiveAuditorAware;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery;
+import org.springframework.data.couchbase.util.Capabilities;
+import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
+import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.IndexExistsException;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Repository tests
@@ -88,8 +105,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Autowired AirportRepository airportRepository;
 
-	@Autowired
-	AirportDefaultConsistencyRepository airportDefaultConsistencyRepository;
+	@Autowired AirportDefaultConsistencyRepository airportDefaultConsistencyRepository;
 
 	@Autowired UserRepository userRepository;
 
@@ -196,6 +212,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void findWithPageRequest() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low6");
+			vie = airportRepository.save(vie);
+			// The exception occurred while building the query. This query will not find anything on execution.
+			Page<Airport> airports = airportRepository.findAllByOrganizationIdsContains("123", PageRequest.of(0, 1));
+		} finally {
+			// airportRepository.delete(vie);
+		}
+	}
+
+	@Test
 	public void saveNotBounded() {
 		// save() followed by query with NOT_BOUNDED will result in not finding the document
 		Airport vie = new Airport("airports::vie", "vie", "low9");
@@ -234,7 +263,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac.getBean("airportDefaultConsistencyRepository");
+		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac
+				.getBean("airportDefaultConsistencyRepository");
 
 		// save() followed by query with NOT_BOUNDED will result in not finding the document
 		Airport vie = new Airport("airports::vie", "vie", "low9");
@@ -272,7 +302,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac.getBean("airportDefaultConsistencyRepository");
+		AirportDefaultConsistencyRepository airportRepositoryRP = (AirportDefaultConsistencyRepository) ac
+				.getBean("airportDefaultConsistencyRepository");
 
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
@@ -357,6 +388,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void count() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
+		airportRepository.countOne();
 		try {
 
 			airportRepository.saveAll(
@@ -365,6 +397,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
+
+			Pageable sPageable = PageRequest.of(0, 2).withSort(Sort.by("iata"));
+			Page<Airport> sPage = airportRepository.getAllByIataNot("JFK", sPageable);
+			assertEquals(iatas.length - 1, sPage.getTotalElements());
+			assertEquals(sPageable.getPageSize(), sPage.getContent().size());
 
 			Pageable pageable = PageRequest.of(0, 2);
 			Page<Airport> aPage = airportRepository.findAllByIataNot("JFK", pageable);
@@ -390,6 +427,16 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository
 					.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
+	}
+
+	@Test
+	void badCount() {
+		assertThrows(CouchbaseQueryExecutionException.class, () -> airportRepository.countBad());
+	}
+
+	@Test
+	void goodCount() {
+		airportRepository.countGood();
 	}
 
 	@Test

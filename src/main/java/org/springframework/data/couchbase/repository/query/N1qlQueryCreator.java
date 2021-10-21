@@ -22,6 +22,7 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 
 import java.util.Iterator;
+import java.util.Optional;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -29,6 +30,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
@@ -62,6 +64,17 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		this.queryMethod = queryMethod;
 		this.converter = converter;
 		this.bucketName = bucketName;
+	}
+
+	@Override
+	public Query createQuery() {
+		Query q = this.createQuery((Optional.of(this.accessor).map(ParameterAccessor::getSort).orElse(Sort.unsorted())));
+		Pageable pageable = accessor.getPageable();
+		if (pageable.isPaged()) {
+			q.skip(pageable.getOffset());
+			q.limit(pageable.getPageSize());
+		}
+		return q;
 	}
 
 	@Override

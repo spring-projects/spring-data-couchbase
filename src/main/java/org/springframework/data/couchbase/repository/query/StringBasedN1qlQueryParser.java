@@ -22,7 +22,6 @@ import static org.springframework.data.couchbase.core.support.TemplateUtils.SELE
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -30,17 +29,12 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.core.convert.support.GenericConversionService;
-import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.repository.query.Parameter;
@@ -494,16 +488,7 @@ public class StringBasedN1qlQueryParser {
 				runtimeParameters);
 		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
 
-		Sort sort = accessor.getSort();
-		if (sort.isSorted()) {
-			N1QLExpression[] cbSorts = N1qlUtils.createSort(sort);
-			parsedStatement = parsedStatement.orderBy(cbSorts);
-		}
-		if (queryMethod.isPageQuery()) {
-			Pageable pageable = accessor.getPageable();
-			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize()).offset(Math.toIntExact(pageable.getOffset()));
-		} else if (queryMethod.isSliceQuery()) {
+		if (queryMethod.isSliceQuery()) {
 			Pageable pageable = accessor.getPageable();
 			Assert.notNull(pageable, "Pageable must not be null!");
 			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
@@ -516,6 +501,12 @@ public class StringBasedN1qlQueryParser {
 		ArrayList<Object> params = new ArrayList<>();
 		for (Object o : accessor) {
 			params.add(o);
+		}
+		if (accessor.getPageable() != null) {
+			params.add(accessor.getPageable());
+		}
+		if (accessor.getSort() != null) {
+			params.add(accessor.getSort());
 		}
 		return params.toArray();
 	}
