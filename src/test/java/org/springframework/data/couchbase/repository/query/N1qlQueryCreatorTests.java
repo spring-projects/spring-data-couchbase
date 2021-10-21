@@ -37,10 +37,13 @@ import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
+import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
 import org.springframework.data.repository.query.DefaultParameters;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -69,9 +72,10 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstname";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class);
-
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
-				bucketName);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), queryMethod,
+				converter, bucketName);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where(i("firstname")).is("Oliver").export());
@@ -82,9 +86,10 @@ class N1qlQueryCreatorTests {
 		String input = "findByMiddlename";
 		PartTree tree = new PartTree(input, Person.class);
 		Method method = PersonRepository.class.getMethod(input, String.class);
-
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
-				bucketName);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), queryMethod,
+				converter, bucketName);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where(i("nickname")).is("Oliver").export());
@@ -95,10 +100,12 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameIn";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String[].class);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
-				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), null, converter,
-				bucketName);
+				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), queryMethod,
+				converter, bucketName);
 		Query query = creator.createQuery();
 
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
@@ -115,11 +122,12 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameIn";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, JsonArray.class);
-
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
 		JsonArray jsonArray = JsonArray.create();
 		jsonArray.add("Oliver");
 		jsonArray.add("Charles");
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), jsonArray), null,
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), jsonArray), queryMethod,
 				converter, bucketName);
 		Query query = creator.createQuery();
 
@@ -137,11 +145,13 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameIn";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String[].class);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
 		List<String> list = new LinkedList<>();
 		list.add("Oliver");
 		list.add("Charles");
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), new Object[] { list }),
-				null, converter, bucketName);
+				queryMethod, converter, bucketName);
 		Query query = creator.createQuery();
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
@@ -159,8 +169,10 @@ class N1qlQueryCreatorTests {
 		String input = "findByFirstnameAndLastname";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class, String.class);
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"), null,
-				converter, bucketName);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "John", "Doe"),
+				queryMethod, converter, bucketName);
 		Query query = creator.createQuery();
 
 		assertEquals(" WHERE " + where(i("firstname")).is("John").and(i("lastname")).is("Doe").export(), query.export());
@@ -171,9 +183,10 @@ class N1qlQueryCreatorTests {
 		String input = "findByIdIsNotNullAndFirstnameEquals";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, String.class);
-
-		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), null, converter,
-				bucketName);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), queryMethod,
+				converter, bucketName);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(),
@@ -185,9 +198,10 @@ class N1qlQueryCreatorTests {
 		String input = "findByVersionEqualsAndFirstnameEquals";
 		PartTree tree = new PartTree(input, User.class);
 		Method method = UserRepository.class.getMethod(input, Long.class, String.class);
-
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
-				getAccessor(getParameters(method), 1611287177404088320L, "Oliver"), null, converter, bucketName);
+				getAccessor(getParameters(method), 1611287177404088320L, "Oliver"), queryMethod, converter, bucketName);
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where(x("META(`" + bucketName + "`).`cas`")).is(1611287177404088320L)

@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -51,6 +50,7 @@ import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
@@ -213,10 +213,10 @@ public class StringBasedN1qlQueryParser {
 			persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 				@Override
 				public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-					if (prop.isIdProperty() && parent == null) {
+					if (prop == persistentEntity.getIdProperty() && parent == null) {
 						return;
 					}
-					if (prop.isVersionProperty()) {
+					if (prop == persistentEntity.getVersionProperty() && parent == null) {
 						return;
 					}
 					String projectField = null;
@@ -224,7 +224,7 @@ public class StringBasedN1qlQueryParser {
 					if (fieldList == null || fieldList.contains(prop.getFieldName())) {
 						PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
 								.getPersistentPropertyPath(prop.getName(), resultClass.getType());
-						projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop).toString();
+						projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
 						if (sb.length() > 0) {
 							sb.append(", ");
 						}
@@ -250,7 +250,7 @@ public class StringBasedN1qlQueryParser {
 			// needs further discussion as removing a field from an entity could cause this and not necessarily be an error
 			if (fieldList != null && !fieldList.isEmpty()) {
 				throw new CouchbaseException(
-				 "projected fields (" + fieldList + ") not found in entity: " + persistentEntity.getName());
+						"projected fields (" + fieldList + ") not found in entity: " + persistentEntity.getName());
 			}
 		} else {
 			for (String field : fields) {
