@@ -206,9 +206,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			}));
 		}
 
-		private QueryOptions buildOptions(QueryOptions options) {
-			QueryOptions opts = query.buildQueryOptions(options, scanConsistency);
-			return opts;
+		public QueryOptions buildOptions(QueryOptions options) {
+			QueryScanConsistency qsc = scanConsistency != null ? scanConsistency : template.getConsistency();
+			return query.buildQueryOptions(options, qsc);
 		}
 
 		@Override

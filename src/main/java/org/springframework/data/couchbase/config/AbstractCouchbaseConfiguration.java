@@ -57,6 +57,7 @@ import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -156,7 +157,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService);
+		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService,
+				getDefaultConsistency());
 	}
 
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
@@ -167,8 +169,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
-				couchbaseTranslationService);
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService,
+				getDefaultConsistency());
 	}
 
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
@@ -374,6 +376,10 @@ public abstract class AbstractCouchbaseConfiguration {
 		} catch (Throwable t) {
 			return false;
 		}
+	}
+
+	public QueryScanConsistency getDefaultConsistency() {
+		return null;
 	}
 
 }

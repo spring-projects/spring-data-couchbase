@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by
  * {@link ReactiveCouchbaseTemplate}.
@@ -47,4 +49,8 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	 */
 	CouchbaseClientFactory getCouchbaseClientFactory();
 
+	/**
+	 * @return the default consistency to use for queries
+	 */
+	QueryScanConsistency getConsistency();
 }

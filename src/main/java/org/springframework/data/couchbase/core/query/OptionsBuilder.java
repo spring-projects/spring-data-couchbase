@@ -381,13 +381,14 @@ public class OptionsBuilder {
 		for (AnnotatedElement el : elements) {
 			A an = AnnotatedElementUtils.findMergedAnnotation(el, annotation);
 			if (an != null) {
-				if (defaultValue != null && !defaultValue.equals(an)) {
-					try {
-						Method m = an.getClass().getMethod(attributeName);
-						return (V) m.invoke(an);
-					} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-						throw new RuntimeException(e);
+				try {
+					Method m = an.getClass().getMethod(attributeName);
+					V result = (V) m.invoke(an);
+					if (result != null && !result.equals(defaultValue)) {
+						return result;
 					}
+				} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+					throw new RuntimeException(e);
 				}
 			}
 		}

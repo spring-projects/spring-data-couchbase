@@ -60,7 +60,6 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 // @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface AirportRepository extends CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository> {
 
-	// override an annotate with REQUEST_PLUS
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> findAll();

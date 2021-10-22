@@ -18,12 +18,9 @@ package org.springframework.data.couchbase.domain;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
-import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -159,14 +156,16 @@ public class Config extends AbstractCouchbaseConfiguration {
 	// will be used instead of the result of this call (the client factory arg is different)
 	public ReactiveCouchbaseTemplate myReactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
+				new JacksonTranslationService(), getDefaultConsistency());
 	}
 
 	// do not use couchbaseTemplate for the name of this method, otherwise the value of that been
 	// will be used instead of the result from this call (the client factory arg is different)
 	public CouchbaseTemplate myCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(),
+				getDefaultConsistency());
 	}
 
 	// do not use couchbaseClientFactory for the name of this method, otherwise the value of that bean will
