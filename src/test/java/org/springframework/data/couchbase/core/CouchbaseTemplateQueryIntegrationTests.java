@@ -35,6 +35,7 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.AssessmentDO;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -130,6 +131,21 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());
+	}
+
+	@Test
+	void findAssessmentDO() {
+		AssessmentDO ado = new AssessmentDO();
+		ado.setEventTimestamp(44444444);// this is also an @IdAttribute
+		ado.setId("123");
+		ado = couchbaseTemplate.upsertById(AssessmentDO.class).one(ado);
+
+		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
+		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+		assertEquals("123", foundUsers.get(0).getId(), "id");
+		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
+		assertEquals(ado, foundUsers.get(0));
 	}
 
 	@Test

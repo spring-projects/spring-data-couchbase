@@ -32,6 +32,7 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.query.ParameterAccessor;
@@ -57,6 +58,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	private final QueryMethod queryMethod;
 	private final CouchbaseConverter converter;
 	private final String bucketName;
+	private final PersistentEntity entity;
 
 	public N1qlQueryCreator(final PartTree tree, final ParameterAccessor accessor, final QueryMethod queryMethod,
 			final CouchbaseConverter converter, final String bucketName) {
@@ -67,13 +69,14 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		this.queryMethod = queryMethod;
 		this.converter = converter;
 		this.bucketName = bucketName;
+		this.entity = converter.getMappingContext().getPersistentEntity(queryMethod.getReturnedObjectType());
 	}
 
 	@Override
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(addMetaIfRequired(bucketName, path, property)), iterator);
+		return from(part, property, where(addMetaIfRequired(bucketName, path, property, entity)), iterator);
 	}
 
 	@Override
@@ -107,7 +110,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
 
-		return from(part, property, base.and(addMetaIfRequired(bucketName, path, property)), iterator);
+		return from(part, property, base.and(addMetaIfRequired(bucketName, path, property, entity)), iterator);
 	}
 
 	@Override
@@ -186,11 +189,11 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	public static N1QLExpression addMetaIfRequired(String bucketName,
 			final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
-			final CouchbasePersistentProperty property) {
-		if (property.isIdProperty()) {
+			final CouchbasePersistentProperty property, final PersistentEntity entity) {
+		if (entity != null && property == entity.getIdProperty()) {
 			return path(meta(i(bucketName)), i(META_ID_PROPERTY));
 		}
-		if (property.isVersionProperty()) {
+		if (property == entity.getVersionProperty()) {
 			return path(meta(i(bucketName)), i(META_CAS_PROPERTY));
 		}
 		if (property.isExpirationProperty()) {
