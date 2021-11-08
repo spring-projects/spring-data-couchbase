@@ -455,7 +455,7 @@ public class MappingCouchbaseConverterTests {
 		List<BigDecimal> listOfValues = new ArrayList<>();
 		listOfValues.add(value);
 		listOfValues.add(value2);
-		Map<String, BigDecimal> mapOfValues = new HashMap<>();
+		Map<String, BigDecimal> mapOfValues = new TreeMap<>();
 		mapOfValues.put("val1", value);
 		mapOfValues.put("val2", value2);
 
