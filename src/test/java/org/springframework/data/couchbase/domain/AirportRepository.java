@@ -77,6 +77,12 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(Iata iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIataIn(java.util.Collection<Iata> iatas);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIataIn(Iata[] iata);
+
 	// NOT_BOUNDED to test ScanConsistency
 	// @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
 	Airport iata(String iata);

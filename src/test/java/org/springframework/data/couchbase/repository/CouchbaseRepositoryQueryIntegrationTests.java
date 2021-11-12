@@ -69,6 +69,7 @@ import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryScanConsistencyTest;
+import org.springframework.data.couchbase.domain.Iata;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
@@ -370,9 +371,20 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
-			Airport airport2 = airportRepository.findByIata(vie.getIata());
+			Airport airport2 = airportRepository.findByIata(Iata.vie);
 			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
+
+			Airport airport3 = airportRepository.findByIataIn(new Iata[]{Iata.vie, Iata.xxx});
+			assertNotNull(airport3, "should have found " + vie);
+			assertEquals(airport3.getId(), vie.getId());
+
+			java.util.Collection<Iata> iatas = new ArrayList<>();
+			iatas.add(Iata.vie);
+			iatas.add(Iata.xxx);
+			Airport airport4 = airportRepository.findByIataIn( iatas );
+			assertNotNull(airport4, "should have found " + vie);
+			assertEquals(airport4.getId(), vie.getId());
 
 		} finally {
 			airportRepository.delete(vie);
