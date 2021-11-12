@@ -18,17 +18,22 @@ package org.springframework.data.couchbase.core.query;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Michael Nitschinger
@@ -412,8 +417,8 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 				try {
 					params.add(convert(converter, value));
 				} catch (InvalidArgumentException iae) {
-					if (value instanceof Object[]) {
-						addAsArray(params, value, converter);
+					if (value instanceof Object[] || value instanceof Collection) {
+						addAsCollection(params, asCollection(value), converter);
 					} else {
 						throw iae;
 					}
@@ -462,14 +467,27 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return converter != null ? converter.convertForWriteIfNeeded(value) : value;
 	}
 
-	private void addAsArray(JsonArray posValues, Object o, CouchbaseConverter converter) {
-		Object[] array = (Object[]) o;
+	private void addAsCollection(JsonArray posValues, Collection collection, CouchbaseConverter converter) {
 		JsonArray ja = JsonValue.ja();
-		for (Object e : array) {
+		for (Object e : collection) {
 			ja.add(String.valueOf(convert(converter, e)));
 		}
 		posValues.add(ja);
 	}
+
+	/**
+	 * Returns a collection from the given source object. From MappingCouchbaseConverter.
+	 *
+	 * @param source the source object.
+	 * @return the target collection.
+	 */
+	private static Collection<?> asCollection(final Object source) {
+		if (source instanceof Collection) {
+			return (Collection<?>) source;
+		}
+		return source.getClass().isArray() ? CollectionUtils.arrayToList(source) : Collections.singleton(source);
+	}
+
 
 	private String maybeBackTic(String value) {
 		if (value == null || (value.startsWith("`") && value.endsWith("`"))) {
