@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -33,6 +35,7 @@ import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
+import org.springframework.util.CollectionUtils;
 
 /**
  * @author Michael Nitschinger
