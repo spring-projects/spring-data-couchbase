@@ -1,0 +1,197 @@
+/*
+ * Copyright 2021 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.springframework.data.couchbase.transaction;
+
+import com.couchbase.transactions.AttemptContext;
+import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.repository.DynamicProxyable;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.reactive.TransactionCallback;
+import org.springframework.transaction.reactive.TransactionContextManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import org.springframework.util.Assert;
+
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.transactions.TransactionGetResult;
+import com.couchbase.transactions.TransactionResult;
+import com.couchbase.transactions.TransactionsReactive;
+
+public class CouchbaseTransactionalOperatorNonReactive implements TransactionalOperator {
+
+	// package org.springframework.transaction.reactive;
+	private static final Log logger = LogFactory.getLog(CouchbaseTransactionalOperatorNonReactive.class);
+	private final PlatformTransactionManager transactionManager;
+	private final TransactionDefinition transactionDefinition;
+
+	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
+	private AttemptContext attemptContext;
+
+	public CouchbaseTransactionalOperatorNonReactive(CouchbaseTransactionManager transactionManager) {
+		this(transactionManager, new CouchbaseTransactionDefinition());
+	}
+
+	public CouchbaseTransactionalOperatorNonReactive(CouchbaseTransactionManager transactionManager,
+																									 TransactionDefinition transactionDefinition) {
+		Assert.notNull(transactionManager, "ReactiveTransactionManager must not be null");
+		Assert.notNull(transactionDefinition, "TransactionDefinition must not be null");
+		this.transactionManager = transactionManager;
+		this.transactionDefinition = transactionDefinition;
+	}
+
+	public TransactionResult execute(Function<CouchbaseTransactionalOperatorNonReactive, TransactionResult> transactionLogic) {
+		return execute(transactionLogic, true);
+	}
+
+	/**
+	 * A convenience wrapper around {@link TransactionsReactive#run}, that provides a default
+	 * <code>PerTransactionConfig</code>.
+	 */
+	public TransactionResult execute(Function<CouchbaseTransactionalOperatorNonReactive, TransactionResult> transactionLogic,
+			boolean commit) {
+		return (((CouchbaseTransactionManager) transactionManager).getTransactions().run((ctx) -> {
+			setAttemptContext(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
+			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
+			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
+			transactionLogic.apply(this);
+		}, null));
+	}
+
+	public TransactionResultHolder transactionResultHolder(Integer key) {
+		return getResultMap.get(key);
+	}
+
+	public TransactionResultHolder transactionResultHolder(TransactionGetResult result) {
+		TransactionResultHolder holder = new TransactionResultHolder(result);
+		getResultMap.put(System.identityHashCode(holder), holder);
+		return holder;
+	}
+
+	public void setAttemptContext(AttemptContext attemptContext) {
+		this.attemptContext = attemptContext;
+	}
+
+	public AttemptContext getAttemptContext() {
+		return attemptContext;
+	}
+
+	@Override
+	public <T> Flux<T> transactional(Flux<T> flux) {
+		return execute((it -> flux);
+	}
+
+	@Override
+	public <T> Mono<T> transactional(Mono<T> mono) {
+		return TransactionContextManager.currentContext().flatMap(context -> {
+			// getCtx()/getAttemptTransActionReactive() has the atr
+			// atr : transactionalOpterator -> transactionDefinition -> transactionHolder ->
+			((CouchbaseTransactionDefinition) transactionDefinition).setAttemptContext(getAttemptContext());
+			TransactionStatus status = this.transactionManager.getTransaction(this.transactionDefinition);
+			// This is an around advice: Invoke the next interceptor in the chain.
+			// This will normally result in a target object being invoked.
+			// Need re-wrapping of ReactiveTransaction until we get hold of the exception
+			// through usingWhen.
+			return Mono.just(status)
+					.flatMap(it -> Mono
+							.usingWhen(Mono.just(it), ignore -> mono, this.transactionManager::commit, (res, err) -> Mono.empty(),
+									this.transactionManager::rollback)
+							.onErrorResume(ex -> rollbackOnException(it, ex).then(Mono.error(ex))));
+		}).contextWrite(TransactionContextManager.getOrCreateContext())
+				.contextWrite(TransactionContextManager.getOrCreateContextHolder());
+	}
+
+	@Override
+	public <T> Flux<T> execute(TransactionCallback<T> action) throws TransactionException {
+		return TransactionContextManager.currentContext().flatMapMany(context -> {
+			TransactionStatus status = this.transactionManager.getTransaction(this.transactionDefinition);
+			// This is an around advice: Invoke the next interceptor in the chain.
+			// This will normally result in a target object being invoked.
+			// Need re-wrapping of ReactiveTransaction until we get hold of the exception
+			// through usingWhen.
+			return status
+					.flatMapMany(it -> Flux
+							.usingWhen(Mono.just(it), action::doInTransaction, this.transactionManager::commit,
+									(tx, ex) -> Mono.empty(), this.transactionManager::rollback)
+							.onErrorResume(ex -> rollbackOnException(it, ex).then(Mono.error(ex))));
+		}).contextWrite(TransactionContextManager.getOrCreateContext())
+				.contextWrite(TransactionContextManager.getOrCreateContextHolder());
+	}
+
+	private void rollbackOnException(TransactionStatus status, Throwable ex) throws TransactionException {
+		logger.debug("Initiating transaction rollback on application exception", ex);
+		this.transactionManager.rollback(status);
+		/*.onErrorMap((ex2) -> {
+			logger.error("Application exception overridden by rollback exception", ex);
+			if (ex2 instanceof TransactionSystemException) {
+				((TransactionSystemException) ex2).initApplicationException(ex);
+			}
+			return ex2;
+		});
+		 */
+	}
+
+	/*
+	public TransactionDefinition getTransactionDefinition() {
+		return transactionDefinition;
+	}
+	 */
+
+	public TransactionManager getTransactionManager() {
+		return transactionManager;
+	}
+
+	public CouchbaseTemplate template(CouchbaseTemplate template) {
+		CouchbaseTransactionManager txMgr = ((CouchbaseTransactionManager) ((CouchbaseTransactionalOperatorNonReactive) this)
+				.getTransactionManager());
+		if (template.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
+			throw new CouchbaseException(
+					"Template must use the same clientFactory as the transactionManager of the transactionalOperator "
+							+ template);
+		}
+		return template.with(this); // template with a new couchbaseClient with txOperator
+	}
+
+	public <R extends DynamicProxyable<R>> R repository(R repo) {
+		if (!(repo.getOperations() instanceof ReactiveCouchbaseOperations)) {
+			throw new CouchbaseException("Repository must be a Reactive Couchbase repository" + repo);
+		}
+		CouchbaseOperations operations = (CouchbaseOperations) repo.getOperations();
+		CouchbaseTransactionManager txMgr = ((CouchbaseTransactionManager) (this).getTransactionManager());
+
+		if (operations.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
+			throw new CouchbaseException(
+					"Repository must use the same clientFactory as the transactionManager of the transactionalOperator " + repo);
+		}
+		return repo.withTransaction(this); // this returns a new repository proxy with txOperator in its threadLocal
+		// what if instead we returned a new repo with a new template with the txOperator?
+	}
+
+}

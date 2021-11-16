@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core.support;
 
-import com.couchbase.transactions.AttemptContextReactive;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 /**
  * Interface for operations that take distinct fields
@@ -27,7 +27,7 @@ public interface WithTransaction<T> {
 	/**
 	 * Specify transactions
 	 *
-	 * @param txCtx
-	 */
-	Object transaction(AttemptContextReactive txCtx);
+   * @param txCtx
+   */
+	Object transaction(CouchbaseStuffHandle txCtx);
 }

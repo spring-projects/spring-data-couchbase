@@ -23,19 +23,19 @@ import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
-import com.couchbase.transactions.AttemptContextReactive;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
 	private final String scopeName;
 	private final String collectionName;
-	private final AttemptContextReactive ctx;
+	private final CouchbaseStuffHandle transactionalOperator;
 
-	public PseudoArgs(String scopeName, String collectionName, OPTS options, AttemptContextReactive ctx) {
+	public PseudoArgs(String scopeName, String collectionName, OPTS options, CouchbaseStuffHandle transactionalOperator) {
 		this.options = options;
 		this.scopeName = scopeName;
 		this.collectionName = collectionName;
-		this.ctx = ctx;
+		this.transactionalOperator = transactionalOperator;
 	}
 
 	/**
@@ -51,12 +51,12 @@ public class PseudoArgs<OPTS> {
 	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
-			AttemptContextReactive ctx, Class<?> domainType) {
+                    CouchbaseStuffHandle transactionalOperator, Class<?> domainType) {
 
 		String scopeForQuery = null;
 		String collectionForQuery = null;
 		OPTS optionsForQuery = null;
-		AttemptContextReactive ctxForQuery = null;
+		CouchbaseStuffHandle txOpForQuery = null;
 
 		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
@@ -66,13 +66,15 @@ public class PseudoArgs<OPTS> {
 			scopeForQuery = threadLocal.getScope();
 			collectionForQuery = threadLocal.getCollection();
 			optionsForQuery = threadLocal.getOptions();
-			ctxForQuery = threadLocal.getCtx();
+			//throw new RuntimeException("PseudoArgs fix me 1");
+			txOpForQuery = threadLocal.getTxOp();
+			//System.err.println("threadLocal: txOpForQuery: "+txOpForQuery+" session: ");
 		}
 
 		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
 		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
 		optionsForQuery = fromFirst(null, options, optionsForQuery);
-		ctxForQuery = fromFirst( null, ctx, ctxForQuery);
+		txOpForQuery = fromFirst( null, transactionalOperator, txOpForQuery /*, template.txOperator() */);
 
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
@@ -95,7 +97,7 @@ public class PseudoArgs<OPTS> {
 			throw new CouchbaseException(new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
 		}
 		this.options = optionsForQuery;
-		this.ctx = ctxForQuery;
+		this.transactionalOperator = txOpForQuery;
 
 	}
 
@@ -123,8 +125,8 @@ public class PseudoArgs<OPTS> {
 	/**
 	 * @return the attempt context
 	 */
-	public AttemptContextReactive getCtx() {
-		return ctx;
+	public CouchbaseStuffHandle getTxOp() {
+		return transactionalOperator;
 	}
 
 	@Override

@@ -51,6 +51,15 @@ public class CouchbaseRepositoryBase<T, ID> {
 		return entityInformation;
 	}
 
+	/**
+	 * Returns the repository interface
+	 *
+	 * @return the underlying entity information.
+	 */
+	public Class<?> getRepositoryInterface() {
+		return repositoryInterface;
+	}
+
 	Class<T> getJavaType() {
 		return getEntityInformation().getJavaType();
 	}

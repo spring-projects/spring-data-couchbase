@@ -1,0 +1,368 @@
+/*
+ * Copyright 2012-2021 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.data.couchbase.transactions;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
+import org.springframework.data.couchbase.util.Capabilities;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.couchbase.client.core.cnc.Event;
+import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.java.Collection;
+import com.couchbase.client.java.ReactiveCollection;
+import com.couchbase.client.java.kv.RemoveOptions;
+import com.couchbase.transactions.TransactionDurabilityLevel;
+import com.couchbase.transactions.TransactionResult;
+import com.couchbase.transactions.config.TransactionConfig;
+import com.couchbase.transactions.config.TransactionConfigBuilder;
+import com.couchbase.transactions.error.TransactionFailed;
+
+/**
+ * Tests for com.couchbase.transactions without using the spring data transactions framework
+ *
+ * @author Michael Reiche
+ */
+@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(CouchbaseTransactionNativeTests.Config.class)
+public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
+
+	// @Autowired not supported on static fields. These are initialized in beforeAll()
+	// Also - @Autowired doesn't work here on couchbaseClientFactory even when it is not static, not sure why - oh, it
+	// seems there is not a ReactiveCouchbaseClientFactory bean
+	@Autowired CouchbaseClientFactory couchbaseClientFactory;
+	@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
+
+	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
+
+	@Autowired PersonRepository repo;
+	@Autowired CouchbaseTemplate cbTmpl;;
+	static String cName; // short name
+
+	@BeforeAll
+	public static void beforeAll() {
+		callSuperBeforeAll(new Object() {});
+		// short names
+		cName = null;// cName;
+	}
+
+	@AfterAll
+	public static void afterAll() {
+		callSuperAfterAll(new Object() {});
+	}
+
+	@Test
+	public void replacePersonTemplate() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+
+
+		try {
+			CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(
+					reactiveCouchbaseTransactionManager);
+			 txOperator.execute(reactiveTransaction -> {
+				return cbTmpl.replaceById(Person.class).one(person);
+			});
+
+			Flux<TransactionResult> result = txOperator.execute((ctx) -> {
+				Person p = txOperator.template(cbTmpl).findById(Person.class).one(person.getId().toString());
+				txOperator.template(cbTmpl).replaceById(Person.class).one(p.withFirstName("Walt"));
+				// throw new PoofException();
+				return null;
+			});
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertEquals(person, pFound, "Should have found " + person);
+				return;
+			}
+			e.printStackTrace();
+		}
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void replacePersonRbTemplate() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+		try {
+			CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(
+					reactiveCouchbaseTransactionManager);
+			TransactionResult result = txOperator
+					.execute((ctx) -> ctx.template(cbTmpl).findById(Person.class).one(person.getId().toString())
+							.flatMap(p -> ctx.template(cbTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
+							.flatMap(it -> Mono.error(new PoofException())).then());
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertEquals(person, pFound, "Should have found " + person);
+				return;
+			}
+			e.printStackTrace();
+		}
+		// Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void insertPersonTemplate() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+
+		try {
+			CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(
+					reactiveCouchbaseTransactionManager);
+			Mono<TransactionResult> result = txOperator.reactive((ctx) -> ctx.template(cbTmpl).insertById(Person.class)
+					.one(person).flatMap(p -> ctx.template(cbTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
+					// .flatMap(it -> Mono.error(new PoofException()))
+					.then());
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertNull(pFound, "Should NOT have found " + pFound);
+				return;
+			}
+			e.printStackTrace();
+		}
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void insertPersonRbTemplate() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+		try {
+
+			CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(
+					reactiveCouchbaseTransactionManager);
+			Mono<TransactionResult> result = txOperator.reactive((ctx) -> ctx.template(cbTmpl).insertById(Person.class)
+					.one(person).flatMap(p -> ctx.template(cbTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
+					.flatMap(it -> Mono.error(new PoofException())).then());
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertNull(pFound, "Should NOT have found " + pFound);
+				return;
+			}
+			e.printStackTrace();
+		}
+		// Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void replacePersonRbRepo() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+		repo.withCollection(cName).save(person);
+		try {
+			CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(
+					reactiveCouchbaseTransactionManager);
+			Mono<TransactionResult> result = txOperator
+					.reactive((ctx) -> ctx.repository(repo).withCollection(cName).findById(person.getId().toString())
+							.flatMap(p -> ctx.repository(repo).withCollection(cName).save(p.withFirstName("Walt")))
+							.flatMap(it -> Mono.error(new PoofException())).then());
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertEquals(person, pFound, "Should have found " + person);
+				return;
+			}
+			e.printStackTrace();
+		}
+		// Person pFound = repo.withCollection(cName).findById(person.getId().toString());
+		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void insertPersonRbRepo() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+try {
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(couchbaseTransactionManager);
+		Mono<TransactionResult> result = txOperator
+				.reactive((ctx) -> ctx.repository(repo).withCollection(cName).save(person) // insert
+						.flatMap(p -> ctx.repository(repo).withCollection(cName).save(p.withFirstName("Walt"))) // replace
+						.flatMap(it -> Mono.error(new PoofException())).then());
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertNull(pFound, "Should NOT have found " + pFound);
+				return;
+			}
+			e.printStackTrace();
+		}
+		// Person pFound = repo.withCollection(cName).findById(person.getId().toString());
+		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void insertPersonRepo() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+try {
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
+		Mono<TransactionResult> result = txOperator
+				.reactive((ctx) -> ctx.repository(repo).withCollection(cName).save(person) // insert
+						.flatMap(p -> ctx.repository(repo).withCollection(cName).save(p.withFirstName("Walt"))) // replace
+						// .flatMap(it -> Mono.error(new PoofException()))
+						.then());
+
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertNull(pFound, "Should NOT have found " + pFound);
+				return;
+			}
+			e.printStackTrace();
+		}
+		Person pFound = repo.withCollection(cName).findById(person.getId().toString());
+		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	@Test
+	public void replacePersonRbSpringTransactional() {
+		Person person = new Person(1, "Walter", "White");
+		remove(cbTmpl, cName, person.getId().toString());
+		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+
+		try {
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
+		Mono<TransactionResult> result = txOperator.reactive((ctx) -> {
+			ctx.transactionResultHolder(123);
+			return ctx.template(cbTmpl).findById(Person.class).one(person.getId().toString())
+					.flatMap(p -> ctx.template(cbTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
+					.as(txOperator::transactional).then();
+		}, false);
+
+		} catch (TransactionFailed e) {
+			if (e.getCause() instanceof PoofException) {
+				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+				assertEquals(person, pFound, "Should have found " + person);
+				return;
+			}
+			e.printStackTrace();
+		}
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
+		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	}
+
+	void remove(Collection col, String id) {
+		remove(col.reactive(), id);
+	}
+
+	void remove(ReactiveCollection col, String id) {
+		try {
+			col.remove(id, RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10)));
+		} catch (DocumentNotFoundException nfe) {
+			System.out.println(id + " : " + "DocumentNotFound when deleting");
+		}
+	}
+
+	void remove(CouchbaseTemplate template, String collection, String id) {
+		remove(template.reactive(), collection, id);
+	}
+
+	void remove(ReactiveCouchbaseTemplate template, String collection, String id) {
+		try {
+			template.removeById(Person.class).inCollection(collection).one(id);
+			System.out.println("removed " + id);
+		} catch (DocumentNotFoundException | DataRetrievalFailureException nfe) {
+			System.out.println(id + " : " + "DocumentNotFound when deleting");
+		}
+	}
+
+	static class PoofException extends Exception {};
+
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+	static class Config extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Override
+		public TransactionConfig getTransactionConfig() {
+			return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
+					.expirationTime(Duration.ofMinutes(10)).durabilityLevel(TransactionDurabilityLevel.MAJORITY).build();
+		}
+
+	}
+}

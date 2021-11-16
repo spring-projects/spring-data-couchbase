@@ -75,7 +75,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 			LOG.trace("existsById {}", pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
+							.getCollection(pArgs.getCollection()).block().reactive().exists(id, buildOptions(pArgs.getOptions()))
 							.map(ExistsResult::exists))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {

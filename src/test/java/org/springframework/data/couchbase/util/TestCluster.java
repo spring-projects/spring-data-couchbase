@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.net.URL;

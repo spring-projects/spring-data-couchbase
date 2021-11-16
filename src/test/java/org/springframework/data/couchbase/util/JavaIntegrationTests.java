@@ -47,6 +47,9 @@ import java.util.function.Predicate;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.platform.commons.util.UnrecoverableExceptions;
+import org.opentest4j.AssertionFailedError;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -111,12 +114,9 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
-		// This will result in a Transactions object being created.
-		if (couchbaseTemplate == null || reactiveCouchbaseTemplate == null) {
-			ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-			couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-			reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
-		}
+		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	/**
@@ -146,7 +146,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void setupScopeCollection(Cluster cluster, String scopeName, String collectionName,
-			CollectionManager collectionManager) {
+																					CollectionManager collectionManager) {
 		// Create the scope.collection (borrowed from CollectionManagerIntegrationTest )
 		ScopeSpec scopeSpec = ScopeSpec.create(scopeName);
 		CollectionSpec collSpec = CollectionSpec.create(collectionName, scopeName);
@@ -224,13 +224,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	private static void createAndDeleteBucket() {
 		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
 				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
-		String hostPort = connectionString().replace("11210", "8091");
+		String hostPort = connectionString().replace("11210", "8091").replace("11207", "18091");
+		String protocol = hostPort.equals("18091") ? "https" : "http";
 		String bucketname = UUID.randomUUID().toString();
 		try {
 
 			Response postResponse = httpClient.newCall(new Request.Builder()
 					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url("http://" + hostPort + "/pools/default/buckets/")
+					.url(protocol+"://" + hostPort + "/pools/default/buckets/")
 					.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
 							.add("replicaNumber", Integer.toString(0)).add("flushEnabled", "1").build())
 					.build()).execute();
@@ -240,7 +241,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			}
 			Response deleteResponse = httpClient.newCall(new Request.Builder()
 					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url("http://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
+					.url(protocol+"://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
 			System.out.println("deleteResponse: " + deleteResponse);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -305,7 +306,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static CompletableFuture<Void> createPrimaryIndex(Cluster cluster, String bucketName, String scopeName,
-			String collectionName) {
+																													 String collectionName) {
 		CreatePrimaryQueryIndexOptions options = CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions();
 		options.timeout(Duration.ofSeconds(300));
 		options.ignoreIfExists(true);
@@ -330,14 +331,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType*/ boolean queryType, CharSequence statement,
-			Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
+																										 Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
 		return with.isEmpty() ? exec(cluster, queryType, statement, options)
 				: exec(cluster, queryType, statement + " WITH " + Mapper.encodeAsString(with), options);
 	}
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType,*/ boolean queryType, CharSequence statement,
-			CommonOptions<?>.BuiltCommonOptions options) {
+																										 CommonOptions<?>.BuiltCommonOptions options) {
 		QueryOptions queryOpts = toQueryOptions(options).readonly(queryType /*requireNonNull(queryType) == READ_ONLY*/);
 
 		return cluster.async().query(statement.toString(), queryOpts).exceptionally(t -> {
@@ -369,7 +370,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void createFtsCollectionIndex(Cluster cluster, String indexName, String bucketName, String scopeName,
-			String collectionName) {
+																							String collectionName) {
 		SearchIndex searchIndex = new SearchIndex(indexName, bucketName);
 		if (scopeName != null) {
 			// searchIndex = searchIndex.forScopeCollection(scopeName, collectionName);
@@ -405,5 +406,25 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		try {
 			Thread.sleep(ms);
 		} catch (InterruptedException ie) {}
+	}
+
+	public static Throwable assertThrowsOneOf(Executable executable, Class<?>... expectedTypes) {
+
+		try {
+			executable.execute();
+		}
+		catch (Throwable actualException) {
+				for(Class<?> expectedType:expectedTypes){
+					if(actualException.getClass().isAssignableFrom( expectedType)){
+						return actualException;
+					}
+				}
+				UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+				String message = "Unexpected exception type thrown "+actualException.getClass();
+				throw new AssertionFailedError(message, actualException);
+		}
+
+		String message ="Expected "+expectedTypes+" to be thrown, but nothing was thrown.";
+		throw new AssertionFailedError(message);
 	}
 }

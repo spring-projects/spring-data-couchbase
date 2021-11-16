@@ -381,7 +381,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport saved = airportRepositoryRP.save(vie);
-		List<Airport> allSaved = airportRepositoryRP.findAll();
+		List<Airport> allSaved = airportRepositoryRP.findAll(REQUEST_PLUS);
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
 		assertEquals(1, allSaved.size(), "should have found 1 airport");
 	}

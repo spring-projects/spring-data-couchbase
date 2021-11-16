@@ -17,6 +17,12 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.transactions.AttemptContextReactive;
+import com.couchbase.transactions.TransactionQueryOptions;
+import com.example.demo.CouchbaseTransactionalTemplate;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.ClientSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -29,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -38,7 +44,6 @@ import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetAndTouchOptions;
 import com.couchbase.client.java.kv.GetOptions;
-import com.couchbase.transactions.AttemptContextReactive;
 
 public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperation {
 
@@ -62,12 +67,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final String collection;
 		private final CommonOptions<?> options;
 		private final List<String> fields;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 		private final ReactiveTemplateSupport support;
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, AttemptContextReactive txCtx,
+				CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseStuffHandle txCtx,
 				ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
@@ -87,20 +92,29 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, txCtx, domainType);
 			LOG.trace("findById {}", pArgs);
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollection(pArgs.getCollection()).reactive();
-			Mono<T> reactiveEntity;
-			if (pArgs.getCtx() == null) {
-				if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-					reactiveEntity = rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
-							result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
-				} else {
-					reactiveEntity = rc.get(id, (GetOptions) pArgs.getOptions()).flatMap(
-							result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,pArgs.getScope(), pArgs.getCollection(), null));
-				}
-			} else {
-				reactiveEntity = pArgs.getCtx().get(rc, id).flatMap(result -> support.decodeEntity(id,
-						result.contentAsObject().toString(), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result)));
-			}
+					.getCollection(pArgs.getCollection()).block().reactive();
+
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			//AttemptContextReactive ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
+			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
+
+			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
+					.flatMap(s -> {
+						if ( s == null || s.getAttemptContextReactive() == null ) {
+							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
+										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+							} else {
+								return rc.get(id, (GetOptions) pArgs.getOptions()).flatMap(
+										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+							}
+						} else {
+							return s.getAttemptContextReactive().get(rc, id)
+									.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), result.cas(),
+											domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), s));
+						}
+					}));
+
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {
 					return Mono.empty();
@@ -159,7 +173,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public FindByIdWithProjection<T> transaction(AttemptContextReactive txCtx) {
+		public FindByIdWithProjection<T> transaction(CouchbaseStuffHandle txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
 					support);

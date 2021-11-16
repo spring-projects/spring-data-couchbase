@@ -27,7 +27,7 @@ import org.springframework.data.couchbase.core.support.WithProjectionId;
 import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.kv.GetOptions;
-import com.couchbase.transactions.AttemptContextReactive;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 /**
  * Get Operations
@@ -118,7 +118,7 @@ public interface ExecutableFindByIdOperation {
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		FindByIdWithProjection<T> transaction(AttemptContextReactive txCtx);
+		FindByIdWithProjection<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	interface FindByIdTxOrNot<T> extends FindByIdWithExpiry<T>, FindByIdWithTransaction<T> {}

@@ -30,11 +30,11 @@ import org.springframework.data.couchbase.core.support.WithDistinct;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
 import org.springframework.data.couchbase.core.support.WithTransaction;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Query Operations
@@ -193,7 +193,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		TerminatingFindByQuery<T> transaction(AttemptContextReactive txCtx);
+		TerminatingFindByQuery<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	interface FindByQueryTxOrNot<T> extends FindByQueryWithConsistency<T>, FindByQueryWithTransaction<T> {}

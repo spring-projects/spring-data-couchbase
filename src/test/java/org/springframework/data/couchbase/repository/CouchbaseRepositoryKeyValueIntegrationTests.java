@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -219,6 +222,15 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if(getConnectionString().contains("cloud.couchbase.com")) {
+				builder.securityConfig(SecurityConfig.builder()
+						.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE)
+						.enableTls(true));
+			}
 		}
 
 	}

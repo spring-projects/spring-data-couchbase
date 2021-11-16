@@ -18,6 +18,9 @@ package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.query.Query;
+
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -50,4 +53,8 @@ public interface CouchbaseOperations extends FluentCouchbaseOperations {
 	 * Returns the default consistency to use for queries
 	 */
 	QueryScanConsistency getConsistency();
+	<T> T save(T entity);
+
+	 <T> Long count(Query query, Class<T> domainType);
+
 }

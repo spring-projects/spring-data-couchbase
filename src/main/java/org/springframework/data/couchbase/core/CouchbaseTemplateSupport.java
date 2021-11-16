@@ -27,6 +27,7 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallba
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.util.Assert;
 
@@ -67,16 +68,34 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	}
 
 	@Override
-	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass,
-			String scope, String collection, TransactionResultHolder txHolder) {
-		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder);
+	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+														TransactionResultHolder txHolder) {
+		return decodeEntity(id, source, cas, entityClass, scope, collection, txHolder);
+	}
+
+	@Override
+	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+														TransactionResultHolder txHolder, ClientSession session) {
+		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, session);
 	}
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-			TransactionResultHolder txResultHolder) {
-		return applyResultBase(entity, converted, id, cas, txResultHolder);
+													 TransactionResultHolder txResultHolder) {
+		return applyResult(entity, converted, id, cas,txResultHolder, null);
 	}
+
+	@Override
+	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
+													 TransactionResultHolder txResultHolder, ClientSession session) {
+		return applyResultBase(entity, converted, id, cas, txResultHolder, session);
+	}
+
+	@Override
+	public <T> Integer getTxResultHolder(T source) {
+		return null;
+	}
+
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

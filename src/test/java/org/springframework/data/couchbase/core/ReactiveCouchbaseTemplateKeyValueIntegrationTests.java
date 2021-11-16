@@ -37,6 +37,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ReactiveFindByIdOperation.ReactiveFindById;
@@ -46,6 +48,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
@@ -59,6 +62,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -67,7 +71,11 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(Config.class)
 class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
 	@Override

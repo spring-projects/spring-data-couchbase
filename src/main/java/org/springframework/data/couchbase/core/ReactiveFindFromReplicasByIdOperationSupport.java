@@ -77,8 +77,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			LOG.trace("getAnyReplica {}", pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType, pArgs.getScope(), pArgs.getCollection(), null))
+							.getCollection(pArgs.getCollection()).block().reactive().getAnyReplica(docId, pArgs.getOptions()))
+            .flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType, pArgs.getScope(), pArgs.getCollection(), null))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

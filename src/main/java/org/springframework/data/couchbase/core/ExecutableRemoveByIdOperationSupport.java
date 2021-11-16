@@ -19,13 +19,13 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 
 public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
 
@@ -58,12 +58,12 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Long cas;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final Class<?> domainType, final String scope,
-				final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Long cas, AttemptContextReactive txCtx) {
+																final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+																final DurabilityLevel durabilityLevel, Long cas, CouchbaseStuffHandle txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -129,7 +129,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		}
 
 		@Override
-		public RemoveByIdWithCas transaction(AttemptContextReactive txCtx) {
+		public RemoveByIdWithCas transaction(CouchbaseStuffHandle txCtx) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas, txCtx);
 		}

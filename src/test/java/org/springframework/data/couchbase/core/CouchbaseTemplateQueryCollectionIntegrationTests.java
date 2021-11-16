@@ -31,18 +31,19 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.CollectionsConfig;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -56,10 +57,12 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.UnambiguousTimeoutException;
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -78,7 +81,11 @@ import com.couchbase.client.java.query.QueryOptions;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(CollectionsConfig.class)
 class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	Airport vie = new Airport("airports::vie", "vie", "loww");
 
@@ -104,12 +111,16 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		// first call the super method
 		super.beforeEach();
 		// then do processing for this class
-        couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
 		couchbaseTemplate.findByQuery(User.class).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-        couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.findByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.findByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName)
+				.withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(Airport.class).inScope(scopeName).inCollection(collectionName)
+				.withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection)
+				.withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection)
+				.withConsistency(REQUEST_PLUS).all();
 	}
 
 	@AfterEach
@@ -801,27 +812,28 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		RemoveResult rr;
 		result = couchbaseTemplate.insertById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
 				.one(user1);
-		assertEquals(user1,result);
+		assertEquals(user1, result);
 		result = couchbaseTemplate.upsertById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
 				.one(user1);
-		assertEquals(user1,result);
-		result = couchbaseTemplate.replaceById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
-				.one(user1);
-		assertEquals(user1,result);
+		assertEquals(user1, result);
+		result = couchbaseTemplate.replaceById(User.class).inScope(scopeName).inCollection(collectionName)
+				.withDurability(dl).one(user1);
+		assertEquals(user1, result);
 		rr = couchbaseTemplate.removeById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
 				.one(user1.getId());
 		assertEquals(rr.getId(), user1.getId());
-		assertEquals(user1,result);
-		result = reactiveCouchbaseTemplate.insertById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
-				.one(user1).block();
-		assertEquals(user1,result);
-		result = reactiveCouchbaseTemplate.upsertById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
-				.one(user1).block();
-		assertEquals(user1,result);
-		result = reactiveCouchbaseTemplate.replaceById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl).one(user1).block();
-		assertEquals(user1,result);
-		 rr = reactiveCouchbaseTemplate.removeById(User.class).inScope(scopeName).inCollection(collectionName).withDurability(dl)
-				.one(user1.getId()).block();
+		assertEquals(user1, result);
+		result = reactiveCouchbaseTemplate.insertById(User.class).inScope(scopeName).inCollection(collectionName)
+				.withDurability(dl).one(user1).block();
+		assertEquals(user1, result);
+		result = reactiveCouchbaseTemplate.upsertById(User.class).inScope(scopeName).inCollection(collectionName)
+				.withDurability(dl).one(user1).block();
+		assertEquals(user1, result);
+		result = reactiveCouchbaseTemplate.replaceById(User.class).inScope(scopeName).inCollection(collectionName)
+				.withDurability(dl).one(user1).block();
+		assertEquals(user1, result);
+		rr = reactiveCouchbaseTemplate.removeById(User.class).inScope(scopeName).inCollection(collectionName)
+				.withDurability(dl).one(user1.getId()).block();
 		assertEquals(rr.getId(), user1.getId());
 	}
 

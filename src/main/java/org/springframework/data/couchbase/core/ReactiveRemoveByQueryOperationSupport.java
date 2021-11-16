@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +34,6 @@ import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.couchbase.transactions.AttemptContextReactive;
 import com.couchbase.transactions.TransactionQueryOptions;
 
 public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQueryOperation {
@@ -60,11 +61,11 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-				AttemptContextReactive txCtx) {
+																 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
+																 CouchbaseStuffHandle txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -81,15 +82,15 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			String statement = assembleDeleteQuery(pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> allResult = null;
-			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
-			if (pArgs.getCtx() == null) {
+			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().block().reactive();
+			if (pArgs.getTxOp() == null) {
 				QueryOptions opts = buildQueryOptions(pArgs.getOptions());
-				allResult = pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+				allResult = pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
 						: rs.query(statement, opts);
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
-				allResult = pArgs.getScope() == null ? txCtx.query(statement, opts) : pArgs.getCtx().query(rs, statement, opts);
+				allResult = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
 			}
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {
@@ -156,10 +157,11 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		@Override
-		public RemoveByQueryWithConsistency<T> transaction(final AttemptContextReactive txCtx) {
+		public RemoveByQueryWithConsistency<T> transaction(final CouchbaseStuffHandle txCtx) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options, txCtx);
 		}
+
 	}
 
 }

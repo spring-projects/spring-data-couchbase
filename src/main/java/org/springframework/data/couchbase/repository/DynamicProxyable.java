@@ -22,7 +22,7 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import org.springframework.data.couchbase.repository.support.DynamicInvocationHandler;
 
 import com.couchbase.client.java.CommonOptions;
-import com.couchbase.transactions.AttemptContextReactive;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 /**
  * The generic parameter needs to be REPO which is either a CouchbaseRepository parameterized on T,ID or a
@@ -39,14 +39,18 @@ public interface DynamicProxyable<REPO> {
 	Object getOperations();
 
 	/**
-	 * Support for Couchbase-specific options, scope and collections The three "with" methods will return a new proxy
-	 * instance with the specified options, scope, or collections set. The setters are called with the corresponding
-	 * options, scope and collection to set the ThreadLocal fields on the CouchbaseOperations of the repository just
-	 * before the call is made to the repository, and called again with 'null' just after the call is made. The repository
-	 * method will fetch those values to use in the call.
+	 * Support for Couchbase-specific options, scope and collections The four "with" methods will return a new proxy
+	 * instance with the specified options, scope, collection or transactionalOperator set. The setters are called with
+	 * the corresponding options, scope and collection to set the ThreadLocal fields on the CouchbaseOperations of the
+	 * repository just before the call is made to the repository, and called again with 'null' just after the call is
+	 * made. The repository method will fetch those values to use in the call.
 	 */
 
 	/**
+	 * Note that this is is always the first/only call and therefore only one of options, collection, scope or ctx is set.
+	 * Subsequent "with" calls are processed through the DynamicInvocationHandler and sets all of those which have already
+	 * been set.
+	 *
 	 * @param options - the options to set on the returned repository object
 	 */
 	@SuppressWarnings("unchecked")
@@ -57,6 +61,10 @@ public interface DynamicProxyable<REPO> {
 	}
 
 	/**
+	 * Note that this is is always the first/only call and therefore only one of options, collection, scope or ctx is set.
+	 * Subsequent "with" calls are processed through the DynamicInvocationHandler and sets all of those which have already
+	 * been set.
+	 *
 	 * @param scope - the scope to set on the returned repository object
 	 */
 	@SuppressWarnings("unchecked")
@@ -67,6 +75,10 @@ public interface DynamicProxyable<REPO> {
 	}
 
 	/**
+	 * Note that this is is always the first/only call and therefore only one of options, collection, scope or ctx is set.
+	 * Subsequent "with" calls are processed through the DynamicInvocationHandler and sets all of those which have already
+	 * been set.
+	 *
 	 * @param collection - the collection to set on the returned repository object
 	 */
 	@SuppressWarnings("unchecked")
@@ -77,10 +89,18 @@ public interface DynamicProxyable<REPO> {
 	}
 
 	/**
-	 * @param ctx - the AttemptContextReactive for transactions
+	 * @param ctx - the transactionalOperator for transactions
 	 */
 	@SuppressWarnings("unchecked")
-	default REPO withTransaction(AttemptContextReactive ctx) {
+	/*
+	default REPO withTransaction(TransactionalOperator ctx) {
+		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
+				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, null, ctx));
+		return proxyInstance;
+	}
+	 */
+
+	default REPO withTransaction(CouchbaseStuffHandle ctx) {
 		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
 				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, null, ctx));
 		return proxyInstance;

@@ -37,10 +37,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.CollectionsConfig;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -53,6 +56,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.UnambiguousTimeoutException;
@@ -74,10 +78,15 @@ import com.couchbase.client.java.query.QueryOptions;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(CollectionsConfig.class)
 class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
+	@Autowired
+	public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+
 	Airport vie = new Airport("airports::vie", "vie", "low80");
-	ReactiveCouchbaseTemplate template = reactiveCouchbaseTemplate;
+	ReactiveCouchbaseTemplate template;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -103,10 +112,14 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 		// then do processing for this class
 		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
 		couchbaseTemplate.findByQuery(User.class).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.findByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).withConsistency(REQUEST_PLUS).all();
-		couchbaseTemplate.findByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).all();
+		couchbaseTemplate.findByQuery(Airport.class).inScope(scopeName).inCollection(collectionName)
+				.withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).all();
+		couchbaseTemplate.findByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection)
+				.withConsistency(REQUEST_PLUS).all();
+
+		template = reactiveCouchbaseTemplate;
 	}
 
 	@AfterEach
@@ -519,10 +532,10 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 				.one(vie.withIcao("lowg")).block();
 		try {
 			Boolean exists = template.existsById().inScope(otherScope).inCollection(otherCollection)
-					.withOptions(existsOptions).one(vie.getId()).block();
-			assertTrue(exists, "Airport should exist: " + vie.getId());
+					.withOptions(existsOptions).one(saved.getId()).block();
+			assertTrue(exists, "Airport should exist: " + saved.getId());
 		} finally {
-			template.removeById().inScope(otherScope).inCollection(otherCollection).one(vie.getId()).block();
+			template.removeById().inScope(otherScope).inCollection(otherCollection).one(saved.getId()).block();
 		}
 	}
 

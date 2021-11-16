@@ -22,15 +22,17 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
 import org.springframework.data.couchbase.repository.TransactionResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.domain.Persistable;
 import org.springframework.lang.Nullable;
 
 @Document
-public class Person extends AbstractEntity {
+public class Person extends AbstractEntity implements Persistable<Object> {
 	Optional<String> firstname;
 	@Nullable Optional<String> lastname;
 
@@ -49,9 +51,9 @@ public class Person extends AbstractEntity {
 
 	private Address address;
 
-	// Required for use in transactions (??)
-	//@Transient
-	//@TransactionResult private TransactionResultHolder txResultHolder;
+	// Required for use in transactions
+	@TransactionResult private Integer txResultHolder;
+	@Transient private boolean isNew;
 
 
 	public Person() {}
@@ -61,6 +63,7 @@ public class Person extends AbstractEntity {
 		setFirstname(firstname);
 		setLastname(lastname);
 		setMiddlename("Nick");
+		isNew(true);
 	}
 
 	public Person(int id, String firstname, String lastname) {
@@ -166,8 +169,15 @@ public class Person extends AbstractEntity {
 
 	public Person withFirstName(String firstName) {
 		Person p = new Person(this.getId(), firstName, this.getLastname());
-		//p.txResultHolder = this.txResultHolder;
+		p.version = version;
+		p.txResultHolder = this.txResultHolder;
 		return p;
+	}
+
+	public Person withVersion(Long version) {
+		//Person p = new Person(this.getId(), this.getFirstname(), this.getLastname());
+		this.version = version;
+		return this;
 	}
 
 	@Override
@@ -182,5 +192,14 @@ public class Person extends AbstractEntity {
 		Person that = (Person) obj;
 		return this.getId().equals(that.getId()) && this.getFirstname().equals(that.getFirstname())
 				&& this.getLastname().equals(that.getLastname()) && this.getMiddlename().equals(that.getMiddlename());
+	}
+
+	@Override
+	public boolean isNew() {
+		return isNew;
+	}
+
+	public void isNew(boolean isNew){
+		this.isNew = isNew;
 	}
 }

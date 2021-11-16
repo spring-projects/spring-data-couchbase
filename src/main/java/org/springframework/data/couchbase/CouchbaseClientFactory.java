@@ -18,12 +18,18 @@ package org.springframework.data.couchbase;
 
 import java.io.Closeable;
 
+import com.couchbase.transactions.AttemptContextReactive;
+import com.couchbase.transactions.Transactions;
+import com.couchbase.transactions.config.TransactionConfig;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
+import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ClientSessionOptions;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 /**
  * The {@link CouchbaseClientFactory} is the main way to get access to the managed SDK instance and resources.
@@ -73,4 +79,10 @@ public interface CouchbaseClientFactory extends Closeable {
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
+	ClientSession getSession(ClientSessionOptions options, Transactions transactions,
+																				TransactionConfig config , AttemptContextReactive atr);
+
+  //CouchbaseClientFactory with(CouchbaseStuffHandle txOp);
+
+	//CouchbaseStuffHandle getTransactionalOperator();
 }

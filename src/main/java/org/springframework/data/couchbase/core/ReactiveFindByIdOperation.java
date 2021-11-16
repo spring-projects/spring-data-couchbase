@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,7 +31,6 @@ import org.springframework.data.couchbase.core.support.WithProjectionId;
 import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.kv.GetOptions;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Get Operations - method/interface chaining is from the bottom up.
@@ -83,7 +83,7 @@ public interface ReactiveFindByIdOperation {
 		 * @param txCtx
 		 * @return
 		 */
-		TerminatingFindById<T> transaction(AttemptContextReactive txCtx);
+		TerminatingFindById<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	/**

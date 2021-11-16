@@ -32,4 +32,5 @@ public interface ReactiveCouchbaseRepository<T, ID> extends ReactiveSortingRepos
 	ReactiveCouchbaseOperations getOperations();
 
 	CouchbaseEntityInformation<T, String> getEntityInformation();
+
 }

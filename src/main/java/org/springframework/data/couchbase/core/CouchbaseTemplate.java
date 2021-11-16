@@ -16,11 +16,14 @@
 
 package org.springframework.data.couchbase.core;
 
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -28,6 +31,9 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -49,26 +55,49 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final CouchbaseTemplateSupport templateSupport;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private QueryScanConsistency scanConsistency;
+	private CouchbaseStuffHandle txOp;
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
-		this(clientFactory, converter, new JacksonTranslationService());
+	//public CouchbaseTemplate with(CouchbaseStuffHandle transactionalOperator) {
+	//	CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(),
+	//			reactiveCouchbaseTemplate.getCouchbaseClientFactory(), getConverter());
+	//	tmpl.txOp = transactionalOperator;
+	//	return this;
+	//}
+
+	/*
+	public CouchbaseTemplate with(CouchbaseTransactionalOperatorNonReactive transactionalOperator) {
+		CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(), getConverter());
+		tmpl.txOp = transactionalOperator;
+		return this;
+	}
+	*/
+	//public CouchbaseStuffHandle txOperator() {
+	//	return txOp;
+	//}
+
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
+		this(clientFactory, reactiveCouchbaseClientFactory, converter, new JacksonTranslationService());
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, CouchbaseConverter converter,
 			final TranslationService translationService) {
-		this(clientFactory, converter, translationService, null);
+		this(clientFactory, reactiveCouchbaseClientFactory, converter, translationService, null);
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter,
 			final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService,
-				scanConsistency);
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, converter,
+				translationService, scanConsistency);
 		this.scanConsistency = scanConsistency;
+
 		this.mappingContext = this.converter.getMappingContext();
 		if (mappingContext instanceof CouchbaseMappingContext) {
 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
@@ -76,6 +105,20 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
 			}
 		}
+	}
+
+	public <T> T save(T entity) {
+		if (hasNonZeroVersionProperty(entity, templateSupport.converter)) {
+			return replaceById((Class<T>) entity.getClass()).one(entity);
+		//} else if (getTransactionalOperator() != null) {
+		//	return insertById((Class<T>) entity.getClass()).one(entity);
+		} else {
+			return upsertById((Class<T>) entity.getClass()).one(entity);
+		}
+	}
+
+	public <T> Long count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).count();
 	}
 
 	@Override
@@ -210,4 +253,24 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		return templateSupport;
 	}
 
+	/**
+	 * Get the TransactionalOperator from <br>
+	 * 1. The template.clientFactory<br>
+	 * 2. The template.threadLocal<br>
+	 * 3. otherwise null<br>
+	 * This can be overriden in the operation method by<br>
+	 * 1. repository.withCollection()
+	 *//*
+	private CouchbaseStuffHandle getTransactionalOperator() {
+		if (this.getCouchbaseClientFactory().getTransactionalOperator() != null) {
+			return this.getCouchbaseClientFactory().getTransactionalOperator();
+		}
+		ReactiveCouchbaseTemplate t = this.reactive();
+		PseudoArgs pArgs = t.getPseudoArgs();
+		if (pArgs != null && pArgs.getTxOp() != null) {
+			return pArgs.getTxOp();
+		}
+		return null;
+	}
+	*/
 }

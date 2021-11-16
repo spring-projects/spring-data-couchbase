@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.ClientSession;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
@@ -28,11 +30,9 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterConvertCallback;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeConvertCallback;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
@@ -69,16 +69,33 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass,
-			String scope, String collection, TransactionResultHolder txResultHolder) {
-		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder));
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+																	TransactionResultHolder txResultHolder) {
+		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
 	}
 
 	@Override
-	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-			TransactionResultHolder txResultHolder) {
-		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder));
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+																	TransactionResultHolder txResultHolder, ClientSession session) {
+		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, session));
+	}
 
+
+	@Override
+	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
+																 TransactionResultHolder txResultHolder) {
+		return applyResult(entity, converted, id, cas, txResultHolder, null);
+	}
+
+	@Override
+	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
+																 TransactionResultHolder txResultHolder, ClientSession session) {
+		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, session));
+	}
+
+	@Override
+	public <T> Integer getTxResultHolder(T source) {
+		return null;
 	}
 
 	@Override

@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -31,7 +32,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Remove Operations on KV service.
@@ -103,7 +103,7 @@ public interface ReactiveRemoveByIdOperation {
 	}
 
 	interface RemoveByIdWithTransaction extends RemoveByIdWithCas, WithTransaction<RemoveResult> {
-		RemoveByIdWithCas transaction(AttemptContextReactive txCtx);
+		RemoveByIdWithCas transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}

@@ -19,12 +19,18 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.core.service.Service;
+import com.couchbase.client.java.ClusterOptions;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,15 +62,22 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
-		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
-				authenticator(), bucketName())) {
-			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
+		ClusterEnvironment env = config.seed() != null && config.seed().contains("cloud.couchbase.com")
+				? ClusterEnvironment.builder()
+						.securityConfig(SecurityConfig.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true))
+						.build()
+				: ClusterEnvironment.builder().build();
+		String connectString = config.seed() != null && config.seed().contains("cloud.couchbase.com") ? config.seed()
+				: connectionString();
+		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectString,
+				authenticator(), bucketName(), null, env)) {
+			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(), CreatePrimaryQueryIndexOptions
+					.createPrimaryQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// this is for the N1qlJoin test
 			List<String> fieldList = new ArrayList<>();
 			fieldList.add("parentId");
 			couchbaseClientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
-					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
+					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// .with("_class", "org.springframework.data.couchbase.domain.Address"));
 		} catch (IndexFailureException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife);
@@ -122,8 +135,14 @@ public abstract class ClusterAwareIntegrationTests {
 	}
 
 	protected static Set<SeedNode> seedNodes() {
-		return config().nodes().stream().map(cfg -> SeedNode.create(cfg.hostname(),
-				Optional.ofNullable(cfg.ports().get(Services.KV)), Optional.ofNullable(cfg.ports().get(Services.MANAGER))))
+		return config().nodes().stream()
+				.map(cfg -> SeedNode.create(cfg.hostname(),
+						Optional.ofNullable(config().seed() != null && config().seed().contains("cloud.couchbase.com")
+								? cfg.ports().get(Services.KV_TLS)
+								: cfg.ports().get(Services.KV)),
+						Optional.ofNullable(config().seed() != null && config().seed().contains("cloud.couchbase.com")
+								? cfg.ports().get(Services.MANAGER_TLS)
+								: cfg.ports().get(Services.MANAGER))))
 				.collect(Collectors.toSet());
 	}
 

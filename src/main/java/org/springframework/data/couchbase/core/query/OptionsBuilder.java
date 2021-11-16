@@ -74,7 +74,7 @@ public class OptionsBuilder {
 		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
 				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
 				: null;
-		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, getScanConsistency(optsJson),
+		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(), getScanConsistency(optsJson),
 				scanConsistency, metaQueryScanConsistency);
 		Duration timeout = fromFirst(Duration.ofSeconds(0), getTimeout(optsBuilt), meta.get(TIMEOUT));
 		RetryStrategy retryStrategy = fromFirst(null, getRetryStrategy(optsBuilt), meta.get(RETRY_STRATEGY));

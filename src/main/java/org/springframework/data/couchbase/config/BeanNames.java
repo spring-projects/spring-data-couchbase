@@ -64,4 +64,9 @@ public class BeanNames {
 
 	public static final String COUCHBASE_CLIENT_FACTORY = "couchbaseClientFactory";
 
+	public static final String REACTIVE_COUCHBASE_TRANSACTION_MANAGER = "reactiveCouchbaseTransactionManager";
+
+	public static final String COUCHBASE_TRANSACTION_MANAGER = "couchbaseTransactionManager";
+
+	public static final String COUCHBASE_CALLBACK_TRANSACTION_MANAGER = "couchbaseCallbackTransactionManager";
 }

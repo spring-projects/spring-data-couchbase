@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,7 +34,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * Insert Operations
@@ -104,7 +104,7 @@ public interface ReactiveInsertByIdOperation {
 
 	interface InsertByIdWithTransaction<T> extends TerminatingInsertById<T>, WithTransaction<T> {
 		@Override
-		InsertByIdWithDurability<T> transaction(AttemptContextReactive txCtx);
+		InsertByIdWithDurability<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	/**

@@ -28,7 +28,7 @@ import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.AttemptContextReactive;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 /**
  * RemoveBy Query Operations
@@ -92,7 +92,7 @@ public interface ExecutableRemoveByQueryOperation {
 	 */
 	interface RemoveByQueryWithTransaction<T> extends TerminatingRemoveByQuery<T>, WithTransaction<RemoveResult> {
 		@Override
-		TerminatingRemoveByQuery<T> transaction(AttemptContextReactive txCtx);
+		TerminatingRemoveByQuery<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	interface RemoveByQueryWithTxOrNot<T> extends RemoveByQueryWithConsistency<T>, RemoveByQueryWithTransaction<T> {}

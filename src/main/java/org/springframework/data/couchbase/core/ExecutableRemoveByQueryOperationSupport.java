@@ -19,11 +19,11 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.AttemptContextReactive;
 
 public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemoveByQueryOperation {
 
@@ -50,11 +50,11 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-				AttemptContextReactive txCtx) {
+																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
+																	 CouchbaseStuffHandle txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -111,10 +111,11 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		}
 
 		@Override
-		public TerminatingRemoveByQuery<T> transaction(final AttemptContextReactive txCtx) {
+		public TerminatingRemoveByQuery<T> transaction(final CouchbaseStuffHandle txCtx) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options, txCtx);
 		}
+
 	}
 
 }

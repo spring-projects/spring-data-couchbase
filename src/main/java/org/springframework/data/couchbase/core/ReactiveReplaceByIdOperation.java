@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,7 +34,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * ReplaceOperations
@@ -50,7 +50,7 @@ public interface ReactiveReplaceByIdOperation {
 	 */
 	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
-	/**
+  /**
 	 * Terminating operations invoking the actual execution.
 	 */
 	interface TerminatingReplaceById<T> extends OneAndAllEntityReactive<T> {
@@ -101,7 +101,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
 		@Override
-		ReplaceByIdWithExpiry<T> transaction(final AttemptContextReactive txCtx);
+		ReplaceByIdWithExpiry<T> transaction(final CouchbaseStuffHandle txCtx);
 	}
 
 	interface ReplaceByIdTxOrNot<T> extends ReplaceByIdWithExpiry<T>, ReplaceByIdWithTransaction<T> {}

@@ -19,13 +19,13 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 
 public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByIdOperation {
 
@@ -53,12 +53,12 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
 				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, final AttemptContextReactive txCtx) {
+				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseStuffHandle txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -126,7 +126,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		}
 
 		@Override
-		public InsertByIdWithExpiry<T> transaction(final AttemptContextReactive txCtx) {
+		public InsertByIdWithExpiry<T> transaction(final CouchbaseStuffHandle txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null.");
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, txCtx);

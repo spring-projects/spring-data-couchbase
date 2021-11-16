@@ -1,0 +1,170 @@
+
+
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
+package org.springframework.data.couchbase.transaction.internal;
+
+import com.couchbase.client.java.Scope;
+import com.mongodb.ClientSessionOptions;
+import com.mongodb.MongoClientException;
+import com.mongodb.ServerAddress;
+import com.mongodb.assertions.Assertions;
+import com.mongodb.internal.binding.ReferenceCounted;
+import com.mongodb.lang.Nullable;
+import com.mongodb.session.ClientSession;
+import com.mongodb.session.ServerSession;
+import org.bson.BsonDocument;
+import org.bson.BsonTimestamp;
+import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ClientSessionOptions;
+import org.springframework.lang.Nullable;
+import reactor.core.publisher.Mono;
+
+public class BaseClientSessionImpl implements ClientSession {
+  private static final String CLUSTER_TIME_KEY = "clusterTime";
+  private final ServerSessionPool serverSessionPool;
+  private final ServerSession serverSession;
+  private final Object originator;
+  private final ClientSessionOptions options;
+  private long clusterTime;
+  private long operationTime;
+  private long snapshotTimestamp;
+  private ServerAddress pinnedServerAddress;
+  private BsonDocument recoveryToken;
+  private ReferenceCounted transactionContext;
+  private volatile boolean closed;
+
+  public BaseClientSessionImpl(ServerSessionPool serverSessionPool, Object originator, ClientSessionOptions options) {
+    this.serverSessionPool = serverSessionPool;
+    this.serverSession = serverSessionPool.get();
+    this.originator = originator;
+    this.options = options;
+    this.pinnedServerAddress = null;
+    this.closed = false;
+  }
+
+  @Nullable
+  public ServerAddress getPinnedServerAddress() {
+    return this.pinnedServerAddress;
+  }
+
+  public Object getTransactionContext() {
+    return this.transactionContext;
+  }
+
+  public void setTransactionContext(ServerAddress address, Object transactionContext) {
+    Assertions.assertTrue(transactionContext instanceof ReferenceCounted);
+    this.pinnedServerAddress = address;
+    this.transactionContext = (ReferenceCounted)transactionContext;
+    this.transactionContext.retain();
+  }
+
+  public void clearTransactionContext() {
+    this.pinnedServerAddress = null;
+    if (this.transactionContext != null) {
+      this.transactionContext.release();
+      this.transactionContext = null;
+    }
+
+  }
+
+  public BsonDocument getRecoveryToken() {
+    return this.recoveryToken;
+  }
+
+  public void setRecoveryToken(BsonDocument recoveryToken) {
+    this.recoveryToken = recoveryToken;
+  }
+
+  public ClientSessionOptions getOptions() {
+    return this.options;
+  }
+
+  public boolean isCausallyConsistent() {
+    Boolean causallyConsistent = this.options.isCausallyConsistent();
+    return causallyConsistent == null ? true : causallyConsistent;
+  }
+
+  public Object getOriginator() {
+    return this.originator;
+  }
+
+  public long getClusterTime() {
+    return this.clusterTime;
+  }
+
+  public long getOperationTime() {
+    return this.operationTime;
+  }
+
+  @Override
+  public Mono<Scope> getScope() {
+    return null;
+  }
+
+  public ServerSession getServerSession() {
+    Assertions.isTrue("open", !this.closed);
+    return this.serverSession;
+  }
+
+  public void advanceOperationTime(BsonTimestamp newOperationTime) {
+    Assertions.isTrue("open", !this.closed);
+    this.operationTime = this.greaterOf(newOperationTime);
+  }
+
+  public void advanceClusterTime(BsonDocument newClusterTime) {
+    Assertions.isTrue("open", !this.closed);
+    this.clusterTime = this.greaterOf(newClusterTime);
+  }
+
+  public void setSnapshotTimestamp(BsonTimestamp snapshotTimestamp) {
+    Assertions.isTrue("open", !this.closed);
+    if (snapshotTimestamp != null) {
+      if (this.snapshotTimestamp != null && !snapshotTimestamp.equals(this.snapshotTimestamp)) {
+        throw new MongoClientException("Snapshot timestamps should not change during the lifetime of the session.  Current timestamp is " + this.snapshotTimestamp + ", and attempting to set it to " + snapshotTimestamp);
+      }
+
+      this.snapshotTimestamp = snapshotTimestamp;
+    }
+
+  }
+
+  @Nullable
+  public BsonTimestamp getSnapshotTimestamp() {
+    Assertions.isTrue("open", !this.closed);
+    return this.snapshotTimestamp;
+  }
+
+  private BsonDocument greaterOf(BsonDocument newClusterTime) {
+    if (newClusterTime == null) {
+      return this.clusterTime;
+    } else if (this.clusterTime == null) {
+      return newClusterTime;
+    } else {
+      return newClusterTime.getTimestamp("clusterTime").compareTo(this.clusterTime.getTimestamp("clusterTime")) > 0 ? newClusterTime : this.clusterTime;
+    }
+  }
+
+  private long greaterOf(long newOperationTime) {
+    if (newOperationTime == 0) {
+      return this.operationTime;
+    } else if (this.operationTime == 0) {
+      return newOperationTime;
+    } else {
+      return newOperationTime > this.operationTime ? newOperationTime : this.operationTime;
+    }
+  }
+
+  public void close() {
+    if (!this.closed) {
+      this.closed = true;
+      this.serverSessionPool.release(this.serverSession);
+      this.clearTransactionContext();
+    }
+
+  }
+}
+

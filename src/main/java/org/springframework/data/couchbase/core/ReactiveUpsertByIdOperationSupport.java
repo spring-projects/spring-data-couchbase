@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -81,18 +82,26 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, null, domainType);
 			LOG.trace("upsertById {}", pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			Mono<T> reactiveEntity = support.encodeEntity(object)
+					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
+						if (s == null || s.getAttemptContextReactive() == null) {
+							return tp.getCouchbaseClientFactory().withScope(pArgs.getScope())
+									.getCollection(pArgs.getCollection()).flatMap(collection -> collection.reactive()
+									.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+									.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 						} else {
-							return throwable;
+							return Mono.error(new CouchbaseException("No upsert in a transaction. Use insert or replace"));
 						}
-					});
+					})));
+
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

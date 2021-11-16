@@ -15,6 +15,13 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.Cluster;
+import com.example.demo.CouchbaseTransactionalTemplate;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.transaction.reactive.TransactionContext;
+import org.springframework.transaction.reactive.TransactionContextManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,7 +34,8 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -35,8 +43,10 @@ import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.AttemptContextReactive;
 import com.couchbase.transactions.TransactionInsertOptions;
+
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
@@ -51,7 +61,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 	public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveInsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, null, template.support());
+				DurabilityLevel.NONE, null, (TransactionalOperator) null, template.support());
 	}
 
 	static class ReactiveInsertByIdSupport<T> implements ReactiveInsertById<T> {
@@ -65,12 +75,13 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
+		private final TransactionalOperator txOp;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
 				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Duration expiry, AttemptContextReactive txCtx,
+				final DurabilityLevel durabilityLevel, Duration expiry, CouchbaseStuffHandle txCtx,
 				ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
@@ -82,28 +93,84 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
 			this.txCtx = txCtx;
+			this.txOp = null;
+			this.support = support;
+		}
+
+		ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
+				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+				final DurabilityLevel durabilityLevel, Duration expiry, TransactionalOperator txOp,
+				ReactiveTemplateSupport support) {
+			this.template = template;
+			this.domainType = domainType;
+			this.scope = scope;
+			this.collection = collection;
+			this.options = options;
+			this.persistTo = persistTo;
+			this.replicateTo = replicateTo;
+			this.durabilityLevel = durabilityLevel;
+			this.expiry = expiry;
+			this.txCtx = null;
+			this.txOp = txOp;
 			this.support = support;
 		}
 
 		@Override
 		public Mono<T> one(T object) {
+			// ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
+			// .getResource(getRequiredDatabaseFactory());
+
+			// ((ReactiveCouchbaseResourceHolder)
+			// TransactionSynchronizationManager.forCurrentTransaction().flatMap((synchronizationManager) -> {
+			// return Mono.just(synchronizationManager.getResource( template.getCouchbaseClientFactory()));
+			// }).block()).getSession().getAttemptContextReactive() /
+			// if (TransactionSynchronizationManager.hasResource(template.getCouchbaseClientFactory())){
+			//
+			// }
+			// the template should have the session(???)
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
-			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).reactive();
-			Mono<T> reactiveEntity;
-			if (pArgs.getCtx() == null) {
-				reactiveEntity = support.encodeEntity(object)
-						.flatMap(converted -> rc
-								.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
-								.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
+
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
+			Mono<T> reactiveEntity = support.encodeEntity(object)
+					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
+						if (s == null || s.getAttemptContextReactive() == null) {
+							return template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+									.getCollection(pArgs.getCollection())
+									.flatMap(collection -> collection.reactive()
+											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+											.flatMap(
+													result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
+						} else {
+							return s.getAttemptContextReactive()
+									.insert(
+											tp.doGetDatabase().block().bucket(tp.getBucketName()).reactive()
+													.scope(pArgs.getScope() != null ? pArgs.getScope() : DEFAULT_SCOPE)
+													.collection(pArgs.getCollection() != null ? pArgs.getCollection() : DEFAULT_COLLECTION),
+											converted.getId(), converted.getContent(), buildTxOptions(pArgs.getOptions(), converted))
+									.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), new TransactionResultHolder(result), s));
+						}
+					})));
+			// .flatMap(converted ->/* rc */tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getCluster().flatMap( cl ->
+			// cl.bucket("my_bucket").reactive()
+			// .defaultCollection()
+			// .insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+			// .flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)))));
+			/*
 			} else {
-				reactiveEntity = support.encodeEntity(object)
-						.flatMap(converted -> pArgs.getCtx()
-								.insert(rc, converted.getId(), converted.getContent(), buildTxOptions(pArgs.getOptions(), converted))
-								.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(),
-										new TransactionResultHolder(result))));
+				reactiveEntity = support.encodeEntity(object).flatMap(converted -> pArgs.getTxOp().getAttemptContextReactive() // transactional()
+																																																												// needs
+																																																												// to
+																																																												// have
+																																																												// initted
+																																																												// acr
+						.insert(template.doGetDatabase().block().bucket("my_bucket").reactive().defaultCollection(),
+								converted.getId(), converted.getContent(), buildTxOptions(pArgs.getOptions(), converted))
+						.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(),
+								pArgs.getTxOp().transactionResultHolder(result))));
 			}
+			*/
 
 			return reactiveEntity.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -169,7 +236,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		}
 
 		@Override
-		public InsertByIdWithExpiry<T> transaction(final AttemptContextReactive txCtx) {
+		public InsertByIdWithExpiry<T> transaction(final CouchbaseStuffHandle txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null.");
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, txCtx, support);

@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +33,6 @@ import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * ReactiveFindByQueryOperation<br>
@@ -152,7 +152,7 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link ReactiveFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
-		TerminatingFindByQuery<T> transaction(AttemptContextReactive txCtx);
+		TerminatingFindByQuery<T> transaction(CouchbaseStuffHandle txCtx);
 	}
 
 	/**

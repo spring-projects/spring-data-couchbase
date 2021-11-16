@@ -20,11 +20,11 @@ import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * {@link ExecutableFindByQueryOperation} implementations for Couchbase.
@@ -61,12 +61,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		private final QueryOptions options;
 		private final String[] distinctFields;
 		private final String[] fields;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 
 		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<?> domainType, final Class<T> returnType,
 				final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
 				final QueryOptions options, final String[] distinctFields, final String[] fields,
-				final AttemptContextReactive txCtx) {
+				final CouchbaseStuffHandle txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;
@@ -151,7 +151,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public FindByQueryWithDistinct<T> transaction(AttemptContextReactive txCtx) {
+		public FindByQueryWithDistinct<T> transaction(CouchbaseStuffHandle txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null!");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, fields, txCtx);

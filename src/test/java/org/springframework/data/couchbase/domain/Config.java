@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.cache.CouchbaseCacheConfiguration;
 import org.springframework.data.couchbase.cache.CouchbaseCacheManager;
@@ -60,7 +61,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableCaching
 public class Config extends AbstractCouchbaseConfiguration {
-	String bucketname = "travel-sample";
+	String bucketname = "test";
 	String username = "Administrator";
 	String password = "password";
 	String connectionString = "127.0.0.1";
@@ -159,18 +160,16 @@ public class Config extends AbstractCouchbaseConfiguration {
 
 	// do not use reactiveCouchbaseTemplate for the name of this method, otherwise the value of that bean
 	// will be used instead of the result of this call (the client factory arg is different)
-	public ReactiveCouchbaseTemplate myReactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
-				new JacksonTranslationService(), getDefaultConsistency());
+	public ReactiveCouchbaseTemplate myReactiveCouchbaseTemplate(ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+																															 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(), getDefaultConsistency());
 	}
 
 	// do not use couchbaseTemplate for the name of this method, otherwise the value of that been
 	// will be used instead of the result from this call (the client factory arg is different)
-	public CouchbaseTemplate myCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+	public CouchbaseTemplate myCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory, ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(),
-				getDefaultConsistency());
+		return new CouchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(), getDefaultConsistency());
 	}
 
 	// do not use couchbaseClientFactory for the name of this method, otherwise the value of that bean will
@@ -231,15 +230,14 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return "t"; // this will override '_class', is passed in to new CustomMappingCouchbaseConverter
 	}
 
-	public static String scopeName = null;
-
 	@Override
 	protected String getScopeName() {
 		return scopeName;
 	}
 
-	public static void setScopeName(String scopeName) {
+	static public void setScopeName(String scopeName){
 		Config.scopeName = scopeName;
 	}
 
+	static private String scopeName = null;
 }

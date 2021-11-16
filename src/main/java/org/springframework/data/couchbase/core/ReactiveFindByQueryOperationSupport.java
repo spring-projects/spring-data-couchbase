@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +34,6 @@ import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.couchbase.transactions.AttemptContextReactive;
 import com.couchbase.transactions.TransactionQueryOptions;
 
 /**
@@ -70,13 +71,13 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final String[] distinctFields;
 		private final String[] fields;
 		private final QueryOptions options;
-		private final AttemptContextReactive txCtx;
+		private final CouchbaseStuffHandle txCtx;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
-				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-				final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
-				final AttemptContextReactive txCtx, final ReactiveTemplateSupport support) {
+															 final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
+															 final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
+															 final CouchbaseStuffHandle txCtx, final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 			this.template = template;
@@ -165,7 +166,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		@Override
-		public FindByQueryWithTransaction<T> transaction(AttemptContextReactive txCtx) {
+		public FindByQueryWithTransaction<T> transaction(CouchbaseStuffHandle txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, fields, txCtx, support);
@@ -187,16 +188,35 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> allResult = null;
-			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
-			if (pArgs.getCtx() == null) {
+			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().block().reactive();
+			/*
+			if (pArgs.getTxOp() == null) {
 				QueryOptions opts = buildOptions(pArgs.getOptions());
-				allResult = pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+				allResult = pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
 						: rs.query(statement, opts);
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-				allResult = pArgs.getScope() == null ? pArgs.getCtx().query(statement, opts) : txCtx.query(rs, statement, opts);
+				allResult = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
 			}
+			 */
+			// Mono<Cluster> cluster = template.doGetDatabase(); //doesn't work because there is no interface for Cluster
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			// Mono<TransactionContext> ctx = TransactionContextManager.currentContext();
+			//if (pArgs.getTxOp() == null && txOp == null) { // too early to find TxOp - transactional() has not yet been called
+			allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
+							.flatMap(s -> {
+								if ( s == null || s.getAttemptContextReactive() == null ) {
+									QueryOptions opts = buildOptions(pArgs.getOptions());
+									return 	 pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
+											: rs.query(statement, opts);
+								} else {
+									TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+									return s.getAttemptContextReactive()
+											.query(statement, opts);
+								}
+							}));
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return finalAllResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -242,17 +262,33 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
-			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rc = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().block().reactive();
 			Mono<ReactiveQueryResult> countResult = null;
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+
+			/*
 			if (txCtx == null) {
 				QueryOptions opts = buildOptions(pArgs.getOptions());
-				countResult = pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
-						: rc.query(statement, opts);
+				countResult = pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
+						: rs.query(statement, opts);
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-				countResult = pArgs.getScope() == null ? txCtx.query(statement, opts) : txCtx.query(rc, statement, opts);
+				countResult = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rc, statement, opts);
 			}
+			 */
+			countResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
+					.flatMap(s -> {
+						if ( s == null || s.getAttemptContextReactive() == null ) {
+							QueryOptions opts = buildOptions(pArgs.getOptions());
+							return 	 pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
+									: rs.query(statement, opts);
+						} else {
+							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+							return s.getAttemptContextReactive()
+									.query(statement, opts);
+						}
+					}));
 			Mono<ReactiveQueryResult> finalCountResult = countResult;
 			return Mono.defer(() -> finalCountResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
