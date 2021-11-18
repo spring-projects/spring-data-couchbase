@@ -48,13 +48,14 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 
 	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope) {
 		this.target = target;
-		if (target instanceof CouchbaseRepository) {
+		if (target instanceof CouchbaseRepository || target instanceof SimpleCouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
 			this.entityInformation = ((CouchbaseRepository<?, String>) target).getEntityInformation();
 		} else if (target instanceof ReactiveCouchbaseRepository) {
 			reactiveTemplate = (ReactiveCouchbaseTemplate) ((ReactiveCouchbaseRepository) target).getOperations();
 			this.entityInformation = ((ReactiveCouchbaseRepository<?, String>) target).getEntityInformation();
 		} else {
+			printInterfaces(target.getClass(), "  ");
 			throw new RuntimeException("Unknown target type: " + target.getClass());
 		}
 		this.options = options;
@@ -62,7 +63,15 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		this.scope = scope;
 		this.repositoryClass = target.getClass();
 	}
-
+	void printInterfaces(Class clazz, String tab){
+		System.out.println(tab+"{");
+		for(Class c:clazz.getInterfaces()){
+			System.out.println(tab+"  " +c.getSimpleName());
+			if(c.getInterfaces().length > 0)
+				printInterfaces(c, tab+"  ");
+		}
+		System.out.println(tab+"}");
+	}
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 

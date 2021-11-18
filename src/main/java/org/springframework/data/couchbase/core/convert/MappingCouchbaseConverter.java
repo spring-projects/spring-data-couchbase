@@ -48,6 +48,7 @@ import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
+import org.springframework.data.couchbase.repository.TransactionMeta;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
@@ -539,6 +540,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 					}
 
 					if (prop.isAnnotationPresent(Transient.class)) {
+						return;
+					}
+
+					if (prop.isAnnotationPresent(TransactionMeta.class)) {
 						return;
 					}
 

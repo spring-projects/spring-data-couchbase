@@ -17,7 +17,9 @@
 package org.springframework.data.couchbase.config;
 
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TRANSACTION_MANAGER;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -40,12 +42,14 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.transactions.CouchbaseTransactionManager;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
+import com.couchbase.client.core.cnc.Event;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
@@ -58,6 +62,9 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.transactions.TransactionDurabilityLevel;
+import com.couchbase.transactions.config.TransactionConfig;
+import com.couchbase.transactions.config.TransactionConfigBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -177,6 +184,29 @@ public abstract class AbstractCouchbaseConfiguration {
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return reactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
+	}
+
+	/**
+	 * Blocking Transaction Manager
+	 *
+	 * @param couchbaseTemplate
+	 * @param transactionConfig
+	 * @return
+	 */
+	@Bean(COUCHBASE_TRANSACTION_MANAGER)
+	CouchbaseTransactionManager transactionManager(CouchbaseTemplate couchbaseTemplate,
+			TransactionConfig transactionConfig) {
+		return new CouchbaseTransactionManager(couchbaseTemplate, transactionConfig);
+	}
+
+	/**
+	 * configuration for transactions. Logging may need ch.qos.logback:logback-classic:1.2.5 or other logging
+	 *
+	 * @return configuration for transactions.
+	 */
+	@Bean
+	public TransactionConfig transactionConfig() {
+		return TransactionConfigBuilder.create().build();
 	}
 
 	@Bean(name = BeanNames.COUCHBASE_OPERATIONS_MAPPING)
@@ -299,8 +329,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
 	 *
-	 * @throws Exception on Bean construction failure.
 	 * @return ObjectMapper
+	 * @throws Exception on Bean construction failure.
 	 */
 
 	public ObjectMapper couchbaseObjectMapper() {

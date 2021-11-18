@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.repository.support;
 
 import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -73,8 +75,12 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		Assert.notNull(entity, "Entity must not be null!");
 		// if entity has non-null, non-zero version property, then replace()
 		Mono<S> result;
+		// if there is a transaction, the entity must have a CAS, otherwise it will be inserted instead of replaced
 		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
 			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+					.one(entity);
+		} else if (((ReactiveCouchbaseTemplate) operations).getCtx() != null) { // tx does not have upsert, try insert
+			result = (Mono<S>) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
 					.one(entity);
 		} else {
 			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())

@@ -16,6 +16,10 @@
 
 package org.springframework.data.couchbase.core;
 
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
+
+import reactor.core.publisher.Mono;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,10 +29,16 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transactions.CouchbaseTransactionManager;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.Assert;
 
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.transactions.AttemptContextReactive;
 
 /**
  * template class for Reactive Couchbase operations
@@ -63,6 +73,28 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
 		this.templateSupport = new ReactiveCouchbaseTemplateSupport(this, converter, translationService);
 		this.scanConsistency = scanConsistency;
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <S extends Object> Mono<S> save(S entity) {
+		Assert.notNull(entity, "Entity must not be null!");
+		Mono<S> result;
+		// if entity has non-null, non-zero version property, then replace()
+		// if there is a transaction, the entity must have a CAS, otherwise it will be inserted instead of replaced
+		if (hasNonZeroVersionProperty(entity, this.getConverter())) {
+			result = this.replaceById((Class<S>) entity.getClass()).one(entity);
+		} else if (this.getCtx() != null) { // tx does not have upsert, try insert
+			result = this.insertById((Class<S>) entity.getClass()).one(entity);
+		} else {
+			result = this.upsertById((Class<S>) entity.getClass()).one(entity);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> Mono<Long> count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).count();
 	}
 
 	@Override
@@ -196,6 +228,32 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public QueryScanConsistency getConsistency() {
 		return scanConsistency;
+	}
+
+	/**
+	 * @return the AttemptContextReactive for the transaction
+	 */
+	public AttemptContextReactive getCtx() {
+		CouchbaseTransactionManager.CouchbaseResourceHolder resource = (CouchbaseTransactionManager.CouchbaseResourceHolder) TransactionSynchronizationManager
+				.getResource(this.getCouchbaseClientFactory());
+		AttemptContextReactive atr = null;
+		if (resource != null) {
+			atr = resource.getAttemptContext();
+		}
+		return atr;
+	}
+
+	/**
+	 * @return the TransactionResultMap for the transaction
+	 */
+	TransactionResultMap getTxResultMap() {
+		CouchbaseTransactionManager.CouchbaseResourceHolder resource = (CouchbaseTransactionManager.CouchbaseResourceHolder) TransactionSynchronizationManager
+				.getResource(this.getCouchbaseClientFactory());
+		TransactionResultMap txResultMap = null;
+		if (resource != null) {
+			txResultMap = resource.getTxResultMap();
+		}
+		return txResultMap;
 	}
 
 }

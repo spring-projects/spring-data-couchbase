@@ -49,6 +49,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.transactions.TransactionQueryOptions;
 
 public class OptionsBuilder {
 
@@ -86,6 +87,36 @@ public class OptionsBuilder {
 		}
 		if (LOG.isTraceEnabled()) {
 			LOG.trace("query options: {}", getQueryOpts(options.build()));
+		}
+		return options;
+	}
+
+	public static TransactionQueryOptions buildTransactionQueryOptions(Query query, TransactionQueryOptions options,
+			QueryScanConsistency scanConsistency) {
+
+		options = options != null ? options : TransactionQueryOptions.queryOptions();
+		if (query.getParameters() != null) {
+			if (query.getParameters() instanceof JsonArray) {
+				options.parameters((JsonArray) query.getParameters());
+			} else {
+				options.parameters((JsonObject) query.getParameters());
+			}
+		}
+
+		Meta meta = query.getMeta() != null ? query.getMeta() : new Meta();
+
+		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
+				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
+				: null;
+		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, scanConsistency, metaQueryScanConsistency);
+		//RetryStrategy retryStrategy = fromFirst(null, meta.get(RETRY_STRATEGY));
+
+		if (qsc != null) {
+			options.scanConsistency(qsc);
+		}
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("query options: {}", options);
 		}
 		return options;
 	}
@@ -423,4 +454,5 @@ public class OptionsBuilder {
 			AnnotatedElement[] elements) {
 		return annotationString(annotation, "value", defaultValue, elements);
 	}
+
 }

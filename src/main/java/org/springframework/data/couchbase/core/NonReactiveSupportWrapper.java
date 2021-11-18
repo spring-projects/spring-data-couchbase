@@ -19,11 +19,15 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
+
+import com.couchbase.transactions.TransactionGetResult;
 
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
  * @author Carlos Espinaco
+ * @author Michael Reiche
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
@@ -41,22 +45,29 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass) {
-		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass));
+		return decodeEntity(id, source, cas, entityClass, null, null);
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedCas(Object entity, CouchbaseDocument converted, long cas) {
-		return Mono.fromSupplier(() -> support.applyUpdatedCas(entity, converted, cas));
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass,
+			TransactionGetResult txResult, TransactionResultMap map) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, txResult, map));
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedId(Object entity, Object id) {
-		return Mono.fromSupplier(() -> support.applyUpdatedId(entity, id));
+	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
+			TransactionGetResult txResult, TransactionResultMap map) {
+		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResult, map));
 	}
 
 	@Override
 	public Long getCas(Object entity) {
 		return support.getCas(entity);
+	}
+
+	@Override
+	public Object getId(Object entity) {
+		return support.getId(entity);
 	}
 
 	@Override

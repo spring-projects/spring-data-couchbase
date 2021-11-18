@@ -35,6 +35,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * Remove Operations on KV service.
  *
  * @author Christoph Strobl
+ * @author Michael Reiche
  * @since 2.0
  */
 public interface ReactiveRemoveByIdOperation {
@@ -62,6 +63,14 @@ public interface ReactiveRemoveByIdOperation {
 		 */
 		@Override
 		Mono<RemoveResult> one(String id);
+
+		/**
+		 * Remove one document.  This is for the transactions api which has a remove(object), but not a remove(id).
+		 *
+		 * @param object the document.
+		 * @return result of the remove
+		 */
+		Mono<Void> one(Object object);
 
 		/**
 		 * Remove the documents in the collection.
@@ -127,6 +136,6 @@ public interface ReactiveRemoveByIdOperation {
 	/**
 	 * Provides methods for constructing remove operations in a fluent way.
 	 */
-	interface ReactiveRemoveById extends RemoveByIdWithCas {}
+	interface ReactiveRemoveById extends RemoveByIdWithCas {};
 
 }

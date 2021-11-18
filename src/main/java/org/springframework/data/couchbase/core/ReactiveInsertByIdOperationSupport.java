@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.kv.GetOptions;
+import com.couchbase.transactions.TransactionInsertOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,12 +28,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
@@ -79,21 +83,33 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			LOG.trace("insertById {}", pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+			AttemptContextReactive ctx = template.getCtx();
+			TransactionResultMap map = template.getTxResultMap();
+			Mono<T> reactiveEntity;
+			if (ctx != null) {
+				PseudoArgs<TransactionInsertOptions> pArgs = new PseudoArgs(template, scope, collection, TransactionInsertOptions.insertOptions(), domainType);
+				LOG.trace("insertById {}", pArgs);
+				reactiveEntity = support.encodeEntity(object)
+						.flatMap(converted -> ctx.insert(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+								.getCollection(pArgs.getCollection()).reactive(), converted.getId(), converted.export(),
+								buildTransactionOptions(pArgs.getOptions(), converted)).flatMap(
+								result -> support.applyResult(object, converted, converted.getId(), result.cas(), result, map)));
+			} else {
+				PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+				LOG.trace("insertById {}", pArgs);
+				reactiveEntity = Mono.just(object).flatMap(support::encodeEntity)
+						.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+								.getCollection(pArgs.getCollection()).reactive()
+								.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted)).flatMap(
+										result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+			}
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override
@@ -104,6 +120,24 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		public InsertOptions buildOptions(InsertOptions options, CouchbaseDocument doc) { // CouchbaseDocument converted
 			return OptionsBuilder.buildInsertOptions(options, persistTo, replicateTo, durabilityLevel, expiry, doc);
 		}
+
+		private TransactionInsertOptions buildTransactionOptions(TransactionInsertOptions options, CouchbaseDocument doc) {
+			options = options != null ? options : TransactionInsertOptions.insertOptions();
+			if(persistTo != null && persistTo != PersistTo.NONE){
+				throw new IllegalArgumentException("persistTo option must be specified in TransactionManager configuration");
+			}
+			if(replicateTo != null && replicateTo != ReplicateTo.NONE){
+				throw new IllegalArgumentException("replicateTo option must be specified in TransactionManager configuration");
+			}
+			if(durabilityLevel != null && durabilityLevel != DurabilityLevel.NONE){
+				throw new IllegalArgumentException("durabilityLevel option must be specified in TransactionManager configuration");
+			}
+			if(expiry != null){
+				throw new IllegalArgumentException("expiry option must be specified in TransactionManager configuration");
+			}
+			return options;
+		}
+
 
 		@Override
 		public TerminatingInsertById<T> withOptions(final InsertOptions options) {

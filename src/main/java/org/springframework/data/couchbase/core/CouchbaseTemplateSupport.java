@@ -34,12 +34,17 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallba
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.repository.TransactionMeta;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
+import org.springframework.transaction.TransactionUsageException;
 import org.springframework.util.Assert;
+
+import com.couchbase.transactions.TransactionGetResult;
 
 /**
  * Internal encode/decode support for CouchbaseTemplate.
@@ -82,6 +87,12 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 
 	@Override
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass) {
+		return decodeEntity(id, source, cas, entityClass, null, null);
+	}
+
+	@Override
+	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, TransactionGetResult txResult,
+			TransactionResultMap map) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
 		CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entityClass);
@@ -96,38 +107,52 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id);
+		if (txResult != null) {
+			Integer key = map.save(accessor.getBean(), txResult);
+			if (persistentEntity.transactionResultProperty() != null) {
+				// even if this results in a different bean object, than used above, it is saving the original key.
+				accessor.setProperty(persistentEntity.transactionResultProperty(), key);
+			}
+		}
 		return accessor.getBean();
 	}
 
 	@Override
-	public Object applyUpdatedCas(final Object entity, CouchbaseDocument converted, final long cas) {
-		Object returnValue;
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-
-		if (versionProperty != null) {
-			accessor.setProperty(versionProperty, cas);
-			returnValue = accessor.getBean();
-		} else {
-			returnValue = entity;
-		}
-		maybeEmitEvent(new AfterSaveEvent(returnValue, converted));
-
-		return returnValue;
+	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, Long cas, TransactionGetResult txResult,
+			TransactionResultMap map) {
+		return applyResultBase(entity, converted, id, cas, txResult, map);
 	}
 
-	@Override
-	public Object applyUpdatedId(final Object entity, Object id) {
-		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
+			TransactionGetResult txResult, TransactionResultMap map) {
+		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
+		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
+				.getRequiredPersistentEntity(entity.getClass());
+
+		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
 		if (idProperty != null) {
 			accessor.setProperty(idProperty, id);
-			return accessor.getBean();
 		}
-		return entity;
+
+		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
+		if (versionProperty != null) {
+			accessor.setProperty(versionProperty, cas);
+		}
+
+		final CouchbasePersistentProperty transactionResultProperty = persistentEntity.transactionResultProperty();
+		if (transactionResultProperty != null) {
+			accessor.setProperty(transactionResultProperty, System.identityHashCode(txResult));
+		}
+		if (txResult != null) {
+			Integer key = map.save(accessor.getBean(), txResult);
+			if (persistentEntity.transactionResultProperty() != null) {
+				// even if this results in a different bean object, than used above, it is saving the original key.
+				accessor.setProperty(persistentEntity.transactionResultProperty(), key);
+			}
+		}
+		maybeEmitEvent(new AfterSaveEvent(accessor.getBean(), converted));
+		return (T) accessor.getBean();
 	}
 
 	@Override
@@ -144,6 +169,18 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			}
 		}
 		return cas;
+	}
+
+	@Override
+	public Object getId(final Object entity) {
+		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+		Object idObject = null;
+		if (idProperty != null) {
+			idObject = accessor.getProperty(idProperty);
+		}
+		return idObject;
 	}
 
 	@Override
@@ -216,6 +253,25 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			LOG.info("maybeCallAfterConvert called, but CouchbaseTemplate not initialized with applicationContext");
 		}
 		return object;
+	}
+
+	public <T> Integer getTxResultKey(Object source) {
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(source.getClass());
+		final CouchbasePersistentProperty transactionResultProperty = persistentEntity.transactionResultProperty();
+		if (transactionResultProperty == null) {
+			throw new TransactionUsageException(
+					"the TransactionGetResult was not found using the identityHashCode of the object, and the class "
+							+ source.getClass().getSimpleName() + " does not have an @" + TransactionMeta.class.getName()
+							+ " Integer field object: " + source);
+		}
+		Integer result = getPropertyAccessor(source).getProperty(transactionResultProperty, Integer.class);
+		if (result == null) { // this will be thrown if the @TransactionResultKey exists, but is null
+			throw new TransactionUsageException(
+					"the TransactionGetResult was not found using the identityHashCode of the object, and the @"
+							+ TransactionMeta.class.getSimpleName() + " Integer field is null. "
+							+ "If the object was copied, that field must also copied. object: " + source);
+		}
+		return result;
 	}
 
 }

@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
+import org.springframework.transaction.TransactionUsageException;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -37,6 +39,7 @@ import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.codec.RawJsonTranscoder;
 import com.couchbase.client.java.kv.GetAndTouchOptions;
 import com.couchbase.client.java.kv.GetOptions;
+import com.couchbase.transactions.AttemptContextReactive;
 
 public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperation {
 
@@ -79,32 +82,54 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		public Mono<T> one(final String id) {
 
 			CommonOptions<?> gOptions = initGetOptions();
-			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
-			LOG.trace("findById {}", pArgs);
-
-			return Mono.just(id).flatMap(docId -> {
-				ReactiveCollection reactive = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-						.getCollection(pArgs.getCollection()).reactive();
-				if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-					return reactive.getAndTouch(docId, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions());
-				} else {
-					return reactive.get(docId, (GetOptions) pArgs.getOptions());
+			AttemptContextReactive ctx = template.getCtx();
+			TransactionResultMap map = template.getTxResultMap();
+			Mono<T> reactiveEntity;
+			if (ctx != null) {
+				PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
+				LOG.trace("findById {}", pArgs);
+				if(expiry != null){
+					throw new TransactionUsageException("expiry must be specified on TransactionManager configuration");
 				}
-			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
-					.onErrorResume(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							if (throwable instanceof DocumentNotFoundException) {
-								return Mono.empty();
-							}
-						}
-						return Mono.error(throwable);
-					}).onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+				if(fields != null){
+					throw new TransactionUsageException("project not support in transaction");
+				}
+				if(options != null){
+					throw new TransactionUsageException("project not support in transaction");
+				}
+				reactiveEntity = ctx
+						.get(template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
+								.reactive(), id )
+						.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), result.cas(), domainType,
+								result, map));
+			} else {
+				PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
+				LOG.trace("findById {}", pArgs);
+				reactiveEntity = Mono.just(id).flatMap(docId ->	{
+					ReactiveCollection reactive = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+							.getCollection(pArgs.getCollection()).reactive();
+					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+						return reactive.getAndTouch(docId, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions());
+					} else {
+						return reactive.get(docId, (GetOptions) pArgs.getOptions());
+					}
+				}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType));
+			}
+
+			return reactiveEntity.onErrorResume(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					if (throwable instanceof DocumentNotFoundException) {
+						return Mono.empty();
+					}
+				}
+				return Mono.error(throwable);
+			}).onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

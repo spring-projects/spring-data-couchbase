@@ -28,11 +28,15 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.util.Assert;
+
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 /**
  * Implements lower-level couchbase operations on top of the SDK with entity mapping capabilities.
@@ -76,6 +80,28 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
 			}
 		}
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <S extends Object> S save(S entity) {
+		Assert.notNull(entity, "Entity must not be null!");
+		S result;
+		// if entity has non-null, non-zero version property, then replace()
+		// if there is a transaction, the entity must have a CAS, otherwise it will be inserted instead of replaced
+		if (hasNonZeroVersionProperty(entity, this.getConverter())) {
+			result = this.replaceById((Class<S>) entity.getClass()).one(entity);
+		} else if (this.reactive().getCtx() != null) { // tx does not have upsert, try insert
+			result = this.insertById((Class<S>) entity.getClass()).one(entity);
+		} else {
+			result = this.upsertById((Class<S>) entity.getClass()).one(entity);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> Long count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).count();
 	}
 
 	@Override

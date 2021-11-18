@@ -19,6 +19,8 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.data.couchbase.core.query.Query;
+import reactor.core.publisher.Mono;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by
@@ -33,6 +35,11 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	 * Returns the converter used for this template/operations.
 	 */
 	CouchbaseConverter getConverter();
+
+  @SuppressWarnings("unchecked")
+  <S extends Object> Mono<S> save(S entity);
+
+	<T> Mono<Long> count(Query query, Class<T> domainType);
 
 	/**
 	 * The name of the bucket used.

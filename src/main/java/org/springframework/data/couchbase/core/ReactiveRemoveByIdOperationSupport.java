@@ -24,12 +24,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
 
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
@@ -93,6 +95,31 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 							return throwable;
 						}
 					});
+		}
+
+		@Override
+		public Mono<Void> one(final Object object) {
+			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			LOG.trace("removeById {}", pArgs);
+			AttemptContextReactive ctx = template.getCtx();
+			TransactionResultMap map = template.getTxResultMap();
+			Mono<Void> reactiveEntity;
+			if (ctx != null) {
+				reactiveEntity = template.support().encodeEntity(object).flatMap(converted -> ctx.remove(map.get(object)));
+			} else {
+				Object id = template.support().getId(object);
+				reactiveEntity = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+						.getCollection(pArgs.getCollection()).reactive()
+						.remove(id.toString(), buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id.toString(), r))
+						.then();
+			}
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

@@ -151,7 +151,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		couchbaseTemplate.insertById(User.class).one(user);
 		User found = couchbaseTemplate.findById(User.class).project(new String[] { "firstname" }).one(user.getId());
-		System.err.println(found);
+		assertEquals(found.getFirstname(), "firstname");
+		assertNull(found.getLastname(), "last name should be null");
 		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 

@@ -85,8 +85,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
 							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
+							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

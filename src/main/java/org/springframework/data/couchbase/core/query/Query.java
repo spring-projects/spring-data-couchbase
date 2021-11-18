@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.couchbase.transactions.TransactionQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
@@ -376,6 +377,10 @@ public class Query {
 	 */
 	public QueryOptions buildQueryOptions(QueryOptions options, QueryScanConsistency scanConsistency) {
 		return OptionsBuilder.buildQueryOptions(this, options, scanConsistency);
+	}
+
+	public TransactionQueryOptions buildTransactionQueryOptions(TransactionQueryOptions options, QueryScanConsistency scanConsistency) {
+		return OptionsBuilder.buildTransactionQueryOptions(this, options, scanConsistency);
 	}
 
 	/**

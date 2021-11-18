@@ -26,12 +26,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.data.couchbase.transactions.TransactionResultMap;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.transactions.AttemptContextReactive;
+import com.couchbase.transactions.TransactionReplaceOptions;
 
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
@@ -79,21 +82,38 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("replaceById {}", pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.replace(converted.getId(), converted.export(),
-									buildReplaceOptions(pArgs.getOptions(), object, converted))
-							.flatMap(result -> support.applyUpdatedCas(object, converted, result.cas())))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+			AttemptContextReactive ctx = template.getCtx();
+			TransactionResultMap map = template.getTxResultMap();
+			Mono<T> reactiveEntity;
+			if (ctx != null) {
+				PseudoArgs<TransactionReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection,
+						TransactionReplaceOptions.replaceOptions(), domainType);
+				LOG.trace("replaceById {}", pArgs);
+				reactiveEntity = support.encodeEntity(object)
+						.flatMap(converted -> ctx
+								.replace(map.get(object), converted.getContent(),
+										buildTransactionOptions(pArgs.getOptions(), object, converted))
+								.flatMap(
+										result -> support.applyResult(object, converted, converted.getId(), result.cas(), result, map)));
+			} else {
+				PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+				LOG.trace("replaceById {}", pArgs);
+				reactiveEntity = support.encodeEntity(object)
+						.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+								.getCollection(pArgs.getCollection()).reactive()
+								.replace(converted.getId(), converted.export(),
+										buildReplaceOptions(pArgs.getOptions(), object, converted))
+								.flatMap(
+										result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+			}
+
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override
@@ -104,6 +124,24 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private ReplaceOptions buildReplaceOptions(ReplaceOptions options, T object, CouchbaseDocument doc) {
 			return OptionsBuilder.buildReplaceOptions(options, persistTo, replicateTo, durabilityLevel, expiry,
 					support.getCas(object), doc);
+		}
+
+		private TransactionReplaceOptions buildTransactionOptions(TransactionReplaceOptions options, T object,
+				CouchbaseDocument converted) {
+			options = options != null ? options : TransactionReplaceOptions.replaceOptions();
+			if(persistTo != null && persistTo != PersistTo.NONE){
+				throw new IllegalArgumentException("persistTo option must be specified in TransactionManager configuration");
+			}
+			if(replicateTo != null && replicateTo != ReplicateTo.NONE){
+				throw new IllegalArgumentException("replicateTo option must be specified in TransactionManager configuration");
+			}
+			if(durabilityLevel != null && durabilityLevel != DurabilityLevel.NONE){
+				throw new IllegalArgumentException("durabilityLevel option must be specified in TransactionManager configuration");
+			}
+			if(expiry != null){
+				throw new IllegalArgumentException("expiry option must be specified in TransactionManager configuration");
+			}
+			return options;
 		}
 
 		@Override

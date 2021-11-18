@@ -62,6 +62,14 @@ public interface ExecutableRemoveByIdOperation {
 		RemoveResult one(String id);
 
 		/**
+		 * Remove one document. This is for the transactions api which has a remove(object), but not a remove(id).
+		 *
+		 * @param entity the document.
+		 * @return result of the remove
+		 */
+		void one(Object entity);
+
+		/**
 		 * Remove the documents in the collection.
 		 *
 		 * @param ids the document IDs.

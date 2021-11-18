@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -73,8 +74,11 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 		Assert.notNull(entity, "Entity must not be null!");
 		// if entity has non-null, non-zero version property, then replace()
 		S result;
+		// if there is a transaction, the entity must have a CAS, otherwise it will be inserted instead of replaced
 		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
 			result = (S) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
+		} else if (((CouchbaseTemplate) operations).reactive().getCtx() != null) { // tx does not have upsert, try insert
+			result = (S) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
 		} else {
 			result = (S) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
 		}
@@ -118,7 +122,11 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	@Override
 	public void delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity));
+		if (((CouchbaseTemplate) operations).reactive().getCtx() == null) {
+			operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity));
+		} else {
+			operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
+		}
 	}
 
 	@Override
