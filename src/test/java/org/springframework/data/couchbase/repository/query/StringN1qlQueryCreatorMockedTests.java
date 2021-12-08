@@ -85,7 +85,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and firstname = $1 and lastname = $2",
+				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `firstname`, `lastname`, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate` FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and firstname = $1 and lastname = $2",
 				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
@@ -104,7 +104,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and (firstname = $first or lastname = $last)",
+				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `firstname`, `lastname`, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate` FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and (firstname = $first or lastname = $last)",
 				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 

@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -71,6 +72,9 @@ public final class CouchbaseJsr310Converters {
 		converters.add(StringToDurationConverter.INSTANCE);
 		converters.add(PeriodToStringConverter.INSTANCE);
 		converters.add(StringToPeriodConverter.INSTANCE);
+		converters.add(ZonedDateTimeToLongConverter.INSTANCE);
+		converters.add(NumberToZonedDateTimeConverter.INSTANCE);
+
 		return converters;
 	}
 
@@ -96,6 +100,31 @@ public final class CouchbaseJsr310Converters {
 		public Long convert(LocalDateTime source) {
 			return source == null ? null
 					: DateConverters.DateToLongConverter.INSTANCE.convert(Date.from(source.atZone(systemDefault()).toInstant()));
+		}
+	}
+
+	@ReadingConverter
+	public enum NumberToZonedDateTimeConverter implements Converter<Number, ZonedDateTime> {
+
+		INSTANCE;
+
+		@Override
+		public ZonedDateTime convert(Number source) {
+			return source == null ? null
+					: ZonedDateTime.ofInstant(DateConverters.SerializedObjectToDateConverter.INSTANCE.convert(source).toInstant(),
+					systemDefault());
+		}
+	}
+
+	@WritingConverter
+	public enum ZonedDateTimeToLongConverter implements Converter<ZonedDateTime, Long> {
+
+		INSTANCE;
+
+		@Override
+		public Long convert(ZonedDateTime source) {
+			return source == null ? null
+					: DateConverters.DateToLongConverter.INSTANCE.convert(Date.from(source.toInstant()));
 		}
 	}
 

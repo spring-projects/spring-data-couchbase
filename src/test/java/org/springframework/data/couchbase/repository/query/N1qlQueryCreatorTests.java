@@ -109,7 +109,7 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
@@ -132,7 +132,7 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
@@ -156,7 +156,7 @@ class N1qlQueryCreatorTests {
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();

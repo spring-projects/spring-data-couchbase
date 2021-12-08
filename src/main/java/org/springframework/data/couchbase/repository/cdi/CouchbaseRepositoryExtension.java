@@ -22,13 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.enterprise.event.Observes;
-import javax.enterprise.inject.UnsatisfiedResolutionException;
-import javax.enterprise.inject.spi.AfterBeanDiscovery;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.ProcessBean;
-
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.inject.spi.ProcessBean;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.repository.cdi.CdiRepositoryBean;
 import org.springframework.data.repository.cdi.CdiRepositoryExtensionSupport;
@@ -67,6 +66,7 @@ public class CouchbaseRepositoryExtension extends CdiRepositoryExtensionSupport 
 	 *
 	 * @param beanManager The BeanManager instance.
 	 */
+
 	void afterBeanDiscovery(@Observes AfterBeanDiscovery afterBeanDiscovery, BeanManager beanManager) {
 		for (Map.Entry<Class<?>, Set<Annotation>> entry : getRepositoryTypes()) {
 

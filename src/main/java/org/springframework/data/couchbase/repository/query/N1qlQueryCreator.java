@@ -69,7 +69,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		this.queryMethod = queryMethod;
 		this.converter = converter;
 		this.bucketName = bucketName;
-		this.entity = converter.getMappingContext().getPersistentEntity(queryMethod.getReturnedObjectType());
+		this.entity = converter.getMappingContext().getPersistentEntity(queryMethod.getEntityInformation().getJavaType());
 	}
 
 	@Override

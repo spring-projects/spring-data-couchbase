@@ -130,6 +130,18 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Page<Airport> getAllByIataNot(String iata, Pageable pageable);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Query("SELECT iata, \"\" as __id, 0 as __cas from #{#n1ql.bucket} WHERE #{#n1ql.filter} order by meta().id")
+	List<String> getStrings();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Query("SELECT length(iata), \"\" as __id, 0 as __cas from #{#n1ql.bucket} WHERE #{#n1ql.filter} order by meta().id")
+	List<Long> getLongs();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Query("SELECT iata, icao, \"\" as __id, 0 as __cas from #{#n1ql.bucket} WHERE #{#n1ql.filter} order by meta().id")
+	List<String[]> getStringArrays();
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Optional<Airport> findByIdAndIata(String id, String iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

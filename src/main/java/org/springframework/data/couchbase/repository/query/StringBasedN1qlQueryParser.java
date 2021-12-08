@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.Expiration;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
@@ -44,7 +45,6 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.ReturnedType;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -130,10 +130,11 @@ public class StringBasedN1qlQueryParser {
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
 		String collection = queryMethod.getCollection();
-		this.statementContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, false, null,
-				null);
-		this.countContext = createN1qlSpelValues(bucketName, collection, null, null, typeField, typeValue, true, null,
-				null);
+		this.statementContext = createN1qlSpelValues(bucketName, collection,
+				queryMethod.getEntityInformation().getJavaType(), queryMethod.getReturnedObjectType(), typeField, typeValue,
+				false, null, null);
+		this.countContext = createN1qlSpelValues(bucketName, collection, queryMethod.getEntityInformation().getJavaType(),
+				queryMethod.getReturnedObjectType(), typeField, typeValue, true, null, null);
 		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
 		checkPlaceholders(this.parsedExpression.toString());
 	}
@@ -161,12 +162,11 @@ public class StringBasedN1qlQueryParser {
 		String b = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
 				"only one of project(fields) and distinct(distinctFields) can be specified");
-		String projectedFields = getProjectedFields(b, resultClass, fields);
 		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS;
 		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
 		String selectEntity;
 		if (distinctFields != null) {
-			String distinctFieldsStr = distinctFields.length == 0 ? projectedFields : getDistinctFields(distinctFields);
+			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, fields, distinctFields);
 			if (isCount) {
 				selectEntity = "SELECT COUNT( DISTINCT {" + distinctFieldsStr + "} ) " + CountFragment.COUNT_ALIAS + " FROM "
 						+ i(b);
@@ -176,6 +176,7 @@ public class StringBasedN1qlQueryParser {
 		} else if (isCount) {
 			selectEntity = "SELECT " + count + " FROM " + i(b);
 		} else {
+			String projectedFields = getProjectedOrDistinctFields(b, domainClass, fields, distinctFields);
 			selectEntity = "SELECT " + entity + (!projectedFields.isEmpty() ? ", " : " ") + projectedFields + " FROM " + i(b);
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
@@ -186,65 +187,63 @@ public class StringBasedN1qlQueryParser {
 		return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);
 	}
 
-	private String getDistinctFields(String... distinctFields) {
-		return i(distinctFields).toString();
-	}
-
-	private String getProjectedFields(String b, Class resultClass, String[] fields) {
-
+	private String getProjectedOrDistinctFields(String b, Class resultClass, String[] fields, String[] distinctFields) {
+		if (distinctFields != null && distinctFields.length != 0) {
+			return i(distinctFields).toString();
+		}
 		String projectedFields = i(b) + ".*";
 		if (resultClass != null) {
 			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
 			StringBuilder sb = new StringBuilder();
-			getProjectedFieldsInternal(b, null, sb, persistentEntity.getTypeInformation(), fields/*, ""*/);
+			getProjectedFieldsInternal(b, null, sb, persistentEntity, fields, distinctFields != null);
 			projectedFields = sb.toString();
 		}
 		return projectedFields;
 	}
 
 	private void getProjectedFieldsInternal(String bucketName, CouchbasePersistentProperty parent, StringBuilder sb,
-			TypeInformation resultClass, String[] fields/*, String path*/) {
+			PersistentEntity persistentEntity, String[] fields, boolean forDistinct) {
 
-		if (resultClass != null) {
+		if (persistentEntity != null) {
 			Set<String> fieldList = fields != null ? new HashSet<>(Arrays.asList(fields)) : null;
-			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
-			// CouchbasePersistentProperty property = path.getLeafProperty();
 
-			persistentEntity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
-				@Override
-				public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-					if (prop == persistentEntity.getIdProperty() && parent == null) {
-						return;
-					}
-					if (prop == persistentEntity.getVersionProperty() && parent == null) {
-						return;
-					}
-					String projectField = null;
+			// do not include the id and cas metadata fields.
 
-					if (fieldList == null || fieldList.contains(prop.getFieldName())) {
-						PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
-								.getPersistentPropertyPath(prop.getName(), resultClass.getType());
-						projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
-						if (sb.length() > 0) {
-							sb.append(", ");
-						}
-						sb.append(projectField); // from N1qlQueryCreator
-					}
-
-					if (fieldList != null) {
-						fieldList.remove(prop.getFieldName());
-					}
-					// The current limitation is that only top-level properties can be projected
-					// This traversing of nested data structures would need to replicate the processing done by
-					// MappingCouchbaseConverter. Either the read or write
-					// And the n1ql to project lower-level properties is complex
-
-					// if (!conversions.isSimpleType(prop.getType())) {
-					// getProjectedFieldsInternal(prop, sb, prop.getTypeInformation(), path+prop.getName()+".");
-					// } else {
-
-					// }
+			persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
+				if (prop == persistentEntity.getIdProperty() && parent == null) {
+					return;
 				}
+				if (prop == persistentEntity.getVersionProperty() && parent == null) {
+					return;
+				}
+				// for distinct when no distinctFields were provided, do not include the expiration field.
+				if (forDistinct && prop.findAnnotation(Expiration.class) != null && parent == null) {
+					return;
+				}
+				String projectField = null;
+
+				if (fieldList == null || fieldList.contains(prop.getFieldName())) {
+					PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
+							.getPersistentPropertyPath(prop.getName(), persistentEntity.getTypeInformation().getType());
+					projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					sb.append(projectField); // from N1qlQueryCreator
+				}
+
+				if (fieldList != null) {
+					fieldList.remove(prop.getFieldName());
+				}
+				// The current limitation is that only top-level properties can be projected
+				// This traversing of nested data structures would need to replicate the processing done by
+				// MappingCouchbaseConverter. Either the read or write
+				// And the n1ql to project lower-level properties is complex
+
+				// if (!conversions.isSimpleType(prop.getType())) {
+				// getProjectedFieldsInternal(prop, sb, prop.getTypeInformation(), path+prop.getName()+".");
+				// } else {
+				// }
 			});
 			// throw an exception if there is an request for a field not in the entity.
 			// needs further discussion as removing a field from an entity could cause this and not necessarily be an error

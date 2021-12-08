@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
+import jakarta.validation.ConstraintViolationException;
 import junit.framework.AssertionFailedError;
 
 import java.lang.reflect.Method;
@@ -44,8 +45,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-
-import javax.validation.ConstraintViolationException;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,7 +100,6 @@ import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
-import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -317,16 +315,17 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac.getBean("airportRepositoryScanConsistencyTest");
+		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
+				.getBean("airportRepositoryScanConsistencyTest");
 
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		Airport vie = new Airport("airports::vie", "vie" , "low9");
+		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport saved = airportRepositoryRP.save(vie);
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		assertNotEquals(  1, allSaved.size(),"should not have found 1 airport");
+		assertNotEquals(1, allSaved.size(), "should not have found 1 airport");
 	}
 
 	@Test
@@ -334,18 +333,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
-		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac.getBean("airportRepositoryScanConsistencyTest");
+		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
+				.getBean("airportRepositoryScanConsistencyTest");
 
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		Airport vie = new Airport("airports::vie", "vie" , "low9");
+		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport saved = airportRepositoryRP.save(vie);
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		assertEquals(  1, allSaved.size(),"should have found 1 airport");
+		assertEquals(1, allSaved.size(), "should have found 1 airport");
 	}
-
 
 	@Test
 	void findByTypeAlias() {
@@ -543,6 +542,25 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		userRepository.findByFirstname("Dave");
 		sleep(2000);
 		assertThrows(DataRetrievalFailureException.class, () -> userRepository.delete(user));
+	}
+
+	@Test
+	void stringQueryReturnsSimpleType(){
+		Airport airport1 = new Airport("1", "myIata1", "MyIcao");
+		airportRepository.save(airport1);
+		Airport airport2 = new Airport("2", "myIata2__", "MyIcao");
+		airportRepository.save(airport2);
+		List<String> iatas = airportRepository.getStrings();
+		assertEquals(Arrays.asList(airport1.getIata(), airport2.getIata()), iatas);
+		List<Long> iataLengths = airportRepository.getLongs();
+		assertEquals(Arrays.asList(airport1.getIata().length(), airport2.getIata().length()).toString(), iataLengths.toString());
+		// this is somewhat broken, because decode is told that each "row" is just a String instead of a String[]
+		// As such, only the first element is returned. (QueryExecutionConverts.unwrapWrapperTypes)
+		List<String[]> iataAndIcaos = airportRepository.getStringArrays();
+		assertEquals(airport1.getIata(), iataAndIcaos.get(0)[0]);
+		assertEquals(airport2.getIata(), iataAndIcaos.get(1)[0]);
+		airportRepository.deleteById(airport1.getId());
+		airportRepository.deleteById(airport2.getId());
 	}
 
 	@Test
@@ -886,13 +904,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		@Bean
 		public ValidatingCouchbaseEventListener validationEventListener() {
-			return new ValidatingCouchbaseEventListener(validator());
+			return new ValidatingCouchbaseEventListener( validator());
 		}
 	}
 
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+	// @EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
 	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
 
 		@Override

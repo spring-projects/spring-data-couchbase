@@ -26,7 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.Assert;
 
 /**

@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
+import jakarta.validation.constraints.Max;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
@@ -23,8 +24,6 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Expiration;
-
-import javax.validation.constraints.Max;
 
 /**
  * Airport entity

@@ -24,11 +24,11 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 import static org.springframework.data.couchbase.repository.query.support.N1qlUtils.escapedBucket;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 
 import com.couchbase.client.java.json.JsonArray;
-
-import java.util.Arrays;
 
 /**
  * @author Mauro Monti
@@ -85,8 +85,9 @@ class QueryCriteriaTests {
 	void testNestedNotIn() {
 		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).or(i("country")).is("Austria"))
 				.and(where(i("state")).notIn(new String[] { "Alabama", "Florida" }));
-		assertEquals("`name` = \"Bubba\" or (`age` > 12 or `country` = \"Austria\") and "
-				+ "(not( (`state` in ( [\"Alabama\",\"Florida\"] )) ))", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3) and (not( (`state` in ( $4, $5 )) ))",
+				c.export(new int[1], parameters, null));
 	}
 
 	@Test
@@ -224,21 +225,22 @@ class QueryCriteriaTests {
 	@Test
 	void testIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).in((Object)args);
-		assertEquals("`name` in ( [\"gump\",\"davis\"] )", c.export());
+		QueryCriteria c = where(i("name")).in((Object) args);
+		assertEquals("`name` in ( \"gump\", \"davis\" )", c.export());
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` in ( $1 )", c.export(new int[1], parameters, null));
-		assertEquals(arrayToString(args), parameters.get(0).toString());
+		assertEquals("`name` in ( $1, $2 )", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.toString());
 	}
 
 	@Test
 	void testNotIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).notIn((Object)args);
-		assertEquals("not( (`name` in ( [\"gump\",\"davis\"] )) )", c.export());
+		QueryCriteria c = where(i("name")).notIn((Object) args);
+		assertEquals("not( (`name` in ( \"gump\", \"davis\" )) )", c.export());
+		// this tests creating parameters from the args.
 		JsonArray parameters = JsonArray.create();
-		assertEquals("not( (`name` in ( $1 )) )", c.export(new int[1], parameters, null));
-		assertEquals(arrayToString(args), parameters.get(0).toString());
+		assertEquals("not( (`name` in ( $1, $2 )) )", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.toString());
 	}
 
 	@Test
@@ -260,7 +262,6 @@ class QueryCriteriaTests {
 		assertEquals(" USE KEYS [\"a\"]", expression.keys(Arrays.asList("a")).toString());
 		assertEquals(" USE KEYS []", expression.keys(Arrays.asList()).toString());
 	}
-
 
 	@Test // https://github.com/spring-projects/spring-data-couchbase/issues/1066
 	void testCriteriaCorrectlyEscapedWhenUsingMetaOnLHS() {

@@ -58,10 +58,6 @@ public class N1qlCountQueryCreator extends OldN1qlQueryCreator {
 			return Sort.unsorted();
 		}
 
-		public Optional<Class<?>> getDynamicProjection() {
-			return delegate.getDynamicProjection();
-		}
-
 		@Override
 		public Class<?> findDynamicProjection() {
 			return delegate.findDynamicProjection();

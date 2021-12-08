@@ -15,13 +15,12 @@
  */
 package org.springframework.data.couchbase.repository.cdi;
 
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
+
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.Set;
-
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
@@ -63,8 +62,7 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	 * @see org.springframework.data.repository.cdi.CdiRepositoryBean#create(javax.enterprise.context.spi.CreationalContext, java.lang.Class)
 	*/
 	@Override
-	protected T create(CreationalContext<T> creationalContext, Class<T> repositoryType) {
-
+	protected T create(jakarta.enterprise.context.spi.CreationalContext<T> creationalContext, Class<T> repositoryType) {
 		CouchbaseOperations couchbaseOperations = getDependencyInstance(couchbaseOperationsBean, CouchbaseOperations.class);
 		RepositoryOperationsMapping couchbaseOperationsMapping = new RepositoryOperationsMapping(couchbaseOperations);
 
@@ -75,4 +73,5 @@ public class CouchbaseRepositoryBean<T> extends CdiRepositoryBean<T> {
 	public Class<? extends Annotation> getScope() {
 		return couchbaseOperationsBean.getScope();
 	}
+
 }
