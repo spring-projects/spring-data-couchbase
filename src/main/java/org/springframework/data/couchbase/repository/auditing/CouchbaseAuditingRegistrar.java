@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.repository.auditing;
 import java.lang.annotation.Annotation;
 
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.RootBeanDefinition;
@@ -70,7 +71,11 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 		Assert.notNull(configuration, "AuditingConfiguration must not be null!");
 
 		BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(IsNewAwareAuditingHandler.class);
-		builder.addConstructorArgReference(BeanNames.COUCHBASE_MAPPING_CONTEXT);
+
+		BeanDefinitionBuilder definition = BeanDefinitionBuilder.genericBeanDefinition(PersistentEntitiesFactoryBean.class);
+		definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_CONSTRUCTOR);
+
+		builder.addConstructorArgValue(definition.getBeanDefinition());
 		return configureDefaultAuditHandlerAttributes(configuration, builder);
 	}
 

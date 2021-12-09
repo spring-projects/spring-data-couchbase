@@ -18,12 +18,15 @@ package org.springframework.data.couchbase.core.query;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.lang.Nullable;
+import org.springframework.util.CollectionUtils;
 
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
@@ -278,18 +281,30 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 
 	public QueryCriteria in(@Nullable Object... o) {
 		operator = "IN";
-		format = "%1$s in ( %3$s )";
-		// IN takes a single argument that is a list
+		format = "%1$s in ( ";
 		if (o.length > 0) {
 			if (o[0] instanceof JsonArray || o[0] instanceof List || o[0] instanceof Object[]) {
 				if (o.length != 1) {
 					throw new RuntimeException("IN cannot take multiple lists");
 				}
-				value = o;
+				if (o[0] instanceof Object[]) {
+					value = (Object[]) o[0];
+				} else if (o[0] instanceof JsonArray) {
+					JsonArray ja = ((JsonArray) o[0]);
+					value = ja.toList().toArray();
+				} else if (o[0] instanceof List) {
+					List l = ((List) o[0]);
+					value = l.toArray();
+				}
 			} else {
-				value = new Object[1];
-				value[0] = o; // JsonArray.from(o);
+				value = o;
 			}
+			for (int i = 0; i < value.length; i++) {
+				if (i > 0)
+					format = format + ", ";
+				format = format + "%" + (i + 3) + "$s";
+			}
+			format = format + " )";
 		}
 		return this;
 	}
@@ -409,15 +424,13 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 			if (paramIndexPtr[0] >= 0) {
 				JsonArray params = (JsonArray) parameters;
 				// from StringBasedN1qlQueryParser.getPositionalPlaceholderValues()
-				try {
+
+				if (value instanceof Object[] || value instanceof Collection) {
+					addAsCollection(params, asCollection(value), converter);
+				} else {
 					params.add(convert(converter, value));
-				} catch (InvalidArgumentException iae) {
-					if (value instanceof Object[]) {
-						addAsArray(params, value, converter);
-					} else {
-						throw iae;
-					}
 				}
+
 				return "$" + (++paramIndexPtr[0]); // these are generated in order
 			} else {
 				JsonObject params = (JsonObject) parameters;
@@ -462,13 +475,25 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return converter != null ? converter.convertForWriteIfNeeded(value) : value;
 	}
 
-	private void addAsArray(JsonArray posValues, Object o, CouchbaseConverter converter) {
-		Object[] array = (Object[]) o;
+	private void addAsCollection(JsonArray posValues, Collection collection, CouchbaseConverter converter) {
 		JsonArray ja = JsonValue.ja();
-		for (Object e : array) {
+		for (Object e : collection) {
 			ja.add(String.valueOf(convert(converter, e)));
 		}
 		posValues.add(ja);
+	}
+
+	/**
+	 * Returns a collection from the given source object. From MappingCouchbaseConverter.
+	 *
+	 * @param source the source object.
+	 * @return the target collection.
+	 */
+	private static Collection<?> asCollection(final Object source) {
+		if (source instanceof Collection) {
+			return (Collection<?>) source;
+		}
+		return source.getClass().isArray() ? CollectionUtils.arrayToList(source) : Collections.singleton(source);
 	}
 
 	private String maybeBackTic(String value) {

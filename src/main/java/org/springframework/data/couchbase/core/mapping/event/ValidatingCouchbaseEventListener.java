@@ -18,13 +18,13 @@ package org.springframework.data.couchbase.core.mapping.event;
 
 import java.util.Set;
 
-import javax.validation.ConstraintViolationException;
-import javax.validation.Validator;
 
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.util.Assert;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 /**
  * javax.validation dependant entities validator. When it is registered as Spring component its automatically invoked
@@ -38,14 +38,14 @@ public class ValidatingCouchbaseEventListener extends AbstractCouchbaseEventList
 
 	private static final Logger LOG = LoggerFactory.getLogger(ValidatingCouchbaseEventListener.class);
 
-	private final Validator validator;
+	private final LocalValidatorFactoryBean validator;
 
 	/**
 	 * Creates a new {@link ValidatingCouchbaseEventListener} using the given {@link Validator}.
 	 *
 	 * @param validator must not be {@literal null}.
 	 */
-	public ValidatingCouchbaseEventListener(Validator validator) {
+	public ValidatingCouchbaseEventListener(LocalValidatorFactoryBean validator) {
 		Assert.notNull(validator, "Validator must not be null!");
 		this.validator = validator;
 	}
