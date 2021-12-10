@@ -33,7 +33,7 @@ import com.couchbase.client.core.error.*;
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
- * <p/>
+ * <p>
  * Convert the given runtime exception to an appropriate exception from the {@code org.springframework.dao} hierarchy.
  * Return {@literal null} if no translation is appropriate: any other exception may have resulted from user code, and
  * should not be translated.

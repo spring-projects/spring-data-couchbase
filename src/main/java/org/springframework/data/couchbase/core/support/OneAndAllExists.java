@@ -21,11 +21,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * A common interface for those that support one(T), all(Collection<T>)
+ * A common interface for those that support one(T), all(Collection&lt;T&gt;)
  *
  * @author Michael Reiche
- *
- * @param <T> - the entity class
  */
 public interface OneAndAllExists {
   boolean one(String id);
