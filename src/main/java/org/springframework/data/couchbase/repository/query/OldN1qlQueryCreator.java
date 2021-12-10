@@ -75,7 +75,6 @@ import com.couchbase.client.java.json.JsonValue;
  * <ul>
  * <li><b>NEAR, WITHIN:</b> geospatial is not supported in N1QL as of now</li>
  * </ul>
- * </p>
  *
  * @author Simon Baslé
  * @author Subhashni Balakrishnan

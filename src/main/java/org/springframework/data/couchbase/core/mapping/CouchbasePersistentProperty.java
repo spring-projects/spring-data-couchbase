@@ -27,7 +27,7 @@ public interface CouchbasePersistentProperty extends PersistentProperty<Couchbas
 
 	/**
 	 * Returns the field name of the property.
-	 * <p/>
+	 * <p>
 	 * The field name can be different from the actual property name by using a custom annotation.
 	 */
 	String getFieldName();

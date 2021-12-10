@@ -26,7 +26,7 @@ import com.couchbase.client.java.CommonOptions;
 /**
  * The generic parameter needs to be REPO which is either a CouchbaseRepository parameterized on T,ID or a
  * ReactiveCouchbaseRepository parameterized on T,ID. i.e.: interface AirportRepository extends
- * CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository>
+ * CouchbaseRepository&lt;Airport, String&gt;, DynamicProxyable&lt;AirportRepository&gt;
  * 
  * @param <REPO>
  * @author Michael Reiche

@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.core.support;
 import java.util.Collection;
 
 /**
- * A common interface for those that support one(T), all(Collection<T>)
+ * A common interface for those that support one(T), all(Collection&lt;T&gt;)
  *
  * @author Michael Reiche
  *

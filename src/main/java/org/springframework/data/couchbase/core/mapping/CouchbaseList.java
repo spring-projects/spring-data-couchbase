@@ -25,11 +25,9 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
  * A {@link CouchbaseList} is an abstract list that represents an array stored in a (most of the times JSON) document.
- * <p/>
  * <p>
  * This {@link CouchbaseList} is part of the potentially nested structure inside one or more {@link CouchbaseDocument}s.
  * It can also contain them recursively, depending on how the document is modeled.
- * </p>
  */
 public class CouchbaseList implements CouchbaseStorable {
 
@@ -145,7 +143,7 @@ public class CouchbaseList implements CouchbaseStorable {
 
 	/**
 	 * Returns the current payload, including all recursive elements.
-	 * <p/>
+	 * <p>
 	 * It either returns the raw results or makes sure that the recusrive elements are also exported properly.
 	 *
 	 * @return

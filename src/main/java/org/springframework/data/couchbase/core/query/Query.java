@@ -383,7 +383,6 @@ public class Query {
 	 * This will find annotations included in composed annotations as well. Ideally
 	 * 
 	 * @param method representing the query.
-	 * @return the query with the annotations applied
 	 */
 	public void setMeta(CouchbaseQueryMethod method, Class<?> typeToRead) {
 		meta = OptionsBuilder.buildMeta(method, typeToRead);

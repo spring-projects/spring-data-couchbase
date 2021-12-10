@@ -816,7 +816,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	/**
 	 * COPIED Set the {@link EntityCallbacks} instance to use when invoking
 	 * {@link org.springframework.data.mapping.callback.EntityCallback callbacks} like the {@link AfterConvertCallback}.
-	 * <p/>
+	 * <p>
 	 * Overrides potentially existing {@link EntityCallbacks}.
 	 *
 	 * @param entityCallbacks must not be {@literal null}.

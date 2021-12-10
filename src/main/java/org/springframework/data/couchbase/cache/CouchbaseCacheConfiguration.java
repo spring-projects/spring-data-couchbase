@@ -64,7 +64,7 @@ public class CouchbaseCacheConfiguration {
 	 * <ul>
 	 * <li>{@link String} to {@link byte byte[]} using UTF-8 encoding.</li>
 	 * <li>{@link SimpleKey} to {@link String}</li>
-	 *
+	 * </ul>
 	 * @param registry must not be {@literal null}.
 	 */
 	public static void registerDefaultConverters(final ConverterRegistry registry) {

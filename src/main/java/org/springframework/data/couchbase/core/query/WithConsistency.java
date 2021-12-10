@@ -30,7 +30,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * Annotation to set the scan consistency of N1QL queries with Couchbase. This controls whether couchbase waits for all
  * changes to be processed by an index or whether stale results are acceptable.
- * <p/>
+ * <p>
  * If not set, the default consistency set in {@link AbstractCouchbaseConfiguration#getDefaultConsistency()} is used.
  *
  * @author Johannes Jasper.

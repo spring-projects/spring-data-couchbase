@@ -26,10 +26,10 @@ import org.springframework.data.couchbase.repository.CouchbaseRepository;
 /**
  * This annotation is targeted at {@link CouchbaseRepository Repository} interfaces, indicating that the framework
  * should ensure a View is present when the repository is instantiated.
- * <p/>
+ * <p>
  * The view must at least be described as a design document name and view name. Default map function will filter
  * documents on the type associated to the repository, and default reduce function is "_count".
- * <p/>
+ * <p>
  * One can specify a custom reduce function as well as a non-default map function.
  *
  * @author Simon Baslé

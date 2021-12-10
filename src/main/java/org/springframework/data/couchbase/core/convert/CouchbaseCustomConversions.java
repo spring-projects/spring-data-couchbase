@@ -24,11 +24,9 @@ import org.springframework.data.mapping.model.SimpleTypeHolder;
 
 /**
  * Value object to capture custom conversion.
- * <p/>
  * <p>
  * Types that can be mapped directly onto JSON are considered simple ones, because they neither need deeper inspection
  * nor nested conversion.
- * </p>
  *
  * @author Michael Nitschinger
  * @author Oliver Gierke

@@ -18,9 +18,9 @@ package org.springframework.data.couchbase.repository.query;
 
 /**
  * An utility entity that allows to extract total row count out of a COUNT(*) N1QL query.
- * <p/>
+ * <p>
  * The query should use the COUNT_ALIAS, eg.: SELECT COUNT(*) AS count FROM default;
- * <p/>
+ * <p>
  * This ensures that the framework will be able to map the JSON result to this {@link CountFragment} class so that it
  * can be used.
  */

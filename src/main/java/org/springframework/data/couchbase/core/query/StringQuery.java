@@ -28,7 +28,7 @@ import com.couchbase.client.java.json.JsonValue;
  * 
  * <pre>
  * &#64;Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
- * List<User> getByFirstnameAndLastname(String firstname, String lastname);
+ * List&lt;User&gt; getByFirstnameAndLastname(String firstname, String lastname);
  * </pre>
  * 
  * It must include the SELECT ... FROM ... preferably via the #n1ql expression, in addition to any predicates required,
