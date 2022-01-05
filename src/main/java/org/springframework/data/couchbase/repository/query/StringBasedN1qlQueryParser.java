@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,7 +184,7 @@ public class StringBasedN1qlQueryParser {
 		String delete = N1QLExpression.delete().from(b).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(b).toString();
 
-		return new N1qlSpelValues(selectEntity, entity, b, typeSelection, delete, returning);
+		return new N1qlSpelValues(selectEntity, entity, i(b).toString(), typeSelection, delete, returning);
 	}
 
 	private String getProjectedOrDistinctFields(String b, Class resultClass, String[] fields, String[] distinctFields) {

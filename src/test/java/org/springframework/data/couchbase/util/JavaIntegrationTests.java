@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,12 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.util.Util.waitUntilCondition;
 
+import okhttp3.Credentials;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
@@ -39,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.context.ApplicationContext;
@@ -60,6 +65,7 @@ import com.couchbase.client.core.error.ParsingFailureException;
 import com.couchbase.client.core.error.QueryException;
 import com.couchbase.client.core.error.ScopeNotFoundException;
 import com.couchbase.client.core.error.UnambiguousTimeoutException;
+import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.json.Mapper;
 import com.couchbase.client.core.service.ServiceType;
 import com.couchbase.client.java.Bucket;
@@ -200,6 +206,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			}
 
 			if (!ready) {
+				createAndDeleteBucket();// need to do this because of https://issues.couchbase.com/browse/MB-50132
 				try {
 					Thread.sleep(50);
 				} catch (InterruptedException e) {}
@@ -208,6 +215,32 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 		if (guard == 0) {
 			throw new IllegalStateException("Query indexer is still not aware of bucket " + bucketName);
+		}
+	}
+
+	private static void createAndDeleteBucket() {
+		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
+				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
+		String hostPort = connectionString().replace("11210", "8091");
+		String bucketname = UUID.randomUUID().toString();
+		try {
+
+			Response postResponse = httpClient.newCall(new Request.Builder()
+					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
+					.url("http://" + hostPort + "/pools/default/buckets/")
+					.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
+							.add("replicaNumber", Integer.toString(0)).add("flushEnabled", "1").build())
+					.build()).execute();
+
+			if (postResponse.code() != 202) {
+				throw new IOException("Could not create bucket: " + postResponse + ", Reason: " + postResponse.body().string());
+			}
+			Response deleteResponse = httpClient.newCall(new Request.Builder()
+					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
+					.url("http://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
+			System.out.println("deleteResponse: " + deleteResponse);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
 		}
 	}
 

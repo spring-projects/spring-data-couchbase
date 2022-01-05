@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryScanConsistencyTest;
+import org.springframework.data.couchbase.domain.Iata;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
@@ -273,6 +274,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedRequestPlus() {
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
@@ -311,7 +313,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedWithDefaultRepository() {
-
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
@@ -369,9 +371,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
-			Airport airport2 = airportRepository.findByIata(vie.getIata());
+			Airport airport2 = airportRepository.findByIata(Iata.vie);
 			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
+			Airport airport3 = airportRepository.findByIataIn(new Iata[] { Iata.vie, Iata.xxx });
+			assertNotNull(airport3, "should have found " + vie);
+			assertEquals(airport3.getId(), vie.getId());
+
+			java.util.Collection<Iata> iatas = new ArrayList<>();
+			iatas.add(Iata.vie);
+			iatas.add(Iata.xxx);
+			Airport airport4 = airportRepository.findByIataIn(iatas);
+			assertNotNull(airport4, "should have found " + vie);
+			assertEquals(airport4.getId(), vie.getId());
 
 		} finally {
 			airportRepository.delete(vie);
@@ -545,7 +557,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
-	void stringQueryReturnsSimpleType(){
+	void stringQueryReturnsSimpleType() {
 		Airport airport1 = new Airport("1", "myIata1", "MyIcao");
 		airportRepository.save(airport1);
 		Airport airport2 = new Airport("2", "myIata2__", "MyIcao");
@@ -553,7 +565,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		List<String> iatas = airportRepository.getStrings();
 		assertEquals(Arrays.asList(airport1.getIata(), airport2.getIata()), iatas);
 		List<Long> iataLengths = airportRepository.getLongs();
-		assertEquals(Arrays.asList(airport1.getIata().length(), airport2.getIata().length()).toString(), iataLengths.toString());
+		assertEquals(Arrays.asList(airport1.getIata().length(), airport2.getIata().length()).toString(),
+				iataLengths.toString());
 		// this is somewhat broken, because decode is told that each "row" is just a String instead of a String[]
 		// As such, only the first element is returned. (QueryExecutionConverts.unwrapWrapperTypes)
 		List<String[]> iataAndIcaos = airportRepository.getStringArrays();
@@ -565,6 +578,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	void count() {
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
 		airportRepository.countOne();
@@ -663,6 +677,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void distinct() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		String[] icaos = { "ic0", "ic1", "ic0", "ic1", "ic0", "ic1", "ic0" };
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 
 		try {
 			for (int i = 0; i < iatas.length; i++) {
@@ -904,13 +919,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		@Bean
 		public ValidatingCouchbaseEventListener validationEventListener() {
-			return new ValidatingCouchbaseEventListener( validator());
+			return new ValidatingCouchbaseEventListener(validator());
 		}
 	}
 
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	// @EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
 	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
 
 		@Override

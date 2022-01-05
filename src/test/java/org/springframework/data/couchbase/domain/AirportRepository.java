@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,12 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(Iata iata);
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIataIn(java.util.Collection<Iata> iatas);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIataIn(Iata[] iata);
+
 	// NOT_BOUNDED to test ScanConsistency
 	// @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
 	Airport iata(String iata);
@@ -89,11 +95,11 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<RemoveResult> deleteByIata(String iata);
 
-	@Query("SELECT __cas, * from `#{#n1ql.bucket}` where iata = $1")
+	@Query("SELECT __cas, * from #{#n1ql.bucket} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIataNoID(String iata);
 
-	@Query("SELECT __id, * from `#{#n1ql.bucket}` where iata = $1")
+	@Query("SELECT __id, * from #{#n1ql.bucket} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIataNoCAS(String iata);
 
@@ -116,10 +122,10 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Long countFancyExpression(@Param("projectIds") List<String> projectIds, @Param("planIds") List<String> planIds,
 			@Param("active") Boolean active);
 
-	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE anything = 'count(*)'") // looks like count query, but is not
+	@Query("SELECT 1 FROM #{#n1ql.bucket} WHERE anything = 'count(*)'") // looks like count query, but is not
 	Long countBad();
 
-	@Query("SELECT count(*) FROM `#{#n1ql.bucket}`")
+	@Query("SELECT count(*) FROM #{#n1ql.bucket}")
 	Long countGood();
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -156,7 +162,7 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Long countDistinctIcaoBy();
 
-	@Query("SELECT 1 FROM `#{#n1ql.bucket}` WHERE #{#n1ql.filter} " + " #{#projectIds != null ? 'AND blah IN $1' : ''} "
+	@Query("SELECT 1 FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} " + " #{#projectIds != null ? 'AND blah IN $1' : ''} "
 			+ " #{#planIds != null ? 'AND blahblah IN $2' : ''} " + " #{#active != null ? 'AND false = $3' : ''} ")
 	Long countOne();
 
