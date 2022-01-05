@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package org.springframework.data.couchbase.core.mapping;
 
 import com.couchbase.client.java.json.JsonObject;
 
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Map;
 
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
  * <p>
- * It acts like a {@link HashMap}, but only allows those types to be written that are supported by the underlying
+ * It acts like a {@link TreeMap}, but only allows those types to be written that are supported by the underlying
  * storage format, which is currently JSON. Note that JSON conversion is not happening here, but performed at a
  * different stage based on the payload stored in the {@link CouchbaseDocument}.
  * <p>
@@ -81,7 +81,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	public CouchbaseDocument(final String id, final int expiration) {
 		this.id = id;
 		this.expiration = expiration;
-		content = new HashMap<>();
+		content = new TreeMap<>();
 	}
 
 	/**
@@ -115,8 +115,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 *
 	 * @return
 	 */
-	public final HashMap<String, Object> export() {
-		HashMap<String, Object> toExport = new HashMap<String, Object>(content);
+	public final TreeMap<String, Object> export() {
+		TreeMap<String, Object> toExport = new TreeMap<String, Object>(content);
 		for (Map.Entry<String, Object> entry : content.entrySet()) {
 			if (entry.getValue() instanceof CouchbaseDocument) {
 				toExport.put(entry.getKey(), ((CouchbaseDocument) entry.getValue()).export());
@@ -262,10 +262,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Verifies that only values of a certain and supported type can be stored.
-	 * <p/>
 	 * <p>
 	 * If this is not the case, a {@link IllegalArgumentException} is thrown.
-	 * </p>
 	 *
 	 * @param value the object to verify its type.
 	 */

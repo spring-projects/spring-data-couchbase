@@ -62,7 +62,7 @@ public enum ViewPostProcessor implements RepositoryProxyPostProcessor {
 
 	/**
 	 * {@link MethodInterceptor} to inspect the currently invoked {@link Method} for a {@link View} annotation.
-	 * <p/>
+	 * <p>
 	 * If a View annotation is found, it will bind it to a locally held ThreadLocal for later lookup in the
 	 * SimpleCouchbaseRepository class.
 	 *
