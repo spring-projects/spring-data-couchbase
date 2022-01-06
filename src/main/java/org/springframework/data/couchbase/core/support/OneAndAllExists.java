@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,9 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * A common interface for those that support one(T), all(Collection<T>)
+ * A common interface for those that support one(T), all(Collection&lt;T&gt;)
  *
  * @author Michael Reiche
- *
- * @param <T> - the entity class
  */
 public interface OneAndAllExists {
   boolean one(String id);

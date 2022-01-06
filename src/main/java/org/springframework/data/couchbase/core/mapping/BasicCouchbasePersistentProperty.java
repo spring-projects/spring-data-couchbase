@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,9 @@ import com.couchbase.client.core.deps.com.fasterxml.jackson.annotation.JsonPrope
 
 /**
  * Implements annotated property representations of a given {@link Field} instance.
- * <p/>
  * <p>
  * This object is used to gather information out of properties on objects that need to be persisted. For example, it
  * supports overriding of the actual property name by providing custom annotations.
- * </p>
  *
  * @author Michael Nitschinger
  * @author Mark Paluch
@@ -71,7 +69,7 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 
 	/**
 	 * Returns the field name of the property.
-	 * <p/>
+	 * <p>
 	 * The field name can be different from the actual property name by using a custom annotation.
 	 */
 	@Override

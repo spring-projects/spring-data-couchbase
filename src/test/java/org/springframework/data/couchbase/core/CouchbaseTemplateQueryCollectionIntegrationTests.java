@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -349,20 +349,15 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 			assertEquals(7, airports2.size());
 
 			// count( distinct icao )
-			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
 			Long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
 					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).inCollection(collectionName).count()
 					.block();
 			assertEquals(2, count1);
 
-			// count( distinct (all fields in icaoClass) // which only has one field
-			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
-			Class icaoClass = (new Object() {
-				String icao;
-			}).getClass();
-			long count2 = (long) reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(icaoClass)
+			// count (distinct { iata, icao } )
+			Long count2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {"iata", "icao"})
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inCollection(collectionName).count().block();
-			assertEquals(2, count2);
+			assertEquals(7, count2);
 
 		} finally {
 			reactiveCouchbaseTemplate.removeById().inCollection(collectionName)

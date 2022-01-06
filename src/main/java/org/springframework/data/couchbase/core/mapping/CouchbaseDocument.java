@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,14 @@ import java.util.Map;
 
 /**
  * A {@link CouchbaseDocument} is an abstract representation of a document stored inside Couchbase Server.
- * <p/>
  * <p>
  * It acts like a {@link TreeMap}, but only allows those types to be written that are supported by the underlying
  * storage format, which is currently JSON. Note that JSON conversion is not happening here, but performed at a
  * different stage based on the payload stored in the {@link CouchbaseDocument}.
- * </p>
- * <p/>
  * <p>
  * In addition to the actual content, meta data is also stored. This especially refers to the document ID and its
  * expiration time. Note that this information is not mandatory, since documents can be nested and therefore only the
  * topmost document most likely has an ID.
- * </p>
  *
  * @author Michael Nitschinger
  */
@@ -114,7 +110,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Returns the current payload, including all recursive elements.
-	 * <p/>
+	 * <p>
 	 * It either returns the raw results or makes sure that the recusrive elements are also exported properly.
 	 *
 	 * @return
@@ -187,10 +183,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Returns the underlying payload.
-	 * <p/>
 	 * <p>
 	 * Note that unlike {@link #export()}, the nested objects are not converted, so the "raw" map is returned.
-	 * </p>
 	 *
 	 * @return the underlying payload.
 	 */
@@ -268,10 +262,8 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Verifies that only values of a certain and supported type can be stored.
-	 * <p/>
 	 * <p>
 	 * If this is not the case, a {@link IllegalArgumentException} is thrown.
-	 * </p>
 	 *
 	 * @param value the object to verify its type.
 	 */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ public interface CouchbasePersistentProperty extends PersistentProperty<Couchbas
 
 	/**
 	 * Returns the field name of the property.
-	 * <p/>
+	 * <p>
 	 * The field name can be different from the actual property name by using a custom annotation.
 	 */
 	String getFieldName();

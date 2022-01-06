@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.couchbase.client.java.json.JsonValue;
  * 
  * <pre>
  * &#64;Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and firstname = $1 and lastname = $2")
- * List<User> getByFirstnameAndLastname(String firstname, String lastname);
+ * List&lt;User&gt; getByFirstnameAndLastname(String firstname, String lastname);
  * </pre>
  * 
  * It must include the SELECT ... FROM ... preferably via the #n1ql expression, in addition to any predicates required,

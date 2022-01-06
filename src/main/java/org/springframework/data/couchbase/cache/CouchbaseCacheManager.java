@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -228,7 +228,7 @@ public class CouchbaseCacheManager extends AbstractTransactionSupportingCacheMan
 
 		/**
 		 * Disable in-flight {@link org.springframework.cache.Cache} creation for unconfigured caches.
-		 * <p />
+		 * <p>
 		 * {@link CouchbaseCacheManager#getMissingCache(String)} returns {@literal null} for any unconfigured
 		 * {@link org.springframework.cache.Cache} instead of a new {@link CouchbaseCache} instance. This allows eg.
 		 * {@link org.springframework.cache.support.CompositeCacheManager} to chime in.

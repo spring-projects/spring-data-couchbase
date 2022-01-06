@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.lang.Nullable;
+import org.springframework.util.CollectionUtils;
 
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
-import org.springframework.util.CollectionUtils;
 
 /**
  * @author Michael Nitschinger
@@ -283,18 +281,30 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 
 	public QueryCriteria in(@Nullable Object... o) {
 		operator = "IN";
-		format = "%1$s in ( %3$s )";
-		// IN takes a single argument that is a list
+		format = "%1$s in ( ";
 		if (o.length > 0) {
 			if (o[0] instanceof JsonArray || o[0] instanceof List || o[0] instanceof Object[]) {
 				if (o.length != 1) {
 					throw new RuntimeException("IN cannot take multiple lists");
 				}
-				value = o;
+				if (o[0] instanceof Object[]) {
+					value = (Object[]) o[0];
+				} else if (o[0] instanceof JsonArray) {
+					JsonArray ja = ((JsonArray) o[0]);
+					value = ja.toList().toArray();
+				} else if (o[0] instanceof List) {
+					List l = ((List) o[0]);
+					value = l.toArray();
+				}
 			} else {
-				value = new Object[1];
-				value[0] = o; // JsonArray.from(o);
+				value = o;
 			}
+			for (int i = 0; i < value.length; i++) {
+				if (i > 0)
+					format = format + ", ";
+				format = format + "%" + (i + 3) + "$s";
+			}
+			format = format + " )";
 		}
 		return this;
 	}
@@ -414,15 +424,13 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 			if (paramIndexPtr[0] >= 0) {
 				JsonArray params = (JsonArray) parameters;
 				// from StringBasedN1qlQueryParser.getPositionalPlaceholderValues()
-				try {
+
+				if (value instanceof Object[] || value instanceof Collection) {
+					addAsCollection(params, asCollection(value), converter);
+				} else {
 					params.add(convert(converter, value));
-				} catch (InvalidArgumentException iae) {
-					if (value instanceof Object[] || value instanceof Collection) {
-						addAsCollection(params, asCollection(value), converter);
-					} else {
-						throw iae;
-					}
 				}
+
 				return "$" + (++paramIndexPtr[0]); // these are generated in order
 			} else {
 				JsonObject params = (JsonObject) parameters;
@@ -487,7 +495,6 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		}
 		return source.getClass().isArray() ? CollectionUtils.arrayToList(source) : Collections.singleton(source);
 	}
-
 
 	private String maybeBackTic(String value) {
 		if (value == null || (value.startsWith("`") && value.endsWith("`"))) {

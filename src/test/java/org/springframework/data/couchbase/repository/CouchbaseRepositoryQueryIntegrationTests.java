@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,6 @@ import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
-import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -276,6 +275,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedRequestPlus() {
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
@@ -314,20 +314,21 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedWithDefaultRepository() {
-
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// the Config class has been modified, these need to be loaded again
 		CouchbaseTemplate couchbaseTemplateRP = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac.getBean("airportRepositoryScanConsistencyTest");
+		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
+				.getBean("airportRepositoryScanConsistencyTest");
 
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		Airport vie = new Airport("airports::vie", "vie" , "low9");
+		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport saved = airportRepositoryRP.save(vie);
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		assertNotEquals(  1, allSaved.size(),"should not have found 1 airport");
+		assertNotEquals(1, allSaved.size(), "should not have found 1 airport");
 	}
 
 	@Test
@@ -335,18 +336,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		ApplicationContext ac = new AnnotationConfigApplicationContext(ConfigRequestPlus.class);
 		// the Config class has been modified, these need to be loaded again
-		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac.getBean("airportRepositoryScanConsistencyTest");
+		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
+				.getBean("airportRepositoryScanConsistencyTest");
 
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		Airport vie = new Airport("airports::vie", "vie" , "low9");
+		Airport vie = new Airport("airports::vie", "vie", "low9");
 		Airport saved = airportRepositoryRP.save(vie);
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		assertEquals(  1, allSaved.size(),"should have found 1 airport");
+		assertEquals(1, allSaved.size(), "should have found 1 airport");
 	}
-
 
 	@Test
 	void findByTypeAlias() {
@@ -374,15 +375,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Airport airport2 = airportRepository.findByIata(Iata.vie);
 			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
-
-			Airport airport3 = airportRepository.findByIataIn(new Iata[]{Iata.vie, Iata.xxx});
+			Airport airport3 = airportRepository.findByIataIn(new Iata[] { Iata.vie, Iata.xxx });
 			assertNotNull(airport3, "should have found " + vie);
 			assertEquals(airport3.getId(), vie.getId());
 
 			java.util.Collection<Iata> iatas = new ArrayList<>();
 			iatas.add(Iata.vie);
 			iatas.add(Iata.xxx);
-			Airport airport4 = airportRepository.findByIataIn( iatas );
+			Airport airport4 = airportRepository.findByIataIn(iatas);
 			assertNotNull(airport4, "should have found " + vie);
 			assertEquals(airport4.getId(), vie.getId());
 
@@ -558,7 +558,28 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void stringQueryReturnsSimpleType() {
+		Airport airport1 = new Airport("1", "myIata1", "MyIcao");
+		airportRepository.save(airport1);
+		Airport airport2 = new Airport("2", "myIata2__", "MyIcao");
+		airportRepository.save(airport2);
+		List<String> iatas = airportRepository.getStrings();
+		assertEquals(Arrays.asList(airport1.getIata(), airport2.getIata()), iatas);
+		List<Long> iataLengths = airportRepository.getLongs();
+		assertEquals(Arrays.asList(airport1.getIata().length(), airport2.getIata().length()).toString(),
+				iataLengths.toString());
+		// this is somewhat broken, because decode is told that each "row" is just a String instead of a String[]
+		// As such, only the first element is returned. (QueryExecutionConverts.unwrapWrapperTypes)
+		List<String[]> iataAndIcaos = airportRepository.getStringArrays();
+		assertEquals(airport1.getIata(), iataAndIcaos.get(0)[0]);
+		assertEquals(airport2.getIata(), iataAndIcaos.get(1)[0]);
+		airportRepository.deleteById(airport1.getId());
+		airportRepository.deleteById(airport2.getId());
+	}
+
+	@Test
 	void count() {
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
 		airportRepository.countOne();
@@ -657,6 +678,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void distinct() {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 		String[] icaos = { "ic0", "ic1", "ic0", "ic1", "ic0", "ic1", "ic0" };
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 
 		try {
 			for (int i = 0; i < iatas.length; i++) {

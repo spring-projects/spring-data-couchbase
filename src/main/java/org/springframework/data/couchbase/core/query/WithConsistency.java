@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * Annotation to set the scan consistency of N1QL queries with Couchbase. This controls whether couchbase waits for all
  * changes to be processed by an index or whether stale results are acceptable.
- * <p/>
+ * <p>
  * If not set, the default consistency set in {@link AbstractCouchbaseConfiguration#getDefaultConsistency()} is used.
  *
  * @author Johannes Jasper.
