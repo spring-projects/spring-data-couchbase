@@ -150,6 +150,12 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id, scope, collection);
 		return accessor.getBean();
 	}
+	CouchbasePersistentEntity couldBePersistentEntity(Class<?> entityClass) {
+		if (ClassUtils.isPrimitiveOrWrapper(entityClass) || entityClass == String.class) {
+			return null;
+		}
+		return mappingContext.getPersistentEntity(entityClass);
+	}
 
 	CouchbasePersistentEntity couldBePersistentEntity(Class<?> entityClass) {
 		if (ClassUtils.isPrimitiveOrWrapper(entityClass) || entityClass == String.class) {
