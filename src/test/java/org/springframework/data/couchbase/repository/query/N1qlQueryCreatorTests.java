@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
@@ -132,7 +132,7 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();
@@ -156,7 +156,7 @@ class N1qlQueryCreatorTests {
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
 
-		assertEquals(expected.export(new int[1]), query.export(new int[1]));
+		assertEquals(" WHERE `firstname` in ( $1, $2 )", query.export(new int[1]));
 		JsonObject expectedOptions = JsonObject.create();
 		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
 		JsonObject actualOptions = JsonObject.create();

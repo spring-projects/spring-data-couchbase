@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -383,7 +383,6 @@ public class Query {
 	 * This will find annotations included in composed annotations as well. Ideally
 	 * 
 	 * @param method representing the query.
-	 * @return the query with the annotations applied
 	 */
 	public void setMeta(CouchbaseQueryMethod method, Class<?> typeToRead) {
 		meta = OptionsBuilder.buildMeta(method, typeToRead);

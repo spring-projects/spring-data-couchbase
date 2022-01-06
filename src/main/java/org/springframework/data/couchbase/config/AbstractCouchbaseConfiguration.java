@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -254,8 +254,6 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Creates a {@link MappingCouchbaseConverter} using the configured {@link #couchbaseMappingContext}.
-	 *
-	 * @throws Exception on Bean construction failure.
 	 */
 	@Bean
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
@@ -283,7 +281,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
 	 *
-	 * @throws Exception on Bean construction failure.
 	 */
 	@Bean
 	public CouchbaseMappingContext couchbaseMappingContext(CustomConversions customConversions) throws Exception {
@@ -299,7 +296,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
 	 *
-	 * @throws Exception on Bean construction failure.
 	 * @return ObjectMapper
 	 */
 
@@ -337,11 +333,9 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Return the base package to scan for mapped {@link Document}s. Will return the package name of the configuration
 	 * class (the concrete class, not this one here) by default.
-	 * <p/>
 	 * <p>
 	 * So if you have a {@code com.acme.AppConfig} extending {@link AbstractCouchbaseConfiguration} the base package will
 	 * be considered {@code com.acme} unless the method is overridden to implement alternate behavior.
-	 * </p>
 	 *
 	 * @return the base package to scan for mapped {@link Document} classes or {@literal null} to not enable scanning for
 	 *         entities.
