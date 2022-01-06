@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +45,7 @@ import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
@@ -84,7 +88,19 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 		return Mono.fromSupplier(() -> {
 			final CouchbaseDocument converted = new CouchbaseDocument(id);
 			converted.setId(id);
-			CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entityClass);
+
+			CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
+
+			if (persistentEntity == null) { // method could return a Long, Boolean, String etc.
+				// QueryExecutionConverters.unwrapWrapperTypes will recursively unwrap until there is nothing left
+				// to unwrap. This results in List<String[]> being unwrapped past String[] to String, so this may also be a
+				// Collection (or Array) of entityClass. We have no way of knowing - so just assume it is what we are told.
+				// if this is a Collection or array, only the first element will be returned.
+				Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
+						.getContent().entrySet();
+				return (T) set.iterator().next().getValue();
+			}
+
 			if (cas != 0 && persistentEntity.getVersionProperty() != null) {
 				converted.put(persistentEntity.getVersionProperty().getName(), cas);
 			}
@@ -98,6 +114,13 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 			N1qlJoinResolver.handleProperties(persistentEntity, accessor, template, id);
 			return accessor.getBean();
 		});
+	}
+
+	CouchbasePersistentEntity couldBePersistentEntity(Class<?> entityClass) {
+		if (ClassUtils.isPrimitiveOrWrapper(entityClass) || entityClass == String.class) {
+			return null;
+		}
+		return mappingContext.getPersistentEntity(entityClass);
 	}
 
 	@Override

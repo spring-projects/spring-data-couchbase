@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 
 	/**
 	 * Returns the expiration time of the entity.
-	 * <p/>
+	 * <p>
 	 * The Couchbase format for expiration time is: - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in
 	 * seconds - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
 	 *
@@ -45,7 +45,7 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 
 	/**
 	 * Returns the expiration time of the entity.
-	 * <p/>
+	 * <p>
 	 * The Couchbase format for expiration time is: - for TTL < 31 days (<= 30 * 24 * 60 * 60): expressed as a TTL in
 	 * seconds - for TTL > 30 days: expressed as Unix UTC time of expiry (number of SECONDS since the Epoch)
 	 *

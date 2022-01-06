@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -265,15 +265,6 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count();
 			assertEquals(7, count1);
 
-			// count( distinct (all fields in icaoClass)
-			Class icaoClass = (new Object() {
-				String iata;
-				String icao;
-			}).getClass();
-			long count2 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(icaoClass)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).count();
-			assertEquals(7, count2);
-
 		} finally {
 			couchbaseTemplate.removeById()
 					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
@@ -305,19 +296,14 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			assertEquals(7, airports2.size());
 
 			// count( distinct icao )
-			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
-			long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
+			Long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
 					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
 			assertEquals(2, count1);
 
-			// count( distinct (all fields in icaoClass) // which only has one field
-			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
-			Class icaoClass = (new Object() {
-				String icao;
-			}).getClass();
-			long count2 = (long) reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(icaoClass)
+			// count( distinct { icao, iata } )
+			Long count2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao", "iata" })
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
-			assertEquals(2, count2);
+			assertEquals(7, count2);
 
 		} finally {
 			reactiveCouchbaseTemplate.removeById()
