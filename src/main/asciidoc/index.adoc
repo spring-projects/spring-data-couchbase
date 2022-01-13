@@ -1,10 +1,10 @@
 = Spring Data Couchbase - Reference Documentation
-Michael Nitschinger, Oliver Gierke, Simon Baslé
+Michael Nitschinger, Oliver Gierke, Simon Baslé, Michael Reiche
 :revnumber: {version}
 :revdate: {localdate}
 :spring-data-commons-docs: ../../../../spring-data-commons/src/main/asciidoc
 
-(C) 2014-2019 The original author(s).
+(C) 2014-2022 The original author(s).
 
 NOTE: Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.
 
@@ -24,8 +24,8 @@ include::repository.adoc[]
 include::reactiverepository.adoc[]
 include::template.adoc[]
 include::transactions.adoc[]
-// (daschl) disabled the ansijoins docs since it is being overhauled for 4.x
-// include::ansijoins.adoc[]
+include::collections.adoc[]
+include::ansijoins.adoc[]
 :leveloffset: -1
 
 [[appendix]]
