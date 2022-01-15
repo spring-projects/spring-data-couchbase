@@ -106,7 +106,7 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 					name));
 		}
 
-		cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), value, cacheConfig.getExpiry(),
+		cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), toStoreValue(value), cacheConfig.getExpiry(),
 				cacheConfig.getValueTranscoder());
 	}
 
@@ -116,7 +116,7 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 			return get(key);
 		}
 
-		Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), value,
+		Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), toStoreValue(value),
 				cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
 
 		if (result == null) {
