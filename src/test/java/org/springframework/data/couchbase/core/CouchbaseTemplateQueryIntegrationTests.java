@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -26,9 +27,11 @@ import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.java.query.QueryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.query.Query;
@@ -50,6 +53,9 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 /**
  * Query tests Theses tests rely on a cb server running
@@ -73,7 +79,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		// ensure each test starts with clean state
 
 		couchbaseTemplate.removeByQuery(User.class).all();
-		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).all();
 	}
 
 	@Test
@@ -85,7 +91,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
 
 			final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					.withConsistency(REQUEST_PLUS).all();
 
 			for (User u : foundUsers) {
 				if (!(u.equals(user1) || u.equals(user2))) {
@@ -108,7 +114,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			couchbaseTemplate.findById(User.class).one(user1.getId());
 			reactiveCouchbaseTemplate.findById(User.class).one(user1.getId()).block();
 		} finally {
-			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all();
 		}
 
 		User usery = couchbaseTemplate.findById(User.class).one("user1");
@@ -128,7 +134,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
 		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
-				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());
 	}
@@ -142,7 +148,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
 		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
-				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
 		assertEquals("123", foundUsers.get(0).getId(), "id");
 		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
 		assertEquals(ado, foundUsers.get(0));
@@ -169,7 +175,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		Query daveUsers = new Query(QueryCriteria.where("username").like("dave"));
 
 		final List<UserSubmissionProjected> foundUserSubmissions = couchbaseTemplate.findByQuery(UserSubmission.class)
-				.as(UserSubmissionProjected.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(daveUsers).all();
+				.as(UserSubmissionProjected.class).withConsistency(REQUEST_PLUS).matching(daveUsers).all();
 		assertEquals(1, foundUserSubmissions.size());
 		assertEquals(user.getUsername(), foundUserSubmissions.get(0).getUsername());
 		assertEquals(user.getId(), foundUserSubmissions.get(0).getId());
@@ -186,11 +192,11 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where("firstname").like("special"));
 		final List<UserJustLastName> foundUsers = couchbaseTemplate.findByQuery(User.class).as(UserJustLastName.class)
-				.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all();
+				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
 		assertEquals(1, foundUsers.size());
 
 		final List<UserJustLastName> foundUsersReactive = reactiveCouchbaseTemplate.findByQuery(User.class)
-				.as(UserJustLastName.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(specialUsers).all()
+				.as(UserJustLastName.class).withConsistency(REQUEST_PLUS).matching(specialUsers).all()
 				.collectList().block();
 		assertEquals(1, foundUsersReactive.size());
 
@@ -206,7 +212,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		assertTrue(couchbaseTemplate.existsById().one(user1.getId()));
 		assertTrue(couchbaseTemplate.existsById().one(user2.getId()));
 
-		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
@@ -227,7 +233,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query nonSpecialUsers = new Query(QueryCriteria.where(i("firstname")).notLike("special"));
 
-		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS)
 				.matching(nonSpecialUsers).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
@@ -252,17 +258,17 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 			// distinct icao
 			List<Airport> airports1 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
-					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					.as(Airport.class).withConsistency(REQUEST_PLUS).all();
 			assertEquals(2, airports1.size());
 
 			// distinct all-fields-in-Airport.class
 			List<Airport> airports2 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(Airport.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					.withConsistency(REQUEST_PLUS).all();
 			assertEquals(7, airports2.size());
 
 			// count( distinct { iata, icao } )
 			long count1 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "iata", "icao" })
-					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count();
+					.as(Airport.class).withConsistency(REQUEST_PLUS).count();
 			assertEquals(7, count1);
 
 		} finally {
@@ -287,28 +293,55 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 			// distinct icao
 			List<Airport> airports1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
-					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all().collectList().block();
+					.as(Airport.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 			assertEquals(2, airports1.size());
 
 			// distinct all-fields-in-Airport.class
 			List<Airport> airports2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {})
-					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all().collectList().block();
+					.as(Airport.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 			assertEquals(7, airports2.size());
 
 			// count( distinct icao )
 			Long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
-					.as(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
+					.as(Airport.class).withConsistency(REQUEST_PLUS).count().block();
 			assertEquals(2, count1);
 
 			// count( distinct { icao, iata } )
 			Long count2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao", "iata" })
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
+					.withConsistency(REQUEST_PLUS).count().block();
 			assertEquals(7, count2);
 
 		} finally {
 			reactiveCouchbaseTemplate.removeById()
 					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet())).collectList()
 					.block();
+		}
+	}
+
+	@Test
+	void sortedTemplate() {
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+
+		try {
+			couchbaseTemplate.insertById(Airport.class).all(
+					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
+							.collect(Collectors.toSet()));
+
+			org.springframework.data.couchbase.core.query.Query query = org.springframework.data.couchbase.core.query.Query.query(QueryCriteria.where("iata").isNotNull());
+			Pageable pageableWithSort = PageRequest.of(0, 7, Sort.by("iata"));
+			query.with(pageableWithSort);
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).matching(query).all();
+
+			String[] sortedIatas = iatas.clone();
+			System.out.println(""+iatas.length+" "+sortedIatas.length);
+			Arrays.sort(sortedIatas);
+			for(int i=0; i< pageableWithSort.getPageSize(); i++){
+				System.out.println(airports.get(i).getIata());
+				assertEquals(sortedIatas[i], airports.get(i).getIata());
+			}
+		} finally {
+			couchbaseTemplate.removeById(Airport.class).all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
 	}
 
