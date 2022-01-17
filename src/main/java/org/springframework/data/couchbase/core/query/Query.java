@@ -178,8 +178,7 @@ public class Query {
 		}
 		this.limit = pageable.getPageSize();
 		this.skip = pageable.getOffset();
-		if (!this.sort.equals(pageable.getSort()))
-			this.sort.and(pageable.getSort());
+		this.with(pageable.getSort());
 		return this;
 	}
 
