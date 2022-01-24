@@ -43,6 +43,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
+import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
@@ -59,6 +60,10 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 // @Scope("repositoryScope")
 // @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface AirportRepository extends CouchbaseRepository<Airport, String>, DynamicProxyable<AirportRepository> {
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> findByIataInAndIcaoIn(java.util.Collection<String> size, java.util.Collection<String> color,
+			Pageable pageable);
 
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
@@ -81,7 +86,10 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	Airport findByIataIn(java.util.Collection<Iata> iatas);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Airport findByIataIn(Iata[] iata);
+	Airport findByIataIn(Iata... iatas);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByIataIn(JsonArray iatas);
 
 	// NOT_BOUNDED to test ScanConsistency
 	// @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
