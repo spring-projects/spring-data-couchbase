@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -238,6 +239,30 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void issue1304CollectionParameter() {
+		Airport vie = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low5");
+			airportRepository.save(vie);
+			java.util.Collection<String> iatas = new LinkedList<String>();
+			iatas.add(vie.getIata());
+			java.util.Collection<String> icaos = new LinkedList<String>();
+			icaos.add(vie.getIcao());
+			icaos.add("blue");
+			PageRequest pageable = PageRequest.of( 0, 1, Sort.by("iata"));
+			List<Airport>airports = airportRepository.findByIataInAndIcaoIn(iatas, icaos, pageable);
+			assertEquals(1, airports.size());
+
+			List<Airport>airports2 = airportRepository.findByIataInAndIcaoIn(iatas, icaos, pageable);
+			assertEquals(1, airports2.size());
+
+		} finally {
+			airportRepository.delete(vie);
+		}
+
+	}
+
+	@Test
 	void findBySimpleProperty() {
 		Airport vie = null;
 		try {
@@ -369,9 +394,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	void findByEnum() {
 		Airport vie = null;
+		Airport zzz = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
+			zzz = airportRepository.save(vie.withId("airports::zzz").withIata("zzz"));
 			Airport airport2 = airportRepository.findByIata(Iata.vie);
 			assertNotNull(airport2, "should have found " + vie);
 			assertEquals(airport2.getId(), vie.getId());
@@ -386,8 +413,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertNotNull(airport4, "should have found " + vie);
 			assertEquals(airport4.getId(), vie.getId());
 
+			Airport airport5 = airportRepository.findByIataIn(Iata.vie, Iata.xxx);
+			assertNotNull(airport5, "should have found " + vie);
+			assertEquals(airport5.getId(), vie.getId());
+
+			JsonArray iatasJson = JsonArray.ja();
+			iatasJson.add(Iata.vie.toString());
+			iatasJson.add(Iata.xxx.toString());
+			Airport airport6 = airportRepository.findByIataIn(iatasJson);
+			assertNotNull(airport6, "should have found " + vie);
+			assertEquals(airport6.getId(), vie.getId());
 		} finally {
 			airportRepository.delete(vie);
+			airportRepository.delete(zzz);
 		}
 	}
 

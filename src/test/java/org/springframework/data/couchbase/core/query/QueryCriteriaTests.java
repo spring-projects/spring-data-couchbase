@@ -84,9 +84,9 @@ class QueryCriteriaTests {
 	@Test
 	void testNestedNotIn() {
 		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).or(i("country")).is("Austria"))
-				.and(where(i("state")).notIn(new String[] { "Alabama", "Florida" }));
+				.and(where(i("state")).notIn((Object) new String[] { "Alabama", "Florida" }));
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3) and (not( (`state` in ( $4, $5 )) ))",
+		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3) and (not( (`state` in $4) ))",
 				c.export(new int[1], parameters, null));
 	}
 
@@ -225,22 +225,22 @@ class QueryCriteriaTests {
 	@Test
 	void testIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).in((Object) args);
-		assertEquals("`name` in ( \"gump\", \"davis\" )", c.export());
+		QueryCriteria c = where(i("name")).in((Object) args); // the first arg is an array
+		assertEquals("`name` in [\"gump\",\"davis\"]", c.export());
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` in ( $1, $2 )", c.export(new int[1], parameters, null));
-		assertEquals(arrayToString(args), parameters.toString());
+		assertEquals("`name` in $1", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
 	@Test
 	void testNotIn() {
 		String[] args = new String[] { "gump", "davis" };
-		QueryCriteria c = where(i("name")).notIn((Object) args);
-		assertEquals("not( (`name` in ( \"gump\", \"davis\" )) )", c.export());
+		QueryCriteria c = where(i("name")).notIn((Object) args); // the first arg is an array
+		assertEquals("not( (`name` in [\"gump\",\"davis\"]) )", c.export());
 		// this tests creating parameters from the args.
 		JsonArray parameters = JsonArray.create();
-		assertEquals("not( (`name` in ( $1, $2 )) )", c.export(new int[1], parameters, null));
-		assertEquals(arrayToString(args), parameters.toString());
+		assertEquals("not( (`name` in $1) )", c.export(new int[1], parameters, null));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
 	@Test

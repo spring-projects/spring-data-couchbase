@@ -24,6 +24,7 @@ import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
@@ -281,30 +282,34 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 
 	public QueryCriteria in(@Nullable Object... o) {
 		operator = "IN";
-		format = "%1$s in ( ";
+		format = "%1$s in %3$s";
+		value = new Object[1];
 		if (o.length > 0) {
 			if (o[0] instanceof JsonArray || o[0] instanceof List || o[0] instanceof Object[]) {
 				if (o.length != 1) {
 					throw new RuntimeException("IN cannot take multiple lists");
 				}
 				if (o[0] instanceof Object[]) {
-					value = (Object[]) o[0];
+					value[0] = o[0];
 				} else if (o[0] instanceof JsonArray) {
 					JsonArray ja = ((JsonArray) o[0]);
-					value = ja.toList().toArray();
+					value[0] = ja.toList().toArray();
 				} else if (o[0] instanceof List) {
 					List l = ((List) o[0]);
-					value = l.toArray();
+					value[0] = l.toArray();
 				}
 			} else {
-				value = o;
+				// N1qlQueryCreatorTests.queryParametersArray()
+				// Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
+				if (o instanceof Object[]) {
+					value[0] = o;
+				} else {
+					// see QueryCriteriaTests.testNestedNotIn() - if arg to notIn is not cast to Object
+					// notIn((Object) new String[] { "Alabama", "Florida" }));
+					throw new CouchbaseException("unhandled parameters "+o);
+				}
 			}
-			for (int i = 0; i < value.length; i++) {
-				if (i > 0)
-					format = format + ", ";
-				format = format + "%" + (i + 3) + "$s";
-			}
-			format = format + " )";
+
 		}
 		return this;
 	}
