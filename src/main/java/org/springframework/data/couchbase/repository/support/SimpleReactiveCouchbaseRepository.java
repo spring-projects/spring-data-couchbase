@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,12 +26,15 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -71,13 +72,26 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		// if entity has non-null, non-zero version property, then replace()
 		Mono<S> result;
-		if (hasNonZeroVersionProperty(entity, operations.getConverter())) {
+		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
+				.getPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
+		final boolean versionPresent = versionProperty != null;
+		final Long version = versionProperty == null || versionProperty.getField() == null ? null
+				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
+		final boolean existingDocument = version != null && version > 0;
+
+		if (!versionPresent) { // the entity doesn't have a version property
+			// No version field - no cas
+			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+					.one(entity);
+		} else if (existingDocument) { // there is a version property, and it is non-zero
+			// Updating existing document with cas
 			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
 					.one(entity);
-		} else {
-			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+		} else { // there is a version property, but it's zero or not set.
+			// Creating new document
+			result = (Mono<S>) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
 					.one(entity);
 		}
 		return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
@@ -27,9 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.ReactiveAirlineRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.ReactiveUserRepository;
@@ -49,6 +54,31 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 	@Autowired ReactiveUserRepository userRepository;
 
 	@Autowired ReactiveAirportRepository airportRepository;
+
+	@Autowired ReactiveAirlineRepository airlineRepository;
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveReplaceUpsertInsert() {
+		// the User class has a version.
+		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		// save the document - we don't care how on this call
+		userRepository.save(user).block();
+		// Now set the version to 0, it should attempt an insert and fail.
+		long saveVersion = user.getVersion();
+		user.setVersion(0);
+		assertThrows(DuplicateKeyException.class, () -> userRepository.save(user).block());
+		user.setVersion(saveVersion + 1);
+		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
+		userRepository.delete(user);
+
+		// Airline does not have a version
+		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline");
+		// save the document - we don't care how on this call
+		airlineRepository.save(airline).block();
+		airlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
+		airlineRepository.delete(airline).block();
+	}
 
 	@Test
 	void saveAndFindById() {
