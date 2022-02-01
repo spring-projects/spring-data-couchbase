@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.springframework.dao.OptimisticLockingFailureException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -119,7 +120,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user).block();
 		user.setVersion(user.getVersion() - 1);
-		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
+		assertThrows(OptimisticLockingFailureException.class, () -> userRepository.save(user).block());
 		user.setVersion(0);
 		userRepository.save(user).block();
 		userRepository.delete(user).block();

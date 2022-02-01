@@ -25,6 +25,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
@@ -66,7 +67,11 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			return new DataRetrievalFailureException(ex.getMessage(), ex);
 		}
 
-		if (ex instanceof CasMismatchException || ex instanceof ConcurrentModificationException
+		if (ex instanceof CasMismatchException) {
+			return new OptimisticLockingFailureException(ex.getMessage(), ex);
+		}
+
+		if (ex instanceof ConcurrentModificationException
 				|| ex instanceof ReplicaNotConfiguredException || ex instanceof DurabilityLevelNotAvailableException
 				|| ex instanceof DurabilityImpossibleException || ex instanceof DurabilityAmbiguousException) {
 			return new DataIntegrityViolationException(ex.getMessage(), ex);
