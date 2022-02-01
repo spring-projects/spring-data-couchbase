@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * 1. repository.withCollection() 2. Annotation on the method
 	 */
 
-	String getScope() {
+	protected String getScope() {
 		String fromAnnotation = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE,
 				new AnnotatedElement[] { getJavaType(), repositoryInterface });
 		String fromMetadata = crudMethodMetadata.getScope();
@@ -83,7 +83,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * This can be overriden in the operation method by<br>
 	 * 1. repository.withCollection()
 	 */
-	String getCollection() {
+	protected String getCollection() {
 		String fromAnnotation = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
 				new AnnotatedElement[] { getJavaType(), repositoryInterface });
 		String fromMetadata = crudMethodMetadata.getCollection();
