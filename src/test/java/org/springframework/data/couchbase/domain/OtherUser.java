@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,16 @@ import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
- * User entity for tests
+ * OtherUser entity for tests. Both User and OtherUser extend AbstractUser
  *
- * @author Michael Nitschinger
  * @author Michael Reiche
  */
 
 @Document
-public class User extends AbstractUser {
+public class OtherUser extends AbstractUser {
 
 	@PersistenceConstructor
-	public User(final String id, final String firstname, final String lastname) {
+	public OtherUser(final String id, final String firstname, final String lastname) {
 		this.id = id;
 		this.firstname = firstname;
 		this.lastname = lastname;
