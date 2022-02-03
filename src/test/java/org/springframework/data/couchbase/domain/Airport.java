@@ -35,7 +35,7 @@ import javax.validation.constraints.Max;
 @Document
 @TypeAlias("airport")
 public class Airport extends ComparableEntity {
-	@Id String id;
+	@Id String key;
 
 	String iata;
 
@@ -49,14 +49,14 @@ public class Airport extends ComparableEntity {
 	long size;
 
 	@PersistenceConstructor
-	public Airport(String id, String iata, String icao) {
-		this.id = id;
+	public Airport(String key, String iata, String icao) {
+		this.key = key;
 		this.iata = iata;
 		this.icao = icao;
 	}
 
 	public String getId() {
-		return id;
+		return key;
 	}
 
 	public String getIata() {
