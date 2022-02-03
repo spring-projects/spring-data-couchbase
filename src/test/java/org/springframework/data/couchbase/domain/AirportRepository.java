@@ -174,6 +174,9 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 			+ " #{#planIds != null ? 'AND blahblah IN $2' : ''} " + " #{#active != null ? 'AND false = $3' : ''} ")
 	Long countOne();
 
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Airport findByKey(String id);
+
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target({ ElementType.METHOD, ElementType.TYPE })
 	// @Meta
