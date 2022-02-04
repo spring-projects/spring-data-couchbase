@@ -37,7 +37,6 @@ import org.springframework.data.couchbase.core.mapping.Expiration;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyHandler;
@@ -135,7 +134,7 @@ public class StringBasedN1qlQueryParser {
 				false, null, null);
 		this.countContext = createN1qlSpelValues(bucketName, collection, queryMethod.getEntityInformation().getJavaType(),
 				queryMethod.getReturnedObjectType(), typeField, typeValue, true, null, null);
-		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
+		this.parsedExpression = getExpression(accessor, null, parser, evaluationContextProvider);
 		checkPlaceholders(this.parsedExpression.toString());
 	}
 
@@ -188,7 +187,8 @@ public class StringBasedN1qlQueryParser {
 		return new N1qlSpelValues(selectEntity, entity, i(b).toString(), typeSelection, delete, returning);
 	}
 
-	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields, String[] distinctFields) {
+	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
+			String[] distinctFields) {
 		if (distinctFields != null && distinctFields.length != 0) {
 			return i(distinctFields).toString();
 		}
@@ -217,7 +217,7 @@ public class StringBasedN1qlQueryParser {
 				if (prop == persistentEntity.getVersionProperty() && parent == null) {
 					return;
 				}
-				if( prop.getFieldName().equals(typeField)) // typeField already projected
+				if (prop.getFieldName().equals(typeField)) // typeField already projected
 					return;
 				// for distinct when no distinctFields were provided, do not include the expiration field.
 				if (forDistinct && prop.findAnnotation(Expiration.class) != null && parent == null) {
@@ -528,23 +528,17 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	// copied from StringN1qlBasedQuery
-	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+	private N1QLExpression getExpression(ParameterAccessor accessor,
 			ReturnedType returnedType, SpelExpressionParser parser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		boolean isCountQuery = queryMethod.isCountQuery();
+		Object[] runtimeParameters = getParameters(accessor);
 		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(queryMethod.getParameters(),
 				runtimeParameters);
 		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
-
-		if (queryMethod.isSliceQuery()) {
-			Pageable pageable = accessor.getPageable();
-			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
-		}
 		return parsedStatement;
 	}
 
-	// getExpression() could do this itself, but pass as an arg to be consistent with StringN1qlBasedQuery
 	private static Object[] getParameters(ParameterAccessor accessor) {
 		ArrayList<Object> params = new ArrayList<>();
 		for (Object o : accessor) {

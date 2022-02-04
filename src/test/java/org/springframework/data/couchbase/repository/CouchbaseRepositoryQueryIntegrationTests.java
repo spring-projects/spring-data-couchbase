@@ -91,6 +91,7 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.repository.core.support.DefaultRepositoryMetadata;
@@ -639,7 +640,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
-	void count() {
+	void countSlicePage() {
 		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
@@ -676,6 +677,18 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 			airportCount = airportRepository.countByIataIn("XXX");
 			assertEquals(0, airportCount);
+
+			pageable = PageRequest.of(1, 2, Sort.by("iata"));
+			Slice<Airport> airportSlice = airportRepository.fetchSlice("AAA", "zzz", pageable);
+			assertEquals(2, airportSlice.getSize());
+			assertEquals("LAX", airportSlice.getContent().get(0).getIata());
+			assertEquals("PHX", airportSlice.getContent().get(1).getIata());
+
+			pageable = PageRequest.of(1, 2, Sort.by("iata"));
+			Page<Airport> airportPage = airportRepository.fetchPage("AAA", "zzz", pageable);
+			assertEquals(2, airportPage.getSize());
+			assertEquals("LAX", airportPage.getContent().get(0).getIata());
+			assertEquals("PHX", airportPage.getContent().get(1).getIata());
 
 		} finally {
 			airportRepository
@@ -833,7 +846,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 	}
 
-	@Test // DATACOUCH-650
+	@Test
+	// DATACOUCH-650
 	void deleteAllById() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");

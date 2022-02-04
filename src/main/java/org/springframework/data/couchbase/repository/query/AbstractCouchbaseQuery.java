@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.Te
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.PagedExecution;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.SlicedExecution;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
@@ -116,7 +117,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			return new DeleteExecution(getOperations(), getQueryMethod());
 		} else if (isTailable(getQueryMethod())) {
 			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
-																																															// all()
+			// all()
 		} else if (getQueryMethod().isCollectionQuery()) {
 			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all();
 		} else if (getQueryMethod().isStreamQuery()) {
@@ -127,6 +128,8 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 			return (q, t, r, c) -> operation.as(r).matching(q).exists();
 		} else if (getQueryMethod().isPageQuery()) {
 			return new PagedExecution(operation, accessor.getPageable());
+		} else if (getQueryMethod().isSliceQuery()) {
+			return new SlicedExecution(operation, accessor.getPageable());
 		} else {
 			return (q, t, r, c) -> {
 				TerminatingFindByQuery<?> find = operation.as(r).matching(q);
