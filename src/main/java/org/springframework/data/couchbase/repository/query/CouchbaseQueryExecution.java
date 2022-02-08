@@ -22,11 +22,11 @@ import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.Assert;
 
 /**
@@ -93,13 +93,13 @@ interface CouchbaseQueryExecution {
 	 */
 	final class SlicedExecution implements CouchbaseQueryExecution {
 
-		private final ExecutableFindByQuery<?> find;
+		private final ExecutableFindByQuery<?> operation;
 		private final Pageable pageable;
 
-		public SlicedExecution(ExecutableFindByQuery find, Pageable pageable) {
-			Assert.notNull(find, "Find must not be null!");
+		public SlicedExecution(ExecutableFindByQuery operation, Pageable pageable) {
+			Assert.notNull(operation, "Find must not be null!");
 			Assert.notNull(pageable, "Pageable must not be null!");
-			this.find = find;
+			this.operation = operation;
 			this.pageable = pageable;
 		}
 
@@ -110,12 +110,14 @@ interface CouchbaseQueryExecution {
 		@Override
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			int pageSize = pageable.getPageSize();
-			// Apply Pageable but tweak limit to peek into next page
-			Query modifiedQuery = query.skip(pageable.getOffset()).limit(pageSize + 1);
-			List result = find.as(returnType).matching(modifiedQuery).all();
-			boolean hasNext = result.size() > pageSize;
-			return new SliceImpl<Object>(hasNext ? result.subList(0, pageSize) : result, pageable, hasNext);
+			int overallLimit = 0; // query.getLimit();
+			TerminatingFindByQuery<?> matching = operation.as(returnType).matching(query);
+			// Adjust limit if page would exceed the overall limit
+			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
+				query.limit((int) (overallLimit - pageable.getOffset()));
+			}
+			List<?> results = matching.all();
+			return new SliceImpl(results, pageable, results != null && !results.isEmpty());
 		}
 	}
 
@@ -146,10 +148,13 @@ interface CouchbaseQueryExecution {
 			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
 				query.limit((int) (overallLimit - pageable.getOffset()));
 			}
-			return PageableExecutionUtils.getPage(matching.all(), pageable, () -> {
-				long count = operation.matching(query.skip(-1).limit(-1).withoutSort()).count();
-				return overallLimit != 0 ? Math.min(count, overallLimit) : count;
-			});
+
+			List<?> result = matching.all(); // this needs to be done before count, as count clears the skip and limit
+
+			long count = operation.matching(query.skip(-1).limit(-1).withoutSort()).count();
+			count = overallLimit != 0 ? Math.min(count, overallLimit) : count;
+
+			return new PageImpl(result, pageable, count);
 		}
 	}
 
