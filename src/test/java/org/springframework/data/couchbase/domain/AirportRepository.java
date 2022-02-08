@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -176,6 +177,12 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByKey(String id);
+
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND iata  between $1 and $2")
+	Slice<Airport> fetchSlice(String startIata, String iata, Pageable pageable);
+
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND iata  between $1 and $2")
+	Page<Airport> fetchPage(String startIata, String iata, Pageable pageable);
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Target({ ElementType.METHOD, ElementType.TYPE })
