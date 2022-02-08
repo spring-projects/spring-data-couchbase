@@ -215,7 +215,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Returns the expiration time of the document.
-	 * <p/>
+	 * <p>
 	 * If the expiration time is 0, then the document will be persisted until deleted manually ("forever").
 	 *
 	 * @return the expiration time of the document.
@@ -226,9 +226,9 @@ public class CouchbaseDocument implements CouchbaseStorable {
 
 	/**
 	 * Set the expiration time of the document.
-	 * <p/>
+	 * <p>
 	 * If the expiration time is 0, then the document will be persisted until deleted manually ("forever").
-	 * <p/>
+	 * <p>
 	 * Expiration should be expressed as seconds if <= 30 days (30 x 24 x 60 x 60 seconds), or as an expiry date (UTC,
 	 * UNIX time ie. seconds form the Epoch) if > 30 days.
 	 *
