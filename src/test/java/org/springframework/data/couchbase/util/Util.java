@@ -33,7 +33,7 @@ public class Util {
    * Waits and sleeps for a little bit of time until the given condition is met.
    *
    * <p>Sleeps 1ms between "false" invocations. It will wait at most one minute to prevent hanging forever in case
-   * the condition never becomes true.</p>
+   * the condition never becomes true.
    *
    * @param supplier return true once it should stop waiting.
    */
@@ -83,7 +83,7 @@ public class Util {
    * Reads a file from the resources folder (in the same path as the requesting test class).
    *
    * <p>The class will be automatically loaded relative to the namespace and converted
-   * to a string.</p>
+   * to a string.
    *
    * @param filename the filename of the resource.
    * @param clazz    the reference class.

@@ -186,10 +186,8 @@ public class CouchbaseList implements CouchbaseStorable {
 
 	/**
 	 * Verifies that only values of a certain and supported type can be stored.
-	 * <p/>
 	 * <p>
 	 * If this is not the case, a {@link IllegalArgumentException} is thrown.
-	 * </p>
 	 *
 	 * @param value the object to verify its type.
 	 */

@@ -200,7 +200,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	 * Set the {@link ReactiveEntityCallbacks} instance to use when invoking
 	 * {@link org.springframework.data.mapping.callback.ReactiveEntityCallbacks callbacks} like the
 	 * {@link ReactiveBeforeConvertCallback}.
-	 * <p/>
+	 * <p>
 	 * Overrides potentially existing {@link EntityCallbacks}.
 	 *
 	 * @param reactiveEntityCallbacks must not be {@literal null}.
