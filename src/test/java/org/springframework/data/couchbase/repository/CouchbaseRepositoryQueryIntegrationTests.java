@@ -895,9 +895,6 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	void findPlusN1qlJoin() throws Exception {
 
-		// needs an index for this N1ql Join
-		// create index ix2 on my_bucket(parent_id) where `_class` = 'org.springframework.data.couchbase.domain.Address';
-
 		UserSubmission user = new UserSubmission();
 		user.setId(UUID.randomUUID().toString());
 		user.setUsername("dave");
@@ -936,7 +933,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		}
 
 		couchbaseTemplate.removeById(Address.class)
-				.all(Arrays.asList(address1.getId(), address2.getId(), address3.getId(), user.getId()));
+				.all(Arrays.asList(address1.getId(), address2.getId(), address3.getId()));
+		couchbaseTemplate.removeById(UserSubmission.class).one(user.getId());
 	}
 
 	@Test

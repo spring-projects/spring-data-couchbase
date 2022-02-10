@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -30,12 +32,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.AddressAnnotated;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
 import org.springframework.data.couchbase.domain.UserColRepository;
+import org.springframework.data.couchbase.domain.UserSubmissionAnnotated;
+import org.springframework.data.couchbase.domain.UserSubmissionAnnotatedRepository;
+import org.springframework.data.couchbase.domain.UserSubmissionUnannotated;
+import org.springframework.data.couchbase.domain.UserSubmissionUnannotatedRepository;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
@@ -50,8 +58,10 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
-	@Autowired AirportRepository airportRepository;
-	@Autowired UserColRepository userColRepository;
+	@Autowired AirportRepository airportRepository; // initialized in beforeEach()
+	@Autowired UserColRepository userColRepository; // initialized in beforeEach()
+	@Autowired UserSubmissionAnnotatedRepository userSubmissionAnnotatedRepository; // initialized in beforeEach()
+	@Autowired UserSubmissionUnannotatedRepository userSubmissionUnannotatedRepository; // initialized in beforeEach()
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -80,6 +90,10 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// seems that @Autowired is not adequate, so ...
 		airportRepository = (AirportRepository) ac.getBean("airportRepository");
 		userColRepository = (UserColRepository) ac.getBean("userColRepository");
+		userSubmissionAnnotatedRepository = (UserSubmissionAnnotatedRepository) ac
+				.getBean("userSubmissionAnnotatedRepository");
+		userSubmissionUnannotatedRepository = (UserSubmissionUnannotatedRepository) ac
+				.getBean("userSubmissionUnannotatedRepository");
 	}
 
 	@AfterEach
@@ -223,4 +237,116 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			} catch (DataRetrievalFailureException drfe) {}
 		}
 	}
+
+	@Test
+	void findPlusN1qlJoinBothAnnotated() throws Exception {
+
+		// UserSubmissionAnnotated has scope=my_scope, collection=my_collection
+		UserSubmissionAnnotated user = new UserSubmissionAnnotated();
+		user.setId(UUID.randomUUID().toString());
+		user.setUsername("dave");
+		user = userSubmissionAnnotatedRepository.save(user);
+
+		// AddressesAnnotated has scope=dummy_scope, collection=my_collection2
+		// scope must be explicitly set on template insertById, findByQuery and removeById
+		// For userSubmissionAnnotatedRepository.findByUsername(), scope will be taken from UserSubmissionAnnotated
+		AddressAnnotated address1 = new AddressAnnotated();
+		address1.setId(UUID.randomUUID().toString());
+		address1.setStreet("3250 Olcott Street");
+		address1.setParentId(user.getId());
+		AddressAnnotated address2 = new AddressAnnotated();
+		address2.setId(UUID.randomUUID().toString());
+		address2.setStreet("148 Castro Street");
+		address2.setParentId(user.getId());
+		AddressAnnotated address3 = new AddressAnnotated();
+		address3.setId(UUID.randomUUID().toString());
+		address3.setStreet("123 Sesame Street");
+		address3.setParentId(UUID.randomUUID().toString()); // does not belong to user
+
+		try {
+
+			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
+			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
+			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.inScope(scopeName).all();
+
+			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
+			List<UserSubmissionAnnotated> users = userSubmissionAnnotatedRepository.findByUsername(user.getUsername());
+			assertEquals(2, users.get(0).getOtherAddresses().size());
+			for (Address a : users.get(0).getOtherAddresses()) {
+				if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+					throw new Exception("street does not match : " + a);
+				}
+			}
+
+			UserSubmissionAnnotated foundUser = userSubmissionAnnotatedRepository.findById(user.getId()).get();
+			assertEquals(2, foundUser.getOtherAddresses().size());
+			for (Address a : foundUser.getOtherAddresses()) {
+				if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+					throw new Exception("street does not match : " + a);
+				}
+			}
+		} finally {
+			couchbaseTemplate.removeById(AddressAnnotated.class).inScope(scopeName)
+					.all(Arrays.asList(address1.getId(), address2.getId(), address3.getId()));
+			couchbaseTemplate.removeById(UserSubmissionAnnotated.class).one(user.getId());
+		}
+	}
+
+	@Test
+	void findPlusN1qlJoinUnannotated() throws Exception {
+		// UserSubmissionAnnotated has scope=my_scope, collection=my_collection
+		UserSubmissionUnannotated user = new UserSubmissionUnannotated();
+		user.setId(UUID.randomUUID().toString());
+		user.setUsername("dave");
+		user = userSubmissionUnannotatedRepository.save(user);
+
+		// AddressesAnnotated has scope=dummy_scope, collection=my_collection2
+		// scope must be explicitly set on template insertById, findByQuery and removeById
+		// For userSubmissionAnnotatedRepository.findByUsername(), scope will be taken from UserSubmissionAnnotated
+		AddressAnnotated address1 = new AddressAnnotated();
+		address1.setId(UUID.randomUUID().toString());
+		address1.setStreet("3250 Olcott Street");
+		address1.setParentId(user.getId());
+		AddressAnnotated address2 = new AddressAnnotated();
+		address2.setId(UUID.randomUUID().toString());
+		address2.setStreet("148 Castro Street");
+		address2.setParentId(user.getId());
+		AddressAnnotated address3 = new AddressAnnotated();
+		address3.setId(UUID.randomUUID().toString());
+		address3.setStreet("123 Sesame Street");
+		address3.setParentId(UUID.randomUUID().toString()); // does not belong to user
+
+		try {
+
+			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
+			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
+			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.inScope(scopeName).all();
+
+			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
+			List<UserSubmissionUnannotated> users = userSubmissionUnannotatedRepository.findByUsername(user.getUsername());
+			assertEquals(2, users.get(0).getOtherAddresses().size());
+			for (Address a : users.get(0).getOtherAddresses()) {
+				if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+					throw new Exception("street does not match : " + a);
+				}
+			}
+
+			UserSubmissionUnannotated foundUser = userSubmissionUnannotatedRepository.findById(user.getId()).get();
+			assertEquals(2, foundUser.getOtherAddresses().size());
+			for (Address a : foundUser.getOtherAddresses()) {
+				if (!(a.getStreet().equals(address1.getStreet()) || a.getStreet().equals(address2.getStreet()))) {
+					throw new Exception("street does not match : " + a);
+				}
+			}
+		} finally {
+			couchbaseTemplate.removeById(AddressAnnotated.class).inScope(scopeName)
+					.all(Arrays.asList(address1.getId(), address2.getId(), address3.getId()));
+			couchbaseTemplate.removeById(UserSubmissionUnannotated.class).one(user.getId());
+		}
+	}
+
 }
