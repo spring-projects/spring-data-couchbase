@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -289,12 +288,15 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			User found = couchbaseTemplate.findById(user.getClass()).one(user.getId());
 			if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
 				if (found == null) {
-					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId() );
+					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId());
 				}
 			} else {
 				if (found != null) {
 					errorList.add("\nfound should have been null as document should be expired " + user.getId());
 				}
+			}
+			if (found != null) {
+				couchbaseTemplate.removeById(user.getClass()).one(user.getId());
 			}
 		}
 
@@ -310,7 +312,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	@Test
 	void upsertAndReplaceById() {
-		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
+		User user = new User(UUID.randomUUID().toString(), "firstname_upsertAndReplaceById", "lastname");
 		User modified = couchbaseTemplate.upsertById(User.class).one(user);
 		assertEquals(user, modified);
 
@@ -335,7 +337,6 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			assertEquals(user.getId(), removeResult.getId());
 			assertTrue(removeResult.getCas() != 0);
 			assertTrue(removeResult.getMutationToken().isPresent());
-
 			assertNull(couchbaseTemplate.findById(User.class).one(user.getId()));
 		}
 		{
@@ -360,6 +361,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		User inserted = couchbaseTemplate.insertById(User.class).one(user);
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 
 	@Test
@@ -384,6 +386,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		}
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 
 	@Test
@@ -395,12 +398,13 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		User inserted = couchbaseTemplate.insertById(User.class).one(user);
 		assertEquals(user, inserted);
 		assertTrue(couchbaseTemplate.existsById().one(id));
+		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() {
-		PersonValue personValue = new PersonValue(UUID.randomUUID().toString(), 123, "f", "l");
+		PersonValue personValue = new PersonValue(UUID.randomUUID().toString(), 123, "408", "l");
 		PersonValue inserted = null;
 		PersonValue upserted = null;
 		PersonValue replaced = null;
@@ -431,7 +435,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		PersonValue foundReplaced = couchbaseTemplate.findById(PersonValue.class).one(replaced.getId());
 		assertNotNull(foundReplaced, "replaced personValue not found");
 		assertEquals(replaced, foundReplaced);
-
+		couchbaseTemplate.removeById(PersonValue.class).one(replaced.getId());
 	}
 
 	private void sleepSecs(int i) {

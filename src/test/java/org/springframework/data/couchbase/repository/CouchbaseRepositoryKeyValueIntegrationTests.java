@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.couchbase.client.java.kv.GetResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +50,8 @@ import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.couchbase.client.java.kv.GetResult;
 
 /**
  * Repository KV tests
@@ -76,12 +79,13 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		GetResult jdkResult = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().get(st.getId());
 		assertNotEquals(0, st.getVersion());
 		assertEquals(jdkResult.cas(), st.getVersion());
+		subscriptionTokenRepository.delete(st);
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
-		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		User user = new User(UUID.randomUUID().toString(), "saveAndFindById", "l");
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
 		assertFalse(userRepository.existsById(user.getId()));
 
@@ -98,7 +102,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		PersonValue personValue = new PersonValue(null, 0, "f", "l");
+		PersonValue personValue = new PersonValue(null, 0, "saveAndFindImmutableById", "l");
 		personValue = personValueRepository.save(personValue);
 		Optional<PersonValue> found = personValueRepository.findById(personValue.getId());
 		assertTrue(found.isPresent());
@@ -138,7 +142,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		user.setCourses(Arrays.asList(new Course(UUID.randomUUID().toString(), user.getId(), "581")));
 
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
-		assertFalse(userRepository.existsById(user.getId()));
+		assertFalse(userSubmissionRepository.existsById(user.getId()));
 
 		userSubmissionRepository.save(user);
 
@@ -146,7 +150,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertTrue(found.isPresent());
 		found.ifPresent(u -> assertEquals(user, u));
 
-		assertTrue(userRepository.existsById(user.getId()));
+		assertTrue(userSubmissionRepository.existsById(user.getId()));
 		assertEquals(user.getSubmissions().get(0).getId(), found.get().getSubmissions().get(0).getId());
 		assertEquals(user.getCourses().get(0).getId(), found.get().getCourses().get(0).getId());
 		assertEquals(user, found.get());
