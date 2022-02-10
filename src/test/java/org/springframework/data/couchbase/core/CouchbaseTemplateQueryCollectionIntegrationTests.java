@@ -103,13 +103,16 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		// first call the super method
 		super.beforeEach();
 		// then do processing for this class
-		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+				.inCollection(collectionName).all();
 		couchbaseTemplate.findByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collectionName).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName)
+				.inCollection(collectionName).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName)
 				.inCollection(collectionName).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).all();
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+				.inScope(otherScope).inCollection(otherCollection).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(otherScope)
 				.inCollection(otherCollection).all();
 	}
@@ -355,7 +358,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 			assertEquals(2, count1);
 
 			// count (distinct { iata, icao } )
-			Long count2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {"iata", "icao"})
+			Long count2 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "iata", "icao" })
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inCollection(collectionName).count().block();
 			assertEquals(7, count2);
 
@@ -384,7 +387,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		GetOptions options = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		ExistsOptions existsOptions = ExistsOptions.existsOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("398"));
 		try {
 			Boolean exists = couchbaseTemplate.existsById().inScope(scopeName).inCollection(collectionName)
 					.withOptions(existsOptions).one(saved.getId());
@@ -399,7 +402,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findByAnalytics() { // 2
 		AnalyticsOptions options = AnalyticsOptions.analyticsOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("413"));
 		try {
 			List<Airport> found = couchbaseTemplate.findByAnalytics(Airport.class).inScope(scopeName)
 					.inCollection(collectionName).withOptions(options).all();
@@ -413,7 +416,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findById() { // 3
 		GetOptions options = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("427"));
 		try {
 			Airport found = couchbaseTemplate.findById(Airport.class).inScope(scopeName).inCollection(collectionName)
 					.withOptions(options).one(saved.getId());
@@ -427,7 +430,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findByQuery() { // 4
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("441"));
 		try {
 			List<Airport> found = couchbaseTemplate.findByQuery(Airport.class)
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
@@ -442,7 +445,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findFromReplicasById() { // 5
 		GetAnyReplicaOptions options = GetAnyReplicaOptions.getAnyReplicaOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("456"));
 		try {
 			Airport found = couchbaseTemplate.findFromReplicasById(Airport.class).inScope(scopeName)
 					.inCollection(collectionName).withOptions(options).any(saved.getId());
@@ -471,7 +474,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void removeById() { // 7
 		RemoveOptions options = RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("485"));
 		RemoveResult removeResult = couchbaseTemplate.removeById().inScope(scopeName).inCollection(collectionName)
 				.withOptions(options).one(saved.getId());
 		assertEquals(saved.getId(), removeResult.getId());
@@ -481,7 +484,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void removeByQuery() { // 8
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.one(vie);
+				.one(vie.withIcao("495"));
 		List<RemoveResult> removeResults = couchbaseTemplate.removeByQuery(Airport.class)
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
 				.withOptions(options).matching(Query.query(QueryCriteria.where("iata").is(vie.getIata()))).all();
@@ -494,7 +497,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		ReplaceOptions options = ReplaceOptions.replaceOptions().timeout(Duration.ofSeconds(10));
 		GetOptions getOptions = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.withOptions(insertOptions).one(vie);
+				.withOptions(insertOptions).one(vie.withIcao("508"));
 		Airport replaced = couchbaseTemplate.replaceById(Airport.class).inScope(scopeName).inCollection(collectionName)
 				.withOptions(options).one(vie.withIcao("newIcao"));
 		try {
@@ -512,7 +515,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		GetOptions getOptions = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 
 		Airport saved = couchbaseTemplate.upsertById(Airport.class).inScope(scopeName).inCollection(collectionName)
-				.withOptions(options).one(vie);
+				.withOptions(options).one(vie.withIcao("526"));
 		try {
 			Airport found = couchbaseTemplate.findById(Airport.class).inScope(scopeName).inCollection(collectionName)
 					.withOptions(getOptions).one(saved.getId());
@@ -527,13 +530,14 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		GetOptions options = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		ExistsOptions existsOptions = ExistsOptions.existsOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("lowg"));
+
 		try {
 			Boolean exists = couchbaseTemplate.existsById().inScope(otherScope).inCollection(otherCollection)
-					.withOptions(existsOptions).one(saved.getId());
-			assertTrue(exists, "Airport should exist: " + saved.getId());
+					.withOptions(existsOptions).one(vie.getId());
+			assertTrue(exists, "Airport should exist: " + vie.getId());
 		} finally {
-			couchbaseTemplate.removeById().inScope(otherScope).inCollection(otherCollection).one(saved.getId());
+			couchbaseTemplate.removeById().inScope(otherScope).inCollection(otherCollection).one(vie.getId());
 		}
 	}
 
@@ -542,7 +546,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findByAnalyticsOther() { // 2
 		AnalyticsOptions options = AnalyticsOptions.analyticsOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("566"));
 		try {
 			List<Airport> found = couchbaseTemplate.findByAnalytics(Airport.class).inScope(otherScope)
 					.inCollection(otherCollection).withOptions(options).all();
@@ -556,7 +560,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findByIdOther() { // 3
 		GetOptions options = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("580"));
 		try {
 			Airport found = couchbaseTemplate.findById(Airport.class).inScope(otherScope).inCollection(otherCollection)
 					.withOptions(options).one(saved.getId());
@@ -570,7 +574,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findByQueryOther() { // 4
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("594"));
 		try {
 			List<Airport> found = couchbaseTemplate.findByQuery(Airport.class)
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(otherScope).inCollection(otherCollection)
@@ -585,7 +589,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findFromReplicasByIdOther() { // 5
 		GetAnyReplicaOptions options = GetAnyReplicaOptions.getAnyReplicaOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("609"));
 		try {
 			Airport found = couchbaseTemplate.findFromReplicasById(Airport.class).inScope(otherScope)
 					.inCollection(otherCollection).withOptions(options).any(saved.getId());
@@ -614,7 +618,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void removeByIdOther() { // 7
 		RemoveOptions options = RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("638"));
 		RemoveResult removeResult = couchbaseTemplate.removeById().inScope(otherScope).inCollection(otherCollection)
 				.withOptions(options).one(saved.getId());
 		assertEquals(saved.getId(), removeResult.getId());
@@ -624,7 +628,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void removeByQueryOther() { // 8
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("648"));
 		List<RemoveResult> removeResults = couchbaseTemplate.removeByQuery(Airport.class)
 				.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(otherScope).inCollection(otherCollection)
 				.withOptions(options).matching(Query.query(QueryCriteria.where("iata").is(vie.getIata()))).all();
@@ -637,7 +641,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		ReplaceOptions options = ReplaceOptions.replaceOptions().timeout(Duration.ofSeconds(10));
 		GetOptions getOptions = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.withOptions(insertOptions).one(vie);
+				.withOptions(insertOptions).one(vie.withIcao("661"));
 		Airport replaced = couchbaseTemplate.replaceById(Airport.class).inScope(otherScope).inCollection(otherCollection)
 				.withOptions(options).one(vie.withIcao("newIcao"));
 		try {
@@ -655,7 +659,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		GetOptions getOptions = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 
 		Airport saved = couchbaseTemplate.upsertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.withOptions(options).one(vie);
+				.withOptions(options).one(vie.withIcao("679"));
 		try {
 			Airport found = couchbaseTemplate.findById(Airport.class).inScope(otherScope).inCollection(otherCollection)
 					.withOptions(getOptions).one(saved.getId());
@@ -699,7 +703,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void findFromReplicasByIdOptions() { // 5
 		GetAnyReplicaOptions options = GetAnyReplicaOptions.getAnyReplicaOptions().timeout(Duration.ofNanos(1000));
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("723"));
 		try {
 			Airport found = couchbaseTemplate.findFromReplicasById(Airport.class).inScope(otherScope)
 					.inCollection(otherCollection).withOptions(options).any(saved.getId());
@@ -719,7 +723,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	@Test
 	public void removeByIdOptions() { // 7 - options
 		Airport saved = couchbaseTemplate.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
-				.one(vie);
+				.one(vie.withIcao("743"));
 		RemoveOptions options = RemoveOptions.removeOptions().timeout(Duration.ofNanos(10));
 		assertThrows(AmbiguousTimeoutException.class, () -> couchbaseTemplate.removeById().inScope(otherScope)
 				.inCollection(otherCollection).withOptions(options).one(vie.getId()));
@@ -746,7 +750,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	public void upsertByIdOptions() { // 10 - options
 		UpsertOptions options = UpsertOptions.upsertOptions().timeout(Duration.ofNanos(10));
 		assertThrows(AmbiguousTimeoutException.class, () -> couchbaseTemplate.upsertById(Airport.class).inScope(otherScope)
-				.inCollection(otherCollection).withOptions(options).one(vie));
+				.inCollection(otherCollection).withOptions(options).one(vie.withIcao("770")));
 	}
 
 	@Test
