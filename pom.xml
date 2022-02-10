@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>3.2.4</couchbase>
-        <couchbase.osgi>3.2.4</couchbase.osgi>
+        <couchbase>3.2.5</couchbase>
+        <couchbase.osgi>3.2.5</couchbase.osgi>
         <springdata.commons>2.6.2-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
