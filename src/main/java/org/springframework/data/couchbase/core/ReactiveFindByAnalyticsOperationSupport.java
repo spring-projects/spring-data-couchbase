@@ -149,7 +149,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							} else {
 								return throwable;
 							}
-						}).flatMapMany(ReactiveAnalyticsResult::rowsAsObject).map(row -> row.getLong("__count")).next();
+						}).flatMapMany(ReactiveAnalyticsResult::rowsAsObject)
+						.map(row -> row.getLong(row.getNames().iterator().next())).next();
 			});
 		}
 
