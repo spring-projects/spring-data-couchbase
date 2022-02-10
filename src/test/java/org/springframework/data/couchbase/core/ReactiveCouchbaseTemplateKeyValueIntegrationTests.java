@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,6 +232,9 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 					errorList.add("\nfound should have been null as document should be expired " + user.getId());
 				}
 			}
+			if (found != null) {
+				couchbaseTemplate.removeById(user.getClass()).one(user.getId());
+			}
 		}
 
 		if (!errorList.isEmpty()) {
@@ -323,7 +326,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() {
-		PersonValue personValue = new PersonValue(UUID.randomUUID().toString(), 123, "f", "l");
+		PersonValue personValue = new PersonValue(UUID.randomUUID().toString(), 123, "329", "l");
 		PersonValue inserted;
 		PersonValue upserted;
 		PersonValue replaced;
@@ -354,7 +357,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 		PersonValue foundReplaced = reactiveCouchbaseTemplate.findById(PersonValue.class).one(replaced.getId()).block();
 		assertNotNull(foundReplaced, "replaced personValue not found");
 		assertEquals(replaced, foundReplaced);
-
+		couchbaseTemplate.removeById(PersonValue.class).one(replaced.getId());
 	}
 
 	private void sleepSecs(int i) {

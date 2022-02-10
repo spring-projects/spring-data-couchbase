@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,9 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.kv.GetResult;
 
+/**
+ * @author Michael Reiche
+ */
 @SpringJUnitConfig(CustomTypeKeyIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests {
@@ -62,6 +65,7 @@ public class CustomTypeKeyIntegrationTests extends ClusterAwareIntegrationTests 
 		assertEquals("org.springframework.data.couchbase.domain.User",
 				getResult.contentAsObject().getString(CUSTOM_TYPE_KEY));
 		assertFalse(getResult.contentAsObject().containsKey(DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY));
+		operations.removeById(User.class).one(user.getId());
 	}
 
 	@Configuration
