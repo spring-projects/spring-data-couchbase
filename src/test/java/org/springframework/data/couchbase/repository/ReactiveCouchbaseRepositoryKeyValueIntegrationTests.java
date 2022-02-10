@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,9 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+/**
+ * @author Michael Reiche
+ */
 @SpringJUnitConfig(ReactiveCouchbaseRepositoryKeyValueIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
@@ -52,7 +55,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 
 	@Test
 	void saveAndFindById() {
-		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		User user = new User(UUID.randomUUID().toString(), "saveAndFindById_reactive", "l");
 
 		assertFalse(userRepository.existsById(user.getId()).block());
 
@@ -63,6 +66,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		found.ifPresent(u -> assertEquals(save, u));
 
 		assertTrue(userRepository.existsById(user.getId()).block());
+		userRepository.delete(user).block();
 	}
 
 	@Test
