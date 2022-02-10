@@ -189,8 +189,8 @@ class N1qlQueryCreatorTests {
 				converter, bucketName);
 		Query query = creator.createQuery();
 
-		assertEquals(query.export(),
-				" WHERE " + where(x("META(`" + bucketName + "`).`id`")).isNotNull().and(i("firstname")).is("Oliver").export());
+		assertEquals(" WHERE " + where(x("META().`id`")).isNotNull().and(i("firstname")).is("Oliver").export(),
+				query.export());
 	}
 
 	@Test // https://github.com/spring-projects/spring-data-couchbase/issues/1072
@@ -204,8 +204,9 @@ class N1qlQueryCreatorTests {
 				getAccessor(getParameters(method), 1611287177404088320L, "Oliver"), queryMethod, converter, bucketName);
 		Query query = creator.createQuery();
 
-		assertEquals(query.export(), " WHERE " + where(x("META(`" + bucketName + "`).`cas`")).is(1611287177404088320L)
-				.and(i("firstname")).is("Oliver").export());
+		assertEquals(
+				" WHERE " + where(x("META().`cas`")).is(1611287177404088320L).and(i("firstname")).is("Oliver").export(),
+				query.export());
 	}
 
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
