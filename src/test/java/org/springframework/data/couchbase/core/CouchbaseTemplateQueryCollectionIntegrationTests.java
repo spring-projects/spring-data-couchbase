@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -800,4 +801,38 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 			} catch (DataRetrievalFailureException drfe) {}
 		}
 	}
+
+	@Test
+	void testFluentApi() {
+		User user1 = new User(UUID.randomUUID().toString(), "user1", "user1");
+		DurabilityLevel dl = DurabilityLevel.NONE;
+		User result;
+		RemoveResult rr;
+		result = couchbaseTemplate.insertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1);
+		assertEquals(user1,result);
+		result = couchbaseTemplate.upsertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1);
+		assertEquals(user1,result);
+		result = couchbaseTemplate.replaceById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1);
+		assertEquals(user1,result);
+		rr = couchbaseTemplate.removeById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1.getId());
+		assertEquals(rr.getId(), user1.getId());
+		assertEquals(user1,result);
+		result = reactiveCouchbaseTemplate.insertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1).block();
+		assertEquals(user1,result);
+		result = reactiveCouchbaseTemplate.upsertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1).block();
+		assertEquals(user1,result);
+		result = reactiveCouchbaseTemplate.replaceById(User.class).withDurability(dl).inScope(scopeName)
+				.inCollection(collectionName).one(user1).block();
+		assertEquals(user1,result);
+		 rr = reactiveCouchbaseTemplate.removeById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
+				.one(user1.getId()).block();
+		assertEquals(rr.getId(), user1.getId());
+	}
+
 }
