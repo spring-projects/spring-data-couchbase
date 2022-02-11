@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,10 +114,10 @@ public interface ExecutableRemoveByIdOperation {
 	interface RemoveByIdWithDurability extends RemoveByIdInScope, WithDurability<RemoveResult> {
 
 		@Override
-		RemoveByIdInCollection withDurability(DurabilityLevel durabilityLevel);
+		RemoveByIdInScope withDurability(DurabilityLevel durabilityLevel);
 
 		@Override
-		RemoveByIdInCollection withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		RemoveByIdInScope withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 
