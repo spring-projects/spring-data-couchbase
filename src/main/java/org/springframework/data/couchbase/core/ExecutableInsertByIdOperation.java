@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,10 +117,10 @@ public interface ExecutableInsertByIdOperation {
 	interface InsertByIdWithDurability<T> extends InsertByIdInScope<T>, WithDurability<T> {
 
 		@Override
-		InsertByIdInCollection<T> withDurability(DurabilityLevel durabilityLevel);
+		InsertByIdInScope<T> withDurability(DurabilityLevel durabilityLevel);
 
 		@Override
-		InsertByIdInCollection<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+		InsertByIdInScope<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
 
 	}
 

@@ -31,7 +31,6 @@ import org.junit.platform.commons.support.AnnotationSupport;
  * <p>
  * Note that the internals on what and how the containers are managed is up to the {@link TestCluster} implementation,
  * and if it is unmanaged than this very well be mostly a "stub".
- * </p>
  *
  * @since 2.0.0
  */

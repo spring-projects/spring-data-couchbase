@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository;
 
+
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -94,6 +95,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		GetResult jdkResult = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().get(st.getId());
 		assertNotEquals(0, st.getVersion());
 		assertEquals(jdkResult.cas(), st.getVersion());
+		subscriptionTokenRepository.delete(st);
 	}
 
 	@Test
@@ -122,7 +124,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
-		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		User user = new User(UUID.randomUUID().toString(), "saveAndFindById", "l");
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
 		assertFalse(userRepository.existsById(user.getId()));
 
@@ -139,7 +141,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		PersonValue personValue = new PersonValue(null, 0, "f", "l");
+		PersonValue personValue = new PersonValue(null, 0, "saveAndFindImmutableById", "l");
 		personValue = personValueRepository.save(personValue);
 		Optional<PersonValue> found = personValueRepository.findById(personValue.getId());
 		assertTrue(found.isPresent());
@@ -179,7 +181,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		user.setCourses(Arrays.asList(new Course(UUID.randomUUID().toString(), user.getId(), "581")));
 
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
-		assertFalse(userRepository.existsById(user.getId()));
+		assertFalse(userSubmissionRepository.existsById(user.getId()));
 
 		userSubmissionRepository.save(user);
 
@@ -187,7 +189,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertTrue(found.isPresent());
 		found.ifPresent(u -> assertEquals(user, u));
 
-		assertTrue(userRepository.existsById(user.getId()));
+		assertTrue(userSubmissionRepository.existsById(user.getId()));
 		assertEquals(user.getSubmissions().get(0).getId(), found.get().getSubmissions().get(0).getId());
 		assertEquals(user.getCourses().get(0).getId(), found.get().getCourses().get(0).getId());
 		assertEquals(user, found.get());

@@ -37,7 +37,6 @@ import org.springframework.data.couchbase.core.mapping.Expiration;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyHandler;
@@ -135,7 +134,7 @@ public class StringBasedN1qlQueryParser {
 				false, null, null);
 		this.countContext = createN1qlSpelValues(bucketName, collection, queryMethod.getEntityInformation().getJavaType(),
 				queryMethod.getReturnedObjectType(), typeField, typeValue, true, null, null);
-		this.parsedExpression = getExpression(accessor, getParameters(accessor), null, parser, evaluationContextProvider);
+		this.parsedExpression = getExpression(accessor, null, parser, evaluationContextProvider);
 		checkPlaceholders(this.parsedExpression.toString());
 	}
 
@@ -162,11 +161,12 @@ public class StringBasedN1qlQueryParser {
 		String b = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
 				"only one of project(fields) and distinct(distinctFields) can be specified");
-		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS;
+		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS + ", "
+				+ i(typeField);
 		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
 		String selectEntity;
 		if (distinctFields != null) {
-			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, fields, distinctFields);
+			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
 			if (isCount) {
 				selectEntity = "SELECT COUNT( DISTINCT {" + distinctFieldsStr + "} ) " + CountFragment.COUNT_ALIAS + " FROM "
 						+ i(b);
@@ -176,7 +176,7 @@ public class StringBasedN1qlQueryParser {
 		} else if (isCount) {
 			selectEntity = "SELECT " + count + " FROM " + i(b);
 		} else {
-			String projectedFields = getProjectedOrDistinctFields(b, domainClass, fields, distinctFields);
+			String projectedFields = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
 			selectEntity = "SELECT " + entity + (!projectedFields.isEmpty() ? ", " : " ") + projectedFields + " FROM " + i(b);
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
@@ -187,7 +187,8 @@ public class StringBasedN1qlQueryParser {
 		return new N1qlSpelValues(selectEntity, entity, i(b).toString(), typeSelection, delete, returning);
 	}
 
-	private String getProjectedOrDistinctFields(String b, Class resultClass, String[] fields, String[] distinctFields) {
+	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
+			String[] distinctFields) {
 		if (distinctFields != null && distinctFields.length != 0) {
 			return i(distinctFields).toString();
 		}
@@ -195,14 +196,14 @@ public class StringBasedN1qlQueryParser {
 		if (resultClass != null) {
 			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
 			StringBuilder sb = new StringBuilder();
-			getProjectedFieldsInternal(b, null, sb, persistentEntity, fields, distinctFields != null);
+			getProjectedFieldsInternal(b, null, sb, persistentEntity, typeField, fields, distinctFields != null);
 			projectedFields = sb.toString();
 		}
 		return projectedFields;
 	}
 
 	private void getProjectedFieldsInternal(String bucketName, CouchbasePersistentProperty parent, StringBuilder sb,
-			PersistentEntity persistentEntity, String[] fields, boolean forDistinct) {
+			PersistentEntity persistentEntity, String typeField, String[] fields, boolean forDistinct) {
 
 		if (persistentEntity != null) {
 			Set<String> fieldList = fields != null ? new HashSet<>(Arrays.asList(fields)) : null;
@@ -216,6 +217,8 @@ public class StringBasedN1qlQueryParser {
 				if (prop == persistentEntity.getVersionProperty() && parent == null) {
 					return;
 				}
+				if (prop.getFieldName().equals(typeField)) // typeField already projected
+					return;
 				// for distinct when no distinctFields were provided, do not include the expiration field.
 				if (forDistinct && prop.findAnnotation(Expiration.class) != null && parent == null) {
 					return;
@@ -253,8 +256,10 @@ public class StringBasedN1qlQueryParser {
 			}
 		} else {
 			for (String field : fields) {
-				if (sb.length() > 0) {
-					sb.append(", ");
+				if (!field.equals(typeField)) { // typeField is already projected
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
 				}
 				sb.append(x(field));
 			}
@@ -523,23 +528,17 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	// copied from StringN1qlBasedQuery
-	private N1QLExpression getExpression(ParameterAccessor accessor, Object[] runtimeParameters,
+	private N1QLExpression getExpression(ParameterAccessor accessor,
 			ReturnedType returnedType, SpelExpressionParser parser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		boolean isCountQuery = queryMethod.isCountQuery();
+		Object[] runtimeParameters = getParameters(accessor);
 		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(queryMethod.getParameters(),
 				runtimeParameters);
 		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
-
-		if (queryMethod.isSliceQuery()) {
-			Pageable pageable = accessor.getPageable();
-			Assert.notNull(pageable, "Pageable must not be null!");
-			parsedStatement = parsedStatement.limit(pageable.getPageSize() + 1).offset(Math.toIntExact(pageable.getOffset()));
-		}
 		return parsedStatement;
 	}
 
-	// getExpression() could do this itself, but pass as an arg to be consistent with StringN1qlBasedQuery
 	private static Object[] getParameters(ParameterAccessor accessor) {
 		ArrayList<Object> params = new ArrayList<>();
 		for (Object o : accessor) {
