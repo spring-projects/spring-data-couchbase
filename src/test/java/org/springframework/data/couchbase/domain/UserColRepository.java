@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,12 @@ public interface UserColRepository extends CouchbaseRepository<UserCol, String>,
 
 	// CouchbaseRepositoryQueryCollectionIntegrationTests.testScopeCollectionAnnotationSwap() relies on this
 	// being commented out.
-	//<S extends UserCol> S save(S var1);
+	// <S extends UserCol> S save(S var1);
 
 	List<UserCol> findByFirstname(String firstname);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	UserCol getById(String id);
 
 	List<UserCol> findByFirstnameIn(String... firstnames);
 
