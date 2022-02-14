@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,9 +118,10 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user).block();
+		long saveVersion = user.getVersion();
 		user.setVersion(user.getVersion() - 1);
 		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
-		user.setVersion(0);
+		user.setVersion(saveVersion);
 		userRepository.save(user).block();
 		userRepository.delete(user).block();
 	}
