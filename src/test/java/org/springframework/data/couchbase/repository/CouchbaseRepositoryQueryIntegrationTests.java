@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.ConstraintViolationException;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -104,7 +105,7 @@ import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
-import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -131,6 +132,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	String scopeName = "_default";
 	String collectionName = "_default";
+
+	@BeforeEach
+	public void beforeEach() {
+		super.beforeEach();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).all();
+	}
 
 	@Test
 	void shouldSaveAndFindAll() {
@@ -556,9 +564,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	public void testCas() {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
+		long saveVersion = user.getVersion();
 		user.setVersion(user.getVersion() - 1);
 		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
-		user.setVersion(0);
+		user.setVersion(saveVersion);
 		userRepository.save(user);
 		userRepository.delete(user);
 	}
@@ -566,7 +575,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Test
 	public void testExpiration() {
 		Airport airport = new Airport("1", "iata21", "icao21");
-		airportRepository.withOptions(UpsertOptions.upsertOptions().expiry(Duration.ofSeconds(10))).save(airport);
+		airportRepository.withOptions(InsertOptions.insertOptions().expiry(Duration.ofSeconds(10))).save(airport);
 		Airport foundAirport = airportRepository.findByIata(airport.getIata());
 		assertNotEquals(0, foundAirport.getExpiration());
 		airportRepository.delete(airport);
