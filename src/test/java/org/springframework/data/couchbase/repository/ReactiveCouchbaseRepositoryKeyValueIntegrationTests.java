@@ -28,8 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airline;
@@ -72,7 +72,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		user.setVersion(0);
 		assertThrows(DuplicateKeyException.class, () -> userRepository.save(user).block());
 		user.setVersion(saveVersion + 1);
-		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
+		assertThrows(OptimisticLockingFailureException.class, () -> userRepository.save(user).block());
 		userRepository.delete(user);
 
 		// Airline does not have a version

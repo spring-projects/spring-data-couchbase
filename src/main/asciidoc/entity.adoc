@@ -375,7 +375,7 @@ public class User {
 
 If you load a document through the template or repository, the version field will be automatically populated with the current CAS value.
 It is important to note that you shouldn't access the field or even change it on your own.
-Once you save the document back, it will either succeed or fail with a `DataIntegrityViolationException`.
+Once you save the document back, it will either succeed or fail with a `OptimisticLockingFailureException`.
 If you get such an exception, the further approach depends on what you want to achieve application wise.
 You should either retry the complete load-update-write cycle or propagate the error to the upper layers for proper handling.
 
