@@ -37,8 +37,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ReactiveFindByIdOperation.ReactiveFindById;
 import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperation.ReactiveRemoveById;
 import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperation.ReactiveReplaceById;
@@ -130,7 +130,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 
 		User badUser = new User(user.getId(), user.getFirstname(), user.getLastname());
 		badUser.setVersion(12345678);
-		assertThrows(DataIntegrityViolationException.class,
+		assertThrows(OptimisticLockingFailureException.class,
 				() -> reactiveCouchbaseTemplate.replaceById(User.class).one(badUser).block());
 
 		User found = reactiveCouchbaseTemplate.findById(User.class).one(user.getId()).block();
@@ -285,7 +285,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			// careful now - user and modified are the same object. The object has the new cas (@Version version)
 			Long savedCas = modified.getVersion();
 			modified.setVersion(123);
-			assertThrows(DataIntegrityViolationException.class, () -> reactiveCouchbaseTemplate.removeById()
+			assertThrows(OptimisticLockingFailureException.class, () -> reactiveCouchbaseTemplate.removeById()
 					.withCas(reactiveCouchbaseTemplate.support().getCas(modified)).one(modified.getId()).block());
 			modified.setVersion(savedCas);
 			reactiveCouchbaseTemplate.removeById().withCas(reactiveCouchbaseTemplate.support().getCas(modified))
