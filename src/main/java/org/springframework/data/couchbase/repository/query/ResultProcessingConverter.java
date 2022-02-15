@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 
 import org.reactivestreams.Publisher;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.DtoInstantiatingConverter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
