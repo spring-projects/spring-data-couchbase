@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType))
+					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType,
+							pArgs.getScope(), pArgs.getCollection()))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

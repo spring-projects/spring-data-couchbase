@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,8 +90,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				} else {
 					return reactive.get(docId, (GetOptions) pArgs.getOptions());
 				}
-			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType))
-					.onErrorResume(throwable -> {
+			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+					pArgs.getScope(), pArgs.getCollection())).onErrorResume(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							if (throwable instanceof DocumentNotFoundException) {
 								return Mono.empty();
