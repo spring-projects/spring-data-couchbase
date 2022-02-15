@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,9 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass) {
-		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass));
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope,
+			String collection) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection));
 	}
 
 	@Override
