@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.repository;
 
 
+
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -84,7 +84,8 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass) {
+	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope,
+			String collection) {
 		return Mono.fromSupplier(() -> {
 			final CouchbaseDocument converted = new CouchbaseDocument(id);
 			converted.setId(id);
@@ -111,7 +112,7 @@ class ReactiveCouchbaseTemplateSupport implements ApplicationContextAware, React
 			if (persistentEntity.getVersionProperty() != null) {
 				accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 			}
-			N1qlJoinResolver.handleProperties(persistentEntity, accessor, template, id);
+			N1qlJoinResolver.handleProperties(persistentEntity, accessor, template, id, scope, collection);
 			return accessor.getBean();
 		});
 	}

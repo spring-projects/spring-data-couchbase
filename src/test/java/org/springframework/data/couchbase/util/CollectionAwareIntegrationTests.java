@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 
 import java.time.Duration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,14 +30,13 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
 
+import com.couchbase.client.core.error.IndexExistsException;
 import com.couchbase.client.core.service.ServiceType;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.collection.CollectionManager;
-import com.couchbase.client.java.manager.collection.CollectionSpec;
-import com.couchbase.client.java.manager.collection.ScopeSpec;
 
 /**
  * Provides Collection support for integration tests
@@ -49,6 +48,7 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 	public static String scopeName = "my_scope";// + randomString();
 	public static String otherScope = "other_scope";
 	public static String collectionName = "my_collection";// + randomString();
+	public static String collectionName2 = "my_collection2";// + randomString();
 	public static String otherCollection = "other_collection";// + randomString();
 
 	@BeforeAll
@@ -64,9 +64,23 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 		CollectionManager collectionManager = bucket.collections();
 
 		setupScopeCollection(cluster, scopeName, collectionName, collectionManager);
+		setupScopeCollection(cluster, scopeName, collectionName2, collectionManager);
+
 		if (otherScope != null || otherCollection != null) {
 			// afterAll should be undoing the creation of scope etc
 			setupScopeCollection(cluster, otherScope, otherCollection, collectionManager);
+		}
+
+		try {
+			// needs an index for this N1ql Join
+			// create index ix2 on my_bucket(parent_id) where `_class` = 'org.springframework.data.couchbase.domain.Address';
+
+			List<String> fieldList = new ArrayList<>();
+			fieldList.add("parentId");
+			cluster.query("CREATE INDEX `parent_idx` ON default:" + bucketName() + "." + scopeName + "." + collectionName2
+					+ "(parentId)");
+		} catch (IndexExistsException ife) {
+			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife.toString());
 		}
 
 		Config.setScopeName(scopeName);
