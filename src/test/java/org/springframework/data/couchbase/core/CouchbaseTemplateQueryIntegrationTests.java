@@ -31,7 +31,6 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.java.query.QueryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.query.Query;
@@ -51,8 +50,6 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
-
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -90,8 +87,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 			couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2));
 
-			final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
-					.withConsistency(REQUEST_PLUS).all();
+			final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).all();
 
 			for (User u : foundUsers) {
 				if (!(u.equals(user1) || u.equals(user2))) {
@@ -133,8 +129,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
-		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class)
-				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
+				.matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());
 	}
@@ -152,6 +148,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		assertEquals("123", foundUsers.get(0).getId(), "id");
 		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
 		assertEquals(ado, foundUsers.get(0));
+		couchbaseTemplate.removeById(AssessmentDO.class).one(ado.getDocumentId());
 	}
 
 	@Test
@@ -196,10 +193,10 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		assertEquals(1, foundUsers.size());
 
 		final List<UserJustLastName> foundUsersReactive = reactiveCouchbaseTemplate.findByQuery(User.class)
-				.as(UserJustLastName.class).withConsistency(REQUEST_PLUS).matching(specialUsers).all()
-				.collectList().block();
+				.as(UserJustLastName.class).withConsistency(REQUEST_PLUS).matching(specialUsers).all().collectList().block();
 		assertEquals(1, foundUsersReactive.size());
 
+		couchbaseTemplate.removeById(User.class).all(Arrays.asList(user1.getId(), user2.getId(), specialUser.getId()));
 	}
 
 	@Test
@@ -233,8 +230,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query nonSpecialUsers = new Query(QueryCriteria.where(i("firstname")).notLike("special"));
 
-		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS)
-				.matching(nonSpecialUsers).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).matching(nonSpecialUsers).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
@@ -324,24 +320,27 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
 
 		try {
-			couchbaseTemplate.insertById(Airport.class).all(
-					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
+			couchbaseTemplate.insertById(Airport.class)
+					.all(Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
 
-			org.springframework.data.couchbase.core.query.Query query = org.springframework.data.couchbase.core.query.Query.query(QueryCriteria.where("iata").isNotNull());
+			org.springframework.data.couchbase.core.query.Query query = org.springframework.data.couchbase.core.query.Query
+					.query(QueryCriteria.where("iata").isNotNull());
 			Pageable pageableWithSort = PageRequest.of(0, 7, Sort.by("iata"));
 			query.with(pageableWithSort);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).matching(query).all();
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS)
+					.matching(query).all();
 
 			String[] sortedIatas = iatas.clone();
-			System.out.println(""+iatas.length+" "+sortedIatas.length);
+			System.out.println("" + iatas.length + " " + sortedIatas.length);
 			Arrays.sort(sortedIatas);
-			for(int i=0; i< pageableWithSort.getPageSize(); i++){
+			for (int i = 0; i < pageableWithSort.getPageSize(); i++) {
 				System.out.println(airports.get(i).getIata());
 				assertEquals(sortedIatas[i], airports.get(i).getIata());
 			}
 		} finally {
-			couchbaseTemplate.removeById(Airport.class).all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
+			couchbaseTemplate.removeById(Airport.class)
+					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
 		}
 	}
 

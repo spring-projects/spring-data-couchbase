@@ -76,7 +76,7 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 	protected QueryCriteria create(final Part part, final Iterator<Object> iterator) {
 		PersistentPropertyPath<CouchbasePersistentProperty> path = context.getPersistentPropertyPath(part.getProperty());
 		CouchbasePersistentProperty property = path.getLeafProperty();
-		return from(part, property, where(addMetaIfRequired(bucketName, path, property, entity)), iterator);
+		return from(part, property, where(addMetaIfRequired(null, path, property, entity)), iterator);
 	}
 
 	@Override
@@ -187,17 +187,28 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		}
 	}
 
+	/**
+	 * Translate meta-fields to META(bucketName).id, cas, expiry.<br>
+	 * If bucketName is null, META().id etc, <br>
+	 * If not a meta-field, just create the corresponding path
+	 *
+	 * @param bucketName
+	 * @param persistentPropertyPath
+	 * @param property
+	 * @param entity
+	 * @return N1QLExpression
+	 */
 	public static N1QLExpression addMetaIfRequired(String bucketName,
 			final PersistentPropertyPath<CouchbasePersistentProperty> persistentPropertyPath,
 			final CouchbasePersistentProperty property, final PersistentEntity entity) {
 		if (entity != null && property == entity.getIdProperty()) {
-			return path(meta(i(bucketName)), i(META_ID_PROPERTY));
+			return path(meta(bucketName != null ? i(bucketName) : x("")), i(META_ID_PROPERTY));
 		}
 		if (property == entity.getVersionProperty()) {
-			return path(meta(i(bucketName)), i(META_CAS_PROPERTY));
+			return path(meta(bucketName != null ? i(bucketName) : x("")), i(META_CAS_PROPERTY));
 		}
 		if (property.isExpirationProperty()) {
-			return path(meta(i(bucketName)), i(META_EXPIRATION_PROPERTY));
+			return path(meta(bucketName != null ? i(bucketName) : x("")), i(META_EXPIRATION_PROPERTY));
 		}
 		return x(persistentPropertyPath.toDotPath(cvtr));
 	}

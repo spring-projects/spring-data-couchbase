@@ -106,6 +106,16 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 	}
 
 	@Test
+	void findByKey() {
+		UserCol userCol = new UserCol("101", "userColFirst", "userColLast");
+		userColRepository.save(userCol);
+		UserCol found = userColRepository.getById(userCol.getId());
+		System.err.println("found: " + found);
+		assertEquals(userCol, found);
+		userColRepository.delete(found);
+	}
+
+	@Test
 	public void myTest() {
 
 		AirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);

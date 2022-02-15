@@ -16,9 +16,13 @@
 
 package org.springframework.data.couchbase.repository;
 
+
+
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.InvocationTargetException;
@@ -28,11 +32,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.domain.Airline;
+import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
@@ -67,8 +76,16 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Autowired LibraryRepository libraryRepository;
 	@Autowired SubscriptionTokenRepository subscriptionTokenRepository;
 	@Autowired UserSubmissionRepository userSubmissionRepository;
+	@Autowired AirlineRepository airlineRepository;
 	@Autowired PersonValueRepository personValueRepository;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
+
+	@BeforeEach
+	public void beforeEach() {
+		super.beforeEach();
+		couchbaseTemplate.removeByQuery(SubscriptionToken.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(SubscriptionToken.class).withConsistency(REQUEST_PLUS).all();
+	}
 
 	@Test
 	void subscriptionToken() {
@@ -79,12 +96,36 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		GetResult jdkResult = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().get(st.getId());
 		assertNotEquals(0, st.getVersion());
 		assertEquals(jdkResult.cas(), st.getVersion());
+		subscriptionTokenRepository.delete(st);
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveReplaceUpsertInsert() {
+		// the User class has a version.
+		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		// save the document - we don't care how on this call
+		userRepository.save(user);
+		// Now set the version to 0, it should attempt an insert and fail.
+		long saveVersion = user.getVersion();
+		user.setVersion(0);
+		assertThrows(DuplicateKeyException.class, () -> userRepository.save(user));
+		user.setVersion(saveVersion + 1);
+		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
+		userRepository.delete(user);
+
+		// Airline does not have a version
+		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline");
+		// save the document - we don't care how on this call
+		airlineRepository.save(airline);
+		airlineRepository.save(airline); // If it was an insert it would fail. Can't tell if it is an upsert or replace.
+		airlineRepository.delete(airline);
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
-		User user = new User(UUID.randomUUID().toString(), "f", "l");
+		User user = new User(UUID.randomUUID().toString(), "saveAndFindById", "l");
 		// this currently fails when using mocked in integration.properties with status "UNKNOWN"
 		assertFalse(userRepository.existsById(user.getId()));
 
@@ -101,7 +142,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindImmutableById() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		PersonValue personValue = new PersonValue(null, 0, "f", "l");
+		PersonValue personValue = new PersonValue(null, 0, "saveAndFindImmutableById", "l");
 		personValue = personValueRepository.save(personValue);
 		Optional<PersonValue> found = personValueRepository.findById(personValue.getId());
 		assertTrue(found.isPresent());
