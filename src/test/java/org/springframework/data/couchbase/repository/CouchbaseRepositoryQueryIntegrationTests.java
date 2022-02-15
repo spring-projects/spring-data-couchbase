@@ -55,8 +55,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
@@ -566,7 +566,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		userRepository.save(user);
 		long saveVersion = user.getVersion();
 		user.setVersion(user.getVersion() - 1);
-		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user));
+		assertThrows(OptimisticLockingFailureException.class, () -> userRepository.save(user));
 		user.setVersion(saveVersion);
 		userRepository.save(user);
 		userRepository.delete(user);
