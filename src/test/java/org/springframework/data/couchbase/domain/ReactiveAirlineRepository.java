@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,20 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.couchbase.repository.Query;
-import org.springframework.data.repository.query.Param;
-import reactor.core.publisher.Flux;
-
-import org.springframework.data.repository.reactive.ReactiveSortingRepository;
-import org.springframework.stereotype.Repository;
-
 import java.util.List;
+
+import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 /**
  * @author Michael Reiche
  */
 @Repository
-public interface ReactiveAirlineRepository extends ReactiveSortingRepository<Airline, String> {
+public interface ReactiveAirlineRepository extends ReactiveCouchbaseRepository<Airline, String> {
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (name = $1)")
-	List<User> getByName(@Param("airline_name")String airlineName);
+	List<User> getByName(@Param("airline_name") String airlineName);
 
 }

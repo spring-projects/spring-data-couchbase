@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.ScanConsistency;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -30,7 +30,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-public interface UserSubmissionRepository extends PagingAndSortingRepository<UserSubmission, String> {
+public interface UserSubmissionRepository extends CouchbaseRepository<UserSubmission, String> {
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<UserSubmission> findByUsername(String username);
