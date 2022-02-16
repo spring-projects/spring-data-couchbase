@@ -87,7 +87,7 @@ public class CouchbaseCacheConfiguration {
 	}
 
 	/**
-	 * Set the expiry to apply for cache entries. Use {@link Duration#ZERO} to declare an eternal cache.
+	 * Set the collectinName to use.
 	 *
 	 * @param collectionName must not be {@literal null}.
 	 * @return new {@link CouchbaseCacheConfiguration}.
