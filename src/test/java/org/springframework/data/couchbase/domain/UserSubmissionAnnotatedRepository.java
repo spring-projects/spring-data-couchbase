@@ -18,8 +18,8 @@ package org.springframework.data.couchbase.domain;
 
 import java.util.List;
 
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.ScanConsistency;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -30,8 +30,8 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @Repository
-public interface UserSubmissionAnnotatedRepository extends PagingAndSortingRepository<UserSubmissionAnnotated, String> {
+public interface UserSubmissionAnnotatedRepository extends CouchbaseRepository<UserSubmissionAnnotated, String> {
 
-  @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-  List<UserSubmissionAnnotated> findByUsername(String username);
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<UserSubmissionAnnotated> findByUsername(String username);
 }

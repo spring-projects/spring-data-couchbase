@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -25,6 +25,6 @@ import org.springframework.stereotype.Repository;
  * @author Andrea Torlaschi
  */
 @Repository
-public interface LibraryRepository extends PagingAndSortingRepository<Library, String> {
+public interface LibraryRepository extends CouchbaseRepository<Library, String> {
 
 }

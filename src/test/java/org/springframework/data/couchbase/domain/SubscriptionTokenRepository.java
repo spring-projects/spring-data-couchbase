@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -25,5 +25,4 @@ import org.springframework.stereotype.Repository;
  * @author Michael Reiche
  */
 @Repository
-public interface SubscriptionTokenRepository extends PagingAndSortingRepository<SubscriptionToken, String> {
-}
+public interface SubscriptionTokenRepository extends CouchbaseRepository<SubscriptionToken, String> {}
