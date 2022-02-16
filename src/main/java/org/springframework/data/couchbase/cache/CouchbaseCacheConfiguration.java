@@ -65,6 +65,7 @@ public class CouchbaseCacheConfiguration {
 	 * <li>{@link String} to {@link byte byte[]} using UTF-8 encoding.</li>
 	 * <li>{@link SimpleKey} to {@link String}</li>
 	 * </ul>
+	 * 
 	 * @param registry must not be {@literal null}.
 	 */
 	public static void registerDefaultConverters(final ConverterRegistry registry) {
@@ -81,6 +82,18 @@ public class CouchbaseCacheConfiguration {
 	 */
 	public CouchbaseCacheConfiguration entryExpiry(final Duration expiry) {
 		Assert.notNull(expiry, "Expiry duration must not be null!");
+		return new CouchbaseCacheConfiguration(expiry, cacheNullValues, usePrefix, keyPrefix, conversionService,
+				valueTranscoder, collectionName);
+	}
+
+	/**
+	 * Set the expiry to apply for cache entries. Use {@link Duration#ZERO} to declare an eternal cache.
+	 *
+	 * @param collectionName must not be {@literal null}.
+	 * @return new {@link CouchbaseCacheConfiguration}.
+	 */
+	public CouchbaseCacheConfiguration collection(final String collectionName) {
+		Assert.notNull(collectionName, "collectionName must not be null!");
 		return new CouchbaseCacheConfiguration(expiry, cacheNullValues, usePrefix, keyPrefix, conversionService,
 				valueTranscoder, collectionName);
 	}
