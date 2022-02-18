@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.springframework.data.util.TypeInformation;
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
+ * @author Michael Reiche
  */
 public interface CouchbaseConverter
 		extends EntityConverter<CouchbasePersistentEntity<?>, CouchbasePersistentProperty, Object, CouchbaseDocument>,
@@ -61,4 +62,10 @@ public interface CouchbaseConverter
 	 * @return the alias value for the type
 	 */
 	Alias getTypeAlias(TypeInformation<?> info);
+
+	// TODO needed later
+	// CouchbaseTypeMapper getMapper();
+	// Object convertToCouchbaseType(Object source, TypeInformation<?> typeInformation);
+	//
+	// Object convertToCouchbaseType(String source);
 }

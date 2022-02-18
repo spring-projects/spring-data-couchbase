@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,21 @@ import org.springframework.data.couchbase.core.mapping.Document;
 @Document
 @CompositeQueryIndex(fields = { "id", "name desc" })
 @CompositeQueryIndex(fields = { "id.something", "name desc" })
+/**
+ * @author Michael Reiche
+ */
 public class Airline extends ComparableEntity {
 	@Id String id;
 
 	@QueryIndexed String name;
 
+	String hqCountry;
+
 	@PersistenceConstructor
-	public Airline(String id, String name) {
+	public Airline(String id, String name, String hqCountry) {
 		this.id = id;
 		this.name = name;
+		this.hqCountry = hqCountry;
 	}
 
 	public String getId() {
@@ -41,6 +47,10 @@ public class Airline extends ComparableEntity {
 
 	public String getName() {
 		return name;
+	}
+
+	public String getHqCountry() {
+		return hqCountry;
 	}
 
 }

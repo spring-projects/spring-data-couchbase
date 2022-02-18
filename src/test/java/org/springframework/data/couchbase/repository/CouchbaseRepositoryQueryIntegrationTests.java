@@ -67,6 +67,7 @@ import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbase
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
@@ -123,6 +124,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired AirportRepository airportRepository;
+
+	@Autowired AirlineRepository airlineRepository;
 
 	@Autowired UserRepository userRepository;
 

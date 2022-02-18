@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -58,6 +57,8 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -82,7 +83,7 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 	@Test
 	@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 	void findUsingStringNq1l() throws Exception {
-		Airline airline = new Airline(UUID.randomUUID().toString(), "Continental");
+		Airline airline = new Airline(UUID.randomUUID().toString(), "Continental", "USA");
 		try {
 			Airline modified = couchbaseTemplate.upsertById(Airline.class).one(airline);
 
@@ -99,8 +100,8 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 
 			Query query = creator.createQuery();
 
-			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate
-					.findByQuery(Airline.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query);
+			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate.findByQuery(Airline.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query);
 
 			Optional<Airline> al = q.one();
 			assertEquals(airline.toString(), al.get().toString());

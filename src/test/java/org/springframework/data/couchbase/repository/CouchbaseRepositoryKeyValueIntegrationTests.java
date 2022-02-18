@@ -115,7 +115,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		userRepository.delete(user);
 
 		// Airline does not have a version
-		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline");
+		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline", null);
 		// save the document - we don't care how on this call
 		airlineRepository.save(airline);
 		airlineRepository.save(airline); // If it was an insert it would fail. Can't tell if it is an upsert or replace.

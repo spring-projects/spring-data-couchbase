@@ -24,6 +24,7 @@ import org.springframework.data.mapping.PersistentEntity;
  * Represents an entity that can be persisted which contains 0 or more properties.
  *
  * @author Michael Nitschinger
+ * @author Michael Reiche
  */
 public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, CouchbasePersistentProperty> {
 
@@ -61,4 +62,7 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 */
 	boolean isTouchOnRead();
 
+	boolean hasTextScoreProperty();
+
+	CouchbasePersistentProperty getTextScoreProperty();
 }

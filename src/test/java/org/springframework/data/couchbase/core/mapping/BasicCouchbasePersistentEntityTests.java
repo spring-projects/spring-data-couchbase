@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,78 +190,78 @@ public class BasicCouchbasePersistentEntityTests {
 	@Configuration
 	static class Config {}
 
-	public static class SimpleDocument {}
+	class SimpleDocument {}
 
 	@Document(expiry = 10)
-	public static class SimpleDocumentWithExpiry {}
+	class SimpleDocumentWithExpiry {}
 
 	@Document(expiry = 10, touchOnRead = true)
-	public static class SimpleDocumentWithTouchOnRead {}
+	class SimpleDocumentWithTouchOnRead {}
 
 	/**
 	 * Simple POJO to test default expiry.
 	 */
 	@Document
-	private class DefaultExpiry {}
+	class DefaultExpiry {}
 
 	/**
 	 * Simple POJO to test default expiry unit.
 	 */
 	@Document(expiry = 78)
-	private class DefaultExpiryUnit {}
+	class DefaultExpiryUnit {}
 
 	/**
 	 * Simple POJO to test limit expiry.
 	 */
 	@Document(expiry = 30, expiryUnit = TimeUnit.DAYS)
-	private class LimitDaysExpiry {}
+	class LimitDaysExpiry {}
 
 	/**
 	 * Simple POJO to test larger than 30 days expiry.
 	 */
 	@Document(expiry = 31, expiryUnit = TimeUnit.DAYS)
-	public class OverLimitDaysExpiry {}
+	class OverLimitDaysExpiry {}
 
 	/**
 	 * Simple POJO to test larger than 30 days expiry defined as an expression
 	 */
 	@Document(expiryExpression = "${document.expiry.larger.than.30days:31}", expiryUnit = TimeUnit.DAYS)
-	public class OverLimitDaysExpiryExpression {}
+	class OverLimitDaysExpiryExpression {}
 
 	/**
 	 * Simple POJO to test larger than 30 days expiry, when expressed in default time unit (SECONDS).
 	 */
 	@Document(expiry = 31 * 24 * 60 * 60)
-	public class OverLimitSecondsExpiry {}
+	class OverLimitSecondsExpiry {}
 
 	/**
 	 * Simple POJO to test constant expiry expression
 	 */
 	@Document(expiryExpression = "10")
-	private class ConstantExpiryExpression {}
+	class ConstantExpiryExpression {}
 
 	/**
 	 * Simple POJO to test valid expiry expression by resolving simple property from environment
 	 */
 	@Document(expiryExpression = "${valid.document.expiry}")
-	private class ExpiryWithValidExpression {}
+	class ExpiryWithValidExpression {}
 
 	/**
 	 * Simple POJO to test invalid expiry expression
 	 */
 	@Document(expiryExpression = "${invalid.document.expiry}")
-	private class ExpiryWithInvalidExpression {}
+	class ExpiryWithInvalidExpression {}
 
 	/**
 	 * Simple POJO to test expiry expression logic failure to resolve property placeholder
 	 */
 	@Document(expiryExpression = "${missing.expiry}")
-	private class ExpiryWithMissingProperty {}
+	class ExpiryWithMissingProperty {}
 
 	/**
 	 * Simple POJO to test that expiry and expiry expression cannot be used simultaneously
 	 */
 	@Document(expiry = 10, expiryExpression = "10")
-	private class ExpiryAndExpression {}
+	class ExpiryAndExpression {}
 
 }
