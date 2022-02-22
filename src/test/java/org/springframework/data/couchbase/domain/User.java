@@ -29,6 +29,8 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+import java.io.Serializable;
+
 /**
  * User entity for tests
  *
