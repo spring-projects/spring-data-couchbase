@@ -22,13 +22,13 @@ To make it work, you need to add the `@EnableCaching` annotation and configure t
 public class Config extends AbstractCouchbaseConfiguration {
     // general methods
 
-  @Bean
-  public CouchbaseCacheManager cacheManager(CouchbaseTemplate couchbaseTemplate) throws Exception {
-  CouchbaseCacheManager.CouchbaseCacheManagerBuilder builder = CouchbaseCacheManager.CouchbaseCacheManagerBuilder
-      .fromConnectionFactory(couchbaseTemplate.getCouchbaseClientFactory());
-    builder.withCacheConfiguration("mySpringCache", CouchbaseCacheConfiguration.defaultCacheConfig());
-    return builder.build();
-  }
+    @Bean
+    public CouchbaseCacheManager cacheManager(CouchbaseTemplate couchbaseTemplate) throws Exception {
+        CouchbaseCacheManager.CouchbaseCacheManagerBuilder builder = CouchbaseCacheManager.CouchbaseCacheManagerBuilder
+                .fromConnectionFactory(couchbaseTemplate.getCouchbaseClientFactory());
+            return builder.build();
+        }
+
 ----
 ====
 
