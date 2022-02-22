@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -27,6 +27,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * User Repository for tests
@@ -35,7 +36,7 @@ import com.couchbase.client.java.json.JsonArray;
  * @author Michael Reiche
  */
 @Repository
-@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
+@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
@@ -57,4 +58,13 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
 
 	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
+
+	// simulate a slow operation
+	@Cacheable("mySpringCache")
+	default List<User> getByFirstname(String firstname) {
+		try {
+			Thread.sleep(1000 * 5);
+		} catch (InterruptedException ie) {}
+		return findByFirstname(firstname);
+	}
 }

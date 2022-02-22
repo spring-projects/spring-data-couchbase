@@ -21,10 +21,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.List;
 import java.util.UUID;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -40,6 +48,8 @@ import com.couchbase.client.java.query.QueryOptions;
 class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 
 	volatile CouchbaseCache cache;
+	@Autowired CouchbaseCacheManager cacheManager; // autowired not working
+	@Autowired UserRepository userRepository; // autowired not working
 
 	@BeforeEach
 	@Override
@@ -48,6 +58,16 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		cache = CouchbaseCacheManager.create(couchbaseTemplate.getCouchbaseClientFactory()).createCouchbaseCache("myCache",
 				CouchbaseCacheConfiguration.defaultCacheConfig());
 		clear(cache);
+		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		cacheManager = ac.getBean(CouchbaseCacheManager.class);
+		userRepository = ac.getBean(UserRepository.class);
+	}
+
+	@AfterEach
+	@Override
+	public void afterEach() {
+		clear(cache);
+		super.afterEach();
 	}
 
 	private void clear(CouchbaseCache c) {
@@ -67,6 +87,19 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		cache.put(user2.getId(), user2); // put user2
 		assertEquals(user1, cache.get(user1.getId()).get()); // get user1
 		assertEquals(user2, cache.get(user2.getId()).get()); // get user2
+	}
+
+	@Test
+	void cacheable() {
+		User user = new User("cache_92", "Dave", "Wilson");
+		cacheManager.getCache("mySpringCache").clear();
+		userRepository.save(user);
+		long t0 = System.currentTimeMillis();
+		List<User> users = userRepository.getByFirstname(user.getFirstname());
+		assert (System.currentTimeMillis() - t0 > 1000 * 5);
+		t0 = System.currentTimeMillis();
+		users = userRepository.getByFirstname(user.getFirstname());
+		assert (System.currentTimeMillis() - t0 < 100);
 	}
 
 	@Test
@@ -97,5 +130,23 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		assertEquals(user1, cache.putIfAbsent(user1.getId(), user2).get()); // should not put user2, should return user1
 		assertEquals(user1, cache.get(user1.getId()).get()); // user1.getId() is still user1
 	}
+
+	@Test // this test FAILS (local empty (i.e. fast) Couchbase installation)
+	public void clearFail() {
+		cache.put("KEY", "VALUE"); // no delay between put and clear, entry will not be
+		cache.clear(); // will not be indexed when clear() executes
+		assertNotNull(cache.get("KEY")); // will still find entry, clear failed to delete
+	}
+
+	@Test // this WORKS
+	public void clearWithDelayOk() throws InterruptedException {
+		cache.put("KEY", "VALUE");
+		Thread.sleep(50); // give main index time to update
+		cache.clear();
+		assertNull(cache.get("KEY"));
+	}
+
+	@Test
+	public void noOpt() {}
 
 }
