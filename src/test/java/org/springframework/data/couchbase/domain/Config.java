@@ -58,7 +58,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @EnableReactiveCouchbaseRepositories
 @EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
-
+@EnableCaching
 public class Config extends AbstractCouchbaseConfiguration {
 	String bucketname = "travel-sample";
 	String username = "Administrator";

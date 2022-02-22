@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author Michael Reiche
  */
-@IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = {  Capabilities.COLLECTIONS })
+@IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = { Capabilities.COLLECTIONS })
 class CouchbaseCacheCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	volatile CouchbaseCache cache;
@@ -57,7 +57,6 @@ class CouchbaseCacheCollectionIntegrationTests extends CollectionAwareIntegratio
 		couchbaseTemplate.getCouchbaseClientFactory().getCluster().query("SELECT count(*) from `" + bucketName() + "`",
 				QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS));
 	}
-
 
 	@Test
 	void cachePutGet() {
