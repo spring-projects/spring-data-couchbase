@@ -17,12 +17,17 @@
 package org.springframework.data.couchbase.domain;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
+import org.springframework.data.couchbase.cache.CouchbaseCacheConfiguration;
+import org.springframework.data.couchbase.cache.CouchbaseCacheManager;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
@@ -212,6 +217,13 @@ public class Config extends AbstractCouchbaseConfiguration {
 		// for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
 		JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		return jacksonTranslationService;
+	}
+
+	@Bean
+	public CouchbaseCacheManager cacheManager(CouchbaseTemplate couchbaseTemplate) throws Exception {
+		CouchbaseCacheManager.CouchbaseCacheManagerBuilder builder = CouchbaseCacheManager.CouchbaseCacheManagerBuilder
+				.fromConnectionFactory(couchbaseTemplate.getCouchbaseClientFactory());
+		return builder.build();
 	}
 
 	@Override
