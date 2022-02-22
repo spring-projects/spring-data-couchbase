@@ -26,6 +26,7 @@ include::template.adoc[]
 include::transactions.adoc[]
 include::collections.adoc[]
 include::ansijoins.adoc[]
+include::caching.adoc[]
 :leveloffset: -1
 
 [[appendix]]
