@@ -223,7 +223,6 @@ public class Config extends AbstractCouchbaseConfiguration {
 	public CouchbaseCacheManager cacheManager(CouchbaseTemplate couchbaseTemplate) throws Exception {
 		CouchbaseCacheManager.CouchbaseCacheManagerBuilder builder = CouchbaseCacheManager.CouchbaseCacheManagerBuilder
 				.fromConnectionFactory(couchbaseTemplate.getCouchbaseClientFactory());
-		//CouchbaseCacheConfiguration cfg = CouchbaseCacheConfiguration.defaultCacheConfig().withCacheConfiguration("mySpringCache", CouchbaseCacheConfiguration.defaultCacheConfig());
 		return builder.build();
 	}
 
