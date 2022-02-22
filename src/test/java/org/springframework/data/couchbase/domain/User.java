@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.domain;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+import java.io.Serializable;
+
 /**
  * User entity for tests
  *
@@ -27,7 +29,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
  */
 
 @Document
-public class User extends AbstractUser {
+public class User extends AbstractUser  implements Serializable {
 
 	@PersistenceConstructor
 	public User(final String id, final String firstname, final String lastname) {
