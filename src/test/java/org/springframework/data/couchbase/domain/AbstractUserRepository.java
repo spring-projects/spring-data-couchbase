@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 import java.util.stream.Stream;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -27,6 +26,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * AbstractUser Repository for tests
@@ -34,13 +34,13 @@ import com.couchbase.client.java.json.JsonArray;
  * @author Michael Reiche
  */
 @Repository
-@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
+@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface AbstractUserRepository extends CouchbaseRepository<AbstractUser, String> {
 
 	@Query("#{#n1ql.selectEntity} where (meta().id = $1)")
 	AbstractUser myFindById(String id);
 
-	List<User> findByFirstname(String firstname);
+	List<AbstractUser> findByFirstname(String firstname);
 
 	Stream<User> findByLastname(String lastname);
 
