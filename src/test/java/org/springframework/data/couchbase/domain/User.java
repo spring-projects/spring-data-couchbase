@@ -16,10 +16,18 @@
 
 package org.springframework.data.couchbase.domain;
 
-import org.springframework.data.annotation.PersistenceConstructor;
-import org.springframework.data.couchbase.core.mapping.Document;
-
 import java.io.Serializable;
+import java.util.Objects;
+
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.PersistenceConstructor;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.couchbase.core.mapping.Document;
 
 /**
  * User entity for tests
@@ -29,13 +37,71 @@ import java.io.Serializable;
  */
 
 @Document
-public class User extends AbstractUser  implements Serializable {
+@TypeAlias(AbstractingTypeMapper.Type.ABSTRACTUSER)
+public class User extends AbstractUser implements Serializable {
 
 	@PersistenceConstructor
 	public User(final String id, final String firstname, final String lastname) {
 		this.id = id;
 		this.firstname = firstname;
 		this.lastname = lastname;
+		this.subtype = AbstractingTypeMapper.Type.USER;
+	}
+
+	@Version protected long version;
+	@Transient protected String transientInfo;
+	@CreatedBy protected String createdBy;
+	@CreatedDate protected long createdDate;
+	@LastModifiedBy protected String lastModifiedBy;
+	@LastModifiedDate protected long lastModifiedDate;
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public long getCreatedDate() {
+		return createdDate;
+	}
+
+	public void setCreatedDate(long createdDate) {
+		this.createdDate = createdDate;
+	}
+
+	public String getCreatedBy() {
+		return createdBy;
+	}
+
+	public void setCreatedBy(String createdBy) {
+		this.createdBy = createdBy;
+	}
+
+	public long getLastModifiedDate() {
+		return lastModifiedDate;
+	}
+
+	public String getLastModifiedBy() {
+		return lastModifiedBy;
+	}
+
+	public long getVersion() {
+		return version;
+	}
+
+	public void setVersion(long version) {
+		this.version = version;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(getId(), firstname, lastname);
+	}
+
+	public String getTransientInfo() {
+		return transientInfo;
+	}
+
+	public void setTransientInfo(String something) {
+		transientInfo = something;
 	}
 
 }

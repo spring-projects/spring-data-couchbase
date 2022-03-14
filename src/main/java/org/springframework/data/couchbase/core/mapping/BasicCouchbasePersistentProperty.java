@@ -77,6 +77,10 @@ public class BasicCouchbasePersistentProperty extends AnnotationBasedPersistentP
 		if (fieldName != null) {
 			return fieldName;
 		}
+		if (getField() == null) { // use the name of the property - instead of getting an NPE trying to use field
+			return fieldName = getName();
+		}
+
 		Field annotationField = getField().getAnnotation(Field.class);
 
 		if (annotationField != null) {
