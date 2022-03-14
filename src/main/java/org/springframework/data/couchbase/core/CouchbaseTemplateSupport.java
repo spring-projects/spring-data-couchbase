@@ -88,6 +88,18 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
+
+		// this is the entity class defined for the repository. It may not be the class of the document that was read
+		// we will reset it after reading the document
+		//
+		// This will fail for the case where:
+		// 1) The version is defined in the concrete class, but not in the abstract class; and
+		// 2) The constructor takes a "long version" argument resulting in an exception would be thrown if version in
+		// the source is null.
+		// We could expose from the MappingCouchbaseConverter determining the persistent entity from the source,
+		// but that is a lot of work to do every time just for this very rare and avoidable case.
+		// TypeInformation<? extends R> typeToUse = typeMapper.readType(source, type);
+
 		CouchbasePersistentEntity persistentEntity = couldBePersistentEntity(entityClass);
 
 		if (persistentEntity == null) { // method could return a Long, Boolean, String etc.
@@ -100,14 +112,24 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			return (T) set.iterator().next().getValue();
 		}
 
+		// if possible, set the version property in the source so that if the constructor has a long version argument,
+		// it will have a value an not fail (as null is not a valid argument for a long argument). This possible failure
+		// can be avoid by defining the argument as Long instead of long.
+		// persistentEntity is still the (possibly abstract) class specified in the repository definition
+		// it's possible that the abstract class does not have a version property, and this won't be able to set the version
 		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
 			converted.put(persistentEntity.getVersionProperty().getName(), cas);
 		}
 
+		// if the constructor has an argument that is long version, then construction will fail if the 'version'
+		// is not available as 'null' is not a legal value for a long. Changing the arg to "Long version" would solve this.
+		// (Version doesn't come from 'source', it comes from the cas argument to decodeEntity)
 		T readEntity = converter.read(entityClass, (CouchbaseDocument) translationService.decode(source, converted));
 		final ConvertingPropertyAccessor<T> accessor = getPropertyAccessor(readEntity);
 
-		if (persistentEntity.getVersionProperty() != null) {
+		persistentEntity = couldBePersistentEntity(readEntity.getClass());
+
+		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id, scope, collection);
