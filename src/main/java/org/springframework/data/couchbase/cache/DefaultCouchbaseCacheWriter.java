@@ -20,6 +20,7 @@ import static com.couchbase.client.java.kv.GetOptions.*;
 import static com.couchbase.client.java.kv.InsertOptions.*;
 import static com.couchbase.client.java.kv.UpsertOptions.*;
 import static com.couchbase.client.java.query.QueryOptions.*;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
 import java.time.Duration;
 
@@ -102,10 +103,10 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 	}
 
 	@Override
-	public long clear(final String pattern) {
-		QueryResult result = clientFactory.getCluster().query(
-				"DELETE FROM `" + clientFactory.getBucket().name() + "` where meta().id LIKE $pattern",
-				queryOptions().metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%")));
+	public long clear(final String collectionName, final String pattern) {
+		QueryResult result = clientFactory.getScope().query(
+				"DELETE FROM `" + collectionName + "` where meta().id LIKE $pattern",
+				queryOptions().scanConsistency(REQUEST_PLUS).metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%")));
 		return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
 	}
 

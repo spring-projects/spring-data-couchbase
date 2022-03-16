@@ -74,6 +74,6 @@ public interface CouchbaseCacheWriter {
 	 * @param pattern the pattern to clear.
 	 * @return the number of cleared items.
 	 */
-	long clear(String pattern);
+	long clear(String collectionName, String pattern);
 
 }
