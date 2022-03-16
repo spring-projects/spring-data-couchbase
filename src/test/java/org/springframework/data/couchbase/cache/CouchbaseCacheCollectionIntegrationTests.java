@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.cache;
 
-import com.couchbase.client.java.query.QueryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.util.Capabilities;
@@ -26,7 +25,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import java.util.UUID;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -47,15 +45,7 @@ class CouchbaseCacheCollectionIntegrationTests extends CollectionAwareIntegratio
 		super.beforeEach();
 		cache = CouchbaseCacheManager.create(couchbaseTemplate.getCouchbaseClientFactory()).createCouchbaseCache("myCache",
 				CouchbaseCacheConfiguration.defaultCacheConfig().collection("my_collection"));
-		clear(cache);
-	}
-
-	private void clear(CouchbaseCache c) {
-		couchbaseTemplate.getCouchbaseClientFactory().getCluster().query("SELECT count(*) from `" + bucketName() + "`",
-				QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS));
-		c.clear();
-		couchbaseTemplate.getCouchbaseClientFactory().getCluster().query("SELECT count(*) from `" + bucketName() + "`",
-				QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS));
+		cache.clear();
 	}
 
 	@Test
@@ -76,7 +66,19 @@ class CouchbaseCacheCollectionIntegrationTests extends CollectionAwareIntegratio
 		cache.put(user1.getId(), user1); // put user1
 		cache.put(user2.getId(), user2); // put user2
 		cache.evict(user1.getId()); // evict user1
+		assertNull(cache.get(user1.getId())); // get user1 -> not present
 		assertEquals(user2, cache.get(user2.getId()).get()); // get user2 -> present
+	}
+
+	@Test
+	void cacheClear() {
+		CacheUser user1 = new CacheUser(UUID.randomUUID().toString(), "first1", "last1");
+		CacheUser user2 = new CacheUser(UUID.randomUUID().toString(), "first2", "last2");
+		cache.put(user1.getId(), user1); // put user1
+		cache.put(user2.getId(), user2); // put user2
+		cache.clear();
+		assertNull(cache.get(user1.getId())); // get user1 -> not present
+		assertNull(cache.get(user2.getId())); // get user2 -> not present
 	}
 
 	@Test
