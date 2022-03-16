@@ -105,7 +105,7 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 	@Override
 	public long clear(final String collectionName, final String pattern) {
 		QueryResult result = clientFactory.getScope().query(
-				"DELETE FROM `" + collectionName + "` where meta().id LIKE $pattern",
+				"DELETE FROM `" + getCollection(collectionName).name() + "` where meta().id LIKE $pattern",
 				queryOptions().scanConsistency(REQUEST_PLUS).metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%")));
 		return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
 	}
