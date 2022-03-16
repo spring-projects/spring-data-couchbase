@@ -138,12 +138,12 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 
 	@Override
 	public boolean invalidate() {
-		return cacheWriter.clear(cacheConfig.getKeyPrefixFor(name)) > 0;
+		return cacheWriter.clear(cacheConfig.getCollectionName(), cacheConfig.getKeyPrefixFor(name)) > 0;
 	}
 
 	@Override
 	public void clear() {
-		cacheWriter.clear(cacheConfig.getKeyPrefixFor(name));
+		cacheWriter.clear( cacheConfig.getCollectionName(), cacheConfig.getKeyPrefixFor(name));
 	}
 
 	/**
