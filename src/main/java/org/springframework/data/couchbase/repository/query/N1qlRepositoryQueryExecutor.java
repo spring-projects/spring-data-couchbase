@@ -73,7 +73,7 @@ public class N1qlRepositoryQueryExecutor {
 		}
 
 		ExecutableFindByQuery<?> operation = (ExecutableFindByQuery<?>) operations
-				.findByQuery(domainClass).withConsistency(buildQueryScanConsistency());
+				.findByQuery(domainClass).withConsistency(queryMethod.buildQueryScanConsistency());
 		if (queryMethod.isCountQuery()) {
 			return operation.matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {
@@ -87,14 +87,14 @@ public class N1qlRepositoryQueryExecutor {
 
 	}
 
-	private QueryScanConsistency buildQueryScanConsistency() {
-		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
-		if (queryMethod.hasConsistencyAnnotation()) {
-			scanConsistency = queryMethod.getConsistencyAnnotation().value();
-		} else if (queryMethod.hasScanConsistencyAnnotation()) {
-			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
-		}
-		return scanConsistency;
-	}
+//	private QueryScanConsistency buildQueryScanConsistency() {
+//		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+//		if (queryMethod.hasConsistencyAnnotation()) {
+//			scanConsistency = queryMethod.getConsistencyAnnotation().value();
+//		} else if (queryMethod.hasScanConsistencyAnnotation()) {
+//			scanConsistency = queryMethod.getScanConsistencyAnnotation().query();
+//		}
+//		return scanConsistency;
+//	}
 
 }

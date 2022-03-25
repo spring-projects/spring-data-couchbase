@@ -74,13 +74,13 @@ public interface ReactiveExistsByIdOperation {
 	/**
 	 * Fluent method to specify options.
 	 */
-	interface ExistsByIdWithOptions extends TerminatingExistsById, WithExistsOptions {
+	interface ExistsByIdWithOptions extends TerminatingExistsById {
 		/**
 		 * Fluent method to specify options to use for execution.
 		 *
 		 * @param options to use for execution
 		 */
-		@Override
+
 		TerminatingExistsById withOptions(ExistsOptions options);
 	}
 

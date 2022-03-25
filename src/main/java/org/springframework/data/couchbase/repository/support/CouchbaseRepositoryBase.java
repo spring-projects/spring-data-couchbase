@@ -105,8 +105,8 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * List<T> findAll();<br>
 	 */
 	QueryScanConsistency buildQueryScanConsistency() {
-		ScanConsistency sc = crudMethodMetadata.getScanConsistency();
-		QueryScanConsistency fromMeta = sc != null ? sc.query() : null;
+		ScanConsistency scanConsistency = crudMethodMetadata.getScanConsistency();
+		QueryScanConsistency fromMeta = scanConsistency != null ? scanConsistency.query() : null;
 		QueryScanConsistency fromAnnotation = OptionsBuilder.annotationAttribute(ScanConsistency.class, "query",
 				QueryScanConsistency.NOT_BOUNDED, new AnnotatedElement[] { getJavaType(), repositoryInterface });
 		return OptionsBuilder.fromFirst(QueryScanConsistency.NOT_BOUNDED, fromMeta, fromAnnotation);

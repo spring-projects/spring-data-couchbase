@@ -42,6 +42,7 @@ import org.springframework.data.repository.util.ReactiveWrapperConverters;
 import org.springframework.util.StringUtils;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Represents a query method with couchbase extensions, allowing to discover if View-based query or N1QL-based query
@@ -288,6 +289,16 @@ public class CouchbaseQueryMethod extends QueryMethod {
 		AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass(),
 				repositoryMetadata.getRepositoryInterface(), repositoryMetadata.getDomainType() };
 		return OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
+	}
+	
+	public QueryScanConsistency buildQueryScanConsistency() {
+		QueryScanConsistency scanConsistency = QueryScanConsistency.NOT_BOUNDED;
+		if (hasConsistencyAnnotation()) {
+			scanConsistency = getConsistencyAnnotation().value();
+		} else if (hasScanConsistencyAnnotation()) {
+			scanConsistency = getScanConsistencyAnnotation().query();
+		}
+		return scanConsistency;
 	}
 
 }

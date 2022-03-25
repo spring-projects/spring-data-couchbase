@@ -55,8 +55,8 @@ public interface ExecutableExistsByIdOperation {
 		 * @param id the ID to perform the operation on.
 		 * @return true if the document exists, false otherwise.
 		 */
-		@Override
-		boolean one(String id);
+//		@Override
+//		boolean one(String id);
 
 		/**
 		 * Performs the operation on the collection of ids.
