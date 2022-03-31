@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import static org.springframework.data.querydsl.QuerydslUtils.QUERY_DSL_PRESENT;
+
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -30,9 +33,11 @@ import org.springframework.data.couchbase.repository.query.PartTreeCouchbaseQuer
 import org.springframework.data.couchbase.repository.query.StringBasedCouchbaseQuery;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.core.support.RepositoryComposition;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
@@ -52,6 +57,8 @@ import org.springframework.util.Assert;
 public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 
 	private static final SpelExpressionParser SPEL_PARSER = new SpelExpressionParser();
+
+	private final CouchbaseOperations operations;
 
 	/**
 	 * Holds the reference to the template.
@@ -76,7 +83,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 		this.couchbaseOperationsMapping = couchbaseOperationsMapping;
 		this.crudMethodMetadataPostProcessor = new CrudMethodMetadataPostProcessor();
 		mappingContext = this.couchbaseOperationsMapping.getMappingContext();
-
+		operations = this.couchbaseOperationsMapping.getDefault();
 		addRepositoryProxyPostProcessor(crudMethodMetadataPostProcessor);
 	}
 
@@ -166,6 +173,46 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 						evaluationContextProvider);
 			}
 		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.repository.core.support.RepositoryFactorySupport#getRepositoryFragments(org.springframework.data.repository.core.RepositoryMetadata)
+	 */
+	@Override
+	protected RepositoryComposition.RepositoryFragments getRepositoryFragments(RepositoryMetadata metadata) {
+		return getRepositoryFragments(metadata, operations);
+	}
+
+	/**
+	 * Creates {@link RepositoryComposition.RepositoryFragments} based on {@link RepositoryMetadata} to add
+	 * Couchbase-specific extensions. Typically adds a {@link QuerydslCouchbasePredicateExecutor} if the repository
+	 * interface uses Querydsl.
+	 * <p>
+	 * Can be overridden by subclasses to customize {@link RepositoryComposition.RepositoryFragments}.
+	 *
+	 * @param metadata repository metadata.
+	 * @param operations the Couchbase operations manager.
+	 * @return
+	 */
+	protected RepositoryComposition.RepositoryFragments getRepositoryFragments(RepositoryMetadata metadata,
+			CouchbaseOperations operations) {
+
+		boolean isQueryDslRepository = QUERY_DSL_PRESENT
+				&& QuerydslPredicateExecutor.class.isAssignableFrom(metadata.getRepositoryInterface());
+
+		if (isQueryDslRepository) {
+
+			if (metadata.isReactiveRepository()) {
+				throw new InvalidDataAccessApiUsageException(
+						"Cannot combine Querydsl and reactive repository support in a single interface");
+			}
+
+			return RepositoryComposition.RepositoryFragments
+					.just(new QuerydslCouchbasePredicateExecutor<>(getEntityInformation(metadata.getDomainType()), operations));
+		}
+
+		return RepositoryComposition.RepositoryFragments.empty();
 	}
 
 }

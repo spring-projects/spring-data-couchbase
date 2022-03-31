@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,12 @@ package org.springframework.data.couchbase.core.query;
 import java.io.Serializable;
 import java.util.Iterator;
 
+/**
+ * A N1QL Query Expression
+ *
+ * @author Michael Nitschinger
+ * @author Michael Reiche
+ */
 public class N1QLExpression {
 	private static final N1QLExpression NULL_INSTANCE = new N1QLExpression("NULL");
 	private static final N1QLExpression TRUE_INSTANCE = new N1QLExpression("TRUE");
@@ -88,6 +94,15 @@ public class N1QLExpression {
 	 */
 	public static N1QLExpression NULL() {
 		return NULL_INSTANCE;
+	}
+
+	/**
+	 * Returns an expression representing WRAPPER.
+	 *
+	 * @return an expression representing WRAPPER.
+	 */
+	public static N1QLExpression WRAPPER() {
+		return EMPTY_INSTANCE;
 	}
 
 	/**

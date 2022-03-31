@@ -17,7 +17,6 @@ package org.springframework.data.couchbase.core.query;
 
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Formatter;
@@ -41,11 +40,11 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
-	private final N1QLExpression key;
+	private N1QLExpression key;
 	/**
 	 * Holds the chain itself, the current operator being always the last one.
 	 */
-	private List<QueryCriteria> criteriaChain;
+	private LinkedList<QueryCriteria> criteriaChain;
 	/**
 	 * Represents how the chain is hung together, null only for the first element.
 	 */
@@ -54,27 +53,25 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	private Object[] value;
 	private String format;
 
-	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object[] value, ChainOperator chainOperator) {
+	public QueryCriteria(LinkedList<QueryCriteria> chain, N1QLExpression key, Object[] value,
+			ChainOperator chainOperator) {
 		this(chain, key, value, chainOperator, null, null);
 	}
 
-	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object value, ChainOperator chainOperator) {
+	QueryCriteria(LinkedList<QueryCriteria> chain, N1QLExpression key, Object value, ChainOperator chainOperator) {
 		this(chain, key, new Object[] { value }, chainOperator, null, null);
 	}
 
-	QueryCriteria(List<QueryCriteria> chain, N1QLExpression key, Object[] value, ChainOperator chainOperator,
+	QueryCriteria(LinkedList<QueryCriteria> chain, N1QLExpression key, Object[] value, ChainOperator chainOperator,
 			String operator, String format) {
-		this.criteriaChain = chain;
-		criteriaChain.add(this);
+		this.criteriaChain = chain != null ? chain : new LinkedList<>();
+		this.chainOperator = chainOperator;
+		this.criteriaChain.add(this);// add the new one to the chain. The new one has the chainOperator set
 		this.key = key;
 		this.value = value;
-		this.chainOperator = chainOperator;
+		// this.chainOperator = chainOperator; ignored now.
 		this.operator = operator;
 		this.format = format;
-	}
-
-	Object[] getValue() {
-		return value;
 	}
 
 	/**
@@ -88,13 +85,56 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	 * Static factory method to create a Criteria using the provided N1QLExpression key.
 	 */
 	public static QueryCriteria where(N1QLExpression key) {
-		return new QueryCriteria(new ArrayList<>(), key, null, null);
+		return new QueryCriteria(null, key, null, null);
 	}
 
+	// wrap criteria (including the criteriaChain) in a new QueryCriteria and set the queryChain of the original criteria
+	// to just itself. The new query will be the value[0] of the original query.
+	private void replaceThisAsWrapperOf(QueryCriteria criteria) {
+		QueryCriteria qc = new QueryCriteria(criteria.criteriaChain, criteria.key, criteria.value, criteria.chainOperator,
+				criteria.operator, criteria.format);
+		criteriaChain.remove(criteria); // we replaced it with the clone
+		criteriaChain = new LinkedList<>();
+		criteriaChain.add(this);
+		key = N1QLExpression.WRAPPER();
+		operator = "";
+		value = new Object[] { qc };
+		chainOperator = null;
+	}
+
+	// wrap criteria (including the criteriaChain) in a new QueryCriteria and set the queryChain of the original criteria
+	// to just itself. The new query will be the value[0] of the original query.
+	private void wrapThis() {
+		QueryCriteria qc = new QueryCriteria(this.criteriaChain, this.key, this.value, this.chainOperator, this.operator,
+				this.format);
+		this.criteriaChain.remove(this); // we replaced it with the clone
+		this.criteriaChain = new LinkedList<>();
+		this.criteriaChain.add(this);
+		this.key = N1QLExpression.WRAPPER();
+		this.operator = "";
+		this.format = null;
+		this.value = new Object[] { qc };
+		this.chainOperator = null;
+
+	}
+
+	// wrap criteria (including the criteriaChain) in a new QueryCriteria and set the queryChain of the original criteria
+	// to just itself. The new query will be the value[0] of the original query.
 	private static QueryCriteria wrap(QueryCriteria criteria) {
-		QueryCriteria qc = new QueryCriteria(new LinkedList<>(), criteria.key, criteria.value, null, criteria.operator,
-				criteria.format);
-		return qc;
+		QueryCriteria qc = new QueryCriteria(criteria.criteriaChain, criteria.key, criteria.value, criteria.chainOperator,
+				criteria.operator, criteria.format);
+		criteria.criteriaChain.remove(qc);
+		int idx = criteria.criteriaChain.indexOf(criteria);
+		criteria.criteriaChain.add(idx, qc);
+		criteria.criteriaChain.remove(criteria); // we replaced it with the clone
+		criteria.criteriaChain = new LinkedList<>();
+		criteria.criteriaChain.add(criteria);
+		criteria.key = N1QLExpression.WRAPPER();
+		criteria.operator = "";
+		criteria.format = null;
+		criteria.value = new Object[] { qc };
+		criteria.chainOperator = null;
+		return criteria;
 	}
 
 	public QueryCriteria and(String key) {
@@ -102,11 +142,40 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria and(N1QLExpression key) {
+		// this.criteriaChain.getLast().setChainOperator(ChainOperator.AND);
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.AND);
 	}
 
 	public QueryCriteria and(QueryCriteria criteria) {
-		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.AND);
+		if (this.criteriaChain != null && !this.criteriaChain.contains(this)) {
+			throw new RuntimeException("criteria chain does not include this");
+		}
+		if (this.criteriaChain == null) {
+			this.criteriaChain = new LinkedList<>();
+			this.criteriaChain.add(this);
+		}
+		QueryCriteria newThis = wrap(this);
+		QueryCriteria qc = wrap(criteria);
+		newThis.criteriaChain.add(qc);
+		qc.setChainOperator(ChainOperator.AND);
+		newThis.chainOperator = ChainOperator.AND;//  otherwise we get "A chain operator must be present when chaining"
+		return newThis;
+	}
+
+	// upper and lower should work like and/or by pushing "this" to a 'value' and changing "this" to upper()/lower()
+	public QueryCriteria upper() {
+		key = x("UPPER(" + key + ")");
+		operator = "UPPER";
+		value = new Object[] {};
+		return this;
+	}
+
+	// upper and lower should work like and/or by pushing "this" to a 'value' and changing "this" to upper()/lower()
+	public QueryCriteria lower() {
+		key = x("LOWER(" + key + ")");
+		operator = "LOWER";
+		value = new Object[] {};
+		return this;
 	}
 
 	public QueryCriteria or(String key) {
@@ -114,11 +183,25 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria or(N1QLExpression key) {
+		// this.criteriaChain.getLast().setChainOperator(ChainOperator.OR);
 		return new QueryCriteria(this.criteriaChain, key, null, ChainOperator.OR);
 	}
 
 	public QueryCriteria or(QueryCriteria criteria) {
-		return new QueryCriteria(this.criteriaChain, null, criteria, ChainOperator.OR);
+		if (this.criteriaChain != null && !this.criteriaChain.contains(this)) {
+			throw new RuntimeException("criteria chain does not include this");
+		}
+		if (this.criteriaChain == null) {
+			this.criteriaChain = new LinkedList<>();
+			this.criteriaChain.add(this);
+		}
+		QueryCriteria newThis = wrap(this);
+		QueryCriteria qc = wrap(criteria);
+		qc.criteriaChain = newThis.criteriaChain;
+		newThis.criteriaChain.add(qc);
+		qc.setChainOperator(ChainOperator.OR);
+		newThis.chainOperator = ChainOperator.OR;//  otherwise we get "A chain operator must be present when chaining"
+		return newThis;
 	}
 
 	public QueryCriteria eq(@Nullable Object o) {
@@ -204,9 +287,25 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria notContaining(@Nullable Object o) {
-		value = new QueryCriteria[] { wrap(containing(o)) };
+		replaceThisAsWrapperOf(containing(o));
 		operator = "NOT";
 		format = "not( %3$s )";
+		return this;
+	}
+
+	public QueryCriteria negate() {
+		replaceThisAsWrapperOf(this);
+		operator = "NOT";
+		format = "not( %3$s )";
+		// criteriaChain = new LinkedList<>();
+		// criteriaChain.add(this);
+		return this;
+	}
+
+	public QueryCriteria size() {
+		replaceThisAsWrapperOf(this);
+		operator = "LENGTH";
+		format = "LENGTH( %3$s )";
 		return this;
 	}
 
@@ -315,10 +414,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria notIn(@Nullable Object... o) {
-		value = new QueryCriteria[] { wrap(in(o)) };
-		operator = "NOT";
-		format = "not( %3$s )"; // field = 1$, operator = 2$, value=$3, $4, ...
-		return this;
+		return in(o).negate();
 	}
 
 	public QueryCriteria TRUE() { // true/false are reserved, use TRUE/FALSE
@@ -329,9 +425,9 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria FALSE() {
-		value = new QueryCriteria[] { wrap(TRUE()) };
-		operator = "not";
-		format = "not( %3$s )";
+		value = null;
+		operator = "NOT";
+		format = "not(%1$s)"; // field = 1$, operator = 2$, value=$3, $4, ...
 		return this;
 	}
 
@@ -352,7 +448,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		for (QueryCriteria c : this.criteriaChain) {
 			if (!first) {
 				if (c.chainOperator == null) {
-					throw new IllegalStateException("A chain operator must be present when chaining!");
+					throw new IllegalStateException("A chain operator must be present when chaining! \n" + c);
 				}
 				// the consistent place to output this would be in the c.exportSingle(output) about five lines down
 				output.append(" ").append(c.chainOperator.representation).append(" ");
@@ -509,7 +605,12 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		}
 	}
 
-	enum ChainOperator {
+	@Override
+	public void setChainOperator(ChainOperator chainOperator) {
+		this.chainOperator = chainOperator;
+	}
+
+	public enum ChainOperator {
 		AND("and"), OR("or");
 
 		private final String representation;
@@ -518,9 +619,25 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 			this.representation = representation;
 		}
 
+		public static ChainOperator from(String operator) {
+			return valueOf(operator.substring(1).toUpperCase());
+		}
+
 		public String getRepresentation() {
 			return representation;
 		}
 	}
 
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("{key: " + this.key);
+		sb.append(", operator: " + this.operator);
+		sb.append(", value: " + this.value);
+		sb.append(", criteriaChain.size(): " + this.criteriaChain.size() + "\n");
+		for (QueryCriteria qc : criteriaChain) {
+			sb.append("  key: " + qc.key + " operator: " + qc.operator + "\n");
+		}
+		sb.append("}");
+		return sb.toString();
+	}
 }
