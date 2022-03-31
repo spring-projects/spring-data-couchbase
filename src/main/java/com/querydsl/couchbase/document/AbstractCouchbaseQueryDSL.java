@@ -60,15 +60,15 @@ public abstract class AbstractCouchbaseQueryDSL<Q extends AbstractCouchbaseQuery
 	}
 
 	/**
-	 * mongodb uses createQuery(Predicate filter) where the serializer creates the 'query' <br>
+	 * other spring-data project uses createQuery(Predicate filter) where the serializer creates the 'query' <br>
 	 * and then uses the result to create a BasicQuery with queryObject = result <br>
 	 * Couchbase Query has a 'criteria' which is a <br>
-	 * List<QueryCriteriaDefinition> criteria <br>
+	 * List&lt;QueryCriteriaDefinition&gt; criteria <br>
 	 * so we could create a List&lt;QueryCriteriaDefinition&gt; or an uber QueryCriteria that combines <br>
 	 * all the sub QueryDefinitions in the filter.
 	 */
 	protected QueryCriteriaDefinition createCriteria(Predicate predicate) {
-		// mongodb uses createQuery(Predicate filter) where the serializer creates the 'queryObject' of the BasicQuery
+		// other project use createQuery(Predicate filter) where the serializer creates the 'queryObject' of the BasicQuery
 		return predicate != null ? (QueryCriteriaDefinition) this.serializer.handle(predicate) : null;
 	}
 
