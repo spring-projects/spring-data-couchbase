@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Michael Nitschinger
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
 		implements CouchbasePersistentEntity<T>, EnvironmentAware {
@@ -162,6 +163,16 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		org.springframework.data.couchbase.core.mapping.Document annotation = getType()
 				.getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
 		return annotation == null ? false : annotation.touchOnRead() && getExpiry() > 0;
+	}
+
+	@Override
+	public boolean hasTextScoreProperty() {
+		return false;
+	}
+
+	@Override
+	public CouchbasePersistentProperty getTextScoreProperty() {
+		return null;
 	}
 
 }

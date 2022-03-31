@@ -32,6 +32,7 @@ import com.couchbase.client.java.json.JsonArray;
 
 /**
  * @author Mauro Monti
+ * @author Michael Reiche
  */
 class QueryCriteriaTests {
 
@@ -69,7 +70,7 @@ class QueryCriteriaTests {
 	void testNestedAndCriteria() {
 		QueryCriteria c = where(i("name")).is("Bubba").and(where(i("age")).gt(12).or(i("country")).is("Austria"));
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` = $1 and (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
+		assertEquals("  (`name` = $1) and   (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
 		assertEquals("[\"Bubba\",12,\"Austria\"]", parameters.toString());
 	}
 
@@ -77,17 +78,31 @@ class QueryCriteriaTests {
 	void testNestedOrCriteria() {
 		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).or(i("country")).is("Austria"));
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
+		assertEquals("  (`name` = $1) or   (`age` > $2 or `country` = $3)", c.export(new int[1], parameters, null));
 		assertEquals("[\"Bubba\",12,\"Austria\"]", parameters.toString());
 	}
 
 	@Test
 	void testNestedNotIn() {
-		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).or(i("country")).is("Austria"))
-				.and(where(i("state")).notIn((Object) new String[] { "Alabama", "Florida" }));
+		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).and(i("country")).is("Austria"))
+				.and(where(i("state")).notIn(new String[] { "Alabama", "Florida" }));
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` = $1 or (`age` > $2 or `country` = $3) and (not( (`state` in $4) ))",
+		assertEquals("  (  (`name` = $1) or   (`age` > $2 and `country` = $3)) and   (not( (`state` in $4) ))",
 				c.export(new int[1], parameters, null));
+	}
+
+	@Test
+	void testNestedNotIn2() {
+		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12)).and(where(i("state")).eq("1"));
+		JsonArray parameters = JsonArray.create();
+		assertEquals("  (  (`name` = $1) or   (`age` > $2)) and   (`state` = $3)", c.export(new int[1], parameters, null));
+	}
+
+	@Test
+	void testNestedNotIn3() {
+		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12)).and(i("state")).eq("1");
+		JsonArray parameters = JsonArray.create();
+		assertEquals("  (`name` = $1) or   (`age` > $2) and `state` = $3", c.export(new int[1], parameters, null));
 	}
 
 	@Test
@@ -252,7 +267,7 @@ class QueryCriteriaTests {
 	@Test
 	void testFalse() {
 		QueryCriteria c = where(i("name")).FALSE();
-		assertEquals("not( (`name`) )", c.export());
+		assertEquals("not(`name`)", c.export());
 	}
 
 	@Test

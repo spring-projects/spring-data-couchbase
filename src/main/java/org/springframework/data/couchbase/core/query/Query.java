@@ -15,7 +15,10 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import static org.springframework.util.Assert.notNull;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,7 +56,7 @@ public class Query {
 	private int limit;
 	private boolean distinct;
 	private String[] distinctFields;
-	private Sort sort = Sort.unsorted();
+	protected Sort sort = Sort.unsorted();
 	private QueryScanConsistency queryScanConsistency;
 	private Meta meta;
 
@@ -66,6 +69,19 @@ public class Query {
 		addCriteria(criteriaDefinition);
 	}
 
+	public Query(Query that) {
+		Assert.notNull(that, "source query cannot be null");
+		this.criteria.addAll(that.criteria);
+		this.parameters = that.parameters;
+		this.skip = that.skip;
+		this.limit = that.limit;
+		this.distinct = that.distinct;
+		this.distinctFields = that.distinctFields;
+		this.sort = that.sort;
+		this.queryScanConsistency = that.queryScanConsistency;
+		this.meta = that.meta;
+	};
+
 	public static Query query(QueryCriteriaDefinition criteriaDefinition) {
 		return new Query(criteriaDefinition);
 	}
@@ -73,6 +89,10 @@ public class Query {
 	public Query addCriteria(QueryCriteriaDefinition criteriaDefinition) {
 		this.criteria.add(criteriaDefinition);
 		return this;
+	}
+
+	protected List<QueryCriteriaDefinition> getCriteriaList() {
+		return this.criteria;
 	}
 
 	/**
@@ -209,7 +229,7 @@ public class Query {
 	 * @return
 	 */
 	public Query with(final Sort sort) {
-		Assert.notNull(sort, "Sort must not be null!");
+		notNull(sort, "Sort must not be null!");
 		if (sort.isUnsorted()) {
 			return this;
 		}
@@ -348,9 +368,9 @@ public class Query {
 		return statement.toString();
 	}
 
-	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(
-			ReactiveCouchbaseTemplate template, String collectionName,
-			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
+	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template,
+			String collectionName, Class domainClass, Class returnClass, boolean isCount, String[] distinctFields,
+			String[] fields) {
 		String typeKey = template.getConverter().getTypeKey();
 		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
@@ -389,6 +409,53 @@ public class Query {
 
 	public Meta getMeta() {
 		return meta;
+	}
+
+	public boolean equals(Object o) {
+		if (!o.getClass().isAssignableFrom(getClass())) {
+			return false;
+		}
+		Query that = (Query) o;
+		if (this.criteria.size() != that.criteria.size()) {
+			return false;
+		}
+		if (this.criteria.equals(that.criteria)) {
+			return false;
+		}
+		int i = 0;
+		for (QueryCriteriaDefinition thisCriteria : this.criteria) {
+			if (!thisCriteria.equals(that.criteria.get(i))) {
+				return false;
+			}
+		}
+
+		if (this.parameters.equals(that.parameters)) {
+			return false;
+		}
+		;
+		if (this.skip != that.skip) {
+			return false;
+		}
+		if (this.limit != that.limit) {
+			return false;
+		}
+		if (this.distinct != that.distinct) {
+			return false;
+		}
+
+		if (Arrays.equals(this.distinctFields, that.distinctFields)) {
+			return false;
+		}
+		if (this.sort != that.sort) {
+			return false;
+		}
+		if (this.queryScanConsistency != that.queryScanConsistency) {
+			return false;
+		}
+		if (!meta.equals(that.meta)) {
+			return false;
+		}
+		return true;
 	}
 
 }
