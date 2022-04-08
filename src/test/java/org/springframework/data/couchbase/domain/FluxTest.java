@@ -51,8 +51,11 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.util.Pair;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.query.QueryOptions;
@@ -262,6 +265,14 @@ public class FluxTest extends JavaIntegrationTests {
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 	}

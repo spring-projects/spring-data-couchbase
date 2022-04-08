@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.util.Util.comprises;
 import static org.springframework.data.couchbase.util.Util.exactly;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Optional;
@@ -57,6 +56,8 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.querydsl.core.types.Predicate;
@@ -579,8 +580,10 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 
 		@Override
 		public void configureEnvironment(final ClusterEnvironment.Builder builder) {
-			builder.ioConfig().maxHttpConnections(11).idleHttpConnectionTimeout(Duration.ofSeconds(4));
-			return;
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 		@Bean(name = "dateTimeProviderRef")
@@ -627,6 +630,14 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 		@Bean(name = "auditorAwareRef")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,35 +22,65 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.tls.HandshakeCertificates;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
+import com.couchbase.client.core.cnc.EventBus;
+import com.couchbase.client.core.cnc.SimpleEventBus;
+import com.couchbase.client.core.env.SeedNode;
+import com.couchbase.client.core.util.ConnectionStringUtil;
+
 public class UnmanagedTestCluster extends TestCluster {
 
-	private final OkHttpClient httpClient = new OkHttpClient.Builder().build();
+	private final OkHttpClient httpClient;
 	private final String seedHost;
 	private final int seedPort;
 	private final String adminUsername;
 	private final String adminPassword;
 	private final int numReplicas;
+	private final String protocol;
+	private final String hostname;
 	private volatile String bucketname;
 	private long startTime = System.currentTimeMillis();
 
 	UnmanagedTestCluster(final Properties properties) {
-		seedHost = properties.getProperty("cluster.unmanaged.seed").split(":")[0];
-		seedPort = Integer.parseInt(properties.getProperty("cluster.unmanaged.seed").split(":")[1]);
+		String seed = properties.getProperty("cluster.unmanaged.seed");
+		if (seed.contains("cloud.couchbase.com")) {
+			protocol = "https";
+			seedPort = 18091;
+			EventBus eventBus = new SimpleEventBus(false);
+			eventBus.subscribe(event -> System.err.println("Event: " + event));
+			Collection<SeedNode> seedNodes = ConnectionStringUtil.seedNodesFromConnectionString("couchbases://" + seed, true,
+					true, eventBus);
+			hostname = seedNodes.stream().filter((node) -> node.kvPort() != null).findFirst().get().address().toString();
+			seedHost = "couchbases://" + seed;
+		} else {
+			protocol = "http";
+			seedHost = seed.split(":")[0];
+			hostname = seedHost;
+			seedPort = Integer.parseInt(seed.split(":")[1]);
+		}
 		adminUsername = properties.getProperty("cluster.adminUsername");
 		adminPassword = properties.getProperty("cluster.adminPassword");
 		numReplicas = Integer.parseInt(properties.getProperty("cluster.unmanaged.numReplicas"));
+
+		HandshakeCertificates clientCertificates = new HandshakeCertificates.Builder().addPlatformTrustedCertificates()
+				.addInsecureHost(hostname).build();
+
+		httpClient = new OkHttpClient.Builder()
+				.sslSocketFactory(clientCertificates.sslSocketFactory(), clientCertificates.trustManager()).build();
+
 	}
 
 	@Override
@@ -60,24 +90,28 @@ public class UnmanagedTestCluster extends TestCluster {
 
 	@Override
 	TestClusterConfig _start() throws Exception {
-		bucketname = UUID.randomUUID().toString();
+		// no means to create a bucket on Capella
+		// have not created config() yet.
+		boolean usingCloud = seedHost.endsWith("cloud.couchbase.com");
+		bucketname = usingCloud ? "my_bucket" : UUID.randomUUID().toString();
+		if (!usingCloud) {
+			Response postResponse = httpClient
+					.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
+							.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/buckets")
+							.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
+									.add("replicaNumber", Integer.toString(numReplicas)).add("flushEnabled", "1").build())
+							.build())
+					.execute();
 
-		Response postResponse = httpClient
-				.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-						.url("http://" + seedHost + ":" + seedPort + "/pools/default/buckets")
-						.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
-								.add("replicaNumber", Integer.toString(numReplicas)).add("flushEnabled", "1").build())
-						.build())
-				.execute();
-
-		String reason = postResponse.body().string();
-		if (postResponse.code() != 202 && !(reason.contains("Bucket with given name already exists"))) {
-			throw new Exception("Could not create bucket: " + postResponse + ", Reason: " + reason);
+			String reason = postResponse.body().string();
+			if (postResponse.code() != 202 && !(reason.contains("Bucket with given name already exists"))) {
+				throw new Exception("Could not create bucket: " + postResponse + ", Reason: " + reason);
+			}
 		}
 
 		Response getResponse = httpClient
 				.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-						.url("http://" + seedHost + ":" + seedPort + "/pools/default/b/" + bucketname).build())
+						.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/b/" + bucketname).build())
 				.execute();
 
 		String raw = getResponse.body().string();
@@ -87,14 +121,14 @@ public class UnmanagedTestCluster extends TestCluster {
 		Optional<X509Certificate> cert = loadClusterCertificate();
 
 		return new TestClusterConfig(bucketname, adminUsername, adminPassword, nodesFromRaw(seedHost, raw),
-				replicasFromRaw(raw), cert, capabilitiesFromRaw(raw));
+				replicasFromRaw(raw), cert, capabilitiesFromRaw(raw), seedHost);
 	}
 
 	private Optional<X509Certificate> loadClusterCertificate() {
 		try {
 			Response getResponse = httpClient
 					.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-							.url("http://" + seedHost + ":" + seedPort + "/pools/default/certificate").build())
+							.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/certificate").build())
 					.execute();
 
 			String raw = getResponse.body().string();
@@ -112,7 +146,7 @@ public class UnmanagedTestCluster extends TestCluster {
 		while (true) {
 			Response getResponse = httpClient
 					.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-							.url("http://" + seedHost + ":" + seedPort + "/pools/default/").build())
+							.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/").build())
 					.execute();
 
 			String raw = getResponse.body().string();
@@ -145,7 +179,8 @@ public class UnmanagedTestCluster extends TestCluster {
 			if (!bucketname.equals("my_bucket")) {
 				httpClient
 						.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
-								.url("http://" + seedHost + ":" + seedPort + "/pools/default/buckets/" + bucketname).delete().build())
+								.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/buckets/" + bucketname).delete()
+								.build())
 						.execute();
 			}
 			System.out.println("elapsed: " + (System.currentTimeMillis() - startTime));

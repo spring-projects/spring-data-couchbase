@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,10 +36,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
+import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.core.env.SeedNode;
 import com.couchbase.client.core.error.IndexFailureException;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
@@ -57,14 +61,14 @@ public abstract class ClusterAwareIntegrationTests {
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
 		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
-				authenticator(), bucketName())) {
-			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
+				authenticator(), bucketName(), null, environment().build())) {
+			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(), CreatePrimaryQueryIndexOptions
+					.createPrimaryQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// this is for the N1qlJoin test
 			List<String> fieldList = new ArrayList<>();
 			fieldList.add("parentId");
 			couchbaseClientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
-					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true));
+					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// .with("_class", "org.springframework.data.couchbase.domain.Address"));
 		} catch (IndexFailureException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife);
@@ -102,7 +106,12 @@ public abstract class ClusterAwareIntegrationTests {
 	 * @return the connection string to connect.
 	 */
 	public static String connectionString() {
+		if (config().isUsingCloud()) {
+			return config().seed();
+		}
+
 		StringBuffer sb = new StringBuffer();
+
 		for (SeedNode s : seedNodes()) {
 			if (s.kvPort().isPresent()) {
 				if (sb.length() > 0)
@@ -121,9 +130,23 @@ public abstract class ClusterAwareIntegrationTests {
 		return sb.toString();
 	}
 
+	/**
+	 * Creates the environment. When using cloud.couchbase.com, use tls.
+	 *
+	 * @return the cluster environment.
+	 */
+	protected static ClusterEnvironment.Builder environment() {
+		return config().isUsingCloud()
+				? ClusterEnvironment.builder()
+						.securityConfig(SecurityConfig.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true))
+				: ClusterEnvironment.builder();
+	}
+
 	protected static Set<SeedNode> seedNodes() {
 		return config().nodes().stream().map(cfg -> SeedNode.create(cfg.hostname(),
-				Optional.ofNullable(cfg.ports().get(Services.KV)), Optional.ofNullable(cfg.ports().get(Services.MANAGER))))
+				Optional.ofNullable(config().isUsingCloud() ? cfg.ports().get(Services.KV_TLS) : cfg.ports().get(Services.KV)),
+				Optional.ofNullable(
+						config().isUsingCloud() ? cfg.ports().get(Services.MANAGER_TLS) : cfg.ports().get(Services.MANAGER))))
 				.collect(Collectors.toSet());
 	}
 
@@ -178,16 +201,13 @@ public abstract class ClusterAwareIntegrationTests {
 				for (Method m : methods) {
 					annotation = m.getAnnotation(annotationClass);
 					if (annotation != null) {
-						if (annotation != null) {
-							m.invoke(null);
-							invokedSuper = m;
-						}
+						m.invoke(null);
+						invokedSuper = m;
 					}
 				}
 				if (invokedSuper != null) { // called method is responsible for calling any super methods
 					return;
 				}
-
 			}
 
 		} catch (IllegalAccessException | InvocationTargetException e) {
