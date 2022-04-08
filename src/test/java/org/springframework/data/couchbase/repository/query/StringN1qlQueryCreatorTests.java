@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -57,6 +56,11 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Michael Nitschinger
@@ -175,6 +179,14 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 		@Override

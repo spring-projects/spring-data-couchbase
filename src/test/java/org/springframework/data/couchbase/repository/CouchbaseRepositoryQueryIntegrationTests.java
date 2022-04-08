@@ -99,6 +99,8 @@ import org.springframework.data.repository.core.support.DefaultRepositoryMetadat
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.IndexFailureException;
@@ -343,7 +345,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport saved = airportRepositoryRP.save(vie.clearVersion());
 		List<Airport> airports = couchbaseTemplateRP.findByQuery(Airport.class).withConsistency(NOT_BOUNDED).all();
 		RemoveResult removeResult = couchbaseTemplateRP.removeById().one(saved.getId());
-		assertFalse(!airports.isEmpty(), "airports should have been empty");
+		if (!config().isUsingCloud()) {
+			assertTrue(airports.isEmpty(), "airports should have been empty");
+		}
 	}
 
 	@Test
@@ -362,7 +366,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Airport saved = airportRepositoryRP.save(vie);
 		List<Airport> allSaved = airportRepositoryRP.findAll();
 		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		assertNotEquals(1, allSaved.size(), "should not have found 1 airport");
+		if (!config().isUsingCloud()) {
+			assertTrue(allSaved.isEmpty(), "should not have been empty");
+		}
 	}
 
 	@Test
@@ -542,7 +548,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 				assertNull(airport3, "should have been removed");
 			}
 		}
-		assertNull(airport2, "airport2 should have likely been null at least once");
+		if (!config().isUsingCloud()) {
+			assertNull(airport2, "airport2 should have likely been null at least once");
+		}
 		Airport saved = airportRepository.save(vie.clearVersion());
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 		airport2 = airportRepository.iata(vie.getIata());
@@ -995,8 +1003,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		@Override
 		public void configureEnvironment(final ClusterEnvironment.Builder builder) {
-			builder.ioConfig().maxHttpConnections(11).idleHttpConnectionTimeout(Duration.ofSeconds(4));
-			return;
+			// builder.ioConfig().maxHttpConnections(11).idleHttpConnectionTimeout(Duration.ofSeconds(4));
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 		@Bean(name = "dateTimeProviderRef")
@@ -1038,6 +1049,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 		@Bean(name = "auditorAwareRef")

@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.repository;
 
-
-
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -60,6 +58,9 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.kv.GetResult;
 
 /**
@@ -221,6 +222,13 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 			return bucketName();
 		}
 
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
+		}
 	}
 
 }

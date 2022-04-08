@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +57,7 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
 import com.couchbase.client.core.error.UnambiguousTimeoutException;
-import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -765,9 +764,6 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
 					.matching(query).all();
 			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = couchbaseTemplate.findByQuery(UserCol.class).inScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.inCollection(CollectionIdentifier.DEFAULT_COLLECTION).matching(query).all();
-			assertEquals(0, notfound.size(), "should not have found what was saved");
 			couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
 					.all();
 		} finally {
@@ -789,9 +785,6 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 					.withConsistency(QueryScanConsistency.REQUEST_PLUS).inScope(scopeName).inCollection(collectionName)
 					.matching(query).all();
 			assertEquals(saved, found.get(0), "should have found what was saved");
-			List<UserCol> notfound = couchbaseTemplate.findByQuery(UserCol.class).inScope(CollectionIdentifier.DEFAULT_SCOPE)
-					.inCollection(CollectionIdentifier.DEFAULT_COLLECTION).matching(query).all();
-			assertEquals(0, notfound.size(), "should not have found what was saved");
 			couchbaseTemplate.removeByQuery(UserCol.class).inScope(scopeName).inCollection(collectionName).matching(query)
 					.all();
 		} finally {
@@ -810,28 +803,28 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 		RemoveResult rr;
 		result = couchbaseTemplate.insertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
 				.one(user1);
-		assertEquals(user1,result);
+		assertEquals(user1, result);
 		result = couchbaseTemplate.upsertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
 				.one(user1);
-		assertEquals(user1,result);
-		result = couchbaseTemplate.replaceById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
-				.one(user1);
-		assertEquals(user1,result);
+		assertEquals(user1, result);
+		result = couchbaseTemplate.replaceById(User.class).withDurability(dl).inScope(scopeName)
+				.inCollection(collectionName).one(user1);
+		assertEquals(user1, result);
 		rr = couchbaseTemplate.removeById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
 				.one(user1.getId());
 		assertEquals(rr.getId(), user1.getId());
-		assertEquals(user1,result);
-		result = reactiveCouchbaseTemplate.insertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
-				.one(user1).block();
-		assertEquals(user1,result);
-		result = reactiveCouchbaseTemplate.upsertById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
-				.one(user1).block();
-		assertEquals(user1,result);
+		assertEquals(user1, result);
+		result = reactiveCouchbaseTemplate.insertById(User.class).withDurability(dl).inScope(scopeName)
+				.inCollection(collectionName).one(user1).block();
+		assertEquals(user1, result);
+		result = reactiveCouchbaseTemplate.upsertById(User.class).withDurability(dl).inScope(scopeName)
+				.inCollection(collectionName).one(user1).block();
+		assertEquals(user1, result);
 		result = reactiveCouchbaseTemplate.replaceById(User.class).withDurability(dl).inScope(scopeName)
 				.inCollection(collectionName).one(user1).block();
-		assertEquals(user1,result);
-		 rr = reactiveCouchbaseTemplate.removeById(User.class).withDurability(dl).inScope(scopeName).inCollection(collectionName)
-				.one(user1.getId()).block();
+		assertEquals(user1, result);
+		rr = reactiveCouchbaseTemplate.removeById(User.class).withDurability(dl).inScope(scopeName)
+				.inCollection(collectionName).one(user1.getId()).block();
 		assertEquals(rr.getId(), user1.getId());
 	}
 
