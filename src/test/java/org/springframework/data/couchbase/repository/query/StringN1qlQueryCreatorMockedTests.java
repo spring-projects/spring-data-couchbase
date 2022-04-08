@@ -51,6 +51,10 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
+
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -175,6 +179,14 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 		@Override
 		public String getBucketName() {
 			return bucketName();
+		}
+
+		@Override
+		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+			if (config().isUsingCloud()) {
+				builder.securityConfig(
+						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+			}
 		}
 
 	}

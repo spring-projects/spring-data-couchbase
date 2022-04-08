@@ -49,8 +49,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
@@ -75,7 +73,6 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.CommonOptions;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.diagnostics.PingOptions;
-import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.manager.collection.CollectionManager;
 import com.couchbase.client.java.manager.collection.CollectionSpec;
@@ -104,26 +101,9 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
-				authenticator(), bucketName())) {
-			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
-					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
-		} catch (IOException ioe) {
-			throw new RuntimeException(ioe);
-		}
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
-	}
-
-	/**
-	 * Creates a {@link ClusterEnvironment.Builder} which already has the seed nodes and credentials plugged and ready to
-	 * use depending on the environment.
-	 *
-	 * @return the builder, ready to be further modified or used directly.
-	 */
-	protected static ClusterEnvironment.Builder environment() {
-		return ClusterEnvironment.builder();
 	}
 
 	/**
@@ -221,13 +201,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	private static void createAndDeleteBucket() {
 		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
 				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
-		String hostPort = connectionString().replace("11210", "8091");
+		String hostPort = connectionString().replace("11210", "8091").replace("11207", "18091");
+		String protocol = hostPort.equals("18091") ? "https" : "http";
 		String bucketname = UUID.randomUUID().toString();
 		try {
 
 			Response postResponse = httpClient.newCall(new Request.Builder()
 					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url("http://" + hostPort + "/pools/default/buckets/")
+					.url(protocol + "://" + hostPort + "/pools/default/buckets/")
 					.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
 							.add("replicaNumber", Integer.toString(0)).add("flushEnabled", "1").build())
 					.build()).execute();
@@ -237,7 +218,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			}
 			Response deleteResponse = httpClient.newCall(new Request.Builder()
 					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url("http://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
+					.url(protocol + "://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
 			System.out.println("deleteResponse: " + deleteResponse);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();

@@ -35,7 +35,6 @@ import com.couchbase.client.core.service.ServiceType;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
-import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.collection.CollectionManager;
 
 /**
@@ -54,11 +53,10 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		ClusterEnvironment environment = environment().build();
-		Cluster cluster = Cluster.connect(seedNodes(),
-				ClusterOptions.clusterOptions(authenticator()).environment(environment));
+		Cluster cluster = Cluster.connect(connectionString(),
+				ClusterOptions.clusterOptions(authenticator()).environment(environment().build()));
 		Bucket bucket = cluster.bucket(config().bucketname());
-		bucket.waitUntilReady(Duration.ofSeconds(5));
+		bucket.waitUntilReady(Duration.ofSeconds(30));
 		waitForService(bucket, ServiceType.QUERY);
 		waitForQueryIndexerToHaveBucket(cluster, config().bucketname());
 		CollectionManager collectionManager = bucket.collections();
@@ -77,7 +75,7 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 
 			List<String> fieldList = new ArrayList<>();
 			fieldList.add("parentId");
-			cluster.query("CREATE INDEX `parent_idx` ON default:" + bucketName() + "." + scopeName + "." + collectionName2
+			cluster.query("CREATE INDEX `parent_idx` ON default:`" + bucketName() + "`." + scopeName + "." + collectionName2
 					+ "(parentId)");
 		} catch (IndexExistsException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife.toString());
