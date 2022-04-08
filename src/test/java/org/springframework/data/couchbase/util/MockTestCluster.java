@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,16 @@
 package org.springframework.data.couchbase.util;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.UUID;
 
 import com.couchbase.mock.Bucket;
 import com.couchbase.mock.BucketConfiguration;
@@ -91,8 +100,8 @@ public class MockTestCluster extends TestCluster {
 
 		return new TestClusterConfig(bucketConfig.name, bucketConfig.name, bucketConfig.password, nodeConfigs,
 				bucketConfig.numReplicas, Optional.empty(), // mock does not support certs
-				EnumSet.of(Capabilities.VIEWS) // mock only has a limited set of capabilities we can utilize
-		);
+				EnumSet.of(Capabilities.VIEWS), // mock only has a limited set of capabilities we can utilize
+				null);
 	}
 
 	@Override

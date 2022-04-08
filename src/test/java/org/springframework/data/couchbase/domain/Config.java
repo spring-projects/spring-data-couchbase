@@ -17,8 +17,6 @@
 package org.springframework.data.couchbase.domain;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -26,7 +24,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
-import org.springframework.data.couchbase.cache.CouchbaseCacheConfiguration;
 import org.springframework.data.couchbase.cache.CouchbaseCacheManager;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -45,6 +42,9 @@ import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOp
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 
 /**
@@ -107,6 +107,14 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	public String getBucketName() {
 		return clusterGet("bucketName", bucketname);
+	}
+
+	@Override
+	protected void configureEnvironment(ClusterEnvironment.Builder builder) {
+		if (getConnectionString().contains("cloud.couchbase.com")) {
+			builder.securityConfig(
+					SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
+		}
 	}
 
 	@Bean(name = "auditorAwareRef")

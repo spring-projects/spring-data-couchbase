@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,11 @@ public class TestClusterConfig {
 	private final int numReplicas;
 	private final Optional<X509Certificate> clusterCert;
 	private final Set<Capabilities> capabilities;
+	private final String seed;
+	private final boolean usingCloud;
 
 	TestClusterConfig(String bucketname, String adminUsername, String adminPassword, List<TestNodeConfig> nodes,
-			int numReplicas, Optional<X509Certificate> clusterCert, Set<Capabilities> capabilities) {
+			int numReplicas, Optional<X509Certificate> clusterCert, Set<Capabilities> capabilities, String seed) {
 		this.bucketname = bucketname;
 		this.adminUsername = adminUsername;
 		this.adminPassword = adminPassword;
@@ -45,6 +47,8 @@ public class TestClusterConfig {
 		this.numReplicas = numReplicas;
 		this.clusterCert = clusterCert;
 		this.capabilities = capabilities;
+		this.seed = seed;
+		this.usingCloud = seed != null && seed.contains("cloud.couchbase.com");
 	}
 
 	public String bucketname() {
@@ -91,6 +95,15 @@ public class TestClusterConfig {
 	public String toString() {
 		return "TestClusterConfig{" + "bucketname='" + bucketname + '\'' + ", adminUsername='" + adminUsername + '\''
 				+ ", adminPassword='" + adminPassword + '\'' + ", nodes=" + nodes + ", numReplicas=" + numReplicas
-				+ ", clusterCert=" + clusterCert + ", capabilities=" + capabilities + '}';
+				+ ", clusterCert=" + clusterCert + ", capabilities=" + capabilities + ", seed=" + seed + ", usingCloud="
+				+ usingCloud + '}';
+	}
+
+	public String seed() {
+		return seed;
+	}
+
+	public boolean isUsingCloud() {
+		return usingCloud;
 	}
 }
