@@ -48,6 +48,7 @@
             <groupId>com.querydsl</groupId>
             <artifactId>querydsl-apt</artifactId>
             <version>${querydsl}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
