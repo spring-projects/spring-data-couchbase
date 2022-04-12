@@ -377,7 +377,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 		AtomicInteger tryCount = new AtomicInteger(0);
 		Mono<TransactionResult> result = transactions.reactive(ctx -> { // get the ctx
-			// see TransactionalOperatorImpl.tranactional().
+			// see TransactionalOperatorImpl.transactional().
 			ClientSession clientSession = couchbaseClientFactory
 					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
 			ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
@@ -1009,12 +1009,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			System.err.println("declarativeFindReplacePersonCallback try: "+tryCount.incrementAndGet());
 			System.err.println("declarativeFindReplacePersonCallback cluster : "+callbackTm.template().getCouchbaseClientFactory().getCluster().block());
 			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "+org.springframework.transaction.support.TransactionSynchronizationManager.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
-			/* what are we trying to see here???
-			TransactionSynchronizationManager.forCurrentTransaction().flatMap( sm -> {
-				System.err.println("declarativeFindReplacePersonCallback reactive resourceHolder : "+sm.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
-				return Mono.just(sm);
-			}).block();
-			 */
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			return personOperations.replaceById(Person.class).one(p);
 		}
@@ -1045,7 +1039,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		 * @param person
 		 * @return
 		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER) // doesn't retry
 		public Person declarativeFindReplacePerson(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePerson try: "+tryCount.incrementAndGet());
@@ -1054,7 +1048,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		}
 
 
-		@Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER) // doesn't retry
 		public Mono<Person> declarativeSavePersonReactive(Person person) {
 			assertInAnnotationTransaction(true);
 			return personOperationsRx.insertById(Person.class).one(person);

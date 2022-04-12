@@ -17,22 +17,13 @@ package org.springframework.data.couchbase;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Supplier;
 
-import com.couchbase.transactions.AttemptContext;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.transactions.TransactionContext;
-import com.couchbase.transactions.config.MergedTransactionConfig;
-import com.couchbase.transactions.config.PerTransactionConfig;
-import com.couchbase.transactions.config.PerTransactionConfigBuilder;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.couchbase.transaction.ClientSessionImpl;
 import org.springframework.data.couchbase.transaction.ClientSessionOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.OwnedSupplier;
@@ -43,7 +34,9 @@ import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.transactions.AttemptContext;
 import com.couchbase.transactions.AttemptContextReactive;
+import com.couchbase.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.transactions.Transactions;
 import com.couchbase.transactions.config.TransactionConfig;
 
@@ -85,16 +78,10 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName,
 			final String scopeName) {
-		this(cluster, bucketName, scopeName, null);
-	}
-
-	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName, final String scopeName,
-			final CouchbaseStuffHandle transactionalOperator) {
 		this.cluster = cluster;
 		this.bucket = cluster.get().bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
-		//this.transactionalOperator = transactionalOperator;
 	}
 
 	@Override
@@ -142,23 +129,23 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	@Override
 	public ClientSession getSession(ClientSessionOptions options, Transactions transactions, TransactionConfig config,
 			AttemptContextReactive atr) {
-     // can't we just use AttemptContextReactive everywhere? Instead of creating AttemptContext(atr), then
+		// can't we just use AttemptContextReactive everywhere? Instead of creating AttemptContext(atr), then
 		// accessing at.getACR() ?
-		AttemptContext at = AttemptContextReactiveAccessor.from( atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive()));
+		AttemptContext at = AttemptContextReactiveAccessor
+				.from(atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive()));
 
 		return new ClientSessionImpl(this, transactions, config, at);
 	}
 
+	// @Override
+	// public CouchbaseClientFactory with(CouchbaseStuffHandle txOp) {
+	// return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scope.name(), txOp);
+	// }
 
-	//@Override
-	//public CouchbaseClientFactory with(CouchbaseStuffHandle txOp) {
-	//	return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scope.name(), txOp);
-	//}
-
-	//@Override
-	//public CouchbaseStuffHandle getTransactionalOperator() {
-	//	return (CouchbaseStuffHandle) transactionalOperator;
-	//}
+	// @Override
+	// public CouchbaseStuffHandle getTransactionalOperator() {
+	// return (CouchbaseStuffHandle) transactionalOperator;
+	// }
 
 	@Override
 	public void close() {

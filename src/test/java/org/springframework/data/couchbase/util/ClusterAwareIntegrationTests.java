@@ -62,13 +62,8 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
-		ClusterEnvironment env = config.seed() != null && config.seed().contains("cloud.couchbase.com")
-				? ClusterEnvironment.builder()
-						.securityConfig(SecurityConfig.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true))
-						.build()
-				: ClusterEnvironment.builder().build();
-		String connectString = config.seed() != null && config.seed().contains("cloud.couchbase.com") ? config.seed()
-				: connectionString();
+		ClusterEnvironment env = ClusterEnvironment.builder().build();
+		String connectString = connectionString();
 		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectString,
 				authenticator(), bucketName(), null, env)) {
 			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(), CreatePrimaryQueryIndexOptions
@@ -137,12 +132,8 @@ public abstract class ClusterAwareIntegrationTests {
 	protected static Set<SeedNode> seedNodes() {
 		return config().nodes().stream()
 				.map(cfg -> SeedNode.create(cfg.hostname(),
-						Optional.ofNullable(config().seed() != null && config().seed().contains("cloud.couchbase.com")
-								? cfg.ports().get(Services.KV_TLS)
-								: cfg.ports().get(Services.KV)),
-						Optional.ofNullable(config().seed() != null && config().seed().contains("cloud.couchbase.com")
-								? cfg.ports().get(Services.MANAGER_TLS)
-								: cfg.ports().get(Services.MANAGER))))
+						Optional.ofNullable(cfg.ports().get(Services.KV)),
+						Optional.ofNullable(cfg.ports().get(Services.MANAGER))))
 				.collect(Collectors.toSet());
 	}
 
