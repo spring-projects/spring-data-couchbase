@@ -90,7 +90,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public FindByQueryWithQuery<T> matching(Query query) {
 			QueryScanConsistency scanCons;
 			if (query.getScanConsistency() != null) { // redundant, since buildQueryOptions() will use
-																								// query.getScanConsistency()
+				// query.getScanConsistency()
 				scanCons = query.getScanConsistency();
 			} else {
 				scanCons = scanConsistency;
@@ -185,20 +185,28 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				}
 			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
 				String id = "";
-				long cas = 0;
+				Long cas = Long.valueOf(0);
 				if (!query.isDistinct() && distinctFields == null) {
-					if (row.getString(TemplateUtils.SELECT_ID) == null) {
+					if (row.getString(TemplateUtils.SELECT_ID) == null && row.getString(TemplateUtils.SELECT_ID_3x) == null) {
 						return Flux.error(new CouchbaseException(
 								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
 										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 					}
 					id = row.getString(TemplateUtils.SELECT_ID);
-					if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
+					if (id == null) {
+						id = row.getString(TemplateUtils.SELECT_ID_3x);
+						row.removeKey(TemplateUtils.SELECT_ID_3x);
+					}
+					if (row.getLong(TemplateUtils.SELECT_CAS) == null && row.getLong(TemplateUtils.SELECT_CAS_3x) == null) {
 						return Flux.error(new CouchbaseException(
 								"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
 										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 					}
 					cas = row.getLong(TemplateUtils.SELECT_CAS);
+					if (cas == null) {
+						cas = row.getLong(TemplateUtils.SELECT_CAS_3x);
+						row.removeKey(TemplateUtils.SELECT_CAS_3x);
+					}
 					row.removeKey(TemplateUtils.SELECT_ID);
 					row.removeKey(TemplateUtils.SELECT_CAS);
 				}

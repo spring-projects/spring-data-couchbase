@@ -33,6 +33,9 @@ public interface AirlineRepository extends PagingAndSortingRepository<Airline, S
 		QuerydslPredicateExecutor<Airline>, DynamicProxyable<AirlineRepository> {
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (name = $1)")
-	List<User> getByName(@Param("airline_name") String airlineName);
+	List<Airline> getByName(@Param("airline_name") String airlineName);
+
+	@Query("select meta().id as _ID, meta().cas as _CAS, #{#n1ql.bucket}.* from #{#n1ql.bucket} where #{#n1ql.filter} and (name = $1)")
+	List<Airline> getByName_3x(@Param("airline_name") String airlineName);
 
 }

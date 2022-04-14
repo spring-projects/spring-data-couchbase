@@ -32,6 +32,8 @@ import org.springframework.data.couchbase.repository.query.CountFragment;
 public class TemplateUtils {
 	public static final String SELECT_ID = "__id";
 	public static final String SELECT_CAS = "__cas";
+	public static final String SELECT_ID_3x = "_ID";
+	public static final String SELECT_CAS_3x = "_CAS";
 	public static final String SELECT_COUNT = CountFragment.COUNT_ALIAS;
 	private static PersistenceExceptionTranslator exceptionTranslator = new CouchbaseExceptionTranslator();
 
