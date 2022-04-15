@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -168,10 +168,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				try {
 					return invocation.proceed();
 				} finally {
-					// TransactionSynchronizationManager.unbindResource(method);
+					TransactionSynchronizationManager.unbindResource(method);
 				}
 			} finally {
-				// currentInvocation.set(oldInvocation);
+				currentInvocation.set(oldInvocation);
 			}
 		}
 	}
@@ -209,7 +209,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				return;
 			}
 
-			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass()};
+			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass() };
 			this.scanConsistency = OptionsBuilder.annotation(ScanConsistency.class, "query", QueryScanConsistency.NOT_BOUNDED,
 					annotated);
 			this.scope = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
