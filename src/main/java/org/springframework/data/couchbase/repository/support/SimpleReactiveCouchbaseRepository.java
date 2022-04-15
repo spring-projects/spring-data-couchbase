@@ -68,9 +68,35 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		this.operations = operations;
 	}
 
+	@Override
+	public Flux<T> findAll(Sort sort) {
+		return findAll(new Query().with(sort));
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
+		return save(entity, getScope(), getCollection());
+	}
+
+	@Override
+	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
+		Assert.notNull(entities, "The given Iterable of entities must not be null!");
+		String scope = getScope();
+		String collection = getCollection();
+		return Flux.fromIterable(entities).flatMap(e -> save(e, scope, collection));
+	}
+
+	@Override
+	public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
+		Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
+		String scope = getScope();
+		String collection = getCollection();
+		return Flux.from(entityStream).flatMap(e -> save(e, scope, collection));
+	}
+
+	@SuppressWarnings("unchecked")
+	private <S extends T> Mono<S> save(S entity, String scope, String collection) {
 		Assert.notNull(entity, "Entity must not be null!");
 		Mono<S> result;
 		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
@@ -83,63 +109,28 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 		if (!versionPresent) { // the entity doesn't have a version property
 			// No version field - no cas
-			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-					.one(entity);
+			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
 		} else if (existingDocument) { // there is a version property, and it is non-zero
 			// Updating existing document with cas
-			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-					.one(entity);
+			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
 		} else { // there is a version property, but it's zero or not set.
 			// Creating new document
-			result = (Mono<S>) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-					.one(entity);
+			result = (Mono<S>) operations.insertById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
 		}
 		return result;
 	}
 
 	@Override
-	public Flux<T> findAll(Sort sort) {
-		return findAll(new Query().with(sort));
-	}
-
-	@Override
-	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return Flux.fromIterable(entities).flatMap(e -> save(e));
-	}
-
-	@Override
-	public <S extends T> Flux<S> saveAll(Publisher<S> entityStream) {
-		Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
-		return Flux.from(entityStream).flatMap(this::save);
-	}
-
-	@Override
 	public Mono<T> findById(ID id) {
-		return operations.findById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString());
+		return findById(id, getScope(), getCollection());
 	}
 
 	@Override
 	public Mono<T> findById(Publisher<ID> publisher) {
 		Assert.notNull(publisher, "The given Publisher must not be null!");
-		return Mono.from(publisher).flatMap(this::findById);
-	}
-
-	@Override
-	public Mono<Boolean> existsById(ID id) {
-		Assert.notNull(id, "The given id must not be null!");
-		return operations.existsById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString());
-	}
-
-	@Override
-	public Mono<Boolean> existsById(Publisher<ID> publisher) {
-		Assert.notNull(publisher, "The given Publisher must not be null!");
-		return Mono.from(publisher).flatMap(this::existsById);
-	}
-
-	@Override
-	public Flux<T> findAll() {
-		return findAll(new Query());
+		String scope = getScope();
+		String collection = getCollection();
+		return Mono.from(publisher).flatMap(id -> findById(id, scope, collection));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -154,26 +145,64 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Flux<T> findAllById(Publisher<ID> entityStream) {
 		Assert.notNull(entityStream, "The given entityStream must not be null!");
-		return Flux.from(entityStream).flatMap(this::findById);
+		String scope = getScope();
+		String collection = getCollection();
+		return Flux.from(entityStream).flatMap(id -> findById(id, scope, collection));
+	}
+
+	private Mono<T> findById(ID id, String scope, String collection) {
+		return operations.findById(getJavaType()).inScope(scope).inCollection(collection).one(id.toString());
+	}
+
+	@Override
+	public Mono<Boolean> existsById(ID id) {
+		Assert.notNull(id, "The given id must not be null!");
+		return existsById(id, getScope(), getCollection());
+	}
+
+	private Mono<Boolean> existsById(ID id, String scope, String collection) {
+		Assert.notNull(id, "The given id must not be null!");
+		return operations.existsById(getJavaType()).inScope(scope).inCollection(collection).one(id.toString());
+	}
+
+	@Override
+	public Mono<Boolean> existsById(Publisher<ID> publisher) {
+		Assert.notNull(publisher, "The given Publisher must not be null!");
+		String scope = getScope();
+		String collection = getCollection();
+		return Mono.from(publisher).flatMap(id -> existsById(id, scope, collection));
+	}
+
+	@Override
+	public Flux<T> findAll() {
+		return findAll(new Query());
 	}
 
 	@Override
 	public Mono<Void> deleteById(ID id) {
-		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(id.toString())
-				.then();
+		return deleteById(id, getScope(), getCollection());
+	}
+
+	private Mono<Void> deleteById(ID id, String scope, String collection) {
+		return operations.removeById(getJavaType()).inScope(scope).inCollection(collection).one(id.toString()).then();
 	}
 
 	@Override
 	public Mono<Void> deleteById(Publisher<ID> publisher) {
 		Assert.notNull(publisher, "The given id must not be null!");
-		return Mono.from(publisher).flatMap(this::deleteById);
+		String scope = getScope();
+		String collection = getCollection();
+		return Mono.from(publisher).flatMap(e -> deleteById(e, scope, collection));
 	}
 
 	@Override
 	public Mono<Void> delete(T entity) {
+		return delete(entity, getScope(), getCollection());
+	}
+
+	private Mono<Void> delete(T entity, String scope, String collection) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity))
-				.then();
+		return operations.removeById(getJavaType()).inScope(scope).inCollection(collection).one(getId(entity)).then();
 	}
 
 	@Override
@@ -191,19 +220,21 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> deleteAll(Publisher<? extends T> entityStream) {
 		Assert.notNull(entityStream, "The given publisher of entities must not be null!");
-		return Flux.from(entityStream).flatMap(this::delete).single();
-	}
-
-	@Override
-	public Mono<Long> count() {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
-				.inCollection(getCollection()).count();
+		String scope = getScope();
+		String collection = getCollection();
+		return Flux.from(entityStream).flatMap(e -> delete(e, scope, collection)).single();
 	}
 
 	@Override
 	public Mono<Void> deleteAll() {
 		return operations.removeByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).all().then();
+	}
+
+	@Override
+	public Mono<Long> count() {
+		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+				.inCollection(getCollection()).count();
 	}
 
 	private Flux<T> findAll(Query query) {
