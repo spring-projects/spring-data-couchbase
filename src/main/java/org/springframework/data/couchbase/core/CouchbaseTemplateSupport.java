@@ -37,6 +37,7 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallba
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.callback.EntityCallbacks;
@@ -44,6 +45,8 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import com.couchbase.client.core.error.CouchbaseException;
 
 /**
  * Internal encode/decode support for CouchbaseTemplate.
@@ -85,9 +88,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 	}
 
 	@Override
-	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection) {
-		final CouchbaseDocument converted = new CouchbaseDocument(id);
-		converted.setId(id);
+	public <T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection) {
 
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
 		// we will reset it after reading the document
@@ -107,18 +108,32 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 			// to unwrap. This results in List<String[]> being unwrapped past String[] to String, so this may also be a
 			// Collection (or Array) of entityClass. We have no way of knowing - so just assume it is what we are told.
 			// if this is a Collection or array, only the first element will be returned.
+			final CouchbaseDocument converted = new CouchbaseDocument(id);
 			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
 					.getContent().entrySet();
 			return (T) set.iterator().next().getValue();
 		}
 
+		if (id == null) {
+			throw new CouchbaseException(TemplateUtils.SELECT_ID + " was null. Either use #{#n1ql.selectEntity} or project "
+					+ TemplateUtils.SELECT_ID);
+		}
+
+		final CouchbaseDocument converted = new CouchbaseDocument(id);
+
 		// if possible, set the version property in the source so that if the constructor has a long version argument,
-		// it will have a value an not fail (as null is not a valid argument for a long argument). This possible failure
+		// it will have a value and not fail (as null is not a valid argument for a long argument). This possible failure
 		// can be avoid by defining the argument as Long instead of long.
 		// persistentEntity is still the (possibly abstract) class specified in the repository definition
 		// it's possible that the abstract class does not have a version property, and this won't be able to set the version
-		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
-			converted.put(persistentEntity.getVersionProperty().getName(), cas);
+		if (persistentEntity.getVersionProperty() != null) {
+			if (cas == null) {
+				throw new CouchbaseException("version/cas in the entity but " + TemplateUtils.SELECT_CAS
+						+ " was not in result. Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_CAS);
+			}
+			if (cas != 0) {
+				converted.put(persistentEntity.getVersionProperty().getName(), cas);
+			}
 		}
 
 		// if the constructor has an argument that is long version, then construction will fail if the 'version'
