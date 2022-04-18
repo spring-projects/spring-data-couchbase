@@ -26,7 +26,7 @@ public interface TemplateSupport {
 
 	CouchbaseDocument encodeEntity(Object entityToEncode);
 
-	<T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection);
+	<T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection);
 
 	<T> T applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
 

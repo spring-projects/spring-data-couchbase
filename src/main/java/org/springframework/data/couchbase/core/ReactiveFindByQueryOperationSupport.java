@@ -25,7 +25,6 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
@@ -184,23 +183,16 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					return throwable;
 				}
 			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
-				String id = "";
-				Long cas = Long.valueOf(0);
-				if (!query.isDistinct() && distinctFields == null) {
-					if (row.getString(TemplateUtils.SELECT_ID) == null && row.getString(TemplateUtils.SELECT_ID_3x) == null) {
-						return Flux.error(new CouchbaseException(
-								"query did not project " + TemplateUtils.SELECT_ID + ". Either use #{#n1ql.selectEntity} or project "
-										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
-					}
+				String id = null;
+				Long cas = null;
+				if (query.isDistinct() || distinctFields != null) {
+					id = "";
+					cas = Long.valueOf(0);
+				} else {
 					id = row.getString(TemplateUtils.SELECT_ID);
 					if (id == null) {
 						id = row.getString(TemplateUtils.SELECT_ID_3x);
 						row.removeKey(TemplateUtils.SELECT_ID_3x);
-					}
-					if (row.getLong(TemplateUtils.SELECT_CAS) == null && row.getLong(TemplateUtils.SELECT_CAS_3x) == null) {
-						return Flux.error(new CouchbaseException(
-								"query did not project " + TemplateUtils.SELECT_CAS + ". Either use #{#n1ql.selectEntity} or project "
-										+ TemplateUtils.SELECT_ID + " and " + TemplateUtils.SELECT_CAS + " : " + statement));
 					}
 					cas = row.getLong(TemplateUtils.SELECT_CAS);
 					if (cas == null) {
