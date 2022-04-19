@@ -168,14 +168,6 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>${javax-annotation-api}</version>
-        </dependency>
-
-        <!-- -addmods java.annotations.common -->
-
-        <dependency>
             <groupId>org.apache.openwebbeans</groupId>
             <artifactId>openwebbeans-se</artifactId>
             <version>${webbeans}</version>
