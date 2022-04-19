@@ -77,7 +77,7 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 
 			List<String> fieldList = new ArrayList<>();
 			fieldList.add("parentId");
-			cluster.query("CREATE INDEX `parent_idx` ON default:" + bucketName() + "." + scopeName + "." + collectionName2
+			cluster.query("CREATE INDEX `parent_idx` ON default:`" + bucketName() + "`." + scopeName + "." + collectionName2
 					+ "(parentId)");
 		} catch (IndexExistsException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife.toString());
