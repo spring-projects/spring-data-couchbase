@@ -223,9 +223,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					} else {
 						return throwable;
 					}
-				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> {
-					return row.getLong(TemplateUtils.SELECT_COUNT);
-				}).next();
+				}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(row.getNames().iterator().next()))
+						.next();
 			});
 		}
 
