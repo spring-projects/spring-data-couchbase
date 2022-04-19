@@ -431,7 +431,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	void badCount() {
-		assertThrows(CouchbaseQueryExecutionException.class, () -> airportRepository.countBad());
+		assertThrows(NullPointerException.class, () -> airportRepository.countBad());
 	}
 
 	@Test
