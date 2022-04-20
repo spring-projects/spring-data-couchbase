@@ -27,6 +27,8 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.util.Util.waitUntilCondition;
 
+import com.couchbase.client.core.retry.BestEffortRetryStrategy;
+import com.couchbase.client.core.retry.RetryStrategy;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -161,10 +163,27 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 		// the call to createPrimaryIndex takes about 60 seconds
 
-		try {
-			block(createPrimaryIndex(cluster, config().bucketname(), scopeName, collectionName));
-		} catch (Exception e) {
-			e.printStackTrace();
+		// sometimes fails with :
+		// com.couchbase.client.core.error.IndexFailureException: The server reported an issue with the underlying index
+		// {"completed":true,"coreId":"0xbbef22aa00000003","errors":[{"code":12003,"message":"Keyspace not found in CB
+		// datastore: default:cfc84bb8-ab0e-433e-a1af-812d51fa8855.my_scope.my_collection2","retry":false}],
+		// "httpStatus":500,"idempotent":false,"lastDispatchedFrom":"127.0.0.1:49908","lastDispatchedTo":"127.0.0.1:8093",
+		// "requestId":58,"requestType":"QueryRequest","retried":0,"service":
+		// {"operationId":"04b28225-2b0f-4d2c-943b-330ac637ecd8","statement":"CREATE PRIMARY INDEX ON
+		// default:`cfc84bb8-ab0e-433e-a1af-812d51fa8855`.`my_scope`.`my_collection2`","type":"query"},
+		// "timeoutMs":300000,"timings":{"dispatchMicros":746,"totalDispatchMicros":746,"totalMicros":1636}}
+
+		for (int i = 0; i < 10; i++) {
+			try {
+				sleepMs(100);
+				block(createPrimaryIndex(cluster, config().bucketname(), scopeName, collectionName));
+				break;
+			} catch (Exception e) {
+				System.err.println(e);
+				if (i > 5) {
+					e.printStackTrace();
+				}
+			}
 		}
 
 		waitUntilCondition(
@@ -201,7 +220,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	private static void createAndDeleteBucket() {
 		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
 				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
-		String hostPort = connectionString().replace("11210", "8091").replace("11207", "18091");
+		String hostPort = connectionString().split("=")[0].replace("11210", "8091").replace("11207", "18091");
 		String protocol = hostPort.equals("18091") ? "https" : "http";
 		String bucketname = UUID.randomUUID().toString();
 		try {
