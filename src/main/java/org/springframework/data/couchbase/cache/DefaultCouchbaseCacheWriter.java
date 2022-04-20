@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.cache;
 
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
+import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 import static com.couchbase.client.java.kv.GetOptions.*;
 import static com.couchbase.client.java.kv.InsertOptions.*;
 import static com.couchbase.client.java.kv.UpsertOptions.*;
@@ -28,7 +30,6 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 
 import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.codec.Transcoder;
@@ -104,20 +105,35 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 
 	@Override
 	public long clear(final String collectionName, final String pattern) {
-		QueryResult result = clientFactory.getScope().query(
-				"DELETE FROM `" + getCollection(collectionName).name() + "` where meta().id LIKE $pattern",
-				queryOptions().scanConsistency(REQUEST_PLUS).metrics(true).parameters(JsonObject.create().put("pattern", pattern + "%")));
+		QueryResult result;
+		if (getScope() == null
+				|| (DEFAULT_SCOPE.equals(getScope().name()) && DEFAULT_COLLECTION.equals(getCollection(collectionName).name()))) {
+			result = clientFactory.getCluster().query(
+					"DELETE FROM `" + clientFactory.getBucket().name() + "` where meta().id LIKE $pattern",
+					queryOptions().scanConsistency(REQUEST_PLUS).metrics(true)
+							.parameters(JsonObject.create().put("pattern", pattern + "%")));
+		} else {
+			result = clientFactory.getScope().query(
+					"DELETE FROM `" + getCollection(collectionName).name() + "` where meta().id LIKE $pattern",
+					queryOptions().scanConsistency(REQUEST_PLUS).metrics(true)
+							.parameters(JsonObject.create().put("pattern", pattern + "%")));
+		}
 		return result.metaData().metrics().map(QueryMetrics::mutationCount).orElse(0L);
 	}
 
 	private Collection getCollection(final String collectionName) {
 		final Scope scope = clientFactory.getScope();
 		if (collectionName == null) {
-			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
+			if (!scope.name().equals(DEFAULT_SCOPE)) {
 				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
 			}
 			return clientFactory.getBucket().defaultCollection();
 		}
 		return scope.collection(collectionName);
 	}
+
+	private Scope getScope() {
+		return clientFactory.getScope();
+	}
+
 }
