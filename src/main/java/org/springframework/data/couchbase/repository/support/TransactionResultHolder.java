@@ -16,8 +16,9 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import com.couchbase.transactions.SingleQueryTransactionResult;
-import com.couchbase.transactions.TransactionGetResult;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.transactions.TransactionGetResult;
+import reactor.util.annotation.Nullable;
 
 /**
  * Holds previously obtained Transaction*Result
@@ -26,26 +27,29 @@ import com.couchbase.transactions.TransactionGetResult;
  */
 public class TransactionResultHolder {
 
-	TransactionGetResult getResult;
-	SingleQueryTransactionResult singleQueryResult;
+	private final @Nullable TransactionGetResult getResult;
+	// todo gp needed?
+	private final @Nullable QueryResult singleQueryResult;
 
 	public TransactionResultHolder(TransactionGetResult getResult) {
 		// we don't need the content and we don't have access to the transcoder an txnMeta (and we don't need them either).
-		this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
-				getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);
+		// todo gp will need to expose a copy ctor if a copy is really needed
+		this.getResult = getResult;
+//		this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
+//				getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);
 		this.singleQueryResult = null;
 	}
 
-	public TransactionResultHolder(SingleQueryTransactionResult singleQueryResult) {
+	public TransactionResultHolder(QueryResult singleQueryResult) {
 		this.getResult = null;
 		this.singleQueryResult = singleQueryResult;
 	}
 
-	public TransactionGetResult transactionGetResult() {
+	public @Nullable TransactionGetResult transactionGetResult() {
 		return getResult;
 	}
 
-	public SingleQueryTransactionResult singleQueryResult() {
+	public @Nullable QueryResult singleQueryResult() {
 		return singleQueryResult();
 	}
 }

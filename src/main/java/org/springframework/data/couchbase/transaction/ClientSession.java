@@ -3,21 +3,17 @@ package org.springframework.data.couchbase.transaction;
 
 import com.couchbase.client.java.AsyncCluster;
 import com.couchbase.client.java.Scope;
-import com.couchbase.transactions.AttemptContext;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.TransactionGetResult;
-import com.couchbase.transactions.TransactionQueryOptions;
-import com.couchbase.transactions.config.TransactionConfig;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-
 /**
  * ClientSession. There is only one implementation - ClientSessionImpl
  * The SpringTransaction framework relies on the client session to perform commit() and abort()
- * and therefore it has an AttemptContextReactive
+ * and therefore it has a ReactiveTransactionAttemptContext
  *
  * @author Michael Reiche
  */
@@ -33,17 +29,15 @@ public interface ClientSession /*extends com.mongodb.session.ClientSession*/ {
 
   void notifyOperationInitiated(Object var1);
 
-  //void setAttemptContextReactive(AttemptContextReactive atr);
+  //void setAttemptContextReactive(ReactiveTransactionAttemptContext atr);
 
-  AttemptContextReactive getAttemptContextReactive();
+  ReactiveTransactionAttemptContext getReactiveTransactionAttemptContext();
 
   TransactionOptions getTransactionOptions();
 
   AsyncCluster getWrapped();
 
   void startTransaction();
-
-  void startTransaction(TransactionConfig var1);
 
   Publisher<Void> commitTransaction();
 
@@ -61,7 +55,7 @@ public interface ClientSession /*extends com.mongodb.session.ClientSession*/ {
 
  TransactionResultHolder transactionResultHolder(Integer key);
 
-  AttemptContext getAttemptContext();
+  TransactionAttemptContext getTransactionAttemptContext();
 
-  //ClientSession with(AttemptContextReactive atr);
+  //ClientSession with(ReactiveTransactionAttemptContext atr);
 }

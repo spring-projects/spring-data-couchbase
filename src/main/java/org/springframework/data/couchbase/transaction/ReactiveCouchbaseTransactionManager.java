@@ -33,10 +33,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.TransactionQueryOptions;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
 
 /**
  * A {@link org.springframework.transaction.ReactiveTransactionManager} implementation that manages
@@ -69,8 +65,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		implements InitializingBean {
 
 	private @Nullable ReactiveCouchbaseClientFactory databaseFactory; // (why) does this need to be reactive?
-	private @Nullable Transactions transactions; // This is the com.couchbase.transactions object
-	private @Nullable TransactionConfig config;
 
 	/**
 	 * Create a new {@link ReactiveCouchbaseTransactionManager} for bean-style usage.
@@ -92,14 +86,11 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 * starting a new transaction.
 	 *
 	 * @param databaseFactory must not be {@literal null}.
-	 * @param transactions - couchbase Transactions object
 	 */
-	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory,
-																						 @Nullable Transactions transactions) {
+	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory) {
 		Assert.notNull(databaseFactory, "DatabaseFactory must not be null!");
 		this.databaseFactory = databaseFactory; // should be a clone? TransactionSynchronizationManager binds objs to it
-		this.transactions = transactions;
-		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
+		System.err.println("ReactiveCouchbaseTransactionManager : created");
 	}
 
 	/*
@@ -111,10 +102,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
 	}
 */
-	public Transactions getTransactions() {
-		System.err.println("ReactiveCouchbaseTransactionManager.getTransactions() : " + transactions);
-		return transactions;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -168,7 +155,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 			}).doOnNext(resourceHolder -> {
 
-				couchbaseTransactionObject.startTransaction(config);
+				couchbaseTransactionObject.startTransaction();
 
 				if (logger.isDebugEnabled()) {
 					logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getSession())));
@@ -331,15 +318,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	}
 
 	/**
-	 * Set the {@link TransactionConfig} to be applied when starting transactions.
-	 *
-	 * @param config can be {@literal null}.
-	 */
-	public void setConfig(@Nullable TransactionConfig config) {
-		this.config = config;
-	}
-
-	/**
 	 * Get the {@link CouchbaseClientFactory} that this instance manages transactions for.
 	 *
 	 * @return can be {@literal null}.
@@ -363,9 +341,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
-		getTransactions().reactive();
-	  TransactionConfig config = transactions.reactive().config();
-		Mono<ClientSession> sess = Mono.just(dbFactory.getSession(options, transactions, config , null/* TODO */));
+		Mono<ClientSession> sess = dbFactory.getSession(options);
 		return sess.map(session -> new ReactiveCouchbaseResourceHolder(session, dbFactory));
 	}
 
@@ -463,17 +439,13 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 		/**
 		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}.
-		 *
+		 * todo gp how to expose TransactionOptions
 		 * @param options can be {@literal null}
 		 */
-		void startTransaction(@Nullable TransactionConfig options) {
+		void startTransaction() {
 
 			ClientSession session = getRequiredSession();
-			if (options != null) {
-				session.startTransaction(options);
-			} else {
-				session.startTransaction();
-			}
+			session.startTransaction();
 		}
 
 		/**

@@ -21,7 +21,6 @@
         <couchbase>3.2.5</couchbase>
         <couchbase.osgi>3.2.5</couchbase.osgi>
         <springdata.commons>2.7.0-SNAPSHOT</springdata.commons>
-        <couchbase-transactions>1.2.2</couchbase-transactions>
         <java-module-name>spring.data.couchbase</java-module-name>
 <!--
         <spring.boot>2.6.0-RC1</spring.boot>
@@ -55,18 +54,6 @@
         </dependency>
 -->
 
-
-    <dependency>
-        <groupId>com.couchbase.client</groupId>
-        <artifactId>couchbase-transactions</artifactId>
-        <version>${couchbase-transactions}</version>
-        <exclusions>
-            <exclusion>
-                <groupId>com.couchbase.client</groupId>
-                <artifactId>java-client</artifactId>
-            </exclusion>
-        </exclusions>
-    </dependency>
 
         <dependency>
             <groupId>org.springframework</groupId>
@@ -245,18 +232,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.couchbase.client</groupId>
-            <artifactId>couchbase-transactions</artifactId>
-            <version>${couchbase-transactions}</version>
-            <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.couchbase.client</groupId>
-                    <artifactId>java-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
         </dependency>
@@ -264,7 +239,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>java-client</artifactId>
-            <version>3.2.5</version>
+            <version>3.3.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

@@ -15,13 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.Cluster;
-import com.example.demo.CouchbaseTransactionalTemplate;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
-import org.springframework.transaction.reactive.TransactionContext;
-import org.springframework.transaction.reactive.TransactionContextManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,7 +24,6 @@ import java.util.Collection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
@@ -39,11 +32,9 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.TransactionInsertOptions;
 
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
@@ -135,7 +126,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
 			Mono<T> reactiveEntity = support.encodeEntity(object)
 					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-						if (s == null || s.getAttemptContextReactive() == null) {
+						if (s == null || s.getReactiveTransactionAttemptContext() == null) {
 							return template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 									.getCollection(pArgs.getCollection())
 									.flatMap(collection -> collection.reactive()
@@ -143,13 +134,14 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 											.flatMap(
 													result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 						} else {
-							return s.getAttemptContextReactive()
+							return s.getReactiveTransactionAttemptContext()
 									.insert(
 											tp.doGetDatabase().block().bucket(tp.getBucketName()).reactive()
 													.scope(pArgs.getScope() != null ? pArgs.getScope() : DEFAULT_SCOPE)
 													.collection(pArgs.getCollection() != null ? pArgs.getCollection() : DEFAULT_COLLECTION),
-											converted.getId(), converted.getContent(), buildTxOptions(pArgs.getOptions(), converted))
-									.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), new TransactionResultHolder(result), s));
+											converted.getId(), converted.getContent())
+									// todo gp don't have result.cas() anymore - needed?
+									.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L, new TransactionResultHolder(result), s));
 						}
 					})));
 			// .flatMap(converted ->/* rc */tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getCluster().flatMap( cl ->
@@ -188,10 +180,6 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		public InsertOptions buildOptions(InsertOptions options, CouchbaseDocument doc) { // CouchbaseDocument converted
 			return OptionsBuilder.buildInsertOptions(options, persistTo, replicateTo, durabilityLevel, expiry, doc);
-		}
-
-		private TransactionInsertOptions buildTxOptions(InsertOptions buildOptions, CouchbaseDocument doc) {
-			return OptionsBuilder.buildTxInsertOptions(buildOptions(buildOptions, doc));
 		}
 
 		@Override

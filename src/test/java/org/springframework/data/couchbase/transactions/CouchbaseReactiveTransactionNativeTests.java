@@ -19,6 +19,8 @@ package org.springframework.data.couchbase.transactions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.Disabled;
 import reactor.core.publisher.Mono;
 
@@ -55,11 +57,6 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.RemoveOptions;
-import com.couchbase.transactions.TransactionDurabilityLevel;
-import com.couchbase.transactions.TransactionResult;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.config.TransactionConfigBuilder;
-import com.couchbase.transactions.error.TransactionFailed;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
@@ -115,7 +112,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 				assertEquals(person, pFound, "Should have found " + person);
@@ -125,7 +122,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		}
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		// throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -142,7 +139,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 				assertEquals(person, pFound, "Should have found " + person);
@@ -152,7 +149,7 @@ sleepMs(1000);
 		}
 		// Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -168,7 +165,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 				assertNull(pFound, "Should NOT have found " + pFound);
@@ -178,7 +175,7 @@ sleepMs(1000);
 		}
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		// throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -193,7 +190,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 				assertNull(pFound, "Should NOT have found " + pFound);
@@ -203,7 +200,7 @@ sleepMs(1000);
 		}
 		// Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -220,7 +217,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 				assertEquals(person, pFound, "Should have found " + person);
@@ -230,7 +227,7 @@ sleepMs(1000);
 		}
 		// Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -246,7 +243,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 				assertNull(pFound, "Should NOT have found " + pFound);
@@ -256,7 +253,7 @@ sleepMs(1000);
 		}
 		// Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	@Test
@@ -273,7 +270,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof SimulateFailureException) {
 				Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 				assertNull(pFound, "Should NOT have found " + pFound);
@@ -283,7 +280,7 @@ sleepMs(1000);
 		}
 		Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		// throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 
 	/*
@@ -312,7 +309,7 @@ sleepMs(1000);
 
 		try {
 			result.block();
-		} catch (TransactionFailed e) {
+		} catch (TransactionFailedException e) {
 			if (e.getCause() instanceof PoofException) {
 				Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 				assertEquals(person, pFound, "Should have found " + person);
@@ -322,7 +319,7 @@ sleepMs(1000);
 		}
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		// throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+		// throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	}
 */
 	@Test
@@ -427,13 +424,6 @@ sleepMs(1000);
 		public String getBucketName() {
 			return bucketName();
 		}
-
-		@Override
-		public TransactionConfig transactionConfig() {
-			return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
-					.expirationTime(Duration.ofMinutes(10)).durabilityLevel(TransactionDurabilityLevel.MAJORITY).build();
-		}
-
 	}
 
 }

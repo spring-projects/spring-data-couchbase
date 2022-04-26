@@ -15,6 +15,9 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionResult;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -41,15 +44,6 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationUtils;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.java.Cluster;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.transactions.TransactionResult;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.error.external.TransactionOperationFailed;
-import reactor.util.context.ContextView;
-
 /**
  * Blocking TransactionManager
  *
@@ -64,18 +58,14 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 
 	private final CouchbaseTemplate template;
 	private final ReactiveCouchbaseTemplate reactiveTemplate;
-	private Transactions transactions;
 	private final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	private final CouchbaseClientFactory couchbaseClientFactory;
 
 	private ReactiveCouchbaseTransactionManager.ReactiveCouchbaseTransactionObject transaction;
 
-	public CouchbaseCallbackTransactionManager(CouchbaseTemplate template, ReactiveCouchbaseTemplate reactiveTemplate,
-			TransactionConfig transactionConfig) {
+	public CouchbaseCallbackTransactionManager(CouchbaseTemplate template, ReactiveCouchbaseTemplate reactiveTemplate) {
 		this.template = template;
 		this.reactiveTemplate = reactiveTemplate;
-		this.transactions = Transactions.create((Cluster) (template().getCouchbaseClientFactory().getCluster().block()),
-				transactionConfig);
 		this.reactiveCouchbaseClientFactory = this.reactiveTemplate.getCouchbaseClientFactory();
 		this.couchbaseClientFactory = this.template.getCouchbaseClientFactory();
 	}
@@ -85,12 +75,12 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 	}
 
 	private CouchbaseResourceHolder newResourceHolder(TransactionDefinition definition, ClientSessionOptions options,
-			AttemptContextReactive atr) {
+			ReactiveTransactionAttemptContext atr) {
 
 		CouchbaseClientFactory databaseFactory = template.getCouchbaseClientFactory();
 
 		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
-				databaseFactory.getSession(options, transactions, null, atr), databaseFactory);
+				databaseFactory.getSession(options, atr), databaseFactory);
 		return resourceHolder;
 	}
 
@@ -99,10 +89,11 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 		final AtomicReference<T> execResult = new AtomicReference<>();
 		AtomicReference<Long> startTime = new AtomicReference<>(0L);
 
-		Mono<TransactionResult> txnResult = transactions.reactive().run(ctx -> {
+		Mono<TransactionResult> txnResult = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			/* begin spring-data-couchbase transaction 1/2 */
 			ClientSession clientSession = reactiveCouchbaseClientFactory // couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build())
+					.block();
 			ReactiveCouchbaseResourceHolder reactiveResourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
 					reactiveCouchbaseClientFactory);
 
@@ -149,11 +140,14 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 						}).contextWrite(TransactionContextManager.getOrCreateContext()) // this doesn't create a context on the desired publisher
 								.contextWrite(TransactionContextManager.getOrCreateContextHolder()).then();
 
-						result.onErrorResume(err -> {
-							AttemptContextReactiveAccessor.getLogger(ctx).info(ctx.attemptId(),
-									"caught exception '%s' in async, rethrowing", err);
-							return Mono.error(TransactionOperationFailed.convertToOperationFailedIfNeeded(err, ctx));
-						}).thenReturn(ctx);
+						// todo gp this isn't part of the chain (no `result = result.onErrorResume...`) so isn't called
+						// and presumably isn't needed? 
+//						result.onErrorResume(err -> {
+//							AttemptContextReactiveAccessor.getLogger(ctx).info(ctx.attemptId(),
+//									"caught exception '%s' in async, rethrowing", err);
+//							return Mono.error(ctx.TransactionOperationFailedException.convertToOperationFailedIfNeeded(err, ctx));
+//						}).thenReturn(ctx);
+
 						return result.then(Mono.just(synchronizationManager));
 					});
 			/* begin spring-data-couchbase transaction  2/2 */  // this doesn't create a context on the desired publisher
@@ -168,7 +162,7 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 	}
 
 	private void setTransaction(ReactiveCouchbaseTransactionManager.ReactiveCouchbaseTransactionObject transaction) {
-		this.transactions = transactions;
+		this.transaction = transaction;
 	}
 
 	@Override
@@ -214,7 +208,6 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 
 	@Override
 	public void destroy() {
-		transactions.close();
 	}
 
 	@Override
@@ -232,18 +225,18 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 	/*
 	public class CouchbaseResourceHolder extends ResourceHolderSupport {
 	
-	  private volatile AttemptContextReactive attemptContext;
+	  private volatile ReactiveTransactionAttemptContext attemptContext;
 	  //private volatile TransactionResultMap resultMap = new TransactionResultMap(template);
 	
-	  public CouchbaseResourceHolder(AttemptContextReactive attemptContext) {
+	  public CouchbaseResourceHolder(ReactiveTransactionAttemptContext attemptContext) {
 	    this.attemptContext = attemptContext;
 	  }
 	
-	  public AttemptContextReactive getAttemptContext() {
+	  public ReactiveTransactionAttemptContext getAttemptContext() {
 	    return attemptContext;
 	  }
 	
-	  public void setAttemptContext(AttemptContextReactive attemptContext) {
+	  public void setAttemptContext(ReactiveTransactionAttemptContext attemptContext) {
 	    this.attemptContext = attemptContext;
 	  }
 	

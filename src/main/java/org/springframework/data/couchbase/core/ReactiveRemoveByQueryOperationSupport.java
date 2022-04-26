@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
+import com.couchbase.client.java.transactions.TransactionQueryResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
@@ -34,7 +36,6 @@ import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.couchbase.transactions.TransactionQueryOptions;
 
 public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQueryOperation {
 
@@ -90,7 +91,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 						: rs.query(statement, opts);
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
-				allResult = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
+				Mono<TransactionQueryResult> tqr = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
+				// todo gp do something with tqr
 			}
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {

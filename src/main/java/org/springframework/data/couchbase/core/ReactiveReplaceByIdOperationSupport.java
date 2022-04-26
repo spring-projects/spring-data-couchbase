@@ -36,7 +36,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.components.TransactionLinks;
 
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
@@ -67,10 +66,6 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private final Duration expiry;
 		private final CouchbaseStuffHandle txCtx;
 		private final ReactiveTemplateSupport support;
-
-		private final TransactionLinks tl = new TransactionLinks(Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty());
 
 		ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
 				final String collection, final ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
@@ -127,7 +122,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 			CouchbaseDocument converted = support.encodeEntity(object).block();
 			reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-				if (s == null || s.getAttemptContextReactive() == null) {
+				if (s == null || s.getReactiveTransactionAttemptContext() == null) {
 					System.err.println("ReactiveReplaceById: not");
 					Mono<com.couchbase.client.java.Collection> op = template.getCouchbaseClientFactory()
 							.withScope(pArgs.getScope()).getCollection(pArgs.getCollection());
@@ -137,10 +132,11 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 				} else {
 					System.err.println("ReactiveReplaceById: transaction");
-					return s.getAttemptContextReactive()
+					return s.getReactiveTransactionAttemptContext()
 							.replace(s.transactionResultHolder(getTransactionHolder(object)).transactionGetResult(),
 									converted.getContent())
-							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(),
+							// todo gp no CAS
+							.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L,
 									new TransactionResultHolder(result), s));
 				}
 			}));

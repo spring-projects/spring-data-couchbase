@@ -1,6 +1,6 @@
 package com.example.demo;
 
-import com.couchbase.transactions.TransactionGetResult;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 
 public class SpringTransactionGetResult<T> {
 

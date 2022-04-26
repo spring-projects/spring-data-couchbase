@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.function.Supplier;
 
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 import org.springframework.data.couchbase.transaction.ClientSession;
@@ -34,11 +35,7 @@ import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.transactions.AttemptContext;
-import com.couchbase.transactions.AttemptContextReactive;
 import com.couchbase.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
 
 /**
  * The default implementation of a {@link CouchbaseClientFactory}.
@@ -127,14 +124,15 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	}
 
 	@Override
-	public ClientSession getSession(ClientSessionOptions options, Transactions transactions, TransactionConfig config,
-			AttemptContextReactive atr) {
-		// can't we just use AttemptContextReactive everywhere? Instead of creating AttemptContext(atr), then
+	public ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext atr) {
+		// todo gp needed?
+		return null;
+		// can't we just use ReactiveTransactionAttemptContext everywhere? Instead of creating TransactionAttemptContext(atr), then
 		// accessing at.getACR() ?
-		AttemptContext at = AttemptContextReactiveAccessor
-				.from(atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive()));
-
-		return new ClientSessionImpl(this, transactions, config, at);
+//		TransactionAttemptContext at = AttemptContextReactiveAccessor
+//				.from(atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive()));
+//
+//		return new ClientSessionImpl(this, transactions, config, at);
 	}
 
 	// @Override

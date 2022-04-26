@@ -69,9 +69,6 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.RemoveOptions;
-import com.couchbase.transactions.TransactionDurabilityLevel;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.config.TransactionConfigBuilder;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -394,7 +391,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	          .then(rxCBTmpl.removeById(Person.class).inCollection(cName).transaction(ctx).one(person.getId().toString()))
 	          .then();
 	    }));
-	    assertThrows(TransactionFailed.class, result::block);
+	    assertThrows(TransactionFailedException.class, result::block);
 	    Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	    assertEquals(pFound, person, "Should have found " + person);
 	  }
@@ -425,7 +422,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	      return rxRepo.withCollection(cName).withTransaction(ctx).deleteById(person.getId().toString())
 	          .then(rxRepo.withCollection(cName).withTransaction(ctx).deleteById(person.getId().toString())).then();
 	    }));
-	    assertThrows(TransactionFailed.class, result::block);
+	    assertThrows(TransactionFailedException.class, result::block);
 	    Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	    assertEquals(pFound, person, "Should have found " + person);
 	  }
@@ -464,7 +461,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	
 	    try {
 	      result.block();
-	    } catch (TransactionFailed e) {
+	    } catch (TransactionFailedException e) {
 	      e.printStackTrace();
 	      if (e.getCause() instanceof PoofException) {
 	        Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
@@ -474,7 +471,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	        e.printStackTrace();
 	      }
 	    }
-	    throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	    throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	  }
 	
 	  @Test
@@ -493,7 +490,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	
 	    try {
 	      result.block();
-	    } catch (TransactionFailed e) {
+	    } catch (TransactionFailedException e) {
 	      if (e.getCause() instanceof PoofException) {
 	        Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	        assertEquals(person, pFound, "Should have found " + person);
@@ -502,7 +499,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	        e.printStackTrace();
 	      }
 	    }
-	    throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	    throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	  }
 	
 	  @Test
@@ -573,12 +570,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		@Override
 		public String getBucketName() {
 			return bucketName();
-		}
-
-		@Override
-		public TransactionConfig transactionConfig() {
-			return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
-					.expirationTime(Duration.ofMinutes(10)).durabilityLevel(TransactionDurabilityLevel.MAJORITY).build();
 		}
 
 		@Bean

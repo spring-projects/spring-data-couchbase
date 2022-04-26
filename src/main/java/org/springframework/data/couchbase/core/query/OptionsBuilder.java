@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -50,9 +51,6 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.transactions.TransactionInsertOptions;
-import com.couchbase.transactions.TransactionQueryOptions;
-import com.couchbase.transactions.TransactionReplaceOptions;
 
 public class OptionsBuilder {
 
@@ -134,13 +132,6 @@ public class OptionsBuilder {
 		return options;
 	}
 
-	public static TransactionInsertOptions buildTxInsertOptions(InsertOptions options) {
-		options = options != null ? options : InsertOptions.insertOptions();
-		InsertOptions.Built built = options.build();
-		TransactionInsertOptions txOptions = TransactionInsertOptions.insertOptions();
-		return txOptions;
-	}
-
 	public static UpsertOptions buildUpsertOptions(UpsertOptions options, PersistTo persistTo, ReplicateTo replicateTo,
 			DurabilityLevel durabilityLevel, Duration expiry, CouchbaseDocument doc) {
 		options = options != null ? options : UpsertOptions.upsertOptions();
@@ -180,18 +171,6 @@ public class OptionsBuilder {
 			LOG.trace("replace options: {}" + toString(options));
 		}
 		return options;
-	}
-
-	public static Object buildTransactionReplaceOptions(ReplaceOptions options) {
-		ReplaceOptions.Built built = options.build();
-		TransactionReplaceOptions txOptions = TransactionReplaceOptions.replaceOptions();
-		return txOptions;
-	}
-
-	public static TransactionReplaceOptions buildTransactionUpsertOptions(ReplaceOptions options) {
-		ReplaceOptions.Built built = options.build();
-		TransactionReplaceOptions txOptions = TransactionReplaceOptions.replaceOptions();
-		return txOptions;
 	}
 
 	public static RemoveOptions buildRemoveOptions(RemoveOptions options, PersistTo persistTo, ReplicateTo replicateTo,

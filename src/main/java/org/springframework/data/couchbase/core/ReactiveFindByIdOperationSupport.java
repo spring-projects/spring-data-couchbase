@@ -17,12 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.TransactionQueryOptions;
-import com.example.demo.CouchbaseTransactionalTemplate;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -95,12 +90,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					.getCollection(pArgs.getCollection()).block().reactive();
 
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			//AttemptContextReactive ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
+			//ReactiveTransactionAttemptContext ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
 			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
 
 			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
 					.flatMap(s -> {
-						if ( s == null || s.getAttemptContextReactive() == null ) {
+						if ( s == null || s.getReactiveTransactionAttemptContext() == null ) {
 							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
 								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
 										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
@@ -109,8 +104,9 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
 							}
 						} else {
-							return s.getAttemptContextReactive().get(rc, id)
-									.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), result.cas(),
+							return s.getReactiveTransactionAttemptContext().get(rc, id)
+									// todo gp no cas
+									.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), 0,
 											domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), s));
 						}
 					}));

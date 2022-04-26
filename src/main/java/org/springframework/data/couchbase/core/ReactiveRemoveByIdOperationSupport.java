@@ -34,8 +34,6 @@ import com.couchbase.client.java.codec.Transcoder;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.transactions.TransactionGetResult;
-import com.couchbase.transactions.components.TransactionLinks;
 
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
@@ -71,10 +69,6 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		private final Long cas;
 		private final CouchbaseStuffHandle txCtx;
 
-		private final TransactionLinks tl = new TransactionLinks(Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-				Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty());
-
 		ReactiveRemoveByIdSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType, final String scope,
 															final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
 															final DurabilityLevel durabilityLevel, Long cas, CouchbaseStuffHandle txCtx) {
@@ -101,9 +95,13 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				removeResult = rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
 			} else {
 				Transcoder transcoder = template.getCouchbaseClientFactory().getCluster().block().environment().transcoder();
-				TransactionGetResult doc = new TransactionGetResult(id, null, 0, rc, tl, null, Optional.empty(), transcoder,
-						null);
-				removeResult = pArgs.getTxOp().getAttemptContextReactive().remove(doc).map(r -> new RemoveResult(id, 0, null));
+				// todo gp we definitely don't want to be creating TransactionGetResult.  It's essential that this is passed
+				// from a previous ctx.get().  So we know if this doc is in a transaction and can safely detect
+				// write-write conflicts.  This will be a blocker.
+				// Looks like replace is solving this with a getTransactionHolder?
+//				TransactionGetResult doc = new TransactionGetResult(id, null, 0, rc, tl, null, Optional.empty(), transcoder,
+//						null);
+				removeResult = pArgs.getTxOp().getAttemptContextReactive().remove(null).map(r -> new RemoveResult(id, 0, null));
 			}
 			return removeResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {

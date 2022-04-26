@@ -53,9 +53,6 @@ import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.couchbase.client.core.cnc.Event;
-import com.couchbase.transactions.TransactionDurabilityLevel;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.config.TransactionConfigBuilder;
 import com.example.demo.CouchbaseTransactionManager;
 import com.example.demo.CouchbaseTransactionalTemplate;
 
@@ -98,16 +95,9 @@ public class CouchbaseTemplateTransaction2IntegrationTests extends JavaIntegrati
 			return bucketName();
 		}
 
-		@Override
-		public TransactionConfig transactionConfig() {
-			return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
-					.expirationTime(Duration.ofMinutes(10)).durabilityLevel(TransactionDurabilityLevel.NONE).build();
-		}
-
 		@Bean
-		public CouchbaseTransactionManager transactionManager(@Autowired CouchbaseTemplate template,
-				@Autowired TransactionConfig transactionConfig) {
-			return new CouchbaseTransactionManager(template, transactionConfig);
+		public CouchbaseTransactionManager transactionManager(@Autowired CouchbaseTemplate template) {
+			return new CouchbaseTransactionManager(template);
 		}
 
 		@Bean
