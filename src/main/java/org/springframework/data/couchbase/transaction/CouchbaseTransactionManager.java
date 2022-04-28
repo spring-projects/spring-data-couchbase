@@ -62,6 +62,7 @@ import reactor.core.publisher.Mono;
  * @see <a href="https://www.mongodb.com/transactions">MongoDB Transaction Documentation</a>
  * @see MongoDatabaseUtils#getDatabase(CouchbaseClientFactory, SessionSynchronization)
  */
+// todo gp is this needed, or can we only have the CallbackPreferring one?
 public class CouchbaseTransactionManager extends AbstractPlatformTransactionManager
 		implements ResourceTransactionManager, InitializingBean {
 

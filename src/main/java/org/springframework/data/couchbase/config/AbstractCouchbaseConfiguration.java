@@ -342,9 +342,14 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
 	}
 
+//	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+//	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
+//		return new CouchbaseTransactionManager(couchbaseClientFactory);
+//	}
+
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
-		return new CouchbaseTransactionManager(couchbaseClientFactory);
+	CouchbaseCallbackTransactionManager transactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
+		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
 	}
 
 	/**
@@ -353,10 +358,10 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param couchbaseTemplate
 	 * @return
 	 */
-	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
-		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
-	}
+//	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
+//	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
+//		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
+//	}
 
 	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.

@@ -33,7 +33,7 @@ public class TransactionResultHolder {
 
 	public TransactionResultHolder(TransactionGetResult getResult) {
 		// we don't need the content and we don't have access to the transcoder an txnMeta (and we don't need them either).
-		// todo gp will need to expose a copy ctor if a copy is really needed
+		// todo gp will need to expose a copy ctor if a copy is needed
 		this.getResult = getResult;
 //		this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
 //				getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);

@@ -33,7 +33,7 @@ import org.springframework.transaction.support.ResourceHolderSupport;
  * @see CouchbaseTransactionManager
  * @see CouchbaseTemplate
  */
-
+// todo gp understand why this is needed - can we not just hold ctx in Mono context?
 public class CouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable ClientSession session; // which holds the atr

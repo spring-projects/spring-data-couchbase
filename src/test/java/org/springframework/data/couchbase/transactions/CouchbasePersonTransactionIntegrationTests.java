@@ -114,7 +114,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
-	@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
+	//@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired CouchbaseTemplate cbTmpl;
@@ -915,16 +915,16 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	class PersonService {
 
 		final CouchbaseOperations personOperations;
-		final CouchbaseTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
+		final CouchbaseCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
 		final ReactiveCouchbaseOperations personOperationsRx;
 		final ReactiveCouchbaseTransactionManager managerRx;
 
-		public PersonService(CouchbaseOperations ops, CouchbaseTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
+		public PersonService(CouchbaseOperations ops, 	CouchbaseCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
 				ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
 			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
-			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
+//			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
 			System.err.println("manager Manager     : " + manager);
 
 			personOperationsRx = opsRx;

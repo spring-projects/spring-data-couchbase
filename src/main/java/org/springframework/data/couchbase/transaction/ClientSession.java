@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
  *
  * @author Michael Reiche
  */
+// todo gp understand why this is needed
 public interface ClientSession /*extends com.mongodb.session.ClientSession*/ {
 
  Mono<Scope> getScope();

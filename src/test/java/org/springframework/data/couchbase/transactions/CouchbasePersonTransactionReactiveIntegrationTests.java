@@ -22,6 +22,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.domain.Persistable;
 import org.springframework.test.context.transaction.AfterTransaction;
@@ -85,7 +86,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
-	@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
+	@Autowired CouchbaseCallbackTransactionManager couchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
@@ -269,14 +270,14 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		final ReactiveCouchbaseOperations personOperationsRx;
 		final ReactiveCouchbaseTransactionManager managerRx;
 		final CouchbaseOperations personOperations;
-		final CouchbaseTransactionManager manager;
+		final CouchbaseCallbackTransactionManager manager;
 
-		public PersonService(CouchbaseOperations ops, CouchbaseTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
+		public PersonService(CouchbaseOperations ops, CouchbaseCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
 				ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
 			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
-			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
+//			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
 			System.err.println("manager Manager     : " + manager);
 
 			personOperationsRx = opsRx;

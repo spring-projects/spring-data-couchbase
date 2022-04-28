@@ -105,6 +105,7 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 					.<TransactionSynchronizationManager> flatMap(synchronizationManager -> {
 						System.err.println("CallbackTransactionManager: " + this);
 						System.err.println("bindResource: " + reactiveCouchbaseClientFactory.getCluster().block());
+						// todo gp not sure why we bind, unbind, bind again?
 						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster().block(),
 								reactiveResourceHolder);
 						org.springframework.transaction.support.TransactionSynchronizationManager
@@ -115,9 +116,13 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 								reactiveResourceHolder);
 						setTransaction(transaction);
 
+						synchronizationManager.bindResource(ReactiveTransactionAttemptContext.class, ctx);
+
 						/* end spring-data-couchbase transaction  1/2 */
 
+						// todo gp do we need TransactionSynchronizationManager.forCurrentTransaction()? as we already have synchronizationManager
 						Mono<Void> result = TransactionSynchronizationManager.forCurrentTransaction().flatMap((sm) -> {
+							// todo gp not sure why re-binding again?
 							sm.unbindResourceIfPossible(reactiveCouchbaseClientFactory.getCluster().block());
 							sm.bindResource(reactiveCouchbaseClientFactory.getCluster().block(),
 									reactiveResourceHolder);
@@ -129,6 +134,7 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 								// Since we are on a different thread now transparently, at least make sure
 								// that the original method invocation is synchronized.
 								synchronized (this) {
+									// todo gp this will execute the lambda, and so we likely don't want that to be inside a synchronized block
 									execResult.set(callback.doInTransaction(status));
 								}
 							} catch (RuntimeException e) {

@@ -12,6 +12,7 @@ public class CouchbaseTransactionDefinition extends DefaultTransactionDefinition
 
   public CouchbaseTransactionDefinition(){
     super();
+    setIsolationLevel(ISOLATION_READ_COMMITTED);
   }
 
   public CouchbaseTransactionDefinition(TransactionDefinition that) {
