@@ -20,6 +20,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.function.Supplier;
 
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 import org.springframework.data.couchbase.transaction.ClientSession;
@@ -57,8 +60,9 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 			final String bucketName, final String scopeName) {
-		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))),
-				bucketName, scopeName);
+		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)
+				// todo gp disabling cleanupLostAttempts to simplify output during development
+				.environment(env -> env.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))))), bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
@@ -132,7 +136,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 //		TransactionAttemptContext at = AttemptContextReactiveAccessor
 //				.from(atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive()));
 //
-//		return new ClientSessionImpl(this, transactions, config, at);
+//		return new ClientSessionImpl(this, at);
 	}
 
 	// @Override

@@ -31,6 +31,8 @@ import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.core.service.Service;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,7 +64,10 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
-		ClusterEnvironment env = ClusterEnvironment.builder().build();
+		// todo gp disabling cleanupLostAttempts to simplify output during development
+		ClusterEnvironment env = ClusterEnvironment.builder()
+				.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))
+				.build();
 		String connectString = connectionString();
 		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectString,
 				authenticator(), bucketName(), null, env)) {

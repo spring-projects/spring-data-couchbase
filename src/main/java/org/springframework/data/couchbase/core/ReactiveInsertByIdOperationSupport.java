@@ -15,12 +15,15 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,11 +125,12 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
 
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
+			Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
+					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
+
 			Mono<T> reactiveEntity = support.encodeEntity(object)
-					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-						if (s == null || s.getReactiveTransactionAttemptContext() == null) {
+					.flatMap(converted -> {
+						if (!ctxr.isPresent()) {
 							return template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 									.getCollection(pArgs.getCollection())
 									.flatMap(collection -> collection.reactive()
@@ -134,16 +138,20 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 											.flatMap(
 													result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 						} else {
-							return s.getReactiveTransactionAttemptContext()
-									.insert(
-											tp.doGetDatabase().block().bucket(tp.getBucketName()).reactive()
-													.scope(pArgs.getScope() != null ? pArgs.getScope() : DEFAULT_SCOPE)
-													.collection(pArgs.getCollection() != null ? pArgs.getCollection() : DEFAULT_COLLECTION),
-											converted.getId(), converted.getContent())
-									// todo gp don't have result.cas() anymore - needed?
-									.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L, new TransactionResultHolder(result), s));
+							return template.doGetTemplate()
+									// todo gp this runnable probably not great
+									.flatMap(tp -> Mono.defer(() -> {
+//												ReactiveTransactionAttemptContext ctx = (ReactiveTransactionAttemptContext) ctxr.get();
+										TransactionGetResult result = ctxr.get().insert(
+												tp.doGetDatabase().block().bucket(tp.getBucketName())
+														.scope(pArgs.getScope() != null ? pArgs.getScope() : DEFAULT_SCOPE)
+														.collection(pArgs.getCollection() != null ? pArgs.getCollection() : DEFAULT_COLLECTION),
+												converted.getId(), converted.getContent());
+										// todo gp don't have result.cas() anymore - needed?
+										return support.applyResult(object, converted, converted.getId(), 0L, new TransactionResultHolder(result), null);
+									}));
 						}
-					})));
+					});
 			// .flatMap(converted ->/* rc */tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getCluster().flatMap( cl ->
 			// cl.bucket("my_bucket").reactive()
 			// .defaultCollection()

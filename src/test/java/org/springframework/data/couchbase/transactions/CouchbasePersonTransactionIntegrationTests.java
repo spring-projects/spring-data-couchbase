@@ -26,6 +26,7 @@ import com.couchbase.client.core.error.transaction.TransactionOperationFailedExc
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import lombok.Data;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -128,7 +129,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
 		context = new AnnotationConfigApplicationContext(CouchbasePersonTransactionIntegrationTests.Config.class,
-				PersonService.class, CouchbasePersonTransactionIntegrationTests.TransactionInterception.class);
+//				PersonService.class, CouchbasePersonTransactionIntegrationTests.TransactionInterception.class);
+				PersonService.class);
 	}
 
 	@AfterAll
@@ -869,43 +871,44 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		}
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	static class TransactionInterception {
-
-		@Bean
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
-				CouchbaseTransactionManager txManager) {
-			TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
-			interceptor.setTransactionAttributeSource(transactionAttributeSource);
-			if (txManager != null) {
-				interceptor.setTransactionManager(txManager);
-			}
-			return interceptor;
-		}
-
-		@Bean
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public TransactionAttributeSource transactionAttributeSource() {
-			return new AnnotationTransactionAttributeSource();
-		}
-
-		@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
-				TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
-
-			BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-			advisor.setTransactionAttributeSource(transactionAttributeSource);
-			advisor.setAdvice(transactionInterceptor);
-			// if (this.enableTx != null) {
-			// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
-			// }
-			return advisor;
-		}
-
-	}
+	// todo gp disabled while trying to get alternative method of CouchbaseCallbackTransactionManager working
+//	@Configuration(proxyBeanMethods = false)
+//	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//	static class TransactionInterception {
+//
+//		@Bean
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
+//				CouchbaseTransactionManager txManager) {
+//			TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
+//			interceptor.setTransactionAttributeSource(transactionAttributeSource);
+//			if (txManager != null) {
+//				interceptor.setTransactionManager(txManager);
+//			}
+//			return interceptor;
+//		}
+//
+//		@Bean
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public TransactionAttributeSource transactionAttributeSource() {
+//			return new AnnotationTransactionAttributeSource();
+//		}
+//
+//		@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
+//				TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
+//
+//			BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
+//			advisor.setTransactionAttributeSource(transactionAttributeSource);
+//			advisor.setAdvice(transactionInterceptor);
+//			// if (this.enableTx != null) {
+//			// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
+//			// }
+//			return advisor;
+//		}
+//
+//	}
 
 	@Service
 	@Component
@@ -915,11 +918,11 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	class PersonService {
 
 		final CouchbaseOperations personOperations;
-		final CouchbaseCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
+		final CouchbaseSimpleCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
 		final ReactiveCouchbaseOperations personOperationsRx;
 		final ReactiveCouchbaseTransactionManager managerRx;
 
-		public PersonService(CouchbaseOperations ops, 	CouchbaseCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
+		public PersonService(CouchbaseOperations ops, 	CouchbaseSimpleCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
 				ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
@@ -1024,7 +1027,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			return p;
 		}
 
-		@Autowired CouchbaseCallbackTransactionManager callbackTm;
+		@Autowired CouchbaseSimpleCallbackTransactionManager callbackTm;
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry
@@ -1036,11 +1039,11 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		public Person declarativeFindReplacePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
-			System.err.println("declarativeFindReplacePersonCallback cluster : "
-					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
-			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
-					+ org.springframework.transaction.support.TransactionSynchronizationManager
-							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
+//			System.err.println("declarativeFindReplacePersonCallback cluster : "
+//					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
+//			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
+//					+ org.springframework.transaction.support.TransactionSynchronizationManager
+//							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			return personOperations.replaceById(Person.class).one(p);
 		}

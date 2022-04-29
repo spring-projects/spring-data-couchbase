@@ -116,6 +116,8 @@ public class CouchbaseCallbackTransactionManager extends AbstractPlatformTransac
 								reactiveResourceHolder);
 						setTransaction(transaction);
 
+						// todo gp experimenting with replacing the ClientSession, the ReactiveCouchbaseTransactionObject,
+						// the resource holders etc., with just storing the TransactionAttemptContext.
 						synchronizationManager.bindResource(ReactiveTransactionAttemptContext.class, ctx);
 
 						/* end spring-data-couchbase transaction  1/2 */

@@ -47,6 +47,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
@@ -347,9 +348,11 @@ public abstract class AbstractCouchbaseConfiguration {
 //		return new CouchbaseTransactionManager(couchbaseClientFactory);
 //	}
 
+	// todo gp experimenting with making  CouchbaseSimpleCallbackTransactionManager the default - but it doesn't play
+	// nice with MR's changes to insert CouchbaseTransactionInterceptor
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseCallbackTransactionManager transactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
-		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
+	CouchbaseSimpleCallbackTransactionManager transactionManager(CouchbaseClientFactory clientFactory) {
+		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
 	}
 
 	/**
