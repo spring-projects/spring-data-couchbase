@@ -17,12 +17,9 @@ package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.TransactionQueryOptions;
-import com.example.demo.CouchbaseTransactionalTemplate;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -30,6 +27,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,16 +89,43 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			CommonOptions<?> gOptions = initGetOptions();
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, txCtx, domainType);
 			LOG.trace("findById {}", pArgs);
-			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollection(pArgs.getCollection()).block().reactive();
 
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			//AttemptContextReactive ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
+//			return GenericSupport.one(template, scope, collection, support, object,
+//					(GenericSupportHelper support) -> {
+//						if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+//							return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
+//									result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+//						} else {
+//							return rc.get(id, (GetOptions) pArgs.getOptions()).flatMap(
+//									result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+//						}
+//					},
+//					(GenericSupportHelper support) -> {
+//						return s.getReactiveTransactionAttemptContext().get(rc, id)
+//								// todo gp no cas
+//								.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), 0,
+//										domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), s));
+//					}
+//		})).onErrorResume(throwable -> {
+//			if (throwable instanceof DocumentNotFoundException) {
+//				return Mono.empty();
+//			}
+//			return Mono.error(throwable);
+//		});
+
+			Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
+					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
+
+			com.couchbase.client.java.Collection coll = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollection(pArgs.getCollection()).block();
+		ReactiveCollection rc = coll.reactive();
+
+//			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			//ReactiveTransactionAttemptContext ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
 			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
 
-			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
-					.flatMap(s -> {
-						if ( s == null || s.getAttemptContextReactive() == null ) {
+			Mono<T> reactiveEntity = Mono.defer(() -> {
+						if (!ctxr.isPresent()) {
 							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
 								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
 										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
@@ -109,11 +134,18 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
 							}
 						} else {
-							return s.getAttemptContextReactive().get(rc, id)
-									.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), result.cas(),
-											domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), s));
+							return Mono.defer(() -> {
+								TransactionGetResult result = ctxr.get().get(coll, id);
+								// todo gp no cas
+								return support.decodeEntity(id, result.contentAsObject().toString(), 0,
+										domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), null)
+										.doOnNext(out -> {
+											// todo gp is this safe?  are we on the right thread?
+											// org.springframework.transaction.support.TransactionSynchronizationManager.bindResource(out, result);
+										});
+							});
 						}
-					}));
+					});
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {
@@ -134,6 +166,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					return OptionsBuilder.buildTransactionGetOptions(buildOptions);
 				}
 		 */
+
 
 		@Override
 		public Flux<? extends T> all(final Collection<String> ids) {

@@ -2,11 +2,10 @@ package org.springframework.data.couchbase.transaction;
 
 import java.util.Objects;
 
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.springframework.data.annotation.Immutable;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
-
-import com.couchbase.transactions.TransactionQueryOptions;
 
 @Immutable
 public final class ClientSessionOptions {

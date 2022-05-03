@@ -33,6 +33,7 @@ import org.springframework.transaction.support.ResourceHolderSupport;
  * @see ReactiveCouchbaseTransactionManager
  * @see ReactiveCouchbaseTemplate
  */
+// todo gp understand why this is needed
 public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable ClientSession session; // which holds the atr

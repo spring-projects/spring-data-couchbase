@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.lang.Nullable;
@@ -32,9 +34,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
 import reactor.core.publisher.Mono;
 
 /**
@@ -63,12 +62,11 @@ import reactor.core.publisher.Mono;
  * @see <a href="https://www.mongodb.com/transactions">MongoDB Transaction Documentation</a>
  * @see MongoDatabaseUtils#getDatabase(CouchbaseClientFactory, SessionSynchronization)
  */
+// todo gp is this needed, or can we only have the CallbackPreferring one?
 public class CouchbaseTransactionManager extends AbstractPlatformTransactionManager
 		implements ResourceTransactionManager, InitializingBean {
 
 	private @Nullable CouchbaseClientFactory databaseFactory;
-	private @Nullable Transactions transactions; // This is the com.couchbase.transactions object
-	private @Nullable TransactionConfig config;
 	private @Nullable TransactionOptions options;
 
 	/**
@@ -87,27 +85,17 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	public CouchbaseTransactionManager() {}
 
 	/**
-	 * Create a new {@link CouchbaseTransactionManager} obtaining sessions from the given {@link CouchbaseClientFactory}.
-	 *
-	 * @param databaseFactory must not be {@literal null}.
-	 */
-	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory) {
-		this(databaseFactory, null);
-	}
-
-	/**
 	 * Create a new {@link CouchbaseTransactionManager} obtaining sessions from the given {@link CouchbaseClientFactory}
 	 * applying the given {@link TransactionOptions options}, if present, when starting a new transaction.
 	 *
 	 * @param databaseFactory must not be {@literal null}. @//param options can be {@literal null}.
 	 */
-	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory, @Nullable Transactions transactions) {
+	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory) {
 
 		Assert.notNull(databaseFactory, "DbFactory must not be null!");
 		System.err.println(this);
 		System.err.println(databaseFactory.getCluster());
 		this.databaseFactory = databaseFactory;
-		this.transactions = transactions;
 	}
 
 	/*
@@ -351,12 +339,12 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	}
 
 	private CouchbaseResourceHolder newResourceHolder(TransactionDefinition definition, ClientSessionOptions options,
-			AttemptContextReactive atr) {
+			ReactiveTransactionAttemptContext atr) {
 
 		CouchbaseClientFactory databaseFactory = getResourceFactory();
 
 		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
-				databaseFactory.getSession(options, transactions, null, atr), databaseFactory);
+				databaseFactory.getSession(options, atr), databaseFactory);
 		// TODO resourceHolder.setTimeoutIfNotDefaulted(determineTimeout(definition));
 
 		return resourceHolder;
@@ -425,10 +413,6 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 	public CouchbaseClientFactory getDatabaseFactory() {
 		return databaseFactory;
-	}
-
-	public Transactions getTransactions() {
-		return transactions;
 	}
 
 	/**

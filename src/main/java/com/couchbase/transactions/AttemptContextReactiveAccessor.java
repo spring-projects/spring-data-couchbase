@@ -17,12 +17,10 @@
 package com.couchbase.transactions;
 
 import com.couchbase.client.core.annotation.Stability;
-import com.couchbase.transactions.config.MergedTransactionConfig;
-import com.couchbase.transactions.config.PerTransactionConfig;
-import com.couchbase.transactions.config.PerTransactionConfigBuilder;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.forwards.Supported;
-import com.couchbase.transactions.log.TransactionLogger;
+import com.couchbase.client.core.transaction.log.CoreTransactionLogger;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import org.springframework.transaction.reactive.TransactionContext;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -30,61 +28,70 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * To access the AttemptContextReactive held by AttemptContext
+ * To access the ReactiveTransactionAttemptContext held by TransactionAttemptContext
  *
  * @author Michael Reiche
  */
 public class AttemptContextReactiveAccessor {
 
-  public static AttemptContextReactive getACR(AttemptContext attemptContext) {
-    return attemptContext.ctx();
+  public static ReactiveTransactionAttemptContext getACR(TransactionAttemptContext attemptContext) {
+    // return attemptContext.ctx();
+      // todo gp is this access needed.  Could hold the raw CoreTransactionAttemptContext instead.
+      return null;
   }
 
-  public static AttemptContext from(AttemptContextReactive attemptContextReactive) {
-    return new AttemptContext(attemptContextReactive);
+  public static TransactionAttemptContext from(ReactiveTransactionAttemptContext attemptContextReactive) {
+      // todo gp needed?
+      return null;
+//    return new TransactionAttemptContext(attemptContextReactive);
   }
 
-  public static TransactionLogger getLogger(AttemptContextReactive attemptContextReactive){
-    return attemptContextReactive.LOGGER;
+  public static CoreTransactionLogger getLogger(ReactiveTransactionAttemptContext attemptContextReactive){
+      // todo gp needed?
+      return null;
+    //return attemptContextReactive;
   }
-  @Stability.Internal
-  public static AttemptContextReactive newAttemptContextReactive(TransactionsReactive transactions){
-    PerTransactionConfig perConfig = PerTransactionConfigBuilder.create().build();
-    MergedTransactionConfig merged = new MergedTransactionConfig(transactions.config(), Optional.of(perConfig));
-
-    TransactionContext overall = new TransactionContext(
-        transactions.cleanup().clusterData().cluster().environment().requestTracer(),
-        transactions.cleanup().clusterData().cluster().environment().eventBus(),
-        UUID.randomUUID().toString(), now(), Duration.ZERO, merged);
-
-    String txnId = UUID.randomUUID().toString();
-    overall.LOGGER.info(configDebug(transactions.config(), perConfig));
-    return transactions.createAttemptContext(overall, merged, txnId);
-  }
+    // todo gp needed?
+//  @Stability.Internal
+//  public static ReactiveTransactionAttemptContext newAttemptContextReactive(TransactionsReactive transactions){
+//      return null;
+//    PerTransactionConfig perConfig = PerTransactionConfigBuilder.create().build();
+//    MergedTransactionConfig merged = new MergedTransactionConfig(transactions.config(), Optional.of(perConfig));
+//
+//    TransactionContext overall = new TransactionContext(
+//        transactions.cleanup().clusterData().cluster().environment().requestTracer(),
+//        transactions.cleanup().clusterData().cluster().environment().eventBus(),
+//        UUID.randomUUID().toString(), now(), Duration.ZERO, merged);
+//
+//    String txnId = UUID.randomUUID().toString();
+//    overall.LOGGER.info(configDebug(transactions.config(), perConfig));
+//    return transactions.createAttemptContext(overall, merged, txnId);
+//  }
 
   private static Duration now() {
     return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
   }
 
-  static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("library version: ");
-    sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
-    sb.append(" config: ");
-    sb.append("atrs=");
-    sb.append(config.numAtrs());
-    sb.append(", metadataCollection=");
-    sb.append(config.metadataCollection());
-    sb.append(", expiry=");
-    sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
-    sb.append("msecs durability=");
-    sb.append(config.durabilityLevel());
-    sb.append(" per-txn config=");
-    sb.append(" durability=");
-    sb.append(perConfig.durabilityLevel());
-    sb.append(", supported=");
-    sb.append(Supported.SUPPORTED);
-    return sb.toString();
-  }
+  // todo gp if needed let's expose in the SDK
+//  static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
+//    StringBuilder sb = new StringBuilder();
+//    sb.append("library version: ");
+//    sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
+//    sb.append(" config: ");
+//    sb.append("atrs=");
+//    sb.append(config.numAtrs());
+//    sb.append(", metadataCollection=");
+//    sb.append(config.metadataCollection());
+//    sb.append(", expiry=");
+//    sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
+//    sb.append("msecs durability=");
+//    sb.append(config.durabilityLevel());
+//    sb.append(" per-txn config=");
+//    sb.append(" durability=");
+//    sb.append(perConfig.durabilityLevel());
+//    sb.append(", supported=");
+//    sb.append(Supported.SUPPORTED);
+//    return sb.toString();
+//  }
 
 }

@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
+import com.couchbase.client.java.transactions.TransactionQueryResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Flux;
@@ -22,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
@@ -34,7 +35,6 @@ import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.couchbase.transactions.TransactionQueryOptions;
 
 /**
  * {@link ReactiveFindByQueryOperation} implementations for Couchbase.
@@ -207,14 +207,16 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			//if (pArgs.getTxOp() == null && txOp == null) { // too early to find TxOp - transactional() has not yet been called
 			allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
 							.flatMap(s -> {
-								if ( s == null || s.getAttemptContextReactive() == null ) {
+								if ( s == null || s.getReactiveTransactionAttemptContext() == null ) {
 									QueryOptions opts = buildOptions(pArgs.getOptions());
 									return 	 pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
 											: rs.query(statement, opts);
 								} else {
 									TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-									return s.getAttemptContextReactive()
+									Mono<TransactionQueryResult> tqr = s.getReactiveTransactionAttemptContext()
 											.query(statement, opts);
+									// todo gp do something with tqr
+									return Mono.empty();
 								}
 							}));
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
@@ -279,14 +281,16 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			 */
 			countResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null)
 					.flatMap(s -> {
-						if ( s == null || s.getAttemptContextReactive() == null ) {
+						if ( s == null || s.getReactiveTransactionAttemptContext() == null ) {
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return 	 pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
 									: rs.query(statement, opts);
 						} else {
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-							return s.getAttemptContextReactive()
+							Mono<TransactionQueryResult> tqr = s.getReactiveTransactionAttemptContext()
 									.query(statement, opts);
+							// todo gp do something with tqr
+							return Mono.empty();
 						}
 					}));
 			Mono<ReactiveQueryResult> finalCountResult = countResult;

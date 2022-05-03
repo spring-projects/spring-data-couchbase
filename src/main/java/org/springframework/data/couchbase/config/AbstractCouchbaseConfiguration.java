@@ -46,7 +46,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
-import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
@@ -67,10 +67,6 @@ import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
-import com.couchbase.transactions.TransactionDurabilityLevel;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.config.TransactionConfigBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -334,41 +330,46 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
-	@Bean(COUCHBASE_TRANSACTIONS)
-	public Transactions getTransactions(Cluster cluster, TransactionConfig transactionConfig) {
-		return Transactions.create(cluster, transactionConfig);
-	}
-
-	@Bean
-	public TransactionConfig transactionConfig() {
-		return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
-				.expirationTime(Duration.ofSeconds(10)).durabilityLevel(TransactionDurabilityLevel.MAJORITY).build();
-	}
+	// todo gp how to DI this into the Cluster creation esp. as it creates a CoreTransactionConfig
+//	@Bean
+//	public TransactionsConfig transactionConfig() {
+//		return TransactionsConfig.builder().build();
+//	}
 
 	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
 	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, Transactions transactions) {
-		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory, transactions);
+			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
+		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
 	}
 
+//	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+//	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
+//		return new CouchbaseTransactionManager(couchbaseClientFactory);
+//	}
+
+	// todo gp experimenting with making  CouchbaseSimpleCallbackTransactionManager the default - but it doesn't play
+	// nice with MR's changes to insert CouchbaseTransactionInterceptor
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory,
-			Transactions transactions) {
-		return new CouchbaseTransactionManager(couchbaseClientFactory, transactions);
+	CouchbaseSimpleCallbackTransactionManager transactionManager(CouchbaseClientFactory clientFactory) {
+		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
 	}
+
+//	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+//	CouchbaseSimpleCallbackTransactionManager simpleCallbackTransactionManager(CouchbaseClientFactory clientFactory) {
+//		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
+//	}
+
 
 	/**
 	 * Blocking Transaction Manager
 	 *
 	 * @param couchbaseTemplate
-	 * @param transactionConfig
 	 * @return
 	 */
-	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate,
-																								 TransactionConfig transactionConfig) {
-		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate, transactionConfig);
-	}
+//	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
+//	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
+//		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
+//	}
 
 	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.

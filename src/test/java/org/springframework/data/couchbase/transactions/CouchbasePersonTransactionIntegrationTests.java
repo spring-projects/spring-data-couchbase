@@ -22,7 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
+import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import lombok.Data;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -62,7 +66,6 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.couchbase.transaction.ClientSessionOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
@@ -95,13 +98,6 @@ import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.RemoveOptions;
-import com.couchbase.transactions.TransactionDurabilityLevel;
-import com.couchbase.transactions.TransactionResult;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
-import com.couchbase.transactions.config.TransactionConfigBuilder;
-import com.couchbase.transactions.error.TransactionFailed;
-import com.couchbase.transactions.error.external.TransactionOperationFailed;
 
 /**
  * Tests for com.couchbase.transactions using
@@ -118,12 +114,11 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
-	@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
+	//@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired CouchbaseTemplate cbTmpl;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
-	@Autowired Transactions transactions;
 	/* DO NOT @Autowired - it will result in no @Transactional annotation behavior */ PersonService personService;
 	@Autowired CouchbaseTemplate operations;
 
@@ -133,13 +128,14 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
 		context = new AnnotationConfigApplicationContext(CouchbasePersonTransactionIntegrationTests.Config.class,
-				PersonService.class, CouchbasePersonTransactionIntegrationTests.TransactionInterception.class);
+//				PersonService.class, CouchbasePersonTransactionIntegrationTests.TransactionInterception.class);
+				PersonService.class);
 	}
 
 	@AfterAll
 	public static void afterAll() {
 		callSuperAfterAll(new Object() {});
-		context.close();
+		//context.close();
 	}
 
 	@BeforeEach
@@ -160,7 +156,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	}
 
 	/* Not used in this class.  The class itself is not @Transaction
-	
+
 	List<AfterTransactionAssertion<? extends Persistable<?>>> assertionList;
 	
 		@BeforeTransaction
@@ -235,6 +231,18 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	}
 
 	@Test
+	public void replaceInTxAnnotatedCallback() {
+		Person person = new Person(1, "Walter", "White");
+		Person switchedPerson = new Person(1, "Dave", "Reynolds");
+		cbTmpl.insertById(Person.class).one(person);
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person p = personService.declarativeFindReplacePersonCallback(person, tryCount);
+		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
+	}
+
+
+	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethodReactive() {
 		Person p = new Person(null, "Walter", "White");
 		Person s = personService.declarativeSavePersonReactive(p).block();
@@ -276,7 +284,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(new Person(null, "Walter", "White"));
-		assertThrows(TransactionOperationFailed.class, () -> personService.savePerson(p));
+		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException
+		assertThrows(TransactionOperationFailedException.class, () -> personService.savePerson(p));
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
@@ -289,9 +298,9 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void replacePersonCBTransactionsRxTmpl() {
 		Person person = new Person(1, "Walter", "White");
 		cbTmpl.insertById(Person.class).one(person);
-		Mono<TransactionResult> result = transactions.reactive(ctx -> { // get the ctx
+		Mono<TransactionResult> result = this.couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			ClientSession clientSession = couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), ctx);
 			ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
 					reactiveCouchbaseClientFactory);
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
@@ -299,11 +308,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster().block(), resourceHolder);
 						prepareSynchronization(synchronizationManager, null, new CouchbaseTransactionDefinition());
 						return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
-								.flatMap((pp) -> {
-									System.err.println("==================================== ATTEMPT : " + ctx.attemptId()
-											+ " ======================================");
-									return Mono.just(pp);
-								}) //
 								.flatMap((pp) -> rxCBTmpl.replaceById(Person.class).one(pp)) //
 								.then(Mono.just(synchronizationManager)); // tx
 					});
@@ -321,11 +325,11 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person person = new Person(1, "Walter", "White");
 		try {
 			rxCBTmpl.removeById(Person.class).one(person.getId().toString());
-		} catch (DocumentNotFoundException dnfe) {}
-		Mono<TransactionResult> result = transactions.reactive(ctx -> { // get the ctx
+		} catch(DocumentNotFoundException dnfe){}
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 
 			ClientSession clientSession = couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), ctx);
 			ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
 					reactiveCouchbaseClientFactory);
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
@@ -339,7 +343,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 					.contextWrite(TransactionContextManager.getOrCreateContextHolder()).then();
 
 		});
-		assertThrowsCause(TransactionFailed.class, SimulateFailureException.class, (ignore) -> {
+		assertThrowsCause(TransactionFailedException.class, SimulateFailureException.class, (ignore) -> {
 			result.block();
 			return null;
 		});
@@ -351,9 +355,9 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void insertTwicePersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
 		sleepMs(1000);
-		Mono<TransactionResult> result = transactions.reactive(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			ClientSession clientSession = couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), ctx);
 			ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
 					reactiveCouchbaseClientFactory);
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
@@ -367,7 +371,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			return sync.contextWrite(TransactionContextManager.getOrCreateContext())
 					.contextWrite(TransactionContextManager.getOrCreateContextHolder()).then();
 		});
-		assertThrowsCause(TransactionFailed.class, DuplicateKeyException.class, (ignore) -> {
+		assertThrowsCause(TransactionFailedException.class, DuplicateKeyException.class, (ignore) -> {
 			result.block();
 			return null;
 		});
@@ -385,10 +389,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		cbTmpl.insertById(Person.class).one(person);
 
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Mono<TransactionResult> result = transactions.reactive(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			// see TransactionalOperatorImpl.transactional().
 			ClientSession clientSession = couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), ctx);
 			ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
 					reactiveCouchbaseClientFactory);
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
@@ -398,7 +402,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 						return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
 								.flatMap((ppp) -> {
 									tryCount.getAndIncrement();
-									System.err.println("===== ATTEMPT : " + tryCount.get() + " " + ctx.attemptId() + " =====");
+									System.err.println("===== ATTEMPT : " + tryCount.get() + " =====");
 									return Mono.just(ppp);
 								})//
 								.flatMap((ppp) -> rxCBTmpl.replaceById(Person.class).one(ppp)) //
@@ -429,7 +433,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			t.start();
 			cbTmpl.insertById(Person.class).one(person);
 			tryCount.set(0);
-			TransactionsWrapper transactionsWrapper = new TransactionsWrapper(transactions, reactiveCouchbaseClientFactory);
+			TransactionsWrapper transactionsWrapper = new TransactionsWrapper(reactiveCouchbaseClientFactory);
 			Mono<TransactionResult> result = transactionsWrapper.reactive(ctx -> {
 				System.err.println("try: " + tryCount.incrementAndGet());
 				return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
@@ -546,15 +550,15 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		rxCBTmpl.insertById(Person.class).one(person).block();
 		sleepMs(1000);
 		Mono<TransactionResult> result = transactions.reactive(((ctx) -> { // get the ctx
-			// can we take the AttemptContextReactive ctx and save it in the context?
+			// can we take the ReactiveTransactionAttemptContext ctx and save it in the context?
 			ClientSession clientSession = couchbaseClientFactory
-					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+					.getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), ctx);
 			CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(clientSession, couchbaseClientFactory);
 	
-	// I think this needs to happen within the transactions.reactive() call - or equivalent.
+	// I think this needs to happen within the couchbaseClientFactory.getCluster().reactive().transactions().run() call - or equivalent.
 	
 	// this currentContext() call is going to create a new ctx, and store the acr.  Will it get uses in syncFlatMap()
-	// below?  Should the ctx be created in the above call to transactions.reactive()?
+	// below?  Should the ctx be created in the above call to couchbaseClientFactory.getCluster().reactive().transactions().run()?
 	// How does this work in savePerson etc?
 	// is there means for just getting the currentContext() without creating it? 
 	Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext().map(TransactionSynchronizationManager::new)
@@ -575,7 +579,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	
 	
 		result.block();
-		// assertThrows(TransactionFailed.class, () -> result.block());
+		// assertThrows(TransactionFailedException.class, () -> result.block());
 		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
 		System.err.println(pFound);
 		assertEquals(person.getFirstname(), pFound.getFirstname());
@@ -624,7 +628,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	          .then(rxCBTmpl.removeById(Person.class).inCollection(cName).transaction(ctx).one(person.getId().toString()))
 	          .then();
 	    }));
-	    assertThrows(TransactionFailed.class, result::block);
+	    assertThrows(TransactionFailedException.class, result::block);
 	    Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	    assertEquals(pFound, person, "Should have found " + person);
 	  }
@@ -655,7 +659,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	      return rxRepo.withCollection(cName).withTransaction(ctx).deleteById(person.getId().toString())
 	          .then(rxRepo.withCollection(cName).withTransaction(ctx).deleteById(person.getId().toString())).then();
 	    }));
-	    assertThrows(TransactionFailed.class, result::block);
+	    assertThrows(TransactionFailedException.class, result::block);
 	    Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	    assertEquals(pFound, person, "Should have found " + person);
 	  }
@@ -694,7 +698,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	
 	    try {
 	      result.block();
-	    } catch (TransactionFailed e) {
+	    } catch (TransactionFailedException e) {
 	      e.printStackTrace();
 	      if (e.getCause() instanceof PoofException) {
 	        Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
@@ -704,7 +708,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	        e.printStackTrace();
 	      }
 	    }
-	    throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	    throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	  }
 	
 	  @Test
@@ -723,7 +727,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	
 	    try {
 	      result.block();
-	    } catch (TransactionFailed e) {
+	    } catch (TransactionFailedException e) {
 	      if (e.getCause() instanceof PoofException) {
 	        Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 	        assertEquals(person, pFound, "Should have found " + person);
@@ -732,7 +736,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	        e.printStackTrace();
 	      }
 	    }
-	    throw new RuntimeException("Should have been a TransactionFailed exception with a cause of PoofException");
+	    throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
 	  }
 	
 	  @Test
@@ -835,12 +839,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			return bucketName();
 		}
 
-		@Override
-		public TransactionConfig transactionConfig() {
-			// expirationTime 20 minutes for stepping with the debugger
-			return TransactionConfigBuilder.create().logDirectly(Event.Severity.INFO).logOnFailure(true, Event.Severity.ERROR)
-					.expirationTime(Duration.ofMinutes(20)).durabilityLevel(TransactionDurabilityLevel.MAJORITY).build();
-		}
 
 		/*
 				beforeAll creates a PersonService bean in the applicationContext
@@ -884,43 +882,44 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		}
 	}
 
-	@Configuration(proxyBeanMethods = false)
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	static class TransactionInterception {
-
-		@Bean
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
-				CouchbaseTransactionManager txManager) {
-			TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
-			interceptor.setTransactionAttributeSource(transactionAttributeSource);
-			if (txManager != null) {
-				interceptor.setTransactionManager(txManager);
-			}
-			return interceptor;
-		}
-
-		@Bean
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public TransactionAttributeSource transactionAttributeSource() {
-			return new AnnotationTransactionAttributeSource();
-		}
-
-		@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
-		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
-				TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
-
-			BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-			advisor.setTransactionAttributeSource(transactionAttributeSource);
-			advisor.setAdvice(transactionInterceptor);
-			// if (this.enableTx != null) {
-			// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
-			// }
-			return advisor;
-		}
-
-	}
+	// todo gp disabled while trying to get alternative method of CouchbaseCallbackTransactionManager working
+//	@Configuration(proxyBeanMethods = false)
+//	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//	static class TransactionInterception {
+//
+//		@Bean
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
+//				CouchbaseTransactionManager txManager) {
+//			TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
+//			interceptor.setTransactionAttributeSource(transactionAttributeSource);
+//			if (txManager != null) {
+//				interceptor.setTransactionManager(txManager);
+//			}
+//			return interceptor;
+//		}
+//
+//		@Bean
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public TransactionAttributeSource transactionAttributeSource() {
+//			return new AnnotationTransactionAttributeSource();
+//		}
+//
+//		@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
+//		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+//		public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
+//				TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
+//
+//			BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
+//			advisor.setTransactionAttributeSource(transactionAttributeSource);
+//			advisor.setAdvice(transactionInterceptor);
+//			// if (this.enableTx != null) {
+//			// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
+//			// }
+//			return advisor;
+//		}
+//
+//	}
 
 	@Service
 	@Component
@@ -930,16 +929,16 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	class PersonService {
 
 		final CouchbaseOperations personOperations;
-		final CouchbaseTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
+		final CouchbaseSimpleCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
 		final ReactiveCouchbaseOperations personOperationsRx;
 		final ReactiveCouchbaseTransactionManager managerRx;
 
-		public PersonService(CouchbaseOperations ops, CouchbaseTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
+		public PersonService(CouchbaseOperations ops, 	CouchbaseSimpleCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
 				ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
 			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
-			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
+//			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
 			System.err.println("manager Manager     : " + manager);
 
 			personOperationsRx = opsRx;
@@ -1039,7 +1038,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			return p;
 		}
 
-		@Autowired CouchbaseCallbackTransactionManager callbackTm;
+		@Autowired CouchbaseSimpleCallbackTransactionManager callbackTm;
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry
@@ -1047,18 +1046,19 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		 * @param person
 		 * @return
 		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public Person declarativeFindReplacePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
-			System.err.println("declarativeFindReplacePersonCallback cluster : "
-					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
-			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
-					+ org.springframework.transaction.support.TransactionSynchronizationManager
-							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
+//			System.err.println("declarativeFindReplacePersonCallback cluster : "
+//					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
+//			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
+//					+ org.springframework.transaction.support.TransactionSynchronizationManager
+//							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			return personOperations.replaceById(Person.class).one(p);
 		}
+
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry

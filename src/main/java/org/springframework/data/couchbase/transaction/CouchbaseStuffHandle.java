@@ -1,5 +1,8 @@
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
+import com.couchbase.client.java.transactions.TransactionResult;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.core.publisher.Mono;
@@ -20,10 +23,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.CouchbaseException;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.TransactionGetResult;
-import com.couchbase.transactions.TransactionResult;
-import com.couchbase.transactions.TransactionsReactive;
 
 public class CouchbaseStuffHandle {
 
@@ -33,7 +32,7 @@ public class CouchbaseStuffHandle {
 	private final TransactionDefinition transactionDefinition;
 
 	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
-	private AttemptContextReactive attemptContextReactive;
+	private ReactiveTransactionAttemptContext attemptContextReactive;
 
 	public CouchbaseStuffHandle() {
 		transactionManager = null;
@@ -61,13 +60,15 @@ public class CouchbaseStuffHandle {
 	 * <code>PerTransactionConfig</code>.
 	 */
 	public Mono<TransactionResult> reactive(Function<CouchbaseStuffHandle, Mono<Void>> transactionLogic,
-			boolean commit) {
-		return ((ReactiveCouchbaseTransactionManager) transactionManager).getTransactions().reactive((ctx) -> {
-			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
-			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
-			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
-			return transactionLogic.apply(this);
-		}/*, commit*/);
+											boolean commit) {
+		// todo gp this needs access to a Cluster
+		return Mono.empty();
+//		return ((ReactiveCouchbaseTransactionManager) transactionManager).getTransactions().reactive((ctx) -> {
+//			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
+//			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
+//			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
+//			return transactionLogic.apply(this);
+//		}/*, commit*/);
 	}
 
 	public TransactionResultHolder transactionResultHolder(Integer key) {
@@ -80,7 +81,7 @@ public class CouchbaseStuffHandle {
 		return holder;
 	}
 
-	public void setAttemptContextReactive(AttemptContextReactive attemptContextReactive) {
+	public void setAttemptContextReactive(ReactiveTransactionAttemptContext attemptContextReactive) {
 		this.attemptContextReactive = attemptContextReactive;
 		// see ReactiveCouchbaseTransactionManager.doBegin()
 		// transactionManager.getReactiveTransaction(new CouchbaseTransactionDefinition()).block();
@@ -94,7 +95,7 @@ public class CouchbaseStuffHandle {
 		 */
 	}
 
-	public AttemptContextReactive getAttemptContextReactive() {
+	public ReactiveTransactionAttemptContext getAttemptContextReactive() {
 		return attemptContextReactive;
 	}
 
