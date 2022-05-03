@@ -46,8 +46,6 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	/**
 	 * Provides access to the managed SDK {@link Cluster} reference.
 	 */
-	//Cluster getCluster();
-
 	Mono<ClusterInterface> getCluster();
 
 	/**
@@ -58,8 +56,6 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	/**
 	 * Provides access to the managed SDK {@link Scope} reference.
 	 */
-	//Scope getScope();
-
 	Mono<Scope> getScope();
 
 	/**
@@ -67,9 +63,8 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
-	//Collection getCollection(String name);
-
 	Mono<Collection> getCollection(String name);
+
 	/**
 	 * Provides access to the default collection.
 	 */
@@ -113,7 +108,4 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	boolean isTransactionActive();
 
-	//CouchbaseStuffHandle getTransactionalOperator();
-
-	//ReactiveCouchbaseClientFactory with(CouchbaseStuffHandle txOp);
 }

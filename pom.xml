@@ -292,10 +292,12 @@
                 <enabled>false</enabled>
             </releases>
         </repository>
+<!--
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
+-->
     </repositories>
 
     <pluginRepositories>
@@ -327,6 +329,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <useModulePath>false</useModulePath>
                     <includes>
                         <include>**/*IntegrationTest.java</include>
                         <include>**/*IntegrationTests.java</include>

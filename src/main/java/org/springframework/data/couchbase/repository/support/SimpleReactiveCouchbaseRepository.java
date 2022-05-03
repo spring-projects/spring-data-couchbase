@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import com.couchbase.client.java.CommonOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -74,6 +75,24 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@SuppressWarnings("unchecked")
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
+		return save(entity, getScope(), getCollection());
+	}
+
+	@Override
+	public Flux<T> findAll(Sort sort) {
+		return findAll(new Query().with(sort));
+	}
+
+	@Override
+	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
+		Assert.notNull(entities, "The given Iterable of entities must not be null!");
+		String scopeName = getScope();
+		String collection = getCollection();
+		return Flux.fromIterable(entities).flatMap(e -> save(e, scopeName, collection));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <S extends T> Mono<S> save(S entity, String scopeName, String collectionName) {
 		Assert.notNull(entity, "Entity must not be null!");
 		Mono<S> result;
 		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
@@ -86,29 +105,18 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 		if (!versionPresent) { // the entity doesn't have a version property
 			// No version field - no cas
-			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		} else if (existingDocument) { // there is a version property, and it is non-zero
 			// Updating existing document with cas
-			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		} else { // there is a version property, but it's zero or not set.
 			// Creating new document
-			result = (Mono<S>) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.insertById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		}
 		return result;
-	}
-
-	@Override
-	public Flux<T> findAll(Sort sort) {
-		return findAll(new Query().with(sort));
-	}
-
-	@Override
-	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return Flux.fromIterable(entities).flatMap(e -> save(e));
 	}
 
 	@Override

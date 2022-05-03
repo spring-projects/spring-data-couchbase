@@ -128,7 +128,6 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			CouchbaseDocument converted = support.encodeEntity(object).block();
 			reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
 				if (s == null || s.getAttemptContextReactive() == null) {
-					System.err.println("ReactiveReplaceById: not");
 					Mono<com.couchbase.client.java.Collection> op = template.getCouchbaseClientFactory()
 							.withScope(pArgs.getScope()).getCollection(pArgs.getCollection());
 					return op.flatMap(collection -> collection.reactive()

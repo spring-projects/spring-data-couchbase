@@ -168,10 +168,10 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 				try {
 					return invocation.proceed();
 				} finally {
-					// TransactionSynchronizationManager.unbindResource(method);
+					TransactionSynchronizationManager.unbindResource(method);
 				}
 			} finally {
-				// currentInvocation.set(oldInvocation);
+				currentInvocation.set(oldInvocation);
 			}
 		}
 	}

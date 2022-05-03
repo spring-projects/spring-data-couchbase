@@ -114,9 +114,9 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		//ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		//couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		//reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	/**

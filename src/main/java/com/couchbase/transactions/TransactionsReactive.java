@@ -364,7 +364,7 @@ public class TransactionsReactive {
     }
 
     // TODO: changed from package-protected to public (could have just used an accessor class in same package)
-    public AttemptContextReactive createAttemptContext(TransactionContext overall,
+     AttemptContextReactive createAttemptContext(TransactionContext overall,
                                                 MergedTransactionConfig config,
                                                 String attemptId) {
         // null only happens in testing with Mockito, harmless

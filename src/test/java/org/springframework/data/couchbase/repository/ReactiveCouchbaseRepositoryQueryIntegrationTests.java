@@ -93,6 +93,28 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	}
 
 	@Test
+	void testQuery() {
+		Airport vie = null;
+		Airport jfk = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low1");
+			airportRepository.save(vie).block();
+			jfk = new Airport("airports::jfk", "JFK", "xxxx");
+			airportRepository.save(jfk).block();
+
+			List<String> all = airportRepository.findIdByDynamicN1ql("","").toStream().collect(Collectors.toList());
+			System.out.println(all);
+			assertFalse(all.isEmpty());
+			assertTrue(all.stream().anyMatch(a -> a.equals("airports::vie")));
+			assertTrue(all.stream().anyMatch(a -> a.equals("airports::jfk")));
+
+		} finally {
+			airportRepository.delete(vie).block();
+			airportRepository.delete(jfk).block();
+		}
+	}
+
+	@Test
 	void findBySimpleProperty() {
 		Airport vie = null;
 		try {

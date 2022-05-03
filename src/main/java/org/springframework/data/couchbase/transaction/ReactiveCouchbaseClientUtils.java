@@ -138,18 +138,16 @@ public class ReactiveCouchbaseClientUtils {
 
 		//CouchbaseResourceHolder h = (CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 		//		.getResource(factory);
-		TransactionSynchronizationManager.forCurrentTransaction()
-				.flatMap((synchronizationManager) -> { System.out.println(synchronizationManager.getResource(factory)); return null; });
 
 		return TransactionSynchronizationManager.forCurrentTransaction()
-				.flatMap(x -> { System.err.println("forCurrentTransaction: getResource() : "+x.getResource(factory.getCluster().block())); return Mono.just(x);})
+				.flatMap(x -> {/* System.err.println("forCurrentTransaction: getResource() : "+x.getResource(factory.getCluster().block()));*/ return Mono.just(x);})
 				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
 				.flatMap(synchronizationManager -> {
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
 							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withSession(it), converter)); // rx TxMgr
 				}) //
 				.onErrorResume(NoTransactionException.class,
-						e -> { System.err.println("noCurrentTransaction: "); return getCouchbaseTemplateOrDefault(dbName,
+						e -> { /* System.err.println("noCurrentTransaction: "); */return getCouchbaseTemplateOrDefault(dbName,
 								getNonReactiveSession(factory) != null ? factory.withSession(getNonReactiveSession(factory)) : factory,
 								converter);}) // blocking TxMgr
 				.switchIfEmpty(getCouchbaseTemplateOrDefault(dbName, factory, converter));
@@ -162,7 +160,7 @@ public class ReactiveCouchbaseClientUtils {
 			h = ((CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 					.getResource(factory));// MN's CouchbaseTransactionManager
 		}
-		System.err.println("getNonreactiveSession: "+ h);
+		//System.err.println("getNonreactiveSession: "+ h);
 		return h != null ? h.getSession() : null;
 	}
 

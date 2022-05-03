@@ -16,6 +16,11 @@
  */
 package com.couchbase.transactions;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.UUID;
+
 import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.transactions.config.MergedTransactionConfig;
 import com.couchbase.transactions.config.PerTransactionConfig;
@@ -24,11 +29,6 @@ import com.couchbase.transactions.config.TransactionConfig;
 import com.couchbase.transactions.forwards.Supported;
 import com.couchbase.transactions.log.TransactionLogger;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.UUID;
-
 /**
  * To access the AttemptContextReactive held by AttemptContext
  *
@@ -36,55 +36,61 @@ import java.util.UUID;
  */
 public class AttemptContextReactiveAccessor {
 
-  public static AttemptContextReactive getACR(AttemptContext attemptContext) {
-    return attemptContext.ctx();
-  }
+	public static AttemptContextReactive getACR(AttemptContext attemptContext) {
+		return attemptContext.ctx();
+	}
 
-  public static AttemptContext from(AttemptContextReactive attemptContextReactive) {
-    return new AttemptContext(attemptContextReactive);
-  }
+	public static AttemptContext from(AttemptContextReactive attemptContextReactive) {
+		return new AttemptContext(attemptContextReactive);
+	}
 
-  public static TransactionLogger getLogger(AttemptContextReactive attemptContextReactive){
-    return attemptContextReactive.LOGGER;
-  }
-  @Stability.Internal
-  public static AttemptContextReactive newAttemptContextReactive(TransactionsReactive transactions){
-    PerTransactionConfig perConfig = PerTransactionConfigBuilder.create().build();
-    MergedTransactionConfig merged = new MergedTransactionConfig(transactions.config(), Optional.of(perConfig));
+	public static TransactionLogger getLogger(AttemptContextReactive attemptContextReactive) {
+		return attemptContextReactive.LOGGER;
+	}
 
-    TransactionContext overall = new TransactionContext(
-        transactions.cleanup().clusterData().cluster().environment().requestTracer(),
-        transactions.cleanup().clusterData().cluster().environment().eventBus(),
-        UUID.randomUUID().toString(), now(), Duration.ZERO, merged);
+	@Stability.Internal
+	public static AttemptContextReactive newAttemptContextReactive(TransactionsReactive transactions) {
+		PerTransactionConfig perConfig = PerTransactionConfigBuilder.create().build();
+		MergedTransactionConfig merged = new MergedTransactionConfig(transactions.config(), Optional.of(perConfig));
 
-    String txnId = UUID.randomUUID().toString();
-    overall.LOGGER.info(configDebug(transactions.config(), perConfig));
-    return transactions.createAttemptContext(overall, merged, txnId);
-  }
+		TransactionContext overall = new TransactionContext(
+				transactions.cleanup().clusterData().cluster().environment().requestTracer(),
+				transactions.cleanup().clusterData().cluster().environment().eventBus(), UUID.randomUUID().toString(), now(),
+				Duration.ZERO, merged);
 
-  private static Duration now() {
-    return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
-  }
+		String txnId = UUID.randomUUID().toString();
+		overall.LOGGER.info(configDebug(transactions.config(), perConfig));
+		return newAttemptContextReactive(transactions, overall, merged, txnId);
+	}
 
-  static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
-    StringBuilder sb = new StringBuilder();
-    sb.append("library version: ");
-    sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
-    sb.append(" config: ");
-    sb.append("atrs=");
-    sb.append(config.numAtrs());
-    sb.append(", metadataCollection=");
-    sb.append(config.metadataCollection());
-    sb.append(", expiry=");
-    sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
-    sb.append("msecs durability=");
-    sb.append(config.durabilityLevel());
-    sb.append(" per-txn config=");
-    sb.append(" durability=");
-    sb.append(perConfig.durabilityLevel());
-    sb.append(", supported=");
-    sb.append(Supported.SUPPORTED);
-    return sb.toString();
-  }
+	@Stability.Internal
+	public static AttemptContextReactive newAttemptContextReactive(TransactionsReactive reactive,
+			TransactionContext overall, MergedTransactionConfig merged, String txnId) {
+		return reactive.createAttemptContext(overall, merged, txnId);
+	}
 
+	private static Duration now() {
+		return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
+	}
+
+	static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("library version: ");
+		sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
+		sb.append(" config: ");
+		sb.append("atrs=");
+		sb.append(config.numAtrs());
+		sb.append(", metadataCollection=");
+		sb.append(config.metadataCollection());
+		sb.append(", expiry=");
+		sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
+		sb.append("msecs durability=");
+		sb.append(config.durabilityLevel());
+		sb.append(" per-txn config=");
+		sb.append(" durability=");
+		sb.append(perConfig.durabilityLevel());
+		sb.append(", supported=");
+		sb.append(Supported.SUPPORTED);
+		return sb.toString();
+	}
 }

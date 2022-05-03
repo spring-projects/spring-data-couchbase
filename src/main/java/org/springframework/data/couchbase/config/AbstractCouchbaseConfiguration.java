@@ -30,6 +30,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -49,9 +50,15 @@ import org.springframework.data.couchbase.repository.config.RepositoryOperations
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
+import org.springframework.data.couchbase.transaction.interceptor.CouchbaseTransactionInterceptor;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.config.TransactionManagementConfigUtils;
+import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
+import org.springframework.transaction.interceptor.TransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -436,4 +443,31 @@ public abstract class AbstractCouchbaseConfiguration {
 		return null;
 	}
 
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource) {
+		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
+		interceptor.setTransactionAttributeSource(transactionAttributeSource);
+		return interceptor;
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionAttributeSource transactionAttributeSource() {
+		return new AnnotationTransactionAttributeSource();
+	}
+
+	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
+			TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
+
+		BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
+		advisor.setTransactionAttributeSource(transactionAttributeSource);
+		advisor.setAdvice(transactionInterceptor);
+		// if (this.enableTx != null) {
+		// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
+		// }
+		return advisor;
+	}
 }

@@ -67,7 +67,7 @@ public class TransactionsWrapper {
       Mono<AttemptContextReactive> ob = Mono.fromCallable(() -> {
         String txnId = UUID.randomUUID().toString();
         overall.LOGGER.info(configDebug(config, perConfig));
-        return transactions.reactive().createAttemptContext(overall, merged, txnId);
+        return AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive(),overall, merged, txnId);
       }).flatMap(ctx -> {
 
         AttemptContextReactiveAccessor.getLogger(ctx).info("starting attempt %d/%s/%s",

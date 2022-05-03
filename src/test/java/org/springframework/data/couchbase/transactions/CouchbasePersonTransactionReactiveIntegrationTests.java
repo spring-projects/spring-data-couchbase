@@ -23,17 +23,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
-import org.springframework.data.domain.Persistable;
-import org.springframework.test.context.transaction.AfterTransaction;
-import org.springframework.test.context.transaction.BeforeTransaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,7 +89,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Autowired Cluster myCluster;
 
-	/* DO NOT @Autowired */ PersonService personService;
+	/* DO NOT @Autowired */ PersonServiceInner personServiceInner;
 
 	static GenericApplicationContext context;
 	@Autowired ReactiveCouchbaseTemplate operations;
@@ -104,7 +98,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
 		context = new AnnotationConfigApplicationContext(CouchbasePersonTransactionReactiveIntegrationTests.Config.class,
-				CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class);
+				PersonServiceInner.class);
 	}
 
 	@AfterAll
@@ -114,7 +108,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@BeforeEach
 	public void beforeEachTest() {
-		personService = context.getBean(CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class); // getting it via autowired results in no @Transactional
+		personServiceInner = context.getBean(PersonServiceInner.class); // getting it via autowired results in no @Transactional
 		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
@@ -124,7 +118,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test // DATAMONGO-2265
 	public void shouldRollbackAfterException() {
-		personService.savePersonErrors(new Person(null, "Walter", "White")) //
+		personServiceInner.savePersonErrors(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.verifyError(RuntimeException.class);
 		// operations.findByQuery(Person.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
@@ -140,7 +134,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		Person p = new Person(null, "Walter", "White");
 		try {
-			personService.declarativeSavePersonErrors(p) //
+			personServiceInner.declarativeSavePersonErrors(p) //
 					.as(StepVerifier::create) //
 					.expectComplete();
 			// .verifyError(RuntimeException.class);
@@ -157,7 +151,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test // DATAMONGO-2265
 	public void commitShouldPersistTxEntries() {
 
-		personService.savePerson(new Person(null, "Walter", "White")) //
+		personServiceInner.savePerson(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.expectNextCount(1) //
 				.verifyComplete();
@@ -173,7 +167,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test // DATAMONGO-2265
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
-		personService.declarativeSavePerson(new Person(null, "Walter", "White")).as(StepVerifier::create) //
+		personServiceInner.declarativeSavePerson(new Person(null, "Walter", "White")).as(StepVerifier::create) //
 				.expectNextCount(1) //
 				.verifyComplete();
 
@@ -187,7 +181,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test // DATAMONGO-2265
 	public void commitShouldPersistTxEntriesAcrossCollections() {
 
-		personService.saveWithLogs(new Person(null, "Walter", "White")) //
+		personServiceInner.saveWithLogs(new Person(null, "Walter", "White")) //
 				.then() //
 				.as(StepVerifier::create) //
 				.verifyComplete();
@@ -206,7 +200,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test // DATAMONGO-2265
 	public void rollbackShouldAbortAcrossCollections() {
 
-		personService.saveWithErrorLogs(new Person(null, "Walter", "White")) //
+		personServiceInner.saveWithErrorLogs(new Person(null, "Walter", "White")) //
 				.then() //
 				.as(StepVerifier::create) //
 				.verifyError();
@@ -225,7 +219,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test // DATAMONGO-2265
 	public void countShouldWorkInsideTransaction() {
 
-		personService.countDuringTx(new Person(null, "Walter", "White")) //
+		personServiceInner.countDuringTx(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.expectNext(1L) //
 				.verifyComplete();
@@ -235,7 +229,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public void emitMultipleElementsDuringTransaction() {
 
 		try {
-			personService.saveWithLogs(new Person(null, "Walter", "White")) //
+			personServiceInner.saveWithLogs(new Person(null, "Walter", "White")) //
 					.as(StepVerifier::create) //
 					.expectNextCount(4L) //
 					.verifyComplete();
@@ -250,7 +244,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 		Person p = new Person(1, "Walter", "White");
 		remove(couchbaseTemplate, "_default", p.getId().toString());
-		personService.savePerson(p) //
+		personServiceInner.savePerson(p) //
 				//.delayElement(Duration.ofMillis(100)) //
 				.then(Mono.error(new RuntimeException("my big bad evil error"))).as(StepVerifier::create) //
 				.expectError()
@@ -267,15 +261,15 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	}
 
 	// @RequiredArgsConstructor
-	static class PersonService {
+	static class PersonServiceInner {
 
 		final ReactiveCouchbaseOperations personOperationsRx;
 		final ReactiveCouchbaseTransactionManager managerRx;
 		final CouchbaseOperations personOperations;
 		final CouchbaseTransactionManager manager;
 
-		public PersonService(CouchbaseOperations ops, CouchbaseTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
-				ReactiveCouchbaseTransactionManager mgrRx) {
+		public PersonServiceInner(CouchbaseOperations ops, CouchbaseTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
+															ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
 			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
@@ -314,7 +308,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
 					new DefaultTransactionDefinition());
 
-			return personOperationsRx.save(person) //
+			return personOperationsRx.insertById(Person.class).one(person) //
 					.then(personOperationsRx.count(new Query(), Person.class)) //
 					.as(transactionalOperator::transactional);
 		}
@@ -324,11 +318,11 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
 					new DefaultTransactionDefinition());
 
-			return Flux.merge(personOperationsRx.save(new EventLog(new ObjectId().toString(), "beforeConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "beforeInsert")), //
-					personOperationsRx.save(person), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterInsert"))) //
+			return Flux.merge(personOperationsRx.insertById(EventLog.class).one(new EventLog(new ObjectId().toString(), "beforeConvert")), //
+					personOperationsRx.insertById(EventLog.class).one(new EventLog(new ObjectId(), "afterConvert")), //
+					personOperationsRx.insertById(EventLog.class).one(new EventLog(new ObjectId(), "beforeInsert")), //
+					personOperationsRx.insertById(Person.class).one(person), //
+					personOperationsRx.insertById(EventLog.class).one(new EventLog(new ObjectId(), "afterInsert"))) //
 					.thenMany(personOperationsRx.findByQuery(EventLog.class).all()) //
 					.as(transactionalOperator::transactional);
 		}
@@ -353,7 +347,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
 					new DefaultTransactionDefinition());
 
-			return transactionalOperator.execute(reactiveTransaction -> personOperationsRx.save(person));
+			return transactionalOperator.execute(reactiveTransaction -> personOperationsRx.insertById(Person.class).one(person));
 		}
 
 		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)

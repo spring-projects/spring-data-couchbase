@@ -206,13 +206,47 @@ public class CouchbaseTransactionInterceptor extends TransactionInterceptor impl
     }
 
     PlatformTransactionManager ptm = asPlatformTransactionManager(tm);
+    final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
 
     if (txAttr == null || !(ptm instanceof CallbackPreferringPlatformTransactionManager)) {
-      return super.invokeWithinTransaction(method, targetClass, invocation);
+      //return super.invokeWithinTransaction(method, targetClass, invocation);
+      // Standard transaction demarcation with getTransaction and commit/rollback calls.
+
+      Object retVal = null;
+      boolean success=false;
+      do {
+        TransactionInfo txInfo = createTransactionIfNecessary(ptm, txAttr, joinpointIdentification);
+        try {
+          // This is an around advice: Invoke the next interceptor in the chain.
+          // This will normally result in a target object being invoked.
+          retVal = invocation.proceedWithInvocation();
+          success = true;
+        } catch (Throwable ex) {
+          // target invocation exception
+          completeTransactionAfterThrowing(txInfo,
+              ex);
+          //throw ex;
+        } finally {
+          cleanupTransactionInfo(txInfo);
+        }
+        if (retVal != null && vavrPresent && VavrDelegate.isVavrTry(retVal)) {
+          // Set rollback-only in case of Vavr failure matching our rollback rules...
+          TransactionStatus status = txInfo.getTransactionStatus();
+          if (status != null && txAttr != null) {
+            retVal = VavrDelegate.evaluateTryFailure(retVal, txAttr, status);
+          }
+        }
+
+        if( retVal != null) {
+          // this could go directly after succeed = true except for the cleanupTransactionInfo(txInfo) and the vavrPresent
+          commitTransactionAfterReturning(txInfo);
+        }
+      } while (!success);
+
+      return retVal;
     }
 
     else {
-      final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
 
       Object result;
       final ThrowableHolder throwableHolder = new ThrowableHolder();

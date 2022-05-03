@@ -30,7 +30,7 @@ public class TransactionResultHolder {
 	SingleQueryTransactionResult singleQueryResult;
 
 	public TransactionResultHolder(TransactionGetResult getResult) {
-		// we don't need the content and we don't have access to the transcoder an txnMeta (and we don't need them either).
+		// we don't need the content and we don't have access to the transcoder and txnMeta (and we don't need them either).
 		this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
 				getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);
 		this.singleQueryResult = null;
@@ -46,6 +46,6 @@ public class TransactionResultHolder {
 	}
 
 	public SingleQueryTransactionResult singleQueryResult() {
-		return singleQueryResult();
+		return singleQueryResult;
 	}
 }
