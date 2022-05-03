@@ -89,7 +89,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `_class`, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, `firstname`, `lastname`, `subtype` FROM `travel-sample` where `_class` = \"abstractuser\" and firstname = $1 and lastname = $2",
+				"SELECT `_class`, META(`travel-sample`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`travel-sample`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `travel-sample` where `_class` = \"abstractuser\" and firstname = $1 and lastname = $2",
 				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
@@ -108,7 +108,7 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `_class`, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, `firstname`, `lastname`, `subtype` FROM `travel-sample` where `_class` = \"abstractuser\" and (firstname = $first or lastname = $last)",
+				"SELECT `_class`, META(`travel-sample`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`travel-sample`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `travel-sample` where `_class` = \"abstractuser\" and (firstname = $first or lastname = $last)",
 				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
