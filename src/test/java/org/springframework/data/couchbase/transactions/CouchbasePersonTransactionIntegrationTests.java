@@ -66,7 +66,6 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.couchbase.transaction.ClientSessionOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
@@ -136,7 +135,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@AfterAll
 	public static void afterAll() {
 		callSuperAfterAll(new Object() {});
-		context.close();
+		//context.close();
 	}
 
 	@BeforeEach
@@ -230,6 +229,18 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
+
+	@Test
+	public void replaceInTxAnnotatedCallback() {
+		Person person = new Person(1, "Walter", "White");
+		Person switchedPerson = new Person(1, "Dave", "Reynolds");
+		cbTmpl.insertById(Person.class).one(person);
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person p = personService.declarativeFindReplacePersonCallback(person, tryCount);
+		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
+	}
+
 
 	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethodReactive() {
@@ -1035,7 +1046,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		 * @param person
 		 * @return
 		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public Person declarativeFindReplacePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
@@ -1047,6 +1058,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			return personOperations.replaceById(Person.class).one(p);
 		}
+
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry

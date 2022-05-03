@@ -15,9 +15,14 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
@@ -117,37 +122,90 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		public Mono<T> one(T object) {
 			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("replaceById {}", pArgs);
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			Mono<T> reactiveEntity;
 
-			CouchbaseDocument converted = support.encodeEntity(object).block();
-			reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-				if (s == null || s.getReactiveTransactionAttemptContext() == null) {
-					System.err.println("ReactiveReplaceById: not");
-					Mono<com.couchbase.client.java.Collection> op = template.getCouchbaseClientFactory()
-							.withScope(pArgs.getScope()).getCollection(pArgs.getCollection());
-					return op.flatMap(collection -> collection.reactive()
-							.replace(converted.getId(), converted.export(),
-									buildReplaceOptions(pArgs.getOptions(), object, converted))
-							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
-				} else {
-					System.err.println("ReactiveReplaceById: transaction");
-					return s.getReactiveTransactionAttemptContext()
-							.replace(s.transactionResultHolder(getTransactionHolder(object)).transactionGetResult(),
-									converted.getContent())
-							// todo gp no CAS
-							.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L,
-									new TransactionResultHolder(result), s));
-				}
-			}));
+			return GenericSupport.one(template, scope, collection, support, object,
+					(GenericSupportHelper support) -> {
+						CouchbaseDocument converted = support.converted;
 
-			return reactiveEntity.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-				} else {
-					return throwable;
-				}
-			});
+						return support.collection.reactive()
+								.replace(converted.getId(), converted.export(),
+										buildReplaceOptions(pArgs.getOptions(), object, converted))
+								.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
+					},
+					(GenericSupportHelper support) -> {
+						CouchbaseDocument converted = support.converted;
+
+						// todo gp replace is a nightmare...
+						// Where to put and how to pass the TransactionGetResult
+						// - Idea: TransactionSynchronizationManager.bindResource
+						// - Idea: use @Version as an index into Map<Long, TransactionGetResult>
+						// - As below, one idea is not to store it at all.
+						// Person could have been fetched outside of @Transactional block.  Need to flat out prevent. Right??
+						// - Maybe not. Could have the replaceById do a ctx.get(), and check the CAS matches the Person (will mandate @Version on Person).
+						// - Could always do that in fact. Then no need to hold onto TransactionGetResult anywhere - but slower too (could optimise later).
+						// - And if had get-less replaces, could pass in the CAS.
+						// - Note: if Person was fetched outside the transaction, the transaction will inevitably expire (continuous CAS mismatch).
+						// -- Will have to doc that the user generally wants to do the read inside the txn.
+						// -- Can we detect this scenario and reject at runtime?  That would also probably need storing something in Person.
+
+//						TransactionGetResult gr = (TransactionGetResult) org.springframework.transaction.support.TransactionSynchronizationManager.getResource(object);
+						TransactionGetResult gr = support.ctx.get(support.collection, converted.getId());
+
+						// todo gp if we need this of course needs to be exposed nicely
+						CoreTransactionGetResult internal;
+						try {
+							Method method = TransactionGetResult.class.getDeclaredMethod("internal");
+							method.setAccessible(true);
+							internal = (CoreTransactionGetResult) method.invoke(gr);
+						}
+						catch (Throwable err) {
+							throw new RuntimeException(err);
+						}
+
+						if (internal.cas() != support.converted.version) {
+							// todo gp really want to set internal state and raise a TransactionOperationFailed
+							throw new RetryTransactionException();
+						}
+
+						support.ctx.replace(gr, converted.getContent());
+								// todo gp no CAS
+						return this.support.applyResult(object, converted, converted.getId(), 0L, null, null);
+					});
+
+//		Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+//			Mono<T> reactiveEntity;
+//
+//			Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
+//					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
+//
+//			CouchbaseDocument converted = support.encodeEntity(object).block();
+//			reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
+//				if (s == null || s.getReactiveTransactionAttemptContext() == null) {
+//					System.err.println("ReactiveReplaceById: not");
+//					Mono<com.couchbase.client.java.Collection> op = template.getCouchbaseClientFactory()
+//							.withScope(pArgs.getScope()).getCollection(pArgs.getCollection());
+//					return op.flatMap(collection -> collection.reactive()
+//							.replace(converted.getId(), converted.export(),
+//									buildReplaceOptions(pArgs.getOptions(), object, converted))
+//							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
+//				} else {
+//					System.err.println("ReactiveReplaceById: transaction");
+//					return s.getReactiveTransactionAttemptContext()
+//							.replace(s.transactionResultHolder(getTransactionHolder(object)).transactionGetResult(),
+//									converted.getContent())
+//							// todo gp no CAS
+//							.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L,
+//									new TransactionResultHolder(result), s));
+//				}
+//			}));
+//
+//			return reactiveEntity.onErrorMap(throwable -> {
+//				if (throwable instanceof RuntimeException) {
+//					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+//				} else {
+//					return throwable;
+//				}
+//			});
 		}
 
 		private <T> Integer getTransactionHolder(T object) {

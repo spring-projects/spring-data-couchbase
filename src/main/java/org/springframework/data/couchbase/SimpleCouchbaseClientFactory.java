@@ -151,9 +151,10 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	@Override
 	public void close() {
-		if (cluster instanceof OwnedSupplier) {
-			cluster.get().disconnect();
-		}
+		// todo gp
+//		if (cluster instanceof OwnedSupplier) {
+//			cluster.get().disconnect();
+//		}
 	}
 
 	private static Duration now() {

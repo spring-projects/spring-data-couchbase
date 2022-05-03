@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
@@ -23,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +36,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-
-import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
-import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
@@ -111,74 +106,24 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			// ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-			// .getResource(getRequiredDatabaseFactory());
-
-			// ((ReactiveCouchbaseResourceHolder)
-			// TransactionSynchronizationManager.forCurrentTransaction().flatMap((synchronizationManager) -> {
-			// return Mono.just(synchronizationManager.getResource( template.getCouchbaseClientFactory()));
-			// }).block()).getSession().getAttemptContextReactive() /
-			// if (TransactionSynchronizationManager.hasResource(template.getCouchbaseClientFactory())){
-			//
-			// }
-			// the template should have the session(???)
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
 
-			Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
-					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
-
-			Mono<T> reactiveEntity = support.encodeEntity(object)
-					.flatMap(converted -> {
-						if (!ctxr.isPresent()) {
-							return template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-									.getCollection(pArgs.getCollection())
-									.flatMap(collection -> collection.reactive()
-											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
-											.flatMap(
-													result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
-						} else {
-							return template.doGetTemplate()
-									// todo gp this runnable probably not great
-									.flatMap(tp -> Mono.defer(() -> {
-//												ReactiveTransactionAttemptContext ctx = (ReactiveTransactionAttemptContext) ctxr.get();
-										TransactionGetResult result = ctxr.get().insert(
-												tp.doGetDatabase().block().bucket(tp.getBucketName())
-														.scope(pArgs.getScope() != null ? pArgs.getScope() : DEFAULT_SCOPE)
-														.collection(pArgs.getCollection() != null ? pArgs.getCollection() : DEFAULT_COLLECTION),
-												converted.getId(), converted.getContent());
-										// todo gp don't have result.cas() anymore - needed?
-										return support.applyResult(object, converted, converted.getId(), 0L, new TransactionResultHolder(result), null);
-									}));
-						}
+			return GenericSupport.one(template, scope, collection, support, object,
+					(GenericSupportHelper support) -> {
+						return support.collection.reactive().insert(support.converted.getId(), support.converted.export(), buildOptions(pArgs.getOptions(), support.converted))
+								.flatMap(result ->
+										this.support.applyResult(object, support.converted, support.converted.getId(), result.cas(), null));
+					},
+					(GenericSupportHelper support) -> {
+						return template.doGetTemplate()
+								// todo gp this runnable probably not great
+								.flatMap(tp -> Mono.defer(() -> {
+									TransactionGetResult result = support.ctx.insert(support.collection, support.converted.getId(), support.converted.getContent());
+									// todo gp don't have result.cas() anymore - needed?
+									return this.support.applyResult(object, support.converted, support.converted.getId(), 0L, new TransactionResultHolder(result), null);
+								}));
 					});
-			// .flatMap(converted ->/* rc */tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getCluster().flatMap( cl ->
-			// cl.bucket("my_bucket").reactive()
-			// .defaultCollection()
-			// .insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
-			// .flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)))));
-			/*
-			} else {
-				reactiveEntity = support.encodeEntity(object).flatMap(converted -> pArgs.getTxOp().getAttemptContextReactive() // transactional()
-																																																												// needs
-																																																												// to
-																																																												// have
-																																																												// initted
-																																																												// acr
-						.insert(template.doGetDatabase().block().bucket("my_bucket").reactive().defaultCollection(),
-								converted.getId(), converted.getContent(), buildTxOptions(pArgs.getOptions(), converted))
-						.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(),
-								pArgs.getTxOp().transactionResultHolder(result))));
-			}
-			*/
-
-			return reactiveEntity.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-				} else {
-					return throwable;
-				}
-			});
 		}
 
 		@Override

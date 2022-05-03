@@ -46,7 +46,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
-import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
@@ -354,6 +353,12 @@ public abstract class AbstractCouchbaseConfiguration {
 	CouchbaseSimpleCallbackTransactionManager transactionManager(CouchbaseClientFactory clientFactory) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
 	}
+
+//	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+//	CouchbaseSimpleCallbackTransactionManager simpleCallbackTransactionManager(CouchbaseClientFactory clientFactory) {
+//		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
+//	}
+
 
 	/**
 	 * Blocking Transaction Manager

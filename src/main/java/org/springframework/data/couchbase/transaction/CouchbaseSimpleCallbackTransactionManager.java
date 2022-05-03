@@ -54,9 +54,20 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				// Setting ThreadLocal storage
 				TransactionSynchronizationManager.setActualTransactionActive(true);
 				TransactionSynchronizationManager.initSynchronization();
+				// Oddly, TransactionSynchronizationManager.clear() does not clear resources
+				try {
+					TransactionSynchronizationManager.unbindResource(TransactionAttemptContext.class);
+				}
+				// todo gp must be a nicer way...
+				catch (IllegalStateException err) {}
 				TransactionSynchronizationManager.bindResource(TransactionAttemptContext.class, ctx);
 
-				execResult.set(callback.doInTransaction(status));
+				try {
+					execResult.set(callback.doInTransaction(status));
+				}
+				finally {
+					TransactionSynchronizationManager.clear();
+				}
 			});
 
 			TransactionSynchronizationManager.clear();
