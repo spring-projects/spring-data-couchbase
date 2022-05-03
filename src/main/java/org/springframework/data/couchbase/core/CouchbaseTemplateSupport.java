@@ -143,7 +143,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 
 		persistentEntity = couldBePersistentEntity(readEntity.getClass());
 
-		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
+		if (cas != null && cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id, scope, collection);
