@@ -162,9 +162,7 @@ public class StringBasedN1qlQueryParser {
 		String b = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
 				"only one of project(fields) and distinct(distinctFields) can be specified");
-		String entity = "META(" + i(b) + ").id AS " + SELECT_ID + ", META(" + i(b) + ").cas AS " + SELECT_CAS + ", "
-				+ i(typeField);
-		String count = "COUNT(*) AS " + CountFragment.COUNT_ALIAS;
+		String entityFields = "";
 		String selectEntity;
 		if (distinctFields != null) {
 			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
@@ -175,17 +173,18 @@ public class StringBasedN1qlQueryParser {
 				selectEntity = "SELECT DISTINCT " + distinctFieldsStr + " FROM " + i(b);
 			}
 		} else if (isCount) {
-			selectEntity = "SELECT " + count + " FROM " + i(b);
+			selectEntity = "SELECT " + "COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM " + i(b);
 		} else {
 			String projectedFields = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
-			selectEntity = "SELECT " + entity + (!projectedFields.isEmpty() ? ", " : " ") + projectedFields + " FROM " + i(b);
+			entityFields = projectedFields;
+			selectEntity = "SELECT " + projectedFields + " FROM " + i(b);
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
 		String delete = N1QLExpression.delete().from(b).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(b).toString();
 
-		return new N1qlSpelValues(selectEntity, entity, i(b).toString(), typeSelection, delete, returning);
+		return new N1qlSpelValues(selectEntity, entityFields, i(b).toString(), typeSelection, delete, returning);
 	}
 
 	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
@@ -193,18 +192,23 @@ public class StringBasedN1qlQueryParser {
 		if (distinctFields != null && distinctFields.length != 0) {
 			return i(distinctFields).toString();
 		}
-		String projectedFields = i(b) + ".*"; // if we can't get further information of the fields needed project everything
+		String projectedFields;
 		if (resultClass != null && !Modifier.isAbstract(resultClass.getModifiers())) {
 			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
 			StringBuilder sb = new StringBuilder();
 			getProjectedFieldsInternal(b, null, sb, persistentEntity, typeField, fields, distinctFields != null);
 			projectedFields = sb.toString();
+		} else {
+			projectedFields = i(b) + ".*, " + "META(`" + b + "`).id AS " + SELECT_ID + ", META(`" + b + "`).cas AS "
+					+ SELECT_CAS; // if we can't get further information of the fields needed, then project everything
 		}
 		return projectedFields;
 	}
 
 	private void getProjectedFieldsInternal(String bucketName, CouchbasePersistentProperty parent, StringBuilder sb,
 			PersistentEntity persistentEntity, String typeField, String[] fields, boolean forDistinct) {
+
+		sb.append(i(typeField));
 
 		if (persistentEntity != null) {
 			Set<String> fieldList = fields != null ? new HashSet<>(Arrays.asList(fields)) : null;
@@ -213,9 +217,35 @@ public class StringBasedN1qlQueryParser {
 
 			persistentEntity.doWithProperties((PropertyHandler<CouchbasePersistentProperty>) prop -> {
 				if (prop == persistentEntity.getIdProperty() && parent == null) {
+					if (forDistinct) {
+						return;
+					}
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
+							.getPersistentPropertyPath(prop.getName(), persistentEntity.getTypeInformation().getType());
+					String projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
+					sb.append(projectField + " AS " + SELECT_ID);
+					if (fieldList != null) {
+						fieldList.remove(prop.getFieldName());
+					}
 					return;
 				}
 				if (prop == persistentEntity.getVersionProperty() && parent == null) {
+					if (forDistinct) {
+						return;
+					}
+					if (sb.length() > 0) {
+						sb.append(", ");
+					}
+					PersistentPropertyPath<CouchbasePersistentProperty> path = couchbaseConverter.getMappingContext()
+							.getPersistentPropertyPath(prop.getName(), persistentEntity.getTypeInformation().getType());
+					String projectField = N1qlQueryCreator.addMetaIfRequired(bucketName, path, prop, persistentEntity).toString();
+					sb.append(projectField + " AS " + SELECT_CAS);
+					if (fieldList != null) {
+						fieldList.remove(prop.getFieldName());
+					}
 					return;
 				}
 				if (prop.getFieldName().equals(typeField)) // typeField already projected
