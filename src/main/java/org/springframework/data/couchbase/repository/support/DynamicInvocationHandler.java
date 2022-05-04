@@ -29,7 +29,7 @@ import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 
 import com.couchbase.client.java.CommonOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Invocation Handler for scope/collection/options proxy for repositories
@@ -46,10 +46,10 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 	CommonOptions<?> options;
 	String collection;
 	String scope;
-	CouchbaseStuffHandle ctx;
+	CouchbaseTransactionalOperator ctx;
 
 	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope,
-                                  CouchbaseStuffHandle ctx) {
+                                  CouchbaseTransactionalOperator ctx) {
 		this.target = target;
 		if (target instanceof CouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
@@ -106,7 +106,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 
 		if (method.getName().equals("withTransaction")) {
 			return Proxy.newProxyInstance(repositoryClass.getClassLoader(), target.getClass().getInterfaces(),
-					new DynamicInvocationHandler<>(target, options, collection, scope, (CouchbaseStuffHandle) args[0]));
+					new DynamicInvocationHandler<>(target, options, collection, scope, (CouchbaseTransactionalOperator) args[0]));
 		}
 
 		Class<?>[] paramTypes = null;

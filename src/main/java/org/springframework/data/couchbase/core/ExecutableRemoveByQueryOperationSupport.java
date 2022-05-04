@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
@@ -50,11 +50,11 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
 																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-																	 CouchbaseStuffHandle txCtx) {
+																	 CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -111,7 +111,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		}
 
 		@Override
-		public TerminatingRemoveByQuery<T> transaction(final CouchbaseStuffHandle txCtx) {
+		public TerminatingRemoveByQuery<T> transaction(final CouchbaseTransactionalOperator txCtx) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options, txCtx);
 		}

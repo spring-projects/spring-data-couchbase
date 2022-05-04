@@ -16,7 +16,10 @@
 
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -38,13 +41,13 @@ import reactor.core.publisher.Mono;
 
 /**
  * A {@link org.springframework.transaction.PlatformTransactionManager} implementation that manages
- * {@link ClientSession} based transactions for a single {@link CouchbaseClientFactory}.
+ * {@link CoreTransactionAttemptContext} based transactions for a single {@link CouchbaseClientFactory}.
  * <p />
- * Binds a {@link ClientSession} from the specified {@link CouchbaseClientFactory} to the thread.
+ * Binds a {@link CoreTransactionAttemptContext} from the specified {@link CouchbaseClientFactory} to the thread.
  * <p />
- * {@link TransactionDefinition#isReadOnly() Readonly} transactions operate on a {@link ClientSession} and enable causal
- * consistency, and also {@link ClientSession#startTransaction() start}, {@link ClientSession#commitTransaction()
- * commit} or {@link ClientSession#abortTransaction() abort} a transaction.
+ * {@link TransactionDefinition#isReadOnly() Readonly} transactions operate on a {@link CoreTransactionAttemptContext} and enable causal
+ * consistency, and also {@link CoreTransactionAttemptContext#startTransaction() start}, {@link CoreTransactionAttemptContext#commitTransaction()
+ * commit} or {@link CoreTransactionAttemptContext#abortTransaction() abort} a transaction.
  * <p />
  * TODO: Application code is required to retrieve the {@link com.couchbase.client.java.Cluster} ????? via
  * {@link ?????#getDatabase(CouchbaseClientFactory)} instead of a standard {@link CouchbaseClientFactory#getCluster()}
@@ -66,6 +69,7 @@ import reactor.core.publisher.Mono;
 public class CouchbaseTransactionManager extends AbstractPlatformTransactionManager
 		implements ResourceTransactionManager, InitializingBean {
 
+	private Transactions transactions;
 	private @Nullable CouchbaseClientFactory databaseFactory;
 	private @Nullable TransactionOptions options;
 
@@ -90,12 +94,14 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 *
 	 * @param databaseFactory must not be {@literal null}. @//param options can be {@literal null}.
 	 */
-	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory) {
+	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory, @Nullable TransactionOptions options) {
 
 		Assert.notNull(databaseFactory, "DbFactory must not be null!");
 		System.err.println(this);
 		System.err.println(databaseFactory.getCluster());
 		this.databaseFactory = databaseFactory;
+		this.options = options;
+		this.transactions = 	databaseFactory.getCluster().transactions();
 	}
 
 	/*
@@ -104,8 +110,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 */
 	@Override
 	protected Object doGetTransaction() throws TransactionException {
-
-		CouchbaseResourceHolder resourceHolder = (CouchbaseResourceHolder) TransactionSynchronizationManager
+		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) TransactionSynchronizationManager
 				.getResource(getRequiredDatabaseFactory().getCluster());
 		return new CouchbaseTransactionObject(resourceHolder);
 	}
@@ -128,28 +133,33 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		CouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
 // 	should ACR already be in TSM?	TransactionSynchronizationManager.bindResource(getRequiredDbFactory().getCluster(), resourceHolder);
-		CouchbaseResourceHolder resourceHolder = newResourceHolder(definition,
-				ClientSessionOptions.builder().causallyConsistent(true).build(),
+		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(definition, TransactionOptions.transactionOptions(),
 				null /* ((CouchbaseTransactionDefinition) definition).getAttemptContextReactive()*/);
 		couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
 		if (logger.isDebugEnabled()) {
 			logger
-					.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getSession())));
+					.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
 		}
 
 		try {
 			couchbaseTransactionObject.startTransaction(options);
 		} catch (CouchbaseException ex) {
 			throw new TransactionSystemException(String.format("Could not start Mongo transaction for session %s.",
-					debugString(couchbaseTransactionObject.getSession())), ex);
+					debugString(couchbaseTransactionObject.getCore())), ex);
 		}
 
 		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getSession())));
+			logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
 		}
 
+		TransactionSynchronizationManager.setActualTransactionActive(true);
+		// use the ResourceHolder which contains the core
+		//TransactionSynchronizationManager.unbindResourceIfPossible(TransactionAttemptContext.class);
+		//TransactionSynchronizationManager.bindResource(CoreTransactionAttemptContext.class, resourceHolder.getCore());
+
 		resourceHolder.setSynchronizedWithTransaction(true);
+		TransactionSynchronizationManager.unbindResourceIfPossible( getRequiredDatabaseFactory().getCluster());
 		System.err.println("CouchbaseTransactionManager: "+this);
 		System.err.println("bindResource: "+ getRequiredDatabaseFactory().getCluster()+" value: "+resourceHolder);
 		TransactionSynchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), resourceHolder);
@@ -188,15 +198,15 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("About to commit transaction for session %s.",
-					debugString(couchbaseTransactionObject.getSession())));
+					debugString(couchbaseTransactionObject.getCore())));
 		}
 
 		try {
 			doCommit(couchbaseTransactionObject);
 		} catch (Exception ex) {
-			logger.debug("could not commit Couchbase transaction for session "+debugString(couchbaseTransactionObject.getSession()));
+			logger.debug("could not commit Couchbase transaction for session "+debugString(couchbaseTransactionObject.getCore()));
 			throw new TransactionSystemException(String.format("Could not commit Couchbase transaction for session %s.",
-					debugString(couchbaseTransactionObject.getSession())), ex);
+					debugString(couchbaseTransactionObject.getCore())), ex);
 		}
 	}
 
@@ -205,7 +215,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 * If a commit operation encounters an error, the MongoDB driver throws a {@link CouchbaseException} holding
 	 * {@literal error labels}. <br />
 	 * By default those labels are ignored, nevertheless one might check for
-	 * {@link CouchbaseException#UNKNOWN_TRANSACTION_COMMIT_RESULT_LABEL transient commit errors labels} and retry the the
+	 * {@link CouchbaseException transient commit errors labels} and retry the the
 	 * commit. <br />
 	 * <code>
 	 *     <pre>
@@ -242,7 +252,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("About to abort transaction for session %s.",
-					debugString(couchbaseTransactionObject.getSession())));
+					debugString(couchbaseTransactionObject.getCore())));
 		}
 
 		try {
@@ -250,7 +260,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		} catch (CouchbaseException ex) {
 
 			throw new TransactionSystemException(String.format("Could not abort Couchbase transaction for session %s.",
-					debugString(couchbaseTransactionObject.getSession())), ex);
+					debugString(couchbaseTransactionObject.getCore())), ex);
 		}
 	}
 
@@ -262,7 +272,8 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	protected void doSetRollbackOnly(DefaultTransactionStatus status) throws TransactionException {
 
 		CouchbaseTransactionObject transactionObject = extractCouchbaseTransaction(status);
-		transactionObject.getRequiredResourceHolder().setRollbackOnly();
+		throw new TransactionException("need to setRollbackOnly() here"){};
+		//transactionObject.getRequiredResourceHolder().setRollbackOnly();
 	}
 
 	/*
@@ -279,12 +290,12 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		CouchbaseTransactionObject couchbaseTransactionObject = (CouchbaseTransactionObject) transaction;
 
 		// Remove the connection holder from the thread.
-		TransactionSynchronizationManager.unbindResource(getRequiredDatabaseFactory().getCluster());
-		couchbaseTransactionObject.getRequiredResourceHolder().clear();
+		TransactionSynchronizationManager.unbindResourceIfPossible(getRequiredDatabaseFactory().getCluster());
+		//couchbaseTransactionObject.getRequiredResourceHolder().clear();
 
 		if (logger.isDebugEnabled()) {
-			logger.debug(String.format("About to release Session %s after transaction.",
-					debugString(couchbaseTransactionObject.getSession())));
+			logger.debug(String.format("About to release Core %s after transaction.",
+					debugString(couchbaseTransactionObject.getCore())));
 		}
 
 		couchbaseTransactionObject.closeSession();
@@ -338,13 +349,13 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		getRequiredDatabaseFactory();
 	}
 
-	private CouchbaseResourceHolder newResourceHolder(TransactionDefinition definition, ClientSessionOptions options,
-			ReactiveTransactionAttemptContext atr) {
+	private ReactiveCouchbaseResourceHolder newResourceHolder(TransactionDefinition definition, TransactionOptions options,
+			CoreTransactionAttemptContext atr) {
 
 		CouchbaseClientFactory databaseFactory = getResourceFactory();
 
-		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
-				databaseFactory.getSession(options, atr), databaseFactory);
+		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(
+				databaseFactory.getCore(options, atr));
 		// TODO resourceHolder.setTimeoutIfNotDefaulted(determineTimeout(definition));
 
 		return resourceHolder;
@@ -379,7 +390,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		return (CouchbaseTransactionObject) status.getTransaction();
 	}
 
-	private static String debugString(@Nullable ClientSession session) {
+	private static String debugString(@Nullable CoreTransactionAttemptContext session) {
 
 		if (session == null) {
 			return "null";
@@ -389,19 +400,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 				Integer.toHexString(session.hashCode()));
 
 		try {
-			if (session.getServerSession() != null) {
-				debugString += String.format("id = %s, ", session.getServerSession().getIdentifier());
-				debugString += String.format("causallyConsistent = %s, ", session.isCausallyConsistent());
-				debugString += String.format("txActive = %s, ", session.hasActiveTransaction());
-				debugString += String.format("txNumber = %d, ", session.getServerSession().getTransactionNumber());
-				debugString += String.format("closed = %d, ", session.getServerSession().isClosed());
-				debugString += String.format("clusterTime = %s", session.getClusterTime());
-			} else {
-				debugString += "id = n/a";
-				debugString += String.format("causallyConsistent = %s, ", session.isCausallyConsistent());
-				debugString += String.format("txActive = %s, ", session.hasActiveTransaction());
-				debugString += String.format("clusterTime = %s", session.getClusterTime());
-			}
+			debugString += String.format("core=%s",session);
 		} catch (RuntimeException e) {
 			debugString += String.format("error = %s", e.getMessage());
 		}
@@ -416,33 +415,33 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	}
 
 	/**
-	 * MongoDB specific transaction object, representing a {@link CouchbaseResourceHolder}. Used as transaction object by
+	 * MongoDB specific transaction object, representing a {@link ReactiveCouchbaseResourceHolder}. Used as transaction object by
 	 * {@link CouchbaseTransactionManager}.
 	 *
 	 * @author Christoph Strobl
 	 * @author Mark Paluch
 	 * @since 2.1
-	 * @see CouchbaseResourceHolder
+	 * @see ReactiveCouchbaseResourceHolder
 	 */
 	protected static class CouchbaseTransactionObject implements SmartTransactionObject {
 
-		private @Nullable CouchbaseResourceHolder resourceHolder;
+		private @Nullable ReactiveCouchbaseResourceHolder resourceHolder;
 
-		CouchbaseTransactionObject(@Nullable CouchbaseResourceHolder resourceHolder) {
+		CouchbaseTransactionObject(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * Set the {@link CouchbaseResourceHolder}.
+		 * Set the {@link ReactiveCouchbaseResourceHolder}.
 		 *
 		 * @param resourceHolder can be {@literal null}.
 		 */
-		void setResourceHolder(@Nullable CouchbaseResourceHolder resourceHolder) {
+		void setResourceHolder(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * @return {@literal true} if a {@link CouchbaseResourceHolder} is set.
+		 * @return {@literal true} if a {@link ReactiveCouchbaseResourceHolder} is set.
 		 */
 		final boolean hasResourceHolder() {
 			return resourceHolder != null;
@@ -455,11 +454,11 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		 */
 		void startTransaction(TransactionOptions options) {
 
-			ClientSession session = getRequiredSession();
+			CoreTransactionAttemptContext core = getRequiredCore();
 			// if (options != null) {
 			// session.startTransaction(options);
 			// } else {
-			session.startTransaction();
+			//core.startTransaction();
 			// }
 		}
 
@@ -467,43 +466,37 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		 * Commit the transaction.
 		 */
 		public void commitTransaction() {
-			((Mono<Void>)(getRequiredSession().commitTransaction())).block();
+			getRequiredCore().commit().block();
 		}
 
 		/**
 		 * Rollback (abort) the transaction.
 		 */
 		public void abortTransaction() {
-			((Mono<Void>)(getRequiredSession().abortTransaction())).block();
+			getRequiredCore().rollback().block();
 		}
 
 		/**
-		 * Close a {@link ClientSession} without regard to its transactional state.
+		 * Close a {@link CoreTransactionAttemptContext} without regard to its transactional state.
 		 */
 		void closeSession() {
-
-			ClientSession session = getRequiredSession();
-			if (session.getServerSession() != null && !session.getServerSession().isClosed()) {
-				session.close();
-			}
+			CoreTransactionAttemptContext core = getRequiredCore();
 		}
 
 		@Nullable
-		public ClientSession getSession() {
-			return resourceHolder != null ? resourceHolder.getSession() : null;
+		public CoreTransactionAttemptContext getCore() {
+			return resourceHolder != null ? resourceHolder.getCore() : null;
 		}
 
-		private CouchbaseResourceHolder getRequiredResourceHolder() {
-
+		private ReactiveCouchbaseResourceHolder getRequiredResourceHolder() {
 			Assert.state(resourceHolder != null, "CouchbaseResourceHolder is required but not present. o_O");
 			return resourceHolder;
 		}
 
-		private ClientSession getRequiredSession() {
-
-			ClientSession session = getSession();
-			Assert.state(session != null, "A Session is required but it turned out to be null.");
-			return session;
+		private CoreTransactionAttemptContext getRequiredCore() {
+			CoreTransactionAttemptContext core = getCore();
+			Assert.state(core != null, "A Core is required but it turned out to be null.");
+			return core;
 		}
 
 		/*

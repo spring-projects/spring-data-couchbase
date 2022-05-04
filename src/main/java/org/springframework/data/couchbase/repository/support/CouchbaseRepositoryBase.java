@@ -65,7 +65,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	}
 
 	<S extends T> String getId(S entity) {
-		return getEntityInformation().getId(entity);
+		return String.valueOf(getEntityInformation().getId(entity));
 	}
 
 	/**

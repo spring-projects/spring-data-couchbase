@@ -21,14 +21,13 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
-import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
 import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * RemoveBy Query Operations
@@ -92,7 +91,7 @@ public interface ExecutableRemoveByQueryOperation {
 	 */
 	interface RemoveByQueryWithTransaction<T> extends TerminatingRemoveByQuery<T>, WithTransaction<RemoveResult> {
 		@Override
-		TerminatingRemoveByQuery<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingRemoveByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface RemoveByQueryWithTxOrNot<T> extends RemoveByQueryWithConsistency<T>, RemoveByQueryWithTransaction<T> {}

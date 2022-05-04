@@ -25,8 +25,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.core.transaction.config.CoreTransactionsConfig;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -164,6 +168,8 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
+		TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false));
+		builder.transactionsConfig(transactionsConfig());
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -338,6 +344,8 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
+	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
+
 	// todo gp how to DI this into the Cluster creation esp. as it creates a CoreTransactionConfig
 //	@Bean
 //	public TransactionsConfig transactionConfig() {
@@ -357,20 +365,26 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	// todo gp experimenting with making  CouchbaseSimpleCallbackTransactionManager the default - but it doesn't play
 	// nice with MR's changes to insert CouchbaseTransactionInterceptor
-	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
+	// todo mr THIS DOES NOT WORK WELL with @TestTransaction / @BeforeTransaction / @AfterTransaction etc.
+	// todo mr Maybe it is only useful with @Transactional?
+	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
 	}
 
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
+		return new CouchbaseTransactionManager(clientFactory, options);
+	}
+
 	@Bean
-	public TransactionOptions transactionOptions(){
+	public TransactionOptions transactionsOptions(){
 		return TransactionOptions.transactionOptions();
 	}
-//	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-//	CouchbaseSimpleCallbackTransactionManager simpleCallbackTransactionManager(CouchbaseClientFactory clientFactory) {
-//		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
-//	}
 
+	public TransactionsConfig.Builder transactionsConfig(){
+		return TransactionsConfig.builder().durabilityLevel(DurabilityLevel.NONE).timeout(Duration.ofMinutes(20));// for testing
+	}
 
 	/**
 	 * Blocking Transaction Manager

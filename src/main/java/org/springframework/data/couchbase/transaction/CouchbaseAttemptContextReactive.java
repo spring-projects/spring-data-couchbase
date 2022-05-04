@@ -59,7 +59,7 @@ public interface CouchbaseAttemptContextReactive {
 		}
 
 		public ReactiveCouchbaseTemplate template(ReactiveCouchbaseTemplate template) {
-			ReactiveCouchbaseTransactionManager txMgr = ((ReactiveCouchbaseTransactionManager) ((CouchbaseStuffHandle) txOperator)
+			ReactiveCouchbaseTransactionManager txMgr = ((ReactiveCouchbaseTransactionManager) ((CouchbaseTransactionalOperator) txOperator)
 					.getTransactionManager());
 			if (template.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
 				throw new CouchbaseException(
@@ -75,7 +75,7 @@ public interface CouchbaseAttemptContextReactive {
 				throw new CouchbaseException("Repository must be a Reactive Couchbase repository" + repo);
 			}
 			ReactiveCouchbaseOperations reactiveOperations = (ReactiveCouchbaseOperations) repo.getOperations();
-			ReactiveCouchbaseTransactionManager txMgr = ((ReactiveCouchbaseTransactionManager) ((CouchbaseStuffHandle) txOperator)
+			ReactiveCouchbaseTransactionManager txMgr = ((ReactiveCouchbaseTransactionManager) ((CouchbaseTransactionalOperator) txOperator)
 					.getTransactionManager());
 
 			if (reactiveOperations.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
@@ -83,7 +83,7 @@ public interface CouchbaseAttemptContextReactive {
 						"Repository must use the same clientFactory as the transactionManager of the transactionalOperator "
 								+ repo);
 			}
-			return repo.withTransaction((CouchbaseStuffHandle) txOperator); // this returns a new repository proxy with txOperator in its threadLocal
+			return repo.withTransaction((CouchbaseTransactionalOperator) txOperator); // this returns a new repository proxy with txOperator in its threadLocal
 			// what if instead we returned a new repo with a new template with the txOperator?
 		}
 

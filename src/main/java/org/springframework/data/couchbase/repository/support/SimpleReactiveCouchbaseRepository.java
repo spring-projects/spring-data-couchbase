@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.repository.support;
 
-import com.couchbase.client.java.CommonOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -27,14 +26,11 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
@@ -183,7 +179,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity))
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).oneEntity(entity)
 				.then();
 	}
 
@@ -196,7 +192,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
 		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-				.all(Streamable.of(entities).map(this::getId).toList()).then();
+				.allEntities((java.util.Collection<Object>)(Streamable.of(entities).toList())).then();
 	}
 
 	@Override

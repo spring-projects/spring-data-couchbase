@@ -16,34 +16,37 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.ClusterInterface;
-import org.springframework.context.ApplicationListener;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.ClientSession;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseClientUtils;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.transaction.SessionSynchronization;
-import org.springframework.data.mapping.context.MappingContextEvent;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
+
+import java.util.function.Consumer;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseClientUtils;
+import org.springframework.data.couchbase.transaction.SessionSynchronization;
+import org.springframework.data.mapping.context.MappingContextEvent;
+import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
-
-import java.util.function.Consumer;
-
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 /**
  * template class for Reactive Couchbase operations
@@ -62,15 +65,15 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 	private QueryScanConsistency scanConsistency;
 
-	//public ReactiveCouchbaseTemplate with(CouchbaseStuffHandle txOp) {
+	public ReactiveCouchbaseTemplate with(CouchbaseTransactionalOperator txOp) {
 		// TODO: why does txOp go on the clientFactory? can't we just put it on the template??
-	//	return new ReactiveCouchbaseTemplate(getCouchbaseClientFactory().with(txOp), getConverter(),
-	//			support().getTranslationService(), getConsistency());
-	//}
+		return new ReactiveCouchbaseTemplate(getCouchbaseClientFactory().with(txOp), getConverter(),
+				support().getTranslationService(), getConsistency());
+	}
 
-	//public CouchbaseStuffHandle txOperator() {
-	//	return clientFactory.getTransactionalOperator();
-	//}
+	public CouchbaseTransactionalOperator txOperator() {
+		return clientFactory.getTransactionalOperator();
+	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
 			final CouchbaseConverter converter) {
@@ -79,7 +82,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
 			final CouchbaseConverter converter, final TranslationService translationService,
-            final QueryScanConsistency scanConsistency) {
+			final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
@@ -101,13 +104,29 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	// }
 
 	public <T> Mono<T> save(T entity) {
-		if (hasNonZeroVersionProperty(entity, templateSupport.converter)) {
-			return replaceById((Class<T>) entity.getClass()).one(entity);
-		//} else if (getTransactionalOperator() != null) {
-		//	return insertById((Class<T>) entity.getClass()).one(entity);
-			 } else {
-			return upsertById((Class<T>) entity.getClass()).one(entity);
+		Assert.notNull(entity, "Entity must not be null!");
+		Mono<T> result;
+		final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
+				.getPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
+		final boolean versionPresent = versionProperty != null;
+		final Long version = versionProperty == null || versionProperty.getField() == null ? null
+				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
+		final boolean existingDocument = version != null && version > 0;
+
+		Class clazz = entity.getClass();
+
+		if (!versionPresent) { // the entity doesn't have a version property
+			// No version field - no cas
+			result = (Mono<T>) upsertById(clazz).one(entity);
+		} else if (existingDocument) { // there is a version property, and it is non-zero
+			// Updating existing document with cas
+			result = (Mono<T>) replaceById(clazz).one(entity);
+		} else { // there is a version property, but it's zero or not set.
+			// Creating new document
+			result = (Mono<T>) insertById(clazz).one(entity);
 		}
+		return result;
 	}
 
 	public <T> Mono<Long> count(Query query, Class<T> domainType) {
@@ -271,8 +290,8 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * (non-Javadoc)
 	 * @see org.springframework.data.mongodb.core.ReactiveMongoOperations#withSession(com.mongodb.session.ClientSession)
 	 */
-	public ReactiveCouchbaseOperations withSession(ClientSession session) {
-		return new ReactiveSessionBoundCouchbaseTemplate(session, ReactiveCouchbaseTemplate.this);
+	public ReactiveCouchbaseOperations withCore(ReactiveCouchbaseResourceHolder core) {
+		return new ReactiveSessionBoundCouchbaseTemplate(core, ReactiveCouchbaseTemplate.this);
 	}
 
 	/*
@@ -288,10 +307,10 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 */
 
 	/**
-	 * {@link CouchbaseTemplate} extension bound to a specific {@link ClientSession} that is applied when interacting with
-	 * the server through the driver API. <br />
+	 * {@link CouchbaseTemplate} extension bound to a specific {@link CoreTransactionAttemptContext} that is applied when
+	 * interacting with the server through the driver API. <br />
 	 * The prepare steps for {} and {} proxy the target and invoke the desired target method matching the actual arguments
-	 * plus a {@link ClientSession}.
+	 * plus a {@link CoreTransactionAttemptContext}.
 	 *
 	 * @author Christoph Strobl
 	 * @since 2.1
@@ -299,18 +318,18 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	static class ReactiveSessionBoundCouchbaseTemplate extends ReactiveCouchbaseTemplate {
 
 		private final ReactiveCouchbaseTemplate delegate;
-		private final ClientSession session;
+		private final ReactiveCouchbaseResourceHolder holder;
 
 		/**
-		 * @param session must not be {@literal null}.
+		 * @param holder must not be {@literal null}.
 		 * @param that must not be {@literal null}.
 		 */
-		ReactiveSessionBoundCouchbaseTemplate(ClientSession session, ReactiveCouchbaseTemplate that) {
+		ReactiveSessionBoundCouchbaseTemplate(ReactiveCouchbaseResourceHolder holder, ReactiveCouchbaseTemplate that) {
 
-			super(that.clientFactory.withSession(session), that.getConverter());
+			super(that.clientFactory.withCore(holder), that.getConverter());
 
 			this.delegate = that;
-			this.session = session;
+			this.holder = holder;
 		}
 
 		/*

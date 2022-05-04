@@ -19,7 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -53,12 +53,12 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
 				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseStuffHandle txCtx) {
+				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -126,7 +126,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		}
 
 		@Override
-		public InsertByIdWithExpiry<T> transaction(final CouchbaseStuffHandle txCtx) {
+		public InsertByIdWithExpiry<T> transaction(final CouchbaseTransactionalOperator txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null.");
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, txCtx);

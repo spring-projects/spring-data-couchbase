@@ -15,13 +15,13 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.lang.Nullable;
-import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionSystemException;
@@ -33,17 +33,21 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.transactions.Transactions;
 
 /**
  * A {@link org.springframework.transaction.ReactiveTransactionManager} implementation that manages
- * {@link ClientSession} based transactions for a single {@link CouchbaseClientFactory}.
+ * {@link CoreTransactionAttemptContext} based transactions for a single {@link CouchbaseClientFactory}.
  * <p />
- * Binds a {@link ClientSession} from the specified {@link CouchbaseClientFactory} to the subscriber
+ * Binds a {@link CoreTransactionAttemptContext} from the specified {@link CouchbaseClientFactory} to the subscriber
  * {@link reactor.util.context.Context}.
  * <p />
  * {@link org.springframework.transaction.TransactionDefinition#isReadOnly() Readonly} transactions operate on a
- * {@link ClientSession} and enable causal consistency, and also {@link ClientSession#startTransaction() start},
- * {@link ClientSession#commitTransaction() commit} or {@link ClientSession#abortTransaction() abort} a transaction.
+ * {@link CoreTransactionAttemptContext} and enable causal consistency, and also
+ * {@link CoreTransactionAttemptContext#startTransaction() start},
+ * {@link CoreTransactionAttemptContext#commitTransaction() commit} or
+ * {@link CoreTransactionAttemptContext#abortTransaction() abort} a transaction.
  * <p />
  * Application code is required to retrieve the {link com.xxxxxxx.reactivestreams.client.MongoDatabase} via {link
  * org.springframework.data.xxxxxxx.ReactiveMongoDatabaseUtils#getDatabase(CouchbaseClientFactory)} instead of a
@@ -65,13 +69,14 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		implements InitializingBean {
 
 	private @Nullable ReactiveCouchbaseClientFactory databaseFactory; // (why) does this need to be reactive?
+	private @Nullable Transactions transactions;
 
 	/**
 	 * Create a new {@link ReactiveCouchbaseTransactionManager} for bean-style usage.
 	 * <p />
 	 * <strong>Note:</strong>The {@link org.springframework.data.couchbase.CouchbaseClientFactory db factory} has to be
-	 * {@link #setDatabaseFactory(ReactiveCouchbaseClientFactory)} set} before using the instance. Use this constructor to prepare
-	 * a {@link ReactiveCouchbaseTransactionManager} via a {@link org.springframework.beans.factory.BeanFactory}.
+	 * {@link #setDatabaseFactory(ReactiveCouchbaseClientFactory)} set} before using the instance. Use this constructor to
+	 * prepare a {@link ReactiveCouchbaseTransactionManager} via a {@link org.springframework.beans.factory.BeanFactory}.
 	 * <p />
 	 * Optionally it is possible to set default {@link TransactionQueryOptions transaction options} defining {link
 	 * com.xxxxxxx.ReadConcern} and {link com.xxxxxxx.WriteConcern}.
@@ -93,15 +98,14 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		System.err.println("ReactiveCouchbaseTransactionManager : created");
 	}
 
-	/*
-	public ReactiveCouchbaseTransactionManager(CouchbaseClientFactory databaseFactory,
-																						 @Nullable Transactions transactions) {
+	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory,
+			@Nullable Transactions transactions) {
 		Assert.notNull(databaseFactory, "DatabaseFactory must not be null!");
-		this.databaseFactory = null; // databaseFactory; // should be a clone? TransactionSynchronizationManager binds objs to it
+		this.databaseFactory = databaseFactory; // databaseFactory; // should be a clone? TransactionSynchronizationManager
+																						// binds objs to it
 		this.transactions = transactions;
 		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
 	}
-*/
 
 	/*
 	 * (non-Javadoc)
@@ -114,8 +118,8 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		// with an attempt to get the resourceHolder from the synchronizationManager
 		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
 				.getResource(getRequiredDatabaseFactory().getCluster().block());
-		//TODO ACR from couchbase
-		//resourceHolder.getSession().setAttemptContextReactive(null);
+		// TODO ACR from couchbase
+		// resourceHolder.getSession().setAttemptContextReactive(null);
 		return new ReactiveCouchbaseTransactionObject(resourceHolder);
 	}
 
@@ -142,15 +146,15 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		return Mono.defer(() -> {
 
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
-
+			// TODO mr - why aren't we creating the AttemptContext here in the client session in the resourceholder?
 			Mono<ReactiveCouchbaseResourceHolder> holder = newResourceHolder(definition,
-					ClientSessionOptions.builder().causallyConsistent(true).build());
+					TransactionOptions.transactionOptions());
 			return holder.doOnNext(resourceHolder -> {
 				couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
 				if (logger.isDebugEnabled()) {
 					logger.debug(
-							String.format("About to start transaction for session %s.", debugString(resourceHolder.getSession())));
+							String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
 				}
 
 			}).doOnNext(resourceHolder -> {
@@ -158,17 +162,18 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 				couchbaseTransactionObject.startTransaction();
 
 				if (logger.isDebugEnabled()) {
-					logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getSession())));
+					logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
 				}
 
 			})//
 					.onErrorMap(ex -> new TransactionSystemException(
 							String.format("Could not start Couchbase transaction for session %s.",
-									debugString(couchbaseTransactionObject.getSession())),
+									debugString(couchbaseTransactionObject.getCore())),
 							ex))
 					.doOnSuccess(resourceHolder -> {
-						System.err.println("ReactiveCouchbaseTransactionManager: "+this);
-						System.err.println("bindResource: "+getRequiredDatabaseFactory().getCluster().block()+" value: "+resourceHolder);
+						System.err.println("ReactiveCouchbaseTransactionManager: " + this);
+						System.err.println(
+								"bindResource: " + getRequiredDatabaseFactory().getCluster().block() + " value: " + resourceHolder);
 						synchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster().block(), resourceHolder);
 					}).then();
 		});
@@ -215,12 +220,12 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("About to doCommit transaction for session %s.",
-						debugString(couchbaseTransactionObject.getSession())));
+						debugString(couchbaseTransactionObject.getCore())));
 			}
 
 			return doCommit(synchronizationManager, couchbaseTransactionObject).onErrorMap(ex -> {
 				return new TransactionSystemException(String.format("Could not commit Couchbase transaction for session %s.",
-						debugString(couchbaseTransactionObject.getSession())), ex);
+						debugString(couchbaseTransactionObject.getCore())), ex);
 			});
 		});
 	}
@@ -254,12 +259,12 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("About to abort transaction for session %s.",
-						debugString(couchbaseTransactionObject.getSession())));
+						debugString(couchbaseTransactionObject.getCore())));
 			}
 
 			return couchbaseTransactionObject.abortTransaction().onErrorResume(CouchbaseException.class, ex -> {
 				return Mono.error(new TransactionSystemException(String.format("Could not abort transaction for session %s.",
-						debugString(couchbaseTransactionObject.getSession())), ex));
+						debugString(couchbaseTransactionObject.getCore())), ex));
 			});
 		});
 	}
@@ -299,7 +304,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("About to release Session %s after transaction.",
-						debugString(couchbaseTransactionObject.getSession())));
+						debugString(couchbaseTransactionObject.getCore())));
 			}
 
 			couchbaseTransactionObject.closeSession();
@@ -337,12 +342,12 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	}
 
 	private Mono<ReactiveCouchbaseResourceHolder> newResourceHolder(TransactionDefinition definition,
-			ClientSessionOptions options) {
+			TransactionOptions options) {
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
-		Mono<ClientSession> sess = dbFactory.getSession(options);
-		return sess.map(session -> new ReactiveCouchbaseResourceHolder(session, dbFactory));
+		Mono<ReactiveCouchbaseResourceHolder> sess = Mono.just(dbFactory.getTransactionResources(options, null));
+		return sess;
 	}
 
 	/**
@@ -372,7 +377,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		return (ReactiveCouchbaseTransactionObject) status.getTransaction();
 	}
 
-	private static String debugString(@Nullable ClientSession session) {
+	private static String debugString(@Nullable CoreTransactionAttemptContext session) {
 
 		if (session == null) {
 			return "null";
@@ -382,19 +387,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 				Integer.toHexString(session.hashCode()));
 
 		try {
-			if (session.getServerSession() != null) {
-				debugString += String.format("id = %s, ", session.getServerSession().getIdentifier());
-				debugString += String.format("causallyConsistent = %s, ", session.isCausallyConsistent());
-				debugString += String.format("txActive = %s, ", session.hasActiveTransaction());
-				debugString += String.format("txNumber = %d, ", session.getServerSession().getTransactionNumber());
-				debugString += String.format("closed = %d, ", session.getServerSession().isClosed());
-				debugString += String.format("clusterTime = %s", session.getClusterTime());
-			} else {
-				debugString += "id = n/a";
-				debugString += String.format("causallyConsistent = %s, ", session.isCausallyConsistent());
-				debugString += String.format("txActive = %s, ", session.hasActiveTransaction());
-				debugString += String.format("clusterTime = %s", session.getClusterTime());
-			}
+			debugString += String.format("core=%s", session);
 		} catch (RuntimeException e) {
 			debugString += String.format("error = %s", e.getMessage());
 		}
@@ -438,44 +431,44 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		}
 
 		/**
-		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}.
-		 * todo gp how to expose TransactionOptions
+		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}. todo gp how to expose
+		 * TransactionOptions
+		 * 
 		 * @param options can be {@literal null}
 		 */
 		void startTransaction() {
 
-			ClientSession session = getRequiredSession();
-			session.startTransaction();
+			CoreTransactionAttemptContext core = getRequiredCore();
+			// core.startTransaction();
 		}
 
 		/**
 		 * Commit the transaction.
 		 */
 		public Mono<Void> commitTransaction() {
-			return (Mono<Void>)(getRequiredSession().commitTransaction());
+			return getRequiredCore().commit();
 		}
 
 		/**
 		 * Rollback (abort) the transaction.
 		 */
 		public Mono<Void> abortTransaction() {
-			return (Mono<Void>)getRequiredSession().abortTransaction();
+			return getRequiredCore().rollback();
 		}
 
 		/**
-		 * Close a {@link ClientSession} without regard to its transactional state.
+		 * Close a {@link CoreTransactionAttemptContext} without regard to its transactional state.
 		 */
 		void closeSession() {
-
-			ClientSession session = getRequiredSession();
-			if (session.getServerSession() != null && !session.getServerSession().isClosed()) {
-				session.close();
-			}
+			CoreTransactionAttemptContext session = getRequiredCore();
+			// if (session.getServerSession() != null && !session.getServerSession().isClosed()) {
+			// session.close();
+			// }
 		}
 
 		@Nullable
-		public ClientSession getSession() {
-			return resourceHolder != null ? resourceHolder.getSession() : null;
+		public CoreTransactionAttemptContext getCore() {
+			return resourceHolder != null ? resourceHolder.getCore() : null;
 		}
 
 		private ReactiveCouchbaseResourceHolder getRequiredResourceHolder() {
@@ -484,11 +477,10 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 			return resourceHolder;
 		}
 
-		private ClientSession getRequiredSession() {
-
-			ClientSession session = getSession();
-			Assert.state(session != null, "A Session is required but it turned out to be null.");
-			return session;
+		private CoreTransactionAttemptContext getRequiredCore() {
+			CoreTransactionAttemptContext core = getCore();
+			Assert.state(core != null, "A CoreTransactionAttemptContext is required but it turned out to be null.");
+			return core;
 		}
 
 		/*

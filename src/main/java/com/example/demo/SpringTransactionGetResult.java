@@ -1,13 +1,14 @@
 package com.example.demo;
 
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 
 public class SpringTransactionGetResult<T> {
 
   private final T value;
-  private final TransactionGetResult inner;
+  private final CoreTransactionGetResult inner;
 
-  public SpringTransactionGetResult(T value, TransactionGetResult inner) {
+  public SpringTransactionGetResult(T value, CoreTransactionGetResult inner) {
     this.value = value;
     this.inner = inner;
   }
@@ -16,7 +17,7 @@ public class SpringTransactionGetResult<T> {
     return value;
   }
 
-  public TransactionGetResult getInner() {
+  public CoreTransactionGetResult getInner() {
     return inner;
   }
 

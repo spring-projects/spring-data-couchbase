@@ -4,12 +4,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.couchbase.transaction.ClientSessionImpl;

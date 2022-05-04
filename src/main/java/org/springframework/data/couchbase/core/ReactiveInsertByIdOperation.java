@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -104,7 +104,7 @@ public interface ReactiveInsertByIdOperation {
 
 	interface InsertByIdWithTransaction<T> extends TerminatingInsertById<T>, WithTransaction<T> {
 		@Override
-		InsertByIdWithDurability<T> transaction(CouchbaseStuffHandle txCtx);
+		InsertByIdWithDurability<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	/**

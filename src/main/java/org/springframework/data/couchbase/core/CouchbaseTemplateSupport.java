@@ -27,7 +27,7 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallba
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.util.Assert;
 
@@ -75,8 +75,8 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 
 	@Override
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-														TransactionResultHolder txHolder, ClientSession session) {
-		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, session);
+														TransactionResultHolder txHolder, ReactiveCouchbaseResourceHolder holder) {
+		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
 	}
 
 	@Override
@@ -87,8 +87,8 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-													 TransactionResultHolder txResultHolder, ClientSession session) {
-		return applyResultBase(entity, converted, id, cas, txResultHolder, session);
+													 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+		return applyResultBase(entity, converted, id, cas, txResultHolder, holder);
 	}
 
 	@Override

@@ -141,7 +141,10 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	public void beforeEach() {
 		super.beforeEach();
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
+
 	}
 
 	@Test

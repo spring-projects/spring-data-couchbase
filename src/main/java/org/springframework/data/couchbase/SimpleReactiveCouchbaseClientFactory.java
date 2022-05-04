@@ -3,10 +3,14 @@ package org.springframework.data.couchbase;
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.ClusterInterface;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import com.couchbase.client.java.codec.JsonSerializer;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.Transactions;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -15,9 +19,6 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
-import org.springframework.data.couchbase.transaction.ClientSession;
-import org.springframework.data.couchbase.transaction.ClientSessionImpl;
-import org.springframework.data.couchbase.transaction.ClientSessionOptions;
 import org.springframework.data.couchbase.transaction.SessionAwareMethodInterceptor;
 import org.springframework.util.ObjectUtils;
 
@@ -31,12 +32,23 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	final String bucketName;
 	final String scopeName;
 	final PersistenceExceptionTranslator exceptionTranslator;
+	JsonSerializer serializer;
+	Transactions transactions;
+	CouchbaseTransactionalOperator transactionalOperator;
 
-	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName) {
+	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName,
+			CouchbaseTransactionalOperator transactionalOperator) {
 		this.cluster = Mono.just(cluster);
 		this.bucketName = bucketName;
 		this.scopeName = scopeName;
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
+		this.serializer = cluster.environment().jsonSerializer();
+		this.transactions = cluster.transactions();
+		this.transactionalOperator = transactionalOperator;
+	}
+
+	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName) {
+		this(cluster, bucketName, scopeName, null);
 	}
 
 	@Override
@@ -105,22 +117,25 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public Mono<ClientSession> getSession(ClientSessionOptions options) { // hopefully this gets filled in later
-		return Mono.from(Mono.just(new ClientSessionImpl(this, null))); // .startSession(options));
+	public Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options) { // hopefully this
+																																																			// gets filled in
+																																																			// later
+		return Mono.just(new ReactiveCouchbaseResourceHolder(null));
 	}
 
 	@Override
-	public ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext atr) {
-		// todo gp needed?
-		return null;
-//		ReactiveTransactionAttemptContext at = atr != null ? atr : AttemptContextReactiveAccessor.newAttemptContextReactive(transactions.reactive());
-//
-//		return new ClientSessionImpl(this, at);
+	public ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options,
+			CoreTransactionAttemptContext atr) {
+		if (atr == null) {
+			atr = AttemptContextReactiveAccessor
+					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
+		}
+		return new ReactiveCouchbaseResourceHolder(atr);
 	}
 
 	@Override
-	public ReactiveCouchbaseClientFactory withSession(ClientSession session) {
-		return new ClientSessionBoundCouchbaseClientFactory(session, this);
+	public ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder holder) {
+		return new CoreTransactionAttemptContextBoundCouchbaseClientFactory(holder, this, transactions);
 	}
 
 	@Override
@@ -128,51 +143,56 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		return false;
 	}
 
-	//@Override
-	//public CouchbaseStuffHandle getTransactionalOperator() {
-	//	return transactionalOperator;
-	//}
+	@Override
+	public CouchbaseTransactionalOperator getTransactionalOperator() {
+		return transactionalOperator;
+	}
 
-	//@Override
-	//public ReactiveCouchbaseClientFactory with(CouchbaseStuffHandle txOp) {
-	//	return new SimpleReactiveCouchbaseClientFactory((Cluster) getCluster().block(), bucketName, scopeName, txOp);
-	//}
+	@Override
+	public ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp) {
+		return new SimpleReactiveCouchbaseClientFactory((Cluster) getCluster().block(), bucketName, scopeName, txOp);
+	}
 
-	private <T> T createProxyInstance(ClientSession session, T target, Class<T> targetType) {
+	private <T> T createProxyInstance(ReactiveCouchbaseResourceHolder session, T target, Class<T> targetType) {
 
 		ProxyFactory factory = new ProxyFactory();
 		factory.setTarget(target);
 		factory.setInterfaces(targetType);
 		factory.setOpaque(true);
 
-		factory.addAdvice(new SessionAwareMethodInterceptor<>(session, target, ClientSession.class, ClusterInterface.class,
-				this::proxyDatabase, Collection.class, this::proxyCollection));
+		factory.addAdvice(new SessionAwareMethodInterceptor<>(session, target, ReactiveCouchbaseResourceHolder.class,
+				ClusterInterface.class, this::proxyDatabase, Collection.class, this::proxyCollection));
 
 		return targetType.cast(factory.getProxy(target.getClass().getClassLoader()));
 	}
 
-	private Collection proxyCollection(ClientSession session, Collection c) {
+	private Collection proxyCollection(ReactiveCouchbaseResourceHolder session, Collection c) {
 		return createProxyInstance(session, c, Collection.class);
 	}
 
-	private ClusterInterface proxyDatabase(ClientSession session, ClusterInterface cluster) {
+	private ClusterInterface proxyDatabase(ReactiveCouchbaseResourceHolder session, ClusterInterface cluster) {
 		return createProxyInstance(session, cluster, ClusterInterface.class);
 	}
 
 	/**
-	 * {@link ClientSession} bound TODO decorating the database with a {@link SessionAwareMethodInterceptor}.
+	 * {@link CoreTransactionAttemptContext} bound TODO decorating the database with a
+	 * {@link SessionAwareMethodInterceptor}.
 	 *
 	 * @author Christoph Strobl
 	 * @since 2.1
 	 */
-	static final class ClientSessionBoundCouchbaseClientFactory implements ReactiveCouchbaseClientFactory {
+	static final class CoreTransactionAttemptContextBoundCouchbaseClientFactory
+			implements ReactiveCouchbaseClientFactory {
 
-		private final ClientSession session;
+		private final ReactiveCouchbaseResourceHolder transactionResources;
 		private final ReactiveCouchbaseClientFactory delegate;
+		// private final Transactions transactions;
 
-		ClientSessionBoundCouchbaseClientFactory(ClientSession session, ReactiveCouchbaseClientFactory delegate) {
-			this.session = session;
+		CoreTransactionAttemptContextBoundCouchbaseClientFactory(ReactiveCouchbaseResourceHolder transactionResources,
+				ReactiveCouchbaseClientFactory delegate, Transactions transactions) {
+			this.transactionResources = transactionResources;
 			this.delegate = delegate;
+			// this.transactions = transactions;
 		}
 
 		/*
@@ -235,25 +255,28 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#getSession(com.mongodb.ClientSessionOptions)
+		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#getSession(com.mongodb.CoreTransactionAttemptContextOptions)
 		 */
+
 		@Override
-		public Mono<ClientSession> getSession(ClientSessionOptions options) {
-			return Mono.just(getSession(options, null));
+		public Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options) {
+			return Mono.just(transactionResources);
 		}
 
 		@Override
-		public ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext atr) {
-			return delegate.getSession(options, atr);
+		public ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options,
+				CoreTransactionAttemptContext atr) {
+			ReactiveCouchbaseResourceHolder holder = delegate.getTransactionResources(options, atr);
+			return holder;
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.ClientSession)
+		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.CoreTransactionAttemptContext)
 		 */
 		@Override
-		public ReactiveCouchbaseClientFactory withSession(ClientSession session) {
-			return delegate.withSession(session);
+		public ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core) {
+			return delegate.withCore(core);
 		}
 
 		/*
@@ -262,46 +285,46 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		 */
 		@Override
 		public boolean isTransactionActive() {
-			return session != null && session.hasActiveTransaction();
+			return transactionResources != null && transactionResources.hasActiveTransaction();
 		}
 
-		//@Override
-		//public CouchbaseStuffHandle getTransactionalOperator() {
-		//	return delegate.getTransactionalOperator();
-		//}
+		@Override
+		public CouchbaseTransactionalOperator getTransactionalOperator() {
+			return delegate.getTransactionalOperator();
+		}
 
-		//@Override
-		//public ReactiveCouchbaseClientFactory with(CouchbaseStuffHandle txOp) {
-		//	return delegate.with(txOp);
-		//}
+		@Override
+		public ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp) {
+			return delegate.with(txOp);
+		}
 
 		private ClusterInterface decorateDatabase(ClusterInterface database) {
+			return createProxyInstance(transactionResources, database, ClusterInterface.class);
+		}
+
+		private ClusterInterface proxyDatabase(ReactiveCouchbaseResourceHolder session, ClusterInterface database) {
 			return createProxyInstance(session, database, ClusterInterface.class);
 		}
 
-		private ClusterInterface proxyDatabase(ClientSession session, ClusterInterface database) {
-			return createProxyInstance(session, database, ClusterInterface.class);
-		}
-
-		private Collection proxyCollection(ClientSession session, Collection collection) {
+		private Collection proxyCollection(ReactiveCouchbaseResourceHolder session, Collection collection) {
 			return createProxyInstance(session, collection, Collection.class);
 		}
 
-		private <T> T createProxyInstance(ClientSession session, T target, Class<T> targetType) {
+		private <T> T createProxyInstance(ReactiveCouchbaseResourceHolder session, T target, Class<T> targetType) {
 
 			ProxyFactory factory = new ProxyFactory();
 			factory.setTarget(target);
 			factory.setInterfaces(targetType);
 			factory.setOpaque(true);
 
-			factory.addAdvice(new SessionAwareMethodInterceptor<>(session, target, ClientSession.class,
+			factory.addAdvice(new SessionAwareMethodInterceptor<>(session, target, ReactiveCouchbaseResourceHolder.class,
 					ClusterInterface.class, this::proxyDatabase, Collection.class, this::proxyCollection));
 
 			return targetType.cast(factory.getProxy(target.getClass().getClassLoader()));
 		}
 
-		public ClientSession getSession() {
-			return this.session;
+		public ReactiveCouchbaseResourceHolder getTransactionResources() {
+			return this.transactionResources;
 		}
 
 		public ReactiveCouchbaseClientFactory getDelegate() {
@@ -315,9 +338,9 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			if (o == null || getClass() != o.getClass())
 				return false;
 
-			ClientSessionBoundCouchbaseClientFactory that = (ClientSessionBoundCouchbaseClientFactory) o;
+			CoreTransactionAttemptContextBoundCouchbaseClientFactory that = (CoreTransactionAttemptContextBoundCouchbaseClientFactory) o;
 
-			if (!ObjectUtils.nullSafeEquals(this.session, that.session)) {
+			if (!ObjectUtils.nullSafeEquals(this.transactionResources, that.transactionResources)) {
 				return false;
 			}
 			return ObjectUtils.nullSafeEquals(this.delegate, that.delegate);
@@ -325,14 +348,14 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 		@Override
 		public int hashCode() {
-			int result = ObjectUtils.nullSafeHashCode(this.session);
+			int result = ObjectUtils.nullSafeHashCode(this.transactionResources);
 			result = 31 * result + ObjectUtils.nullSafeHashCode(this.delegate);
 			return result;
 		}
 
 		public String toString() {
-			return "SimpleReactiveCouchbaseDatabaseFactory.ClientSessionBoundCouchDbFactory(session=" + this.getSession()
-					+ ", delegate=" + this.getDelegate() + ")";
+			return "SimpleReactiveCouchbaseDatabaseFactory.CoreTransactionAttemptContextBoundCouchDbFactory(session="
+					+ this.getTransactionResources() + ", delegate=" + this.getDelegate() + ")";
 		}
 	}
 }

@@ -28,19 +28,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
-import org.springframework.data.couchbase.transactions.CouchbaseTemplateTransaction2IntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.query.QueryOptions;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * CouchbaseCache tests Theses tests rely on a cb server running.
@@ -62,9 +58,9 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		cache = CouchbaseCacheManager.create(couchbaseTemplate.getCouchbaseClientFactory()).createCouchbaseCache("myCache",
 				CouchbaseCacheConfiguration.defaultCacheConfig());
 		clear(cache);
-		//ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		//cacheManager = ac.getBean(CouchbaseCacheManager.class);
-		//userRepository = ac.getBean(UserRepository.class);
+		// ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		// cacheManager = ac.getBean(CouchbaseCacheManager.class);
+		// userRepository = ac.getBean(UserRepository.class);
 	}
 
 	@AfterEach

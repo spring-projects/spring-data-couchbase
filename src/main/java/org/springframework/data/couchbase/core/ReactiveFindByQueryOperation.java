@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -152,7 +152,7 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link ReactiveFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
-		TerminatingFindByQuery<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingFindByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	/**

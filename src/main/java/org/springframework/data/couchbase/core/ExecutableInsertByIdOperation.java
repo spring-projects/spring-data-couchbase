@@ -30,7 +30,7 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Insert Operations
@@ -103,7 +103,7 @@ public interface ExecutableInsertByIdOperation {
 
 	interface InsertByIdWithTransaction<T> extends TerminatingInsertById<T>, WithTransaction<T> {
 		@Override
-		InsertByIdWithExpiry<T> transaction(CouchbaseStuffHandle txCtx);
+		InsertByIdWithExpiry<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface InsertByIdTxOrNot<T> extends InsertByIdWithExpiry<T>, InsertByIdWithTransaction<T> {}

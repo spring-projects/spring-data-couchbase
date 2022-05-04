@@ -427,4 +427,27 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		String message ="Expected "+expectedTypes+" to be thrown, but nothing was thrown.";
 		throw new AssertionFailedError(message);
 	}
+
+	public static Throwable assertThrowsWithCause(Executable executable, Class<?>... expectedTypes) {
+		Class<?> nextExpectedException= null;
+		try {
+			executable.execute();
+		}
+		catch (Throwable actualException) {
+			for(Class<?> expectedType:expectedTypes){
+				nextExpectedException = expectedType;
+				if(actualException == null || !expectedType.isAssignableFrom( actualException.getClass())){
+					String message ="Expected "+nextExpectedException+" to be thrown/cause, but found "+actualException;
+					throw new AssertionFailedError(message, actualException);
+				}
+				actualException = actualException.getCause();
+			}
+			//UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+			return actualException;
+		}
+
+		String message ="Expected "+expectedTypes[0]+" to be thrown, but nothing was thrown.";
+		throw new AssertionFailedError(message);
+	}
+
 }

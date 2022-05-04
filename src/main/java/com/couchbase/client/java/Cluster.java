@@ -285,7 +285,7 @@ public class Cluster implements ClusterInterface {
     notNull(options, "ClusterOptions");
 
     final ClusterOptions.Built opts = options.build();
-    return new Cluster(extractClusterEnvironment(null, opts), opts.authenticator(), seedNodes);
+    return new Cluster(extractClusterEnvironment("", opts), opts.authenticator(), seedNodes);
   }
 
   /**

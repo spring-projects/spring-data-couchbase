@@ -30,7 +30,7 @@ import org.springframework.data.couchbase.core.support.WithDistinct;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
 import org.springframework.data.couchbase.core.support.WithTransaction;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.query.QueryOptions;
@@ -193,7 +193,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		TerminatingFindByQuery<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingFindByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface FindByQueryTxOrNot<T> extends FindByQueryWithConsistency<T>, FindByQueryWithTransaction<T> {}
