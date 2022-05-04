@@ -18,9 +18,7 @@ package org.springframework.data.couchbase;
 
 import java.io.Closeable;
 
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import com.couchbase.client.java.Bucket;
@@ -79,8 +77,7 @@ public interface CouchbaseClientFactory extends Closeable {
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	ClientSession getSession(ClientSessionOptions options, Transactions transactions,
-																				TransactionConfig config , AttemptContextReactive atr);
+	ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext atr);
 
   //CouchbaseClientFactory with(CouchbaseStuffHandle txOp);
 

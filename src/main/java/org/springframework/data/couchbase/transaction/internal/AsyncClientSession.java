@@ -6,8 +6,8 @@
 
 package org.springframework.data.couchbase.transaction.internal;
 
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.ClientSession;
-import org.springframework.data.couchbase.transaction.TransactionOptions;
 
 public interface AsyncClientSession extends ClientSession {
   boolean hasActiveTransaction();

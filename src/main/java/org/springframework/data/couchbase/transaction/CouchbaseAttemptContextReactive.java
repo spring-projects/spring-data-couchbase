@@ -25,11 +25,11 @@ import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
 import com.couchbase.client.core.error.CouchbaseException;
-// import com.couchbase.transactions.AttemptContextReactive;
+// import com.couchbase.transactions.ReactiveTransactionAttemptContext;
 
 
 /**
- * This is a proxy for AttemptContextReactive that also has the transactionalOperator, so that it can provide the
+ * This is a proxy for ReactiveTransactionAttemptContext that also has the transactionalOperator, so that it can provide the
  * transactionalOperator to the repository and templates used within the transaction lambda via ctx.template(templ) and
  * ctx.repository(repo)
  */
@@ -39,7 +39,7 @@ public interface CouchbaseAttemptContextReactive {
 
 	ReactiveCouchbaseTemplate template(ReactiveCouchbaseTemplate template);
 
-	static CouchbaseAttemptContextReactive proxyFor(/*AttemptContextReactive acr,*/ TransactionalOperator txOperator) {
+	static CouchbaseAttemptContextReactive proxyFor(/*ReactiveTransactionAttemptContext acr,*/ TransactionalOperator txOperator) {
 		Class<?>[] interfaces = new Class<?>[] { /* AttemptContextReactiveInterface.class, */
 				CouchbaseAttemptContextReactive.class };
 		CouchbaseAttemptContextReactive proxyInstance = (CouchbaseAttemptContextReactive) Proxy.newProxyInstance(
@@ -50,10 +50,10 @@ public interface CouchbaseAttemptContextReactive {
 
 	class ACRInvocationHandler implements InvocationHandler {
 
-	//	final AttemptContextReactive acr;
+	//	final ReactiveTransactionAttemptContext acr;
 		final TransactionalOperator txOperator;
 
-		public ACRInvocationHandler(/*AttemptContextReactive acr,*/ TransactionalOperator txOperator) {
+		public ACRInvocationHandler(/*ReactiveTransactionAttemptContext acr,*/ TransactionalOperator txOperator) {
 //			this.acr = acr;
 			this.txOperator = txOperator;
 		}

@@ -20,9 +20,7 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-import com.couchbase.transactions.AttemptContextReactive;
-import com.couchbase.transactions.Transactions;
-import com.couchbase.transactions.config.TransactionConfig;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import org.springframework.data.couchbase.transaction.ClientSession;
 import org.springframework.data.couchbase.transaction.ClientSessionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
@@ -83,7 +81,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	Mono<ClientSession> getSession(ClientSessionOptions options, Transactions transactions, TransactionConfig config);
+	Mono<ClientSession> getSession(ClientSessionOptions options);
 
 	String getBucketName();
 
@@ -91,10 +89,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	Mono<ClientSession> getSession(ClientSessionOptions options);
-
-	ClientSession getSession(ClientSessionOptions options, Transactions transactions, TransactionConfig config,
-													 AttemptContextReactive atr);
+	ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)

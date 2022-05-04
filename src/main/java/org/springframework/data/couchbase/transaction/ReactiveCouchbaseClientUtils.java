@@ -140,14 +140,14 @@ public class ReactiveCouchbaseClientUtils {
 		//		.getResource(factory);
 
 		return TransactionSynchronizationManager.forCurrentTransaction()
-				.flatMap(x -> {/* System.err.println("forCurrentTransaction: getResource() : "+x.getResource(factory.getCluster().block()));*/ return Mono.just(x);})
+				.flatMap(x -> {return Mono.just(x);})
 				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
 				.flatMap(synchronizationManager -> {
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
 							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withSession(it), converter)); // rx TxMgr
 				}) //
 				.onErrorResume(NoTransactionException.class,
-						e -> { /* System.err.println("noCurrentTransaction: "); */return getCouchbaseTemplateOrDefault(dbName,
+						e -> { return getCouchbaseTemplateOrDefault(dbName,
 								getNonReactiveSession(factory) != null ? factory.withSession(getNonReactiveSession(factory)) : factory,
 								converter);}) // blocking TxMgr
 				.switchIfEmpty(getCouchbaseTemplateOrDefault(dbName, factory, converter));

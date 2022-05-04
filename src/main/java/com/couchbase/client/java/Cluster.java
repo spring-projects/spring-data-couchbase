@@ -44,6 +44,7 @@ import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchOptions;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
+import com.couchbase.client.java.transactions.Transactions;
 
 import java.time.Duration;
 import java.util.Map;
@@ -102,6 +103,7 @@ import static com.couchbase.client.java.ReactiveCluster.DEFAULT_SEARCH_OPTIONS;
  * The SDK will only work against Couchbase Server 5.0 and later, because RBAC (role-based access control) is a first
  * class concept since 3.0 and therefore required.
  */
+// todo gp is this required?
 public class Cluster implements ClusterInterface {
 
   /**
@@ -574,5 +576,14 @@ public class Cluster implements ClusterInterface {
     block(asyncCluster.waitUntilReady(timeout, options));
   }
 
+  /**
+   * Allows access to transactions.
+   *
+   * @return the {@link Transactions} interface.
+   */
+  @Stability.Uncommitted
+  public Transactions transactions() {
+    return new Transactions(core(), environment().jsonSerializer());
+  }
 }
 

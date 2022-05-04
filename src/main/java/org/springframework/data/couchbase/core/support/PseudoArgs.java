@@ -29,13 +29,13 @@ public class PseudoArgs<OPTS> {
 	private final OPTS options;
 	private final String scopeName;
 	private final String collectionName;
-	private final CouchbaseStuffHandle transactionalOperator;
+	//private final CouchbaseStuffHandle transactionalOperator;
 
 	public PseudoArgs(String scopeName, String collectionName, OPTS options, CouchbaseStuffHandle transactionalOperator) {
 		this.options = options;
 		this.scopeName = scopeName;
 		this.collectionName = collectionName;
-		this.transactionalOperator = transactionalOperator;
+		//this.transactionalOperator = transactionalOperator;
 	}
 
 	/**
@@ -97,7 +97,7 @@ public class PseudoArgs<OPTS> {
 			throw new CouchbaseException(new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
 		}
 		this.options = optionsForQuery;
-		this.transactionalOperator = txOpForQuery;
+		//this.transactionalOperator = txOpForQuery;
 
 	}
 
@@ -126,7 +126,7 @@ public class PseudoArgs<OPTS> {
 	 * @return the attempt context
 	 */
 	public CouchbaseStuffHandle getTxOp() {
-		return transactionalOperator;
+		return null; // transactionalOperator;
 	}
 
 	@Override

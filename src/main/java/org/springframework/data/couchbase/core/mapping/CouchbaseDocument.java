@@ -56,6 +56,9 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 */
 	private int expiration;
 
+	// todo gp
+	public long version;
+
 	/**
 	 * Creates a completely empty {@link CouchbaseDocument}.
 	 */

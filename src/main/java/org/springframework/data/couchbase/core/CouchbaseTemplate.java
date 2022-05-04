@@ -57,25 +57,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private CouchbaseStuffHandle txOp;
-
-	//public CouchbaseTemplate with(CouchbaseStuffHandle transactionalOperator) {
-	//	CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(),
-	//			reactiveCouchbaseTemplate.getCouchbaseClientFactory(), getConverter());
-	//	tmpl.txOp = transactionalOperator;
-	//	return this;
-	//}
-
-	/*
-	public CouchbaseTemplate with(CouchbaseTransactionalOperatorNonReactive transactionalOperator) {
-		CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(), getConverter());
-		tmpl.txOp = transactionalOperator;
-		return this;
-	}
-	*/
-	//public CouchbaseStuffHandle txOperator() {
-	//	return txOp;
-	//}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
 			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
