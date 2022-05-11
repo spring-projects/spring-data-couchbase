@@ -149,39 +149,6 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 		}
 	}
 
-	@Test
-	@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-	void findUsingStringNq1l_3x_projection_id_cas() throws Exception {
-		Airline airline = new Airline(UUID.randomUUID().toString(), "Continental", "USA");
-		try {
-			Airline modified = couchbaseTemplate.upsertById(Airline.class).one(airline);
-
-			String input = "getByName_3x";
-			Method method = AirlineRepository.class.getMethod(input, String.class);
-
-			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-					new DefaultRepositoryMetadata(AirlineRepository.class), new SpelAwareProxyProjectionFactory(),
-					converter.getMappingContext());
-
-			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
-
-			Query query = creator.createQuery();
-
-			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate.findByQuery(Airline.class)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query);
-
-			Optional<Airline> al = q.one();
-			assertEquals(airline.toString(), al.get().toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		} finally {
-			couchbaseTemplate.removeById().one(airline.getId());
-		}
-	}
-
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
 		return new ParametersParameterAccessor(params, values);
 	}
