@@ -215,7 +215,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 									TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
 									Mono<TransactionQueryResult> tqr = s.getReactiveTransactionAttemptContext()
 											.query(statement, opts);
-									// todo gp do something with tqr
+									// todo gpx do something with tqr
 									return Mono.empty();
 								}
 							}));
@@ -289,7 +289,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
 							Mono<TransactionQueryResult> tqr = s.getReactiveTransactionAttemptContext()
 									.query(statement, opts);
-							// todo gp do something with tqr
+							// todo gpx do something with tqr
 							return Mono.empty();
 						}
 					}));

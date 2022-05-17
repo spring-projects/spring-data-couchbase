@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.java.transactions.TransactionResult;
@@ -31,6 +32,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -230,8 +232,43 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
+	// todo gpx this hangs and not sure why...
+	// todo gpx this uses loads of cb-txn- threads and not sure why...
+	@Disabled("because hanging")
+	@Test
+	public void concurrentTxns() {
+		Runnable r = () -> {
+			Person p = new Person(null, "Walter", "White");
+			Person s = personService.declarativeSavePerson(p);
+		};
+		List<Thread> threads = new ArrayList<>();
+		for (int i = 0; i < 100; i ++) {
+			Thread t = new Thread(r);
+			t.start();
+			threads.add(t);
+		}
+		threads.forEach(t -> {
+			try {
+				t.join();
+			} catch (InterruptedException e) {
+				fail();
+			}
+		});
+	}
+
 	@Test
 	public void replaceInTxAnnotatedCallback() {
+		Person person = new Person(1, "Walter", "White");
+		Person switchedPerson = new Person(1, "Dave", "Reynolds");
+		cbTmpl.insertById(Person.class).one(person);
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person p = personService.declarativeFindReplacePersonCallback(person, tryCount);
+		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
+	}
+
+	@Test
+	public void replaceTwiceInTxAnnotatedCallback() {
 		Person person = new Person(1, "Walter", "White");
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
 		cbTmpl.insertById(Person.class).one(person);
@@ -284,7 +321,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(new Person(null, "Walter", "White"));
-		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException
+		// todo gpx user shouldn't be getting exposed to TransactionOperationFailedException (or should they?)
 		assertThrows(TransactionOperationFailedException.class, () -> personService.savePerson(p));
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
@@ -1019,7 +1056,14 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public Person declarativeSavePerson(Person person) {
 			assertInAnnotationTransaction(true);
-			return personOperations.insertById(Person.class).one(person);
+			long currentThreadId = Thread.currentThread().getId();
+			System.out.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
+			Person ret = personOperations.insertById(Person.class).one(person);
+			System.out.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
+			if (currentThreadId != Thread.currentThread().getId()) {
+				throw new IllegalStateException();
+			}
+			return ret;
 		}
 
 		public Person savePersonBlocking(Person person) {
@@ -1057,6 +1101,20 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 //							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			return personOperations.replaceById(Person.class).one(p);
+		}
+
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		public Person declarativeFindReplaceTwicePersonCallback(Person person, AtomicInteger tryCount) {
+			assertInAnnotationTransaction(true);
+			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
+//			System.err.println("declarativeFindReplacePersonCallback cluster : "
+//					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
+//			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
+//					+ org.springframework.transaction.support.TransactionSynchronizationManager
+//							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
+			Person p = personOperations.findById(Person.class).one(person.getId().toString());
+			Person pUpdated = personOperations.replaceById(Person.class).one(p);
+			return personOperations.replaceById(Person.class).one(pUpdated);
 		}
 
 

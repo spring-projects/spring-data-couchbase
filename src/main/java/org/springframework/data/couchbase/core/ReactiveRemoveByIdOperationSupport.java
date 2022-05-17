@@ -95,7 +95,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				removeResult = rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
 			} else {
 				Transcoder transcoder = template.getCouchbaseClientFactory().getCluster().block().environment().transcoder();
-				// todo gp we definitely don't want to be creating TransactionGetResult.  It's essential that this is passed
+				// todo gpx we definitely don't want to be creating TransactionGetResult.  It's essential that this is passed
 				// from a previous ctx.get().  So we know if this doc is in a transaction and can safely detect
 				// write-write conflicts.  This will be a blocker.
 				// Looks like replace is solving this with a getTransactionHolder?

@@ -103,7 +103,7 @@ import static com.couchbase.client.java.ReactiveCluster.DEFAULT_SEARCH_OPTIONS;
  * The SDK will only work against Couchbase Server 5.0 and later, because RBAC (role-based access control) is a first
  * class concept since 3.0 and therefore required.
  */
-// todo gp is this required?
+// todo gpx is this required?
 public class Cluster implements ClusterInterface {
 
   /**

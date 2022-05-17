@@ -330,7 +330,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
-	// todo gp how to DI this into the Cluster creation esp. as it creates a CoreTransactionConfig
+	// todo gp transaction config has been merged into ClusterEnvironment as of SDK integration
 //	@Bean
 //	public TransactionsConfig transactionConfig() {
 //		return TransactionsConfig.builder().build();

@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
@@ -109,6 +110,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
 
+
 			return GenericSupport.one(template, scope, collection, support, object,
 					(GenericSupportHelper support) -> {
 						return support.collection.reactive().insert(support.converted.getId(), support.converted.export(), buildOptions(pArgs.getOptions(), support.converted))
@@ -117,11 +119,15 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					},
 					(GenericSupportHelper support) -> {
 						return template.doGetTemplate()
-								// todo gp this runnable probably not great
+								// todo gpx might be mixing up reactive and non-reactive things
+								// todo gpx this runnable probably not great - what scheduler to run on?
 								.flatMap(tp -> Mono.defer(() -> {
-									TransactionGetResult result = support.ctx.insert(support.collection, support.converted.getId(), support.converted.getContent());
-									// todo gp don't have result.cas() anymore - needed?
-									return this.support.applyResult(object, support.converted, support.converted.getId(), 0L, new TransactionResultHolder(result), null);
+									byte[] content = JsonObject.from(support.converted.getContent()).toBytes();
+									return support.ctx.insert(support.toCollectionIdentifier(), support.converted.getId(), content)
+											.flatMap(gr -> {
+												// todo gpx don't have result.cas() anymore - needed?
+												return this.support.applyResult(object, support.converted, support.converted.getId(), 0L, null, null);
+											});
 								}));
 					});
 		}
@@ -161,7 +167,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					durabilityLevel, expiry, txCtx, support);
 		}
 
-		// todo gp need to figure out how to handle options re transactions.  E.g. many non-transactional insert options, like this, aren't supported
+		// todo gpx need to figure out how to handle options re transactions.  E.g. many non-transactional insert options, like this, aren't supported
 		@Override
 		public InsertByIdInScope<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");

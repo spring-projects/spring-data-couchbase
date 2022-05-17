@@ -92,7 +92,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
 				Mono<TransactionQueryResult> tqr = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
-				// todo gp do something with tqr
+				// todo gpx do something with tqr
 			}
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {

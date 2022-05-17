@@ -16,7 +16,9 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
@@ -135,7 +137,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 					(GenericSupportHelper support) -> {
 						CouchbaseDocument converted = support.converted;
 
-						// todo gp replace is a nightmare...
+						// todo gpx replace is a nightmare...
 						// Where to put and how to pass the TransactionGetResult
 						// - Idea: TransactionSynchronizationManager.bindResource
 						// - Idea: use @Version as an index into Map<Long, TransactionGetResult>
@@ -148,28 +150,34 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 						// -- Will have to doc that the user generally wants to do the read inside the txn.
 						// -- Can we detect this scenario and reject at runtime?  That would also probably need storing something in Person.
 
-//						TransactionGetResult gr = (TransactionGetResult) org.springframework.transaction.support.TransactionSynchronizationManager.getResource(object);
-						TransactionGetResult gr = support.ctx.get(support.collection, converted.getId());
+						// todo gpx also, what about exception contract?  transactions raises TransactionOperationFailed
 
-						// todo gp if we need this of course needs to be exposed nicely
-						CoreTransactionGetResult internal;
-						try {
-							Method method = TransactionGetResult.class.getDeclaredMethod("internal");
-							method.setAccessible(true);
-							internal = (CoreTransactionGetResult) method.invoke(gr);
-						}
-						catch (Throwable err) {
-							throw new RuntimeException(err);
-						}
+						// todo gpx can give different inScope on .findById() than on subsequent .replaceById()...
 
-						if (internal.cas() != support.converted.version) {
-							// todo gp really want to set internal state and raise a TransactionOperationFailed
-							throw new RetryTransactionException();
-						}
+						return support.ctx.get(support.toCollectionIdentifier(), converted.getId())
+								.flatMap(gr -> {
 
-						support.ctx.replace(gr, converted.getContent());
-								// todo gp no CAS
-						return this.support.applyResult(object, converted, converted.getId(), 0L, null, null);
+									// todo gpx if we need this of course needs to be exposed nicely
+									CoreTransactionGetResult internal;
+									try {
+										Method method = TransactionGetResult.class.getDeclaredMethod("internal");
+										method.setAccessible(true);
+										internal = (CoreTransactionGetResult) method.invoke(gr);
+									} catch (Throwable err) {
+										throw new RuntimeException(err);
+									}
+
+									if (internal.cas() != support.converted.version) {
+										// todo gpx really want to set internal state and raise a TransactionOperationFailed
+										throw new RetryTransactionException();
+									}
+
+									return support.ctx.replace(gr, JsonObject.from(converted.getContent()).toBytes())
+											.flatMap(replaced -> {
+												// todo gpx no CAS
+												return this.support.applyResult(object, converted, converted.getId(), 0L, null, null);
+											});
+								});
 					});
 
 //		Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();

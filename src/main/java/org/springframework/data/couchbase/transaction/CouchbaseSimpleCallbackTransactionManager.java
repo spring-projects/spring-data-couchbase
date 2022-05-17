@@ -15,8 +15,11 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -30,6 +33,8 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
 // todo gp experimenting with simplest possible CallbackPreferringPlatformTransactionManager, extending PlatformTransactionManager
@@ -56,11 +61,21 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				TransactionSynchronizationManager.initSynchronization();
 				// Oddly, TransactionSynchronizationManager.clear() does not clear resources
 				try {
-					TransactionSynchronizationManager.unbindResource(TransactionAttemptContext.class);
+					TransactionSynchronizationManager.unbindResource(CoreTransactionAttemptContext.class);
 				}
 				// todo gp must be a nicer way...
 				catch (IllegalStateException err) {}
-				TransactionSynchronizationManager.bindResource(TransactionAttemptContext.class, ctx);
+				// todo gpx if we need this of course needs to be exposed nicely
+				CoreTransactionAttemptContext internal;
+				try {
+					Field field = TransactionAttemptContext.class.getDeclaredField("internal");
+					field.setAccessible(true);
+					internal = (CoreTransactionAttemptContext) field.get(ctx);
+				}
+				catch (Throwable err) {
+					throw new RuntimeException(err);
+				}
+				TransactionSynchronizationManager.bindResource(CoreTransactionAttemptContext.class, internal);
 
 				try {
 					execResult.set(callback.doInTransaction(status));
