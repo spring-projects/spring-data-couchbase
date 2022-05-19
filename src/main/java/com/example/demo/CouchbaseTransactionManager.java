@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -147,7 +146,9 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
     }
 
     public ReactiveTransactionAttemptContext getAttemptContextReactive() {
-      return attemptContext!= null ? AttemptContextReactiveAccessor.getACR(attemptContext) : attemptContextReactive;
+      // todo gp don't think we need the accessor
+      return null;
+      //return attemptContext!= null ? AttemptContextReactiveAccessor.getACR(attemptContext) : attemptContextReactive;
     }
     public void setAttemptContextReactive(ReactiveTransactionAttemptContext attemptContextReactive) {
       this.attemptContextReactive = attemptContextReactive;

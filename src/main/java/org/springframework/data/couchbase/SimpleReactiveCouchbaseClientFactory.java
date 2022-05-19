@@ -5,7 +5,6 @@ import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 
 import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
 import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import reactor.core.publisher.Mono;
 

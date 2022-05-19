@@ -38,7 +38,6 @@ import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.transactions.AttemptContextReactiveAccessor;
 
 /**
  * The default implementation of a {@link CouchbaseClientFactory}.
