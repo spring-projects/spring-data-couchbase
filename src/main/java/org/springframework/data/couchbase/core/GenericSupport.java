@@ -47,15 +47,7 @@ public class GenericSupport {
                                 return nonTransactional.apply(gsh);
                             } else {
                                 System.err.println("tx");
-                                Thread before = Thread.currentThread();
-                                return transactional.apply(gsh)
-                                        .doOnNext(ignore -> {
-                                            Thread now = Thread.currentThread();
-                                            if (before.getId() != now.getId()) {
-                                                // This is essential for ThreadLocalStorage to work
-                                                throw new IllegalStateException("Internal error: the same thread must be used before and after a transactional operation");
-                                            }
-                                        });
+                                return transactional.apply(gsh);
                             }
                         })).onErrorMap(throwable -> {
                             if (throwable instanceof RuntimeException) {
