@@ -24,7 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
+import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import lombok.Data;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
@@ -73,7 +76,6 @@ import org.springframework.data.couchbase.transaction.CouchbaseTransactionManage
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.TransactionsWrapper;
-import org.springframework.data.couchbase.transaction.interceptor.CouchbaseTransactionInterceptor;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -232,24 +234,27 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
-	// todo gpx this hangs and not sure why...
-	// todo gpx this uses loads of cb-txn- threads and not sure why...
-	@Disabled("because hanging")
+	@Disabled("because hanging - requires JCBC-1955 fix")
 	@Test
 	public void concurrentTxns() {
 		Runnable r = () -> {
+			Thread t = Thread.currentThread();
+			System.out.printf("Started thread %d %s%n", t.getId(), t.getName());
 			Person p = new Person(null, "Walter", "White");
-			Person s = personService.declarativeSavePerson(p);
+			Person s = personService.declarativeSavePersonWithThread(p, t);
+			System.out.printf("Finished thread %d %s%n", t.getId(), t.getName());
 		};
 		List<Thread> threads = new ArrayList<>();
-		for (int i = 0; i < 100; i ++) {
+		for (int i = 0; i < 99; i ++) {
 			Thread t = new Thread(r);
 			t.start();
 			threads.add(t);
 		}
 		threads.forEach(t -> {
 			try {
+				System.out.printf("Waiting for thread %d %s%n", t.getId(), t.getName());
 				t.join();
+				System.out.printf("Finished waiting for thread %d %s%n", t.getId(), t.getName());
 			} catch (InterruptedException e) {
 				fail();
 			}
@@ -857,6 +862,13 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	static class Config extends AbstractCouchbaseConfiguration {
 
 		@Override
+		protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
+			// todo gp for test clarity
+			builder.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.builder()
+					.cleanupLostAttempts(false)));
+		}
+
+		@Override
 		public String getConnectionString() {
 			return connectionString();
 		}
@@ -1059,7 +1071,20 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			long currentThreadId = Thread.currentThread().getId();
 			System.out.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
 			Person ret = personOperations.insertById(Person.class).one(person);
-			System.out.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
+			System.out.println(String.format("Thread %d (was %d) %s", Thread.currentThread().getId(), currentThreadId, Thread.currentThread().getName()));
+			if (currentThreadId != Thread.currentThread().getId()) {
+				throw new IllegalStateException();
+			}
+			return ret;
+		}
+
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		public Person declarativeSavePersonWithThread(Person person, Thread thread) {
+			assertInAnnotationTransaction(true);
+			long currentThreadId = Thread.currentThread().getId();
+			System.out.printf("Thread %d %s, started from %d %s%n", Thread.currentThread().getId(), Thread.currentThread().getName(), thread.getId(), thread.getName());
+			Person ret = personOperations.insertById(Person.class).one(person);
+			System.out.printf("Thread %d (was %d) %s, started from %d %s%n", Thread.currentThread().getId(), currentThreadId, Thread.currentThread().getName(), thread.getId(), thread.getName());
 			if (currentThreadId != Thread.currentThread().getId()) {
 				throw new IllegalStateException();
 			}
