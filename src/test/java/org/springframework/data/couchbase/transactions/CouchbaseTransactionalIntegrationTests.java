@@ -105,7 +105,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	}
 
 	@Test
-	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
+	public void shouldRollbackAfterException() {
 		Person p = new Person(null, "Walter", "White");
 		assertThrows(SimulateFailureException.class, () -> personService.declarativeSavePersonErrors(p));
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
@@ -113,7 +113,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	}
 
 	@Test
-	public void shouldRollbackAfterExceptionOfTxAnnotatedMethodReactive() {
+	public void shouldRollbackAfterExceptionReactive() {
 		Person p = new Person(null, "Walter", "White");
 		assertThrows(SimulateFailureException.class, () -> personService.declarativeSavePersonErrorsReactive(p).block());
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
@@ -121,7 +121,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	}
 
 	@Test
-	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
+	public void commitShouldPersistTxEntries() {
 		Person p = new Person(null, "Walter", "White");
 		Person s = personService.declarativeSavePerson(p);
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
@@ -156,7 +156,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	}
 
 	@Test
-	public void replaceInTxAnnotatedCallback() {
+	public void replaceCallback() {
 		Person person = new Person(1, "Walter", "White");
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
 		cbTmpl.insertById(Person.class).one(person);
@@ -167,7 +167,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	}
 
 	@Test
-	public void replaceTwiceInTxAnnotatedCallback() {
+	public void replaceTwiceCallback() {
 		Person person = new Person(1, "Walter", "White");
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
 		cbTmpl.insertById(Person.class).one(person);
@@ -179,7 +179,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 
 
 	@Test
-	public void commitShouldPersistTxEntriesOfTxAnnotatedMethodReactive() {
+	public void commitShouldPersistTxEntriesReactive() {
 		Person p = new Person(null, "Walter", "White");
 		Person s = personService.declarativeSavePersonReactive(p).block();
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
@@ -225,29 +225,13 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	@Component
 	@EnableTransactionManagement
 	static
-	// @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	class PersonService {
-
 		final CouchbaseOperations personOperations;
-		final CouchbaseSimpleCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
 		final ReactiveCouchbaseOperations personOperationsRx;
-		final ReactiveCouchbaseTransactionManager managerRx;
 
-		public PersonService(CouchbaseOperations ops, 	CouchbaseSimpleCallbackTransactionManager mgr, ReactiveCouchbaseOperations opsRx,
-				ReactiveCouchbaseTransactionManager mgrRx) {
+		public PersonService(CouchbaseOperations ops, ReactiveCouchbaseOperations opsRx) {
 			personOperations = ops;
-			manager = mgr;
-			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
-//			System.err.println("manager cluster     : " + manager.getDatabaseFactory().getCluster());
-			System.err.println("manager Manager     : " + manager);
-
 			personOperationsRx = opsRx;
-			managerRx = mgrRx;
-			System.out
-					.println("operationsRx cluster  : " + personOperationsRx.getCouchbaseClientFactory().getCluster().block());
-			System.out.println("managerRx cluster     : " + mgrRx.getDatabaseFactory().getCluster().block());
-			System.out.println("managerRx Manager     : " + managerRx);
-			return;
 		}
 
 		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
