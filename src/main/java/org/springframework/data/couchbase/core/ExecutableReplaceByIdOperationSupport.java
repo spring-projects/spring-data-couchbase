@@ -19,7 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -53,12 +53,12 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveReplaceByIdSupport<T> reactiveSupport;
 
 		ExecutableReplaceByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseStuffHandle txCtx) {
+									 final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+									 final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -113,7 +113,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		}
 
 		@Override
-		public ReplaceByIdWithExpiry<T> transaction(final CouchbaseStuffHandle txCtx) {
+		public ReplaceByIdWithExpiry<T> transaction(final CouchbaseTransactionalOperator txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
 					replicateTo, durabilityLevel, expiry, txCtx);

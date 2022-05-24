@@ -51,17 +51,17 @@ public class Util {
 
   public static void waitUntilThrows(final Class<? extends Exception> clazz, final Supplier<Object> supplier) {
     with()
-        .pollInterval(Duration.ofMillis(1))
-        .await()
-        .atMost(Duration.ofMinutes(1))
-        .until(() -> {
-          try {
-            supplier.get();
-          } catch (final Exception ex) {
-            return ex.getClass().isAssignableFrom(clazz);
-          }
-          return false;
-        });
+            .pollInterval(Duration.ofMillis(1))
+            .await()
+            .atMost(Duration.ofMinutes(1))
+            .until(() -> {
+              try {
+                supplier.get();
+              } catch (final Exception ex) {
+                return ex.getClass().isAssignableFrom(clazz);
+              }
+              return false;
+            });
   }
 
   /**
@@ -94,6 +94,27 @@ public class Util {
     InputStream stream = clazz.getResourceAsStream(path);
     java.util.Scanner s = new java.util.Scanner(stream, UTF_8.name()).useDelimiter("\\A");
     return s.hasNext() ? s.next() : "";
+  }
+
+  /**
+   * check if we are/are not in an @Transactional transaction
+   * @param inTransaction
+   */
+  public static void assertInAnnotationTransaction(boolean inTransaction) {
+    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+    for (StackTraceElement ste : stack) {
+      if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")
+              || ste.getClassName().startsWith("org.springframework.data.couchbase.transaction.interceptor")) {
+        if (inTransaction) {
+          return;
+        }
+      }
+    }
+    if (!inTransaction) {
+      return;
+    }
+    throw new RuntimeException(
+            "in-annotation-transaction = " + (!inTransaction) + " but expected in-annotation-transaction = " + inTransaction);
   }
 
 }

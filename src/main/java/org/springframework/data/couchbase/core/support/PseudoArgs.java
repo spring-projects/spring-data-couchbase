@@ -23,15 +23,15 @@ import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
 	private final String scopeName;
 	private final String collectionName;
-	private final CouchbaseStuffHandle transactionalOperator;
+	private final CouchbaseTransactionalOperator transactionalOperator;
 
-	public PseudoArgs(String scopeName, String collectionName, OPTS options, CouchbaseStuffHandle transactionalOperator) {
+	public PseudoArgs(String scopeName, String collectionName, OPTS options, CouchbaseTransactionalOperator transactionalOperator) {
 		this.options = options;
 		this.scopeName = scopeName;
 		this.collectionName = collectionName;
@@ -43,7 +43,7 @@ public class PseudoArgs<OPTS> {
 	 * 1) values from fluent api<br>
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
-	 * 
+	 *
 	 * @param template which holds ThreadLocal pseudo args
 	 * @param scope - from calling operation
 	 * @param collection - from calling operation
@@ -51,12 +51,12 @@ public class PseudoArgs<OPTS> {
 	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
-                    CouchbaseStuffHandle transactionalOperator, Class<?> domainType) {
+					  CouchbaseTransactionalOperator transactionalOperator, Class<?> domainType) {
 
 		String scopeForQuery = null;
 		String collectionForQuery = null;
 		OPTS optionsForQuery = null;
-		CouchbaseStuffHandle txOpForQuery = null;
+		CouchbaseTransactionalOperator txOpForQuery = null;
 
 		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
@@ -74,7 +74,7 @@ public class PseudoArgs<OPTS> {
 		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
 		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
 		optionsForQuery = fromFirst(null, options, optionsForQuery);
-		txOpForQuery = fromFirst( null, transactionalOperator, txOpForQuery /*, template.txOperator() */);
+		txOpForQuery = fromFirst( null, transactionalOperator, txOpForQuery , template.txOperator() );
 
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
@@ -125,13 +125,13 @@ public class PseudoArgs<OPTS> {
 	/**
 	 * @return the attempt context
 	 */
-	public CouchbaseStuffHandle getTxOp() {
+	public CouchbaseTransactionalOperator getTxOp() {
 		return transactionalOperator;
 	}
 
 	@Override
 	public String toString() {
-		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
+		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions()+" txOp: "+transactionalOperator;
 	}
 
 }

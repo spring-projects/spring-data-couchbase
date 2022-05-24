@@ -30,7 +30,7 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Remove Operations on KV service.
@@ -65,6 +65,14 @@ public interface ExecutableRemoveByIdOperation {
 		RemoveResult one(String id);
 
 		/**
+		 * Remove one document based on the entity.  Transactions need the entity for the cas.
+		 *
+		 * @param entity the document ID.
+		 * @return result of the remove
+		 */
+		RemoveResult oneEntity(Object entity);
+
+		/**
 		 * Remove the documents in the collection.
 		 *
 		 * @param ids the document IDs.
@@ -72,6 +80,14 @@ public interface ExecutableRemoveByIdOperation {
 		 */
 		@Override
 		List<RemoveResult> all(Collection<String> ids);
+
+		/**
+		 * Remove documents based on the entities. Transactions need the entity for the cas.
+		 *
+		 * @param entities to remove.
+		 * @return result of the remove
+		 */
+		List<RemoveResult> allEntities(Collection<Object> entities);
 
 	}
 
@@ -105,7 +121,7 @@ public interface ExecutableRemoveByIdOperation {
 
 	interface RemoveByIdWithTransaction extends TerminatingRemoveById, WithTransaction<RemoveResult> {
 		@Override
-		TerminatingRemoveById transaction(CouchbaseStuffHandle txCtx);
+		TerminatingRemoveById transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}

@@ -16,27 +16,26 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
+import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -68,13 +67,13 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final String collection;
 		private final CommonOptions<?> options;
 		private final List<String> fields;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveTemplateSupport support;
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseStuffHandle txCtx,
-				ReactiveTemplateSupport support) {
+								CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
+								ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -93,60 +92,34 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, txCtx, domainType);
 			LOG.trace("findById {}", pArgs);
 
-//			return GenericSupport.one(template, scope, collection, support, object,
-//					(GenericSupportHelper support) -> {
-//						if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-//							return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
-//									result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
-//						} else {
-//							return rc.get(id, (GetOptions) pArgs.getOptions()).flatMap(
-//									result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
-//						}
-//					},
-//					(GenericSupportHelper support) -> {
-//						return s.getReactiveTransactionAttemptContext().get(rc, id)
-//								// todo gp no cas
-//								.flatMap(result -> support.decodeEntity(id, result.contentAsObject().toString(), 0,
-//										domainType, pArgs.getScope(), pArgs.getCollection(), new TransactionResultHolder(result), s));
-//					}
-//		})).onErrorResume(throwable -> {
-//			if (throwable instanceof DocumentNotFoundException) {
-//				return Mono.empty();
-//			}
-//			return Mono.error(throwable);
-//		});
+			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollection(pArgs.getCollection()).block().reactive();
 
-			Optional<CoreTransactionAttemptContext> ctxr = Optional.ofNullable((CoreTransactionAttemptContext)
-					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(CoreTransactionAttemptContext.class));
+			// this will get me a template with a session holding tx
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			com.couchbase.client.java.Collection coll = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollection(pArgs.getCollection()).block();
-			ReactiveCollection rc = coll.reactive();
-
-
-//			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			//ReactiveTransactionAttemptContext ctx = CouchbaseTransactionalTemplate.getContextReactive(template);
-			//ClientSession session = CouchbaseTransactionalTemplate.getSession(template);
-
-			Mono<T> reactiveEntity = Mono.defer(() -> {
-						if (!ctxr.isPresent()) {
+			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null)
+					.flatMap(s -> {
+						System.err.println("Session: "+s);
+						//Mono<T> reactiveEntity =  Mono.defer(() -> {
+						if (s == null || s.getCore() == null) {
 							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions()).flatMap(
-										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+												pArgs.getScope(), pArgs.getCollection(), null));
 							} else {
-								return rc.get(id, (GetOptions) pArgs.getOptions()).flatMap(
-										result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null));
+								return rc.get(id, (GetOptions) pArgs.getOptions())
+										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+												pArgs.getScope(), pArgs.getCollection(), null));
 							}
 						} else {
-							CollectionIdentifier collId = new CollectionIdentifier(rc.bucketName(), Optional.of(rc.scopeName()), Optional.of(rc.name()));
-
-							return ctxr.get().get(collId, id)
-									.flatMap(result -> {
-										return support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(),
-												domainType, pArgs.getScope(), pArgs.getCollection(), null, null);
+							return  s.getCore().get(makeCollectionIdentifier(rc.async()), id)
+									.flatMap( result -> {
+										return support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(), domainType, pArgs.getScope(),
+												pArgs.getCollection(), new TransactionResultHolder(result), null);
 									});
 						}
-					});
+					}));
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {
@@ -162,12 +135,6 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			});
 
 		}
-		/*
-				private TransactionGetOptions buildTranasactionOptions(ReplaceOptions buildOptions) {
-					return OptionsBuilder.buildTransactionGetOptions(buildOptions);
-				}
-		 */
-
 
 		@Override
 		public Flux<? extends T> all(final Collection<String> ids) {
@@ -207,7 +174,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public FindByIdWithProjection<T> transaction(CouchbaseStuffHandle txCtx) {
+		public FindByIdWithProjection<T> transaction(CouchbaseTransactionalOperator txCtx) {
 			Assert.notNull(txCtx, "txCtx must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
 					support);

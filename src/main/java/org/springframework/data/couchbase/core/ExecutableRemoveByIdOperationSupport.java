@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -58,12 +58,12 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Long cas;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final Class<?> domainType, final String scope,
-																final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-																final DurabilityLevel durabilityLevel, Long cas, CouchbaseStuffHandle txCtx) {
+									final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+									final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -84,9 +84,20 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		}
 
 		@Override
+		public RemoveResult oneEntity(final Object entity) {
+			return reactiveRemoveByIdSupport.oneEntity(entity).block();
+		}
+
+		@Override
 		public List<RemoveResult> all(final Collection<String> ids) {
 			return reactiveRemoveByIdSupport.all(ids).collectList().block();
 		}
+
+		@Override
+		public List<RemoveResult> allEntities(final Collection<Object> entities) {
+			return reactiveRemoveByIdSupport.allEntities(entities).collectList().block();
+		}
+
 
 		@Override
 		public RemoveByIdTxOrNot inCollection(final String collection) {
@@ -129,7 +140,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		}
 
 		@Override
-		public RemoveByIdWithCas transaction(CouchbaseStuffHandle txCtx) {
+		public RemoveByIdWithCas transaction(CouchbaseTransactionalOperator txCtx) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas, txCtx);
 		}

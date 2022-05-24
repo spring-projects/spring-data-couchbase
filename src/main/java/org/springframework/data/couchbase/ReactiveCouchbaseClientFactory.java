@@ -15,15 +15,17 @@
  */
 package org.springframework.data.couchbase;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import org.springframework.data.couchbase.transaction.ClientSession;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.ClientSessionOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import org.springframework.dao.support.PersistenceExceptionTranslator;
@@ -40,12 +42,10 @@ import java.io.IOException;
  * @since 2.0
  */
 public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*/ {
-	
+
 	/**
 	 * Provides access to the managed SDK {@link Cluster} reference.
 	 */
-	//Cluster getCluster();
-
 	Mono<ClusterInterface> getCluster();
 
 	/**
@@ -56,8 +56,6 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	/**
 	 * Provides access to the managed SDK {@link Scope} reference.
 	 */
-	//Scope getScope();
-
 	Mono<Scope> getScope();
 
 	/**
@@ -65,9 +63,8 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
-	//Collection getCollection(String name);
-
 	Mono<Collection> getCollection(String name);
+
 	/**
 	 * Provides access to the default collection.
 	 */
@@ -86,7 +83,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	Mono<ClientSession> getSession(ClientSessionOptions options);
+	Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options);
 
 	String getBucketName();
 
@@ -94,13 +91,19 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	ClientSession getSession(ClientSessionOptions options, ReactiveTransactionAttemptContext ctx);
+	ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.ClientSession)
 	 */
-	ReactiveCouchbaseClientFactory withSession(ClientSession session);
+	ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core);
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#with(com.mongodb.session.ClientSession)
+	 */
+	ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
 
 	/*
 	 * (non-Javadoc)
@@ -108,7 +111,5 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	boolean isTransactionActive();
 
-	//CouchbaseStuffHandle getTransactionalOperator();
-
-	//ReactiveCouchbaseClientFactory with(CouchbaseStuffHandle txOp);
+	CouchbaseTransactionalOperator getTransactionalOperator();
 }

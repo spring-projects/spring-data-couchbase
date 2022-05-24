@@ -15,12 +15,16 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.java.transactions.TransactionGetResult;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +34,11 @@ import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.ReactiveCollection;
-import com.couchbase.client.java.codec.Transcoder;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+
+import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
@@ -67,11 +72,11 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Long cas;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByIdSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType, final String scope,
-															final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-															final DurabilityLevel durabilityLevel, Long cas, CouchbaseStuffHandle txCtx) {
+								  final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -88,33 +93,58 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		public Mono<RemoveResult> one(final String id) {
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("removeById {}", pArgs);
-			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollection(pArgs.getCollection()).block().reactive();
-			Mono<RemoveResult> removeResult;
-			if (pArgs.getTxOp() == null) {
-				removeResult = rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
-			} else {
-				Transcoder transcoder = template.getCouchbaseClientFactory().getCluster().block().environment().transcoder();
-				// todo gpx we definitely don't want to be creating TransactionGetResult.  It's essential that this is passed
-				// from a previous ctx.get().  So we know if this doc is in a transaction and can safely detect
-				// write-write conflicts.  This will be a blocker.
-				// Looks like replace is solving this with a getTransactionHolder?
-//				TransactionGetResult doc = new TransactionGetResult(id, null, 0, rc, tl, null, Optional.empty(), transcoder,
-//						null);
-				removeResult = pArgs.getTxOp().getAttemptContextReactive().remove(null).map(r -> new RemoveResult(id, 0, null));
-			}
-			return removeResult.onErrorMap(throwable -> {
+			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).block()
+					.reactive();
+			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
+			final Mono<RemoveResult> removeResult;
+
+			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
+				if (s.getCore() == null) {
+					System.err.println("non-tx remove");
+					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
+				} else {
+					System.err.println("tx remove");
+					if ( cas == null || cas == 0 ){
+						throw new IllegalArgumentException("cas must be supplied for tx remove");
+					}
+					Mono<CoreTransactionGetResult> gr = s.getCore().get(makeCollectionIdentifier(rc.async()), id);
+
+					return gr.flatMap(getResult -> {
+						if (getResult.cas() !=  cas) {
+							System.err.println("internal: "+getResult.cas()+" object.cas: "+cas);
+							// todo gp really want to set internal state and raise a TransactionOperationFailed
+							throw new RetryTransactionException();
+						}
+						return s.getCore().remove(getResult)
+								.map(r -> new RemoveResult(id, 0, null));
+					});
+
+				}}).onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
 					return throwable;
 				}
-			});
+			}));
+			return allResult;
+		}
+
+		@Override
+		public Mono<RemoveResult> oneEntity(Object entity) {
+			ReactiveRemoveByIdSupport op = new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, template.support().getCas(entity), txCtx);
+			return op.one(template.support().getId(entity).toString());
 		}
 
 		@Override
 		public Flux<RemoveResult> all(final Collection<String> ids) {
 			return Flux.fromIterable(ids).flatMap(this::one);
+		}
+
+		@Override
+		public Flux<RemoveResult> allEntities(Collection<Object> entities) {
+			return Flux.fromIterable(entities).flatMap(this::oneEntity);
 		}
 
 		private RemoveOptions buildRemoveOptions(RemoveOptions options) {
@@ -162,7 +192,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		@Override
-		public RemoveByIdWithCas transaction(CouchbaseStuffHandle txCtx) {
+		public RemoveByIdWithCas transaction(CouchbaseTransactionalOperator txCtx) {
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas, txCtx);
 		}

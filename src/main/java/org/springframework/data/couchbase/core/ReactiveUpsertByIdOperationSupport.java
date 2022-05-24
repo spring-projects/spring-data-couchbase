@@ -64,8 +64,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		private final ReactiveTemplateSupport support;
 
 		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
+								  final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -84,12 +84,12 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			LOG.trace("upsertById {}", pArgs);
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 			Mono<T> reactiveEntity = support.encodeEntity(object)
-					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-						if (s == null || s.getReactiveTransactionAttemptContext() == null) {
+					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
+						if (s == null ) {
 							return tp.getCouchbaseClientFactory().withScope(pArgs.getScope())
 									.getCollection(pArgs.getCollection()).flatMap(collection -> collection.reactive()
-									.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-									.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
+											.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 						} else {
 							return Mono.error(new CouchbaseException("No upsert in a transaction. Use insert or replace"));
 						}

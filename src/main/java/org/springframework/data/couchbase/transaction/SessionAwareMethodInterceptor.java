@@ -20,6 +20,7 @@ import java.lang.reflect.Proxy;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.MethodClassKey;
@@ -31,7 +32,7 @@ import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link MethodInterceptor} implementation looking up and invoking an alternative target method having
- * {@link ClientSession} as its first argument. This allows seamless integration with the existing code base.
+ * {@link CoreTransactionAttemptContext} as its first argument. This allows seamless integration with the existing code base.
  * <br />
  * The {@link MethodInterceptor} is aware of methods on {@code MongoCollection} that my return new instances of itself
  * like (eg. TODO) and decorate them
@@ -47,39 +48,39 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
 
   private static final MethodCache METHOD_CACHE = new MethodCache();
 
-  private final ClientSession session;
-  private final ClientSessionOperator collectionDecorator;
-  private final ClientSessionOperator databaseDecorator;
+  private final ReactiveCouchbaseResourceHolder session;
+  private final ReactiveCouchbaseResourceHolderOperator collectionDecorator;
+  private final ReactiveCouchbaseResourceHolderOperator databaseDecorator;
   private final Object target;
   private final Class<?> targetType;
   private final Class<?> collectionType;
   private final Class<?> databaseType;
-  private final Class<? extends ClientSession> sessionType;
+  private final Class<? extends ReactiveCouchbaseResourceHolder> sessionType;
 
   /**
    * Create a new SessionAwareMethodInterceptor for given target.
    *
-   * @param session the {@link ClientSession} to be used on invocation.
+   * @param session the {@link CoreTransactionAttemptContext} to be used on invocation.
    * @param target the original target object.
    * @param databaseType the MongoDB database type
-   * @param databaseDecorator a {@link ClientSessionOperator} used to create the proxy for an imperative / reactive
+   * @param databaseDecorator a {@link ReactiveCouchbaseResourceHolderOperator} used to create the proxy for an imperative / reactive
    *          {@code MongoDatabase}.
    * @param collectionType the MongoDB collection type.
-   * @param collectionDecorator a {@link ClientSessionOperator} used to create the proxy for an imperative / reactive
+   * @param collectionDecorator a {@link ReactiveCouchbaseResourceHolderOperator} used to create the proxy for an imperative / reactive
    *          {@code MongoCollection}.
    * @param <T> target object type.
    */
-  public <T> SessionAwareMethodInterceptor(ClientSession session, T target, Class<? extends ClientSession> sessionType,
-                                           Class<D> databaseType, ClientSessionOperator<D> databaseDecorator, Class<C> collectionType,
-                                           ClientSessionOperator<C> collectionDecorator) {
+  public <T> SessionAwareMethodInterceptor(ReactiveCouchbaseResourceHolder session, T target, Class<? extends ReactiveCouchbaseResourceHolder> sessionType,
+                                           Class<D> databaseType, ReactiveCouchbaseResourceHolderOperator<D> databaseDecorator, Class<C> collectionType,
+                                           ReactiveCouchbaseResourceHolderOperator<C> collectionDecorator) {
 
-    Assert.notNull(session, "ClientSession must not be null!");
+    Assert.notNull(session, "CoreTransactionAttemptContext must not be null!");
     Assert.notNull(target, "Target must not be null!");
     Assert.notNull(sessionType, "SessionType must not be null!");
     Assert.notNull(databaseType, "Database type must not be null!");
-    Assert.notNull(databaseDecorator, "Database ClientSessionOperator must not be null!");
+    Assert.notNull(databaseDecorator, "Database CoreTransactionAttemptContextOperator must not be null!");
     Assert.notNull(collectionType, "Collection type must not be null!");
-    Assert.notNull(collectionDecorator, "Collection ClientSessionOperator must not be null!");
+    Assert.notNull(collectionDecorator, "Collection CoreTransactionAttemptContextOperator must not be null!");
 
     this.session = session;
     this.target = target;
@@ -117,34 +118,34 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
     Optional<Method> targetMethod = METHOD_CACHE.lookup(methodInvocation.getMethod(), targetType, sessionType);
 
     return !targetMethod.isPresent() ? methodInvocation.proceed()
-        : ReflectionUtils.invokeMethod(targetMethod.get(), target,
-        prependSessionToArguments(session, methodInvocation));
+            : ReflectionUtils.invokeMethod(targetMethod.get(), target,
+            prependSessionToArguments(session, methodInvocation));
   }
 
   private boolean requiresDecoration(Method method) {
 
     return ClassUtils.isAssignable(databaseType, method.getReturnType())
-        || ClassUtils.isAssignable(collectionType, method.getReturnType());
+            || ClassUtils.isAssignable(collectionType, method.getReturnType());
   }
 
   @SuppressWarnings("unchecked")
   protected Object decorate(Object target) {
 
     return ClassUtils.isAssignable(databaseType, target.getClass()) ? databaseDecorator.apply(session, target)
-        : collectionDecorator.apply(session, target);
+            : collectionDecorator.apply(session, target);
   }
 
   private static boolean requiresSession(Method method) {
 
     if (method.getParameterCount() == 0
-        || !ClassUtils.isAssignable(ClientSession.class, method.getParameterTypes()[0])) {
+            || !ClassUtils.isAssignable(CoreTransactionAttemptContext.class, method.getParameterTypes()[0])) {
       return true;
     }
 
     return false;
   }
 
-  private static Object[] prependSessionToArguments(ClientSession session, MethodInvocation invocation) {
+  private static Object[] prependSessionToArguments(ReactiveCouchbaseResourceHolder session, MethodInvocation invocation) {
 
     Object[] args = new Object[invocation.getArguments().length + 1];
 
@@ -155,7 +156,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
   }
 
   /**
-   * Simple {@link Method} to {@link Method} caching facility for {@link ClientSession} overloaded targets.
+   * Simple {@link Method} to {@link Method} caching facility for {@link CoreTransactionAttemptContext} overloaded targets.
    *
    * @since 2.1
    * @author Christoph Strobl
@@ -171,15 +172,15 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
      * @param targetClass
      * @return
      */
-    Optional<Method> lookup(Method method, Class<?> targetClass, Class<? extends ClientSession> sessionType) {
+    Optional<Method> lookup(Method method, Class<?> targetClass, Class<? extends ReactiveCouchbaseResourceHolder> sessionType) {
 
       return cache.computeIfAbsent(new MethodClassKey(method, targetClass),
-          val -> Optional.ofNullable(findTargetWithSession(method, targetClass, sessionType)));
+              val -> Optional.ofNullable(findTargetWithSession(method, targetClass, sessionType)));
     }
 
     @Nullable
     private Method findTargetWithSession(Method sourceMethod, Class<?> targetType,
-                                         Class<? extends ClientSession> sessionType) {
+                                         Class<? extends ReactiveCouchbaseResourceHolder> sessionType) {
 
       Class<?>[] argTypes = sourceMethod.getParameterTypes();
       Class<?>[] args = new Class<?>[argTypes.length + 1];
@@ -203,10 +204,10 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
 
   /**
    * Represents an operation upon two operands of the same type, producing a result of the same type as the operands
-   * accepting {@link ClientSession}. This is a specialization of {@link BiFunction} for the case where the operands and
+   * accepting {@link CoreTransactionAttemptContext}. This is a specialization of {@link BiFunction} for the case where the operands and
    * the result are all of the same type.
    *
    * @param <T> the type of the operands and result of the operator
    */
-  public interface ClientSessionOperator<T> extends BiFunction<ClientSession, T, T> {}
+  public interface ReactiveCouchbaseResourceHolderOperator<T> extends BiFunction<ReactiveCouchbaseResourceHolder, T, T> {}
 }

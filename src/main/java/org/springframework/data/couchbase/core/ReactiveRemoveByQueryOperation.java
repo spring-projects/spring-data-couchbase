@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.query.Query;
@@ -92,10 +92,10 @@ public interface ReactiveRemoveByQueryOperation {
 		/**
 		 * Provide the transaction
 		 *
-     * @param txCtx - transaction
-     */
+		 * @param txCtx - transaction
+		 */
 		@Override
-		TerminatingRemoveByQuery<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingRemoveByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface RemoveByQueryTxOrNot<T> extends RemoveByQueryWithConsistency<T>, RemoveByQueryWithTransaction<T> {}

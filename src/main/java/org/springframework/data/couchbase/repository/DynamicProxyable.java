@@ -22,13 +22,13 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import org.springframework.data.couchbase.repository.support.DynamicInvocationHandler;
 
 import com.couchbase.client.java.CommonOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * The generic parameter needs to be REPO which is either a CouchbaseRepository parameterized on T,ID or a
  * ReactiveCouchbaseRepository parameterized on T,ID. i.e.: interface AirportRepository extends
  * CouchbaseRepository&lt;Airport, String&gt;, DynamicProxyable&lt;AirportRepository&gt;
- * 
+ *
  * @param <REPO>
  * @author Michael Reiche
  */
@@ -100,7 +100,7 @@ public interface DynamicProxyable<REPO> {
 	}
 	 */
 
-	default REPO withTransaction(CouchbaseStuffHandle ctx) {
+	default REPO withTransaction(CouchbaseTransactionalOperator ctx) {
 		REPO proxyInstance = (REPO) Proxy.newProxyInstance(this.getClass().getClassLoader(),
 				this.getClass().getInterfaces(), new DynamicInvocationHandler<>(this, null, null, null, ctx));
 		return proxyInstance;

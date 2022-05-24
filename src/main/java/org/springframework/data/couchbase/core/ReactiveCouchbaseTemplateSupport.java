@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
@@ -47,7 +47,7 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	private ReactiveEntityCallbacks reactiveEntityCallbacks;
 
 	public ReactiveCouchbaseTemplateSupport(final ReactiveCouchbaseTemplate template, final CouchbaseConverter converter,
-			final TranslationService translationService) {
+											final TranslationService translationService) {
 		super(template, converter, translationService);
 		this.template = template;
 	}
@@ -70,27 +70,27 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																	TransactionResultHolder txResultHolder) {
+									TransactionResultHolder txResultHolder) {
 		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
 	}
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																	TransactionResultHolder txResultHolder, ClientSession session) {
-		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, session));
+									TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}
 
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-																 TransactionResultHolder txResultHolder) {
+								   TransactionResultHolder txResultHolder) {
 		return applyResult(entity, converted, id, cas, txResultHolder, null);
 	}
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-																 TransactionResultHolder txResultHolder, ClientSession session) {
-		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, session));
+								   TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
 	}
 
 	@Override

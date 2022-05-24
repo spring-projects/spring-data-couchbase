@@ -55,6 +55,6 @@ public interface CouchbaseOperations extends FluentCouchbaseOperations {
 	QueryScanConsistency getConsistency();
 	<T> T save(T entity);
 
-	 <T> Long count(Query query, Class<T> domainType);
+	<T> Long count(Query query, Class<T> domainType);
 
 }

@@ -26,14 +26,11 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
@@ -66,7 +63,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+											 ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
 		super(entityInformation, repositoryInterface);
 		this.operations = operations;
 	}
@@ -74,6 +71,24 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@SuppressWarnings("unchecked")
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
+		return save(entity, getScope(), getCollection());
+	}
+
+	@Override
+	public Flux<T> findAll(Sort sort) {
+		return findAll(new Query().with(sort));
+	}
+
+	@Override
+	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
+		Assert.notNull(entities, "The given Iterable of entities must not be null!");
+		String scopeName = getScope();
+		String collection = getCollection();
+		return Flux.fromIterable(entities).flatMap(e -> save(e, scopeName, collection));
+	}
+
+	@SuppressWarnings("unchecked")
+	public <S extends T> Mono<S> save(S entity, String scopeName, String collectionName) {
 		Assert.notNull(entity, "Entity must not be null!");
 		Mono<S> result;
 		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
@@ -86,29 +101,18 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 		if (!versionPresent) { // the entity doesn't have a version property
 			// No version field - no cas
-			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		} else if (existingDocument) { // there is a version property, and it is non-zero
 			// Updating existing document with cas
-			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		} else { // there is a version property, but it's zero or not set.
 			// Creating new document
-			result = (Mono<S>) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection())
+			result = (Mono<S>) operations.insertById(getJavaType()).inScope(scopeName).inCollection(collectionName)
 					.one(entity);
 		}
 		return result;
-	}
-
-	@Override
-	public Flux<T> findAll(Sort sort) {
-		return findAll(new Query().with(sort));
-	}
-
-	@Override
-	public <S extends T> Flux<S> saveAll(Iterable<S> entities) {
-		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return Flux.fromIterable(entities).flatMap(e -> save(e));
 	}
 
 	@Override
@@ -175,7 +179,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity))
+		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).oneEntity(entity)
 				.then();
 	}
 
@@ -188,7 +192,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
 		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-				.all(Streamable.of(entities).map(this::getId).toList()).then();
+				.allEntities((java.util.Collection<Object>)(Streamable.of(entities).toList())).then();
 	}
 
 	@Override

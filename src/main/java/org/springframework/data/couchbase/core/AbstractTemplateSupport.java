@@ -28,7 +28,7 @@ import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -58,7 +58,7 @@ public abstract class AbstractTemplateSupport {
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	public <T> T decodeEntityBase(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																TransactionResultHolder txResultHolder, ClientSession session) {
+								  TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
 
@@ -110,8 +110,8 @@ public abstract class AbstractTemplateSupport {
 		}
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id, scope, collection);
 
-		if(session != null){
-			session.transactionResultHolder(txResultHolder, (T)accessor.getBean());
+		if(holder != null){
+			holder.transactionResultHolder(txResultHolder, (T)accessor.getBean());
 		}
 
 		return accessor.getBean();
@@ -127,7 +127,7 @@ public abstract class AbstractTemplateSupport {
 
 
 	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
-			TransactionResultHolder txResultHolder, ClientSession session) {
+								 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
 		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
@@ -147,8 +147,8 @@ public abstract class AbstractTemplateSupport {
 		if (transactionResultProperty != null) {
 			accessor.setProperty(transactionResultProperty, System.identityHashCode(txResultHolder));
 		}
-		if(session != null){
-			session.transactionResultHolder(txResultHolder, (T)accessor.getBean());
+		if(holder != null){
+			holder.transactionResultHolder(txResultHolder, (T)accessor.getBean());
 		}
 		maybeEmitEvent(new AfterSaveEvent(accessor.getBean(), converted));
 		return (T) accessor.getBean();
@@ -159,7 +159,6 @@ public abstract class AbstractTemplateSupport {
 		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
 		final CouchbasePersistentProperty versionProperty = persistentEntity.getVersionProperty();
-
 		long cas = 0;
 		if (versionProperty != null) {
 			Object casObject = accessor.getProperty(versionProperty);
@@ -168,6 +167,17 @@ public abstract class AbstractTemplateSupport {
 			}
 		}
 		return cas;
+	}
+
+	public Object getId(final Object entity) {
+		final ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
+		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty idProperty = persistentEntity.getIdProperty();
+		Object id = null;
+		if (idProperty != null) {
+			id = accessor.getProperty(idProperty);
+		}
+		return id;
 	}
 
 	public String getJavaNameForEntity(final Class<?> clazz) {

@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -95,7 +95,7 @@ public interface ReactiveFindByQueryOperation {
 
 	/**
 	 * Fluent method to specify options.
-	 * 
+	 *
 	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithOptions<T> extends TerminatingFindByQuery<T>, WithQueryOptions<T> {
@@ -152,7 +152,7 @@ public interface ReactiveFindByQueryOperation {
 		 * @return new instance of {@link ReactiveFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
-		TerminatingFindByQuery<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingFindByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	/**

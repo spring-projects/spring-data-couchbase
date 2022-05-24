@@ -32,8 +32,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -57,40 +56,22 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private CouchbaseStuffHandle txOp;
-
-	//public CouchbaseTemplate with(CouchbaseStuffHandle transactionalOperator) {
-	//	CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(),
-	//			reactiveCouchbaseTemplate.getCouchbaseClientFactory(), getConverter());
-	//	tmpl.txOp = transactionalOperator;
-	//	return this;
-	//}
-
-	/*
-	public CouchbaseTemplate with(CouchbaseTransactionalOperatorNonReactive transactionalOperator) {
-		CouchbaseTemplate tmpl = new CouchbaseTemplate(getCouchbaseClientFactory(), getConverter());
-		tmpl.txOp = transactionalOperator;
-		return this;
-	}
-	*/
-	//public CouchbaseStuffHandle txOperator() {
-	//	return txOp;
-	//}
+	private CouchbaseTransactionalOperator couchbaseTransactionalOperator;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
+							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, reactiveCouchbaseClientFactory, converter, new JacksonTranslationService());
 	}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, CouchbaseConverter converter,
-			final TranslationService translationService) {
+							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, CouchbaseConverter converter,
+							 final TranslationService translationService) {
 		this(clientFactory, reactiveCouchbaseClientFactory, converter, translationService, null);
 	}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-			final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter,
-			final TranslationService translationService, QueryScanConsistency scanConsistency) {
+							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter,
+							 final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
@@ -110,8 +91,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public <T> T save(T entity) {
 		if (hasNonZeroVersionProperty(entity, templateSupport.converter)) {
 			return replaceById((Class<T>) entity.getClass()).one(entity);
-		//} else if (getTransactionalOperator() != null) {
-		//	return insertById((Class<T>) entity.getClass()).one(entity);
+			//} else if (getTransactionalOperator() != null) {
+			//	return insertById((Class<T>) entity.getClass()).one(entity);
 		} else {
 			return upsertById((Class<T>) entity.getClass()).one(entity);
 		}
@@ -251,6 +232,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	public TemplateSupport support() {
 		return templateSupport;
+	}
+
+	public CouchbaseTemplate with(CouchbaseTransactionalOperator couchbaseTransactionalOperator) {
+		this.couchbaseTransactionalOperator = couchbaseTransactionalOperator;
+		return this;
 	}
 
 	/**

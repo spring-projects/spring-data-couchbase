@@ -40,6 +40,8 @@ import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchOptions;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
+import com.couchbase.client.java.transactions.Transactions;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 import java.time.Duration;
 import java.util.Set;
@@ -81,7 +83,7 @@ public interface ClusterInterface {
 
   //AnalyticsResult analyticsQuery(String statement);
 
- // AnalyticsResult analyticsQuery(String statement, AnalyticsOptions options);
+  // AnalyticsResult analyticsQuery(String statement, AnalyticsOptions options);
 
   SearchResult searchQuery(String indexName, SearchQuery query);
 
@@ -104,4 +106,6 @@ public interface ClusterInterface {
   void waitUntilReady(Duration timeout);
 
   void waitUntilReady(Duration timeout, WaitUntilReadyOptions options);
+
+  Transactions transactions();
 }

@@ -60,7 +60,7 @@ public class UnmanagedTestCluster extends TestCluster {
 
 	@Override
 	TestClusterConfig _start() throws Exception {
-		bucketname = UUID.randomUUID().toString();
+		bucketname = "my_bucket"; //UUID.randomUUID().toString();
 
 		Response postResponse = httpClient
 				.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))

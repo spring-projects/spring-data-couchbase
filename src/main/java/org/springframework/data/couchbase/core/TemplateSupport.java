@@ -19,7 +19,7 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ClientSession;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 
 /**
  *
@@ -31,13 +31,15 @@ public interface TemplateSupport {
 
 	<T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection, TransactionResultHolder txResultHolder);
 
-	<T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection, TransactionResultHolder txResultHolder, ClientSession session);
+	<T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection, TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder);
 
 	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, TransactionResultHolder txResultHolder);
 
-	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, TransactionResultHolder txResultHolder, ClientSession session);
+	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder);
 
 	Long getCas(Object entity);
+
+	Object getId(Object entity);
 
 	String getJavaNameForEntity(Class<?> clazz);
 
@@ -45,5 +47,5 @@ public interface TemplateSupport {
 
 	<T> Integer getTxResultHolder(T source);
 
-  TranslationService getTranslationService();
+	TranslationService getTranslationService();
 }

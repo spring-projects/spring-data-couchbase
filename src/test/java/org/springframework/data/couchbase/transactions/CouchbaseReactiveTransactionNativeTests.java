@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import org.junit.jupiter.api.Disabled;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -43,7 +42,7 @@ import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -52,7 +51,6 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
-import com.couchbase.client.core.cnc.Event;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
@@ -65,7 +63,7 @@ import com.couchbase.client.java.kv.RemoveOptions;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(CouchbaseReactiveTransactionNativeTests.Config.class)
-@Disabled // Now using TransactionSyncronizationManager for the session
+//@Disabled // Now using TransactionSyncronizationManager for the session
 public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -88,7 +86,9 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 	@AfterAll
 	public static void afterAll() {
 		callSuperAfterAll(new Object() {});
-		context.close();
+		if(context != null){
+			context.close();
+		}
 	}
 
 	@BeforeEach
@@ -103,7 +103,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		remove(rxCBTmpl, cName, person.getId().toString());
 		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.template(rxCBTmpl).findById(Person.class).one(person.getId().toString())
 						.flatMap(p -> ctx.template(rxCBTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
@@ -130,8 +130,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
-sleepMs(1000);
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		sleepMs(1000);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.template(rxCBTmpl).findById(Person.class).one(person.getId().toString())
 						.flatMap(p -> ctx.template(rxCBTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
@@ -157,7 +157,7 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator.reactive((ctx) -> ctx.template(rxCBTmpl).insertById(Person.class)
 				.one(person).flatMap(p -> ctx.template(rxCBTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
 				// .flatMap(it -> Mono.error(new PoofException()))
@@ -183,7 +183,7 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator.reactive((ctx) -> ctx.template(rxCBTmpl).insertById(Person.class)
 				.one(person).flatMap(p -> ctx.template(rxCBTmpl).replaceById(Person.class).one(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())).then());
@@ -200,7 +200,7 @@ sleepMs(1000);
 		}
 		// Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		// assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
-		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
+		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of "+SimulateFailureException.class);
 	}
 
 	@Test
@@ -209,7 +209,7 @@ sleepMs(1000);
 		remove(rxCBTmpl, cName, person.getId().toString());
 		rxRepo.withCollection(cName).save(person).block();
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.repository(rxRepo).withCollection(cName).findById(person.getId().toString())
 						.flatMap(p -> ctx.repository(rxRepo).withCollection(cName).save(p.withFirstName("Walt")))
@@ -235,7 +235,7 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.repository(rxRepo).withTransaction(txOperator).withCollection(cName).save(person) // insert
 						//.flatMap(p -> ctx.repository(rxRepo).withCollection(cName).save(p.withFirstName("Walt"))) // replace
@@ -261,7 +261,7 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.repository(rxRepo).withCollection(cName).save(person) // insert
 						.flatMap(p -> ctx.repository(rxRepo).withCollection(cName).save(p.withFirstName("Walt"))) // replace
@@ -327,8 +327,8 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
-		Mono<TransactionResult> result = txOperator.reactive((ctx) -> {
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
+		Mono<TransactionResult> result = txOperator.reactive(ctx -> {
 			rxCBTmpl.support().getTxResultHolder(person);
 			return rxCBTmpl.findById(Person.class).inCollection(cName).transaction(txOperator).one(person.getId().toString())
 					.flatMap(pGet -> rxCBTmpl.replaceById(Person.class).inCollection(cName).transaction(txOperator)
@@ -345,7 +345,7 @@ sleepMs(1000);
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 
-		CouchbaseStuffHandle txOperator = new CouchbaseStuffHandle(reactiveCouchbaseTransactionManager);
+		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator.reactive((ctx) -> {
 			return rxCBTmpl
 					.insertById(Person.class).inCollection(cName).transaction(txOperator).one(person).flatMap(pInsert -> rxCBTmpl
@@ -375,7 +375,7 @@ sleepMs(1000);
 				.as(transactionalOperator::transactional);
 	}
 
-		void remove(Collection col, String id) {
+	void remove(Collection col, String id) {
 		remove(col.reactive(), id);
 	}
 

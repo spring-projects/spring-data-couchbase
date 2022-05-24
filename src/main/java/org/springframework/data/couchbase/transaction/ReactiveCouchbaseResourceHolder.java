@@ -15,15 +15,19 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * MongoDB specific resource holder, wrapping a {@link ClientSession}. {@link ReactiveCouchbaseTransactionManager} binds
- * instances of this class to the subscriber context.
+ * MongoDB specific resource holder, wrapping a {@link CoreTransactionAttemptContext}.
+ * {@link ReactiveCouchbaseTransactionManager} binds instances of this class to the subscriber context.
  * <p />
  * <strong>Note:</strong> Intended for internal usage only.
  *
@@ -36,121 +40,102 @@ import org.springframework.transaction.support.ResourceHolderSupport;
 // todo gp understand why this is needed
 public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 
-	private @Nullable ClientSession session; // which holds the atr
-	private ReactiveCouchbaseClientFactory databaseFactory;
+	private @Nullable CoreTransactionAttemptContext core; // which holds the atr
+	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
+
+	// private ReactiveCouchbaseClientFactory databaseFactory;
 
 	/**
-	 * Create a new {@link ReactiveCouchbaseResourceHolder} for a given {@link ClientSession session}.
+	 * Create a new {@link ReactiveCouchbaseResourceHolder} for a given {@link CoreTransactionAttemptContext session}.
 	 *
-	 * @param session the associated {@link ClientSession}. Can be {@literal null}.
-	 * @param databaseFactory the associated {@link CouchbaseClientFactory}. must not be {@literal null}.
+	 * @param core the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
 	 */
-	public ReactiveCouchbaseResourceHolder(@Nullable ClientSession session, ReactiveCouchbaseClientFactory databaseFactory) {
+	public ReactiveCouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
 
-		this.session = session;
-		this.databaseFactory = databaseFactory;
+		this.core = core;
+		// this.databaseFactory = databaseFactory;
 	}
 
 	/**
-	 * @return the associated {@link ClientSession}. Can be {@literal null}.
+	 * @return the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
 	 */
 	@Nullable
-	ClientSession getSession() {
-		return session;
+	public CoreTransactionAttemptContext getCore() {
+		return core;
 	}
 
 	/**
-	 * @return the required associated {@link ClientSession}.
+	 * @return the required associated {@link CoreTransactionAttemptContext}.
 	 * @throws IllegalStateException if no session is associated.
 	 */
-	ClientSession getRequiredSession() {
-
-		ClientSession session = getSession();
-
-		if (session == null) {
-			throw new IllegalStateException("No ClientSession associated");
+	CoreTransactionAttemptContext getRequiredCore() {
+		CoreTransactionAttemptContext core = getCore();
+		if (core == null) {
+			throw new IllegalStateException("No CoreTransactionAttemptContext associated");
 		}
-		return session;
+		return core;
 	}
 
-	/**
+	/*
 	 * @return the associated {@link CouchbaseClientFactory}.
-	 */
+
 	ReactiveCouchbaseClientFactory getDatabaseFactory() {
 		return databaseFactory;
 	}
+	 */
 
 	/**
-	 * Set the {@link ClientSession} to guard.
+	 * Set the {@link CoreTransactionAttemptContext} to guard.
 	 *
-	 * @param session can be {@literal null}.
+	 * @param core can be {@literal null}.
 	 */
-	void setSession(@Nullable ClientSession session) {
-		this.session = session;
+	CoreTransactionAttemptContext setCore(@Nullable CoreTransactionAttemptContext core) {
+		System.err.println("setCore: " + core);
+		return this.core = core;
 	}
 
 	/**
 	 * @return {@literal true} if session is not {@literal null}.
 	 */
-	boolean hasSession() {
-		return session != null;
+	boolean hasCore() {
+		return core != null;
 	}
 
 	/**
-	 * If the {@link ReactiveCouchbaseResourceHolder} is {@link #hasSession() not already associated} with a
-	 * {@link ClientSession} the given value is {@link #setSession(ClientSession) set} and returned, otherwise the current
-	 * bound session is returned.
+	 * If the {@link ReactiveCouchbaseResourceHolder} is {@link #hasCore() not already associated} with a
+	 * {@link CoreTransactionAttemptContext} the given value is {@link #setCore(CoreTransactionAttemptContext)} set} and
+	 * returned, otherwise the current bound session is returned.
 	 *
-	 * @param session
+	 * @param core
 	 * @return
 	 */
 	@Nullable
-	ClientSession setSessionIfAbsent(@Nullable ClientSession session) {
+	CoreTransactionAttemptContext setSessionIfAbsent(@Nullable CoreTransactionAttemptContext core) {
 
-		if (!hasSession()) {
-			setSession(session);
+		if (!hasCore()) {
+			setCore(core);
 		}
 
-		return session;
+		return this.core;
 	}
 
-	/**
-	 * @return {@literal true} if the session is active and has not been closed.
-	 */
-	boolean hasActiveSession() {
+	public boolean hasActiveTransaction() {
+		return getCore() != null;
+	}
 
-		if (!hasSession()) {
-			return false;
+
+	public TransactionResultHolder transactionResultHolder(Integer key) {
+		TransactionResultHolder holder = getResultMap.get(key);
+		if(holder == null){
+			throw new RuntimeException("did not find transactionResultHolder for key="+key+" in session");
 		}
-
-		return hasServerSession() && !getRequiredSession().getServerSession().isClosed();
+		return holder;
 	}
 
-	/**
-	 * @return {@literal true} if the session has an active transaction.
-	 * @see #hasActiveSession()
-	 */
-	boolean hasActiveTransaction() {
-
-		if (!hasActiveSession()) {
-			return false;
-		}
-
-		return getRequiredSession().hasActiveTransaction();
+	public TransactionResultHolder transactionResultHolder(TransactionResultHolder holder, Object o) {
+		System.err.println("PUT: "+System.identityHashCode(o)+" "+o);
+		getResultMap.put(System.identityHashCode(o), holder);
+		return holder;
 	}
 
-	/**
-	 * @return {@literal true} if the {@link ClientSession} has a {link com.mongodb.session.ServerSession} associated that
-	 *         is accessible via {@link ClientSession#getServerSession()}.
-	 */
-	boolean hasServerSession() {
-
-		try {
-			return getRequiredSession().getServerSession() != null;
-		} catch (IllegalStateException serverSessionClosed) {
-			// ignore
-		}
-
-		return false;
-	}
 }

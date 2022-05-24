@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.util.annotation.Nullable;
@@ -27,11 +28,11 @@ import reactor.util.annotation.Nullable;
  */
 public class TransactionResultHolder {
 
-	private final @Nullable TransactionGetResult getResult;
+	private final @Nullable CoreTransactionGetResult getResult;
 	// todo gp needed?
 	private final @Nullable QueryResult singleQueryResult;
 
-	public TransactionResultHolder(TransactionGetResult getResult) {
+	public TransactionResultHolder(CoreTransactionGetResult getResult) {
 		// we don't need the content and we don't have access to the transcoder an txnMeta (and we don't need them either).
 		// todo gp will need to expose a copy ctor if a copy is needed
 		this.getResult = getResult;
@@ -45,11 +46,11 @@ public class TransactionResultHolder {
 		this.singleQueryResult = singleQueryResult;
 	}
 
-	public @Nullable TransactionGetResult transactionGetResult() {
+	public @Nullable CoreTransactionGetResult transactionGetResult() {
 		return getResult;
 	}
 
 	public @Nullable QueryResult singleQueryResult() {
-		return singleQueryResult();
+		return singleQueryResult;
 	}
 }

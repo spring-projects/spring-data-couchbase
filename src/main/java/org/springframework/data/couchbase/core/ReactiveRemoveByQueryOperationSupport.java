@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import com.couchbase.client.java.transactions.TransactionQueryResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,7 +26,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -62,11 +61,11 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final CouchbaseStuffHandle txCtx;
+		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-																 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-																 CouchbaseStuffHandle txCtx) {
+									 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
+									 CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -96,12 +95,12 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			}
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-				} else {
-					return throwable;
-				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject)
+						if (throwable instanceof RuntimeException) {
+							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+						} else {
+							return throwable;
+						}
+					}).flatMapMany(ReactiveQueryResult::rowsAsObject)
 					.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
 							Optional.empty())));
 		}
@@ -159,7 +158,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		@Override
-		public RemoveByQueryWithConsistency<T> transaction(final CouchbaseStuffHandle txCtx) {
+		public RemoveByQueryWithConsistency<T> transaction(final CouchbaseTransactionalOperator txCtx) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options, txCtx);
 		}

@@ -30,7 +30,7 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Replace Operations
@@ -101,7 +101,7 @@ public interface ExecutableReplaceByIdOperation {
 
 	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
 		@Override
-		TerminatingReplaceById<T> transaction(CouchbaseStuffHandle txCtx);
+		TerminatingReplaceById<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface ReplaceByIdTxOrNot<T> extends ReplaceByIdWithExpiry<T>, ReplaceByIdWithTransaction<T> {}

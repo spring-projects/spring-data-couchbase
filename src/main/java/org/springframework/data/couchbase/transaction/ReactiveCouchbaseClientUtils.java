@@ -1,6 +1,8 @@
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.ClusterInterface;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -67,12 +69,12 @@ public class ReactiveCouchbaseClientUtils {
 	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
 	 */
 	public static Mono<ClusterInterface> getDatabase(ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization) {
+													 SessionSynchronization sessionSynchronization) {
 		return doGetCouchbaseCluster(null, factory, sessionSynchronization);
 	}
 
 	public static Mono<ReactiveCouchbaseTemplate> getTemplate(ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization, CouchbaseConverter converter) {
+															  SessionSynchronization sessionSynchronization, CouchbaseConverter converter) {
 		return doGetCouchbaseTemplate(null, factory, sessionSynchronization, converter);
 	}
 
@@ -102,12 +104,12 @@ public class ReactiveCouchbaseClientUtils {
 	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
 	 */
 	public static Mono<ClusterInterface> getCluster(String dbName, ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization) {
+													SessionSynchronization sessionSynchronization) {
 		return doGetCouchbaseCluster(dbName, factory, sessionSynchronization);
 	}
 
 	private static Mono<ClusterInterface> doGetCouchbaseCluster(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization) {
+																ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization) {
 
 		Assert.notNull(factory, "DatabaseFactory must not be null!");
 
@@ -120,15 +122,15 @@ public class ReactiveCouchbaseClientUtils {
 				.flatMap(synchronizationManager -> {
 
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
-							.flatMap(it -> getCouchbaseClusterOrDefault(dbName, factory.withSession(it)));
+							.flatMap(it -> getCouchbaseClusterOrDefault(dbName, factory.withCore(it)));
 				}) //
 				.onErrorResume(NoTransactionException.class, e -> getCouchbaseClusterOrDefault(dbName, factory)) // hitting this
 				.switchIfEmpty(getCouchbaseClusterOrDefault(dbName, factory));
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> doGetCouchbaseTemplate(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization,
-			CouchbaseConverter converter) {
+																		  ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization,
+																		  CouchbaseConverter converter) {
 
 		Assert.notNull(factory, "DatabaseFactory must not be null!");
 
@@ -138,58 +140,55 @@ public class ReactiveCouchbaseClientUtils {
 
 		//CouchbaseResourceHolder h = (CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 		//		.getResource(factory);
-		TransactionSynchronizationManager.forCurrentTransaction()
-				.flatMap((synchronizationManager) -> { System.out.println(synchronizationManager.getResource(factory)); return null; });
 
 		return TransactionSynchronizationManager.forCurrentTransaction()
-				.flatMap(x -> { System.err.println("forCurrentTransaction: getResource() : "+x.getResource(factory.getCluster().block())); return Mono.just(x);})
 				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
 				.flatMap(synchronizationManager -> {
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
-							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withSession(it), converter)); // rx TxMgr
+							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withCore(it), converter)); // rx TxMgr
 				}) //
 				.onErrorResume(NoTransactionException.class,
-						// todo gpx understand why this noCurrentTransaction is being printed
-						e -> { /* System.err.println("noCurrentTransaction: "); */ return getCouchbaseTemplateOrDefault(dbName,
-								getNonReactiveSession(factory) != null ? factory.withSession(getNonReactiveSession(factory)) : factory,
+						e -> { return getCouchbaseTemplateOrDefault(dbName,
+								getNonReactiveSession(factory) != null ? factory.withCore(getNonReactiveSession(factory)) : factory,
 								converter);}) // blocking TxMgr
 				.switchIfEmpty(getCouchbaseTemplateOrDefault(dbName, factory, converter));
 	}
 
-	private static ClientSession getNonReactiveSession(ReactiveCouchbaseClientFactory factory) {
-		CouchbaseResourceHolder h = ((CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
+	private static ReactiveCouchbaseResourceHolder getNonReactiveSession(ReactiveCouchbaseClientFactory factory) {
+		ReactiveCouchbaseResourceHolder h = ((ReactiveCouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 				.getResource(factory.getCluster().block()));
-		if( h == null){
-			h = ((CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
+		if( h == null){  // no longer used
+			h = ((ReactiveCouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 					.getResource(factory));// MN's CouchbaseTransactionManager
 		}
-		// todo gpx understand why this getNonreactiveSession: null is being printed
 		//System.err.println("getNonreactiveSession: "+ h);
-		return h != null ? h.getSession() : null;
+		return h;
 	}
 
 	private static Mono<ClusterInterface> getCouchbaseClusterOrDefault(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory) {
+																	   ReactiveCouchbaseClientFactory factory) {
 		return StringUtils.hasText(dbName) ? factory.getCluster() : factory.getCluster();
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> getCouchbaseTemplateOrDefault(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, CouchbaseConverter converter) {
+																				 ReactiveCouchbaseClientFactory factory, CouchbaseConverter converter) {
 		return Mono.just(new ReactiveCouchbaseTemplate(factory, converter));
 	}
 
-	private static Mono<ClientSession> doGetSession(TransactionSynchronizationManager synchronizationManager,
-			ReactiveCouchbaseClientFactory dbFactory, SessionSynchronization sessionSynchronization) {
+	private static Mono<ReactiveCouchbaseResourceHolder> doGetSession(TransactionSynchronizationManager synchronizationManager,
+																	  ReactiveCouchbaseClientFactory dbFactory, SessionSynchronization sessionSynchronization) {
 
 		final ReactiveCouchbaseResourceHolder registeredHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
 				.getResource(dbFactory.getCluster().block()); // make sure this wasn't saved under the wrong key!!!
 
 		// check for native MongoDB transaction
 		if (registeredHolder != null
-				&& (registeredHolder.hasSession() || registeredHolder.isSynchronizedWithTransaction())) {
-			System.err.println("doGetSession: got: "+registeredHolder.getSession());
-			return registeredHolder.hasSession() ? Mono.just(registeredHolder.getSession())
-					: createClientSession(dbFactory).map(registeredHolder::setSessionIfAbsent);
+				&& (registeredHolder.hasCore() || registeredHolder.isSynchronizedWithTransaction())) {
+			System.err.println("doGetSession: got: "+registeredHolder.getCore());
+			// TODO msr - mabye don't create a session unless it has an atr?
+			//return registeredHolder.hasCore() ? Mono.just(registeredHolder)
+			//		: createClientSession(dbFactory).map( core -> { registeredHolder.setCore(core); return registeredHolder;});
+			return Mono.just(registeredHolder);
 		}
 
 		if (SessionSynchronization.ON_ACTUAL_TRANSACTION.equals(sessionSynchronization)) {
@@ -202,20 +201,21 @@ public class ReactiveCouchbaseClientUtils {
 		// init a non native MongoDB transaction by registering a MongoSessionSynchronization
 		return createClientSession(dbFactory).map(session -> {
 
-			ReactiveCouchbaseResourceHolder newHolder = new ReactiveCouchbaseResourceHolder(session, dbFactory);
-			newHolder.getRequiredSession().startTransaction();
+			ReactiveCouchbaseResourceHolder newHolder = new ReactiveCouchbaseResourceHolder(session);
+			//newHolder.getRequiredCore().startTransaction();
+			System.err.println(" need to call startTransaction() ");
 
 			synchronizationManager
 					.registerSynchronization(new CouchbaseSessionSynchronization(synchronizationManager, newHolder, dbFactory));
 			newHolder.setSynchronizedWithTransaction(true);
 			synchronizationManager.bindResource(dbFactory, newHolder);
 
-			return newHolder.getSession();
+			return newHolder;
 		});
 	}
 
-	private static Mono<ClientSession> createClientSession(ReactiveCouchbaseClientFactory dbFactory) {
-		return dbFactory.getSession(ClientSessionOptions.builder().causallyConsistent(true).build());
+	private static Mono<CoreTransactionAttemptContext> createClientSession(ReactiveCouchbaseClientFactory dbFactory) {
+		return null; // ?? dbFactory.getCore(TransactionOptions.transactionOptions());
 	}
 
 	/**
@@ -231,7 +231,7 @@ public class ReactiveCouchbaseClientUtils {
 		private final ReactiveCouchbaseResourceHolder resourceHolder;
 
 		CouchbaseSessionSynchronization(TransactionSynchronizationManager synchronizationManager,
-				ReactiveCouchbaseResourceHolder resourceHolder, ReactiveCouchbaseClientFactory dbFactory) {
+										ReactiveCouchbaseResourceHolder resourceHolder, ReactiveCouchbaseClientFactory dbFactory) {
 
 			super(resourceHolder, dbFactory, synchronizationManager);
 			this.resourceHolder = resourceHolder;
@@ -254,7 +254,7 @@ public class ReactiveCouchbaseClientUtils {
 		protected Mono<Void> processResourceAfterCommit(ReactiveCouchbaseResourceHolder resourceHolder) {
 
 			if (isTransactionActive(resourceHolder)) {
-				return Mono.from(resourceHolder.getRequiredSession().commitTransaction());
+				return Mono.from(resourceHolder.getCore().commit());
 			}
 
 			return Mono.empty();
@@ -271,7 +271,7 @@ public class ReactiveCouchbaseClientUtils {
 
 				if (status == TransactionSynchronization.STATUS_ROLLED_BACK && isTransactionActive(this.resourceHolder)) {
 
-					return Mono.from(resourceHolder.getRequiredSession().abortTransaction()) //
+					return Mono.from(resourceHolder.getCore().rollback()) //
 							.then(super.afterCompletion(status));
 				}
 
@@ -287,19 +287,19 @@ public class ReactiveCouchbaseClientUtils {
 		protected Mono<Void> releaseResource(ReactiveCouchbaseResourceHolder resourceHolder, Object resourceKey) {
 
 			return Mono.fromRunnable(() -> {
-				if (resourceHolder.hasActiveSession()) {
-					resourceHolder.getRequiredSession().close();
-				}
+				//if (resourceHolder.hasActiveSession()) {
+				//	resourceHolder.getRequiredSession().close();
+				//}
 			});
 		}
 
 		private boolean isTransactionActive(ReactiveCouchbaseResourceHolder resourceHolder) {
 
-			if (!resourceHolder.hasSession()) {
+			if (!resourceHolder.hasCore()) {
 				return false;
 			}
 
-			return resourceHolder.getRequiredSession().hasActiveTransaction();
+			return resourceHolder.getRequiredCore() != null;
 		}
 	}
 }

@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -66,6 +66,13 @@ public interface ReactiveRemoveByIdOperation {
 		Mono<RemoveResult> one(String id);
 
 		/**
+		 * Remove one document. Requires whole entity for transaction to have the cas.
+		 *
+		 * @param entity the entity
+		 * @return result of the remove
+		 */
+		Mono<RemoveResult> oneEntity(Object entity);
+		/**
 		 * Remove the documents in the collection.
 		 *
 		 * @param ids the document IDs.
@@ -73,6 +80,13 @@ public interface ReactiveRemoveByIdOperation {
 		 */
 		@Override
 		Flux<RemoveResult> all(Collection<String> ids);
+		/**
+		 * Remove the documents in the collection.  Requires whole entity for transaction to have the cas.
+		 *
+		 * @param ids the document IDs.
+		 * @return result of the removes.
+		 */
+		Flux<RemoveResult> allEntities(Collection<Object> ids);
 
 	}
 
@@ -103,7 +117,7 @@ public interface ReactiveRemoveByIdOperation {
 	}
 
 	interface RemoveByIdWithTransaction extends RemoveByIdWithCas, WithTransaction<RemoveResult> {
-		RemoveByIdWithCas transaction(CouchbaseStuffHandle txCtx);
+		RemoveByIdWithCas transaction(CouchbaseTransactionalOperator txCtx);
 	}
 
 	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}

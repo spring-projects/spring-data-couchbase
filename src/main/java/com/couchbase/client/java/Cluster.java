@@ -256,9 +256,9 @@ public class Cluster implements ClusterInterface {
     final ClusterOptions.Built opts = options.build();
     final Supplier<ClusterEnvironment> environmentSupplier = extractClusterEnvironment(connectionString, opts);
     return new Cluster(
-      environmentSupplier,
-      opts.authenticator(),
-      seedNodesFromConnectionString(connectionString, environmentSupplier.get())
+            environmentSupplier,
+            opts.authenticator(),
+            seedNodesFromConnectionString(connectionString, environmentSupplier.get())
     );
   }
 
@@ -285,7 +285,7 @@ public class Cluster implements ClusterInterface {
     notNull(options, "ClusterOptions");
 
     final ClusterOptions.Built opts = options.build();
-    return new Cluster(extractClusterEnvironment(null, opts), opts.authenticator(), seedNodes);
+    return new Cluster(extractClusterEnvironment("", opts), opts.authenticator(), seedNodes);
   }
 
   /**
