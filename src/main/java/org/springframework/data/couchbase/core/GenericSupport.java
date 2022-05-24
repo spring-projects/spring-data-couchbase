@@ -41,8 +41,6 @@ public class GenericSupport {
                                   Function<GenericSupportHelper, Mono<T>> nonTransactional,
                                   Function<GenericSupportHelper, Mono<T>> transactional) {
         // todo gpx how safe is this?  I think we can switch threads potentially
-//        Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
-//                org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
         Optional<CoreTransactionAttemptContext> ctxr = Optional.ofNullable((CoreTransactionAttemptContext)
                 org.springframework.transaction.support.TransactionSynchronizationManager.getResource(CoreTransactionAttemptContext.class));
 
@@ -54,8 +52,15 @@ public class GenericSupport {
                                     if (!ctxr.isPresent()) {
                                         return nonTransactional.apply(gsh);
                                     } else {
-//                                        System.out.println("Using ctx %s", ctxr.get());
-                                        return transactional.apply(gsh);
+                                        Thread before = Thread.currentThread();
+                                        return transactional.apply(gsh)
+                                                .doOnNext(ignore -> {
+                                                    Thread now = Thread.currentThread();
+                                                    if (before.getId() != now.getId()) {
+                                                        // This is essential for ThreadLocalStorage to work
+                                                        throw new IllegalStateException("Internal error: the same thread must be used before and after a transactional operation");
+                                                    }
+                                                });
                                     }
                                 }))
                 .onErrorMap(throwable -> {
