@@ -330,12 +330,6 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
-	// todo gp transaction config has been merged into ClusterEnvironment as of SDK integration
-//	@Bean
-//	public TransactionsConfig transactionConfig() {
-//		return TransactionsConfig.builder().build();
-//	}
-
 	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
 	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
 			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {

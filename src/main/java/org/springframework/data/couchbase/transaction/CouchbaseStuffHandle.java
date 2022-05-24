@@ -31,6 +31,7 @@ public class CouchbaseStuffHandle {
 	private final ReactiveTransactionManager transactionManager;
 	private final TransactionDefinition transactionDefinition;
 
+	// todo gpx think we've decided to remove this - possibly for now - in favour of ctx.get() before every mutation
 	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
 	private ReactiveTransactionAttemptContext attemptContextReactive;
 

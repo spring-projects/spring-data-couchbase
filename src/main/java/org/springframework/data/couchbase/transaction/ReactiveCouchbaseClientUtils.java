@@ -149,7 +149,8 @@ public class ReactiveCouchbaseClientUtils {
 							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withSession(it), converter)); // rx TxMgr
 				}) //
 				.onErrorResume(NoTransactionException.class,
-						e -> { System.err.println("noCurrentTransaction: "); return getCouchbaseTemplateOrDefault(dbName,
+						// todo gpx understand why this noCurrentTransaction is being printed
+						e -> { /* System.err.println("noCurrentTransaction: "); */ return getCouchbaseTemplateOrDefault(dbName,
 								getNonReactiveSession(factory) != null ? factory.withSession(getNonReactiveSession(factory)) : factory,
 								converter);}) // blocking TxMgr
 				.switchIfEmpty(getCouchbaseTemplateOrDefault(dbName, factory, converter));
@@ -162,7 +163,8 @@ public class ReactiveCouchbaseClientUtils {
 			h = ((CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 					.getResource(factory));// MN's CouchbaseTransactionManager
 		}
-		System.err.println("getNonreactiveSession: "+ h);
+		// todo gpx understand why this getNonreactiveSession: null is being printed
+		//System.err.println("getNonreactiveSession: "+ h);
 		return h != null ? h.getSession() : null;
 	}
 
