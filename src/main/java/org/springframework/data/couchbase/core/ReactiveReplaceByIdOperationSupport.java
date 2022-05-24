@@ -16,29 +16,21 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
-import com.couchbase.client.core.io.CollectionIdentifier;
-import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.couchbase.transaction.CouchbaseStuffHandle;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
@@ -91,35 +83,6 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			this.support = support;
 		}
 
-		/*
-				@Override
-				public Mono<T> one(T object) {
-					PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs(template, scope, collection, options, null, domainType);
-					LOG.trace("upsertById {}", pArgs);
-					Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-					Mono<T> reactiveEntity = support.encodeEntity(object)
-							.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-								if (s == null || s.getAttemptContextReactive() == null) {
-									return tp.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
-											.flatMap(collection -> collection.reactive()
-													.replace(converted.getId(), converted.export(),
-															buildReplaceOptions(pArgs.getOptions(), object, converted))
-													.flatMap(
-															result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
-								} else {
-									return Mono.error(new CouchbaseException("No upsert in a transaction. Use insert or replace"));
-								}
-							})));
-		
-					return reactiveEntity.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
-				}
-		*/
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
@@ -156,78 +119,17 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 						return support.ctx.get(support.toCollectionIdentifier(), converted.getId())
 								.flatMap(gr -> {
-
-									// todo gpx if we need this of course needs to be exposed nicely
-									CoreTransactionGetResult internal;
-									try {
-										Method method = TransactionGetResult.class.getDeclaredMethod("internal");
-										method.setAccessible(true);
-										internal = (CoreTransactionGetResult) method.invoke(gr);
-									} catch (Throwable err) {
-										throw new RuntimeException(err);
-									}
-
-									if (internal.cas() != support.converted.version) {
+									if (gr.cas() != support.converted.version) {
 										// todo gpx really want to set internal state and raise a TransactionOperationFailed
 										throw new RetryTransactionException();
 									}
 
 									return support.ctx.replace(gr, JsonObject.from(converted.getContent()).toBytes())
 											.flatMap(replaced -> {
-												// todo gpx no CAS
-												return this.support.applyResult(object, converted, converted.getId(), 0L, null, null);
+												return this.support.applyResult(object, converted, converted.getId(), replaced.cas(), null, null);
 											});
 								});
 					});
-
-//		Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-//			Mono<T> reactiveEntity;
-//
-//			Optional<TransactionAttemptContext> ctxr = Optional.ofNullable((TransactionAttemptContext)
-//					org.springframework.transaction.support.TransactionSynchronizationManager.getResource(TransactionAttemptContext.class));
-//
-//			CouchbaseDocument converted = support.encodeEntity(object).block();
-//			reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getSession(null).flatMap(s -> {
-//				if (s == null || s.getReactiveTransactionAttemptContext() == null) {
-//					System.err.println("ReactiveReplaceById: not");
-//					Mono<com.couchbase.client.java.Collection> op = template.getCouchbaseClientFactory()
-//							.withScope(pArgs.getScope()).getCollection(pArgs.getCollection());
-//					return op.flatMap(collection -> collection.reactive()
-//							.replace(converted.getId(), converted.export(),
-//									buildReplaceOptions(pArgs.getOptions(), object, converted))
-//							.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
-//				} else {
-//					System.err.println("ReactiveReplaceById: transaction");
-//					return s.getReactiveTransactionAttemptContext()
-//							.replace(s.transactionResultHolder(getTransactionHolder(object)).transactionGetResult(),
-//									converted.getContent())
-//							// todo gp no CAS
-//							.flatMap(result -> support.applyResult(object, converted, converted.getId(), 0L,
-//									new TransactionResultHolder(result), s));
-//				}
-//			}));
-//
-//			return reactiveEntity.onErrorMap(throwable -> {
-//				if (throwable instanceof RuntimeException) {
-//					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-//				} else {
-//					return throwable;
-//				}
-//			});
-		}
-
-		private <T> Integer getTransactionHolder(T object) {
-			Integer transactionResultHolder;
-			System.err.println("GET: " + System.identityHashCode(object) + " " + object);
-			if (1 == 1) {
-				return System.identityHashCode(object);
-			}
-			transactionResultHolder = template.support().getTxResultHolder(object);
-			if (transactionResultHolder == null) {
-				throw new CouchbaseException(
-						"TransactionResult from entity is null - was the entity obtained in a transaction?");
-			}
-			return transactionResultHolder;
 		}
 
 		@Override
