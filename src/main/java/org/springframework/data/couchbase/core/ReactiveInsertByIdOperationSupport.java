@@ -119,16 +119,14 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					},
 					(GenericSupportHelper support) -> {
 						return template.doGetTemplate()
-								// todo gpx might be mixing up reactive and non-reactive things
-								// todo gpx this runnable probably not great - what scheduler to run on?
-								.flatMap(tp -> Mono.defer(() -> {
+								.doOnNext(ignore -> System.out.printf("insert got template %d %s%n", Thread.currentThread().getId(), Thread.currentThread().getName()))
+								.flatMap(tp -> {
 									byte[] content = JsonObject.from(support.converted.getContent()).toBytes();
 									return support.ctx.insert(support.toCollectionIdentifier(), support.converted.getId(), content)
 											.flatMap(gr -> {
-												// todo gpx don't have result.cas() anymore - needed?
-												return this.support.applyResult(object, support.converted, support.converted.getId(), 0L, null, null);
+												return this.support.applyResult(object, support.converted, support.converted.getId(), gr.cas(), null, null);
 											});
-								}));
+								});
 					});
 		}
 
