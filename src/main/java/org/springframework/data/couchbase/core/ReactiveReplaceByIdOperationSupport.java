@@ -17,11 +17,9 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 
@@ -94,15 +92,15 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			LOG.trace("replaceById {}", pArgs);
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return GenericSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(GenericSupportHelper support) -> {
+			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
+					(TransactionalSupportHelper support) -> {
 						CouchbaseDocument converted = support.converted;
 
 						return support.collection
 								.replace(converted.getId(), converted.export(),
 										buildReplaceOptions(pArgs.getOptions(), object, converted))
 								.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
-					}, (GenericSupportHelper support) -> {
+					}, (TransactionalSupportHelper support) -> {
 						CouchbaseDocument converted = support.converted;
 						if ( support.cas == null || support.cas == 0 ){
 							throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);

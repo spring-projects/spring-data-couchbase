@@ -1,4 +1,3 @@
-// todo gpx commenting as doesn't compile
 /*
  * Copyright 2012-2021 the original author or authors
  *

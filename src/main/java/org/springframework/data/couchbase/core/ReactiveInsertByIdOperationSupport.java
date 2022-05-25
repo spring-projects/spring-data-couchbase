@@ -16,12 +16,9 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.codec.Transcoder;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 
@@ -116,13 +113,13 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			System.err.println("txOp: " + pArgs.getTxOp());
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return GenericSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(GenericSupportHelper support) -> support.collection
+			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
+					(TransactionalSupportHelper support) -> support.collection
 							.insert(support.converted.getId(), support.converted.export(),
 									buildOptions(pArgs.getOptions(), support.converted))
 							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
 									result.cas(), null)),
-					(GenericSupportHelper support) -> support.ctx
+					(TransactionalSupportHelper support) -> support.ctx
 							.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
 									template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
 											.encode(support.converted.export()).encoded())

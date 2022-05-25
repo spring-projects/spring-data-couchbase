@@ -3,7 +3,6 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -13,16 +12,15 @@ import org.springframework.lang.Nullable;
 import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.java.ReactiveCollection;
 
-// todo gp better name
 @Stability.Internal
-class GenericSupportHelper {
+class TransactionalSupportHelper {
     public final CouchbaseDocument converted;
     public final Long cas;
     public final ReactiveCollection collection;
     public final @Nullable CoreTransactionAttemptContext ctx;
 
-    public GenericSupportHelper(CouchbaseDocument doc, Long cas, ReactiveCollection collection,
-                                @Nullable CoreTransactionAttemptContext ctx) {
+    public TransactionalSupportHelper(CouchbaseDocument doc, Long cas, ReactiveCollection collection,
+                                      @Nullable CoreTransactionAttemptContext ctx) {
         this.converted = doc;
         this.cas = cas;
         this.collection = collection;
@@ -30,16 +28,19 @@ class GenericSupportHelper {
     }
 }
 
-// todo gp better name
+/**
+ * Checks if this operation is being run inside a transaction, and calls a non-transactional or transactional callback
+ * as appropriate.
+ */
 @Stability.Internal
-public class GenericSupport {
+public class TransactionalSupport {
     public static <T> Mono<T> one(Mono<ReactiveCouchbaseTemplate> tmpl, CouchbaseTransactionalOperator transactionalOperator,
                                   String scopeName, String collectionName, ReactiveTemplateSupport support, T object,
-                                  Function<GenericSupportHelper, Mono<T>> nonTransactional, Function<GenericSupportHelper, Mono<T>> transactional) {
+                                  Function<TransactionalSupportHelper, Mono<T>> nonTransactional, Function<TransactionalSupportHelper, Mono<T>> transactional) {
         return tmpl.flatMap(template -> template.getCouchbaseClientFactory().withScope(scopeName)
                 .getCollection(collectionName).flatMap(collection -> support.encodeEntity(object)
                         .flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
-                            GenericSupportHelper gsh = new GenericSupportHelper(converted, support.getCas(object),
+                            TransactionalSupportHelper gsh = new TransactionalSupportHelper(converted, support.getCas(object),
                                     collection.reactive(), s.getCore() != null ? s.getCore()
                                     : (transactionalOperator != null ? transactionalOperator.getAttemptContext() : null));
                             if (gsh.ctx == null) {
