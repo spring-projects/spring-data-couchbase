@@ -32,7 +32,6 @@ import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import java.io.IOException;
 
-
 /**
  * Interface for factories creating reactive {@link Cluster} instances.
  *
@@ -42,11 +41,16 @@ import java.io.IOException;
  * @since 2.0
  */
 public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*/ {
-	
+
 	/**
 	 * Provides access to the managed SDK {@link Cluster} reference.
 	 */
 	Mono<ClusterInterface> getCluster();
+
+	/**
+	 * Provides access to the managed SDK {@link Cluster} reference.
+	 */
+	ClusterInterface getBlockingCluster();
 
 	/**
 	 * Provides access to the managed SDK {@link Bucket} reference.
@@ -59,11 +63,23 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	Mono<Scope> getScope();
 
 	/**
+	 * Provides access to the managed SDK {@link Scope} reference without block()
+	 */
+	 Scope getBlockingScope(String scopeName);
+
+	/**
 	 * Provides access to a collection (identified by its name) in managed SDK {@link Scope} reference.
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
 	Mono<Collection> getCollection(String name);
+
+	/**
+	 * Provides access to a collection (identified by its name) without block()
+	 *
+	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
+	 */
+	 Collection getBlockingCollection(String collectionName);
 
 	/**
 	 * Provides access to the default collection.
@@ -91,7 +107,8 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options,
+			CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)

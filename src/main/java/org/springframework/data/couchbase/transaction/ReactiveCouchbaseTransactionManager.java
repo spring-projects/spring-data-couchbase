@@ -98,15 +98,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		System.err.println("ReactiveCouchbaseTransactionManager : created");
 	}
 
-	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory,
-			@Nullable Transactions transactions) {
-		Assert.notNull(databaseFactory, "DatabaseFactory must not be null!");
-		this.databaseFactory = databaseFactory; // databaseFactory; // should be a clone? TransactionSynchronizationManager
-																						// binds objs to it
-		this.transactions = transactions;
-		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.transaction.reactive.AbstractReactiveTransactionManager#doGetTransaction(org.springframework.transaction.reactive.TransactionSynchronizationManager)
@@ -117,9 +108,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		// creation of a new ReactiveCouchbaseTransactionObject (i.e. transaction).
 		// with an attempt to get the resourceHolder from the synchronizationManager
 		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-				.getResource(getRequiredDatabaseFactory().getCluster().block());
-		// TODO ACR from couchbase
-		// resourceHolder.getSession().setAttemptContextReactive(null);
+				.getResource(getRequiredDatabaseFactory().getBlockingCluster());
 		return new ReactiveCouchbaseTransactionObject(resourceHolder);
 	}
 
@@ -151,20 +140,15 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 					TransactionOptions.transactionOptions());
 			return holder.doOnNext(resourceHolder -> {
 				couchbaseTransactionObject.setResourceHolder(resourceHolder);
-
 				if (logger.isDebugEnabled()) {
 					logger.debug(
 							String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
 				}
-
 			}).doOnNext(resourceHolder -> {
-
 				couchbaseTransactionObject.startTransaction();
-
 				if (logger.isDebugEnabled()) {
 					logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
 				}
-
 			})//
 					.onErrorMap(ex -> new TransactionSystemException(
 							String.format("Could not start Couchbase transaction for session %s.",

@@ -15,7 +15,9 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
@@ -116,21 +118,10 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 					// todo gp no CAS
 					return gr.flatMap(getResult -> {
-						/*
-						CoreTransactionGetResult internal;
-						try {
-							Method method = CoreTransactionGetResult.class.getDeclaredMethod("internal");
-							method.setAccessible(true);
-							internal = (CoreTransactionGetResult) method.invoke(getResult);
-						}
-						catch (Throwable err) {
-							throw new RuntimeException(err);
-						}
-*/
 						if (getResult.cas() !=  cas) {
 							System.err.println("internal: "+getResult.cas()+" object.cas: "+cas);
 							// todo gp really want to set internal state and raise a TransactionOperationFailed
-							throw new RetryTransactionException();
+							return Mono.error(new TransactionOperationFailedException(true, true, new CasMismatchException(null), null));
 						}
 						return s.getCore().remove(getResult)
 								.map(r -> new RemoveResult(id, 0, null));

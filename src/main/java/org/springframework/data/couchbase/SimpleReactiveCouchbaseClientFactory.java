@@ -29,6 +29,7 @@ import com.couchbase.client.java.Scope;
 
 public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseClientFactory {
 	final Mono<ClusterInterface> cluster;
+	final ClusterInterface theCluster;
 	final String bucketName;
 	final String scopeName;
 	final PersistenceExceptionTranslator exceptionTranslator;
@@ -39,6 +40,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName,
 			CouchbaseTransactionalOperator transactionalOperator) {
 		this.cluster = Mono.just(cluster);
+		this.theCluster = cluster;
 		this.bucketName = bucketName;
 		this.scopeName = scopeName;
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
@@ -56,6 +58,12 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		return cluster;
 	}
 
+
+	@Override
+	public ClusterInterface getBlockingCluster() {
+		return theCluster;
+	}
+
 	@Override
 	public Mono<Bucket> getBucket() {
 		return cluster.map((c) -> c.bucket(bucketName));
@@ -69,6 +77,11 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	@Override
 	public Mono<Scope> getScope() {
 		return cluster.map((c) -> c.bucket(bucketName).scope(scopeName != null ? scopeName : DEFAULT_SCOPE));
+	}
+
+	@Override
+	public Scope getBlockingScope(String scopeName) {
+		return theCluster.bucket(bucketName).scope(scopeName != null ? scopeName : (this.scopeName != null ? this.scopeName : DEFAULT_SCOPE));
 	}
 
 	@Override
@@ -90,6 +103,22 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			}
 		}
 		return getScope().map((s) -> s.collection(collectionName != null ? collectionName : DEFAULT_COLLECTION));
+	}
+
+	@Override
+	public Collection getBlockingCollection(String collectionName) {
+		if (getScopeName() != null && !DEFAULT_SCOPE.equals(getScopeName())) {
+			if (collectionName == null || DEFAULT_COLLECTION.equals(collectionName)) {
+				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used.");
+			}
+		}
+		if (getScopeName() == null || DEFAULT_SCOPE.equals(getScopeName())) {
+			if (collectionName != null && !DEFAULT_COLLECTION.equals(collectionName)) {
+				throw new IllegalStateException(
+						"A collectionName must be null or " + DEFAULT_COLLECTION + " if scope is null or " + DEFAULT_SCOPE);
+			}
+		}
+		return theCluster.bucket(bucketName).scope(scopeName != null ? scopeName : DEFAULT_SCOPE).collection(collectionName != null ? collectionName : DEFAULT_COLLECTION);
 	}
 
 	@Override
@@ -205,6 +234,11 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		}
 
 		@Override
+		public ClusterInterface getBlockingCluster() throws DataAccessException {
+			return decorateDatabase(delegate.getBlockingCluster());
+		}
+
+		@Override
 		public Mono<Bucket> getBucket() {
 			return delegate.getBucket();
 		}
@@ -219,6 +253,15 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			return delegate.getCollection(name);
 		}
 
+		@Override
+		public Collection getBlockingCollection(String collectionName) {
+			return delegate.getBlockingCollection(collectionName);
+		}
+
+		@Override
+		public Scope getBlockingScope(String scopeName) {
+			return delegate.getBlockingScope(scopeName);
+		}
 		@Override
 		public Mono<Collection> getDefaultCollection() {
 			return delegate.getDefaultCollection();

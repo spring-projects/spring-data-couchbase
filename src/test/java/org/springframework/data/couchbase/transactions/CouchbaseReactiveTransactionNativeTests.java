@@ -369,7 +369,6 @@ sleepMs(1000);
 	public Mono<Person> savePerson(Person person) {
 
 		TransactionalOperator transactionalOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
-
 		return operations.save(person) //
 				.flatMap(Mono::just) //
 				.as(transactionalOperator::transactional);

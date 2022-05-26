@@ -22,6 +22,8 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
@@ -33,6 +35,7 @@ import com.couchbase.client.core.transaction.log.CoreTransactionLogger;
 import com.couchbase.client.core.transaction.support.AttemptState;
 import com.couchbase.client.java.codec.JsonSerializer;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 
 /**
  * To access the ReactiveTransactionAttemptContext held by TransactionAttemptContext
@@ -66,13 +69,7 @@ public class AttemptContextReactiveAccessor {
 		} catch (Throwable err) {
 			throw new RuntimeException(err);
 		}
-		try {
-			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			return new ReactiveTransactionAttemptContext((CoreTransactionAttemptContext) field.get(atr), serializer);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
+		return new ReactiveTransactionAttemptContext(getCore(atr), serializer);
 	}
 
 	public static TransactionAttemptContext blocking(ReactiveTransactionAttemptContext atr) {
@@ -84,35 +81,22 @@ public class AttemptContextReactiveAccessor {
 		} catch (Throwable err) {
 			throw new RuntimeException(err);
 		}
-		try {
-			Field field = ReactiveTransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			return new TransactionAttemptContext((CoreTransactionAttemptContext) field.get(atr), serializer);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
+			return new TransactionAttemptContext(getCore(atr), serializer);
 	}
 
 	public static CoreTransactionLogger getLogger(ReactiveTransactionAttemptContext attemptContextReactive) {
-		// todo gp needed?
-		return null;
-		// return attemptContextReactive;
+		return attemptContextReactive.logger();
+	}
+
+	public static CoreTransactionLogger getLogger(TransactionAttemptContext attemptContextReactive) {
+		return attemptContextReactive.logger();
 	}
 
 	// todo gp needed?
 	@Stability.Internal
 	public static CoreTransactionAttemptContext newCoreTranactionAttemptContext(ReactiveTransactions transactions) {
-		// PerTransactionConfig perConfig = PerTransactionConfigBuilder.create().build();
-		// MergedTransactionConfig merged = new MergedTransactionConfig(transactions.config(), Optional.of(perConfig));
-		//
-		// TransactionContext overall = new TransactionContext(
-		// transactions.cleanup().clusterData().cluster().environment().requestTracer(),
-		// transactions.cleanup().clusterData().cluster().environment().eventBus(),
-		// UUID.randomUUID().toString(), now(), Duration.ZERO, merged);
 
 		String txnId = UUID.randomUUID().toString();
-		// overall.LOGGER.info(configDebug(transactions.config(), perConfig));
-
 		CoreTransactionsReactive coreTransactionsReactive;
 		try {
 			Field field = ReactiveTransactions.class.getDeclaredField("internal");
@@ -122,12 +106,8 @@ public class AttemptContextReactiveAccessor {
 			throw new RuntimeException(err);
 		}
 
-		CoreTransactionOptions perConfig = new CoreTransactionOptions(Optional.empty(),
-				Optional.empty(),
-				Optional.empty(),
-				Optional.of(Duration.ofMinutes(10)),
-				Optional.empty(),
-				Optional.empty());
+		CoreTransactionOptions perConfig = new CoreTransactionOptions(Optional.empty(), Optional.empty(), Optional.empty(),
+				Optional.of(Duration.ofMinutes(10)), Optional.empty(), Optional.empty());
 
 		CoreMergedTransactionConfig merged = new CoreMergedTransactionConfig(coreTransactionsReactive.config(),
 				Optional.ofNullable(perConfig));
@@ -135,14 +115,10 @@ public class AttemptContextReactiveAccessor {
 				coreTransactionsReactive.core().context().environment().requestTracer(),
 				coreTransactionsReactive.core().context().environment().eventBus(), UUID.randomUUID().toString(), merged,
 				coreTransactionsReactive.core().transactionsCleanup());
-		// overall.LOGGER.info(configDebug(config, perConfig, cleanup.clusterData().cluster().core()));
 
 		CoreTransactionAttemptContext coreTransactionAttemptContext = coreTransactionsReactive.createAttemptContext(overall,
 				merged, txnId);
 		return coreTransactionAttemptContext;
-		// ReactiveTransactionAttemptContext reactiveTransactionAttemptContext = new ReactiveTransactionAttemptContext(
-		// coreTransactionAttemptContext, null);
-		// return reactiveTransactionAttemptContext;
 	}
 
 	private static Duration now() {
@@ -168,15 +144,13 @@ public class AttemptContextReactiveAccessor {
 	}
 
 	public static CoreTransactionAttemptContext getCore(TransactionAttemptContext atr) {
-		CoreTransactionAttemptContext coreTransactionsReactive;
 		try {
 			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
 			field.setAccessible(true);
-			coreTransactionsReactive = (CoreTransactionAttemptContext) field.get(atr);
+			return (CoreTransactionAttemptContext) field.get(atr);
 		} catch (Throwable err) {
 			throw new RuntimeException(err);
 		}
-		return coreTransactionsReactive;
 	}
 
 	public static Mono<Void> implicitCommit(ReactiveTransactionAttemptContext atr, boolean b) {
@@ -186,17 +160,17 @@ public class AttemptContextReactiveAccessor {
 			// CoreTransactionAttemptContext.class.getDeclaredMethod("implicitCommit", Boolean.class);
 			Method[] methods = CoreTransactionAttemptContext.class.getDeclaredMethods();
 			Method method = null;
-			for(Method m:methods){
-				if( m.getName().equals("implicitCommit")){
+			for (Method m : methods) {
+				if (m.getName().equals("implicitCommit")) {
 					method = m;
 					break;
 				}
 			}
-			if(method == null){
+			if (method == null) {
 				throw new RuntimeException("did not find implicitCommit method");
 			}
 			method.setAccessible(true);
-			return (Mono<Void>)method.invoke(coreTransactionsReactive, b);
+			return (Mono<Void>) method.invoke(coreTransactionsReactive, b);
 		} catch (Throwable err) {
 			throw new RuntimeException(err);
 		}
@@ -214,8 +188,28 @@ public class AttemptContextReactiveAccessor {
 		}
 	}
 
-	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
+	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(
+			CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
 		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
+	}
+
+	public static CoreTransactionsReactive getCoreTransactionsReactive(ReactiveTransactions transactions) {
+		try {
+			Field field = ReactiveTransactions.class.getDeclaredField("internal");
+			field.setAccessible(true);
+			return (CoreTransactionsReactive) field.get(transactions);
+		} catch (Throwable err) {
+			throw new RuntimeException(err);
+		}
+	}
+
+	public static TransactionAttemptContext newTransactionAttemptContext(CoreTransactionAttemptContext ctx,
+			JsonSerializer jsonSerializer) {
+		return new TransactionAttemptContext(ctx, jsonSerializer);
+	}
+
+	public static TransactionResult run(Transactions transactions, Consumer<TransactionAttemptContext> transactionLogic, CoreTransactionOptions coreTransactionOptions) {
+		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
 	}
 
 	// todo gp if needed let's expose in the SDK

@@ -45,9 +45,10 @@ import reactor.core.publisher.Mono;
  * <p />
  * Binds a {@link CoreTransactionAttemptContext} from the specified {@link CouchbaseClientFactory} to the thread.
  * <p />
- * {@link TransactionDefinition#isReadOnly() Readonly} transactions operate on a {@link CoreTransactionAttemptContext} and enable causal
- * consistency, and also {@link CoreTransactionAttemptContext#startTransaction() start}, {@link CoreTransactionAttemptContext#commitTransaction()
- * commit} or {@link CoreTransactionAttemptContext#abortTransaction() abort} a transaction.
+ * {@link TransactionDefinition#isReadOnly() Readonly} transactions operate on a {@link CoreTransactionAttemptContext}
+ * and enable causal consistency, and also {@link CoreTransactionAttemptContext#startTransaction() start},
+ * {@link CoreTransactionAttemptContext#commitTransaction() commit} or
+ * {@link CoreTransactionAttemptContext#abortTransaction() abort} a transaction.
  * <p />
  * TODO: Application code is required to retrieve the {@link com.couchbase.client.java.Cluster} ????? via
  * {@link ?????#getDatabase(CouchbaseClientFactory)} instead of a standard {@link CouchbaseClientFactory#getCluster()}
@@ -101,7 +102,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		System.err.println(databaseFactory.getCluster());
 		this.databaseFactory = databaseFactory;
 		this.options = options;
-		this.transactions = 	databaseFactory.getCluster().transactions();
+		this.transactions = databaseFactory.getCluster().transactions();
 	}
 
 	/*
@@ -132,14 +133,15 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	protected void doBegin(Object transaction, TransactionDefinition definition) throws TransactionException {
 
 		CouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
-// 	should ACR already be in TSM?	TransactionSynchronizationManager.bindResource(getRequiredDbFactory().getCluster(), resourceHolder);
-		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(definition, TransactionOptions.transactionOptions(),
+		// should ACR already be in TSM? TransactionSynchronizationManager.bindResource(getRequiredDbFactory().getCluster(),
+		// resourceHolder);
+		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(getDatabaseFactory(), definition,
+				TransactionOptions.transactionOptions(),
 				null /* ((CouchbaseTransactionDefinition) definition).getAttemptContextReactive()*/);
 		couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
 		if (logger.isDebugEnabled()) {
-			logger
-					.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
+			logger.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
 		}
 
 		try {
@@ -154,14 +156,10 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		}
 
 		TransactionSynchronizationManager.setActualTransactionActive(true);
-		// use the ResourceHolder which contains the core
-		//TransactionSynchronizationManager.unbindResourceIfPossible(TransactionAttemptContext.class);
-		//TransactionSynchronizationManager.bindResource(CoreTransactionAttemptContext.class, resourceHolder.getCore());
-
 		resourceHolder.setSynchronizedWithTransaction(true);
-		TransactionSynchronizationManager.unbindResourceIfPossible( getRequiredDatabaseFactory().getCluster());
-		System.err.println("CouchbaseTransactionManager: "+this);
-		System.err.println("bindResource: "+ getRequiredDatabaseFactory().getCluster()+" value: "+resourceHolder);
+		TransactionSynchronizationManager.unbindResourceIfPossible(getRequiredDatabaseFactory().getCluster());
+		System.err.println("CouchbaseTransactionManager: " + this);
+		System.err.println("bindResource: " + getRequiredDatabaseFactory().getCluster() + " value: " + resourceHolder);
 		TransactionSynchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), resourceHolder);
 	}
 
@@ -204,7 +202,8 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		try {
 			doCommit(couchbaseTransactionObject);
 		} catch (Exception ex) {
-			logger.debug("could not commit Couchbase transaction for session "+debugString(couchbaseTransactionObject.getCore()));
+			logger.debug(
+					"could not commit Couchbase transaction for session " + debugString(couchbaseTransactionObject.getCore()));
 			throw new TransactionSystemException(String.format("Could not commit Couchbase transaction for session %s.",
 					debugString(couchbaseTransactionObject.getCore())), ex);
 		}
@@ -214,9 +213,8 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 * Customization hook to perform an actual commit of the given transaction.<br />
 	 * If a commit operation encounters an error, the MongoDB driver throws a {@link CouchbaseException} holding
 	 * {@literal error labels}. <br />
-	 * By default those labels are ignored, nevertheless one might check for
-	 * {@link CouchbaseException transient commit errors labels} and retry the the
-	 * commit. <br />
+	 * By default those labels are ignored, nevertheless one might check for {@link CouchbaseException transient commit
+	 * errors labels} and retry the the commit. <br />
 	 * <code>
 	 *     <pre>
 	 * int retries = 3;
@@ -272,8 +270,8 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	protected void doSetRollbackOnly(DefaultTransactionStatus status) throws TransactionException {
 
 		CouchbaseTransactionObject transactionObject = extractCouchbaseTransaction(status);
-		throw new TransactionException("need to setRollbackOnly() here"){};
-		//transactionObject.getRequiredResourceHolder().setRollbackOnly();
+		throw new TransactionException("need to setRollbackOnly() here") {};
+		// transactionObject.getRequiredResourceHolder().setRollbackOnly();
 	}
 
 	/*
@@ -291,7 +289,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		// Remove the connection holder from the thread.
 		TransactionSynchronizationManager.unbindResourceIfPossible(getRequiredDatabaseFactory().getCluster());
-		//couchbaseTransactionObject.getRequiredResourceHolder().clear();
+		// couchbaseTransactionObject.getRequiredResourceHolder().clear();
 
 		if (logger.isDebugEnabled()) {
 			logger.debug(String.format("About to release Core %s after transaction.",
@@ -349,15 +347,10 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		getRequiredDatabaseFactory();
 	}
 
-	private ReactiveCouchbaseResourceHolder newResourceHolder(TransactionDefinition definition, TransactionOptions options,
-			CoreTransactionAttemptContext atr) {
-
-		CouchbaseClientFactory databaseFactory = getResourceFactory();
-
+	static ReactiveCouchbaseResourceHolder newResourceHolder(CouchbaseClientFactory databaseFactory, TransactionDefinition definition,
+			TransactionOptions options, CoreTransactionAttemptContext atr) {
 		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(
 				databaseFactory.getCore(options, atr));
-		// TODO resourceHolder.setTimeoutIfNotDefaulted(determineTimeout(definition));
-
 		return resourceHolder;
 	}
 
@@ -390,23 +383,18 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		return (CouchbaseTransactionObject) status.getTransaction();
 	}
 
-	private static String debugString(@Nullable CoreTransactionAttemptContext session) {
-
-		if (session == null) {
+	 static String debugString(@Nullable CoreTransactionAttemptContext ctx) {
+		if (ctx == null) {
 			return "null";
 		}
-
-		String debugString = String.format("[%s@%s ", ClassUtils.getShortName(session.getClass()),
-				Integer.toHexString(session.hashCode()));
-
+		String debugString = String.format("[%s@%s ", ClassUtils.getShortName(ctx.getClass()),
+				Integer.toHexString(ctx.hashCode()));
 		try {
-			debugString += String.format("core=%s",session);
+			debugString += String.format("core=%s", ctx);
 		} catch (RuntimeException e) {
 			debugString += String.format("error = %s", e.getMessage());
 		}
-
 		debugString += "]";
-
 		return debugString;
 	}
 
@@ -415,8 +403,8 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	}
 
 	/**
-	 * MongoDB specific transaction object, representing a {@link ReactiveCouchbaseResourceHolder}. Used as transaction object by
-	 * {@link CouchbaseTransactionManager}.
+	 * MongoDB specific transaction object, representing a {@link ReactiveCouchbaseResourceHolder}. Used as transaction
+	 * object by {@link CouchbaseTransactionManager}.
 	 *
 	 * @author Christoph Strobl
 	 * @author Mark Paluch
@@ -458,7 +446,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 			// if (options != null) {
 			// session.startTransaction(options);
 			// } else {
-			//core.startTransaction();
+			// core.startTransaction();
 			// }
 		}
 

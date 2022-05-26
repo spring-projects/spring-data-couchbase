@@ -92,7 +92,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			LOG.trace("findById {}", pArgs);
 
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollection(pArgs.getCollection()).block().reactive();
+					.getBlockingCollection(pArgs.getCollection()).reactive();
 
 			// this will get me a template with a session holding tx
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
@@ -118,16 +118,6 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 						// todo gp no cas // todo mr - it's required by replace().one when comparing to internal.cas(). it's gone
 						// todo gp if we need this of course needs to be exposed nicely
 						Long cas = result.cas();
-						/*
-						try {
-							Method method = TransactionGetResult.class.getDeclaredMethod("internal");
-							method.setAccessible(true);
-							CoreTransactionGetResult internal = (CoreTransactionGetResult) method.invoke(result);
-							cas = internal.cas();
-						} catch (Throwable err) {
-							throw new RuntimeException(err);
-						}
-*/
 						return support.decodeEntity(id, new String(result.contentAsBytes()), cas, domainType, pArgs.getScope(),
 								pArgs.getCollection(), new TransactionResultHolder(result), null).doOnNext(out -> {
 									// todo gp is this safe? are we on the right thread?

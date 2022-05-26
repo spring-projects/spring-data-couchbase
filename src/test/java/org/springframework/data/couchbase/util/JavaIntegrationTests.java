@@ -209,42 +209,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			}
 
 			if (!ready) {
-				createAndDeleteBucket();// need to do this because of https://issues.couchbase.com/browse/MB-50132
 				try {
-					Thread.sleep(50);
+					Thread.sleep(100);
 				} catch (InterruptedException e) {}
 			}
 		}
 
 		if (guard == 0) {
 			throw new IllegalStateException("Query indexer is still not aware of bucket " + bucketName);
-		}
-	}
-
-	private static void createAndDeleteBucket() {
-		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
-				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
-		String hostPort = connectionString().replace("11210", "8091").replace("11207", "18091");
-		String protocol = hostPort.equals("18091") ? "https" : "http";
-		String bucketname = UUID.randomUUID().toString();
-		try {
-
-			Response postResponse = httpClient.newCall(new Request.Builder()
-					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url(protocol+"://" + hostPort + "/pools/default/buckets/")
-					.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
-							.add("replicaNumber", Integer.toString(0)).add("flushEnabled", "1").build())
-					.build()).execute();
-
-			if (postResponse.code() != 202) {
-				throw new IOException("Could not create bucket: " + postResponse + ", Reason: " + postResponse.body().string());
-			}
-			Response deleteResponse = httpClient.newCall(new Request.Builder()
-					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url(protocol+"://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
-			System.out.println("deleteResponse: " + deleteResponse);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
 		}
 	}
 

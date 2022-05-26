@@ -85,7 +85,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 			Mono<T> reactiveEntity = support.encodeEntity(object)
 					.flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
-						if (s == null ) {
+						if (s.getCore() == null) {
 							return tp.getCouchbaseClientFactory().withScope(pArgs.getScope())
 									.getCollection(pArgs.getCollection()).flatMap(collection -> collection.reactive()
 									.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))

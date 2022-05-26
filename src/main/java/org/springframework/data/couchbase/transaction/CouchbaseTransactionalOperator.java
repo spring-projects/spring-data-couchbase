@@ -193,7 +193,7 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 			// through usingWhen.
 			return status
 					.flatMap(it -> Mono
-							.usingWhen(Mono.just(it), ignore -> mono, this.transactionManager::commit, (res, err) -> Mono.empty(),
+							.usingWhen(Mono.just(it), ignore -> mono, this.transactionManager::commit, (res, err) -> { System.err.println("!!!!!!!!!! "+err+" "+res); return Mono.empty();},
 									this.transactionManager::rollback)
 							.onErrorResume(ex -> rollbackOnException(it, ex).then(Mono.error(ex))));
 		}).contextWrite(TransactionContextManager.getOrCreateContext())

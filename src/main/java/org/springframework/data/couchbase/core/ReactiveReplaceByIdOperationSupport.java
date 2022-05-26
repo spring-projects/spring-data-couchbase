@@ -15,7 +15,9 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
@@ -130,21 +132,10 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 						// todo gp no CAS
 						return gr.flatMap(getResult -> {
-/*
-							CoreTransactionGetResult internal;
-							try {
-								Method method = TransactionGetResult.class.getDeclaredMethod("internal");
-								method.setAccessible(true);
-								internal = (CoreTransactionGetResult) method.invoke(getResult);
-							}
-							catch (Throwable err) {
-								throw new RuntimeException(err);
-							}
-*/
 							if (getResult.cas() !=  support.cas) {
 								System.err.println("internal: "+getResult.cas()+" object.cas: "+ support.cas+" "+converted);
 								// todo gp really want to set internal state and raise a TransactionOperationFailed
-								throw new RetryTransactionException();
+								return Mono.error(new TransactionOperationFailedException(true, true, new CasMismatchException(null), null));
 							}
 							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
 									.encode(support.converted.export()).encoded());

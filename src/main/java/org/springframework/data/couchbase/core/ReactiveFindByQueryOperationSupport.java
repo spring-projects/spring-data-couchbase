@@ -190,18 +190,18 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().block().reactive();
+			ReactiveScope rs = clientFactory.getBlockingScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
 			Mono<Object> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
 				if (s.getCore() == null) {
 					QueryOptions opts = buildOptions(pArgs.getOptions());
-					return pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
+					return pArgs.getScope() == null ? clientFactory.getBlockingCluster().reactive().query(statement, opts)
 							: rs.query(statement, opts);
 				} else {
 					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-							clientFactory.getCluster().block().environment().jsonSerializer())).query(statement, opts);
+					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							clientFactory.getBlockingCluster().environment().jsonSerializer()).query(statement, opts);
 				}
 			}));
 
@@ -253,18 +253,18 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().block().reactive();
+			ReactiveScope rs = clientFactory.getBlockingScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
 			Mono<Object> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
 				if (s.getCore() == null) {
 					QueryOptions opts = buildOptions(pArgs.getOptions());
-					return pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
+					return pArgs.getScope() == null ? clientFactory.getBlockingCluster().reactive().query(statement, opts)
 							: rs.query(statement, opts);
 				} else {
 					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-							clientFactory.getCluster().block().environment().jsonSerializer())).query(statement, opts);
+					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							clientFactory.getBlockingCluster().environment().jsonSerializer()).query(statement, opts);
 				}
 			}));
 
