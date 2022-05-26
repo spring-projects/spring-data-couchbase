@@ -101,6 +101,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 										buildReplaceOptions(pArgs.getOptions(), object, converted))
 								.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
 					}, (TransactionalSupportHelper support) -> {
+						rejectInvalidTransactionalOptions();
+
 						CouchbaseDocument converted = support.converted;
 						if ( support.cas == null || support.cas == 0 ){
 							throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);
@@ -139,18 +141,16 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		}
 
-		private <T> Integer getTransactionHolder(T object) {
-			Integer transactionResultHolder;
-			System.err.println("GET: " + System.identityHashCode(object) + " " + object);
-			if (1 == 1) {
-				return System.identityHashCode(object);
+		private void rejectInvalidTransactionalOptions() {
+			if (this.persistTo != null || this.replicateTo != null) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
 			}
-			transactionResultHolder = template.support().getTxResultHolder(object);
-			if (transactionResultHolder == null) {
-				throw new CouchbaseException(
-						"TransactionResult from entity is null - was the entity obtained in a transaction?");
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
 			}
-			return transactionResultHolder;
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		@Override

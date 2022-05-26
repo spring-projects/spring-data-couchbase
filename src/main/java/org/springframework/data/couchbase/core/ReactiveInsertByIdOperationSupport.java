@@ -119,12 +119,28 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 									buildOptions(pArgs.getOptions(), support.converted))
 							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
 									result.cas(), null)),
-					(TransactionalSupportHelper support) -> support.ctx
-							.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
-									template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
-											.encode(support.converted.export()).encoded())
-							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
-									getCas(result), new TransactionResultHolder(result), null)));
+					(TransactionalSupportHelper support) -> {
+						rejectInvalidTransactionalOptions();
+
+						return support.ctx
+								.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
+										template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
+												.encode(support.converted.export()).encoded())
+								.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
+										getCas(result), new TransactionResultHolder(result), null));
+					});
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if (this.persistTo != null || this.replicateTo != null) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
+			}
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		private Long getCas(CoreTransactionGetResult getResult) {

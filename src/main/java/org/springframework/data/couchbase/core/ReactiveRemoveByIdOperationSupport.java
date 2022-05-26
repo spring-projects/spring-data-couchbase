@@ -104,6 +104,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
 				} else {
+					rejectInvalidTransactionalOptions();
+
 					System.err.println("tx remove");
 					if ( cas == null || cas == 0 ){
 						throw new IllegalArgumentException("cas must be supplied for tx remove");
@@ -128,6 +130,15 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				}
 			}));
 			return allResult;
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if (this.persistTo != null || this.replicateTo != null) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		@Override
