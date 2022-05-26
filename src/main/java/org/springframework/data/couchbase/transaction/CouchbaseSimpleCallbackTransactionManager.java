@@ -42,6 +42,7 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
@@ -60,6 +61,8 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
+		setOptionsFromDefinition(definition);
+
 		TransactionResult result = couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
 
@@ -76,6 +79,27 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		TransactionSynchronizationManager.clear();
 
 		return execResult.get();
+	}
+
+	/**
+	 * @param definition reflects the @Transactional options
+	 */
+	private void setOptionsFromDefinition(TransactionDefinition definition) {
+		if (definition != null) {
+			if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+				options = options.timeout(Duration.ofSeconds(definition.getTimeout()));
+			}
+
+			if (!(definition.getIsolationLevel() == TransactionDefinition.ISOLATION_DEFAULT
+					|| definition.getIsolationLevel() == TransactionDefinition.ISOLATION_READ_COMMITTED)) {
+				throw new IllegalArgumentException("Couchbase Transactions run at Read Committed isolation - other isolation levels are not supported");
+			}
+
+			// readonly is ignored as it is documented as being a hint that won't necessarily cause writes to fail
+
+			// todo gpx what about propagation?
+		}
+
 	}
 
 	// Setting ThreadLocal storage
