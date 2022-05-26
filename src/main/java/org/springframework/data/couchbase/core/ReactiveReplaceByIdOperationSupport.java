@@ -16,7 +16,9 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.core.transaction.util.DebugUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -126,7 +128,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		}
 
 		private void rejectInvalidTransactionalOptions() {
-			if (this.persistTo != null || this.replicateTo != null) {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE) || (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
 				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
 			}
 			if (this.expiry != null) {

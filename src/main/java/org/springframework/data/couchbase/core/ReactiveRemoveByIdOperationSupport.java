@@ -133,7 +133,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		private void rejectInvalidTransactionalOptions() {
-			if (this.persistTo != null || this.replicateTo != null) {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE) || (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
 				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
 			}
 			if (this.options != null) {
