@@ -1,8 +1,11 @@
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Method;
 import java.util.function.Function;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -69,5 +72,24 @@ public class TransactionalSupport {
                         return Mono.empty();
                     }
                 }));
+    }
+
+    public static RuntimeException retryTransactionOnCasMismatch(CoreTransactionAttemptContext ctx, long cas1, long cas2) {
+        try {
+            ctx.logger().info(ctx.attemptId(), "Spring CAS mismatch %s != %s, retrying transaction", cas1, cas2);
+
+            // todo gpx expose this in SDK
+            Method method = CoreTransactionAttemptContext.class.getDeclaredMethod("operationFailed", TransactionOperationFailedException.class);
+            method.setAccessible(true);
+            TransactionOperationFailedException err = TransactionOperationFailedException.Builder.createError()
+                    .retryTransaction()
+                    .cause(new CasMismatchException(null))
+                    .build();
+            method.invoke(ctx, err);
+            return err;
+        } catch (Throwable err) {
+            return new RuntimeException(err);
+        }
+
     }
 }

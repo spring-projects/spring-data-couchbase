@@ -99,6 +99,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 			final Mono<RemoveResult> removeResult;
 
+			// todo gpx convert to TransactionalSupport
 			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
 				if (s.getCore() == null) {
 					System.err.println("non-tx remove");
@@ -113,10 +114,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 					Mono<CoreTransactionGetResult> gr = s.getCore().get(makeCollectionIdentifier(rc.async()), id);
 
 					return gr.flatMap(getResult -> {
-						if (getResult.cas() !=  cas) {
-							System.err.println("internal: "+getResult.cas()+" object.cas: "+cas);
-							// todo gp really want to set internal state and raise a TransactionOperationFailed
-							throw new RetryTransactionException();
+						if (getResult.cas() != cas) {
+							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(s.getCore(), getResult.cas(), cas));
 						}
 						return s.getCore().remove(getResult)
 								.map(r -> new RemoveResult(id, 0, null));

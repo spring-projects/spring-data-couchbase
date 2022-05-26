@@ -115,10 +115,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 						Mono<CoreTransactionGetResult> gr = support.ctx.get(collId, converted.getId());
 
 						return gr.flatMap(getResult -> {
-							if (getResult.cas() !=  support.cas) {
-								System.err.println("internal: "+getResult.cas()+" object.cas: "+ support.cas+" "+converted);
-								// todo gp really want to set internal state and raise a TransactionOperationFailed
-								throw new RetryTransactionException();
+							if (getResult.cas() != support.cas) {
+								return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(support.ctx, getResult.cas(), support.cas));
 							}
 							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
 									.encode(support.converted.export()).encoded());
