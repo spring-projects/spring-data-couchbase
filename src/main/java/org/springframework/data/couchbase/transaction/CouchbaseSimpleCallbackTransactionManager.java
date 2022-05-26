@@ -19,6 +19,7 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +44,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicReference;
 
-// todo gp experimenting with simplest possible CallbackPreferringPlatformTransactionManager, extending PlatformTransactionManager
-// not AbstractPlatformTransactionManager
-public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatformTransactionManager*/ implements CallbackPreferringPlatformTransactionManager {
+public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionManager.class);
 
@@ -61,7 +60,7 @@ public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatfo
 	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
-		couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
+		TransactionResult result = couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
 
 			populateTransactionSynchronizationManager(ctx);
@@ -79,28 +78,10 @@ public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatfo
 		return execResult.get();
 	}
 
+	// Setting ThreadLocal storage
 	private void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
-		// Setting ThreadLocal storage
 		TransactionSynchronizationManager.setActualTransactionActive(true);
 		TransactionSynchronizationManager.initSynchronization();
-		// Oddly, TransactionSynchronizationManager.clear() does not clear resources
-		try {
-			TransactionSynchronizationManager.unbindResource(CoreTransactionAttemptContext.class);
-		}
-		// todo gp must be a nicer way...
-		catch (IllegalStateException err) {}
-		// todo gpx if we need this of course needs to be exposed nicely - apparently unsupported in JDK17 anyway
-		CoreTransactionAttemptContext internal;
-		try {
-			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			internal = (CoreTransactionAttemptContext) field.get(ctx);
-		}
-		catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-		TransactionSynchronizationManager.bindResource(CoreTransactionAttemptContext.class, internal);
-
 		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
 		TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster().block());
 		TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster().block(), resourceHolder);
