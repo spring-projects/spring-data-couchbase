@@ -41,12 +41,6 @@ import reactor.core.publisher.Mono;
  */
 public class AttemptContextReactiveAccessor {
 
-	public static ReactiveTransactionAttemptContext getACR(TransactionAttemptContext attemptContext) {
-		// return attemptContext.ctx();
-		// todo gp is this access needed. Could hold the raw CoreTransactionAttemptContext instead.
-		return null;
-	}
-
 	public static ReactiveTransactions reactive(Transactions transactions) {
 		try {
 			Field field = Transactions.class.getDeclaredField("reactive");
@@ -94,7 +88,7 @@ public class AttemptContextReactiveAccessor {
 	}
 
 	public static CoreTransactionLogger getLogger(ReactiveTransactionAttemptContext attemptContextReactive) {
-		// todo gp needed?
+		// todo gp it should be possible to get access to CoreTransactionAttemptContext everywhere now, which provides access to the logger
 		return null;
 		// return attemptContextReactive;
 	}
@@ -145,10 +139,6 @@ public class AttemptContextReactiveAccessor {
 		// return reactiveTransactionAttemptContext;
 	}
 
-	private static Duration now() {
-		return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
-	}
-
 	public static ReactiveTransactionAttemptContext from(CoreTransactionAttemptContext coreTransactionAttemptContext,
 			JsonSerializer serializer) {
 		TransactionAttemptContext tac = new TransactionAttemptContext(coreTransactionAttemptContext, serializer);
@@ -179,67 +169,7 @@ public class AttemptContextReactiveAccessor {
 		return coreTransactionsReactive;
 	}
 
-	public static Mono<Void> implicitCommit(ReactiveTransactionAttemptContext atr, boolean b) {
-		CoreTransactionAttemptContext coreTransactionsReactive = getCore(atr);
-		try {
-			// getDeclaredMethod() does not find it (because of primitive arg?)
-			// CoreTransactionAttemptContext.class.getDeclaredMethod("implicitCommit", Boolean.class);
-			Method[] methods = CoreTransactionAttemptContext.class.getDeclaredMethods();
-			Method method = null;
-			// todo gp if needed (IntelliJ says code is unused), I can expose this
-			for(Method m:methods){
-				if( m.getName().equals("implicitCommit")){
-					method = m;
-					break;
-				}
-			}
-			if(method == null){
-				throw new RuntimeException("did not find implicitCommit method");
-			}
-			method.setAccessible(true);
-			return (Mono<Void>)method.invoke(coreTransactionsReactive, b);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-
-	}
-
-	public static AttemptState getState(ReactiveTransactionAttemptContext atr) {
-		CoreTransactionAttemptContext coreTransactionsReactive = getCore(atr);
-		try {
-			// todo gp if needed (IntelliJ says code is unused), I can expose this
-			Field field = CoreTransactionAttemptContext.class.getDeclaredField("state");
-			field.setAccessible(true);
-			return (AttemptState) field.get(coreTransactionsReactive);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-	}
-
 	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
 		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
 	}
-
-	// todo gp if needed let's expose in the SDK
-	// static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
-	// StringBuilder sb = new StringBuilder();
-	// sb.append("library version: ");
-	// sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
-	// sb.append(" config: ");
-	// sb.append("atrs=");
-	// sb.append(config.numAtrs());
-	// sb.append(", metadataCollection=");
-	// sb.append(config.metadataCollection());
-	// sb.append(", expiry=");
-	// sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
-	// sb.append("msecs durability=");
-	// sb.append(config.durabilityLevel());
-	// sb.append(" per-txn config=");
-	// sb.append(" durability=");
-	// sb.append(perConfig.durabilityLevel());
-	// sb.append(", supported=");
-	// sb.append(Supported.SUPPORTED);
-	// return sb.toString();
-	// }
-
 }

@@ -107,26 +107,10 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 						if ( support.cas == null || support.cas == 0 ){
 							throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);
 						}
-						// todo gpx replace is a nightmare...
-						// Where to put and how to pass the TransactionGetResult
-						// - Idea: TransactionSynchronizationManager.bindResource
-						// - Idea: use @Version as an index into Map<Long, TransactionGetResult>
-						// - As below, one idea is not to store it at all.
-						// Person could have been fetched outside of @Transactional block. Need to flat out prevent. Right??
-						// - Maybe not. Could have the replaceById do a ctx.get(), and check the CAS matches the Person (will
-						// mandate @Version on Person).
-						// - Could always do that in fact. Then no need to hold onto TransactionGetResult anywhere - but slower too
-						// (could optimise later).
-						// - And if had get-less replaces, could pass in the CAS.
-						// - Note: if Person was fetched outside the transaction, the transaction will inevitably expire (continuous
-						// CAS mismatch).
-						// -- Will have to doc that the user generally wants to do the read inside the txn.
-						// -- Can we detect this scenario and reject at runtime? That would also probably need storing something in
-						// Person.
 
-						// TransactionGetResult gr = (TransactionGetResult)
-						// org.springframework.transaction.support.TransactionSynchronizationManager.getResource(object);
-						Mono<CoreTransactionGetResult> gr = support.ctx.get(makeCollectionIdentifier(support.collection.async()), converted.getId());
+						CollectionIdentifier collId = makeCollectionIdentifier(support.collection.async());
+						support.ctx.logger().info(support.ctx.attemptId(), "refetching %s for Spring replace", DebugUtil.docId(collId, converted.getId()));
+						Mono<CoreTransactionGetResult> gr = support.ctx.get(collId, converted.getId());
 
 						return gr.flatMap(getResult -> {
 							if (getResult.cas() !=  support.cas) {
