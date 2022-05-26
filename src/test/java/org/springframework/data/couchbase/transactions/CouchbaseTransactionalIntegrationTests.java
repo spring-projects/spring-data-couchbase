@@ -16,30 +16,24 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
-import com.couchbase.client.java.transactions.config.TransactionsConfig;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
+import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -49,27 +43,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for @Transactional.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(CouchbaseTransactionalIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
 public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired CouchbaseTemplate cbTmpl;
-	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
 	/* DO NOT @Autowired - it will result in no @Transactional annotation behavior */ PersonService personService;
 	@Autowired CouchbaseTemplate operations;
 
@@ -78,15 +74,12 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(CouchbaseTransactionalIntegrationTests.Config.class,
-//				PersonService.class, CouchbasePersonTransactionIntegrationTests.TransactionInterception.class);
-				PersonService.class);
+		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
 	}
 
 	@AfterAll
 	public static void afterAll() {
 		callSuperAfterAll(new Object() {});
-		//context.close();
 	}
 
 	@BeforeEach
@@ -104,18 +97,136 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 		}
 	}
 
+	@DisplayName("A basic golden path insert should succeed")
 	@Test
-	public void shouldRollbackAfterException() {
-		Person p = new Person(null, "Walter", "White");
-		assertThrows(SimulateFailureException.class, () -> personService.declarativeSavePersonErrors(p));
-		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
-		assertEquals(0, count, "should have done roll back and left 0 entries");
+	public void committedInsert() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+
+		Person inserted = personService.doInTransaction(tryCount, (ops) -> {
+			Person person = new Person(1, "Walter", "White");
+			ops.insertById(Person.class).one(person);
+			return person;
+		});
+
+		Person fetched = operations.findById(Person.class).one(inserted.getId().toString());
+		assertEquals("Walter", fetched.getFirstname());
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("A basic golden path replace should succeed")
+	@Test
+	public void committedReplace() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		personService.fetchAndReplace(person.getId().toString(), tryCount, (p) -> {
+			p.setFirstname("changed");
+			return p;
+		});
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertEquals("changed", fetched.getFirstname());
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("A basic golden path remove should succeed")
+	@Test
+	public void committedRemove() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		personService.fetchAndRemove(person.getId().toString(), tryCount);
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNull(fetched);
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing an insert then rolling back")
+	@Test
+	public void rollbackInsert() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		AtomicReference<String> id = new AtomicReference<>();
+
+		try {
+			personService.doInTransaction(tryCount, (ops) -> {
+				Person person = new Person(1, "Walter", "White");
+				ops.insertById(Person.class).one(person);
+				id.set(person.getId().toString());
+				throw new SimulateFailureException();
+			});
+			fail();
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		Person fetched = operations.findById(Person.class).one(id.get());
+		assertNull(fetched);
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing a replace then rolling back")
+	@Test
+	public void rollbackReplace() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, (ops) -> {
+				Person p = ops.findById(Person.class).one(person.getId().toString());
+				p.setFirstname("changed");
+				ops.replaceById(Person.class).one(p);
+				throw new SimulateFailureException();
+			});
+			fail();
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertEquals("Walter", fetched.getFirstname());
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing a remove then rolling back")
+	@Test
+	public void rollbackRemove() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, (ops) -> {
+				Person p = ops.findById(Person.class).one(person.getId().toString());
+				ops.removeById(Person.class).oneEntity(p);
+				throw new SimulateFailureException();
+			});
+			fail();
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNotNull(fetched);
+		assertEquals(1, tryCount.get());
 	}
 
 	@Test
-	public void shouldRollbackAfterExceptionReactive() {
-		Person p = new Person(null, "Walter", "White");
-		assertThrows(SimulateFailureException.class, () -> personService.declarativeSavePersonErrorsReactive(p).block());
+	public void shouldRollbackAfterException() {
+		try {
+			personService.insertThenThrow();
+			fail();
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -155,71 +266,96 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 		});
 	}
 
+	// todo gpx investigate how @Transactional @Rollback/@Commit interacts with us
+	// todo gpx how to provide per-transaction options?
+	// todo gpx verify we aren't in a transactional context after the transaction ends (success or failure)
+
+	@Disabled("taking too long - must fix")
+	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
-	public void replaceCallback() {
+	public void replacePerson() {
 		Person person = new Person(1, "Walter", "White");
-		Person switchedPerson = new Person(1, "Dave", "Reynolds");
-		cbTmpl.insertById(Person.class).one(person);
+		operations.insertById(Person.class).one(person);
+
+		System.out.printf("insert  CAS: %s%n", person.getVersion());
+
+		Person refetched = operations.findById(Person.class).one(person.getId().toString());
+		operations.replaceById(Person.class).one(refetched);
+
+		System.out.printf("replace CAS: %s%n", refetched.getVersion());
+
+		assertNotEquals(person.getVersion(), refetched.getVersion());
+
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person p = personService.declarativeFindReplacePersonCallback(person, tryCount);
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
-		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
+		// todo gpx this is raising incorrect error:
+		// com.couchbase.client.core.retry.reactor.RetryExhaustedException: com.couchbase.client.core.error.transaction.RetryTransactionException: User request to retry transaction
+		personService.replace(person, tryCount);
 	}
 
+
+	@DisplayName("Entity must have CAS field during replace")
 	@Test
-	public void replaceTwiceCallback() {
+	public void replaceEntityWithoutCas() {
+		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		operations.insertById(PersonWithoutVersion.class).one(person);
+		try {
+			personService.replaceEntityWithoutVersion(person.getId().toString());
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof IllegalArgumentException);
+		}
+	}
+
+	@DisplayName("Entity must have non-zero CAS during replace")
+	@Test
+	public void replaceEntityWithCasZero() {
 		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		// switchedPerson here will have CAS=0, which will fail
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
-		cbTmpl.insertById(Person.class).one(person);
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person p = personService.declarativeFindReplacePersonCallback(person, tryCount);
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
-		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
+
+		try {
+			personService.replacePerson(switchedPerson, tryCount);
+		}
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof IllegalArgumentException);
+		}
 	}
 
-
+	@DisplayName("Entity must have CAS field during remove")
 	@Test
-	public void commitShouldPersistTxEntriesReactive() {
-		Person p = new Person(null, "Walter", "White");
-		Person s = personService.declarativeSavePersonReactive(p).block();
-		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
-		assertEquals(1, count, "should have saved and found 1");
-	}
-
-
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
-			// todo gp for test clarity
-			builder.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.builder()
-					.cleanupLostAttempts(false)));
+	public void removeEntityWithoutCas() {
+		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		operations.insertById(PersonWithoutVersion.class).one(person);
+		try {
+			personService.removeEntityWithoutVersion(person.getId().toString());
 		}
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof IllegalArgumentException);
 		}
 	}
 
+	@DisplayName("removeById().one(id) isn't allowed in transactions, since we don't have the CAS")
+	@Test
+	public void removeEntityById() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+            personService.doInTransaction(tryCount, (ops) -> {
+                Person p = ops.findById(Person.class).one(person.getId().toString());
+                ops.removeById(Person.class).one(p.getId().toString());
+                return p;
+            });
+            fail();
+        }
+		catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof IllegalArgumentException);
+		}
+	}
 
 	@Service
 	@Component
@@ -234,7 +370,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 			personOperationsRx = opsRx;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 		public Person declarativeSavePerson(Person person) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
@@ -247,7 +383,7 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 			return ret;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 		public Person declarativeSavePersonWithThread(Person person, Thread thread) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
@@ -260,12 +396,12 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 			return ret;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-		public Person declarativeSavePersonErrors(Person person) {
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public void insertThenThrow() {
+			Person person = new Person(null, "Walter", "White");
 			assertInAnnotationTransaction(true);
-			Person p = personOperations.insertById(Person.class).one(person); //
+			personOperations.insertById(Person.class).one(person);
 			SimulateFailureException.throwEx();
-			return p;
 		}
 
 		@Autowired CouchbaseSimpleCallbackTransactionManager callbackTm;
@@ -276,20 +412,26 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 		 * @param person
 		 * @return
 		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-		public Person declarativeFindReplacePersonCallback(Person person, AtomicInteger tryCount) {
-			assertInAnnotationTransaction(true);
-			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
-//			System.err.println("declarativeFindReplacePersonCallback cluster : "
-//					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
-//			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
-//					+ org.springframework.transaction.support.TransactionSynchronizationManager
-//							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
-			Person p = personOperations.findById(Person.class).one(person.getId().toString());
-			return personOperations.replaceById(Person.class).one(p);
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public Person replacePerson(Person person, AtomicInteger tryCount) {
+			tryCount.incrementAndGet();
+			// Note that passing in a Person and replace it in this way, is not supported
+			return personOperations.replaceById(Person.class).one(person);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public void replaceEntityWithoutVersion(String id) {
+			PersonWithoutVersion fetched = personOperations.findById(PersonWithoutVersion.class).one(id);
+			personOperations.replaceById(PersonWithoutVersion.class).one(fetched);
+		}
+
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public void removeEntityWithoutVersion(String id) {
+			PersonWithoutVersion fetched = personOperations.findById(PersonWithoutVersion.class).one(id);
+			personOperations.removeById(PersonWithoutVersion.class).oneEntity(fetched);
+		}
+
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 		public Person declarativeFindReplaceTwicePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
@@ -304,69 +446,52 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 		}
 
 
-		/**
-		 * to execute while ThreadReplaceloop() is running should force a retry
-		 *
-		 * @param person
-		 * @return
-		 */
-		@Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-		public Mono<Person> declarativeFindReplacePersonReactive(Person person, AtomicInteger tryCount) {
+		// todo gpx how do we make COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER the default so user only has to specify @Transactional, without the transactionManager?
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
-			System.err.println("declarativeFindReplacePersonReactive try: " + tryCount.incrementAndGet());
-			/*  NoTransactionInContextException
-			TransactionSynchronizationManager.forCurrentTransaction().flatMap( sm -> {
-				System.err.println("declarativeFindReplacePersonReactive reactive resourceHolder : "+sm.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
-				return Mono.just(sm);
-			}).block();
-			*/
-			return personOperationsRx.findById(Person.class).one(person.getId().toString())
-					.flatMap(p -> personOperationsRx.replaceById(Person.class).one(p));
+			tryCount.incrementAndGet();
+			return personOperations.replaceById(Person.class).one(person);
 		}
 
-		/**
-		 * to execute while ThreadReplaceloop() is running should force a retry
-		 *
-		 * @param person
-		 * @return
-		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER) // doesn't retry
-		public Person declarativeFindReplacePerson(Person person, AtomicInteger tryCount) {
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public Person fetchAndReplace(String id, AtomicInteger tryCount, Function<Person, Person> callback) {
 			assertInAnnotationTransaction(true);
-			System.err.println("declarativeFindReplacePerson try: " + tryCount.incrementAndGet());
-			Person p = personOperations.findById(Person.class).one(person.getId().toString());
-			return personOperations.replaceById(Person.class).one(p);
+			tryCount.incrementAndGet();
+			Person p = personOperations.findById(Person.class).one(id);
+			Person modified = callback.apply(p);
+			return personOperations.replaceById(Person.class).one(modified);
 		}
 
-		@Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER) // doesn't retry
-		public Mono<Person> declarativeSavePersonReactive(Person person) {
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public <T> T doInTransaction(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
 			assertInAnnotationTransaction(true);
-			return personOperationsRx.insertById(Person.class).one(person);
+			tryCount.incrementAndGet();
+			return callback.apply(personOperations);
 		}
 
-		@Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-		public Mono<Person> declarativeSavePersonErrorsReactive(Person person) {
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		public void fetchAndRemove(String id, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
-			Mono<Person> p = personOperationsRx.insertById(Person.class).one(person); //
-			SimulateFailureException.throwEx();
-			return p;
+			tryCount.incrementAndGet();
+			Person p = personOperations.findById(Person.class).one(id);
+			personOperations.removeById(Person.class).oneEntity(p);
 		}
+	}
 
-		void assertInAnnotationTransaction(boolean inTransaction) {
-			StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-			for (StackTraceElement ste : stack) {
-				if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")) {
-					if (inTransaction) {
-						return;
-					}
+	static void assertInAnnotationTransaction(boolean inTransaction) {
+		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+		for (StackTraceElement ste : stack) {
+			if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")) {
+				if (inTransaction) {
+					return;
 				}
 			}
-			if (!inTransaction) {
-				return;
-			}
-			throw new RuntimeException(
-					"in transaction = " + (!inTransaction) + " but expected in annotation transaction = " + inTransaction);
 		}
-
+		if (!inTransaction) {
+			return;
+		}
+		throw new RuntimeException(
+				"in transaction = " + (!inTransaction) + " but expected in annotation transaction = " + inTransaction);
 	}
 }
