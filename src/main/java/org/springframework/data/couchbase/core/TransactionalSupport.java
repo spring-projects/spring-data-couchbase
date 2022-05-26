@@ -59,4 +59,15 @@ public class TransactionalSupport {
                         }))));
     }
 
+    public static Mono<Void> verifyNotInTransaction(Mono<ReactiveCouchbaseTemplate> tmpl, String methodName) {
+        return tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null)
+                .flatMap(s -> {
+                    if (s.hasActiveTransaction()) {
+                        return Mono.error(new IllegalArgumentException(methodName + "can not be used inside a transaction"));
+                    }
+                    else {
+                        return Mono.empty();
+                    }
+                }));
+    }
 }

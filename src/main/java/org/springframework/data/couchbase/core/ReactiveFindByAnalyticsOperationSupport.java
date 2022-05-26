@@ -109,8 +109,9 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return template.getCouchbaseClientFactory().getCluster().block().reactive()
-						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
+				return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "findByAnalytics")
+						.then(template.getCouchbaseClientFactory().getCluster().block().reactive()
+						.analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {
