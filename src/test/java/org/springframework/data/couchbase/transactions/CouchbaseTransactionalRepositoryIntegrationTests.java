@@ -16,22 +16,35 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInReactiveTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+import com.couchbase.client.java.Cluster;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -41,46 +54,36 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Consumer;
-
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests @Transactional with repository methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(classes = { CouchbaseTransactionalRepositoryIntegrationTests.Config.class, CouchbaseTransactionalRepositoryIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegrationTests {
+	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired UserRepository userRepo;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	@Autowired
-	CouchbaseTemplate operations;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
+	@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
 	}
 
 	@BeforeEach
 	public void beforeEachTest() {
-		personService = context.getBean(PersonService.class);
+		assertNotInTransaction();
+		assertNotInReactiveTransaction();
 	}
 
 	@AfterEach
 	public void afterEachTest() {
 		assertNotInTransaction();
+		assertNotInReactiveTransaction();
 	}
-
 
 	@Test
 	public void findByFirstname() {
@@ -126,20 +129,16 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 				SimulateFailureException.throwEx("fail");
 			});
 			fail();
-		}
-		catch (TransactionFailedException ignored) {
-		}
+		} catch (TransactionFailedException ignored) {}
 
 		User user = operations.findById(User.class).one(id);
 		assertNull(user);
 	}
 
-
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static
-	class PersonService {
+	static class PersonService {
 		@Autowired UserRepository userRepo;
 
 		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
@@ -150,6 +149,38 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 		public List<User> findByFirstname(String name) {
 			return userRepo.findByFirstname(name);
+		}
+
+	}
+
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+	static class Config extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Bean
+		public Cluster couchbaseCluster() {
+			return Cluster.connect("10.144.220.101", "Administrator", "password");
 		}
 
 	}

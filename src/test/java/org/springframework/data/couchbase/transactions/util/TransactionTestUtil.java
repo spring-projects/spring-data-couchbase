@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.transactions.util;
 
 import org.springframework.transaction.NoTransactionException;
+import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +34,18 @@ public class TransactionTestUtil {
     public static void assertNotInTransaction() {
         try {
             assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+        }
+        catch (NoTransactionException ignored) {
+        }
+    }
+
+    public static <T> Mono<T> assertInReactiveTransaction(T o) {
+        return org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction().just(o);
+    }
+
+    public static void assertNotInReactiveTransaction() {
+        try {
+            org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction().block();
         }
         catch (NoTransactionException ignored) {
         }

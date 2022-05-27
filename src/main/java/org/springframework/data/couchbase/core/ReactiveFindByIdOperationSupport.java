@@ -69,8 +69,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-								CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
-								ReactiveTemplateSupport support) {
+				CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
+				ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -95,28 +95,24 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			// this will get me a template with a session holding tx
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono()
-					.flatMap(s -> {
-						System.err.println("Session: "+s);
-						//Mono<T> reactiveEntity =  Mono.defer(() -> {
-						if (s == null || s.getCore() == null) {
-							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
-										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-												pArgs.getScope(), pArgs.getCollection(), null));
-							} else {
-								return rc.get(id, (GetOptions) pArgs.getOptions())
-										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-												pArgs.getScope(), pArgs.getCollection(), null));
-							}
-						} else {
-							return  s.getCore().get(makeCollectionIdentifier(rc.async()), id)
-									.flatMap( result -> {
-										return support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(), domainType, pArgs.getScope(),
-												pArgs.getCollection(), new TransactionResultHolder(result), null);
-									});
-						}
-					}));
+			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
+				if (s == null || s.getCore() == null) {
+					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+										pArgs.getScope(), pArgs.getCollection(), null));
+					} else {
+						return rc.get(id, (GetOptions) pArgs.getOptions())
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+										pArgs.getScope(), pArgs.getCollection(), null));
+					}
+				} else {
+					return s.getCore().get(makeCollectionIdentifier(rc.async()), id)
+							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
+									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
+									new TransactionResultHolder(result), null));
+				}
+			}));
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {

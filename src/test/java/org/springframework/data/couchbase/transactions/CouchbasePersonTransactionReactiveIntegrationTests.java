@@ -81,29 +81,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(CouchbasePersonTransactionReactiveIntegrationTests.Config.class)
-//@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+@SpringJUnitConfig(classes = { CouchbasePersonTransactionReactiveIntegrationTests.Config.class, CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class } )
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
-
+	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired CouchbaseSimpleCallbackTransactionManager couchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
-
 	@Autowired Cluster myCluster;
-
-	/* DO NOT @Autowired */ PersonService personService;
-
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
 	@Autowired ReactiveCouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(CouchbasePersonTransactionReactiveIntegrationTests.Config.class,
-				CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class);
 	}
 
 	@AfterAll
@@ -113,28 +106,24 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@BeforeEach
 	public void beforeEachTest() {
-		personService = context.getBean(CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class); // getting it via autowired results in no @Transactional
 		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 	}
 
-
-	@Test // DATAMONGO-2265
+	@Test 
 	public void shouldRollbackAfterException() {
 		personService.savePersonErrors(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.verifyError(RuntimeException.class);
-		// operations.findByQuery(Person.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).count().block();
-		// sleepMs(5000);
 		operations.count(new Query(), Person.class) //
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
 				.verifyComplete();
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	// @Rollback(false)
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		Person p = new Person(null, "Walter", "White");
@@ -153,7 +142,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void commitShouldPersistTxEntries() {
 
 		personService.savePerson(new Person(null, "Walter", "White")) //
@@ -169,7 +158,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
 		personService.declarativeSavePerson(new Person(null, "Walter", "White")).as(StepVerifier::create) //
@@ -183,7 +172,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void commitShouldPersistTxEntriesAcrossCollections() {
 
 		personService.saveWithLogs(new Person(null, "Walter", "White")) //
@@ -202,7 +191,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void rollbackShouldAbortAcrossCollections() {
 
 		personService.saveWithErrorLogs(new Person(null, "Walter", "White")) //
@@ -221,16 +210,15 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void countShouldWorkInsideTransaction() {
-
 		personService.countDuringTx(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.expectNext(1L) //
 				.verifyComplete();
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void emitMultipleElementsDuringTransaction() {
 
 		try {
@@ -244,21 +232,14 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		}
 	}
 
-	@Test // DATAMONGO-2265
+	@Test 
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 
 		Person p = new Person(1, "Walter", "White");
-		//remove(couchbaseTemplate, "_default", p.getId().toString());
 		personService.savePerson(p) //
-				//.delayElement(Duration.ofMillis(100)) //
 				.then(Mono.error(new RuntimeException("my big bad evil error"))).as(StepVerifier::create) //
 				.expectError()
 				.verify();
-				//.expectError() //
-				//.as(StepVerifier::create)
-				//.expectNext(p)
-				//.verifyComplete();
-
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(1L) //

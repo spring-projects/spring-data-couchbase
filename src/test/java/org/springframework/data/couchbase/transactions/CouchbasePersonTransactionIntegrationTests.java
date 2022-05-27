@@ -22,12 +22,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import lombok.Data;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -102,9 +110,9 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class, CouchbasePersonTransactionIntegrationTests.PersonService.class })
+@SpringJUnitConfig(classes = { CouchbasePersonTransactionIntegrationTests.Config.class, CouchbasePersonTransactionIntegrationTests.PersonService.class })
 public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationTests {
-
+	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
@@ -119,6 +127,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	String sName = "_default";
 	String cName = "_default";
 	private TransactionalOperator transactionalOperator;
+	private ReactiveTransactionsWrapper reactiveTransactionsWrapper;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -149,6 +158,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person walterWhite = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, walterWhite.getId().toString());
 		transactionalOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
+		reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
+				reactiveCouchbaseClientFactory);
 	}
 
 	@Test
@@ -198,7 +209,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		cbTmpl.insertById(Person.class).one(person);
 		AtomicInteger tryCount = new AtomicInteger(0);
 		Person p = personService.declarativeFindReplacePersonCallback(switchedPerson, tryCount);
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 	}
 
@@ -256,19 +267,17 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
-	/**
-	 * This will appear to work even if replaceById does not use a transaction.
-	 */
 	@Test
 	@Disabled
 	public void replacePersonCBTransactionsRxTmpl() {
 		Person person = new Person(1, "Walter", "White");
 		cbTmpl.insertById(Person.class).one(person);
 		Mono<Person> result = rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
-				.flatMap((pp) -> rxCBTmpl.replaceById(Person.class).one(pp)) //
+				.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp))
+				.flatMap(ppp ->  assertInReactiveTransaction(ppp))
 				.as(transactionalOperator::transactional);
 		result.block();
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertEquals(person, pFound, "should have found expected " + person);
 	}
 
@@ -276,9 +285,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void insertPersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
+				.flatMap(ppp ->  assertInReactiveTransaction(ppp))
 				.flatMap(p -> throwSimulatedFailure(p)).as(transactionalOperator::transactional); // tx
 		assertThrows(SimulateFailureException.class, result::block);
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
@@ -286,10 +296,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void insertTwicePersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
-				.flatMap((ppp) -> rxCBTmpl.insertById(Person.class).one(ppp)) //
+				.flatMap(ppp -> rxCBTmpl.insertById(Person.class).one(ppp)) //
 				.as(transactionalOperator::transactional);
 		assertThrows(DuplicateKeyException.class, result::block);
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
@@ -304,7 +314,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger(0);
 		cbTmpl.insertById(Person.class).one(person);
-
 		for (int i = 0; i < 50; i++) { // the transaction sometimes succeeds on the first try
 			ReplaceLoopThread t = new ReplaceLoopThread(switchedPerson);
 			t.start();
@@ -337,21 +346,18 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			ReplaceLoopThread t = new ReplaceLoopThread(switchedPerson);
 			t.start();
 			tryCount.set(0);
-			ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-					reactiveCouchbaseClientFactory);
 			Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> {
 				System.err.println("try: " + tryCount.incrementAndGet());
 				return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
-						.flatMap((ppp) -> rxCBTmpl.replaceById(Person.class).one(ppp)).then();
+						.flatMap(ppp -> rxCBTmpl.replaceById(Person.class).one(ppp)).then();
 			});
 			TransactionResult txResult = result.block();
-			System.out.println("txResult: " + txResult);
 			t.setStopFlag();
 			if (tryCount.get() > 1) {
 				break;
 			}
 		}
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 	}
@@ -366,7 +372,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger(0);
 		cbTmpl.insertById(Person.class).one(person);
-
 		for (int i = 0; i < 50; i++) { // the transaction sometimes succeeds on the first try
 			ReplaceLoopThread t = new ReplaceLoopThread(switchedPerson);
 			t.start();
@@ -377,7 +382,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 				break;
 			}
 		}
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 	}
@@ -409,7 +414,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 				break;
 			}
 		}
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 	}
@@ -435,7 +440,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 				break;
 			}
 		}
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		System.out.println("pFound: " + pFound);
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
@@ -445,18 +450,13 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void replacePersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
 		String newName = "Walt";
-		rxCBTmpl.insertById(Person.class).one(person).block();
-
-		// doesn't TransactionWrapper do the same thing?
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
+		cbTmpl.insertById(Person.class).one(person);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { //
 			return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
 					.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp.withFirstName(newName))).then(Mono.empty());
 		});
-
 		result.block();
-		Person pFound = rxCBTmpl.findById(Person.class).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		System.err.println(pFound);
 		assertEquals(newName, pFound.getFirstname());
 	}
@@ -465,15 +465,12 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void deletePersonCBTransactionsRxTmpl() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
-		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
-
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
+		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person).then();
 		});
 		result.block();
-		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertNull(pFound, "Should not have found " + pFound);
 	}
 
@@ -482,9 +479,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
 		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
-
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)
 					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)).then();
@@ -498,10 +492,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void deletePersonCBTransactionsRxRepo() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
-		rxRepo.withCollection(cName).save(person).block();
-
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
+		repo.withCollection(cName).save(person);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
 			return rxRepo.withCollection(cName).delete(person).then();
 		});
@@ -514,10 +505,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void deletePersonCBTransactionsRxRepoFail() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
-		rxRepo.withCollection(cName).save(person).block();
-
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
+		repo.withCollection(cName).save(person);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
 			return rxRepo.withCollection(cName).findById(person.getId().toString())
 					.flatMap(pp -> rxRepo.withCollection(cName).delete(pp).then(rxRepo.withCollection(cName).delete(pp))).then();
@@ -534,8 +522,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> rxCBTmpl.findByQuery(Person.class)
 				.inScope(sName).inCollection(cName).matching(q).withConsistency(REQUEST_PLUS).one().doOnSuccess(doc -> {
 					System.err.println("doc: " + doc);
@@ -552,13 +538,9 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void insertPersonRbCBTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
-
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper
 				.run(ctx -> rxCBTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person)
 						.<Person> flatMap(it -> Mono.error(new SimulateFailureException())));
-
 		assertThrowsWithCause(() -> result.block(), TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertNull(pFound, "Should not have found " + pFound);
@@ -569,15 +551,12 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
 		cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person);
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> //
 		rxCBTmpl.findById(Person.class).inScope(sName).inCollection(cName).one(person.getId().toString()) //
 				.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inScope(sName).inCollection(cName)
 						.one(pFound.withFirstName("Walt")))
 				.<Person> flatMap(it -> Mono.error(new SimulateFailureException())));
 		assertThrowsWithCause(() -> result.block(), TransactionFailedException.class, SimulateFailureException.class);
-
 		Person pFound = cbTmpl.findById(Person.class).inScope(sName).inCollection(cName).one(person.getId().toString());
 		assertEquals(person, pFound, "Should have found " + person + " instead of " + pFound);
 	}
@@ -589,8 +568,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		ReactiveTransactionsWrapper reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(
-				reactiveCouchbaseClientFactory);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> rxCBTmpl.findByQuery(Person.class)
 				.inScope(sName).inCollection(cName).matching(q).one().doOnSuccess(r -> docs.add(r)));
 		result.block();
@@ -652,7 +629,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	void remove(ReactiveCouchbaseTemplate template, String scope, String collection, String id) {
 		try {
 			template.removeById(Person.class).inScope(scope).inCollection(collection).one(id).block();
-			System.out.println("removed " + id);
 			List<Person> ps = template.findByQuery(Person.class).inScope(scope).inCollection(collection)
 					.withConsistency(REQUEST_PLUS).all().collectList().block();
 		} catch (DocumentNotFoundException | DataRetrievalFailureException nfe) {
@@ -876,6 +852,39 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			Mono<Person> p = personOperationsRx.insertById(Person.class).one(person); //
 			SimulateFailureException.throwEx();
 			return p;
+		}
+
+	}
+
+
+	@Configuration
+	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
+	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+	static class Config extends AbstractCouchbaseConfiguration {
+
+		@Override
+		public String getConnectionString() {
+			return connectionString();
+		}
+
+		@Override
+		public String getUserName() {
+			return config().adminUsername();
+		}
+
+		@Override
+		public String getPassword() {
+			return config().adminPassword();
+		}
+
+		@Override
+		public String getBucketName() {
+			return bucketName();
+		}
+
+		@Bean
+		public Cluster couchbaseCluster() {
+			return Cluster.connect("10.144.220.101", "Administrator", "password");
 		}
 
 	}

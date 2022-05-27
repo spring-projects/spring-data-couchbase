@@ -64,19 +64,16 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
  * Tests for @Transactional, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(classes = { Config.class, CouchbaseTransactionalTemplateIntegrationTests.PersonService.class} )
 public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
-
+	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	/* DO NOT @Autowired - it will result in no @Transactional annotation behavior */ PersonService personService;
+	@Autowired PersonService personService;
 	@Autowired CouchbaseTemplate operations;
-
-	static GenericApplicationContext context;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
 	}
 
 	@AfterAll
@@ -86,7 +83,6 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 
 	@BeforeEach
 	public void beforeEachTest() {
-		personService = context.getBean(PersonService.class); // getting it via autowired results in no @Transactional
 		// Skip this as we just one to track TransactionContext
 		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all(); // doesn't work???
 		List<Person> p = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
@@ -441,18 +437,16 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		public Person declarativeFindReplaceTwicePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
-//			System.err.println("declarativeFindReplacePersonCallback cluster : "
-//					+ callbackTm.template().getCouchbaseClientFactory().getCluster().block());
-//			System.err.println("declarativeFindReplacePersonCallback resourceHolder : "
-//					+ org.springframework.transaction.support.TransactionSynchronizationManager
-//							.getResource(callbackTm.template().getCouchbaseClientFactory().getCluster().block()));
 			Person p = personOperations.findById(Person.class).one(person.getId().toString());
 			Person pUpdated = personOperations.replaceById(Person.class).one(p);
 			return personOperations.replaceById(Person.class).one(pUpdated);
 		}
 
-
 		// todo gpx how do we make COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER the default so user only has to specify @Transactional, without the transactionManager?
+		// todo mr
+		// todo if there is exactly one bean of type ‘org.springframework.transaction.TransactionManager’.
+		// todo It’s also possible to put the  @Transaction annotation on the class (instead of each method).
+		// todo see TransactionAspectSupport.determineTransactionManager(TransactionAttribute)
 		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
