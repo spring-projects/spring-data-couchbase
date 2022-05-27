@@ -667,6 +667,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Data
 	static class EventLog {
 
+		public EventLog(){};
+
 		public EventLog(ObjectId oid, String action) {
 			this.id = oid.toString();
 			this.action = action;

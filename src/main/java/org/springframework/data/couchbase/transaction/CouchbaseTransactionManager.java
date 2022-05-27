@@ -133,7 +133,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		CouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
 // 	should ACR already be in TSM?	TransactionSynchronizationManager.bindResource(getRequiredDbFactory().getCluster(), resourceHolder);
-		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(definition, TransactionOptions.transactionOptions(),
+		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(getDatabaseFactory(), definition, TransactionOptions.transactionOptions(),
 				null /* ((CouchbaseTransactionDefinition) definition).getAttemptContextReactive()*/);
 		couchbaseTransactionObject.setResourceHolder(resourceHolder);
 

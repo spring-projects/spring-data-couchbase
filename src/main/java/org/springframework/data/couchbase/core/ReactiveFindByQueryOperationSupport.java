@@ -276,7 +276,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 						}
 					}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
 							: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
-					.map(row -> row.getLong(row.getNames().iterator().next())).elementAt(0);
+					.map(row -> row.getLong(row.getNames().iterator().next())).next();
 		}
 
 		@Override

@@ -206,18 +206,4 @@ public class AttemptContextReactiveAccessor {
 		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
 	}
 
-		CoreTransactionAttemptContext coreTransactionsReactive;
-		try {
-			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			coreTransactionsReactive = (CoreTransactionAttemptContext) field.get(atr);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-		return coreTransactionsReactive;
-	}
-
-	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
-		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
-	}
 }
