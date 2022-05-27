@@ -67,9 +67,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public T one(final String id) {
-			//Mono.deferContextual(ctx -> { System.err.println("ExecutableFindById.ctx: "+ctx); return Mono.empty();}).block();
-			return reactiveSupport.one(id)/*.contextWrite(TransactionContextManager.getOrCreateContext())
-					.contextWrite(TransactionContextManager.getOrCreateContextHolder())*/.block();
+			return reactiveSupport.one(id).block();
 		}
 
 		@Override

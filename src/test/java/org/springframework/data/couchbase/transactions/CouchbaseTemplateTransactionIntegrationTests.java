@@ -62,15 +62,12 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.couchbase.client.core.cnc.Event;
-//import com.example.demo.CouchbaseTransactionManager;
-//import com.example.demo.CouchbaseTransactionalTemplate;
 
 /**
- * @author Christoph Strobl
- * @currentRead Shadow's Edge - Brent Weeks
+ * @author Michael Reiche
  */
 
-//@ContextConfiguration
+
 @ExtendWith({ SpringExtension.class })
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
@@ -110,11 +107,6 @@ public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegratio
 		public CouchbaseTransactionManager transactionManager(@Autowired CouchbaseClientFactory template) {
 			return new CouchbaseTransactionManager(template, null);
 		}
-
-		//@Bean
-		//public CouchbaseTransactionalTemplate transactionalTemplate(CouchbaseTransactionManager manager) {
-		//	return manager.template();
-		//}
 
 	}
 
