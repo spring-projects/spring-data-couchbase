@@ -58,7 +58,7 @@ public abstract class AbstractTemplateSupport {
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	public <T> T decodeEntityBase(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								  TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
 
@@ -127,7 +127,7 @@ public abstract class AbstractTemplateSupport {
 
 
 	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
-			TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
 		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()

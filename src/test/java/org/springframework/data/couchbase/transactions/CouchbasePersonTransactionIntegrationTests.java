@@ -24,6 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import lombok.Data;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -57,6 +60,8 @@ import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.couchbase.transaction.TransactionsWrapper;
@@ -69,15 +74,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.ReactiveTransaction;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.reactive.TransactionContextManager;
+import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
@@ -280,6 +293,11 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
+	/**
+	 * This test has the bare minimum for reactive transactions. Create the ClientSession that holds the ctx and put it in
+	 * a resourceHolder and binds it to the currentContext. The retries are handled by couchbase-transactions - which
+	 * creates a new ctx and re-runs the lambda. This is essentially what TransactionWrapper does.
+	 */
 	@Test
 	public void wrapperReplaceWithCasConflictResolvedViaRetry() {
 		Person person = new Person(1, "Walter", "White");
@@ -716,7 +734,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		final ReactiveCouchbaseTransactionManager managerRx;
 
 		public PersonService(CouchbaseOperations ops, CouchbaseSimpleCallbackTransactionManager mgr,
-				ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
+							 ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
 			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());

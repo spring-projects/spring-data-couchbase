@@ -140,7 +140,7 @@ public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegratio
 		assertionList.forEach(it -> {
 
 			boolean isPresent = template.findById(Assassin.class).one(it.getId().toString()) != null; // (Filters.eq("_id",
-																																																// it.getId())) != 0;
+			// it.getId())) != 0;
 
 			assertThat(isPresent).isEqualTo(it.shouldBePresent())
 					.withFailMessage(String.format("After transaction entity %s should %s.", it.getPersistable(),

@@ -30,13 +30,13 @@ public interface ReactiveTemplateSupport {
 	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
 	<T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-			TransactionResultHolder txResultHolder);
+							 TransactionResultHolder txResultHolder);
 
 	<T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
 			TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder);
 
 	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-			TransactionResultHolder txResultHolder);
+							TransactionResultHolder txResultHolder);
 
 	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
 			TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder);

@@ -77,8 +77,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByIdSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType, final String scope,
-				final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
+								  final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -101,40 +101,45 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 			final Mono<RemoveResult> removeResult;
 
+			// todo gpx convert to TransactionalSupport
 			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
 				if (s.getCore() == null) {
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
 				} else {
+					rejectInvalidTransactionalOptions();
+
 					System.err.println("tx remove");
-					// todo gp we definitely don't want to be creating TransactionGetResult. It's essential that this is passed
-					// from a previous ctx.get(). So we know if this doc is in a transaction and can safely detect
-					// write-write conflicts. This will be a blocker.
-					// Looks like replace is solving this with a getTransactionHolder?
 					if ( cas == null || cas == 0 ){
 						throw new IllegalArgumentException("cas must be supplied for tx remove");
 					}
 					Mono<CoreTransactionGetResult> gr = s.getCore().get(makeCollectionIdentifier(rc.async()), id);
 
-					// todo gp no CAS
 					return gr.flatMap(getResult -> {
-						if (getResult.cas() !=  cas) {
-							System.err.println("internal: "+getResult.cas()+" object.cas: "+cas);
-							// todo gp really want to set internal state and raise a TransactionOperationFailed
-							return Mono.error(new TransactionOperationFailedException(true, true, new CasMismatchException(null), null));
+						if (getResult.cas() != cas) {
+							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(s.getCore(), getResult.cas(), cas));
 						}
 						return s.getCore().remove(getResult)
 								.map(r -> new RemoveResult(id, 0, null));
 					});
 
 				}}).onErrorMap(throwable -> {
-					if (throwable instanceof RuntimeException) {
-						return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-					} else {
-						return throwable;
-					}
-				}));
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			}));
 			return allResult;
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE) || (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		@Override

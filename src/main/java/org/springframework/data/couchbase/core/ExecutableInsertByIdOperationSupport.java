@@ -57,8 +57,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx) {
+									final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+									final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;

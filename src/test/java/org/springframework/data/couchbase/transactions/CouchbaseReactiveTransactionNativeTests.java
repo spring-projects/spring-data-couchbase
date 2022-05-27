@@ -130,7 +130,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Person person = new Person(1, "Walter", "White");
 		remove(rxCBTmpl, cName, person.getId().toString());
 		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
-sleepMs(1000);
+		sleepMs(1000);
 		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
 		Mono<TransactionResult> result = txOperator
 				.reactive((ctx) -> ctx.template(rxCBTmpl).findById(Person.class).one(person.getId().toString())
@@ -374,7 +374,7 @@ sleepMs(1000);
 				.as(transactionalOperator::transactional);
 	}
 
-		void remove(Collection col, String id) {
+	void remove(Collection col, String id) {
 		remove(col.reactive(), id);
 	}
 

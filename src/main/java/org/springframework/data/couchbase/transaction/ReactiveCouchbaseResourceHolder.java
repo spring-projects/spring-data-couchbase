@@ -78,7 +78,6 @@ public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 
 	/*
 	 * @return the associated {@link CouchbaseClientFactory}.
-	
 	ReactiveCouchbaseClientFactory getDatabaseFactory() {
 		return databaseFactory;
 	}

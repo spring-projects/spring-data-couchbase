@@ -168,6 +168,7 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
+		// todo gp only suitable for tests
 		TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false));
 		builder.transactionsConfig(transactionsConfig());
 		configureEnvironment(builder);
@@ -185,15 +186,15 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
+											   ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+											   MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
 		return new CouchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter) {
+											   ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+											   MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return couchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
 	}
@@ -291,7 +292,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-			CouchbaseCustomConversions couchbaseCustomConversions) {
+															   CouchbaseCustomConversions couchbaseCustomConversions) {
 		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
 		converter.setCustomConversions(couchbaseCustomConversions);
 		return converter;
@@ -346,12 +347,6 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
 
-	// todo gp how to DI this into the Cluster creation esp. as it creates a CoreTransactionConfig
-//	@Bean
-//	public TransactionsConfig transactionConfig() {
-//		return TransactionsConfig.builder().build();
-//	}
-
 	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
 	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
 			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
@@ -377,11 +372,13 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new CouchbaseTransactionManager(clientFactory, options);
 	}
 
+	// todo gpx these would be per-transactions options so it seems odd to have a global bean?  Surely would want to configure everything at global level instead?
 	@Bean
 	public TransactionOptions transactionsOptions(){
 		return TransactionOptions.transactionOptions();
 	}
 
+	// todo gpx transactions config is now done in standard ClusterConfig - so I think we don't want a separate bean?
 	public TransactionsConfig.Builder transactionsConfig(){
 		return TransactionsConfig.builder().durabilityLevel(DurabilityLevel.NONE).timeout(Duration.ofMinutes(20));// for testing
 	}

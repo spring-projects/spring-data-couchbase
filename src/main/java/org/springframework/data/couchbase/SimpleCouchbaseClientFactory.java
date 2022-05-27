@@ -53,21 +53,21 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	//private JsonSerializer serializer = null;
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName) {
+										final String bucketName) {
 		this(connectionString, authenticator, bucketName, null);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName, final String scopeName) {
+										final String bucketName, final String scopeName) {
 		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)
-				// todo gp disabling cleanupLostAttempts to simplify output during development
-				.environment(env -> env.transactionsConfig(
-						TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))))),
+						// todo gp disabling cleanupLostAttempts to simplify output during development
+						.environment(env -> env.transactionsConfig(
+								TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))))),
 				bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
+										final String bucketName, final String scopeName, final ClusterEnvironment environment) {
 		this(
 				new OwnedSupplier<>(
 						Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))),
@@ -81,7 +81,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	}
 
 	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName,
-			final String scopeName) {
+										 final String scopeName) {
 		this.cluster = cluster;
 		this.bucket = cluster.get().bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);

@@ -15,9 +15,11 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +41,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
-// todo gp experimenting with simplest possible CallbackPreferringPlatformTransactionManager, extending PlatformTransactionManager
-// not AbstractPlatformTransactionManager
-public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatformTransactionManager*/ implements CallbackPreferringPlatformTransactionManager {
+public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionManager.class);
 
@@ -59,31 +61,54 @@ public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatfo
 	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
-			couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
-				CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
+		setOptionsFromDefinition(definition);
 
-				// Setting ThreadLocal storage
-				TransactionSynchronizationManager.setActualTransactionActive(true);
-				TransactionSynchronizationManager.initSynchronization();
-				TransactionSynchronizationManager.unbindResourceIfPossible(TransactionAttemptContext.class);
-				TransactionSynchronizationManager.bindResource(TransactionAttemptContext.class, ctx);
+		TransactionResult result = couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
+			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
 
+			populateTransactionSynchronizationManager(ctx);
 
-				ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
-				TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster().block());
-				TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster().block(), resourceHolder);
+			try {
+				execResult.set(callback.doInTransaction(status));
+			}
+			finally {
+				TransactionSynchronizationManager.clear();
+			}
+		}, this.options);
 
-				try {
-					execResult.set(callback.doInTransaction(status));
-				}
-				finally {
-					TransactionSynchronizationManager.clear();
-				}
-			}, this.options);
+		TransactionSynchronizationManager.clear();
 
-			TransactionSynchronizationManager.clear();
+		return execResult.get();
+	}
 
-			return execResult.get();
+	/**
+	 * @param definition reflects the @Transactional options
+	 */
+	private void setOptionsFromDefinition(TransactionDefinition definition) {
+		if (definition != null) {
+			if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+				options = options.timeout(Duration.ofSeconds(definition.getTimeout()));
+			}
+
+			if (!(definition.getIsolationLevel() == TransactionDefinition.ISOLATION_DEFAULT
+					|| definition.getIsolationLevel() == TransactionDefinition.ISOLATION_READ_COMMITTED)) {
+				throw new IllegalArgumentException("Couchbase Transactions run at Read Committed isolation - other isolation levels are not supported");
+			}
+
+			// readonly is ignored as it is documented as being a hint that won't necessarily cause writes to fail
+
+			// todo gpx what about propagation?
+		}
+
+	}
+
+	// Setting ThreadLocal storage
+	private void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
+		TransactionSynchronizationManager.setActualTransactionActive(true);
+		TransactionSynchronizationManager.initSynchronization();
+		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
+		TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster().block());
+		TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster().block(), resourceHolder);
 	}
 
 	/**
@@ -97,18 +122,20 @@ public class CouchbaseSimpleCallbackTransactionManager /* extends AbstractPlatfo
 	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition)
 			throws TransactionException {
 		TransactionStatus status = new DefaultTransactionStatus(		null, true, true,
-		false, true, false);
+				false, true, false);
 		return status;
 	}
 
 	@Override
 	public void commit(TransactionStatus status) throws TransactionException {
-			LOGGER.debug("NO-OP: Committing Couchbase Transaction with status {}", status);
+		// todo gpx somewhat nervous that commit/rollback/getTransaction are all left empty but things seem to be working
+		// anyway... - what are these used for exactly?
+		LOGGER.debug("NO-OP: Committing Couchbase Transaction with status {}", status);
 	}
 
 	@Override
 	public void rollback(TransactionStatus status) throws TransactionException {
-			LOGGER.warn("NO-OP: Rolling back Couchbase Transaction with status {}", status);
+		LOGGER.warn("NO-OP: Rolling back Couchbase Transaction with status {}", status);
 	}
 
 }

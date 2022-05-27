@@ -587,26 +587,26 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		}
 		 */
 
-	}
+    }
 
-	@Data
-	// @AllArgsConstructor
-	static class EventLog {
-		public EventLog() {}
+    @Data
+    // @AllArgsConstructor
+    static class EventLog {
+        public EventLog() {}
 
-		public EventLog(ObjectId oid, String action) {
-			this.id = oid.toString();
-			this.action = action;
-		}
+        public EventLog(ObjectId oid, String action) {
+            this.id = oid.toString();
+            this.action = action;
+        }
 
-		public EventLog(String id, String action) {
-			this.id = id;
-			this.action = action;
-		}
+        public EventLog(String id, String action) {
+            this.id = id;
+            this.action = action;
+        }
 
-		String id;
-		String action;
-		@Version
-		Long version;
-	}
+        String id;
+        String action;
+        @Version
+        Long version;
+    }
 }

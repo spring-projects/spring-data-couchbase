@@ -47,5 +47,5 @@ public interface TemplateSupport {
 
 	<T> Integer getTxResultHolder(T source);
 
-  TranslationService getTranslationService();
+	TranslationService getTranslationService();
 }

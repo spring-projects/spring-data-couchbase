@@ -77,7 +77,7 @@ public interface CouchbaseClientFactory extends Closeable {
 	PersistenceExceptionTranslator getExceptionTranslator();
 
 	CoreTransactionAttemptContext getCore(TransactionOptions options,
-																				CoreTransactionAttemptContext atr);
+										  CoreTransactionAttemptContext atr);
 
 	//CouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
 

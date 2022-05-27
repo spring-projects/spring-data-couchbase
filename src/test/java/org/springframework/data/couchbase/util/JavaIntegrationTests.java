@@ -146,7 +146,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void setupScopeCollection(Cluster cluster, String scopeName, String collectionName,
-																					CollectionManager collectionManager) {
+											CollectionManager collectionManager) {
 		// Create the scope.collection (borrowed from CollectionManagerIntegrationTest )
 		ScopeSpec scopeSpec = ScopeSpec.create(scopeName);
 		CollectionSpec collSpec = CollectionSpec.create(collectionName, scopeName);
@@ -278,7 +278,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static CompletableFuture<Void> createPrimaryIndex(Cluster cluster, String bucketName, String scopeName,
-																													 String collectionName) {
+															 String collectionName) {
 		CreatePrimaryQueryIndexOptions options = CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions();
 		options.timeout(Duration.ofSeconds(300));
 		options.ignoreIfExists(true);
@@ -303,14 +303,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType*/ boolean queryType, CharSequence statement,
-																										 Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
+													   Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
 		return with.isEmpty() ? exec(cluster, queryType, statement, options)
 				: exec(cluster, queryType, statement + " WITH " + Mapper.encodeAsString(with), options);
 	}
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType,*/ boolean queryType, CharSequence statement,
-																										 CommonOptions<?>.BuiltCommonOptions options) {
+													   CommonOptions<?>.BuiltCommonOptions options) {
 		QueryOptions queryOpts = toQueryOptions(options).readonly(queryType /*requireNonNull(queryType) == READ_ONLY*/);
 
 		return cluster.async().query(statement.toString(), queryOpts).exceptionally(t -> {
@@ -342,7 +342,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void createFtsCollectionIndex(Cluster cluster, String indexName, String bucketName, String scopeName,
-																							String collectionName) {
+												String collectionName) {
 		SearchIndex searchIndex = new SearchIndex(indexName, bucketName);
 		if (scopeName != null) {
 			// searchIndex = searchIndex.forScopeCollection(scopeName, collectionName);
@@ -386,14 +386,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			executable.execute();
 		}
 		catch (Throwable actualException) {
-				for(Class<?> expectedType:expectedTypes){
-					if(actualException.getClass().isAssignableFrom( expectedType)){
-						return actualException;
-					}
+			for(Class<?> expectedType:expectedTypes){
+				if(actualException.getClass().isAssignableFrom( expectedType)){
+					return actualException;
 				}
-				UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
-				String message = "Unexpected exception type thrown "+actualException.getClass();
-				throw new AssertionFailedError(message, actualException);
+			}
+			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+			String message = "Unexpected exception type thrown "+actualException.getClass();
+			throw new AssertionFailedError(message, actualException);
 		}
 
 		String message ="Expected "+expectedTypes+" to be thrown, but nothing was thrown.";

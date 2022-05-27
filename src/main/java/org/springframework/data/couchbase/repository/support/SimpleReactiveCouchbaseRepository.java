@@ -63,7 +63,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+											 ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
 		super(entityInformation, repositoryInterface);
 		this.operations = operations;
 	}

@@ -83,7 +83,7 @@ public interface ClusterInterface {
 
   //AnalyticsResult analyticsQuery(String statement);
 
- // AnalyticsResult analyticsQuery(String statement, AnalyticsOptions options);
+  // AnalyticsResult analyticsQuery(String statement, AnalyticsOptions options);
 
   SearchResult searchQuery(String indexName, SearchQuery query);
 

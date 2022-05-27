@@ -43,25 +43,25 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																	TransactionResultHolder txResultHolder) {
+									TransactionResultHolder txResultHolder) {
 		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
 	}
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-																	TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+									TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-																 TransactionResultHolder txResultHolder) {
+								   TransactionResultHolder txResultHolder) {
 		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder));
 	}
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-																 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								   TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder, holder));
 	}
 

@@ -38,7 +38,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	CouchbaseTransactionalOperator transactionalOperator;
 
 	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName,
-			CouchbaseTransactionalOperator transactionalOperator) {
+												CouchbaseTransactionalOperator transactionalOperator) {
 		this.cluster = Mono.just(cluster);
 		this.theCluster = cluster;
 		this.bucketName = bucketName;
@@ -146,15 +146,13 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options) { // hopefully this
-																																																			// gets filled in
-																																																			// later
-		return Mono.just(new ReactiveCouchbaseResourceHolder(null));
+	public Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options) { 
+	return Mono.just(new ReactiveCouchbaseResourceHolder(null));
 	}
 
 	@Override
 	public ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options,
-			CoreTransactionAttemptContext atr) {
+																   CoreTransactionAttemptContext atr) {
 		if (atr == null) {
 			atr = AttemptContextReactiveAccessor
 					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
@@ -218,7 +216,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		// private final Transactions transactions;
 
 		CoreTransactionAttemptContextBoundCouchbaseClientFactory(ReactiveCouchbaseResourceHolder transactionResources,
-				ReactiveCouchbaseClientFactory delegate, Transactions transactions) {
+																 ReactiveCouchbaseClientFactory delegate, Transactions transactions) {
 			this.transactionResources = transactionResources;
 			this.delegate = delegate;
 			// this.transactions = transactions;
@@ -308,7 +306,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 		@Override
 		public ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options,
-				CoreTransactionAttemptContext atr) {
+																	   CoreTransactionAttemptContext atr) {
 			ReactiveCouchbaseResourceHolder holder = delegate.getTransactionResources(options, atr);
 			return holder;
 		}

@@ -64,8 +64,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-																 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-																 CouchbaseTransactionalOperator txCtx) {
+									 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
+									 CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -91,16 +91,16 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
 				Mono<TransactionQueryResult> tqr = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
-				// todo gp do something with tqr
+				// todo gpx do something with tqr
 			}
 			Mono<ReactiveQueryResult> finalAllResult = allResult;
 			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-				} else {
-					return throwable;
-				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject)
+						if (throwable instanceof RuntimeException) {
+							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+						} else {
+							return throwable;
+						}
+					}).flatMapMany(ReactiveQueryResult::rowsAsObject)
 					.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
 							Optional.empty())));
 		}

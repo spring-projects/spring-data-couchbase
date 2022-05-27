@@ -881,7 +881,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
-	// DATACOUCH-650
+		// DATACOUCH-650
 	void deleteAllById() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
