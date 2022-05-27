@@ -64,9 +64,9 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		private final CouchbaseTransactionalOperator txCtx;
 
 		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<?> domainType, final Class<T> returnType,
-				final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
-				final QueryOptions options, final String[] distinctFields, final String[] fields,
-				final CouchbaseTransactionalOperator txCtx) {
+									 final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
+									 final QueryOptions options, final String[] distinctFields, final String[] fields,
+									 final CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;

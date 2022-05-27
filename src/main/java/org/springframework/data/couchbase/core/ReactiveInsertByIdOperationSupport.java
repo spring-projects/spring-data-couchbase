@@ -16,8 +16,6 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.codec.Transcoder;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -74,9 +72,9 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		private final ReactiveTemplateSupport support;
 
 		ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Duration expiry, CouchbaseTransactionalOperator txCtx,
-				ReactiveTemplateSupport support) {
+								  final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, Duration expiry, CouchbaseTransactionalOperator txCtx,
+								  ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -92,9 +90,9 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		}
 
 		ReactiveInsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, Duration expiry, TransactionalOperator txOp,
-				ReactiveTemplateSupport support) {
+								  final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, Duration expiry, TransactionalOperator txOp,
+								  ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -116,18 +114,34 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			System.err.println("txOp: " + pArgs.getTxOp());
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return GenericSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(GenericSupportHelper support) -> support.collection
+			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
+					(TransactionalSupportHelper support) -> support.collection
 							.insert(support.converted.getId(), support.converted.export(),
 									buildOptions(pArgs.getOptions(), support.converted))
 							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
 									result.cas(), null)),
-					(GenericSupportHelper support) -> support.ctx
-							.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
-									template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
-											.encode(support.converted.export()).encoded())
-							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
-									getCas(result), new TransactionResultHolder(result), null)));
+					(TransactionalSupportHelper support) -> {
+						rejectInvalidTransactionalOptions();
+
+						return support.ctx
+								.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
+										template.getCouchbaseClientFactory().getBlockingCluster().environment().transcoder()
+												.encode(support.converted.export()).encoded())
+								.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
+										getCas(result), new TransactionResultHolder(result), null));
+					});
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE) || (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
+			}
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		private Long getCas(CoreTransactionGetResult getResult) {
@@ -177,7 +191,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					durabilityLevel, expiry, txCtx, support);
 		}
 
-		// todo gp need to figure out how to handle options re transactions. E.g. many non-transactional insert options,
+		// todo gpx need to figure out how to handle options re transactions. E.g. many non-transactional insert options,
 		// like this, aren't supported
 		@Override
 		public InsertByIdInScope<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {

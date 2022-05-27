@@ -44,12 +44,6 @@ import reactor.util.annotation.Nullable;
  */
 public class AttemptContextReactiveAccessor {
 
-	public static ReactiveTransactionAttemptContext getACR(TransactionAttemptContext attemptContext) {
-		// return attemptContext.ctx();
-		// todo gp is this access needed. Could hold the raw CoreTransactionAttemptContext instead.
-		return null;
-	}
-
 	public static ReactiveTransactions reactive(Transactions transactions) {
 		try {
 			Field field = Transactions.class.getDeclaredField("reactive");
@@ -212,26 +206,18 @@ public class AttemptContextReactiveAccessor {
 		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
 	}
 
-	// todo gp if needed let's expose in the SDK
-	// static private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
-	// StringBuilder sb = new StringBuilder();
-	// sb.append("library version: ");
-	// sb.append(TransactionsReactive.class.getPackage().getImplementationVersion());
-	// sb.append(" config: ");
-	// sb.append("atrs=");
-	// sb.append(config.numAtrs());
-	// sb.append(", metadataCollection=");
-	// sb.append(config.metadataCollection());
-	// sb.append(", expiry=");
-	// sb.append(perConfig.expirationTime().orElse(config.transactionExpirationTime()).toMillis());
-	// sb.append("msecs durability=");
-	// sb.append(config.durabilityLevel());
-	// sb.append(" per-txn config=");
-	// sb.append(" durability=");
-	// sb.append(perConfig.durabilityLevel());
-	// sb.append(", supported=");
-	// sb.append(Supported.SUPPORTED);
-	// return sb.toString();
-	// }
+		CoreTransactionAttemptContext coreTransactionsReactive;
+		try {
+			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
+			field.setAccessible(true);
+			coreTransactionsReactive = (CoreTransactionAttemptContext) field.get(atr);
+		} catch (Throwable err) {
+			throw new RuntimeException(err);
+		}
+		return coreTransactionsReactive;
+	}
 
+	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
+		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
+	}
 }

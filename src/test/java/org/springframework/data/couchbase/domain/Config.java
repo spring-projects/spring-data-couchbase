@@ -161,14 +161,14 @@ public class Config extends AbstractCouchbaseConfiguration {
 	// do not use reactiveCouchbaseTemplate for the name of this method, otherwise the value of that bean
 	// will be used instead of the result of this call (the client factory arg is different)
 	public ReactiveCouchbaseTemplate myReactiveCouchbaseTemplate(ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-																															 MappingCouchbaseConverter mappingCouchbaseConverter) {
+																 MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(), getDefaultConsistency());
 	}
 
 	// do not use couchbaseTemplate for the name of this method, otherwise the value of that been
 	// will be used instead of the result from this call (the client factory arg is different)
 	public CouchbaseTemplate myCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory, ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter) {
+												 MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return new CouchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService(), getDefaultConsistency());
 	}
 
@@ -197,7 +197,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	@Bean(name = "mappingCouchbaseConverter")
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-			CouchbaseCustomConversions couchbaseCustomConversions /* there is a customConversions() method bean  */) {
+															   CouchbaseCustomConversions couchbaseCustomConversions /* there is a customConversions() method bean  */) {
 		// MappingCouchbaseConverter relies on a SimpleInformationMapper
 		// that has an getAliasFor(info) that just returns getType().getName().
 		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will

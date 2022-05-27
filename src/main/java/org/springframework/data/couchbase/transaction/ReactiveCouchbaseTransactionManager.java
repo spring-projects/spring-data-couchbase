@@ -98,6 +98,15 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		System.err.println("ReactiveCouchbaseTransactionManager : created");
 	}
 
+	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory,
+											   @Nullable Transactions transactions) {
+		Assert.notNull(databaseFactory, "DatabaseFactory must not be null!");
+		this.databaseFactory = databaseFactory; // databaseFactory; // should be a clone? TransactionSynchronizationManager
+		// binds objs to it
+		this.transactions = transactions;
+		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.transaction.reactive.AbstractReactiveTransactionManager#doGetTransaction(org.springframework.transaction.reactive.TransactionSynchronizationManager)
@@ -108,7 +117,9 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		// creation of a new ReactiveCouchbaseTransactionObject (i.e. transaction).
 		// with an attempt to get the resourceHolder from the synchronizationManager
 		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-				.getResource(getRequiredDatabaseFactory().getBlockingCluster());
+				.getResource(getRequiredDatabaseFactory().getCluster().block());
+		// TODO ACR from couchbase
+		// resourceHolder.getSession().setAttemptContextReactive(null);
 		return new ReactiveCouchbaseTransactionObject(resourceHolder);
 	}
 
@@ -130,7 +141,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doBegin(TransactionSynchronizationManager synchronizationManager, Object transaction,
-			TransactionDefinition definition) throws TransactionException {
+								 TransactionDefinition definition) throws TransactionException {
 
 		return Mono.defer(() -> {
 
@@ -186,7 +197,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doResume(TransactionSynchronizationManager synchronizationManager, @Nullable Object transaction,
-			Object suspendedResources) {
+								  Object suspendedResources) {
 		return Mono
 				.fromRunnable(() -> synchronizationManager.bindResource(getRequiredDatabaseFactory(), suspendedResources));
 	}
@@ -197,7 +208,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected final Mono<Void> doCommit(TransactionSynchronizationManager synchronizationManager,
-			GenericReactiveTransaction status) throws TransactionException {
+										GenericReactiveTransaction status) throws TransactionException {
 		return Mono.defer(() -> {
 
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(status);
@@ -225,7 +236,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 * @param transactionObject never {@literal null}.
 	 */
 	protected Mono<Void> doCommit(TransactionSynchronizationManager synchronizationManager,
-			ReactiveCouchbaseTransactionObject transactionObject) {
+								  ReactiveCouchbaseTransactionObject transactionObject) {
 		return transactionObject.commitTransaction();
 	}
 
@@ -235,7 +246,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doRollback(TransactionSynchronizationManager synchronizationManager,
-			GenericReactiveTransaction status) {
+									GenericReactiveTransaction status) {
 
 		return Mono.defer(() -> {
 
@@ -259,7 +270,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doSetRollbackOnly(TransactionSynchronizationManager synchronizationManager,
-			GenericReactiveTransaction status) throws TransactionException {
+										   GenericReactiveTransaction status) throws TransactionException {
 
 		return Mono.fromRunnable(() -> {
 			ReactiveCouchbaseTransactionObject transactionObject = extractCouchbaseTransaction(status);
@@ -273,7 +284,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doCleanupAfterCompletion(TransactionSynchronizationManager synchronizationManager,
-			Object transaction) {
+												  Object transaction) {
 
 		Assert.isInstanceOf(ReactiveCouchbaseTransactionObject.class, transaction,
 				() -> String.format("Expected to find a %s but it turned out to be %s.",
@@ -326,7 +337,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	}
 
 	private Mono<ReactiveCouchbaseResourceHolder> newResourceHolder(TransactionDefinition definition,
-			TransactionOptions options) {
+																	TransactionOptions options) {
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
@@ -417,7 +428,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		/**
 		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}. todo gp how to expose
 		 * TransactionOptions
-		 * 
+		 *
 		 * @param options can be {@literal null}
 		 */
 		void startTransaction() {

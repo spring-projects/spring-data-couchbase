@@ -76,13 +76,13 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
-			final CouchbaseConverter converter) {
+									 final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService(), null);
 	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
-			final CouchbaseConverter converter, final TranslationService translationService,
-			final QueryScanConsistency scanConsistency) {
+									 final CouchbaseConverter converter, final TranslationService translationService,
+									 final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
@@ -278,10 +278,10 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	/*
 	private <T> Flux<T> withSession(ReactiveSessionCallback<T> action, ClientSession session) {
-	
+
 		ReactiveSessionBoundCouchbaseTemplate operations = new ReactiveSessionBoundCouchbaseTemplate(session,
 				ReactiveCouchbaseTemplate.this);
-	
+
 		return Flux.from(action.doInSession(operations)) //
 				.contextWrite(ctx -> ReactiveMongoContext.setSession(ctx, Mono.just(session)));
 	}
@@ -303,7 +303,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	public ReactiveSessionScoped withSession(ClientSessionOptions sessionOptions) {
 		return withSession(mongoDatabaseFactory.getSession(sessionOptions));
 	}
-	
+
 	 */
 
 	/**

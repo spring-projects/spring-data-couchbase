@@ -62,8 +62,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		private final ReactiveRemoveByIdSupport reactiveRemoveByIdSupport;
 
 		ExecutableRemoveByIdSupport(final CouchbaseTemplate template, final Class<?> domainType, final String scope,
-																final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-																final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
+									final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+									final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;

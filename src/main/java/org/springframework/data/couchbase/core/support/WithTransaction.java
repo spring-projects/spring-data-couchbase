@@ -27,7 +27,7 @@ public interface WithTransaction<T> {
 	/**
 	 * Specify transactions
 	 *
-   * @param txCtx
-   */
+	 * @param txCtx
+	 */
 	Object transaction(CouchbaseTransactionalOperator txCtx);
 }

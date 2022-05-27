@@ -118,27 +118,27 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
     Optional<Method> targetMethod = METHOD_CACHE.lookup(methodInvocation.getMethod(), targetType, sessionType);
 
     return !targetMethod.isPresent() ? methodInvocation.proceed()
-        : ReflectionUtils.invokeMethod(targetMethod.get(), target,
-        prependSessionToArguments(session, methodInvocation));
+            : ReflectionUtils.invokeMethod(targetMethod.get(), target,
+            prependSessionToArguments(session, methodInvocation));
   }
 
   private boolean requiresDecoration(Method method) {
 
     return ClassUtils.isAssignable(databaseType, method.getReturnType())
-        || ClassUtils.isAssignable(collectionType, method.getReturnType());
+            || ClassUtils.isAssignable(collectionType, method.getReturnType());
   }
 
   @SuppressWarnings("unchecked")
   protected Object decorate(Object target) {
 
     return ClassUtils.isAssignable(databaseType, target.getClass()) ? databaseDecorator.apply(session, target)
-        : collectionDecorator.apply(session, target);
+            : collectionDecorator.apply(session, target);
   }
 
   private static boolean requiresSession(Method method) {
 
     if (method.getParameterCount() == 0
-        || !ClassUtils.isAssignable(CoreTransactionAttemptContext.class, method.getParameterTypes()[0])) {
+            || !ClassUtils.isAssignable(CoreTransactionAttemptContext.class, method.getParameterTypes()[0])) {
       return true;
     }
 
@@ -175,7 +175,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
     Optional<Method> lookup(Method method, Class<?> targetClass, Class<? extends ReactiveCouchbaseResourceHolder> sessionType) {
 
       return cache.computeIfAbsent(new MethodClassKey(method, targetClass),
-          val -> Optional.ofNullable(findTargetWithSession(method, targetClass, sessionType)));
+              val -> Optional.ofNullable(findTargetWithSession(method, targetClass, sessionType)));
     }
 
     @Nullable

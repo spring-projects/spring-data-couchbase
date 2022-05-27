@@ -25,6 +25,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,8 +72,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
-				ReactiveTemplateSupport support) {
+								CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
+								ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -101,32 +102,24 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					.flatMap(s -> {
 						System.err.println("Session: "+s);
 						//Mono<T> reactiveEntity =  Mono.defer(() -> {
-				if (s == null || s.getCore() == null) {
-					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-										pArgs.getScope(), pArgs.getCollection(), null));
-					} else {
-						return rc.get(id, (GetOptions) pArgs.getOptions())
-								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-										pArgs.getScope(), pArgs.getCollection(), null));
-					}
-				} else {
-					return  s.getCore().get(makeCollectionIdentifier(rc.async()), id)
-							.flatMap( result -> {
-
-						// todo gp no cas // todo mr - it's required by replace().one when comparing to internal.cas(). it's gone
-						// todo gp if we need this of course needs to be exposed nicely
-						Long cas = result.cas();
-						return support.decodeEntity(id, new String(result.contentAsBytes()), cas, domainType, pArgs.getScope(),
-								pArgs.getCollection(), new TransactionResultHolder(result), null).doOnNext(out -> {
-									// todo gp is this safe? are we on the right thread?
-									// org.springframework.transaction.support.TransactionSynchronizationManager.bindResource(out,
-									// result);
-								});
-					});
-				}
-			}));
+						if (s == null || s.getCore() == null) {
+							if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+								return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+												pArgs.getScope(), pArgs.getCollection(), null));
+							} else {
+								return rc.get(id, (GetOptions) pArgs.getOptions())
+										.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+												pArgs.getScope(), pArgs.getCollection(), null));
+							}
+						} else {
+							return  s.getCore().get(makeCollectionIdentifier(rc.async()), id)
+									.flatMap( result -> {
+										return support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(), domainType, pArgs.getScope(),
+												pArgs.getCollection(), new TransactionResultHolder(result), null);
+									});
+						}
+					}));
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {

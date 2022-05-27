@@ -69,12 +69,12 @@ public class ReactiveCouchbaseClientUtils {
 	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
 	 */
 	public static Mono<ClusterInterface> getDatabase(ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization) {
+													 SessionSynchronization sessionSynchronization) {
 		return doGetCouchbaseCluster(null, factory, sessionSynchronization);
 	}
 
 	public static Mono<ReactiveCouchbaseTemplate> getTemplate(ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization, CouchbaseConverter converter) {
+															  SessionSynchronization sessionSynchronization, CouchbaseConverter converter) {
 		return doGetCouchbaseTemplate(null, factory, sessionSynchronization, converter);
 	}
 
@@ -104,12 +104,12 @@ public class ReactiveCouchbaseClientUtils {
 	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
 	 */
 	public static Mono<ClusterInterface> getCluster(String dbName, ReactiveCouchbaseClientFactory factory,
-			SessionSynchronization sessionSynchronization) {
+													SessionSynchronization sessionSynchronization) {
 		return doGetCouchbaseCluster(dbName, factory, sessionSynchronization);
 	}
 
 	private static Mono<ClusterInterface> doGetCouchbaseCluster(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization) {
+																ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization) {
 
 		Assert.notNull(factory, "DatabaseFactory must not be null!");
 
@@ -129,8 +129,8 @@ public class ReactiveCouchbaseClientUtils {
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> doGetCouchbaseTemplate(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization,
-			CouchbaseConverter converter) {
+																		  ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization,
+																		  CouchbaseConverter converter) {
 
 		Assert.notNull(factory, "DatabaseFactory must not be null!");
 
@@ -166,17 +166,17 @@ public class ReactiveCouchbaseClientUtils {
 	}
 
 	private static Mono<ClusterInterface> getCouchbaseClusterOrDefault(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory) {
+																	   ReactiveCouchbaseClientFactory factory) {
 		return StringUtils.hasText(dbName) ? factory.getCluster() : factory.getCluster();
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> getCouchbaseTemplateOrDefault(@Nullable String dbName,
-			ReactiveCouchbaseClientFactory factory, CouchbaseConverter converter) {
+																				 ReactiveCouchbaseClientFactory factory, CouchbaseConverter converter) {
 		return Mono.just(new ReactiveCouchbaseTemplate(factory, converter));
 	}
 
 	private static Mono<ReactiveCouchbaseResourceHolder> doGetSession(TransactionSynchronizationManager synchronizationManager,
-			ReactiveCouchbaseClientFactory dbFactory, SessionSynchronization sessionSynchronization) {
+																	  ReactiveCouchbaseClientFactory dbFactory, SessionSynchronization sessionSynchronization) {
 
 		final ReactiveCouchbaseResourceHolder registeredHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
 				.getResource(dbFactory.getCluster().block()); // make sure this wasn't saved under the wrong key!!!
@@ -231,7 +231,7 @@ public class ReactiveCouchbaseClientUtils {
 		private final ReactiveCouchbaseResourceHolder resourceHolder;
 
 		CouchbaseSessionSynchronization(TransactionSynchronizationManager synchronizationManager,
-				ReactiveCouchbaseResourceHolder resourceHolder, ReactiveCouchbaseClientFactory dbFactory) {
+										ReactiveCouchbaseResourceHolder resourceHolder, ReactiveCouchbaseClientFactory dbFactory) {
 
 			super(resourceHolder, dbFactory, synchronizationManager);
 			this.resourceHolder = resourceHolder;

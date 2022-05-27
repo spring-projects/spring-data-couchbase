@@ -95,7 +95,7 @@ public interface ReactiveFindByQueryOperation {
 
 	/**
 	 * Fluent method to specify options.
-	 * 
+	 *
 	 * @param <T> the entity type to use for the results.
 	 */
 	interface FindByQueryWithOptions<T> extends TerminatingFindByQuery<T>, WithQueryOptions<T> {

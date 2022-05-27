@@ -28,7 +28,7 @@ import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOper
  * The generic parameter needs to be REPO which is either a CouchbaseRepository parameterized on T,ID or a
  * ReactiveCouchbaseRepository parameterized on T,ID. i.e.: interface AirportRepository extends
  * CouchbaseRepository&lt;Airport, String&gt;, DynamicProxyable&lt;AirportRepository&gt;
- * 
+ *
  * @param <REPO>
  * @author Michael Reiche
  */

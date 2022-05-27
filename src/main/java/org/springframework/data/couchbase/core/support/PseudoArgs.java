@@ -43,7 +43,7 @@ public class PseudoArgs<OPTS> {
 	 * 1) values from fluent api<br>
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
-	 * 
+	 *
 	 * @param template which holds ThreadLocal pseudo args
 	 * @param scope - from calling operation
 	 * @param collection - from calling operation
@@ -51,7 +51,7 @@ public class PseudoArgs<OPTS> {
 	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
-                    CouchbaseTransactionalOperator transactionalOperator, Class<?> domainType) {
+					  CouchbaseTransactionalOperator transactionalOperator, Class<?> domainType) {
 
 		String scopeForQuery = null;
 		String collectionForQuery = null;

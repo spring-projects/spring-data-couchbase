@@ -49,7 +49,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 	CouchbaseTransactionalOperator ctx;
 
 	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope,
-                                  CouchbaseTransactionalOperator ctx) {
+									CouchbaseTransactionalOperator ctx) {
 		this.target = target;
 		if (target instanceof CouchbaseRepository) {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();

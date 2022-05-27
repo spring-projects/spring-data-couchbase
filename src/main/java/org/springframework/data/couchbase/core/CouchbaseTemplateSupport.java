@@ -46,7 +46,7 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	private EntityCallbacks entityCallbacks;
 
 	public CouchbaseTemplateSupport(final CouchbaseTemplate template, final CouchbaseConverter converter,
-			final TranslationService translationService) {
+									final TranslationService translationService) {
 		super(template.reactive(), converter, translationService);
 		this.template = template;
 	}
@@ -69,25 +69,25 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 
 	@Override
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-														TransactionResultHolder txHolder) {
+							  TransactionResultHolder txHolder) {
 		return decodeEntity(id, source, cas, entityClass, scope, collection, txHolder);
 	}
 
 	@Override
 	public <T> T decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-														TransactionResultHolder txHolder, ReactiveCouchbaseResourceHolder holder) {
+							  TransactionResultHolder txHolder, ReactiveCouchbaseResourceHolder holder) {
 		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
 	}
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-													 TransactionResultHolder txResultHolder) {
+							 TransactionResultHolder txResultHolder) {
 		return applyResult(entity, converted, id, cas,txResultHolder, null);
 	}
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-													 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+							 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
 		return applyResultBase(entity, converted, id, cas, txResultHolder, holder);
 	}
 

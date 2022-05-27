@@ -53,8 +53,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final CouchbaseTransactionalOperator txCtx;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-																	 CouchbaseTransactionalOperator txCtx) {
+									   final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
+									   CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;

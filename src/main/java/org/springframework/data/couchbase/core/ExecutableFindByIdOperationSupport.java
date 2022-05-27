@@ -52,7 +52,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-															GetOptions options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx) {
+								  GetOptions options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;

@@ -92,8 +92,8 @@ public interface ReactiveRemoveByQueryOperation {
 		/**
 		 * Provide the transaction
 		 *
-     * @param txCtx - transaction
-     */
+		 * @param txCtx - transaction
+		 */
 		@Override
 		TerminatingRemoveByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}

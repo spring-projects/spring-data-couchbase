@@ -147,7 +147,7 @@ public interface ExecutableFindByQueryOperation {
 
 	/**
 	 * To be removed at the next major release. use WithConsistency instead
-	 * 
+	 *
 	 * @param <T> the entity type to use for the results.
 	 */
 	@Deprecated

@@ -50,7 +50,7 @@ public interface ReactiveReplaceByIdOperation {
 	 */
 	<T> ReactiveReplaceById<T> replaceById(Class<T> domainType);
 
-  /**
+	/**
 	 * Terminating operations invoking the actual execution.
 	 */
 	interface TerminatingReplaceById<T> extends OneAndAllEntityReactive<T> {

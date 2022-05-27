@@ -37,7 +37,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	private CrudMethodMetadata crudMethodMetadata;
 
 	public CouchbaseRepositoryBase(CouchbaseEntityInformation<T, String> entityInformation,
-			Class<?> repositoryInterface) {
+								   Class<?> repositoryInterface) {
 		this.entityInformation = entityInformation;
 		this.repositoryInterface = repositoryInterface;
 	}

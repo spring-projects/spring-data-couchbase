@@ -20,6 +20,10 @@ import com.couchbase.client.core.error.transaction.RetryTransactionException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionGetResult;
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.core.io.CollectionIdentifier;
+import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.core.transaction.util.DebugUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -74,9 +78,9 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private final ReactiveTemplateSupport support;
 
 		ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx,
-				ReactiveTemplateSupport support) {
+								   final String collection, final ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								   final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx,
+								   ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -96,46 +100,29 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			LOG.trace("replaceById {}", pArgs);
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return GenericSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(GenericSupportHelper support) -> {
+			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
+					(TransactionalSupportHelper support) -> {
 						CouchbaseDocument converted = support.converted;
 
 						return support.collection
 								.replace(converted.getId(), converted.export(),
 										buildReplaceOptions(pArgs.getOptions(), object, converted))
 								.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
-					}, (GenericSupportHelper support) -> {
+					}, (TransactionalSupportHelper support) -> {
+						rejectInvalidTransactionalOptions();
+
 						CouchbaseDocument converted = support.converted;
 						if ( support.cas == null || support.cas == 0 ){
 							throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);
 						}
-						// todo gp replace is a nightmare...
-						// Where to put and how to pass the TransactionGetResult
-						// - Idea: TransactionSynchronizationManager.bindResource
-						// - Idea: use @Version as an index into Map<Long, TransactionGetResult>
-						// - As below, one idea is not to store it at all.
-						// Person could have been fetched outside of @Transactional block. Need to flat out prevent. Right??
-						// - Maybe not. Could have the replaceById do a ctx.get(), and check the CAS matches the Person (will
-						// mandate @Version on Person).
-						// - Could always do that in fact. Then no need to hold onto TransactionGetResult anywhere - but slower too
-						// (could optimise later).
-						// - And if had get-less replaces, could pass in the CAS.
-						// - Note: if Person was fetched outside the transaction, the transaction will inevitably expire (continuous
-						// CAS mismatch).
-						// -- Will have to doc that the user generally wants to do the read inside the txn.
-						// -- Can we detect this scenario and reject at runtime? That would also probably need storing something in
-						// Person.
 
-						// TransactionGetResult gr = (TransactionGetResult)
-						// org.springframework.transaction.support.TransactionSynchronizationManager.getResource(object);
-						Mono<CoreTransactionGetResult> gr = support.ctx.get(makeCollectionIdentifier(support.collection.async()), converted.getId());
+						CollectionIdentifier collId = makeCollectionIdentifier(support.collection.async());
+						support.ctx.logger().info(support.ctx.attemptId(), "refetching %s for Spring replace", DebugUtil.docId(collId, converted.getId()));
+						Mono<CoreTransactionGetResult> gr = support.ctx.get(collId, converted.getId());
 
-						// todo gp no CAS
 						return gr.flatMap(getResult -> {
-							if (getResult.cas() !=  support.cas) {
-								System.err.println("internal: "+getResult.cas()+" object.cas: "+ support.cas+" "+converted);
-								// todo gp really want to set internal state and raise a TransactionOperationFailed
-								return Mono.error(new TransactionOperationFailedException(true, true, new CasMismatchException(null), null));
+							if (getResult.cas() != support.cas) {
+								return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(support.ctx, getResult.cas(), support.cas));
 							}
 							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
 									.encode(support.converted.export()).encoded());
@@ -144,18 +131,16 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		}
 
-		private <T> Integer getTransactionHolder(T object) {
-			Integer transactionResultHolder;
-			System.err.println("GET: " + System.identityHashCode(object) + " " + object);
-			if (1 == 1) {
-				return System.identityHashCode(object);
+		private void rejectInvalidTransactionalOptions() {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE) || (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
+				throw new IllegalArgumentException("withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
 			}
-			transactionResultHolder = template.support().getTxResultHolder(object);
-			if (transactionResultHolder == null) {
-				throw new CouchbaseException(
-						"TransactionResult from entity is null - was the entity obtained in a transaction?");
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
 			}
-			return transactionResultHolder;
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		@Override

@@ -1,106 +1,157 @@
 package org.springframework.data.couchbase.transaction;
 
-import static org.springframework.data.couchbase.transaction.CouchbaseTransactionManager.debugString;
-import static org.springframework.data.couchbase.transaction.CouchbaseTransactionManager.newResourceHolder;
-
-import reactor.util.annotation.Nullable;
-
-import java.util.function.Consumer;
-
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import com.couchbase.client.core.error.transaction.internal.CoreTransactionFailedException;
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.core.transaction.CoreTransactionResult;
-import com.couchbase.client.core.transaction.log.CoreTransactionLogger;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.transaction.ReactiveTransaction;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.reactive.TransactionContextManager;
+import org.springframework.transaction.reactive.TransactionSynchronizationManager;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.function.Function;
 
 // todo gp needed now Transactions has gone?
-public class TransactionsWrapper /* wraps Transactions */ {
-	CouchbaseClientFactory couchbaseClientFactory;
+public class TransactionsWrapper {
+  ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 
-	public TransactionsWrapper(CouchbaseClientFactory couchbaseClientFactory) {
-		this.couchbaseClientFactory = couchbaseClientFactory;
-	}
+  public TransactionsWrapper(ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
+    this.reactiveCouchbaseClientFactory = reactiveCouchbaseClientFactory;
+  }
 
+  /**
+   * A convenience wrapper around {@link TransactionsReactive#run}, that provides a default
+   * <code>PerTransactionConfig</code>.
+   */
+  public Mono<TransactionResult> reactive(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic) {
+    // TODO long duration for debugger
+    Duration duration = Duration.ofMinutes(20);
+    System.err.println("tx duration of " + duration);
+    return run(transactionLogic, TransactionOptions.transactionOptions().timeout(duration));
+  }
 
-	/**
-	 * Runs supplied transactional logic until success or failure.
-	 * <p>
-	 * The supplied transactional logic will be run if necessary multiple times, until either:
-	 * <ul>
-	 * <li>The transaction successfully commits</li>
-	 * <li>The transactional logic requests an explicit rollback</li>
-	 * <li>The transaction timesout.</li>
-	 * <li>An exception is thrown, either inside the transaction library or by the supplied transaction logic, that cannot
-	 * be handled.
-	 * </ul>
-	 * <p>
-	 * The transaction logic {@link Consumer} is provided an {@link TransactionAttemptContext}, which contains methods
-	 * allowing it to read, mutate, insert and delete documents, as well as commit or rollback the transaction.
-	 * <p>
-	 * If the transaction logic performs a commit or rollback it must be the last operation performed. Else a
-	 * {@link com.couchbase.client.java.transactions.error.TransactionFailedException} will be thrown. Similarly, there
-	 * cannot be a commit followed by a rollback, or vice versa - this will also raise a
-	 * {@link CoreTransactionFailedException}.
-	 * <p>
-	 * If the transaction logic does not perform an explicit commit or rollback, then a commit will be performed anyway.
-	 *
-	 * @param transactionLogic the application's transaction logic
-	 * @param options the configuration to use for this transaction
-	 * @return there is no need to check the returned {@link CoreTransactionResult}, as success is implied by the lack of
-	 *         a thrown exception. It contains information useful only for debugging and logging.
-	 * @throws TransactionFailedException or a derived exception if the transaction fails to commit for any reason,
-	 *           possibly after multiple retries. The exception contains further details of the error
-	 */
+  public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic) {
+    return run(transactionLogic,null);
+  }
+  public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic,
+                                     TransactionOptions perConfig) {
+    // todo gp this is duplicating a lot of logic from the core loop, and is hopefully not needed..
+    // todo mr it binds to with the TransactionSynchronizationManager - which is necessary.
+    Mono<TransactionResult> txResult = reactiveCouchbaseClientFactory.getCluster().block().reactive().transactions().run((ctx) -> {
+      ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory
+              .getTransactionResources(TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
 
-	public TransactionResult run(Consumer<TransactionAttemptContext> transactionLogic,
-			@Nullable TransactionOptions options) {
-		Consumer<TransactionAttemptContext> newTransactionLogic = (ctx) -> {
-			try {
-				CoreTransactionLogger logger = AttemptContextReactiveAccessor.getLogger(ctx);
-				CoreTransactionAttemptContext atr = AttemptContextReactiveAccessor.getCore(ctx);
+      Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
+              .map(TransactionSynchronizationManager::new).flatMap(synchronizationManager -> {
+                synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster().block(), resourceHolder);
+                prepareSynchronization(synchronizationManager, null, new CouchbaseTransactionDefinition());
+                Mono<?> result = transactionLogic.apply(ctx);
+                result
+                        .onErrorResume(err -> {
+                          AttemptContextReactiveAccessor.getLogger(ctx).info(ctx.toString(), "caught exception '%s' in async, rethrowing", err);
+                          //logElidedStacktrace(ctx, err);
 
-				// from CouchbaseTransactionManager
-				ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(couchbaseClientFactory,
-						/*definition*/ new CouchbaseTransactionDefinition(), TransactionOptions.transactionOptions(), atr);
-				// couchbaseTransactionObject.setResourceHolder(resourceHolder);
+                          return Mono.error(new TransactionOperationFailedException(true, true, err, null));
+                        })
+                        .thenReturn(ctx);
+                return result.then(Mono.just(synchronizationManager));
+              });
 
-				logger
-						.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
+      return sync.contextWrite(TransactionContextManager.getOrCreateContext())
+              .contextWrite(TransactionContextManager.getOrCreateContextHolder());
+    });
+    return txResult;
+		/*
+		TransactionsConfig config = TransactionsConfig.create().build();
 
-				logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
+		ClusterEnvironment env = ClusterEnvironment.builder().build();
+		return Mono.defer(() -> {
+		  MergedTransactionsConfig merged = new MergedTransactionsConfig(config, Optional.of(perConfig));
 
-				TransactionSynchronizationManager.setActualTransactionActive(true);
-				resourceHolder.setSynchronizedWithTransaction(true);
-				TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster());
-				logger.debug("CouchbaseTransactionManager: " + this);
-				logger.debug("bindResource: " + couchbaseClientFactory.getCluster() + " value: " + resourceHolder);
-				TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster(), resourceHolder);
+		  TransactionContext overall =
+		      new TransactionContext(env.requestTracer(),
+		          env.eventBus(),
+		          UUID.randomUUID().toString(),
+		          now(),
+		          Duration.ZERO,
+		          merged);
+		  AtomicReference<Long> startTime = new AtomicReference<>(0L);
 
-				transactionLogic.accept(ctx);
-			} finally {
-				TransactionSynchronizationManager.unbindResource(couchbaseClientFactory.getCluster());
-			}
-		};
+		  Mono<ReactiveTransactionAttemptContext> ob = Mono.fromCallable(() -> {
+		    String txnId = UUID.randomUUID().toString();
+		    //overall.LOGGER.info(configDebug(config, perConfig));
+		    return reactiveCouchbaseClientFactory.getCluster().block().reactive().transactions().createAttemptContext(overall, merged, txnId);
+		  }).flatMap(ctx -> {
 
-		return AttemptContextReactiveAccessor.run(couchbaseClientFactory.getCluster().transactions(), newTransactionLogic,
-				options == null ? null : options.build());
-	}
+		    AttemptContextReactiveAccessor.getLogger(ctx).info("starting attempt %d/%s/%s",
+		        overall.numAttempts(), ctx.transactionId(), ctx.attemptId());
 
-	/**
-	 * Runs supplied transactional logic until success or failure. A convenience overload for {@link Transactions#run}
-	 * that provides a default <code>PerTransactionConfig</code>
-	 */
+		// begin spring-data-couchbase transaction 1/2 *
+		    ClientSession clientSession = reactiveCouchbaseClientFactory // couchbaseClientFactory
+		        .getSession(ClientSessionOptions.builder().causallyConsistent(true).build(), transactions, null, ctx);
+		    ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(clientSession,
+		        reactiveCouchbaseClientFactory);
+		    Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
+		        .map(TransactionSynchronizationManager::new).<TransactionSynchronizationManager>flatMap(synchronizationManager -> {
+		          synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster().block(), resourceHolder);
+		          prepareSynchronization(synchronizationManager, null, new CouchbaseTransactionDefinition());
+		// end spring-data-couchbase transaction  1/2
+		         Mono<Void> result = transactionLogic.apply(ctx);
+		          result
+		              .onErrorResume(err -> {
+		                AttemptContextReactiveAccessor.getLogger(ctx).info(ctx.attemptId(), "caught exception '%s' in async, rethrowing", err);
+		                logElidedStacktrace(ctx, err);
 
-	public TransactionResult run(Consumer<TransactionAttemptContext> transactionLogic) {
-		return run(transactionLogic, null);
-	}
+		                return Mono.error(TransactionOperationFailed.convertToOperationFailedIfNeeded(err, ctx));
+		              })
+		              .thenReturn(ctx);
+		          return result.then(Mono.just(synchronizationManager));
+		        });
+		// begin spring-data-couchbase transaction  2/2
+		    return sync.contextWrite(TransactionContextManager.getOrCreateContext())
+		        .contextWrite(TransactionContextManager.getOrCreateContextHolder()).then(Mono.just(ctx));
+		// end spring-data-couchbase transaction 2/2
+		  }).doOnSubscribe(v -> startTime.set(System.nanoTime()))
+		      .doOnNext(v -> AttemptContextReactiveAccessor.getLogger(v).trace(v.attemptId(), "finished attempt %d in %sms",
+		          overall.numAttempts(), (System.nanoTime() - startTime.get()) / 1_000_000));
+
+		  return transactions.reactive().executeTransaction(merged, overall, ob)
+		      .doOnNext(v -> overall.span().finish())
+		      .doOnError(err -> overall.span().failWith(err));
+		});
+
+		*/
+  }
+
+  // private void logElidedStacktrace(ReactiveTransactionAttemptContext ctx, Throwable err) {
+  // transactions.reactive().logElidedStacktrace(ctx, err);
+  // }
+  //
+  // private String configDebug(TransactionConfig config, PerTransactionConfig perConfig) {
+  // return transactions.reactive().configDebug(config, perConfig);
+  // }
+  //
+  private static Duration now() {
+    return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
+  }
+
+  private static void prepareSynchronization(TransactionSynchronizationManager synchronizationManager,
+                                             ReactiveTransaction status, TransactionDefinition definition) {
+
+    // if (status.isNewSynchronization()) {
+    synchronizationManager.setActualTransactionActive(false /*status.hasTransaction()*/);
+    synchronizationManager.setCurrentTransactionIsolationLevel(
+            definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT ? definition.getIsolationLevel()
+                    : null);
+    synchronizationManager.setCurrentTransactionReadOnly(definition.isReadOnly());
+    synchronizationManager.setCurrentTransactionName(definition.getName());
+    synchronizationManager.initSynchronization();
+    // }
+  }
 
 }

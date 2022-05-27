@@ -26,8 +26,7 @@ public class CouchbaseTransactionalTemplate {
 			CoreTransactionAttemptContext ctx = getContext();
 			CoreTransactionGetResult getResult = ctx.get(  makeCollectionIdentifier(template.getCouchbaseClientFactory().getDefaultCollection().async()) , id).block();
 
-			// todo gp getResult.cas() is no longer exposed - required?
-			T t = template.support().decodeEntity(id, new String(getResult.contentAsBytes()), 0, domainType,
+			T t = template.support().decodeEntity(id, new String(getResult.contentAsBytes()), getResult.cas(), domainType,
 					null, null, null);
 			return new SpringTransactionGetResult<>(t, getResult);
 		} catch (Exception e) {

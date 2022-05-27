@@ -24,8 +24,8 @@ public class SpringTransactionGetResult<T> {
   @Override
   public String toString() {
     return "SpringTransactionGetResult{" +
-      "value=" + value +
-      ", inner=" + inner +
-      '}';
+            "value=" + value +
+            ", inner=" + inner +
+            '}';
   }
 }
