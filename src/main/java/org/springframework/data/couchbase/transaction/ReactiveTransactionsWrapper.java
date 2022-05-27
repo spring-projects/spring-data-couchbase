@@ -37,11 +37,11 @@ public class ReactiveTransactionsWrapper /* wraps ReactiveTransactions */ {
 		// todo gp this is duplicating a lot of logic from the core loop, and is hopefully not needed.
 		// todo ^^^ I think I removed all the duplicate logic.
 		Function<ReactiveTransactionAttemptContext, Mono<?>> newTransactionLogic = (ctx) -> {
-			ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getTransactionResources(
+			ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResourceHolder(
 					TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
 					.map(TransactionSynchronizationManager::new).flatMap(synchronizationManager -> {
-						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getBlockingCluster(), resourceHolder);
+						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster(), resourceHolder);
 						prepareSynchronization(synchronizationManager, null, new CouchbaseTransactionDefinition());
 						return transactionLogic.apply(ctx) // <---- execute the transaction
 								.thenReturn(ctx).then(Mono.just(synchronizationManager));
@@ -50,7 +50,7 @@ public class ReactiveTransactionsWrapper /* wraps ReactiveTransactions */ {
 					.contextWrite(TransactionContextManager.getOrCreateContextHolder());
 		};
 
-		return reactiveCouchbaseClientFactory.getBlockingCluster().reactive().transactions().run(newTransactionLogic,
+		return reactiveCouchbaseClientFactory.getCluster().reactive().transactions().run(newTransactionLogic,
 				perConfig);
 
 	}

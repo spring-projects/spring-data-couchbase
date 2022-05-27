@@ -110,7 +110,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
 				return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "findByAnalytics")
-						.then(template.getCouchbaseClientFactory().getCluster().block().reactive()
+						.then(template.getCouchbaseClientFactory().getCluster().reactive()
 						.analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
@@ -143,7 +143,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
 				String statement = assembleEntityQuery(true);
-				return template.getCouchbaseClientFactory().getBlockingCluster().reactive()
+				return template.getCouchbaseClientFactory().getCluster().reactive()
 						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

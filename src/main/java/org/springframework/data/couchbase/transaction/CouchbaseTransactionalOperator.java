@@ -4,11 +4,9 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionSystemException;
@@ -22,8 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.DynamicProxyable;
@@ -95,7 +91,7 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 											boolean commit) {
 //		// todo gp this needs access to a Cluster
 //		return Mono.empty();
-		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().block().reactive().transactions().run(ctx -> {
+		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().reactive().transactions().run(ctx -> {
 			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
 			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
 			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()

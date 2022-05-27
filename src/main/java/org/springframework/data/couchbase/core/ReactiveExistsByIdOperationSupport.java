@@ -77,7 +77,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 			return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "existsById")
 					.then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getBlockingCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
+							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
 							.map(ExistsResult::exists))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {

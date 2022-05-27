@@ -28,7 +28,6 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -87,7 +86,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 					.then(support.encodeEntity(object))
 					.flatMap(converted -> tmpl.flatMap(tp -> {
 						return tp.getCouchbaseClientFactory().withScope(pArgs.getScope())
-								.getCollection(pArgs.getCollection()).flatMap(collection -> collection.reactive()
+								.getCollectionMono(pArgs.getCollection()).flatMap(collection -> collection.reactive()
 										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 					}));

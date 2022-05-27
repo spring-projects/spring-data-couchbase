@@ -16,12 +16,10 @@
 package org.springframework.data.couchbase;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
@@ -44,46 +42,31 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	/**
 	 * Provides access to the managed SDK {@link Cluster} reference.
 	 */
-	Mono<ClusterInterface> getCluster();
+	ClusterInterface getCluster();
 
 	/**
-	 * Provides access to the managed SDK {@link Cluster} reference.
+	 * Provides access to the managed SDK {@link Scope} reference
 	 */
-	ClusterInterface getBlockingCluster();
+	 Scope getScope(String scopeName);
 
 	/**
-	 * Provides access to the managed SDK {@link Bucket} reference.
+	 * Provides access to the managed SDK {@link Scope} reference
 	 */
-	Mono<Bucket> getBucket();
-
-	/**
-	 * Provides access to the managed SDK {@link Scope} reference.
-	 */
-	Mono<Scope> getScope();
-
-	/**
-	 * Provides access to the managed SDK {@link Scope} reference without block()
-	 */
-	 Scope getBlockingScope(String scopeName);
+	Scope getScope();
 
 	/**
 	 * Provides access to a collection (identified by its name) in managed SDK {@link Scope} reference.
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
-	Mono<Collection> getCollection(String name);
+	Mono<Collection> getCollectionMono(String name);
 
 	/**
 	 * Provides access to a collection (identified by its name) without block()
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
-	 Collection getBlockingCollection(String collectionName);
-
-	/**
-	 * Provides access to the default collection.
-	 */
-	Mono<Collection> getDefaultCollection();
+	 Collection getCollection(String collectionName);
 
 	/**
 	 * Returns a new {@link CouchbaseClientFactory} set to the scope given as an argument.
@@ -98,7 +81,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	Mono<ReactiveCouchbaseResourceHolder> getTransactionResources(TransactionOptions options);
+	Mono<ReactiveCouchbaseResourceHolder> getResourceHolderMono();
 
 	String getBucketName();
 
@@ -106,7 +89,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	ReactiveCouchbaseResourceHolder getTransactionResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	ReactiveCouchbaseResourceHolder getResourceHolder(TransactionOptions options, CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)

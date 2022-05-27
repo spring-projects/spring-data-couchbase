@@ -117,7 +117,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		// creation of a new ReactiveCouchbaseTransactionObject (i.e. transaction).
 		// with an attempt to get the resourceHolder from the synchronizationManager
 		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-				.getResource(getRequiredDatabaseFactory().getCluster().block());
+				.getResource(getRequiredDatabaseFactory().getCluster());
 		// TODO ACR from couchbase
 		// resourceHolder.getSession().setAttemptContextReactive(null);
 		return new ReactiveCouchbaseTransactionObject(resourceHolder);
@@ -166,10 +166,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 									debugString(couchbaseTransactionObject.getCore())),
 							ex))
 					.doOnSuccess(resourceHolder -> {
-						System.err.println("ReactiveCouchbaseTransactionManager: " + this);
-						System.err.println(
-								"bindResource: " + getRequiredDatabaseFactory().getCluster().block() + " value: " + resourceHolder);
-						synchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster().block(), resourceHolder);
+						synchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), resourceHolder);
 					}).then();
 		});
 	}
@@ -294,7 +291,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = (ReactiveCouchbaseTransactionObject) transaction;
 
 			// Remove the connection holder from the thread.
-			synchronizationManager.unbindResource(getRequiredDatabaseFactory().getCluster().block());
+			synchronizationManager.unbindResource(getRequiredDatabaseFactory().getCluster());
 			couchbaseTransactionObject.getRequiredResourceHolder().clear();
 
 			if (logger.isDebugEnabled()) {
@@ -341,7 +338,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
-		Mono<ReactiveCouchbaseResourceHolder> sess = Mono.just(dbFactory.getTransactionResources(options, null));
+		Mono<ReactiveCouchbaseResourceHolder> sess = Mono.just(dbFactory.getResourceHolder(options, null));
 		return sess;
 	}
 

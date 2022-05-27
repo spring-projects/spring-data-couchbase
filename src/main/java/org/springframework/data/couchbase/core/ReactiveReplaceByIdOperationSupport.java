@@ -15,19 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.error.CasMismatchException;
-import com.couchbase.client.core.error.transaction.RetryTransactionException;
-import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.transactions.TransactionGetResult;
-import com.couchbase.client.core.error.transaction.RetryTransactionException;
 import com.couchbase.client.core.io.CollectionIdentifier;
-import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.core.transaction.util.DebugUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 
@@ -39,7 +32,6 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
@@ -124,7 +116,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 							if (getResult.cas() != support.cas) {
 								return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(support.ctx, getResult.cas(), support.cas));
 							}
-							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().block().environment().transcoder()
+							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().environment().transcoder()
 									.encode(support.converted.export()).encoded());
 						}).flatMap(result -> this.support.applyResult(object, converted, converted.getId(), 0L, null, null));
 					});

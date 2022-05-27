@@ -15,17 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.error.CasMismatchException;
-import com.couchbase.client.core.error.transaction.RetryTransactionException;
-import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -96,13 +91,13 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("removeById {}", pArgs);
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection()).block()
+			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 					.reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 			final Mono<RemoveResult> removeResult;
 
 			// todo gpx convert to TransactionalSupport
-			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
+			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
 				if (s.getCore() == null) {
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));

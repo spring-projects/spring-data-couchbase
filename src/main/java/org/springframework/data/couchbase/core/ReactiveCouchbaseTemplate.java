@@ -63,7 +63,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
-	private QueryScanConsistency scanConsistency;
+	private final QueryScanConsistency scanConsistency;
 
 	public ReactiveCouchbaseTemplate with(CouchbaseTransactionalOperator txOp) {
 		// TODO: why does txOp go on the clientFactory? can't we just put it on the template??
@@ -89,19 +89,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		this.templateSupport = new ReactiveCouchbaseTemplateSupport(this, converter, translationService);
 		this.scanConsistency = scanConsistency;
 	}
-
-	// public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
-	// this(clientFactory, converter, new JacksonTranslationService());
-	// }
-
-	// public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory, final CouchbaseConverter
-	// converter,
-	// final TranslationService translationService) {
-	// this.clientFactory = clientFactory;
-	// this.converter = converter;
-	// this.exceptionTranslator = this.clientFactory.getExceptionTranslator();
-	// this.templateSupport = new ReactiveCouchbaseTemplateSupport(this, converter, translationService);
-	// }
 
 	public <T> Mono<T> save(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
@@ -195,12 +182,12 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	@Override
 	public String getBucketName() {
-		return clientFactory.getBucket().block().name();
+		return clientFactory.getBucketName();
 	}
 
 	@Override
 	public String getScopeName() {
-		return clientFactory.getScope().block().name();
+		return clientFactory.getScopeName();
 	}
 
 	@Override
@@ -215,7 +202,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * @return the collection instance.
 	 */
 	public Collection getCollection(final String collectionName) {
-		return clientFactory.getCollection(collectionName).block();
+		return clientFactory.getCollection(collectionName);
 	}
 
 	@Override
@@ -277,34 +264,12 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	/*
-	private <T> Flux<T> withSession(ReactiveSessionCallback<T> action, ClientSession session) {
-
-		ReactiveSessionBoundCouchbaseTemplate operations = new ReactiveSessionBoundCouchbaseTemplate(session,
-				ReactiveCouchbaseTemplate.this);
-
-		return Flux.from(action.doInSession(operations)) //
-				.contextWrite(ctx -> ReactiveMongoContext.setSession(ctx, Mono.just(session)));
-	}
-	*/
-	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.mongodb.core.ReactiveMongoOperations#withSession(com.mongodb.session.ClientSession)
 	 */
-	public ReactiveCouchbaseOperations withCore(ReactiveCouchbaseResourceHolder core) {
-		return new ReactiveSessionBoundCouchbaseTemplate(core, ReactiveCouchbaseTemplate.this);
+	public ReactiveCouchbaseOperations withResources(ReactiveCouchbaseResourceHolder resources) {
+		return new ReactiveResourcesBoundCouchbaseTemplate(resources, ReactiveCouchbaseTemplate.this);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.core.ReactiveMongoOperations#withSession(com.mongodb.ClientSessionOptions)
-	 */
-	/*
-	@Override
-	public ReactiveSessionScoped withSession(ClientSessionOptions sessionOptions) {
-		return withSession(mongoDatabaseFactory.getSession(sessionOptions));
-	}
-
-	 */
 
 	/**
 	 * {@link CouchbaseTemplate} extension bound to a specific {@link CoreTransactionAttemptContext} that is applied when
@@ -315,7 +280,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * @author Christoph Strobl
 	 * @since 2.1
 	 */
-	static class ReactiveSessionBoundCouchbaseTemplate extends ReactiveCouchbaseTemplate {
+	static class ReactiveResourcesBoundCouchbaseTemplate extends ReactiveCouchbaseTemplate {
 
 		private final ReactiveCouchbaseTemplate delegate;
 		private final ReactiveCouchbaseResourceHolder holder;
@@ -324,7 +289,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		 * @param holder must not be {@literal null}.
 		 * @param that must not be {@literal null}.
 		 */
-		ReactiveSessionBoundCouchbaseTemplate(ReactiveCouchbaseResourceHolder holder, ReactiveCouchbaseTemplate that) {
+		ReactiveResourcesBoundCouchbaseTemplate(ReactiveCouchbaseResourceHolder holder, ReactiveCouchbaseTemplate that) {
 
 			super(that.clientFactory.withCore(holder), that.getConverter());
 

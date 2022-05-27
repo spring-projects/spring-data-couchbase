@@ -739,16 +739,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 							 ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
 			personOperations = ops;
 			manager = mgr;
-			System.err.println("operations cluster  : " + personOperations.getCouchbaseClientFactory().getCluster());
-			// System.err.println("manager cluster : " + manager.getDatabaseFactory().getCluster());
-			System.err.println("manager Manager     : " + manager);
-
 			personOperationsRx = opsRx;
 			managerRx = mgrRx;
-			System.out
-					.println("operationsRx cluster  : " + personOperationsRx.getCouchbaseClientFactory().getCluster().block());
-			System.out.println("managerRx cluster     : " + mgrRx.getDatabaseFactory().getCluster().block());
-			System.out.println("managerRx Manager     : " + managerRx);
 			return;
 		}
 
