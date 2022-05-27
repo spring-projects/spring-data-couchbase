@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.transactions;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -57,13 +58,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 /**
- * Tests for @Transactional.
+ * Tests for @Transactional, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
-public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests {
+public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	/* DO NOT @Autowired - it will result in no @Transactional annotation behavior */ PersonService personService;
@@ -95,6 +97,11 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 		} catch (Exception ex) {
 			// System.err.println(ex);
 		}
+	}
+
+	@AfterEach
+	public void afterEachTest() {
+		assertNotInTransaction();
 	}
 
 	@DisplayName("A basic golden path insert should succeed")
@@ -268,7 +275,6 @@ public class CouchbaseTransactionalIntegrationTests extends JavaIntegrationTests
 
 	// todo gpx investigate how @Transactional @Rollback/@Commit interacts with us
 	// todo gpx how to provide per-transaction options?
-	// todo gpx verify we aren't in a transactional context after the transaction ends (success or failure)
 
 	@Disabled("taking too long - must fix")
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
