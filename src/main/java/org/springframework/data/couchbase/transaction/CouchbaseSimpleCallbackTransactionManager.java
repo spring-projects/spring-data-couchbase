@@ -15,39 +15,29 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
-import org.springframework.transaction.InvalidTimeoutException;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.reactive.TransactionContextManager;
-import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.Assert;
-import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseSimpleCallbackTransactionManager.class);
 
 	private final ReactiveCouchbaseClientFactory couchbaseClientFactory;
 	private TransactionOptions options;
@@ -59,9 +49,20 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 	@Override
 	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
-		final AtomicReference<T> execResult = new AtomicReference<>();
+		boolean createNewTransaction = handlePropagation(definition);
 
 		setOptionsFromDefinition(definition);
+
+		if (createNewTransaction) {
+			return executeNewTransaction(callback);
+		}
+		else {
+			return callback.doInTransaction(null);
+		}
+	}
+
+	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
+		final AtomicReference<T> execResult = new AtomicReference<>();
 
 		TransactionResult result = couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
@@ -70,8 +71,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 			try {
 				execResult.set(callback.doInTransaction(status));
-			}
-			finally {
+			} finally {
 				TransactionSynchronizationManager.clear();
 			}
 		}, this.options);
@@ -79,6 +79,61 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		TransactionSynchronizationManager.clear();
 
 		return execResult.get();
+	}
+
+	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
+	private boolean handlePropagation(TransactionDefinition definition) {
+		boolean isExistingTransaction = TransactionSynchronizationManager.isActualTransactionActive();
+
+		LOGGER.trace("Deciding propagation behaviour from {} and {}", definition.getPropagationBehavior(), isExistingTransaction);
+
+		switch (definition.getPropagationBehavior()) {
+			case TransactionDefinition.PROPAGATION_REQUIRED:
+				// Make a new transaction if required, else just execute the new method in the current transaction.
+				return !isExistingTransaction;
+
+			case TransactionDefinition.PROPAGATION_SUPPORTS:
+				// Don't appear to have the ability to execute the callback non-transactionally in this layer.
+				throw new IllegalTransactionStateException(
+						"Propagation level 'support' has been specified which is not supported");
+
+			case TransactionDefinition.PROPAGATION_MANDATORY:
+				if (!isExistingTransaction) {
+					throw new IllegalTransactionStateException(
+							"Propagation level 'mandatory' is specified but not in an active transaction");
+				}
+				return false;
+
+			case TransactionDefinition.PROPAGATION_REQUIRES_NEW:
+				// This requires suspension of the active transaction.  This will be possible to support in a future
+				// release, if required.
+				throw new IllegalTransactionStateException(
+						"Propagation level 'requires_new' has been specified which is not currently supported");
+
+			case TransactionDefinition.PROPAGATION_NOT_SUPPORTED:
+				// Don't appear to have the ability to execute the callback non-transactionally in this layer.
+				throw new IllegalTransactionStateException(
+						"Propagation level 'not_supported' has been specified which is not supported");
+
+			case TransactionDefinition.PROPAGATION_NEVER:
+				if (isExistingTransaction) {
+					throw new IllegalTransactionStateException(
+							"Existing transaction found for transaction marked with propagation 'never'");
+				}
+				return true;
+
+			case TransactionDefinition.PROPAGATION_NESTED:
+				if (isExistingTransaction) {
+					// Couchbase transactions cannot be nested.
+					throw new IllegalTransactionStateException(
+							"Propagation level 'nested' has been specified which is not supported");
+				}
+				return true;
+
+			default:
+				throw new IllegalTransactionStateException(
+						"Unknown propagation level " + definition.getPropagationBehavior() + " has been specified");
+		}
 	}
 
 	/**
@@ -96,8 +151,6 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			}
 
 			// readonly is ignored as it is documented as being a hint that won't necessarily cause writes to fail
-
-			// todo gpx what about propagation?
 		}
 
 	}
