@@ -6,6 +6,8 @@ import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.TransactionException;
@@ -38,10 +40,11 @@ import com.couchbase.client.core.error.CouchbaseException;
  * what it finds in the currentContext()?
  *
  */
+// todo gpx ongoing discussions on whether this can support retries & error handling natively
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
 	// package org.springframework.transaction.reactive;
-	private static final Log logger = LogFactory.getLog(CouchbaseTransactionalOperator.class);
+	private static final Logger logger = LoggerFactory.getLogger(CouchbaseTransactionalOperator.class);
 	private final ReactiveTransactionManager transactionManager;
 	private final TransactionDefinition transactionDefinition;
 
