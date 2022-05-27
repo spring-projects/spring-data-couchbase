@@ -64,7 +64,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
-		TransactionResult result = couchbaseClientFactory.getCluster().block().transactions().run(ctx -> {
+		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
 
 			populateTransactionSynchronizationManager(ctx);
@@ -160,8 +160,8 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		TransactionSynchronizationManager.setActualTransactionActive(true);
 		TransactionSynchronizationManager.initSynchronization();
 		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
-		TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster().block());
-		TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster().block(), resourceHolder);
+		TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster());
+		TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster(), resourceHolder);
 	}
 
 	/**

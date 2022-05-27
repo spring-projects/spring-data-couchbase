@@ -76,9 +76,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
-								   final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-								   final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
-								   final CouchbaseTransactionalOperator txCtx, final ReactiveTemplateSupport support) {
+				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
+				final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
+				final CouchbaseTransactionalOperator txCtx, final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 			this.template = template;
@@ -190,20 +190,21 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getBlockingScope(pArgs.getScope()).reactive();
+			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
-				if (s.getCore() == null) {
-					QueryOptions opts = buildOptions(pArgs.getOptions());
-					return pArgs.getScope() == null ? clientFactory.getCluster().block().reactive().query(statement, opts)
-							: rs.query(statement, opts);
-				} else {
-					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-							clientFactory.getCluster().block().environment().jsonSerializer())).query(statement, opts);
-				}
-			}));
+			Mono<Object> allResult = tmpl
+					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
+						if (s.getCore() == null) {
+							QueryOptions opts = buildOptions(pArgs.getOptions());
+							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts);
+						} else {
+							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+						}
+					}));
 
 			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -213,27 +214,27 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				}
 			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
 					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject())).flatMap(row -> {
-				String id = "";
-				long cas = 0;
-				if (!query.isDistinct() && distinctFields == null) {
-					if (row.getString(TemplateUtils.SELECT_ID) == null) {
-						return Flux.error(new CouchbaseException("query did not project " + TemplateUtils.SELECT_ID
-								+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
-								+ TemplateUtils.SELECT_CAS + " : " + statement));
-					}
-					id = row.getString(TemplateUtils.SELECT_ID);
-					if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
-						return Flux.error(new CouchbaseException("query did not project " + TemplateUtils.SELECT_CAS
-								+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
-								+ TemplateUtils.SELECT_CAS + " : " + statement));
-					}
-					cas = row.getLong(TemplateUtils.SELECT_CAS);
-					row.removeKey(TemplateUtils.SELECT_ID);
-					row.removeKey(TemplateUtils.SELECT_CAS);
-				}
-				return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
-						null);
-			});
+						String id = "";
+						long cas = 0;
+						if (!query.isDistinct() && distinctFields == null) {
+							if (row.getString(TemplateUtils.SELECT_ID) == null) {
+								return Flux.error(new CouchbaseException("query did not project " + TemplateUtils.SELECT_ID
+										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
+										+ TemplateUtils.SELECT_CAS + " : " + statement));
+							}
+							id = row.getString(TemplateUtils.SELECT_ID);
+							if (row.getLong(TemplateUtils.SELECT_CAS) == null) {
+								return Flux.error(new CouchbaseException("query did not project " + TemplateUtils.SELECT_CAS
+										+ ". Either use #{#n1ql.selectEntity} or project " + TemplateUtils.SELECT_ID + " and "
+										+ TemplateUtils.SELECT_CAS + " : " + statement));
+							}
+							cas = row.getLong(TemplateUtils.SELECT_CAS);
+							row.removeKey(TemplateUtils.SELECT_ID);
+							row.removeKey(TemplateUtils.SELECT_CAS);
+						}
+						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
+								null);
+					});
 		}
 
 		public QueryOptions buildOptions(QueryOptions options) {
@@ -253,29 +254,30 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getBlockingScope(pArgs.getScope()).reactive();
+			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
-				if (s.getCore() == null) {
-					QueryOptions opts = buildOptions(pArgs.getOptions());
-					return pArgs.getScope() == null ? clientFactory.getBlockingCluster().reactive().query(statement, opts)
-							: rs.query(statement, opts);
-				} else {
-					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-							clientFactory.getBlockingCluster().environment().jsonSerializer())).query(statement, opts);
-				}
-			}));
+			Mono<Object> allResult = tmpl
+					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
+						if (s.getCore() == null) {
+							QueryOptions opts = buildOptions(pArgs.getOptions());
+							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts);
+						} else {
+							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+						}
+					}));
 
 			return allResult.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
-							: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
 					.map(row -> row.getLong(row.getNames().iterator().next())).next();
 		}
 

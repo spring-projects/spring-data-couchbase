@@ -78,7 +78,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "findFromReplicasById")
 					.then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getBlockingCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
+							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
             .flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType, pArgs.getScope(), pArgs.getCollection(), null))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {

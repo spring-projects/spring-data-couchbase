@@ -18,13 +18,10 @@ package org.springframework.data.couchbase.core;
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
-import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.transactions.TransactionGetResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
@@ -93,12 +90,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			LOG.trace("findById {}", pArgs);
 
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getBlockingCollection(pArgs.getCollection()).reactive();
+					.getCollection(pArgs.getCollection()).reactive();
 
 			// this will get me a template with a session holding tx
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null)
+			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono()
 					.flatMap(s -> {
 						System.err.println("Session: "+s);
 						//Mono<T> reactiveEntity =  Mono.defer(() -> {

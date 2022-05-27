@@ -2,7 +2,6 @@ package org.springframework.data.couchbase.transaction;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.ClusterInterface;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -13,7 +12,6 @@ import org.springframework.transaction.reactive.TransactionSynchronization;
 import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import org.springframework.transaction.support.ResourceHolderSynchronization;
 import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
@@ -156,18 +154,18 @@ public class ReactiveCouchbaseClientUtils {
 
 	private static ReactiveCouchbaseResourceHolder getNonReactiveSession(ReactiveCouchbaseClientFactory factory) {
 		ReactiveCouchbaseResourceHolder h = ((ReactiveCouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
-				.getResource(factory.getCluster().block()));
+				.getResource(factory.getCluster()));
 		if( h == null){  // no longer used
 			h = ((ReactiveCouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
 					.getResource(factory));// MN's CouchbaseTransactionManager
 		}
-		//System.err.println("getNonreactiveSession: "+ h);
 		return h;
 	}
 
+	// TODO mr - unnecessary?
 	private static Mono<ClusterInterface> getCouchbaseClusterOrDefault(@Nullable String dbName,
 																	   ReactiveCouchbaseClientFactory factory) {
-		return StringUtils.hasText(dbName) ? factory.getCluster() : factory.getCluster();
+		return Mono.just(factory.getCluster());
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> getCouchbaseTemplateOrDefault(@Nullable String dbName,
@@ -179,7 +177,7 @@ public class ReactiveCouchbaseClientUtils {
 																	  ReactiveCouchbaseClientFactory dbFactory, SessionSynchronization sessionSynchronization) {
 
 		final ReactiveCouchbaseResourceHolder registeredHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-				.getResource(dbFactory.getCluster().block()); // make sure this wasn't saved under the wrong key!!!
+				.getResource(dbFactory.getCluster()); // make sure this wasn't saved under the wrong key!!!
 
 		// check for native MongoDB transaction
 		if (registeredHolder != null

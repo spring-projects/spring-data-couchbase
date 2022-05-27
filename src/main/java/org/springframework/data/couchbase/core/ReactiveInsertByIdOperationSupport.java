@@ -19,7 +19,6 @@ import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 
@@ -125,7 +124,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 						return support.ctx
 								.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
-										template.getCouchbaseClientFactory().getBlockingCluster().environment().transcoder()
+										template.getCouchbaseClientFactory().getCluster().environment().transcoder()
 												.encode(support.converted.export()).encoded())
 								.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
 										getCas(result), new TransactionResultHolder(result), null));

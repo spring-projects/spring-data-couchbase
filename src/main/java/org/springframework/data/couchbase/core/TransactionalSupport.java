@@ -41,8 +41,8 @@ public class TransactionalSupport {
                                   String scopeName, String collectionName, ReactiveTemplateSupport support, T object,
                                   Function<TransactionalSupportHelper, Mono<T>> nonTransactional, Function<TransactionalSupportHelper, Mono<T>> transactional) {
         return tmpl.flatMap(template -> template.getCouchbaseClientFactory().withScope(scopeName)
-                .getCollection(collectionName).flatMap(collection -> support.encodeEntity(object)
-                        .flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null).flatMap(s -> {
+                .getCollectionMono(collectionName).flatMap(collection -> support.encodeEntity(object)
+                        .flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
                             TransactionalSupportHelper gsh = new TransactionalSupportHelper(converted, support.getCas(object),
                                     collection.reactive(), s.getCore() != null ? s.getCore()
                                     : (transactionalOperator != null ? transactionalOperator.getAttemptContext() : null));
@@ -63,7 +63,7 @@ public class TransactionalSupport {
     }
 
     public static Mono<Void> verifyNotInTransaction(Mono<ReactiveCouchbaseTemplate> tmpl, String methodName) {
-        return tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getTransactionResources(null)
+        return tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono()
                 .flatMap(s -> {
                     if (s.hasActiveTransaction()) {
                         return Mono.error(new IllegalArgumentException(methodName + "can not be used inside a transaction"));

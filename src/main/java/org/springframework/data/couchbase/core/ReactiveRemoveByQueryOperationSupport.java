@@ -83,10 +83,10 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> allResult = null;
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getBlockingScope(pArgs.getScope()).reactive();
+			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 			if (pArgs.getTxOp() == null) {
 				QueryOptions opts = buildQueryOptions(pArgs.getOptions());
-				allResult = pArgs.getScope() == null ? clientFactory.getBlockingCluster().reactive().query(statement, opts)
+				allResult = pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 						: rs.query(statement, opts);
 			} else {
 				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
