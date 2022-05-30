@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.example.demo.CouchbaseTransactionalTemplate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
