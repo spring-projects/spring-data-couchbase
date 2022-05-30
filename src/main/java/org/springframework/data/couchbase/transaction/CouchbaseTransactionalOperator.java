@@ -89,8 +89,6 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	 */
 	public Mono<TransactionResult> reactive(Function<CouchbaseTransactionalOperator, Mono<Void>> transactionLogic,
 											boolean commit) {
-//		// todo gp this needs access to a Cluster
-//		return Mono.empty();
 		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().reactive().transactions().run(ctx -> {
 			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
 			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method

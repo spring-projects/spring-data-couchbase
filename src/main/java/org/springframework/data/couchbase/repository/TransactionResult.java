@@ -28,7 +28,7 @@ import org.springframework.data.annotation.QueryAnnotation;
  *
  * @author Michael Reiche
  */
-// todo gp can we give this a different name since there is an existing TransactionResult
+// todo gp I think this is no longer used - can we remove?
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })
 @Documented

@@ -270,28 +270,25 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	}
 
 	// todo gpx investigate how @Transactional @Rollback/@Commit interacts with us
-	// todo gpx how to provide per-transaction options?
 
-	@Disabled("taking too long - must fix")
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
 	public void replacePerson() {
 		Person person = new Person(1, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		System.out.printf("insert  CAS: %s%n", person.getVersion());
-
 		Person refetched = operations.findById(Person.class).one(person.getId().toString());
 		operations.replaceById(Person.class).one(refetched);
-
-		System.out.printf("replace CAS: %s%n", refetched.getVersion());
 
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
 		AtomicInteger tryCount = new AtomicInteger(0);
-		// todo gpx this is raising incorrect error:
-		// com.couchbase.client.core.retry.reactor.RetryExhaustedException: com.couchbase.client.core.error.transaction.RetryTransactionException: User request to retry transaction
-		personService.replace(person, tryCount);
+		try {
+			personService.replace(person, tryCount);
+			fail();
+		}
+		catch (TransactionFailedException ignored) {
+		}
 	}
 
 
@@ -442,12 +439,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return personOperations.replaceById(Person.class).one(pUpdated);
 		}
 
-		// todo gpx how do we make COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER the default so user only has to specify @Transactional, without the transactionManager?
-		// todo mr
-		// todo if there is exactly one bean of type ‘org.springframework.transaction.TransactionManager’.
-		// todo It’s also possible to put the  @Transaction annotation on the class (instead of each method).
-		// todo see TransactionAspectSupport.determineTransactionManager(TransactionAttribute)
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, timeout = 2)
 		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();

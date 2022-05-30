@@ -255,7 +255,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(new Person(null, "Walter", "White"));
-		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException
+		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException.  This is happening as TransactionOperator does not support the automatic retries and error handling we depend on.  As argued on Slack, we cannot support it because of this.
 		// todo mr
 		/*
 		TransactionOperationFailedException {cause:com.couchbase.client.core.error.DocumentExistsException, retry:false, autoRollback:true, raise:TRANSACTION_FAILED}
@@ -661,45 +661,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			return sb.toString();
 		}
 	}
-
-	// todo gp disabled while trying to get alternative method of CouchbaseCallbackTransactionManager working
-	// @Configuration(proxyBeanMethods = false)
-	// @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	// static class TransactionInterception {
-	//
-	// @Bean
-	// @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	// public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
-	// CouchbaseTransactionManager txManager) {
-	// TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
-	// interceptor.setTransactionAttributeSource(transactionAttributeSource);
-	// if (txManager != null) {
-	// interceptor.setTransactionManager(txManager);
-	// }
-	// return interceptor;
-	// }
-	//
-	// @Bean
-	// @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	// public TransactionAttributeSource transactionAttributeSource() {
-	// return new AnnotationTransactionAttributeSource();
-	// }
-	//
-	// @Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
-	// @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	// public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
-	// TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
-	//
-	// BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-	// advisor.setTransactionAttributeSource(transactionAttributeSource);
-	// advisor.setAdvice(transactionInterceptor);
-	// // if (this.enableTx != null) {
-	// // advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
-	// // }
-	// return advisor;
-	// }
-	//
-	// }
 
 	@Service
 	@Component

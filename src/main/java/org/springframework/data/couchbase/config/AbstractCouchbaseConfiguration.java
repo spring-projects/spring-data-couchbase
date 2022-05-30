@@ -168,9 +168,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
-		// todo gp only suitable for tests
-		TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false));
-		builder.transactionsConfig(transactionsConfig());
 		configureEnvironment(builder);
 		return builder.build();
 	}
