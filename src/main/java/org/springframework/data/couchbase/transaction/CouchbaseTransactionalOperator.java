@@ -97,16 +97,6 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 		}/*, commit*/);
 	}
 
-	public TransactionResultHolder transactionResultHolder(Integer key) {
-		return getResultMap.get(key);
-	}
-
-	public TransactionResultHolder transactionResultHolder(CoreTransactionGetResult result) {
-		TransactionResultHolder holder = new TransactionResultHolder(result);
-		getResultMap.put(System.identityHashCode(holder), holder);
-		return holder;
-	}
-
 	public void setAttemptContextReactive(ReactiveTransactionAttemptContext attemptContextReactive) {
 		this.attemptContextReactive = attemptContextReactive;
 		// see ReactiveCouchbaseTransactionManager.doBegin()
@@ -145,18 +135,6 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 		return template.with(this); // template with a new couchbaseClient with txOperator
 	}
 
-	/*
-	public CouchbaseTemplate template(CouchbaseTemplate template) {
-		CouchbaseTransactionManager txMgr = ((CouchbaseTransactionManager) ((CouchbaseStuffHandle) this)
-				.getTransactionManager());
-		if (template.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
-			throw new CouchbaseException(
-					"Template must use the same clientFactory as the transactionManager of the transactionalOperator "
-							+ template);
-		}
-		return template.with(this); // template with a new couchbaseClient with txOperator
-	}
-*/
 	public <R extends DynamicProxyable<R>> R repository(R repo) {
 		if (!(repo.getOperations() instanceof ReactiveCouchbaseOperations)) {
 			throw new CouchbaseException("Repository must be a Reactive Couchbase repository" + repo);

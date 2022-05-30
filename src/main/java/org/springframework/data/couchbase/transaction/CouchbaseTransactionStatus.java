@@ -5,7 +5,6 @@ import org.springframework.transaction.support.DefaultTransactionStatus;
 
 public class CouchbaseTransactionStatus extends DefaultTransactionStatus {
 
-  final TransactionSynchronizationManager transactionSynchronizationManager;
   /**
    * Create a new {@code DefaultTransactionStatus} instance.
    *
@@ -28,6 +27,5 @@ public class CouchbaseTransactionStatus extends DefaultTransactionStatus {
         readOnly,
         debug,
         suspendedResources);
-    transactionSynchronizationManager = sm;
   }
 }

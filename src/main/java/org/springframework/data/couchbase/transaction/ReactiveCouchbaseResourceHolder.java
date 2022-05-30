@@ -75,23 +75,6 @@ public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 		return core;
 	}
 
-	/*
-	 * @return the associated {@link CouchbaseClientFactory}.
-	ReactiveCouchbaseClientFactory getDatabaseFactory() {
-		return databaseFactory;
-	}
-	 */
-
-	/**
-	 * Set the {@link CoreTransactionAttemptContext} to guard.
-	 *
-	 * @param core can be {@literal null}.
-	 */
-	CoreTransactionAttemptContext setCore(@Nullable CoreTransactionAttemptContext core) {
-		System.err.println("setCore: " + core);
-		return this.core = core;
-	}
-
 	/**
 	 * @return {@literal true} if session is not {@literal null}.
 	 */
@@ -99,36 +82,10 @@ public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 		return core != null;
 	}
 
-	/**
-	 * If the {@link ReactiveCouchbaseResourceHolder} is {@link #hasCore() not already associated} with a
-	 * {@link CoreTransactionAttemptContext} the given value is {@link #setCore(CoreTransactionAttemptContext)} set} and
-	 * returned, otherwise the current bound session is returned.
-	 *
-	 * @param core
-	 * @return
-	 */
-	@Nullable
-	CoreTransactionAttemptContext setSessionIfAbsent(@Nullable CoreTransactionAttemptContext core) {
-
-		if (!hasCore()) {
-			setCore(core);
-		}
-
-		return this.core;
-	}
-
 	public boolean hasActiveTransaction() {
 		return getCore() != null;
 	}
 
-
-	public TransactionResultHolder transactionResultHolder(Integer key) {
-		TransactionResultHolder holder = getResultMap.get(key);
-		if(holder == null){
-			throw new RuntimeException("did not find transactionResultHolder for key="+key+" in session");
-		}
-		return holder;
-	}
 
 	public TransactionResultHolder transactionResultHolder(TransactionResultHolder holder, Object o) {
 		System.err.println("PUT: "+System.identityHashCode(o)+" "+o);

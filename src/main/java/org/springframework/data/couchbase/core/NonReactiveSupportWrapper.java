@@ -82,11 +82,6 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Integer getTxResultHolder(T source) {
-		return support.getTxResultHolder(source);
-	}
-
-	@Override
 	public TranslationService getTranslationService() {
 		return support.getTranslationService();
 	}

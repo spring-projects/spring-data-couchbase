@@ -200,6 +200,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 									: rs.query(statement, opts);
 						} else {
+							// todo gpx handle unsupported options
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
 							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
 									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);

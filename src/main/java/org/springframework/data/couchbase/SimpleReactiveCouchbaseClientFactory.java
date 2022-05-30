@@ -146,11 +146,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public boolean isTransactionActive() {
-		return false;
-	}
-
-	@Override
 	public CouchbaseTransactionalOperator getTransactionalOperator() {
 		return transactionalOperator;
 	}
@@ -279,15 +274,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		@Override
 		public ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core) {
 			return delegate.withCore(core);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#isTransactionActive()
-		 */
-		@Override
-		public boolean isTransactionActive() {
-			return transactionResources != null && transactionResources.hasActiveTransaction();
 		}
 
 		@Override

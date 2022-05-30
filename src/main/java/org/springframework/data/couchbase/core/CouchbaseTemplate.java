@@ -56,7 +56,6 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private CouchbaseTransactionalOperator couchbaseTransactionalOperator;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
 							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
@@ -233,30 +232,4 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public TemplateSupport support() {
 		return templateSupport;
 	}
-
-	public CouchbaseTemplate with(CouchbaseTransactionalOperator couchbaseTransactionalOperator) {
-		this.couchbaseTransactionalOperator = couchbaseTransactionalOperator;
-		return this;
-	}
-
-	/**
-	 * Get the TransactionalOperator from <br>
-	 * 1. The template.clientFactory<br>
-	 * 2. The template.threadLocal<br>
-	 * 3. otherwise null<br>
-	 * This can be overriden in the operation method by<br>
-	 * 1. repository.withCollection()
-	 *//*
-	private CouchbaseStuffHandle getTransactionalOperator() {
-		if (this.getCouchbaseClientFactory().getTransactionalOperator() != null) {
-			return this.getCouchbaseClientFactory().getTransactionalOperator();
-		}
-		ReactiveCouchbaseTemplate t = this.reactive();
-		PseudoArgs pArgs = t.getPseudoArgs();
-		if (pArgs != null && pArgs.getTxOp() != null) {
-			return pArgs.getTxOp();
-		}
-		return null;
-	}
-	*/
 }

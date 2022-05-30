@@ -66,11 +66,6 @@ public class AttemptContextReactiveAccessor {
 		return new ReactiveTransactionAttemptContext(getCore(atr), serializer);
 	}
 
-
-	public static CoreTransactionLogger getLogger(ReactiveTransactionAttemptContext attemptContextReactive) {
-		return attemptContextReactive.logger();
-	}
-
 	public static CoreTransactionLogger getLogger(TransactionAttemptContext attemptContextReactive) {
 		return attemptContextReactive.logger();
 	}
@@ -103,12 +98,6 @@ public class AttemptContextReactiveAccessor {
 		CoreTransactionAttemptContext coreTransactionAttemptContext = coreTransactionsReactive.createAttemptContext(overall,
 				merged, txnId);
 		return coreTransactionAttemptContext;
-	}
-
-	public static ReactiveTransactionAttemptContext from(CoreTransactionAttemptContext coreTransactionAttemptContext,
-			JsonSerializer serializer) {
-		TransactionAttemptContext tac = new TransactionAttemptContext(coreTransactionAttemptContext, serializer);
-		return reactive(tac);
 	}
 
 	public static CoreTransactionAttemptContext getCore(ReactiveTransactionAttemptContext atr) {

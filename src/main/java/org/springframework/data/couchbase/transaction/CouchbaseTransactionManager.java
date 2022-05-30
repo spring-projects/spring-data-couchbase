@@ -474,11 +474,6 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 			return resourceHolder != null ? resourceHolder.getCore() : null;
 		}
 
-		private ReactiveCouchbaseResourceHolder getRequiredResourceHolder() {
-			Assert.state(resourceHolder != null, "CouchbaseResourceHolder is required but not present. o_O");
-			return resourceHolder;
-		}
-
 		private CoreTransactionAttemptContext getRequiredCore() {
 			CoreTransactionAttemptContext core = getCore();
 			Assert.state(core != null, "A Core is required but it turned out to be null.");
