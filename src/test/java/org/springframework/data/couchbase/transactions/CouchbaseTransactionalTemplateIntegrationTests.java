@@ -47,6 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -295,7 +296,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
-		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.replaceEntityWithoutVersion(person.getId().toString());
@@ -326,7 +327,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.removeEntityWithoutVersion(person.getId().toString());
