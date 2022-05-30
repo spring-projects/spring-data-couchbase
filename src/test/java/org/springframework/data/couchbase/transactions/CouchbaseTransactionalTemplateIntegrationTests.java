@@ -32,6 +32,8 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
@@ -45,6 +47,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.Query;
+import javax.management.ValueExp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -148,6 +152,37 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, tryCount.get());
 	}
 
+	@DisplayName("A basic golden path removeByQuery should succeed")
+	@Test
+	public void committedRemoveByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		List<RemoveResult> removed = personService.doInTransaction(tryCount, ops -> {
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+		});
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNull(fetched);
+		assertEquals(1, tryCount.get());
+		assertEquals(1, removed.size());
+	}
+
+	@DisplayName("A basic golden path findByQuery should succeed (though we don't know for sure it executed transactionally)")
+	@Test
+	public void committedFindByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		List<Person> found = personService.doInTransaction(tryCount, ops -> {
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+		});
+
+		assertEquals(1, found.size());
+	}
+
 	@DisplayName("Basic test of doing an insert then rolling back")
 	@Test
 	public void rollbackInsert() {
@@ -218,6 +253,49 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertNotNull(fetched);
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing a removeByQuery then rolling back")
+	@Test
+	public void rollbackRemoveByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, ops -> {
+				// todo gpx this isn't executed transactionally
+				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+				throw new SimulateFailureException();
+			});
+			fail();
+		} catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNotNull(fetched);
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing a findByQuery then rolling back")
+	@Test
+	public void rollbackFindByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, ops -> {
+				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+				throw new SimulateFailureException();
+			});
+			fail();
+		} catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
 		assertEquals(1, tryCount.get());
 	}
 
