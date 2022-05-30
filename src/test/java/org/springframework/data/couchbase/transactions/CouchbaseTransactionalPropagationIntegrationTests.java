@@ -54,10 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-// todo gpx test repository methods in @Transactional
 // todo gpx test queries in @Transactional
 // todo gpx chekc what happens when try to do reactive @Transcational (unsupported by CallbackPreferring)
-// todo gpx handle synchronization
 
 /**
  * Tests for the various propagation values allowed on @Transactional methods.

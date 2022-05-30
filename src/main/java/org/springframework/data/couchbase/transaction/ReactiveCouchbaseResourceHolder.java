@@ -37,7 +37,6 @@ import java.util.Map;
  * @see ReactiveCouchbaseTransactionManager
  * @see ReactiveCouchbaseTemplate
  */
-// todo gp understand why this is needed
 public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable CoreTransactionAttemptContext core; // which holds the atr
