@@ -34,8 +34,6 @@ public class BeanNames {
 
 	public static final String COUCHBASE_CUSTOM_CONVERSIONS = "couchbaseCustomConversions";
 
-	public static final String COUCHBASE_TRANSACTIONS = "couchbaseTransactions";
-
 	/**
 	 * The name for the bean that stores custom mapping between repositories and their backing couchbaseOperations.
 	 */

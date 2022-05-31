@@ -66,22 +66,6 @@ public class AttemptContextReactiveAccessor {
 		return new ReactiveTransactionAttemptContext(getCore(atr), serializer);
 	}
 
-	public static TransactionAttemptContext blocking(ReactiveTransactionAttemptContext atr) {
-		JsonSerializer serializer;
-		try {
-			Field field = ReactiveTransactionAttemptContext.class.getDeclaredField("serializer");
-			field.setAccessible(true);
-			serializer = (JsonSerializer) field.get(atr);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-			return new TransactionAttemptContext(getCore(atr), serializer);
-	}
-
-	public static CoreTransactionLogger getLogger(ReactiveTransactionAttemptContext attemptContextReactive) {
-		return attemptContextReactive.logger();
-	}
-
 	public static CoreTransactionLogger getLogger(TransactionAttemptContext attemptContextReactive) {
 		return attemptContextReactive.logger();
 	}
@@ -100,6 +84,7 @@ public class AttemptContextReactiveAccessor {
 			throw new RuntimeException(err);
 		}
 
+		// todo gpx options need to be loaded from Cluster and TransactionOptions (from TransactionsWrapper)
 		CoreTransactionOptions perConfig = new CoreTransactionOptions(Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.of(Duration.ofMinutes(10)), Optional.empty(), Optional.empty());
 
@@ -113,16 +98,6 @@ public class AttemptContextReactiveAccessor {
 		CoreTransactionAttemptContext coreTransactionAttemptContext = coreTransactionsReactive.createAttemptContext(overall,
 				merged, txnId);
 		return coreTransactionAttemptContext;
-	}
-
-	private static Duration now() {
-		return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
-	}
-
-	public static ReactiveTransactionAttemptContext from(CoreTransactionAttemptContext coreTransactionAttemptContext,
-			JsonSerializer serializer) {
-		TransactionAttemptContext tac = new TransactionAttemptContext(coreTransactionAttemptContext, serializer);
-		return reactive(tac);
 	}
 
 	public static CoreTransactionAttemptContext getCore(ReactiveTransactionAttemptContext atr) {
@@ -147,59 +122,9 @@ public class AttemptContextReactiveAccessor {
 		}
 	}
 
-	public static Mono<Void> implicitCommit(ReactiveTransactionAttemptContext atr, boolean b) {
-		CoreTransactionAttemptContext coreTransactionsReactive = getCore(atr);
-		try {
-			// getDeclaredMethod() does not find it (because of primitive arg?)
-			// CoreTransactionAttemptContext.class.getDeclaredMethod("implicitCommit", Boolean.class);
-			Method[] methods = CoreTransactionAttemptContext.class.getDeclaredMethods();
-			Method method = null;
-			for (Method m : methods) {
-				if (m.getName().equals("implicitCommit")) {
-					method = m;
-					break;
-				}
-			}
-			if (method == null) {
-				throw new RuntimeException("did not find implicitCommit method");
-			}
-			method.setAccessible(true);
-			return (Mono<Void>) method.invoke(coreTransactionsReactive, b);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-
-	}
-
-	public static AttemptState getState(ReactiveTransactionAttemptContext atr) {
-		CoreTransactionAttemptContext coreTransactionsReactive = getCore(atr);
-		try {
-			Field field = CoreTransactionAttemptContext.class.getDeclaredField("state");
-			field.setAccessible(true);
-			return (AttemptState) field.get(coreTransactionsReactive);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-	}
-
 	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(
 			CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
 		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
-	}
-
-	public static CoreTransactionsReactive getCoreTransactionsReactive(ReactiveTransactions transactions) {
-		try {
-			Field field = ReactiveTransactions.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			return (CoreTransactionsReactive) field.get(transactions);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-	}
-
-	public static TransactionAttemptContext newTransactionAttemptContext(CoreTransactionAttemptContext ctx,
-			JsonSerializer jsonSerializer) {
-		return new TransactionAttemptContext(ctx, jsonSerializer);
 	}
 
 	public static TransactionResult run(Transactions transactions, Consumer<TransactionAttemptContext> transactionLogic, CoreTransactionOptions coreTransactionOptions) {

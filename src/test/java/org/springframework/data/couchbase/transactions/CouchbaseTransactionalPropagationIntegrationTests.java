@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.transactions;
 
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,18 +47,18 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-// todo gpx test repository methods in @Transactional
-// todo gpx test queries in @Transactional
-// todo gpx chekc what happens when try to do reactive @Transcational (unsupported by CallbackPreferring)
-// todo gpx handle synchronization
 
 /**
  * Tests for the various propagation values allowed on @Transactional methods.
@@ -168,8 +169,6 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		});
 	}
 
-	// todo gp check retries
-
 	@DisplayName("Call @Transactional that calls @Transactional(propagation = DEFAULT) - succeeds, continues existing")
 	@Test
 	public void callDefaultThatCallsDefault() {
@@ -186,7 +185,8 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 		});
 
-		// Validate everyting committed
+		// Validate everything committed
+
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 	}
@@ -207,7 +207,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 		});
 
-		// Validate everyting committed
+		// Validate everything committed
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 	}
@@ -228,7 +228,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 		});
 
-		// Validate everyting committed
+		// Validate everything committed
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 	}
@@ -324,6 +324,32 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
 	}
+
+	@DisplayName("Call @Transactional that calls @Transactional(propagation = DEFAULT) - check retries act correct")
+	@Test
+	public void callDefaultThatCallsDefaultRetries() {
+		UUID id1 = UUID.randomUUID();
+		UUID id2 = UUID.randomUUID();
+		AtomicInteger attempts = new AtomicInteger();
+
+		personService.propagationDefault(ops -> {
+			ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
+
+			personService.propagationDefault(ops2 -> {
+				ops2.insertById(Person.class).one(new Person(id2, "Grace", "Hopper"));
+				assertInTransaction();
+
+				if (attempts.incrementAndGet() < 3) {
+					throw new RetryTransactionException();
+				}
+			});
+		});
+
+		// Validate everything committed
+		assertNotNull(operations.findById(Person.class).one(id1.toString()));
+		assertNotNull(operations.findById(Person.class).one(id2.toString()));
+		assertEquals(3, attempts.get());
+  }
 
 	void assertInTransaction() {
 		assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());

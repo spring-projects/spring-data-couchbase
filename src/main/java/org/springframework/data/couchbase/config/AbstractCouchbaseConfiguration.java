@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.config;
 
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_MAPPING_CONTEXT;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TRANSACTIONS;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -168,9 +167,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
-		// todo gp only suitable for tests
-		TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false));
-		builder.transactionsConfig(transactionsConfig());
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -376,11 +372,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public TransactionOptions transactionsOptions(){
 		return TransactionOptions.transactionOptions();
-	}
-
-	// todo gpx transactions config is now done in standard ClusterConfig - so I think we don't want a separate bean?
-	public TransactionsConfig.Builder transactionsConfig(){
-		return TransactionsConfig.builder().durabilityLevel(DurabilityLevel.NONE).timeout(Duration.ofMinutes(20));// for testing
 	}
 
 	/**

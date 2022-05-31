@@ -103,11 +103,5 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#isTransactionActive()
-	 */
-	boolean isTransactionActive();
-
 	CouchbaseTransactionalOperator getTransactionalOperator();
 }

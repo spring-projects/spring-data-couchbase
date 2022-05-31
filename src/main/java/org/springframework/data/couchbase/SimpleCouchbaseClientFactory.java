@@ -59,10 +59,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 										final String bucketName, final String scopeName) {
-		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator)
-						// todo gp disabling cleanupLostAttempts to simplify output during development
-						.environment(env -> env.transactionsConfig(
-								TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))))),
+		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))),
 				bucketName, scopeName);
 	}
 

@@ -94,9 +94,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 					.reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			final Mono<RemoveResult> removeResult;
 
-			// todo gpx convert to TransactionalSupport
 			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
 				if (s.getCore() == null) {
 					System.err.println("non-tx remove");

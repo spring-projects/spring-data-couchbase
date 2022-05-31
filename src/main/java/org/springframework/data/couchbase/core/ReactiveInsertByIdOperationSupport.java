@@ -190,8 +190,6 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					durabilityLevel, expiry, txCtx, support);
 		}
 
-		// todo gpx need to figure out how to handle options re transactions. E.g. many non-transactional insert options,
-		// like this, aren't supported
 		@Override
 		public InsertByIdInScope<T> withDurability(final PersistTo persistTo, final ReplicateTo replicateTo) {
 			Assert.notNull(persistTo, "PersistTo must not be null.");
