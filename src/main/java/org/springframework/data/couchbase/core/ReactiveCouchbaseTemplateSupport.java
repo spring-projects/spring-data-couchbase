@@ -93,10 +93,6 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
 	}
 
-	@Override
-	public <T> Integer getTxResultHolder(T source) {
-		return null;
-	}
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

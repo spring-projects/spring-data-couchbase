@@ -32,6 +32,8 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
@@ -45,8 +47,11 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.Query;
+import javax.management.ValueExp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -147,6 +152,37 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, tryCount.get());
 	}
 
+	@DisplayName("A basic golden path removeByQuery should succeed")
+	@Test
+	public void committedRemoveByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		List<RemoveResult> removed = personService.doInTransaction(tryCount, ops -> {
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+		});
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNull(fetched);
+		assertEquals(1, tryCount.get());
+		assertEquals(1, removed.size());
+	}
+
+	@DisplayName("A basic golden path findByQuery should succeed (though we don't know for sure it executed transactionally)")
+	@Test
+	public void committedFindByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		List<Person> found = personService.doInTransaction(tryCount, ops -> {
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+		});
+
+		assertEquals(1, found.size());
+	}
+
 	@DisplayName("Basic test of doing an insert then rolling back")
 	@Test
 	public void rollbackInsert() {
@@ -220,6 +256,50 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, tryCount.get());
 	}
 
+
+	@DisplayName("Basic test of doing a removeByQuery then rolling back")
+	@Test
+	public void rollbackRemoveByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, ops -> {
+				// todo gpx this isn't executed transactionally
+				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+				throw new SimulateFailureException();
+			});
+			fail();
+		} catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertNotNull(fetched);
+		assertEquals(1, tryCount.get());
+	}
+
+	@DisplayName("Basic test of doing a findByQuery then rolling back")
+	@Test
+	public void rollbackFindByQuery() {
+		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = new Person(1, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+
+		try {
+			personService.doInTransaction(tryCount, ops -> {
+				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+				throw new SimulateFailureException();
+			});
+			fail();
+		} catch (TransactionFailedException err) {
+			assertTrue(err.getCause() instanceof SimulateFailureException);
+		}
+
+		assertEquals(1, tryCount.get());
+	}
+
 	@Test
 	public void shouldRollbackAfterException() {
 		try {
@@ -270,35 +350,34 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	}
 
 	// todo gpx investigate how @Transactional @Rollback/@Commit interacts with us
-	// todo gpx how to provide per-transaction options?
 
-	@Disabled("taking too long - must fix")
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
 	public void replacePerson() {
 		Person person = new Person(1, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		System.out.printf("insert  CAS: %s%n", person.getVersion());
-
 		Person refetched = operations.findById(Person.class).one(person.getId().toString());
 		operations.replaceById(Person.class).one(refetched);
-
-		System.out.printf("replace CAS: %s%n", refetched.getVersion());
 
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
 		AtomicInteger tryCount = new AtomicInteger(0);
-		// todo gpx this is raising incorrect error:
-		// com.couchbase.client.core.retry.reactor.RetryExhaustedException: com.couchbase.client.core.error.transaction.RetryTransactionException: User request to retry transaction
-		personService.replace(person, tryCount);
+		try {
+			personService.replace(person, tryCount);
+			fail();
+		}
+		catch (TransactionFailedException ignored) {
+		}
+
 	}
 
 
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
-		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
+
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.replaceEntityWithoutVersion(person.getId().toString());
@@ -329,7 +408,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		PersonWithoutVersion person = new PersonWithoutVersion(1, "Walter", "White");
+		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
+
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.removeEntityWithoutVersion(person.getId().toString());
@@ -442,12 +522,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return personOperations.replaceById(Person.class).one(pUpdated);
 		}
 
-		// todo gpx how do we make COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER the default so user only has to specify @Transactional, without the transactionManager?
-		// todo mr
-		// todo if there is exactly one bean of type ‘org.springframework.transaction.TransactionManager’.
-		// todo It’s also possible to put the  @Transaction annotation on the class (instead of each method).
-		// todo see TransactionAspectSupport.determineTransactionManager(TransactionAttribute)
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, timeout = 2)
+
 		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();

@@ -89,24 +89,12 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	 */
 	public Mono<TransactionResult> reactive(Function<CouchbaseTransactionalOperator, Mono<Void>> transactionLogic,
 											boolean commit) {
-//		// todo gp this needs access to a Cluster
-//		return Mono.empty();
 		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().reactive().transactions().run(ctx -> {
 			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
 			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
 			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
 			return transactionLogic.apply(this);
 		}/*, commit*/);
-	}
-
-	public TransactionResultHolder transactionResultHolder(Integer key) {
-		return getResultMap.get(key);
-	}
-
-	public TransactionResultHolder transactionResultHolder(CoreTransactionGetResult result) {
-		TransactionResultHolder holder = new TransactionResultHolder(result);
-		getResultMap.put(System.identityHashCode(holder), holder);
-		return holder;
 	}
 
 	public void setAttemptContextReactive(ReactiveTransactionAttemptContext attemptContextReactive) {
@@ -147,18 +135,6 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 		return template.with(this); // template with a new couchbaseClient with txOperator
 	}
 
-	/*
-	public CouchbaseTemplate template(CouchbaseTemplate template) {
-		CouchbaseTransactionManager txMgr = ((CouchbaseTransactionManager) ((CouchbaseStuffHandle) this)
-				.getTransactionManager());
-		if (template.getCouchbaseClientFactory() != txMgr.getDatabaseFactory()) {
-			throw new CouchbaseException(
-					"Template must use the same clientFactory as the transactionManager of the transactionalOperator "
-							+ template);
-		}
-		return template.with(this); // template with a new couchbaseClient with txOperator
-	}
-*/
 	public <R extends DynamicProxyable<R>> R repository(R repo) {
 		if (!(repo.getOperations() instanceof ReactiveCouchbaseOperations)) {
 			throw new CouchbaseException("Repository must be a Reactive Couchbase repository" + repo);

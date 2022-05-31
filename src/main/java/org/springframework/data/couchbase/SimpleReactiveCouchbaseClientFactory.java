@@ -146,11 +146,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public boolean isTransactionActive() {
-		return false;
-	}
-
-	@Override
 	public CouchbaseTransactionalOperator getTransactionalOperator() {
 		return transactionalOperator;
 	}
@@ -200,7 +195,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			this.delegate = delegate;
 		}
 
-
 		@Override
 		public ClusterInterface getCluster() throws DataAccessException {
 			return decorateDatabase(delegate.getCluster());
@@ -221,7 +215,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			return delegate.getScope(scopeName);
 		}
 
-		@Override
 		public Scope getScope() {
 			return delegate.getScope();
 		}
@@ -278,15 +271,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		@Override
 		public ReactiveCouchbaseClientFactory withResources(ReactiveCouchbaseResourceHolder core) {
 			return delegate.withResources(core);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#isTransactionActive()
-		 */
-		@Override
-		public boolean isTransactionActive() {
-			return transactionResources != null && transactionResources.hasActiveTransaction();
 		}
 
 		@Override

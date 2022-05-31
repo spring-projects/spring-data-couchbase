@@ -43,8 +43,6 @@ import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -254,70 +252,10 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return scanConsistency;
 	}
 
-	protected Mono<ClusterInterface> doGetDatabase() {
-		return ReactiveCouchbaseClientUtils.getDatabase(clientFactory, SessionSynchronization.ON_ACTUAL_TRANSACTION);
-	}
 
 	protected Mono<ReactiveCouchbaseTemplate> doGetTemplate() {
 		return ReactiveCouchbaseClientUtils.getTemplate(clientFactory, SessionSynchronization.ON_ACTUAL_TRANSACTION,
 				this.getConverter());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.core.ReactiveMongoOperations#withSession(com.mongodb.session.ClientSession)
-	 */
-	public ReactiveCouchbaseOperations withResources(ReactiveCouchbaseResourceHolder resources) {
-		return new ReactiveResourcesBoundCouchbaseTemplate(resources, ReactiveCouchbaseTemplate.this);
-	}
-
-	/**
-	 * {@link CouchbaseTemplate} extension bound to a specific {@link CoreTransactionAttemptContext} that is applied when
-	 * interacting with the server through the driver API. <br />
-	 * The prepare steps for {} and {} proxy the target and invoke the desired target method matching the actual arguments
-	 * plus a {@link CoreTransactionAttemptContext}.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.1
-	 */
-	static class ReactiveResourcesBoundCouchbaseTemplate extends ReactiveCouchbaseTemplate {
-
-		private final ReactiveCouchbaseTemplate delegate;
-		private final ReactiveCouchbaseResourceHolder holder;
-
-		/**
-		 * @param holder must not be {@literal null}.
-		 * @param that must not be {@literal null}.
-		 */
-		ReactiveResourcesBoundCouchbaseTemplate(ReactiveCouchbaseResourceHolder holder, ReactiveCouchbaseTemplate that) {
-
-			super(that.clientFactory.withResources(holder), that.getConverter());
-
-			this.delegate = that;
-			this.holder = holder;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.core.ReactiveMongoTemplate#getCollection(java.lang.String)
-		 */
-		@Override
-		public Collection getCollection(String collectionName) {
-
-			// native MongoDB objects that offer methods with ClientSession must not be proxied.
-			return delegate.getCollection(collectionName);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.data.mongodb.core.ReactiveMongoTemplate#getMongoDatabase()
-		 */
-		@Override
-		public ReactiveCouchbaseClientFactory getCouchbaseClientFactory() {
-
-			// native MongoDB objects that offer methods with ClientSession must not be proxied.
-			return delegate.getCouchbaseClientFactory();
-		}
 	}
 
 	class IndexCreatorEventListener implements ApplicationListener<MappingContextEvent<?, ?>> {
@@ -344,27 +282,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		}
 	}
 
-	/**
-	 * Get the TransactionalOperator from <br>
-	 * 1. The template.clientFactory<br>
-	 * 2. The template.threadLocal<br>
-	 * 3. otherwise null<br>
-	 * This can be overriden in the operation method by<br>
-	 * 1. repository.withCollection()
-	 */
-	/*
-	private CouchbaseStuffHandle getTransactionalOperator() {
-		if (this.getCouchbaseClientFactory().getTransactionalOperator() != null) {
-			return this.getCouchbaseClientFactory().getTransactionalOperator();
-		}
-		ReactiveCouchbaseTemplate t = this;
-		PseudoArgs pArgs = t.getPseudoArgs();
-		if (pArgs != null && pArgs.getTxOp() != null) {
-			return pArgs.getTxOp();
-		}
-		return null;
-	}
-	 */
 	/**
 	 * Value object chaining together a given source document with its mapped representation and the collection to persist
 	 * it to.

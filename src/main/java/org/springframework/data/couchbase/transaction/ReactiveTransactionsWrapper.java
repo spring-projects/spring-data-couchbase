@@ -15,7 +15,6 @@ import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 
-// todo gp needed now Transactions has gone?
 public class ReactiveTransactionsWrapper /* wraps ReactiveTransactions */ {
 	ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 
@@ -34,11 +33,10 @@ public class ReactiveTransactionsWrapper /* wraps ReactiveTransactions */ {
 
 	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic,
 			TransactionOptions perConfig) {
-		// todo gp this is duplicating a lot of logic from the core loop, and is hopefully not needed.
-		// todo ^^^ I think I removed all the duplicate logic.
 		Function<ReactiveTransactionAttemptContext, Mono<?>> newTransactionLogic = (ctx) -> {
 			ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResources(
 					TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
+			// todo gp let's DRY any TransactionSynchronizationManager code
 			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
 					.map(TransactionSynchronizationManager::new).flatMap(synchronizationManager -> {
 						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster(), resourceHolder);

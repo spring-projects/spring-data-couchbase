@@ -64,7 +64,7 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
-		// todo gp disabling cleanupLostAttempts to simplify output during development
+		// Disabling cleanupLostAttempts to simplify output during development
 		ClusterEnvironment env = ClusterEnvironment.builder()
 				.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))
 				.build();

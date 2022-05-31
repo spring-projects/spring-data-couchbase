@@ -47,9 +47,5 @@ public interface ReactiveTemplateSupport {
 
 	String getJavaNameForEntity(Class<?> clazz);
 
-	<T> Integer getTxResultHolder(T source);
-
-	// <T> Integer setTxResultHolder(T source);
-
 	TranslationService getTranslationService();
 }

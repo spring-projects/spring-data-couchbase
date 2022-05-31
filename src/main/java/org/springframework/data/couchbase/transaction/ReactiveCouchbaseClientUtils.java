@@ -17,113 +17,9 @@ import reactor.util.context.Context;
 
 public class ReactiveCouchbaseClientUtils {
 
-	/**
-	 * Check if the {@link ReactiveMongoDatabaseFactory} is actually bound to a
-	 * {@link com.mongodb.reactivestreams.client.ClientSession} that has an active transaction, or if a
-	 * {@link org.springframework.transaction.reactive.TransactionSynchronization} has been registered for the
-	 * {@link ReactiveMongoDatabaseFactory resource} and if the associated
-	 * {@link com.mongodb.reactivestreams.client.ClientSession} has an
-	 * {@link com.mongodb.reactivestreams.client.ClientSession#hasActiveTransaction() active transaction}.
-	 *
-	 * @param databaseFactory the resource to check transactions for. Must not be {@literal null}.
-	 * @return a {@link Mono} emitting {@literal true} if the factory has an ongoing transaction.
-	 */
-	public static Mono<Boolean> isTransactionActive(ReactiveCouchbaseClientFactory databaseFactory) {
-
-		if (databaseFactory.isTransactionActive()) {
-			return Mono.just(true);
-		}
-
-		return TransactionSynchronizationManager.forCurrentTransaction() //
-				.map(it -> {
-
-					ReactiveCouchbaseResourceHolder holder = (ReactiveCouchbaseResourceHolder) it.getResource(databaseFactory);
-					return holder != null && holder.hasActiveTransaction();
-				}) //
-				.onErrorResume(NoTransactionException.class, e -> Mono.just(false));
-	}
-
-	/**
-	 * Obtain the default {@link MongoDatabase database} form the given {@link ReactiveMongoDatabaseFactory factory} using
-	 * {@link SessionSynchronization#ON_ACTUAL_TRANSACTION native session synchronization}. <br />
-	 * Registers a {@link MongoSessionSynchronization MongoDB specific transaction synchronization} within the subscriber
-	 * {@link Context} if {@link TransactionSynchronizationManager#isSynchronizationActive() synchronization is active}.
-	 *
-	 * @param factory the {@link ReactiveMongoDatabaseFactory} to get the {@link MongoDatabase} from.
-	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
-	 */
-	public static Mono<ClusterInterface> getDatabase(ReactiveCouchbaseClientFactory factory) {
-		return doGetCouchbaseCluster(null, factory, SessionSynchronization.ON_ACTUAL_TRANSACTION);
-	}
-
-	/**
-	 * Obtain the default {@link MongoDatabase database} form the given {@link ReactiveMongoDatabaseFactory factory}.
-	 * <br />
-	 * Registers a {@link MongoSessionSynchronization MongoDB specific transaction synchronization} within the subscriber
-	 * {@link Context} if {@link TransactionSynchronizationManager#isSynchronizationActive() synchronization is active}.
-	 *
-	 * @param factory the {@link ReactiveMongoDatabaseFactory} to get the {@link MongoDatabase} from.
-	 * @param sessionSynchronization the synchronization to use. Must not be {@literal null}.
-	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
-	 */
-	public static Mono<ClusterInterface> getDatabase(ReactiveCouchbaseClientFactory factory,
-													 SessionSynchronization sessionSynchronization) {
-		return doGetCouchbaseCluster(null, factory, sessionSynchronization);
-	}
-
 	public static Mono<ReactiveCouchbaseTemplate> getTemplate(ReactiveCouchbaseClientFactory factory,
 															  SessionSynchronization sessionSynchronization, CouchbaseConverter converter) {
 		return doGetCouchbaseTemplate(null, factory, sessionSynchronization, converter);
-	}
-
-	/**
-	 * Obtain the {@link MongoDatabase database} with given name form the given {@link ReactiveMongoDatabaseFactory
-	 * factory} using {@link SessionSynchronization#ON_ACTUAL_TRANSACTION native session synchronization}. <br />
-	 * Registers a {@link MongoSessionSynchronization MongoDB specific transaction synchronization} within the subscriber
-	 * {@link Context} if {@link TransactionSynchronizationManager#isSynchronizationActive() synchronization is active}.
-	 *
-	 * @param dbName the name of the {@link MongoDatabase} to get.
-	 * @param factory the {@link ReactiveMongoDatabaseFactory} to get the {@link MongoDatabase} from.
-	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
-	 */
-	public static Mono<ClusterInterface> getDatabase(String dbName, ReactiveCouchbaseClientFactory factory) {
-		return doGetCouchbaseCluster(dbName, factory, SessionSynchronization.ON_ACTUAL_TRANSACTION);
-	}
-
-	/**
-	 * Obtain the {@link MongoDatabase database} with given name form the given {@link ReactiveMongoDatabaseFactory
-	 * factory}. <br />
-	 * Registers a {@link MongoSessionSynchronization MongoDB specific transaction synchronization} within the subscriber
-	 * {@link Context} if {@link TransactionSynchronizationManager#isSynchronizationActive() synchronization is active}.
-	 *
-	 * @param dbName the name of the {@link MongoDatabase} to get.
-	 * @param factory the {@link ReactiveMongoDatabaseFactory} to get the {@link MongoDatabase} from.
-	 * @param sessionSynchronization the synchronization to use. Must not be {@literal null}.
-	 * @return the {@link MongoDatabase} that is potentially associated with a transactional {@link ClientSession}.
-	 */
-	public static Mono<ClusterInterface> getCluster(String dbName, ReactiveCouchbaseClientFactory factory,
-													SessionSynchronization sessionSynchronization) {
-		return doGetCouchbaseCluster(dbName, factory, sessionSynchronization);
-	}
-
-	private static Mono<ClusterInterface> doGetCouchbaseCluster(@Nullable String dbName,
-																ReactiveCouchbaseClientFactory factory, SessionSynchronization sessionSynchronization) {
-
-		Assert.notNull(factory, "DatabaseFactory must not be null!");
-
-		if (sessionSynchronization == SessionSynchronization.NEVER) {
-			return getCouchbaseClusterOrDefault(dbName, factory);
-		}
-
-		return TransactionSynchronizationManager.forCurrentTransaction()
-				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
-				.flatMap(synchronizationManager -> {
-
-					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
-							.flatMap(it -> getCouchbaseClusterOrDefault(dbName, factory.withResources(it)));
-				}) //
-				.onErrorResume(NoTransactionException.class, e -> getCouchbaseClusterOrDefault(dbName, factory)) // hitting this
-				.switchIfEmpty(getCouchbaseClusterOrDefault(dbName, factory));
 	}
 
 	private static Mono<ReactiveCouchbaseTemplate> doGetCouchbaseTemplate(@Nullable String dbName,
@@ -135,9 +31,6 @@ public class ReactiveCouchbaseClientUtils {
 		if (sessionSynchronization == SessionSynchronization.NEVER) {
 			return getCouchbaseTemplateOrDefault(dbName, factory, converter);
 		}
-
-		//CouchbaseResourceHolder h = (CouchbaseResourceHolder) org.springframework.transaction.support.TransactionSynchronizationManager
-		//		.getResource(factory);
 
 		return TransactionSynchronizationManager.forCurrentTransaction()
 				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
@@ -197,6 +90,7 @@ public class ReactiveCouchbaseClientUtils {
 		System.err.println("doGetSession: createClientSession()");
 
 		// init a non native MongoDB transaction by registering a MongoSessionSynchronization
+		// todo gp but this always returns null - does this code get executed anywhere?
 		return createClientSession(dbFactory).map(session -> {
 
 			ReactiveCouchbaseResourceHolder newHolder = new ReactiveCouchbaseResourceHolder(session);

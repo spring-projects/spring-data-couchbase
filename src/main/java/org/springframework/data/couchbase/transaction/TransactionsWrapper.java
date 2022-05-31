@@ -21,7 +21,6 @@ import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
-// todo gp needed now Transactions has gone?
 public class TransactionsWrapper /* wraps Transactions */ {
 	CouchbaseClientFactory couchbaseClientFactory;
 
@@ -77,6 +76,7 @@ public class TransactionsWrapper /* wraps Transactions */ {
 
 				logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
 
+				// todo gp let's DRY any TransactionSynchronizationManager code
 				TransactionSynchronizationManager.setActualTransactionActive(true);
 				resourceHolder.setSynchronizedWithTransaction(true);
 				TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster());

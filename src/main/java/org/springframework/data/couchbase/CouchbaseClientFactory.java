@@ -78,8 +78,4 @@ public interface CouchbaseClientFactory extends Closeable {
 
 	CoreTransactionAttemptContext getCore(TransactionOptions options,
 										  CoreTransactionAttemptContext atr);
-
-	//CouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
-
-	//CouchbaseTransactionalOperator getTransactionalOperator();
 }

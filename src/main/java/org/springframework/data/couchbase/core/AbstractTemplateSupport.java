@@ -192,16 +192,6 @@ public abstract class AbstractTemplateSupport {
 		return new ConvertingPropertyAccessor<>(accessor, converter.getConversionService());
 	}
 
-	public <T> Integer getTxResultKey(T source) {
-		final CouchbasePersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(source.getClass());
-		final CouchbasePersistentProperty transactionResultProperty = persistentEntity.transactionResultProperty();
-		if (transactionResultProperty == null) {
-			throw new CouchbaseException("the entity class " + source.getClass()
-					+ " does not have a property required for transactions:\n\t@TransactionResult TransactionResultHolder txResultHolder");
-		}
-		return getPropertyAccessor(source).getProperty(transactionResultProperty, Integer.class);
-	}
-
 	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
 		if (canPublishEvent()) {
 			try {
