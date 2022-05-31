@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.transaction;
 
 /**
- * TODO MSR not used
  * {@link SessionSynchronization} is used along with {@link org.springframework.data.couchbase.core.CouchbaseTemplate} to
  * define in which type of transactions to participate if any.
  *
@@ -31,7 +30,7 @@ public enum SessionSynchronization {
 	ALWAYS,
 
 	/**
-	 * Synchronize with native MongoDB transactions initiated via {@link ReactiveCouchbaseTransactionManager}.
+	 * Synchronize with native couchbase transactions initiated via {@link ReactiveCouchbaseTransactionManager}.
 	 */
 	ON_ACTUAL_TRANSACTION,
 	NEVER;

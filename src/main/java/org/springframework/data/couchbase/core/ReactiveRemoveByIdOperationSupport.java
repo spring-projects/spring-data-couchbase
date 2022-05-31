@@ -97,7 +97,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			final Mono<RemoveResult> removeResult;
 
 			// todo gpx convert to TransactionalSupport
-			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
+			Mono<RemoveResult> allResult = tmpl.map(tp -> tp.getCouchbaseClientFactory().getResources()).flatMap(s -> {
 				if (s.getCore() == null) {
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
@@ -124,7 +124,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				} else {
 					return throwable;
 				}
-			}));
+			});
 			return allResult;
 		}
 

@@ -81,7 +81,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	Mono<ReactiveCouchbaseResourceHolder> getResourceHolderMono();
+	ReactiveCouchbaseResourceHolder getResources();
 
 	String getBucketName();
 
@@ -89,13 +89,13 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	ReactiveCouchbaseResourceHolder getResourceHolder(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	ReactiveCouchbaseResourceHolder getResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.ClientSession)
 	 */
-	ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core);
+	ReactiveCouchbaseClientFactory withResources(ReactiveCouchbaseResourceHolder core);
 
 	/*
 	 * (non-Javadoc)

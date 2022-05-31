@@ -120,7 +120,7 @@ public class ReactiveCouchbaseClientUtils {
 				.flatMap(synchronizationManager -> {
 
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
-							.flatMap(it -> getCouchbaseClusterOrDefault(dbName, factory.withCore(it)));
+							.flatMap(it -> getCouchbaseClusterOrDefault(dbName, factory.withResources(it)));
 				}) //
 				.onErrorResume(NoTransactionException.class, e -> getCouchbaseClusterOrDefault(dbName, factory)) // hitting this
 				.switchIfEmpty(getCouchbaseClusterOrDefault(dbName, factory));
@@ -143,11 +143,11 @@ public class ReactiveCouchbaseClientUtils {
 				.filter(TransactionSynchronizationManager::isSynchronizationActive) //
 				.flatMap(synchronizationManager -> {
 					return doGetSession(synchronizationManager, factory, sessionSynchronization) //
-							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withCore(it), converter)); // rx TxMgr
+							.flatMap(it -> getCouchbaseTemplateOrDefault(dbName, factory.withResources(it), converter)); // rx TxMgr
 				}) //
 				.onErrorResume(NoTransactionException.class,
 						e -> { return getCouchbaseTemplateOrDefault(dbName,
-								getNonReactiveSession(factory) != null ? factory.withCore(getNonReactiveSession(factory)) : factory,
+								getNonReactiveSession(factory) != null ? factory.withResources(getNonReactiveSession(factory)) : factory,
 								converter);}) // blocking TxMgr
 				.switchIfEmpty(getCouchbaseTemplateOrDefault(dbName, factory, converter));
 	}

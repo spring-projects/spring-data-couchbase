@@ -291,7 +291,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		 */
 		ReactiveResourcesBoundCouchbaseTemplate(ReactiveCouchbaseResourceHolder holder, ReactiveCouchbaseTemplate that) {
 
-			super(that.clientFactory.withCore(holder), that.getConverter());
+			super(that.clientFactory.withResources(holder), that.getConverter());
 
 			this.delegate = that;
 			this.holder = holder;

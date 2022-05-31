@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +33,7 @@ import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import com.couchbase.client.java.transactions.TransactionQueryResult;
 
@@ -193,18 +193,17 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl
-					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-						if (s.getCore() == null) {
-							QueryOptions opts = buildOptions(pArgs.getOptions());
-							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
-									: rs.query(statement, opts);
-						} else {
-							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
-						}
-					}));
+			Mono<Object> allResult = tmpl.map(tp -> tp.getCouchbaseClientFactory().getResources()).flatMap(s -> {
+				if (s.getCore() == null) {
+					QueryOptions opts = buildOptions(pArgs.getOptions());
+					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+							: rs.query(statement, opts);
+				} else {
+					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+				}
+			});
 
 			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -257,18 +256,17 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl
-					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-						if (s.getCore() == null) {
-							QueryOptions opts = buildOptions(pArgs.getOptions());
-							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
-									: rs.query(statement, opts);
-						} else {
-							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
-									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
-						}
-					}));
+			Mono<Object> allResult = tmpl.map(tp -> tp.getCouchbaseClientFactory().getResources()).flatMap(s -> {
+				if (s.getCore() == null) {
+					QueryOptions opts = buildOptions(pArgs.getOptions());
+					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+							: rs.query(statement, opts);
+				} else {
+					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+				}
+			});
 
 			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {

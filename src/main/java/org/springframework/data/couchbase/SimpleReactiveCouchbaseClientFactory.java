@@ -126,13 +126,13 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public Mono<ReactiveCouchbaseResourceHolder> getResourceHolderMono() {
-		return Mono.just(new ReactiveCouchbaseResourceHolder(null));
+	public ReactiveCouchbaseResourceHolder getResources() {
+		return new ReactiveCouchbaseResourceHolder(null);
 	}
 
 	@Override
-	public ReactiveCouchbaseResourceHolder getResourceHolder(TransactionOptions options,
-																													 CoreTransactionAttemptContext atr) {
+	public ReactiveCouchbaseResourceHolder getResources(TransactionOptions options,
+																											CoreTransactionAttemptContext atr) {
 		if (atr == null) {
 			atr = AttemptContextReactiveAccessor
 					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
@@ -141,7 +141,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder holder) {
+	public ReactiveCouchbaseClientFactory withResources(ReactiveCouchbaseResourceHolder holder) {
 		return new CoreTransactionAttemptContextBoundCouchbaseClientFactory(holder, this, transactions);
 	}
 
@@ -261,15 +261,14 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		 */
 
 		@Override
-		public Mono<ReactiveCouchbaseResourceHolder> getResourceHolderMono() {
-			return Mono.just(transactionResources);
+		public ReactiveCouchbaseResourceHolder getResources() {
+			return transactionResources;
 		}
 
 		@Override
-		public ReactiveCouchbaseResourceHolder getResourceHolder(TransactionOptions options,
-																														 CoreTransactionAttemptContext atr) {
-			ReactiveCouchbaseResourceHolder holder = delegate.getResourceHolder(options, atr);
-			return holder;
+		public ReactiveCouchbaseResourceHolder getResources(TransactionOptions options,
+																												CoreTransactionAttemptContext atr) {
+			return delegate.getResources(options, atr);
 		}
 
 		/*
@@ -277,8 +276,8 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.CoreTransactionAttemptContext)
 		 */
 		@Override
-		public ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core) {
-			return delegate.withCore(core);
+		public ReactiveCouchbaseClientFactory withResources(ReactiveCouchbaseResourceHolder core) {
+			return delegate.withResources(core);
 		}
 
 		/*
@@ -353,7 +352,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 		public String toString() {
 			return "SimpleReactiveCouchbaseDatabaseFactory.CoreTransactionAttemptContextBoundCouchDbFactory(session="
-					+ this.getResourceHolderMono() + ", delegate=" + this.getDelegate() + ")";
+					+ this.getResources() + ", delegate=" + this.getDelegate() + ")";
 		}
 	}
 }

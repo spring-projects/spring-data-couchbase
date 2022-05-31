@@ -95,7 +95,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			// this will get me a template with a session holding tx
 			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
+			Mono<T> reactiveEntity = tmpl.map(tp -> tp.getCouchbaseClientFactory().getResources()).flatMap(s -> {
 				if (s == null || s.getCore() == null) {
 					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
 						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
@@ -112,7 +112,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
 									new TransactionResultHolder(result), null));
 				}
-			}));
+			});
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {
