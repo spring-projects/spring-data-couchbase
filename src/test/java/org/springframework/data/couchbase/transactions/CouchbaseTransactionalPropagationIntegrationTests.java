@@ -59,8 +59,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-// todo gpx test queries in @Transactional
-// todo gpx chekc what happens when try to do reactive @Transcational (unsupported by CallbackPreferring)
 
 /**
  * Tests for the various propagation values allowed on @Transactional methods.
@@ -188,6 +186,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		});
 
 		// Validate everything committed
+
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 	}
@@ -350,6 +349,18 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 		assertEquals(3, attempts.get());
+  }
+
+	void assertInTransaction() {
+		assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+	}
+
+	void assertNotInTransaction() {
+		try {
+			assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+		}
+		catch (NoTransactionException ignored) {
+		}
 	}
 
 	@Service

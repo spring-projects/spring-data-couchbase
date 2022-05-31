@@ -256,6 +256,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, tryCount.get());
 	}
 
+
 	@DisplayName("Basic test of doing a removeByQuery then rolling back")
 	@Test
 	public void rollbackRemoveByQuery() {
@@ -368,6 +369,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		}
 		catch (TransactionFailedException ignored) {
 		}
+
 	}
 
 
@@ -375,6 +377,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void replaceEntityWithoutCas() {
 		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
+
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.replaceEntityWithoutVersion(person.getId().toString());
@@ -406,6 +409,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void removeEntityWithoutCas() {
 		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
+
 		operations.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			personService.removeEntityWithoutVersion(person.getId().toString());
@@ -519,6 +523,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		}
 
 		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, timeout = 2)
+
 		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();

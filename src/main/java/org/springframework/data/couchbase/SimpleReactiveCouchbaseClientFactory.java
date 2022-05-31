@@ -195,7 +195,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			this.delegate = delegate;
 		}
 
-
 		@Override
 		public ClusterInterface getCluster() throws DataAccessException {
 			return decorateDatabase(delegate.getCluster());
@@ -216,7 +215,6 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 			return delegate.getScope(scopeName);
 		}
 
-		@Override
 		public Scope getScope() {
 			return delegate.getScope();
 		}
