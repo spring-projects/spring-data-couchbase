@@ -74,7 +74,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, null, domainType);
 			LOG.trace("existsById {}", pArgs);
 
-			return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "existsById")
+			return TransactionalSupport.verifyNotInTransaction("existsById")
 					.then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))

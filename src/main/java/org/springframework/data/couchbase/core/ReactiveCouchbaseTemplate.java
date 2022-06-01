@@ -37,8 +37,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseClientUtils;
-import org.springframework.data.couchbase.transaction.SessionSynchronization;
 import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -253,9 +251,8 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 
-	protected Mono<ReactiveCouchbaseTemplate> doGetTemplate() {
-		return ReactiveCouchbaseClientUtils.getTemplate(clientFactory, SessionSynchronization.ON_ACTUAL_TRANSACTION,
-				this.getConverter());
+	protected ReactiveCouchbaseTemplate doGetTemplate() {
+		return new ReactiveCouchbaseTemplate(clientFactory, converter);
 	}
 
 	class IndexCreatorEventListener implements ApplicationListener<MappingContextEvent<?, ?>> {

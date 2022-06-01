@@ -15,12 +15,13 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
-import com.couchbase.client.java.transactions.TransactionQueryResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -81,28 +82,30 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
 			String statement = assembleDeleteQuery(pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> allResult = null;
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
-			if (pArgs.getTxOp() == null) {
-				QueryOptions opts = buildQueryOptions(pArgs.getOptions());
-				allResult = pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
-						: rs.query(statement, opts);
-			} else {
-				TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
-				Mono<TransactionQueryResult> tqr = pArgs.getScope() == null ? pArgs.getTxOp().getAttemptContextReactive().query(statement, opts) : pArgs.getTxOp().getAttemptContextReactive().query(rs, statement, opts);
-				// todo gpx do something with tqr
-			}
-			Mono<ReactiveQueryResult> finalAllResult = allResult;
-			return Flux.defer(() -> finalAllResult.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx)
+					.flatMapMany(transactionContext -> {
+
+						if (!transactionContext.isPresent()) {
+							QueryOptions opts = buildQueryOptions(pArgs.getOptions());
+							return (pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts)).flatMapMany(ReactiveQueryResult::rowsAsObject)
+									.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID),
+											row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
 						} else {
-							return throwable;
+							// todo gpx handle unsupported options
+							TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
+							ObjectNode convertedOptions = AttemptContextReactiveAccessor.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
+							return transactionContext.get().getCore().queryBlocking(statement, template.getBucketName(), pArgs.getScope(), convertedOptions, false)
+									.flatMapIterable(result -> result.rows).map(row -> {
+										JsonObject json = JsonObject.fromJson(row.data());
+										return new RemoveResult(json.getString(TemplateUtils.SELECT_ID),
+												json.getLong(TemplateUtils.SELECT_CAS), Optional.empty());
+									});
 						}
-					}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-					.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
-							Optional.empty())));
+					});
 		}
 
 		private QueryOptions buildQueryOptions(QueryOptions options) {

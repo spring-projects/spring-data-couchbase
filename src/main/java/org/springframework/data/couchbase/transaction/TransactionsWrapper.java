@@ -1,8 +1,5 @@
 package org.springframework.data.couchbase.transaction;
 
-import static org.springframework.data.couchbase.transaction.CouchbaseTransactionManager.debugString;
-import static org.springframework.data.couchbase.transaction.CouchbaseTransactionManager.newResourceHolder;
-
 import reactor.util.annotation.Nullable;
 
 import java.util.function.Consumer;
@@ -67,26 +64,20 @@ public class TransactionsWrapper /* wraps Transactions */ {
 				CoreTransactionAttemptContext atr = AttemptContextReactiveAccessor.getCore(ctx);
 
 				// from CouchbaseTransactionManager
-				ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(couchbaseClientFactory,
+				ReactiveCouchbaseResourceHolder resourceHolder = CouchbaseTransactionManager.newResourceHolder(couchbaseClientFactory,
 						/*definition*/ new CouchbaseTransactionDefinition(), TransactionOptions.transactionOptions(), atr);
 				// couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
 				logger
-						.debug(String.format("About to start transaction for session %s.", debugString(resourceHolder.getCore())));
+						.debug(String.format("About to start transaction for session %s.", CouchbaseTransactionManager.debugString(resourceHolder.getCore())));
 
-				logger.debug(String.format("Started transaction for session %s.", debugString(resourceHolder.getCore())));
+				logger.debug(String.format("Started transaction for session %s.", CouchbaseTransactionManager.debugString(resourceHolder.getCore())));
 
-				// todo gp let's DRY any TransactionSynchronizationManager code
-				TransactionSynchronizationManager.setActualTransactionActive(true);
-				resourceHolder.setSynchronizedWithTransaction(true);
-				TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster());
-				logger.debug("CouchbaseTransactionManager: " + this);
-				logger.debug("bindResource: " + couchbaseClientFactory.getCluster() + " value: " + resourceHolder);
-				TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster(), resourceHolder);
+				CouchbaseSimpleCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
 
 				transactionLogic.accept(ctx);
 			} finally {
-				TransactionSynchronizationManager.unbindResource(couchbaseClientFactory.getCluster());
+				CouchbaseSimpleCallbackTransactionManager.clearTransactionSynchronizationManager();
 			}
 		};
 

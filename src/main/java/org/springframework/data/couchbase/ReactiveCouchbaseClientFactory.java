@@ -17,7 +17,6 @@ package org.springframework.data.couchbase;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
@@ -42,7 +41,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	/**
 	 * Provides access to the managed SDK {@link Cluster} reference.
 	 */
-	ClusterInterface getCluster();
+	Cluster getCluster();
 
 	/**
 	 * Provides access to the managed SDK {@link Scope} reference
@@ -90,12 +89,6 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	void close() throws IOException;
 
 	ReactiveCouchbaseResourceHolder getResourceHolder(TransactionOptions options, CoreTransactionAttemptContext ctx);
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.ClientSession)
-	 */
-	ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core);
 
 	/*
 	 * (non-Javadoc)

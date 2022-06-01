@@ -81,15 +81,14 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, null, domainType);
 			LOG.trace("upsertById {}", pArgs);
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "upsertById")
+			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
 					.then(support.encodeEntity(object))
-					.flatMap(converted -> tmpl.flatMap(tp -> {
-						return tp.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.flatMap(converted -> {
+						return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
 								.getCollectionMono(pArgs.getCollection()).flatMap(collection -> collection.reactive()
 										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
-					}));
+					});
 
 			return reactiveEntity.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {

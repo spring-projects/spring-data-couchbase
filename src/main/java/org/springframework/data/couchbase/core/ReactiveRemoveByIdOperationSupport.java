@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
@@ -93,10 +94,9 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 					.reactive();
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<RemoveResult> allResult = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-				if (s.getCore() == null) {
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+				if (!s.isPresent()) {
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
 				} else {
@@ -106,13 +106,14 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 					if ( cas == null || cas == 0 ){
 						throw new IllegalArgumentException("cas must be supplied for tx remove");
 					}
-					Mono<CoreTransactionGetResult> gr = s.getCore().get(makeCollectionIdentifier(rc.async()), id);
+					CoreTransactionAttemptContext ctx = s.get().getCore();
+					Mono<CoreTransactionGetResult> gr = ctx.get(makeCollectionIdentifier(rc.async()), id);
 
 					return gr.flatMap(getResult -> {
 						if (getResult.cas() != cas) {
-							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(s.getCore(), getResult.cas(), cas));
+							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(ctx, getResult.cas(), cas));
 						}
-						return s.getCore().remove(getResult)
+						return ctx.remove(getResult)
 								.map(r -> new RemoveResult(id, 0, null));
 					});
 
@@ -122,8 +123,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				} else {
 					return throwable;
 				}
-			}));
-			return allResult;
+			});
 		}
 
 		private void rejectInvalidTransactionalOptions() {

@@ -33,6 +33,7 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -82,6 +83,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 
 	@BeforeEach
 	public void beforeEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
 		personService = context.getBean(PersonService.class);
 
 		Person walterWhite = new Person(1, "Walter", "White");

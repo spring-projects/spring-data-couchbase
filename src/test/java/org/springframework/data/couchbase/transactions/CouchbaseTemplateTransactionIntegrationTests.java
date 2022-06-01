@@ -45,6 +45,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -115,6 +116,7 @@ public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegratio
 
 	@BeforeEach
 	public void setUp() {
+		TransactionTestUtil.assertNotInTransaction();
 		assertionList = new CopyOnWriteArrayList<>();
 	}
 

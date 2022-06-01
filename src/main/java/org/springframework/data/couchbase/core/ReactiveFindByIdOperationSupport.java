@@ -92,11 +92,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollection(pArgs.getCollection()).reactive();
 
-			// this will get me a template with a session holding tx
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
-
-			Mono<T> reactiveEntity = tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-				if (s == null || s.getCore() == null) {
+			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
+				if (!ctxOpt.isPresent()) {
 					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
 						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
 								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
@@ -107,12 +104,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 										pArgs.getScope(), pArgs.getCollection(), null));
 					}
 				} else {
-					return s.getCore().get(makeCollectionIdentifier(rc.async()), id)
+					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id)
 							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
 									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
 									new TransactionResultHolder(result), null));
 				}
-			}));
+			});
 
 			return reactiveEntity.onErrorResume(throwable -> {
 				if (throwable instanceof DocumentNotFoundException) {
