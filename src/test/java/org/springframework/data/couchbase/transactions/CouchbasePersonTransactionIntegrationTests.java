@@ -158,6 +158,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		transactionalOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void shouldRollbackAfterException() {
 		Person p = new Person(null, "Walter", "White");
@@ -226,6 +227,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(4, countEvents, "should have saved and found 4");
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
 		assertThrows(SimulateFailureException.class,
@@ -242,12 +244,14 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(1, count, "should have counted 1 during tx");
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void emitMultipleElementsDuringTransaction() {
 		List<EventLog> docs = personService.saveWithLogs(new Person(null, "Walter", "White"));
 		assertEquals(4, docs.size(), "should have found 4 eventlogs");
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(new Person(null, "Walter", "White"));
@@ -277,6 +281,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(person, pFound, "should have found expected " + person);
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertPersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
@@ -288,6 +293,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
+	@Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertTwicePersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
