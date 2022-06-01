@@ -3,75 +3,60 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Method;
-import java.util.function.Function;
+import java.util.Optional;
 
-import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.core.annotation.Stability;
-import com.couchbase.client.java.ReactiveCollection;
 
-@Stability.Internal
-class TransactionalSupportHelper {
-    public final CouchbaseDocument converted;
-    public final Long cas;
-    public final ReactiveCollection collection;
-    public final @Nullable CoreTransactionAttemptContext ctx;
-
-    public TransactionalSupportHelper(CouchbaseDocument doc, Long cas, ReactiveCollection collection,
-                                      @Nullable CoreTransactionAttemptContext ctx) {
-        this.converted = doc;
-        this.cas = cas;
-        this.collection = collection;
-        this.ctx = ctx;
-    }
-}
-
-/**
- * Checks if this operation is being run inside a transaction, and calls a non-transactional or transactional callback
- * as appropriate.
- */
 @Stability.Internal
 public class TransactionalSupport {
-    public static <T> Mono<T> one(Mono<ReactiveCouchbaseTemplate> tmpl, CouchbaseTransactionalOperator transactionalOperator,
-                                  String scopeName, String collectionName, ReactiveTemplateSupport support, T object,
-                                  Function<TransactionalSupportHelper, Mono<T>> nonTransactional, Function<TransactionalSupportHelper, Mono<T>> transactional) {
-        return tmpl.flatMap(template -> template.getCouchbaseClientFactory().withScope(scopeName)
-                .getCollectionMono(collectionName).flatMap(collection -> support.encodeEntity(object)
-                        .flatMap(converted -> tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-                            TransactionalSupportHelper gsh = new TransactionalSupportHelper(converted, support.getCas(object),
-                                    collection.reactive(), s.getCore() != null ? s.getCore()
-                                    : (transactionalOperator != null ? transactionalOperator.getAttemptContext() : null));
-                            if (gsh.ctx == null) {
-                                System.err.println("non-tx");
-                                return nonTransactional.apply(gsh);
-                            } else {
-                                System.err.println("tx");
-                                return transactional.apply(gsh);
-                            }
-                        })).onErrorMap(throwable -> {
-                            if (throwable instanceof RuntimeException) {
-                                return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-                            } else {
-                                return throwable;
-                            }
-                        }))));
+
+    /**
+     * Returns non-empty iff in a transaction.  It determines this from thread-local storage and/or reactive context.
+     * <p>
+     * The user could be doing a reactive operation (with .block()) inside a blocking transaction (like @Transactional).
+     * Or a blocking operation inside a ReactiveTransactionsWrapper transaction (which would be a bad idea).
+     * So, need to check both thread-local storage and reactive context.
+     */
+    public static Mono<Optional<ReactiveCouchbaseResourceHolder>> checkForTransactionInThreadLocalStorage(@Nullable CouchbaseTransactionalOperator operator) {
+        return Mono.deferContextual(ctx -> {
+            if (operator != null) {
+                // gp: this isn't strictly correct, as it won't preserve the result map correctly, but tbh want to remove CouchbaseTransactionalOperator anyway
+                return Mono.just(Optional.of(new ReactiveCouchbaseResourceHolder(operator.getAttemptContext())));
+            }
+
+            ReactiveCouchbaseResourceHolder blocking = (ReactiveCouchbaseResourceHolder) TransactionSynchronizationManager.getResource(ReactiveCouchbaseResourceHolder.class);
+            Optional<ReactiveCouchbaseResourceHolder> reactive = ctx.getOrEmpty(ReactiveCouchbaseResourceHolder.class);
+
+            if (blocking != null && reactive.isPresent()) {
+                throw new IllegalStateException("Both blocking and reactive transaction contexts are set simultaneously");
+            }
+
+            if (blocking != null) {
+                return Mono.just(Optional.of(blocking));
+            }
+
+            return Mono.just(reactive);
+        });
     }
 
-    public static Mono<Void> verifyNotInTransaction(Mono<ReactiveCouchbaseTemplate> tmpl, String methodName) {
-        return tmpl.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono()
+    public static Mono<Void> verifyNotInTransaction(String methodName) {
+        return checkForTransactionInThreadLocalStorage(null)
                 .flatMap(s -> {
-                    if (s.hasActiveTransaction()) {
+                    if (s.isPresent()) {
                         return Mono.error(new IllegalArgumentException(methodName + "can not be used inside a transaction"));
                     }
                     else {
                         return Mono.empty();
                     }
-                }));
+                });
     }
 
     public static RuntimeException retryTransactionOnCasMismatch(CoreTransactionAttemptContext ctx, long cas1, long cas2) {

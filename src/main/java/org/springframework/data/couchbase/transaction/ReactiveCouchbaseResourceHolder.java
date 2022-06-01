@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
@@ -25,24 +24,10 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * MongoDB specific resource holder, wrapping a {@link CoreTransactionAttemptContext}.
- * {@link ReactiveCouchbaseTransactionManager} binds instances of this class to the subscriber context.
- * <p />
- * <strong>Note:</strong> Intended for internal usage only.
- *
- * @author Mark Paluch
- * @author Christoph Strobl
- * @since 2.2
- * @see ReactiveCouchbaseTransactionManager
- * @see ReactiveCouchbaseTemplate
- */
 public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable CoreTransactionAttemptContext core; // which holds the atr
 	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
-
-	// private ReactiveCouchbaseClientFactory databaseFactory;
 
 	/**
 	 * Create a new {@link ReactiveCouchbaseResourceHolder} for a given {@link CoreTransactionAttemptContext session}.
@@ -52,7 +37,6 @@ public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
 	public ReactiveCouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
 
 		this.core = core;
-		// this.databaseFactory = databaseFactory;
 	}
 
 	/**

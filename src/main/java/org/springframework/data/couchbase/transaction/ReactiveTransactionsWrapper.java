@@ -5,65 +5,40 @@ import reactor.core.publisher.Mono;
 import java.util.function.Function;
 
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
-import org.springframework.transaction.ReactiveTransaction;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.reactive.TransactionContextManager;
-import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 
-public class ReactiveTransactionsWrapper /* wraps ReactiveTransactions */ {
+public class ReactiveTransactionsWrapper {
 	ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 
 	public ReactiveTransactionsWrapper(ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
 		this.reactiveCouchbaseClientFactory = reactiveCouchbaseClientFactory;
 	}
 
-	/**
-	 * A convenience wrapper around {@link TransactionsReactive#run}, that provides a default
-	 * <code>PerTransactionConfig</code>.
-	 */
-
 	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic) {
 		return run(transactionLogic, null);
 	}
 
+	// todo gp maybe instead of giving them a ReactiveTransactionAttemptContext we give them a wrapped version, in case we ever need Spring-specific functionality
 	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic,
 			TransactionOptions perConfig) {
 		Function<ReactiveTransactionAttemptContext, Mono<?>> newTransactionLogic = (ctx) -> {
-			ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResourceHolder(
-					TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
-			// todo gp let's DRY any TransactionSynchronizationManager code
-			Mono<TransactionSynchronizationManager> sync = TransactionContextManager.currentContext()
-					.map(TransactionSynchronizationManager::new).flatMap(synchronizationManager -> {
-						synchronizationManager.bindResource(reactiveCouchbaseClientFactory.getCluster(), resourceHolder);
-						prepareSynchronization(synchronizationManager, null, new CouchbaseTransactionDefinition());
-						return transactionLogic.apply(ctx) // <---- execute the transaction
-								.thenReturn(ctx).then(Mono.just(synchronizationManager));
+
+			return transactionLogic.apply(ctx)
+
+					// This reactive context is what tells Spring operations they're inside a transaction.
+					.contextWrite(reactiveContext -> {
+						ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResourceHolder(
+								TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
+						return reactiveContext.put(ReactiveCouchbaseResourceHolder.class, resourceHolder);
 					});
-			return sync.contextWrite(TransactionContextManager.getOrCreateContext())
-					.contextWrite(TransactionContextManager.getOrCreateContextHolder());
 		};
 
 		return reactiveCouchbaseClientFactory.getCluster().reactive().transactions().run(newTransactionLogic,
 				perConfig);
 
 	}
-
-	private static void prepareSynchronization(TransactionSynchronizationManager synchronizationManager,
-			ReactiveTransaction status, TransactionDefinition definition) {
-		// if (status.isNewTransaction()) {
-		synchronizationManager.setActualTransactionActive(false /*status.hasTransaction()*/);
-		synchronizationManager.setCurrentTransactionIsolationLevel(
-				definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT ? definition.getIsolationLevel()
-						: null);
-		synchronizationManager.setCurrentTransactionReadOnly(definition.isReadOnly());
-		synchronizationManager.setCurrentTransactionName(definition.getName());
-		synchronizationManager.initSynchronization();
-		// }
-	}
-
 }

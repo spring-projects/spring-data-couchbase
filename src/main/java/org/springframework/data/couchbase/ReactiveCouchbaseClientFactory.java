@@ -93,12 +93,6 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#withSession(com.mongodb.session.ClientSession)
-	 */
-	ReactiveCouchbaseClientFactory withCore(ReactiveCouchbaseResourceHolder core);
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#with(com.mongodb.session.ClientSession)
 	 */
 	ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
