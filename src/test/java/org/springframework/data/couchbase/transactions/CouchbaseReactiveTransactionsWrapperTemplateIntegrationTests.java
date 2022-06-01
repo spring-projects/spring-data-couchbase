@@ -60,7 +60,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  */
 // todo gpx many of these tests are failing
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class })
+@SpringJUnitConfig(Config.class)
 public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired ReactiveCouchbaseClientFactory couchbaseClientFactory;
@@ -92,11 +92,10 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 
 		TransactionResult result = wrapper.run(ctx -> {
-			return TransactionalSupport.checkForTransactionInThreadLocalStorage(null)
-					.then(Mono.defer(() -> {
-						attempts.incrementAndGet();
-						return lambda.apply(ctx);
-					}));
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage(null).then(Mono.defer(() -> {
+				attempts.incrementAndGet();
+				return lambda.apply(ctx);
+			}));
 		}, options).block();
 
 		assertNotInTransaction();
@@ -126,7 +125,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	public void committedReplace() {
 		UUID id = UUID.randomUUID();
 		Person initial = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(initial);
+		Person p = ops.insertById(Person.class).one(initial).block();
 
 		RunResult rr = doInTransaction(ctx -> {
 			return ops.findById(Person.class).one(id.toString()).flatMap(person -> {
@@ -216,7 +215,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		try {
 			doInTransaction(ctx -> {
@@ -244,7 +243,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		try {
 			doInTransaction(ctx -> {
@@ -252,11 +251,9 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 					attempts.incrementAndGet();
 					return ops.findById(Person.class).one(person.getId().toString())
 							// todo gpx failing because no next - seems to come from ctx.get itself
-							.doOnNext(v -> System.out.println("next"))
-							.doFinally(v -> System.out.println("finally"))
-							.flatMap(p -> {
-						return ops.removeById(Person.class).oneEntity(p);
-					}).then(Mono.error(new SimulateFailureException()));
+							.doOnNext(v -> System.out.println("next")).doFinally(v -> System.out.println("finally")).flatMap(p -> {
+								return ops.removeById(Person.class).oneEntity(p);
+							}).then(Mono.error(new SimulateFailureException()));
 				});
 			});
 			fail();
@@ -275,7 +272,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		try {
 			doInTransaction(ctx -> {
@@ -300,7 +297,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		try {
 			doInTransaction(ctx -> {
@@ -322,10 +319,10 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	public void replacePerson() {
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		Person refetched = blocking.findById(Person.class).one(person.getId().toString());
-		ops.replaceById(Person.class).one(refetched);
+		blocking.replaceById(Person.class).one(refetched);
 
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
@@ -344,7 +341,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		UUID id = UUID.randomUUID();
 		PersonWithoutVersion person = new PersonWithoutVersion(id, "Walter", "White");
 
-		ops.insertById(PersonWithoutVersion.class).one(person);
+		PersonWithoutVersion p = blocking.insertById(PersonWithoutVersion.class).one(person);
 		try {
 			doInTransaction(ctx -> {
 				return ops.findById(PersonWithoutVersion.class).one(id.toString())
@@ -398,7 +395,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	public void removeEntityById() {
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		try {
 			doInTransaction(ctx -> {

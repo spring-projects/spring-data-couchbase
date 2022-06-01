@@ -16,7 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Consumer;
@@ -72,13 +71,13 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
-									 final CouchbaseConverter converter) {
+			final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService(), null);
 	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
-									 final CouchbaseConverter converter, final TranslationService translationService,
-									 final QueryScanConsistency scanConsistency) {
+			final CouchbaseConverter converter, final TranslationService translationService,
+			final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
@@ -249,7 +248,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	public QueryScanConsistency getConsistency() {
 		return scanConsistency;
 	}
-
 
 	protected ReactiveCouchbaseTemplate doGetTemplate() {
 		return new ReactiveCouchbaseTemplate(clientFactory, converter);

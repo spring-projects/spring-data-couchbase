@@ -1,11 +1,15 @@
 package org.springframework.data.couchbase.transactions;
 
+import com.couchbase.client.java.transactions.config.TransactionOptions;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import java.time.Duration;
 
 
 @Configuration
@@ -32,5 +36,12 @@ class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	public String getBucketName() {
 		return ClusterAwareIntegrationTests.bucketName();
+	}
+
+	@Override
+	@Bean
+	public TransactionOptions transactionsOptions(){
+		// ten minutes for debugging in the debugger.
+		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
 	}
 }
