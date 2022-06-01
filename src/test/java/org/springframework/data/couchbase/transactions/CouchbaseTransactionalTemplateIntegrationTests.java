@@ -266,7 +266,6 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 
 		try {
 			personService.doInTransaction(tryCount, ops -> {
-				// todo gpx this isn't executed transactionally
 				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
 				throw new SimulateFailureException();
 			});

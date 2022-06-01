@@ -59,12 +59,7 @@ import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for com.couchbase.transactions using
- * <li><le>couchbase reactive transaction manager via transactional operator</le> <le>couchbase non-reactive transaction
- * manager via @Transactional</le> <le>@Transactional(transactionManager =
- * BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)</le></li>
- *
- * @author Michael Reiche
+ * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { Config.class })
