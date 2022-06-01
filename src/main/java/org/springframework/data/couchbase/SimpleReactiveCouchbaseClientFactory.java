@@ -4,7 +4,6 @@ import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTI
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.ClusterInterface;
 import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.Transactions;
@@ -23,7 +22,7 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 
 public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseClientFactory {
-	final ClusterInterface cluster;
+	final Cluster cluster;
 	final String bucketName;
 	final String scopeName;
 	final PersistenceExceptionTranslator exceptionTranslator;
@@ -48,7 +47,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 
 	@Override
-	public ClusterInterface getCluster() {
+	public Cluster getCluster() {
 		return cluster;
 	}
 
@@ -144,26 +143,5 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	@Override
 	public ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp) {
 		return new SimpleReactiveCouchbaseClientFactory((Cluster) getCluster(), bucketName, scopeName, txOp);
-	}
-
-	private <T> T createProxyInstance(ReactiveCouchbaseResourceHolder session, T target, Class<T> targetType) {
-
-		ProxyFactory factory = new ProxyFactory();
-		factory.setTarget(target);
-		factory.setInterfaces(targetType);
-		factory.setOpaque(true);
-
-		factory.addAdvice(new SessionAwareMethodInterceptor<>(session, target, ReactiveCouchbaseResourceHolder.class,
-				ClusterInterface.class, this::proxyDatabase, Collection.class, this::proxyCollection));
-
-		return targetType.cast(factory.getProxy(target.getClass().getClassLoader()));
-	}
-
-	private Collection proxyCollection(ReactiveCouchbaseResourceHolder session, Collection c) {
-		return createProxyInstance(session, c, Collection.class);
-	}
-
-	private ClusterInterface proxyDatabase(ReactiveCouchbaseResourceHolder session, ClusterInterface cluster) {
-		return createProxyInstance(session, cluster, ClusterInterface.class);
 	}
 }
