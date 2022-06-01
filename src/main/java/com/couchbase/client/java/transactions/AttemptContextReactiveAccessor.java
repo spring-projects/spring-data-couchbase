@@ -16,6 +16,7 @@
  */
 package com.couchbase.client.java.transactions;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
@@ -26,6 +27,10 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import com.couchbase.client.core.annotation.Stability;
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
+import com.couchbase.client.core.error.EncodingFailureException;
+import com.couchbase.client.core.json.Mapper;
+import com.couchbase.client.core.msg.query.QueryRequest;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionContext;
 import com.couchbase.client.core.transaction.CoreTransactionsReactive;
@@ -33,7 +38,9 @@ import com.couchbase.client.core.transaction.config.CoreMergedTransactionConfig;
 import com.couchbase.client.core.transaction.config.CoreTransactionOptions;
 import com.couchbase.client.core.transaction.log.CoreTransactionLogger;
 import com.couchbase.client.core.transaction.support.AttemptState;
+import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.codec.JsonSerializer;
+import com.couchbase.client.java.json.JsonObject;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -129,6 +136,26 @@ public class AttemptContextReactiveAccessor {
 
 	public static TransactionResult run(Transactions transactions, Consumer<TransactionAttemptContext> transactionLogic, CoreTransactionOptions coreTransactionOptions) {
 		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
+	}
+
+	// todo gp have C&Ped this from SDK, needs to be exposed properly in SDK
+	public static ObjectNode createTransactionOptions(final ReactiveScope scope,
+																				  final String statement,
+																				  final TransactionQueryOptions options) {
+		JsonObject json = JsonObject.create()
+				.put("statement", statement);
+		if (scope != null) {
+			json.put("query_context", QueryRequest.queryContext(scope.bucketName(), scope.name()));
+		}
+		if (options != null) {
+			options.builder().build().injectParams(json);
+		}
+		try {
+			ObjectNode opts = Mapper.reader().readValue(json.toBytes(), ObjectNode.class);
+			return opts;
+		} catch (IOException e) {
+			throw new EncodingFailureException(e);
+		}
 	}
 
 }
