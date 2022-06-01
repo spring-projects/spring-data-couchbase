@@ -111,24 +111,32 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
 			System.err.println("txOp: " + pArgs.getTxOp());
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(TransactionalSupportHelper support) -> support.collection
-							.insert(support.converted.getId(), support.converted.export(),
-									buildOptions(pArgs.getOptions(), support.converted))
-							.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
-									result.cas(), null)),
-					(TransactionalSupportHelper support) -> {
-						rejectInvalidTransactionalOptions();
+			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
+							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
+								if (!ctxOpt.isPresent()) {
+									return collection.reactive()
+											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+											.flatMap(
+													result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
+								} else {
+									rejectInvalidTransactionalOptions();
 
-						return support.ctx
-								.insert(makeCollectionIdentifier(support.collection.async()), support.converted.getId(),
-										template.getCouchbaseClientFactory().getCluster().environment().transcoder()
-												.encode(support.converted.export()).encoded())
-								.flatMap(result -> this.support.applyResult(object, support.converted, support.converted.getId(),
-										getCas(result), new TransactionResultHolder(result), null));
-					});
+									return ctxOpt.get().getCore()
+											.insert(makeCollectionIdentifier(collection.async()), converted.getId(),
+													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
+															.encode(converted.export()).encoded())
+											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), getCas(result),
+													new TransactionResultHolder(result), null));
+								}
+							})).onErrorMap(throwable -> {
+								if (throwable instanceof RuntimeException) {
+									return template.doGetTemplate().potentiallyConvertRuntimeException((RuntimeException) throwable);
+								} else {
+									return throwable;
+								}
+							}));
 		}
 
 		private void rejectInvalidTransactionalOptions() {

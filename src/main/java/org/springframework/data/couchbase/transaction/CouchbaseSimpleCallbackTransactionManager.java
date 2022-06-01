@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
@@ -64,6 +65,9 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
+		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler.  This
+		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.  If this is
+		// an issue then users need to instead use the standard Couchbase reactive transactions SDK.
 		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
 
@@ -72,11 +76,11 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			try {
 				execResult.set(callback.doInTransaction(status));
 			} finally {
-				TransactionSynchronizationManager.clear();
+				clearTransactionSynchronizationManager();
 			}
 		}, this.options);
 
-		TransactionSynchronizationManager.clear();
+		clearTransactionSynchronizationManager();
 
 		return execResult.get();
 	}
@@ -155,13 +159,21 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 	}
 
-	// Setting ThreadLocal storage
-	private void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
+	// Setting ThreadLocal storage.
+	// Note there is reactive-equivalent code in ReactiveTransactionsWrapper to sync with
+	@Stability.Internal
+	public static void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
 		TransactionSynchronizationManager.setActualTransactionActive(true);
 		TransactionSynchronizationManager.initSynchronization();
 		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
-		TransactionSynchronizationManager.unbindResourceIfPossible(couchbaseClientFactory.getCluster());
-		TransactionSynchronizationManager.bindResource(couchbaseClientFactory.getCluster(), resourceHolder);
+		TransactionSynchronizationManager.unbindResourceIfPossible(ReactiveCouchbaseResourceHolder.class);
+		TransactionSynchronizationManager.bindResource(ReactiveCouchbaseResourceHolder.class, resourceHolder);
+	}
+
+	@Stability.Internal
+	public static void clearTransactionSynchronizationManager() {
+		TransactionSynchronizationManager.unbindResourceIfPossible(ReactiveCouchbaseResourceHolder.class);
+		TransactionSynchronizationManager.clear();
 	}
 
 	/**

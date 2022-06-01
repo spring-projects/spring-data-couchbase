@@ -75,7 +75,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, null,
 					domainType);
 			LOG.trace("getAnyReplica {}", pArgs);
-			return TransactionalSupport.verifyNotInTransaction(template.doGetTemplate(), "findFromReplicasById")
+			return TransactionalSupport.verifyNotInTransaction("findFromReplicasById")
 					.then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))

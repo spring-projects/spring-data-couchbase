@@ -15,9 +15,11 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.transaction.util.DebugUtil;
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -90,37 +92,43 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		public Mono<T> one(T object) {
 			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("replaceById {}", pArgs);
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			return TransactionalSupport.one(tmpl, pArgs.getTxOp(), pArgs.getScope(), pArgs.getCollection(), support, object,
-					(TransactionalSupportHelper support) -> {
-						CouchbaseDocument converted = support.converted;
+			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
+							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
+								if (!ctxOpt.isPresent()) {
+									return collection.reactive()
+											.replace(converted.getId(), converted.export(),
+													buildReplaceOptions(pArgs.getOptions(), object, converted))
+											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null));
+								} else {
+									rejectInvalidTransactionalOptions();
 
-						return support.collection
-								.replace(converted.getId(), converted.export(),
-										buildReplaceOptions(pArgs.getOptions(), object, converted))
-								.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
-					}, (TransactionalSupportHelper support) -> {
-						rejectInvalidTransactionalOptions();
+									Long cas = support.getCas(object);
+									if ( cas == null || cas == 0 ){
+										throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);
+									}
 
-						CouchbaseDocument converted = support.converted;
-						if ( support.cas == null || support.cas == 0 ){
-							throw new IllegalArgumentException("cas must be supplied in object for tx replace. object="+object);
-						}
+									CollectionIdentifier collId = makeCollectionIdentifier(collection.async());
+									CoreTransactionAttemptContext ctx = ctxOpt.get().getCore();
+									ctx.logger().info(ctx.attemptId(), "refetching %s for Spring replace", DebugUtil.docId(collId, converted.getId()));
+									Mono<CoreTransactionGetResult> gr = ctx.get(collId, converted.getId());
 
-						CollectionIdentifier collId = makeCollectionIdentifier(support.collection.async());
-						support.ctx.logger().info(support.ctx.attemptId(), "refetching %s for Spring replace", DebugUtil.docId(collId, converted.getId()));
-						Mono<CoreTransactionGetResult> gr = support.ctx.get(collId, converted.getId());
-
-						return gr.flatMap(getResult -> {
-							if (getResult.cas() != support.cas) {
-								return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(support.ctx, getResult.cas(), support.cas));
-							}
-							return support.ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().environment().transcoder()
-									.encode(support.converted.export()).encoded());
-						}).flatMap(result -> this.support.applyResult(object, converted, converted.getId(), 0L, null, null));
-					});
-
+									return gr.flatMap(getResult -> {
+										if (getResult.cas() != cas) {
+											return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(ctx, getResult.cas(), cas));
+										}
+										return ctx.replace(getResult, 	template.getCouchbaseClientFactory().getCluster().environment().transcoder()
+												.encode(converted.export()).encoded());
+									}).flatMap(result -> this.support.applyResult(object, converted, converted.getId(), 0L, null, null));
+								}
+							})).onErrorMap(throwable -> {
+								if (throwable instanceof RuntimeException) {
+									return template.doGetTemplate().potentiallyConvertRuntimeException((RuntimeException) throwable);
+								} else {
+									return throwable;
+								}
+							}));
 		}
 
 		private void rejectInvalidTransactionalOptions() {

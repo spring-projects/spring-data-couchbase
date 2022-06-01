@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.transactions.util;
 
+import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.transaction.NoTransactionException;
 import reactor.core.publisher.Mono;
 
@@ -28,15 +29,11 @@ public class TransactionTestUtil {
     private TransactionTestUtil() {}
 
     public static void assertInTransaction() {
-        assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+        assertTrue(TransactionalSupport.checkForTransactionInThreadLocalStorage(null).block().isPresent());
     }
 
     public static void assertNotInTransaction() {
-        try {
-            assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
-        }
-        catch (NoTransactionException ignored) {
-        }
+        assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage(null).block().isPresent());
     }
 
     public static <T> Mono<T> assertInReactiveTransaction(T o) {
