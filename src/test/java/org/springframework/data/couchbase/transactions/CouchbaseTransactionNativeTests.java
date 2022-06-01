@@ -92,6 +92,10 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 		callSuperAfterAll(new Object() {});
 	}
 
+	@AfterEach
+	public void afterEach() {
+		TransactionTestUtil.assertNotInTransaction();
+	}
 	@Test
 	public void replacePersonTemplate() {
 		Person person = new Person(1, "Walter", "White");

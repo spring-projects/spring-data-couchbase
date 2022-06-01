@@ -91,6 +91,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 
 	@BeforeEach
 	public void beforeEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
 		operations = rxCBTmpl;
 	}
 

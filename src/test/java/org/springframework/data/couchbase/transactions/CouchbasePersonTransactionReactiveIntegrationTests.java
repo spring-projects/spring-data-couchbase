@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.domain.Persistable;
 import org.springframework.test.context.transaction.AfterTransaction;
 import org.springframework.test.context.transaction.BeforeTransaction;
@@ -108,6 +109,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@BeforeEach
 	public void beforeEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
 		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();

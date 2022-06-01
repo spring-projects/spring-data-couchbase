@@ -31,11 +31,13 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import lombok.Data;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
@@ -137,8 +139,14 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		callSuperAfterAll(new Object() {});
 	}
 
+	@AfterEach
+	public void afterEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
+	}
+
 	@BeforeEach
 	public void beforeEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<RemoveResult> rp1 = operations.removeByQuery(Person.class).inScope(sName).inCollection(cName)
 				.withConsistency(REQUEST_PLUS).all();

@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -66,6 +67,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 
 	@BeforeEach
 	public void beforeEachTest() {
+		TransactionTestUtil.assertNotInTransaction();
 		personService = context.getBean(PersonService.class);
 
 		Person walterWhite = new Person(1, "Walter", "White");
