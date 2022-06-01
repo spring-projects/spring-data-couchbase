@@ -191,20 +191,18 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl
-					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-						if (s.getCore() == null) {
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+						if (!s.isPresent()) {
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 									: rs.query(statement, opts);
 						} else {
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
 									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
 						}
-					}));
+					});
 
 			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
@@ -255,20 +253,18 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
-			Mono<ReactiveCouchbaseTemplate> tmpl = template.doGetTemplate();
 
-			Mono<Object> allResult = tmpl
-					.flatMap(tp -> tp.getCouchbaseClientFactory().getResourceHolderMono().flatMap(s -> {
-						if (s.getCore() == null) {
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+						if (!s.isPresent()) {
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 									: rs.query(statement, opts);
 						} else {
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.getCore(),
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
 									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
 						}
-					}));
+					});
 
 			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
