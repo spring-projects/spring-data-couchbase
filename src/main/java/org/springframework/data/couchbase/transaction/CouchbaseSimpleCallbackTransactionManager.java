@@ -176,31 +176,21 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		TransactionSynchronizationManager.clear();
 	}
 
-	/**
-	 * Test transaction infrastructure uses this to determine if transaction is active
-	 *
-	 * @param definition
-	 * @return
-	 * @throws TransactionException
-	 */
 	@Override
 	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition)
 			throws TransactionException {
-		TransactionStatus status = new DefaultTransactionStatus(		null, true, true,
-				false, true, false);
-		return status;
+		// All Spring transactional code (currently) does not call the getTransaction, commit or rollback methods if
+		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
+		throw new IllegalStateException("getTransaction should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
 	}
 
 	@Override
 	public void commit(TransactionStatus status) throws TransactionException {
-		// todo gpx somewhat nervous that commit/rollback/getTransaction are all left empty but things seem to be working
-		// anyway... - what are these used for exactly?
-		LOGGER.debug("NO-OP: Committing Couchbase Transaction with status {}", status);
+		throw new IllegalStateException("commit should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
 	}
 
 	@Override
 	public void rollback(TransactionStatus status) throws TransactionException {
-		LOGGER.warn("NO-OP: Rolling back Couchbase Transaction with status {}", status);
+		throw new IllegalStateException("rollback should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
 	}
-
 }
