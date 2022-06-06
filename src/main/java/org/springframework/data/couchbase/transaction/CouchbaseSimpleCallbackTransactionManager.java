@@ -23,6 +23,7 @@ import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.TransactionDefinition;
@@ -69,7 +70,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.  If this is
 		// an issue then users need to instead use the standard Couchbase reactive transactions SDK.
 		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
-			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(null, true, false, false, true, null, null);
+			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
 			populateTransactionSynchronizationManager(ctx);
 
@@ -77,6 +78,10 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				execResult.set(callback.doInTransaction(status));
 			} finally {
 				clearTransactionSynchronizationManager();
+			}
+
+			if (status.isRollbackOnly()) {
+				throw new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set");
 			}
 		}, this.options);
 

@@ -20,7 +20,7 @@ public class CouchbaseTransactionStatus extends DefaultTransactionStatus {
    *                           debug logging should be enabled.
    * @param suspendedResources a holder for resources that have been suspended
    */
-  public CouchbaseTransactionStatus(Object transaction, boolean newTransaction, boolean newSynchronization, boolean readOnly, boolean debug, Object suspendedResources, TransactionSynchronizationManager sm) {
+  public CouchbaseTransactionStatus(Object transaction, boolean newTransaction, boolean newSynchronization, boolean readOnly, boolean debug, Object suspendedResources) {
     super(transaction,
         newTransaction,
         newSynchronization,
