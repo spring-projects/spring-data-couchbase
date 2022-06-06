@@ -186,16 +186,18 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			throws TransactionException {
 		// All Spring transactional code (currently) does not call the getTransaction, commit or rollback methods if
 		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
-		throw new IllegalStateException("getTransaction should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
+		// So these methods should only be hit if user is using PlatformTransactionManager directly.  Spring supports this,
+		// but due to the lambda-based nature of our transactions, we cannot.
+		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
-	public void commit(TransactionStatus status) throws TransactionException {
-		throw new IllegalStateException("commit should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
+	public void commit(TransactionStatus ignored) throws TransactionException {
+		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
-	public void rollback(TransactionStatus status) throws TransactionException {
-		throw new IllegalStateException("rollback should not be getting called, as this implements CallbackPreferringPlatformTransactionManager");
+	public void rollback(TransactionStatus ignored) throws TransactionException {
+		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 }
