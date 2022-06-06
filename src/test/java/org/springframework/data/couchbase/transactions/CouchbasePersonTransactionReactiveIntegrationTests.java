@@ -18,64 +18,39 @@ package org.springframework.data.couchbase.transactions;
 
 import com.couchbase.client.java.Cluster;
 import lombok.Data;
-import org.junit.jupiter.api.Disabled;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.config.BeanNames;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
-import org.springframework.data.domain.Persistable;
-import org.springframework.test.context.transaction.AfterTransaction;
-import org.springframework.test.context.transaction.BeforeTransaction;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.reactive.TransactionalOperator;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import com.couchbase.client.core.cnc.Event;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.RemoveOptions;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
@@ -83,8 +58,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { CouchbasePersonTransactionReactiveIntegrationTests.Config.class, CouchbasePersonTransactionReactiveIntegrationTests.PersonService.class } )
-@Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and cannot support)")
+@SpringJUnitConfig(classes = { Config.class, PersonServiceReactive.class } )
+//@Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and cannot support)")
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -94,7 +69,8 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Autowired PersonRepository repo;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
 	@Autowired Cluster myCluster;
-	@Autowired PersonService personService;
+	@Autowired
+	PersonServiceReactive personService;
 	@Autowired ReactiveCouchbaseTemplate operations;
 
 	@BeforeAll
@@ -116,26 +92,25 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 	}
 
-	@Test 
+	@Test
+	//@Disabled("rollback is not taking place")
 	public void shouldRollbackAfterException() {
 		personService.savePersonErrors(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.verifyError(RuntimeException.class);
-		operations.count(new Query(), Person.class) //
+		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
 				.verifyComplete();
 	}
 
-	@Test 
-	// @Rollback(false)
+	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		Person p = new Person(null, "Walter", "White");
 		try {
 			personService.declarativeSavePersonErrors(p) //
 					.as(StepVerifier::create) //
 					.expectComplete();
-			// .verifyError(RuntimeException.class);
 		} catch (RuntimeException e) {
 			if (e instanceof SimulateFailureException || (e.getMessage() != null && e.getMessage().contains("poof"))) {
 				System.err.println(e);
@@ -146,7 +121,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	}
 
-	@Test 
+	@Test
 	public void commitShouldPersistTxEntries() {
 
 		personService.savePerson(new Person(null, "Walter", "White")) //
@@ -162,7 +137,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test 
+	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
 		personService.declarativeSavePerson(new Person(null, "Walter", "White")).as(StepVerifier::create) //
@@ -176,7 +151,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	}
 
-	@Test 
+	@Test
 	public void commitShouldPersistTxEntriesAcrossCollections() {
 
 		personService.saveWithLogs(new Person(null, "Walter", "White")) //
@@ -195,7 +170,8 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test 
+	@Test
+	//@Disabled("the rollback is not occurring")
 	public void rollbackShouldAbortAcrossCollections() {
 
 		personService.saveWithErrorLogs(new Person(null, "Walter", "White")) //
@@ -203,18 +179,18 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.as(StepVerifier::create) //
 				.verifyError();
 
-		operations.count(new Query(), Person.class) //
+		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
 				.verifyComplete();
 
-		operations.count(new Query(), EventLog.class)//
+		operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).count()//
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
 				.verifyComplete();
 	}
 
-	@Test 
+	@Test
 	public void countShouldWorkInsideTransaction() {
 		personService.countDuringTx(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
@@ -222,21 +198,15 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test 
+	@Test
 	public void emitMultipleElementsDuringTransaction() {
-
-		try {
 			personService.saveWithLogs(new Person(null, "Walter", "White")) //
 					.as(StepVerifier::create) //
 					.expectNextCount(4L) //
 					.verifyComplete();
-		} catch (Exception e) {
-			System.err.println("Done");
-			throw e;
-		}
 	}
 
-	@Test 
+	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 
 		Person p = new Person(1, "Walter", "White");
@@ -248,98 +218,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.as(StepVerifier::create) //
 				.expectNext(1L) //
 				.verifyComplete();
-	}
-
-	// @RequiredArgsConstructor
-	static class PersonService {
-
-		final ReactiveCouchbaseOperations personOperationsRx;
-		final ReactiveCouchbaseTransactionManager managerRx;
-		final CouchbaseOperations personOperations;
-		//final CouchbaseCallbackTransactionManager manager;
-
-		public PersonService(CouchbaseOperations ops, /* CouchbaseCallbackTransactionManager mgr, */ ReactiveCouchbaseOperations opsRx,
-				ReactiveCouchbaseTransactionManager mgrRx) {
-			personOperations = ops;
-			personOperationsRx = opsRx;
-			managerRx = mgrRx;
-			return;
-		}
-
-		public Mono<Person> savePersonErrors(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx);
-			return personOperationsRx.insertById(Person.class).one(person) //
-					.<Person> flatMap(it -> Mono.error(new RuntimeException("poof!"))) //
-					.as(transactionalOperator::transactional);
-		}
-
-		public Mono<Person> savePerson(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
-					new DefaultTransactionDefinition());
-
-			return personOperationsRx.insertById(Person.class).one(person) //
-					.flatMap(Mono::just) //
-					.as(transactionalOperator::transactional);
-		}
-
-		public Mono<Long> countDuringTx(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
-					new DefaultTransactionDefinition());
-
-			return personOperationsRx.save(person) //
-					.then(personOperationsRx.count(new Query(), Person.class)) //
-					.as(transactionalOperator::transactional);
-		}
-
-		public Flux<EventLog> saveWithLogs(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
-					new DefaultTransactionDefinition());
-
-			return Flux.merge(personOperationsRx.save(new EventLog(new ObjectId().toString(), "beforeConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "beforeInsert")), //
-					personOperationsRx.save(person), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterInsert"))) //
-					.thenMany(personOperationsRx.findByQuery(EventLog.class).all()) //
-					.as(transactionalOperator::transactional);
-		}
-
-		public Flux<Void> saveWithErrorLogs(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
-					new DefaultTransactionDefinition());
-
-			return Flux.merge(personOperationsRx.save(new EventLog(new ObjectId(), "beforeConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterConvert")), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "beforeInsert")), //
-					personOperationsRx.save(person), //
-					personOperationsRx.save(new EventLog(new ObjectId(), "afterInsert"))) //
-					.<Void> flatMap(it -> Mono.error(new RuntimeException("poof!"))) //
-					.as(transactionalOperator::transactional);
-		}
-
-		@Transactional
-		public Flux<Person> declarativeSavePerson(Person person) {
-
-			TransactionalOperator transactionalOperator = TransactionalOperator.create(managerRx,
-					new DefaultTransactionDefinition());
-
-			return transactionalOperator.execute(reactiveTransaction -> personOperationsRx.save(person));
-		}
-
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-		public Flux<Person> declarativeSavePersonErrors(Person person) {
-			Person p = personOperations.insertById(Person.class).one(person);
-			// if(1==1)throw new RuntimeException("poof!");
-			Person pp = personOperations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().get(0);
-			System.err.println("pp=" + pp);
-			SimulateFailureException.throwEx();
-			return Flux.just(p);
-		}
 	}
 
 	/*
@@ -524,46 +402,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 			System.out.println(id + " : " + "DocumentNotFound when deleting");
 		}
 	}
-
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Bean
-		public Cluster couchbaseCluster() {
-			return Cluster.connect("10.144.220.101", "Administrator", "password");
-		}
-
-		/*
-		@Bean("personService")
-		PersonService getPersonService(CouchbaseOperations ops, CouchbaseTransactionManager mgr,
-				ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
-			return new PersonService(ops, mgr, opsRx, mgrRx);
-		}
-		 */
-
-    }
 
     @Data
     // @AllArgsConstructor

@@ -52,17 +52,21 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.interceptor.CouchbaseTransactionInterceptor;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.config.TransactionManagementConfigUtils;
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -167,6 +171,7 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
+		configureTransactions(builder);
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -341,6 +346,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
+
 	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
 
 	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
@@ -349,6 +355,15 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
 	}
 
+	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
+	public TransactionalOperator transactionOperator(ReactiveCouchbaseTransactionManager reactiveTransactionManager, TransactionDefinition transactionDefinition){
+		return 	TransactionalOperator.create(reactiveTransactionManager, transactionDefinition);
+	}
+
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_DEFINITION)
+	public TransactionDefinition transactionDefinition(){
+		return new CouchbaseTransactionDefinition();
+	}
 //	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 //	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
 //		return new CouchbaseTransactionManager(couchbaseClientFactory);
@@ -372,6 +387,16 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public TransactionOptions transactionsOptions(){
 		return TransactionOptions.transactionOptions();
+	}
+
+
+
+	/**
+	 * Can be overridden to customize the configuration of the environment before bootstrap.
+	 *
+	 * @param builder the builder that can be customized.
+	 */
+	public void configureTransactions(final ClusterEnvironment.Builder builder) {
 	}
 
 	/**

@@ -17,7 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
@@ -76,7 +76,7 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-									TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+									TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}
 
@@ -89,7 +89,7 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-								   TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								   TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
 	}
 

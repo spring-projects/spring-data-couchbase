@@ -60,12 +60,13 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * Tests @Transactional with repository methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { CouchbaseTransactionalRepositoryIntegrationTests.Config.class, CouchbaseTransactionalRepositoryIntegrationTests.PersonService.class })
+@SpringJUnitConfig(classes = { Config.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
 public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired UserRepository userRepo;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired PersonService personService;
+	@Autowired
+	UserService userService;
 	@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
@@ -89,7 +90,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	public void findByFirstname() {
 		operations.insertById(User.class).one(new User(UUID.randomUUID().toString(), "Ada", "Lovelace"));
 
-		List<User> users = personService.findByFirstname("Ada");
+		List<User> users = userService.findByFirstname("Ada");
 
 		assertNotEquals(0, users.size());
 	}
@@ -98,7 +99,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	public void save() {
 		String id = UUID.randomUUID().toString();
 
-		personService.run(repo -> {
+		userService.run(repo -> {
 			assertInTransaction();
 
 			repo.save(new User(id, "Ada", "Lovelace"));
@@ -124,7 +125,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		String id = UUID.randomUUID().toString();
 
 		try {
-			personService.run(repo -> {
+			userService.run(repo -> {
 				repo.save(new User(id, "Ada", "Lovelace"));
 				SimulateFailureException.throwEx("fail");
 			});
@@ -138,7 +139,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static class PersonService {
+	static class UserService {
 		@Autowired UserRepository userRepo;
 
 		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
@@ -153,35 +154,5 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
 
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Bean
-		public Cluster couchbaseCluster() {
-			return Cluster.connect("10.144.220.101", "Administrator", "password");
-		}
-
-	}
 }

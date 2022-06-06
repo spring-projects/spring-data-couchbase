@@ -28,12 +28,11 @@ import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.util.ClassUtils;
 
 import java.util.Map;
@@ -58,7 +57,7 @@ public abstract class AbstractTemplateSupport {
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	public <T> T decodeEntityBase(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
-								  TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								  TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		final CouchbaseDocument converted = new CouchbaseDocument(id);
 		converted.setId(id);
 
@@ -127,7 +126,7 @@ public abstract class AbstractTemplateSupport {
 
 
 	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
-								 TransactionResultHolder txResultHolder, ReactiveCouchbaseResourceHolder holder) {
+								 TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
 		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()

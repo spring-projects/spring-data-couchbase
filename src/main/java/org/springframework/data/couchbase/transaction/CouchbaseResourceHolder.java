@@ -24,17 +24,17 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ReactiveCouchbaseResourceHolder extends ResourceHolderSupport {
+public class CouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable CoreTransactionAttemptContext core; // which holds the atr
 	Map<Integer, TransactionResultHolder> getResultMap = new HashMap<>();
 
 	/**
-	 * Create a new {@link ReactiveCouchbaseResourceHolder} for a given {@link CoreTransactionAttemptContext session}.
+	 * Create a new {@link CouchbaseResourceHolder} for a given {@link CoreTransactionAttemptContext session}.
 	 *
 	 * @param core the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
 	 */
-	public ReactiveCouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
+	public CouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
 
 		this.core = core;
 	}

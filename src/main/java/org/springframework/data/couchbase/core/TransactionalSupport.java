@@ -4,7 +4,8 @@ import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
+import org.springframework.transaction.reactive.TransactionContext;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.core.publisher.Mono;
 
@@ -25,26 +26,45 @@ public class TransactionalSupport {
      * Or a blocking operation inside a ReactiveTransactionsWrapper transaction (which would be a bad idea).
      * So, need to check both thread-local storage and reactive context.
      */
-    public static Mono<Optional<ReactiveCouchbaseResourceHolder>> checkForTransactionInThreadLocalStorage(@Nullable CouchbaseTransactionalOperator operator) {
+    public static Mono<Optional<CouchbaseResourceHolder>> checkForTransactionInThreadLocalStorage(@Nullable CouchbaseTransactionalOperator operator) {
         return Mono.deferContextual(ctx -> {
             if (operator != null) {
                 // gp: this isn't strictly correct, as it won't preserve the result map correctly, but tbh want to remove CouchbaseTransactionalOperator anyway
-                return Mono.just(Optional.of(new ReactiveCouchbaseResourceHolder(operator.getAttemptContext())));
+                return Mono.just(Optional.of(new CouchbaseResourceHolder(operator.getAttemptContext())));
             }
 
-            ReactiveCouchbaseResourceHolder blocking = (ReactiveCouchbaseResourceHolder) TransactionSynchronizationManager.getResource(ReactiveCouchbaseResourceHolder.class);
-            Optional<ReactiveCouchbaseResourceHolder> reactive = ctx.getOrEmpty(ReactiveCouchbaseResourceHolder.class);
+            // need to make usage of TransactionSynchronizationManager consistent.
+            // ReactiveTransactionWrapper stores CouchbaseResourceHolder directly as a TSM.resource
+            // ReactiveCouchbaseTransactionManager (and by extension TransactionalOperator)
+            CouchbaseResourceHolder blocking = (CouchbaseResourceHolder) TransactionSynchronizationManager.getResource(CouchbaseResourceHolder.class);
+            // Stored in the TransactionContext (same as synchronizationManager does)
+            TransactionContext tc = ctx.hasKey(TransactionContext.class) ? ctx.get(TransactionContext.class) : null;
+            CouchbaseResourceHolder holder = tc != null ? (CouchbaseResourceHolder)tc.getResources().get(CouchbaseResourceHolder.class) : null;
+            // Stored directly Reactive ctx
+            if(holder == null ){
+                holder =  ctx.hasKey(CouchbaseResourceHolder.class) ?  ctx.get(CouchbaseResourceHolder.class) : null;
+            }
+            Optional<CouchbaseResourceHolder> reactive = Optional.ofNullable(holder);//ctx.getOrEmpty(ReactiveCouchbaseResourceHolder.class);
 
             if (blocking != null && reactive.isPresent()) {
                 throw new IllegalStateException("Both blocking and reactive transaction contexts are set simultaneously");
             }
 
             if (blocking != null) {
+                printThrough("blocking core: ",blocking.getCore());
                 return Mono.just(Optional.of(blocking));
+            } else  if(reactive.isPresent()){
+                printThrough("reactive core: ",reactive.get().getCore());
+            } else {
+                printThrough("no core:",null);
             }
-
             return Mono.just(reactive);
         });
+    }
+
+    private static <T> T printThrough(String label, T obj){
+        System.err.println(label+obj);
+        return obj;
     }
 
     public static Mono<Void> verifyNotInTransaction(String methodName) {

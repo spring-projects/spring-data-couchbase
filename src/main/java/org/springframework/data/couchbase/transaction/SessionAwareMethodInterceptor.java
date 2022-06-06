@@ -48,14 +48,14 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
 
   private static final MethodCache METHOD_CACHE = new MethodCache();
 
-  private final ReactiveCouchbaseResourceHolder session;
+  private final CouchbaseResourceHolder session;
   private final ReactiveCouchbaseResourceHolderOperator collectionDecorator;
   private final ReactiveCouchbaseResourceHolderOperator databaseDecorator;
   private final Object target;
   private final Class<?> targetType;
   private final Class<?> collectionType;
   private final Class<?> databaseType;
-  private final Class<? extends ReactiveCouchbaseResourceHolder> sessionType;
+  private final Class<? extends CouchbaseResourceHolder> sessionType;
 
   /**
    * Create a new SessionAwareMethodInterceptor for given target.
@@ -70,7 +70,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
    *          {@code MongoCollection}.
    * @param <T> target object type.
    */
-  public <T> SessionAwareMethodInterceptor(ReactiveCouchbaseResourceHolder session, T target, Class<? extends ReactiveCouchbaseResourceHolder> sessionType,
+  public <T> SessionAwareMethodInterceptor(CouchbaseResourceHolder session, T target, Class<? extends CouchbaseResourceHolder> sessionType,
                                            Class<D> databaseType, ReactiveCouchbaseResourceHolderOperator<D> databaseDecorator, Class<C> collectionType,
                                            ReactiveCouchbaseResourceHolderOperator<C> collectionDecorator) {
 
@@ -145,7 +145,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
     return false;
   }
 
-  private static Object[] prependSessionToArguments(ReactiveCouchbaseResourceHolder session, MethodInvocation invocation) {
+  private static Object[] prependSessionToArguments(CouchbaseResourceHolder session, MethodInvocation invocation) {
 
     Object[] args = new Object[invocation.getArguments().length + 1];
 
@@ -172,7 +172,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
      * @param targetClass
      * @return
      */
-    Optional<Method> lookup(Method method, Class<?> targetClass, Class<? extends ReactiveCouchbaseResourceHolder> sessionType) {
+    Optional<Method> lookup(Method method, Class<?> targetClass, Class<? extends CouchbaseResourceHolder> sessionType) {
 
       return cache.computeIfAbsent(new MethodClassKey(method, targetClass),
               val -> Optional.ofNullable(findTargetWithSession(method, targetClass, sessionType)));
@@ -180,7 +180,7 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
 
     @Nullable
     private Method findTargetWithSession(Method sourceMethod, Class<?> targetType,
-                                         Class<? extends ReactiveCouchbaseResourceHolder> sessionType) {
+                                         Class<? extends CouchbaseResourceHolder> sessionType) {
 
       Class<?>[] argTypes = sourceMethod.getParameterTypes();
       Class<?>[] args = new Class<?>[argTypes.length + 1];
@@ -209,5 +209,5 @@ public class SessionAwareMethodInterceptor<D, C> implements MethodInterceptor {
    *
    * @param <T> the type of the operands and result of the operator
    */
-  public interface ReactiveCouchbaseResourceHolderOperator<T> extends BiFunction<ReactiveCouchbaseResourceHolder, T, T> {}
+  public interface ReactiveCouchbaseResourceHolderOperator<T> extends BiFunction<CouchbaseResourceHolder, T, T> {}
 }

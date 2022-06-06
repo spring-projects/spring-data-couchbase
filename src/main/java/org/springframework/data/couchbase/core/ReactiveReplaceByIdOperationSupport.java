@@ -97,11 +97,13 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
+									System.err.println("replace: non-tx");
 									return collection.reactive()
 											.replace(converted.getId(), converted.export(),
 													buildReplaceOptions(pArgs.getOptions(), object, converted))
 											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null));
 								} else {
+									System.err.println("replace: tx");
 									rejectInvalidTransactionalOptions();
 
 									Long cas = support.getCas(object);

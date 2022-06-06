@@ -71,11 +71,8 @@ import com.couchbase.client.core.cnc.Event;
 @ExtendWith({ SpringExtension.class })
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-@SpringJUnitConfig(CouchbaseTemplateTransactionIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
 public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegrationTests {
-
-	static final String DB_NAME = "template-tx-tests";
-	static final String COLLECTION_NAME = "assassins";
 
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")

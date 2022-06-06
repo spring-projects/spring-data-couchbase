@@ -17,8 +17,6 @@
 package org.springframework.data.couchbase.transaction;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.beans.factory.InitializingBean;
@@ -37,7 +35,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
-import reactor.core.publisher.Mono;
 
 /**
  * A {@link org.springframework.transaction.PlatformTransactionManager} implementation that manages
@@ -110,7 +107,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 */
 	@Override
 	protected Object doGetTransaction() throws TransactionException {
-		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) TransactionSynchronizationManager
+		CouchbaseResourceHolder resourceHolder = (CouchbaseResourceHolder) TransactionSynchronizationManager
 				.getResource(getRequiredDatabaseFactory().getCluster());
 		return new CouchbaseTransactionObject(resourceHolder);
 	}
@@ -133,7 +130,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		CouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
 // 	should ACR already be in TSM?	TransactionSynchronizationManager.bindResource(getRequiredDbFactory().getCluster(), resourceHolder);
-		ReactiveCouchbaseResourceHolder resourceHolder = newResourceHolder(getDatabaseFactory(), definition, TransactionOptions.transactionOptions(),
+		CouchbaseResourceHolder resourceHolder = newResourceHolder(getDatabaseFactory(), definition, TransactionOptions.transactionOptions(),
 				null /* ((CouchbaseTransactionDefinition) definition).getAttemptContextReactive()*/);
 		couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
@@ -345,9 +342,9 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		getRequiredDatabaseFactory();
 	}
 
-	static ReactiveCouchbaseResourceHolder newResourceHolder(CouchbaseClientFactory databaseFactory, TransactionDefinition definition,
-			TransactionOptions options, CoreTransactionAttemptContext atr) {
-		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(
+	static CouchbaseResourceHolder newResourceHolder(CouchbaseClientFactory databaseFactory, TransactionDefinition definition,
+                                                   TransactionOptions options, CoreTransactionAttemptContext atr) {
+		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
 				databaseFactory.getCore(options, atr));
 		return resourceHolder;
 	}
@@ -401,33 +398,34 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	}
 
 	/**
-	 * MongoDB specific transaction object, representing a {@link ReactiveCouchbaseResourceHolder}. Used as transaction
+	 * MongoDB specific transaction object, representing a {@link CouchbaseResourceHolder}. Used as transaction
 	 * object by {@link CouchbaseTransactionManager}.
 	 *
 	 * @author Christoph Strobl
 	 * @author Mark Paluch
 	 * @since 2.1
-	 * @see ReactiveCouchbaseResourceHolder
+	 * @see CouchbaseResourceHolder
 	 */
 	protected static class CouchbaseTransactionObject implements SmartTransactionObject {
 
-		private @Nullable ReactiveCouchbaseResourceHolder resourceHolder;
+		private @Nullable
+    CouchbaseResourceHolder resourceHolder;
 
-		CouchbaseTransactionObject(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
+		CouchbaseTransactionObject(@Nullable CouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * Set the {@link ReactiveCouchbaseResourceHolder}.
+		 * Set the {@link CouchbaseResourceHolder}.
 		 *
 		 * @param resourceHolder can be {@literal null}.
 		 */
-		void setResourceHolder(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
+		void setResourceHolder(@Nullable CouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * @return {@literal true} if a {@link ReactiveCouchbaseResourceHolder} is set.
+		 * @return {@literal true} if a {@link CouchbaseResourceHolder} is set.
 		 */
 		final boolean hasResourceHolder() {
 			return resourceHolder != null;

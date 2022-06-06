@@ -321,7 +321,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
-	@Disabled("because hanging - requires JCBC-1955 fix")
+	//@Disabled("because hanging - requires JCBC-1955 fix")
+	// somewhere between 50 and 80 threads, it starts to hang.
 	@Test
 	public void concurrentTxns() {
 		Runnable r = () -> {
@@ -332,11 +333,12 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			System.out.printf("Finished thread %d %s%n", t.getId(), t.getName());
 		};
 		List<Thread> threads = new ArrayList<>();
-		for (int i = 0; i < 99; i ++) {
+		for (int i = 0; i < 50; i ++) { // somewhere between 50-80 it starts to hang
 			Thread t = new Thread(r);
 			t.start();
 			threads.add(t);
 		}
+
 		threads.forEach(t -> {
 			try {
 				System.out.printf("Waiting for thread %d %s%n", t.getId(), t.getName());

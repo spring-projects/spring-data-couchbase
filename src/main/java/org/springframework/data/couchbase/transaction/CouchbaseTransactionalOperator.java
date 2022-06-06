@@ -162,6 +162,7 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 			// atr : transactionalOpterator -> transactionDefinition -> transactionHolder ->
 			((CouchbaseTransactionDefinition) transactionDefinition).setAttemptContextReactive(getAttemptContextReactive());
 			Mono<ReactiveTransaction> status = this.transactionManager.getReactiveTransaction(this.transactionDefinition);
+
 			// This is an around advice: Invoke the next interceptor in the chain.
 			// This will normally result in a target object being invoked.
 			// Need re-wrapping of ReactiveTransaction until we get hold of the exception

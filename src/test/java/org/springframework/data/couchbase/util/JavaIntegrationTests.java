@@ -44,6 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
@@ -90,6 +91,7 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
 
 /**
  * Extends the {@link ClusterAwareIntegrationTests} with java-client specific code.
@@ -114,9 +116,9 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
-		//ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		//couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		//reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		// ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+		// couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+		// reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	/**
@@ -146,7 +148,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void setupScopeCollection(Cluster cluster, String scopeName, String collectionName,
-											CollectionManager collectionManager) {
+			CollectionManager collectionManager) {
 		// Create the scope.collection (borrowed from CollectionManagerIntegrationTest )
 		ScopeSpec scopeSpec = ScopeSpec.create(scopeName);
 		CollectionSpec collSpec = CollectionSpec.create(collectionName, scopeName);
@@ -278,7 +280,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static CompletableFuture<Void> createPrimaryIndex(Cluster cluster, String bucketName, String scopeName,
-															 String collectionName) {
+			String collectionName) {
 		CreatePrimaryQueryIndexOptions options = CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions();
 		options.timeout(Duration.ofSeconds(300));
 		options.ignoreIfExists(true);
@@ -303,14 +305,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType*/ boolean queryType, CharSequence statement,
-													   Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
+			Map<String, Object> with, CommonOptions<?>.BuiltCommonOptions options) {
 		return with.isEmpty() ? exec(cluster, queryType, statement, options)
 				: exec(cluster, queryType, statement + " WITH " + Mapper.encodeAsString(with), options);
 	}
 
 	private static CompletableFuture<QueryResult> exec(Cluster cluster,
 			/*AsyncQueryIndexManager.QueryType queryType,*/ boolean queryType, CharSequence statement,
-													   CommonOptions<?>.BuiltCommonOptions options) {
+			CommonOptions<?>.BuiltCommonOptions options) {
 		QueryOptions queryOpts = toQueryOptions(options).readonly(queryType /*requireNonNull(queryType) == READ_ONLY*/);
 
 		return cluster.async().query(statement.toString(), queryOpts).exceptionally(t -> {
@@ -342,7 +344,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	public static void createFtsCollectionIndex(Cluster cluster, String indexName, String bucketName, String scopeName,
-												String collectionName) {
+			String collectionName) {
 		SearchIndex searchIndex = new SearchIndex(indexName, bucketName);
 		if (scopeName != null) {
 			// searchIndex = searchIndex.forScopeCollection(scopeName, collectionName);
@@ -392,34 +394,51 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 				}
 			}
 			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
-			String message = "Unexpected exception type thrown "+actualException.getClass();
+			String message = "Expected one of "+toString(expectedTypes)+" but was : "+actualException.getClass();
 			throw new AssertionFailedError(message, actualException);
 		}
 
-		String message ="Expected "+expectedTypes+" to be thrown, but nothing was thrown.";
+		String message ="Expected one of "+toString(expectedTypes)+" to be thrown, but nothing was thrown.";
 		throw new AssertionFailedError(message);
 	}
 
+	private static String toString(Object[] array) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("[");
+		for (int i = 0; i < array.length; i++) {
+			if(i>0){
+				sb.append(", ");
+			}
+			sb.append(array[i]);
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+
 	public static Throwable assertThrowsWithCause(Executable executable, Class<?>... expectedTypes) {
-		Class<?> nextExpectedException= null;
+		Class<?> nextExpectedException = null;
 		try {
 			executable.execute();
-		}
-		catch (Throwable actualException) {
-			for(Class<?> expectedType:expectedTypes){
+		} catch (Throwable actualException) {
+			for (Class<?> expectedType : expectedTypes) {
 				nextExpectedException = expectedType;
-				if(actualException == null || !expectedType.isAssignableFrom( actualException.getClass())){
-					String message ="Expected "+nextExpectedException+" to be thrown/cause, but found "+actualException;
+				if (actualException == null || !expectedType.isAssignableFrom(actualException.getClass())) {
+					String message = "Expected " + nextExpectedException + " to be thrown/cause, but found " + actualException;
 					throw new AssertionFailedError(message, actualException);
 				}
 				actualException = actualException.getCause();
 			}
-			//UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
 			return actualException;
 		}
 
-		String message ="Expected "+expectedTypes[0]+" to be thrown, but nothing was thrown.";
+		String message = "Expected " + expectedTypes[0] + " to be thrown, but nothing was thrown.";
 		throw new AssertionFailedError(message);
+	}
+
+	// Use this to still rely on the return type
+	protected static <T> T throwSimulateFailureException(T entity) {
+		throw new SimulateFailureException();
 	}
 
 }

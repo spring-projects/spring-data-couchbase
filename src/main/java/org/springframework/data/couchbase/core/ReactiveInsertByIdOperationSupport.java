@@ -110,19 +110,20 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
-			System.err.println("txOp: " + pArgs.getTxOp());
+			System.err.println("insert txOp: " + pArgs.getTxOp());
 
 			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
+									System.err.println("insert non-tx");
 									return collection.reactive()
 											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
 											.flatMap(
 													result -> this.support.applyResult(object, converted, converted.getId(), result.cas(), null));
 								} else {
 									rejectInvalidTransactionalOptions();
-
+									System.err.println("insert tx");
 									return ctxOpt.get().getCore()
 											.insert(makeCollectionIdentifier(collection.async()), converted.getId(),
 													template.getCouchbaseClientFactory().getCluster().environment().transcoder()

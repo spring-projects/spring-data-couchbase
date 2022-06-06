@@ -9,13 +9,11 @@ import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
-import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
-import org.springframework.data.couchbase.transaction.SessionAwareMethodInterceptor;
 
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
@@ -121,18 +119,18 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public ReactiveCouchbaseResourceHolder getResources() {
-		return new ReactiveCouchbaseResourceHolder(null);
+	public CouchbaseResourceHolder getResources() {
+		return new CouchbaseResourceHolder(null);
 	}
 
 	@Override
-	public ReactiveCouchbaseResourceHolder getResources(TransactionOptions options,
-																											CoreTransactionAttemptContext atr) {
+	public CouchbaseResourceHolder getResources(TransactionOptions options,
+                                              CoreTransactionAttemptContext atr) {
 		if (atr == null) {
 			atr = AttemptContextReactiveAccessor
 					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
 		}
-		return new ReactiveCouchbaseResourceHolder(atr);
+		return new CouchbaseResourceHolder(atr);
 	}
 
 	@Override

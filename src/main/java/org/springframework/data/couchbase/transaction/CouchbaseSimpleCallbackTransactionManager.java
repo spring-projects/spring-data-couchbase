@@ -165,14 +165,14 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	public static void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
 		TransactionSynchronizationManager.setActualTransactionActive(true);
 		TransactionSynchronizationManager.initSynchronization();
-		ReactiveCouchbaseResourceHolder resourceHolder = new ReactiveCouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
-		TransactionSynchronizationManager.unbindResourceIfPossible(ReactiveCouchbaseResourceHolder.class);
-		TransactionSynchronizationManager.bindResource(ReactiveCouchbaseResourceHolder.class, resourceHolder);
+		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
+		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
+		TransactionSynchronizationManager.bindResource(CouchbaseResourceHolder.class, resourceHolder);
 	}
 
 	@Stability.Internal
 	public static void clearTransactionSynchronizationManager() {
-		TransactionSynchronizationManager.unbindResourceIfPossible(ReactiveCouchbaseResourceHolder.class);
+		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
 		TransactionSynchronizationManager.clear();
 	}
 

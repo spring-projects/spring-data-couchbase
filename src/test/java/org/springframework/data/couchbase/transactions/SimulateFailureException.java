@@ -1,6 +1,6 @@
 package org.springframework.data.couchbase.transactions;
 
-class SimulateFailureException extends RuntimeException {
+public class SimulateFailureException extends RuntimeException {
 
   public SimulateFailureException(String... s){
     super(s!= null && s.length > 0 ? s[0] : null);

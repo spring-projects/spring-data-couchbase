@@ -21,7 +21,7 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseResourceHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import org.springframework.dao.support.PersistenceExceptionTranslator;
@@ -80,7 +80,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	ReactiveCouchbaseResourceHolder getResources();
+	CouchbaseResourceHolder getResources();
 
 	String getBucketName();
 
@@ -88,7 +88,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	ReactiveCouchbaseResourceHolder getResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	CouchbaseResourceHolder getResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)

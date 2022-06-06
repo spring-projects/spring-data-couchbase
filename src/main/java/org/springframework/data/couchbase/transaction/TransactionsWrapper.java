@@ -5,7 +5,6 @@ import reactor.util.annotation.Nullable;
 import java.util.function.Consumer;
 
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.couchbase.client.core.error.transaction.internal.CoreTransactionFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
@@ -64,7 +63,7 @@ public class TransactionsWrapper /* wraps Transactions */ {
 				CoreTransactionAttemptContext atr = AttemptContextReactiveAccessor.getCore(ctx);
 
 				// from CouchbaseTransactionManager
-				ReactiveCouchbaseResourceHolder resourceHolder = CouchbaseTransactionManager.newResourceHolder(couchbaseClientFactory,
+				CouchbaseResourceHolder resourceHolder = CouchbaseTransactionManager.newResourceHolder(couchbaseClientFactory,
 						/*definition*/ new CouchbaseTransactionDefinition(), TransactionOptions.transactionOptions(), atr);
 				// couchbaseTransactionObject.setResourceHolder(resourceHolder);
 

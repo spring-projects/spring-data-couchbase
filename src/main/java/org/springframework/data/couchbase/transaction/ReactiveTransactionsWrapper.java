@@ -31,14 +31,19 @@ public class ReactiveTransactionsWrapper {
 
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
-						ReactiveCouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResources(
-								TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
-						return reactiveContext.put(ReactiveCouchbaseResourceHolder.class, resourceHolder);
+						CouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResources(
+								TransactionOptions.transactionOptions(), printThrough("core: ",AttemptContextReactiveAccessor.getCore(ctx)));
+						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
 		};
 
 		return reactiveCouchbaseClientFactory.getCluster().reactive().transactions().run(newTransactionLogic,
 				perConfig);
 
+	}
+
+	private static <T> T printThrough(String label, T obj){
+		System.err.println(label+obj);
+		return obj;
 	}
 }

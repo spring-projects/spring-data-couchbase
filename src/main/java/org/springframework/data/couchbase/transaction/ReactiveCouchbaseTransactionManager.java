@@ -34,7 +34,6 @@ import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.transactions.Transactions;
 
 /**
  * A {@link org.springframework.transaction.ReactiveTransactionManager} implementation that manages
@@ -69,21 +68,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		implements InitializingBean {
 
 	private @Nullable ReactiveCouchbaseClientFactory databaseFactory; // (why) does this need to be reactive?
-	private @Nullable Transactions transactions;
-
-	/**
-	 * Create a new {@link ReactiveCouchbaseTransactionManager} for bean-style usage.
-	 * <p />
-	 * <strong>Note:</strong>The {@link org.springframework.data.couchbase.CouchbaseClientFactory db factory} has to be
-	 * {@link #setDatabaseFactory(ReactiveCouchbaseClientFactory)} set} before using the instance. Use this constructor to
-	 * prepare a {@link ReactiveCouchbaseTransactionManager} via a {@link org.springframework.beans.factory.BeanFactory}.
-	 * <p />
-	 * Optionally it is possible to set default {@link TransactionQueryOptions transaction options} defining {link
-	 * com.xxxxxxx.ReadConcern} and {link com.xxxxxxx.WriteConcern}.
-	 *
-	 * @see #setDatabaseFactory(ReactiveCouchbaseClientFactory)
-	 */
-	public ReactiveCouchbaseTransactionManager() {}
 
 	/**
 	 * Create a new {@link ReactiveCouchbaseTransactionManager} obtaining sessions from the given
@@ -98,15 +82,6 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		System.err.println("ReactiveCouchbaseTransactionManager : created");
 	}
 
-	public ReactiveCouchbaseTransactionManager(ReactiveCouchbaseClientFactory databaseFactory,
-											   @Nullable Transactions transactions) {
-		Assert.notNull(databaseFactory, "DatabaseFactory must not be null!");
-		this.databaseFactory = databaseFactory; // databaseFactory; // should be a clone? TransactionSynchronizationManager
-		// binds objs to it
-		this.transactions = transactions;
-		System.err.println("ReactiveCouchbaseTransactionManager : created Transactions: " + transactions);
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.transaction.reactive.AbstractReactiveTransactionManager#doGetTransaction(org.springframework.transaction.reactive.TransactionSynchronizationManager)
@@ -116,10 +91,8 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 			throws TransactionException {
 		// creation of a new ReactiveCouchbaseTransactionObject (i.e. transaction).
 		// with an attempt to get the resourceHolder from the synchronizationManager
-		ReactiveCouchbaseResourceHolder resourceHolder = (ReactiveCouchbaseResourceHolder) synchronizationManager
-				.getResource(getRequiredDatabaseFactory().getCluster());
-		// TODO ACR from couchbase
-		// resourceHolder.getSession().setAttemptContextReactive(null);
+		CouchbaseResourceHolder resourceHolder = (CouchbaseResourceHolder) synchronizationManager
+				.getResource(/*getRequiredDatabaseFactory().getCluster()*/ CouchbaseResourceHolder.class);
 		return new ReactiveCouchbaseTransactionObject(resourceHolder);
 	}
 
@@ -141,13 +114,12 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doBegin(TransactionSynchronizationManager synchronizationManager, Object transaction,
-								 TransactionDefinition definition) throws TransactionException {
+			TransactionDefinition definition) throws TransactionException {
 
 		return Mono.defer(() -> {
 
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
-			// TODO mr - why aren't we creating the AttemptContext here in the client session in the resourceholder?
-			Mono<ReactiveCouchbaseResourceHolder> holder = newResourceHolder(definition,
+			Mono<CouchbaseResourceHolder> holder = newResourceHolder(definition,
 					TransactionOptions.transactionOptions());
 			return holder.doOnNext(resourceHolder -> {
 				couchbaseTransactionObject.setResourceHolder(resourceHolder);
@@ -166,7 +138,8 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 									debugString(couchbaseTransactionObject.getCore())),
 							ex))
 					.doOnSuccess(resourceHolder -> {
-						synchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), resourceHolder);
+						synchronizationManager.bindResource(
+								CouchbaseResourceHolder.class /* getRequiredDatabaseFactory().getCluster()*/, resourceHolder);
 					}).then();
 		});
 	}
@@ -194,7 +167,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doResume(TransactionSynchronizationManager synchronizationManager, @Nullable Object transaction,
-								  Object suspendedResources) {
+			Object suspendedResources) {
 		return Mono
 				.fromRunnable(() -> synchronizationManager.bindResource(getRequiredDatabaseFactory(), suspendedResources));
 	}
@@ -205,7 +178,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected final Mono<Void> doCommit(TransactionSynchronizationManager synchronizationManager,
-										GenericReactiveTransaction status) throws TransactionException {
+			GenericReactiveTransaction status) throws TransactionException {
 		return Mono.defer(() -> {
 
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(status);
@@ -215,10 +188,9 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 						debugString(couchbaseTransactionObject.getCore())));
 			}
 
-			return doCommit(synchronizationManager, couchbaseTransactionObject).onErrorMap(ex -> {
-				return new TransactionSystemException(String.format("Could not commit Couchbase transaction for session %s.",
-						debugString(couchbaseTransactionObject.getCore())), ex);
-			});
+			return doCommit(synchronizationManager, couchbaseTransactionObject).onErrorMap(
+					ex -> new TransactionSystemException(String.format("Could not commit Couchbase transaction for session %s.",
+							debugString(couchbaseTransactionObject.getCore())), ex));
 		});
 	}
 
@@ -233,7 +205,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 * @param transactionObject never {@literal null}.
 	 */
 	protected Mono<Void> doCommit(TransactionSynchronizationManager synchronizationManager,
-								  ReactiveCouchbaseTransactionObject transactionObject) {
+			ReactiveCouchbaseTransactionObject transactionObject) {
 		return transactionObject.commitTransaction();
 	}
 
@@ -243,7 +215,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doRollback(TransactionSynchronizationManager synchronizationManager,
-									GenericReactiveTransaction status) {
+			GenericReactiveTransaction status) {
 
 		return Mono.defer(() -> {
 
@@ -254,10 +226,9 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 						debugString(couchbaseTransactionObject.getCore())));
 			}
 
-			return couchbaseTransactionObject.abortTransaction().onErrorResume(CouchbaseException.class, ex -> {
-				return Mono.error(new TransactionSystemException(String.format("Could not abort transaction for session %s.",
-						debugString(couchbaseTransactionObject.getCore())), ex));
-			});
+			return couchbaseTransactionObject.abortTransaction().onErrorResume(CouchbaseException.class,
+					ex -> Mono.error(new TransactionSystemException(String.format("Could not abort transaction for session %s.",
+							debugString(couchbaseTransactionObject.getCore())), ex)));
 		});
 	}
 
@@ -267,7 +238,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doSetRollbackOnly(TransactionSynchronizationManager synchronizationManager,
-										   GenericReactiveTransaction status) throws TransactionException {
+			GenericReactiveTransaction status) throws TransactionException {
 
 		return Mono.fromRunnable(() -> {
 			ReactiveCouchbaseTransactionObject transactionObject = extractCouchbaseTransaction(status);
@@ -281,7 +252,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	 */
 	@Override
 	protected Mono<Void> doCleanupAfterCompletion(TransactionSynchronizationManager synchronizationManager,
-												  Object transaction) {
+			Object transaction) {
 
 		Assert.isInstanceOf(ReactiveCouchbaseTransactionObject.class, transaction,
 				() -> String.format("Expected to find a %s but it turned out to be %s.",
@@ -291,7 +262,8 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = (ReactiveCouchbaseTransactionObject) transaction;
 
 			// Remove the connection holder from the thread.
-			synchronizationManager.unbindResource(getRequiredDatabaseFactory().getCluster());
+			synchronizationManager
+					.unbindResource(CouchbaseResourceHolder.class /* getRequiredDatabaseFactory().getCluster() */);
 			couchbaseTransactionObject.getRequiredResourceHolder().clear();
 
 			if (logger.isDebugEnabled()) {
@@ -333,12 +305,12 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		getRequiredDatabaseFactory();
 	}
 
-	private Mono<ReactiveCouchbaseResourceHolder> newResourceHolder(TransactionDefinition definition,
-																	TransactionOptions options) {
+	private Mono<CouchbaseResourceHolder> newResourceHolder(TransactionDefinition definition,
+																													TransactionOptions options) {
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
-		Mono<ReactiveCouchbaseResourceHolder> sess = Mono.just(dbFactory.getResources(options, null));
+		Mono<CouchbaseResourceHolder> sess = Mono.just(dbFactory.getResources(options, null));
 		return sess;
 	}
 
@@ -390,33 +362,34 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 	}
 
 	/**
-	 * Couchbase specific transaction object, representing a {@link ReactiveCouchbaseResourceHolder}. Used as transaction
+	 * Couchbase specific transaction object, representing a {@link CouchbaseResourceHolder}. Used as transaction
 	 * object by {@link ReactiveCouchbaseTransactionManager}.
 	 *
 	 * @author Christoph Strobl
 	 * @author Mark Paluch
 	 * @since 2.2
-	 * @see ReactiveCouchbaseResourceHolder
+	 * @see CouchbaseResourceHolder
 	 */
 	protected static class ReactiveCouchbaseTransactionObject implements SmartTransactionObject {
 
-		public @Nullable ReactiveCouchbaseResourceHolder resourceHolder;
+		public @Nullable
+		CouchbaseResourceHolder resourceHolder;
 
-		ReactiveCouchbaseTransactionObject(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
+		ReactiveCouchbaseTransactionObject(@Nullable CouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * Set the {@link ReactiveCouchbaseResourceHolder}.
+		 * Set the {@link CouchbaseResourceHolder}.
 		 *
 		 * @param resourceHolder can be {@literal null}.
 		 */
-		void setResourceHolder(@Nullable ReactiveCouchbaseResourceHolder resourceHolder) {
+		void setResourceHolder(@Nullable CouchbaseResourceHolder resourceHolder) {
 			this.resourceHolder = resourceHolder;
 		}
 
 		/**
-		 * @return {@literal true} if a {@link ReactiveCouchbaseResourceHolder} is set.
+		 * @return {@literal true} if a {@link CouchbaseResourceHolder} is set.
 		 */
 		final boolean hasResourceHolder() {
 			return resourceHolder != null;
@@ -463,7 +436,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 			return resourceHolder != null ? resourceHolder.getCore() : null;
 		}
 
-		private ReactiveCouchbaseResourceHolder getRequiredResourceHolder() {
+		private CouchbaseResourceHolder getRequiredResourceHolder() {
 
 			Assert.state(resourceHolder != null, "ReactiveMongoResourceHolder is required but not present. o_O");
 			return resourceHolder;
