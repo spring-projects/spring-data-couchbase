@@ -93,11 +93,15 @@ public class OptionsBuilder {
 	}
 
 	public static TransactionQueryOptions buildTransactionQueryOptions(QueryOptions options) {
-
 		QueryOptions.Built built = options.build();
 		TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
 
 		JsonObject optsJson = getQueryOpts(built);
+
+		if (optsJson.containsKey("use_fts")) {
+			throw new IllegalArgumentException("QueryOptions.flexIndex is not supported in a transaction");
+		}
+
 		// todo gpx is this compatible with all forms of named and positional parameters? won't be compatible with JsonSerializer. maybe can put some support into SDK
 		for (Map.Entry<String, Object> entry : optsJson.toMap().entrySet()) {
 			txOptions.raw(entry.getKey(), entry.getValue());
