@@ -158,7 +158,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void replacePersonCBTransactionsRxTmplRollback() {
 		Person person = new Person(1, "Walter", "White");
 		String newName = "Walt";
@@ -174,7 +173,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void deletePersonCBTransactionsRxTmpl() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -202,7 +200,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void deletePersonCBTransactionsRxRepo() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -216,7 +213,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void deletePersonCBTransactionsRxRepoFail() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -231,7 +227,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void findPersonCBTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -253,7 +248,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void insertPersonRbCBTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -266,7 +260,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void replacePersonRbCBTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
@@ -282,7 +275,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	}
 
 	@Test
-	@Disabled
 	public void findPersonSpringTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
