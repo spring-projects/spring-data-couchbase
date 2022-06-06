@@ -39,7 +39,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
-import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
@@ -49,6 +48,8 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -366,4 +367,41 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		Person fetched = ops.findById(Person.class).one(id.toString());
 		assertNull(fetched);
 	}
+
+	@DisplayName("Setting an unsupported isolation level should fail")
+	@Test
+	public void unsupportedIsolationLevel() {
+		template.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
+
+		assertThrowsWithCause(() -> doInTransaction(status -> {
+		}), IllegalArgumentException.class);
+	}
+
+	@DisplayName("Setting PROPAGATION_MANDATORY should fail, as not in a transaction")
+	@Test
+	public void propagationMandatoryOutsideTransaction() {
+		template.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
+
+		assertThrowsWithCause(() -> doInTransaction(status -> {
+		}), IllegalTransactionStateException.class);
+	}
+
+	@Test
+	public void nestedTransactionTemplates() {
+		TransactionTemplate template2 = new TransactionTemplate(transactionManager);
+		template2.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
+
+		UUID id = UUID.randomUUID();
+
+		template.executeWithoutResult(status -> {
+			template2.executeWithoutResult(status2 -> {
+				Person person = new Person(id, "Walter", "White");
+				ops.insertById(Person.class).one(person);
+			});
+		});
+
+		Person fetched = ops.findById(Person.class).one(id.toString());
+		assertEquals("Walter", fetched.getFirstname());
+	}
+
 }
