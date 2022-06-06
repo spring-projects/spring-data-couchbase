@@ -107,7 +107,6 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 			assertInTransaction();
 
 			// read your own write
-			// todo gpx now understand why this was failing, but have concerns (see Slack) about UX
 			User user = operations.findById(User.class).one(id);
 			assertNotNull(user);
 
