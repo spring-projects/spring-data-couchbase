@@ -20,6 +20,7 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 
@@ -95,8 +96,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 									.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID),
 											row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
 						} else {
-							// todo gpx handle unsupported options
-							TransactionQueryOptions opts = buildTransactionOptions(buildQueryOptions(pArgs.getOptions()));
+							TransactionQueryOptions opts = OptionsBuilder.buildTransactionQueryOptions(buildQueryOptions(pArgs.getOptions()));
 							ObjectNode convertedOptions = AttemptContextReactiveAccessor.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
 							return transactionContext.get().getCore().queryBlocking(statement, template.getBucketName(), pArgs.getScope(), convertedOptions, false)
 									.flatMapIterable(result -> result.rows).map(row -> {
@@ -111,11 +111,6 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private QueryOptions buildQueryOptions(QueryOptions options) {
 			QueryScanConsistency qsc = scanConsistency != null ? scanConsistency : template.getConsistency();
 			return query.buildQueryOptions(options, qsc);
-		}
-
-		private TransactionQueryOptions buildTransactionOptions(QueryOptions options) {
-			TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
-			return txOptions;
 		}
 
 		@Override
