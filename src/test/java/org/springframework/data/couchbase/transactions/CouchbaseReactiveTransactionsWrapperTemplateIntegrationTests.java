@@ -57,7 +57,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 /**
  * Tests for ReactiveTransactionsWrapper, using template methods (findById etc.)
  */
-// todo gpx many of these tests are failing
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
 public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extends JavaIntegrationTests {

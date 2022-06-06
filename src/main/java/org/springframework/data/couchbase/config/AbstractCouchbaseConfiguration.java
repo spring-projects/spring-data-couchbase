@@ -55,7 +55,6 @@ import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTra
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
-import org.springframework.data.couchbase.transaction.interceptor.CouchbaseTransactionInterceptor;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -360,6 +359,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return 	TransactionalOperator.create(reactiveTransactionManager, transactionDefinition);
 	}
 
+	// todo gp what is this used for
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_DEFINITION)
 	public TransactionDefinition transactionDefinition(){
 		return new CouchbaseTransactionDefinition();
@@ -396,6 +396,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @param builder the builder that can be customized.
 	 */
+	// todo gp is this needed?  Can already configure transactions through the regular ClusterEnvironment, and this method would also permit configuring non-transactional options
 	public void configureTransactions(final ClusterEnvironment.Builder builder) {
 	}
 
