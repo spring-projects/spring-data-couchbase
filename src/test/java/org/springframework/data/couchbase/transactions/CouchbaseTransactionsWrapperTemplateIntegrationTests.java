@@ -396,4 +396,38 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 			assertTrue(err.getCause() instanceof IllegalArgumentException);
 		}
 	}
+
+	@DisplayName("Forcing CAS mismatch causes a transaction retry")
+	@Test
+	public void casMismatchCausesRetry() {
+		UUID id = UUID.randomUUID();
+		Person person = new Person(id, "Walter", "White");
+		ops.insertById(Person.class).one(person);
+		AtomicInteger attempts = new AtomicInteger();
+
+		// Needs to take place in a separate thread to bypass the ThreadLocalStorage checks
+		Thread forceCASMismatch = new Thread(() -> {
+			Person fetched = ops.findById(Person.class).one(id.toString());
+			ops.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
+		});
+
+		doInTransaction(ctx -> {
+			Person fetched = ops.findById(Person.class).one(id.toString());
+
+			if (attempts.incrementAndGet() == 1) {
+				forceCASMismatch.start();
+				try {
+					forceCASMismatch.join();
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+			ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+		});
+
+		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		assertEquals("Changed by transaction", fetched.getFirstname());
+		assertEquals(2, attempts.get());
+	}
 }
