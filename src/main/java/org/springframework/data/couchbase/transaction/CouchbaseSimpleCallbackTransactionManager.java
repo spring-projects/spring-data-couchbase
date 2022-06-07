@@ -26,13 +26,15 @@ import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
+import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
-import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
@@ -67,6 +69,21 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		}
 	}
 
+	@Stability.Internal
+	<T> Flux<T> executeReactive(TransactionDefinition definition, org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+		return Flux.defer(() -> {
+			boolean createNewTransaction = handlePropagation(definition);
+
+			setOptionsFromDefinition(definition);
+
+			if (createNewTransaction) {
+				return executeNewReactiveTransaction(callback);
+			} else {
+				return Mono.error(new IllegalStateException("Unsupported operation"));
+			}
+		});
+	}
+
 	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
@@ -92,6 +109,61 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		clearTransactionSynchronizationManager();
 
 		return execResult.get();
+	}
+
+	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+		final AtomicReference<Flux<T>> execResult = new AtomicReference<>();
+
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
+			return Mono.defer(() -> {
+				ReactiveTransaction status = new ReactiveTransaction() {
+					boolean rollbackOnly = false;
+
+					@Override
+					public boolean isNewTransaction() {
+						return true;
+					}
+
+					@Override
+					public void setRollbackOnly() {
+						this.rollbackOnly = true;
+					}
+
+					@Override
+					public boolean isRollbackOnly() {
+						return rollbackOnly;
+					}
+
+					@Override
+					public boolean isCompleted() {
+						return false;
+					}
+				};
+
+				return Flux.from(callback.doInTransaction(status))
+						.publish(flux -> {
+							execResult.set(flux);
+							return flux;
+						})
+						.then(Mono.defer(() -> {
+							if (status.isRollbackOnly()) {
+								return Mono.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
+							}
+							return Mono.empty();
+						}));
+			})
+					// This reactive context is what tells Spring operations they're inside a transaction.
+					.contextWrite(reactiveContext -> {
+						CouchbaseResourceHolder resourceHolder = couchbaseClientFactory.getResources(
+								TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
+						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
+					});
+
+		}, this.options);
+
+		clearTransactionSynchronizationManager();
+
+		return result.thenMany(Flux.defer(() -> execResult.get()));
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
