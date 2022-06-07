@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.springframework.dao.OptimisticLockingFailureException;
 import reactor.core.publisher.Mono;
 
@@ -115,6 +116,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
+	@Disabled("todo gp: temporarily disabling as sometimes hanging")
 	@Test
 	// need to fix this to make it deliberately have the CasMismatch by synchronization.
 	// And to *not* do any out-of-tx updates after the tx update has succeeded.
@@ -155,6 +157,42 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		//	System.err.println(cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()));
 		//	sleepMs(1000);
 		//}
+	}
+
+	@DisplayName("Forcing CAS mismatch causes a transaction retry")
+	@Test
+	public void casMismatchCausesRetry() {
+		UUID id = UUID.randomUUID();
+		Person person = new Person(id, "Walter", "White");
+		operations.insertById(Person.class).one(person);
+		AtomicInteger attempts = new AtomicInteger();
+
+		// Needs to take place in a separate thread to bypass the ThreadLocalStorage checks
+		Thread forceCASMismatch = new Thread(() -> {
+			Person fetched = operations.findById(Person.class).one(id.toString());
+			operations.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
+		});
+
+		reactiveTransactionsWrapper.run(ctx -> {
+			return rxCBTmpl.findById(Person.class).one(id.toString())
+					.flatMap(fetched -> Mono.defer(() -> {
+
+						if (attempts.incrementAndGet() == 1) {
+							forceCASMismatch.start();
+							try {
+								forceCASMismatch.join();
+							} catch (InterruptedException e) {
+								throw new RuntimeException(e);
+							}
+						}
+
+						return rxCBTmpl.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+					}));
+		}).block();
+
+		Person fetched = operations.findById(Person.class).one(person.getId().toString());
+		assertEquals("Changed by transaction", fetched.getFirstname());
+		assertEquals(2, attempts.get());
 	}
 
 	@Test
