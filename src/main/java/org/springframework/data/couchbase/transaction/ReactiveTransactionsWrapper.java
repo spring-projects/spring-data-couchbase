@@ -31,6 +31,7 @@ public class ReactiveTransactionsWrapper {
 
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
+						// todo gp why is this taking a TransactionOptions?
 						CouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResources(
 								TransactionOptions.transactionOptions(), printThrough("core: ",AttemptContextReactiveAccessor.getCore(ctx)));
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);

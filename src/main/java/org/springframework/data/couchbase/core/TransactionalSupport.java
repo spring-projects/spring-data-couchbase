@@ -83,7 +83,7 @@ public class TransactionalSupport {
         try {
             ctx.logger().info(ctx.attemptId(), "Spring CAS mismatch %s != %s, retrying transaction", cas1, cas2);
 
-            // todo gpx expose this in SDK
+            // todo gpx expose this in SDK (now done, need 3.3.1 release)
             Method method = CoreTransactionAttemptContext.class.getDeclaredMethod("operationFailed", TransactionOperationFailedException.class);
             method.setAccessible(true);
             TransactionOperationFailedException err = TransactionOperationFailedException.Builder.createError()

@@ -138,7 +138,7 @@ public class AttemptContextReactiveAccessor {
 		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
 	}
 
-	// todo gp have C&Ped this from SDK, needs to be exposed properly in SDK
+	// todo gp have C&Ped this from SDK, needs to be exposed properly in SDK (now done, need 3.3.1 release)
 	public static ObjectNode createTransactionOptions(final ReactiveScope scope,
 																				  final String statement,
 																				  final TransactionQueryOptions options) {
