@@ -82,6 +82,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			this.support = support;
 		}
 
+
+
 		@Override
 		public Mono<T> one(final String id) {
 
@@ -127,6 +129,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			});
 
 		}
+
+		// todo gpx test reactive @Transactional - we don't support, but what happens. There is no CallbackPreferring ReactiveTransactionManager
 
 		@Override
 		public Flux<? extends T> all(final Collection<String> ids) {
