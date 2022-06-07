@@ -153,9 +153,13 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		TransactionSynchronizationManager.setActualTransactionActive(true);
 		resourceHolder.setSynchronizedWithTransaction(true);
 		TransactionSynchronizationManager.unbindResourceIfPossible(getRequiredDatabaseFactory().getCluster());
+		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
 		System.err.println("CouchbaseTransactionManager: " + this);
 		System.err.println("bindResource: " + getRequiredDatabaseFactory().getCluster() + " value: " + resourceHolder);
 		TransactionSynchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), resourceHolder);
+		// todo gp if we keep this CouchbaseTransactionManager (and I feel we shouldn't), let's standardise on the CouchbaseResourceHolder.class
+		// I've kept both ways (CouchbaseResourceHolder.class and getRequiredDatabaseFactory().getCluster()) for now
+		TransactionSynchronizationManager.bindResource(CouchbaseResourceHolder.class, resourceHolder);
 	}
 
 	/*
@@ -168,6 +172,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 		CouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
 		couchbaseTransactionObject.setResourceHolder(null);
 
+		TransactionSynchronizationManager.unbindResource(CouchbaseResourceHolder.class);
 		return TransactionSynchronizationManager.unbindResource(getRequiredDatabaseFactory().getCluster());
 	}
 
@@ -178,6 +183,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	@Override
 	protected void doResume(@Nullable Object transaction, Object suspendedResources) {
 		TransactionSynchronizationManager.bindResource(getRequiredDatabaseFactory().getCluster(), suspendedResources);
+		TransactionSynchronizationManager.bindResource(CouchbaseResourceHolder.class, suspendedResources);
 	}
 
 	/*
@@ -284,6 +290,7 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 
 		// Remove the connection holder from the thread.
 		TransactionSynchronizationManager.unbindResourceIfPossible(getRequiredDatabaseFactory().getCluster());
+		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
 		//couchbaseTransactionObject.getRequiredResourceHolder().clear();
 
 		if (logger.isDebugEnabled()) {
