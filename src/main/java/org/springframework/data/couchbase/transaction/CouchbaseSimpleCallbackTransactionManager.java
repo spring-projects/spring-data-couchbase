@@ -42,9 +42,13 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseSimpleCallbackTransactionManager.class);
 
 	private final ReactiveCouchbaseClientFactory couchbaseClientFactory;
-	private TransactionOptions options;
+	private @Nullable TransactionOptions options;
 
-	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, TransactionOptions options) {
+	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory) {
+		this(couchbaseClientFactory, null);
+	}
+
+	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 		this.options = options;
 	}
