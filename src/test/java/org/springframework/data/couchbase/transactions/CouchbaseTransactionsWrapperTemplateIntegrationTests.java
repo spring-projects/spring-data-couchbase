@@ -44,6 +44,7 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.data.couchbase.transaction.SpringTransactionAttemptContext;
 import org.springframework.data.couchbase.transaction.TransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -79,11 +80,11 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 		}
 	}
 
-	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda) {
+	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda) {
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda, @Nullable TransactionOptions options) {
+	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda, @Nullable TransactionOptions options) {
 		TransactionsWrapper wrapper = new TransactionsWrapper(couchbaseClientFactory);
 		AtomicInteger attempts = new AtomicInteger();
 

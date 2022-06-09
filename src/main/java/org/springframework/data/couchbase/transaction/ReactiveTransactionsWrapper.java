@@ -18,16 +18,15 @@ public class ReactiveTransactionsWrapper {
 		this.reactiveCouchbaseClientFactory = reactiveCouchbaseClientFactory;
 	}
 
-	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic) {
+	public Mono<TransactionResult> run(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> transactionLogic) {
 		return run(transactionLogic, null);
 	}
 
-	// todo gpx maybe instead of giving them a ReactiveTransactionAttemptContext we give them a wrapped version, in case we ever need Spring-specific functionality
-	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic,
+	public Mono<TransactionResult> run(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> transactionLogic,
 			TransactionOptions perConfig) {
 		Function<ReactiveTransactionAttemptContext, Mono<?>> newTransactionLogic = (ctx) -> {
 
-			return transactionLogic.apply(ctx)
+			return transactionLogic.apply(new ReactiveSpringTransactionAttemptContext(ctx))
 
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.data.couchbase.transaction.ReactiveSpringTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -80,11 +81,11 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		}
 	}
 
-	private RunResult doInTransaction(Function<ReactiveTransactionAttemptContext, Mono<?>> lambda) {
+	private RunResult doInTransaction(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> lambda) {
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Function<ReactiveTransactionAttemptContext, Mono<?>> lambda,
+	private RunResult doInTransaction(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> lambda,
 			@Nullable TransactionOptions options) {
 		ReactiveTransactionsWrapper wrapper = new ReactiveTransactionsWrapper(couchbaseClientFactory);
 		AtomicInteger attempts = new AtomicInteger();
