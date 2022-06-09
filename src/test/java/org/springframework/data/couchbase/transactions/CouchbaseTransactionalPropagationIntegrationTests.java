@@ -376,49 +376,49 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			this.ops = ops;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void propagationDefault(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationDefault");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.REQUIRED)
+		@Transactional(propagation = Propagation.REQUIRED)
 		public void propagationRequired(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequired");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.MANDATORY)
+		@Transactional(propagation = Propagation.MANDATORY)
 		public void propagationMandatory(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationMandatory");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.NESTED)
+		@Transactional(propagation = Propagation.NESTED)
 		public void propagationNested(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.SUPPORTS)
+		@Transactional(propagation = Propagation.SUPPORTS)
 		public void propagationSupports(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationSupports");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.NOT_SUPPORTED)
+		@Transactional(propagation = Propagation.NOT_SUPPORTED)
 		public void propagationNotSupported(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNotSupported");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.REQUIRES_NEW)
+		@Transactional(propagation = Propagation.REQUIRES_NEW)
 		public void propagationRequiresNew(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequiresNew");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, propagation = Propagation.NEVER)
+		@Transactional(propagation = Propagation.NEVER)
 		public void propagationNever(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
 			if (callback != null) callback.accept(ops);

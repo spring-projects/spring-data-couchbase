@@ -453,7 +453,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			personOperationsRx = opsRx;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Person declarativeSavePerson(Person person) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
@@ -466,7 +466,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return ret;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Person declarativeSavePersonWithThread(Person person, Thread thread) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
@@ -479,7 +479,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return ret;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void insertThenThrow() {
 			Person person = new Person(null, "Walter", "White");
 			assertInAnnotationTransaction(true);
@@ -495,26 +495,26 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		 * @param person
 		 * @return
 		 */
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Person replacePerson(Person person, AtomicInteger tryCount) {
 			tryCount.incrementAndGet();
 			// Note that passing in a Person and replace it in this way, is not supported
 			return personOperations.replaceById(Person.class).one(person);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void replaceEntityWithoutVersion(String id) {
 			PersonWithoutVersion fetched = personOperations.findById(PersonWithoutVersion.class).one(id);
 			personOperations.replaceById(PersonWithoutVersion.class).one(fetched);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void removeEntityWithoutVersion(String id) {
 			PersonWithoutVersion fetched = personOperations.findById(PersonWithoutVersion.class).one(id);
 			personOperations.removeById(PersonWithoutVersion.class).oneEntity(fetched);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Person declarativeFindReplaceTwicePersonCallback(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
@@ -523,7 +523,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return personOperations.replaceById(Person.class).one(pUpdated);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, timeout = 2)
+		@Transactional(timeout = 2)
 
 		public Person replace(Person person, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
@@ -531,7 +531,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return personOperations.replaceById(Person.class).one(person);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Person fetchAndReplace(String id, AtomicInteger tryCount, Function<Person, Person> callback) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();
@@ -540,14 +540,14 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			return personOperations.replaceById(Person.class).one(modified);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public <T> T doInTransaction(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();
 			return callback.apply(personOperations);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void fetchAndRemove(String id, AtomicInteger tryCount) {
 			assertInAnnotationTransaction(true);
 			tryCount.incrementAndGet();

@@ -141,12 +141,12 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	static class UserService {
 		@Autowired UserRepository userRepo;
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public void run(Consumer<UserRepository> callback) {
 			callback.accept(userRepo);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public List<User> findByFirstname(String name) {
 			return userRepo.findByFirstname(name);
 		}
