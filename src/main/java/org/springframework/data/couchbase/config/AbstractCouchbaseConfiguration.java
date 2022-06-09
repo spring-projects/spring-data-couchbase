@@ -369,10 +369,6 @@ public abstract class AbstractCouchbaseConfiguration {
 //		return new CouchbaseTransactionManager(couchbaseClientFactory);
 //	}
 
-	// todo gp experimenting with making  CouchbaseSimpleCallbackTransactionManager the default - but it doesn't play
-	// nice with MR's changes to insert CouchbaseTransactionInterceptor
-	// todo mr THIS DOES NOT WORK WELL with @TestTransaction / @BeforeTransaction / @AfterTransaction etc.
-	// todo mr Maybe it is only useful with @Transactional?
 	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
