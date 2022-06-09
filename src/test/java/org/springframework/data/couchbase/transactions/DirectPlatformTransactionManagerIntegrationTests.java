@@ -39,7 +39,7 @@ public class DirectPlatformTransactionManagerIntegrationTests extends JavaIntegr
 
 	@Test
 	public void directUseAlwaysFails() {
-		PlatformTransactionManager ptm = new CouchbaseSimpleCallbackTransactionManager(couchbaseClientFactory, null);
+		PlatformTransactionManager ptm = new CouchbaseSimpleCallbackTransactionManager(couchbaseClientFactory);
 
 		assertThrowsWithCause(() -> {
 			TransactionDefinition def = new DefaultTransactionDefinition();

@@ -231,6 +231,9 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	private void setOptionsFromDefinition(TransactionDefinition definition) {
 		if (definition != null) {
 			if (definition.getTimeout() != TransactionDefinition.TIMEOUT_DEFAULT) {
+				if (options == null) {
+					options = TransactionOptions.transactionOptions();
+				}
 				options = options.timeout(Duration.ofSeconds(definition.getTimeout()));
 			}
 

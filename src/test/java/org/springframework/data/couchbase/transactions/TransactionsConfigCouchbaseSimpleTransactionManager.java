@@ -59,8 +59,8 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 	}
 
 	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
-		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
+	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
+		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
 	}
 
 	@Bean
