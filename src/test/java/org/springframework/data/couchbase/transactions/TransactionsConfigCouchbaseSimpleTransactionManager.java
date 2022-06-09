@@ -35,6 +35,9 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
 @Configuration
 @EnableCouchbaseRepositories("org.springframework.data.couchbase")
 @EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
+// todo gpx it seems to get CouchbaseSimpleTransactionInterceptor picked up requires this.  It's unfortunate as we
+//  want txns to work OOTB (and presumably don't want to put this annotation on AbstractCouchbaseConfiguration?) - any solutions?
+@EnableTransactionManagement
 public class TransactionsConfigCouchbaseSimpleTransactionManager extends AbstractCouchbaseConfiguration {
 
 	@Override
@@ -72,27 +75,5 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 			interceptor.setTransactionManager(txManager);
 		}
 		return interceptor;
-	}
-
-	// todo gpx find for sure if we need this
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionAttributeSource transactionAttributeSource() {
-		return new AnnotationTransactionAttributeSource();
-	}
-
-	// todo gpx find for sure if we need this
-	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
-			TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
-
-		BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-		advisor.setTransactionAttributeSource(transactionAttributeSource);
-		advisor.setAdvice(transactionInterceptor);
-		// if (this.enableTx != null) {
-		// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
-		// }
-		return advisor;
 	}
 }
