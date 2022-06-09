@@ -65,7 +65,7 @@ import com.couchbase.client.java.kv.RemoveOptions;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseTransactionManager.class)
 //@Disabled("gp: disabling as these use CouchbaseTransactionalOperator which I've done broke (but also feel we should remove)")
 // todo mr - I've changed the tests to use the transactionalOperator bean.
 public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {

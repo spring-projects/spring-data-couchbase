@@ -34,9 +34,7 @@ import java.util.function.Consumer;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +44,7 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.data.couchbase.transaction.SpringTransactionAttemptContext;
 import org.springframework.data.couchbase.transaction.TransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -60,7 +59,7 @@ import reactor.util.annotation.Nullable;
  * Tests for TransactionsWrapper, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig( Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -81,11 +80,11 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 		}
 	}
 
-	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda) {
+	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda) {
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda, @Nullable TransactionOptions options) {
+	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda, @Nullable TransactionOptions options) {
 		TransactionsWrapper wrapper = new TransactionsWrapper(couchbaseClientFactory);
 		AtomicInteger attempts = new AtomicInteger();
 

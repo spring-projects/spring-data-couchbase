@@ -18,13 +18,12 @@ import com.couchbase.client.java.transactions.Transactions;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
-public class TransactionsWrapper /* wraps Transactions */ {
+public class TransactionsWrapper {
 	CouchbaseClientFactory couchbaseClientFactory;
 
 	public TransactionsWrapper(CouchbaseClientFactory couchbaseClientFactory) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 	}
-
 
 	/**
 	 * Runs supplied transactional logic until success or failure.
@@ -56,7 +55,7 @@ public class TransactionsWrapper /* wraps Transactions */ {
 	 *           possibly after multiple retries. The exception contains further details of the error
 	 */
 
-	public TransactionResult run(Consumer<TransactionAttemptContext> transactionLogic,
+	public TransactionResult run(Consumer<SpringTransactionAttemptContext> transactionLogic,
 			@Nullable TransactionOptions options) {
 		Consumer<TransactionAttemptContext> newTransactionLogic = (ctx) -> {
 			try {
@@ -75,7 +74,7 @@ public class TransactionsWrapper /* wraps Transactions */ {
 
 				CouchbaseSimpleCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
 
-				transactionLogic.accept(ctx);
+				transactionLogic.accept(new SpringTransactionAttemptContext(ctx));
 			} finally {
 				CouchbaseSimpleCallbackTransactionManager.clearTransactionSynchronizationManager();
 			}
@@ -90,7 +89,7 @@ public class TransactionsWrapper /* wraps Transactions */ {
 	 * that provides a default <code>PerTransactionConfig</code>
 	 */
 
-	public TransactionResult run(Consumer<TransactionAttemptContext> transactionLogic) {
+	public TransactionResult run(Consumer<SpringTransactionAttemptContext> transactionLogic) {
 		return run(transactionLogic, null);
 	}
 

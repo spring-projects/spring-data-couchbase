@@ -33,7 +33,7 @@ import com.couchbase.client.java.transactions.TransactionResult;
  * todo gpx ongoing discussions on whether this can support retries & error handling natively todo mr - this class is on
  * the chopping block in favour of {@link CouchbaseSimpleTransactionalOperator}
  */
-//
+// todo gp ongoing discussions on whether this can support retries & error handling natively
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
 	private static final Logger logger = LoggerFactory.getLogger(CouchbaseTransactionalOperator.class);

@@ -100,7 +100,7 @@ public interface ExecutableReplaceByIdOperation {
 	}
 
 	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
-		// todo gpx is this staying?  It's confusing when doing ops.replaceById() inside @Transactional to get this transaction() method - unclear as a user whether I need to call it or not
+		// todo gp is this staying?  It's confusing when doing ops.replaceById() inside @Transactional to get this transaction() method - unclear as a user whether I need to call it or not
 		@Override
 		TerminatingReplaceById<T> transaction(CouchbaseTransactionalOperator txCtx);
 	}

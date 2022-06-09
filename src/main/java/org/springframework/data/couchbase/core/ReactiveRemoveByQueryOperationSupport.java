@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
+import com.couchbase.client.core.transaction.support.OptionsUtil;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
@@ -97,7 +98,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 											row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
 						} else {
 							TransactionQueryOptions opts = OptionsBuilder.buildTransactionQueryOptions(buildQueryOptions(pArgs.getOptions()));
-							ObjectNode convertedOptions = AttemptContextReactiveAccessor.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
+							ObjectNode convertedOptions = com.couchbase.client.java.transactions.internal.OptionsUtil.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
 							return transactionContext.get().getCore().queryBlocking(statement, template.getBucketName(), pArgs.getScope(), convertedOptions, false)
 									.flatMapIterable(result -> result.rows).map(row -> {
 										JsonObject json = JsonObject.fromJson(row.data());

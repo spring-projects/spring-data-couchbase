@@ -26,7 +26,6 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
-import org.springframework.data.couchbase.repository.TransactionResult;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.domain.Persistable;
 import org.springframework.lang.Nullable;
@@ -51,8 +50,6 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 
 	private Address address;
 
-	// Required for use in transactions
-	@TransactionResult private Integer txResultHolder;
 	@Transient private boolean isNew;
 
 
@@ -172,7 +169,6 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 	public Person withFirstName(String firstName) {
 		Person p = new Person(this.getId(), firstName, this.getLastname());
 		p.version = version;
-		p.txResultHolder = this.txResultHolder;
 		return p;
 	}
 

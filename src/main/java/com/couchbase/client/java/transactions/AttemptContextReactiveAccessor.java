@@ -91,7 +91,7 @@ public class AttemptContextReactiveAccessor {
 			throw new RuntimeException(err);
 		}
 
-		// todo gpx options need to be loaded from Cluster and TransactionOptions (from TransactionsWrapper)
+		// todo gp options need to be loaded from Cluster and TransactionOptions (from TransactionsWrapper)
 		CoreTransactionOptions perConfig = new CoreTransactionOptions(Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.of(Duration.ofMinutes(10)), Optional.empty(), Optional.empty());
 
@@ -137,25 +137,4 @@ public class AttemptContextReactiveAccessor {
 	public static TransactionResult run(Transactions transactions, Consumer<TransactionAttemptContext> transactionLogic, CoreTransactionOptions coreTransactionOptions) {
 		return reactive(transactions).runBlocking(transactionLogic, coreTransactionOptions);
 	}
-
-	// todo gp have C&Ped this from SDK, needs to be exposed properly in SDK (now done, need 3.3.1 release)
-	public static ObjectNode createTransactionOptions(final ReactiveScope scope,
-																				  final String statement,
-																				  final TransactionQueryOptions options) {
-		JsonObject json = JsonObject.create()
-				.put("statement", statement);
-		if (scope != null) {
-			json.put("query_context", QueryRequest.queryContext(scope.bucketName(), scope.name()));
-		}
-		if (options != null) {
-			options.builder().build().injectParams(json);
-		}
-		try {
-			ObjectNode opts = Mapper.reader().readValue(json.toBytes(), ObjectNode.class);
-			return opts;
-		} catch (IOException e) {
-			throw new EncodingFailureException(e);
-		}
-	}
-
 }

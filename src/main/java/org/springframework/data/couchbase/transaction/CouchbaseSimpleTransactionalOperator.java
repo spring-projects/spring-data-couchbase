@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono;
 public class CouchbaseSimpleTransactionalOperator implements TransactionalOperator {
 	private final CouchbaseSimpleCallbackTransactionManager manager;
 
-	// todo gp static or ctor?
+	// todo gpx static or ctor?
 	public CouchbaseSimpleTransactionalOperator(CouchbaseSimpleCallbackTransactionManager manager) {
 		this.manager = manager;
 	}

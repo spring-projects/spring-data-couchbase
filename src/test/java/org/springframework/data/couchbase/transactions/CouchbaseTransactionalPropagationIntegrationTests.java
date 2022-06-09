@@ -63,33 +63,22 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests for the various propagation values allowed on @Transactional methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalPropagationIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	@Autowired
-	CouchbaseTemplate operations;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
+	@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
 	}
 
 	@BeforeEach
 	public void beforeEachTest() {
 		TransactionTestUtil.assertNotInTransaction();
-		personService = context.getBean(PersonService.class);
-
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
 	}
 
 	@AfterEach
@@ -113,7 +102,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -137,7 +126,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -149,7 +138,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -249,7 +238,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back
@@ -272,7 +261,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back
@@ -318,7 +307,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back
@@ -374,49 +363,49 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			this.ops = ops;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+		@Transactional
 		public void propagationDefault(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationDefault");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.REQUIRED)
+		@Transactional(propagation = Propagation.REQUIRED)
 		public void propagationRequired(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequired");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.MANDATORY)
+		@Transactional(propagation = Propagation.MANDATORY)
 		public void propagationMandatory(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationMandatory");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.NESTED)
+		@Transactional(propagation = Propagation.NESTED)
 		public void propagationNested(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.SUPPORTS)
+		@Transactional(propagation = Propagation.SUPPORTS)
 		public void propagationSupports(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationSupports");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.NOT_SUPPORTED)
+		@Transactional(propagation = Propagation.NOT_SUPPORTED)
 		public void propagationNotSupported(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNotSupported");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.REQUIRES_NEW)
+		@Transactional(propagation = Propagation.REQUIRES_NEW)
 		public void propagationRequiresNew(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequiresNew");
 			if (callback != null) callback.accept(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER, propagation = Propagation.NEVER)
+		@Transactional(propagation = Propagation.NEVER)
 		public void propagationNever(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
 			if (callback != null) callback.accept(ops);

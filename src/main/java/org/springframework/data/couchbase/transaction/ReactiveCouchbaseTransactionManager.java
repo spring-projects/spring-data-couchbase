@@ -119,8 +119,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		return Mono.defer(() -> {
 
 			ReactiveCouchbaseTransactionObject couchbaseTransactionObject = extractCouchbaseTransaction(transaction);
-			Mono<CouchbaseResourceHolder> holder = newResourceHolder(definition,
-					TransactionOptions.transactionOptions());
+			Mono<CouchbaseResourceHolder> holder = newResourceHolder();
 			return holder.doOnNext(resourceHolder -> {
 				couchbaseTransactionObject.setResourceHolder(resourceHolder);
 				if (logger.isDebugEnabled()) {
@@ -305,13 +304,10 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		getRequiredDatabaseFactory();
 	}
 
-	private Mono<CouchbaseResourceHolder> newResourceHolder(TransactionDefinition definition,
-																													TransactionOptions options) {
-
+	private Mono<CouchbaseResourceHolder> newResourceHolder() {
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
-		// TODO MSR : config should be derived from config that was used for `transactions`
-		Mono<CouchbaseResourceHolder> sess = Mono.just(dbFactory.getResources(null));
-		return sess;
+		Mono<CouchbaseResourceHolder> resourceHolder = Mono.just(dbFactory.getResources(null));
+		return resourceHolder;
 	}
 
 	/**
@@ -396,7 +392,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		}
 
 		/**
-		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}. todo gp how to expose
+		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}.
 		 * TransactionOptions
 		 *
 		 * @param options can be {@literal null}
