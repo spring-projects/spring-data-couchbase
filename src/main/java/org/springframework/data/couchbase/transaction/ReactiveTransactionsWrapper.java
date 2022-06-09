@@ -22,7 +22,7 @@ public class ReactiveTransactionsWrapper {
 		return run(transactionLogic, null);
 	}
 
-	// todo gp maybe instead of giving them a ReactiveTransactionAttemptContext we give them a wrapped version, in case we ever need Spring-specific functionality
+	// todo gpx maybe instead of giving them a ReactiveTransactionAttemptContext we give them a wrapped version, in case we ever need Spring-specific functionality
 	public Mono<TransactionResult> run(Function<ReactiveTransactionAttemptContext, Mono<?>> transactionLogic,
 			TransactionOptions perConfig) {
 		Function<ReactiveTransactionAttemptContext, Mono<?>> newTransactionLogic = (ctx) -> {

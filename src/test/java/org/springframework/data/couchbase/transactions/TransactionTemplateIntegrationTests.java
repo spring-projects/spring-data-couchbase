@@ -43,6 +43,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -62,8 +63,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
-	// todo gp can we get @AutoWired working here
-	// @Autowired
 	TransactionTemplate template;
 	@Autowired CouchbaseSimpleCallbackTransactionManager transactionManager;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -103,6 +102,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		template.executeWithoutResult(status -> {
+			TransactionTestUtil.assertInTransaction();
 			assertFalse(status.hasSavepoint());
 			assertFalse(status.isRollbackOnly());
 			assertFalse(status.isCompleted());
@@ -111,6 +111,8 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 			tryCount.incrementAndGet();
 			lambda.accept(status);
 		});
+
+		TransactionTestUtil.assertNotInTransaction();
 
 		return new RunResult(tryCount.get());
 	}

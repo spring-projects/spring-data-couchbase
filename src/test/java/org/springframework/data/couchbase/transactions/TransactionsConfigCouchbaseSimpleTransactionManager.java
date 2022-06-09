@@ -35,7 +35,6 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
 @Configuration
 @EnableCouchbaseRepositories("org.springframework.data.couchbase")
 @EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-@EnableTransactionManagement
 public class TransactionsConfigCouchbaseSimpleTransactionManager extends AbstractCouchbaseConfiguration {
 
 	@Override
@@ -75,14 +74,14 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 		return interceptor;
 	}
 
-	// todo gp find for sure if we need this
+	// todo gpx find for sure if we need this
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	public TransactionAttributeSource transactionAttributeSource() {
 		return new AnnotationTransactionAttributeSource();
 	}
 
-	// todo gp find for sure if we need this
+	// todo gpx find for sure if we need this
 	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
