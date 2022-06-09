@@ -36,7 +36,7 @@ import com.couchbase.client.core.error.CouchbaseException;
  * what it finds in the currentContext()?
  *
  */
-// todo gpx ongoing discussions on whether this can support retries & error handling natively
+// todo gp ongoing discussions on whether this can support retries & error handling natively
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
 	// package org.springframework.transaction.reactive;

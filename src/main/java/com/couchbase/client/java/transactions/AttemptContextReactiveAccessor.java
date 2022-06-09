@@ -91,7 +91,7 @@ public class AttemptContextReactiveAccessor {
 			throw new RuntimeException(err);
 		}
 
-		// todo gpx options need to be loaded from Cluster and TransactionOptions (from TransactionsWrapper)
+		// todo gp options need to be loaded from Cluster and TransactionOptions (from TransactionsWrapper)
 		CoreTransactionOptions perConfig = new CoreTransactionOptions(Optional.empty(), Optional.empty(), Optional.empty(),
 				Optional.of(Duration.ofMinutes(10)), Optional.empty(), Optional.empty());
 

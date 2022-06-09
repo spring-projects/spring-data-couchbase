@@ -392,7 +392,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 		}
 
 		/**
-		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}. todo gp how to expose
+		 * Start a XxxxxxXX transaction optionally given {@link TransactionQueryOptions}.
 		 * TransactionOptions
 		 *
 		 * @param options can be {@literal null}
