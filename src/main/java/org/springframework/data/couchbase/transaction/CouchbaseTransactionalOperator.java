@@ -1,18 +1,5 @@
 package org.springframework.data.couchbase.transaction;
 
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.transaction.ReactiveTransaction;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionSystemException;
-import org.springframework.transaction.reactive.TransactionCallback;
-import org.springframework.transaction.reactive.TransactionContextManager;
-import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -20,26 +7,35 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.transaction.ReactiveTransaction;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.reactive.TransactionCallback;
+import org.springframework.transaction.reactive.TransactionContextManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionResult;
 
 /**
- * What's this for again?
- * A transaction-enabled operator that uses the CouchbaseStuffHandle txOp instead of
- * what it finds in the currentContext()?
- *
+ * todo gpx ongoing discussions on whether this can support retries & error handling natively todo mr - this class is on
+ * the chopping block in favour of {@link CouchbaseSimpleTransactionalOperator}
  */
-// todo gpx ongoing discussions on whether this can support retries & error handling natively
+//
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
-	// package org.springframework.transaction.reactive;
 	private static final Logger logger = LoggerFactory.getLogger(CouchbaseTransactionalOperator.class);
 	private final ReactiveTransactionManager transactionManager;
 	private final TransactionDefinition transactionDefinition;
@@ -56,12 +52,13 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 		this(transactionManager, new CouchbaseTransactionDefinition());
 	}
 
-	public ReactiveCouchbaseTemplate getTemplate(){
-		return ((ReactiveCouchbaseTransactionManager)transactionManager).getDatabaseFactory().getTransactionalOperator()
+	public ReactiveCouchbaseTemplate getTemplate() {
+		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getTransactionalOperator()
 				.getTemplate();
 	}
+
 	public CouchbaseTransactionalOperator(ReactiveCouchbaseTransactionManager transactionManager,
-																				TransactionDefinition transactionDefinition) {
+			TransactionDefinition transactionDefinition) {
 		Assert.notNull(transactionManager, "ReactiveTransactionManager must not be null");
 		Assert.notNull(transactionDefinition, "TransactionDefinition must not be null");
 		this.transactionManager = transactionManager;
@@ -74,35 +71,38 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
 	public TransactionResult run(Function<CouchbaseTransactionalOperator, Object> transactionLogic) {
 		return reactive(new Function<CouchbaseTransactionalOperator, Mono<Void>>() {
-											@Override
-											public Mono<Void> apply(CouchbaseTransactionalOperator couchbaseTransactionalOperator) {
-												return Mono.defer(() -> {transactionLogic.apply( couchbaseTransactionalOperator); return Mono.empty();});
-											}
-										},
-				true).block();
+			@Override
+			public Mono<Void> apply(CouchbaseTransactionalOperator couchbaseTransactionalOperator) {
+				return Mono.defer(() -> {
+					transactionLogic.apply(couchbaseTransactionalOperator);
+					return Mono.empty();
+				});
+			}
+		}, true).block();
 	}
-
 
 	/**
 	 * A convenience wrapper around {@link TransactionsReactive#run}, that provides a default
 	 * <code>PerTransactionConfig</code>.
 	 */
 	public Mono<TransactionResult> reactive(Function<CouchbaseTransactionalOperator, Mono<Void>> transactionLogic,
-											boolean commit) {
-		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().reactive().transactions().run(ctx -> {
-			setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
-			// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
-			// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
-			return transactionLogic.apply(this);
-		}/*, commit*/);
+			boolean commit) {
+		return ((ReactiveCouchbaseTransactionManager) transactionManager).getDatabaseFactory().getCluster().reactive()
+				.transactions().run(ctx -> {
+					setAttemptContextReactive(ctx); // for getTxOp().getCtx() in Reactive*OperationSupport
+					// for transactional(), transactionDefinition.setAtr(ctx) is called at the beginning of that method
+					// and is eventually added to the ClientSession in transactionManager.doBegin() via newResourceHolder()
+					return transactionLogic.apply(this);
+				}/*, commit*/);
 	}
 
 	public void setAttemptContextReactive(ReactiveTransactionAttemptContext attemptContextReactive) {
 		this.attemptContextReactive = attemptContextReactive;
 		// see ReactiveCouchbaseTransactionManager.doBegin()
 		// transactionManager.getReactiveTransaction(new CouchbaseTransactionDefinition()).block();
-	//	CouchbaseResourceHolder holder = null;
-	//TransactionSynchronizationManager.bindResource(((ReactiveCouchbaseTransactionManager)transactionManager).getDatabaseFactory(), holder);
+		// CouchbaseResourceHolder holder = null;
+		// TransactionSynchronizationManager.bindResource(((ReactiveCouchbaseTransactionManager)transactionManager).getDatabaseFactory(),
+		// holder);
 
 		/*
 		for savePerson that,  doBegin() is called from AbstractReactiveTransactionManager.getReactiveTransaction()
@@ -118,7 +118,6 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	public CoreTransactionAttemptContext getAttemptContext() {
 		return AttemptContextReactiveAccessor.getCore(attemptContextReactive);
 	}
-
 
 	public ReactiveTransactionManager getTransactionManager() {
 		return transactionManager;
@@ -168,10 +167,10 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 			// Need re-wrapping of ReactiveTransaction until we get hold of the exception
 			// through usingWhen.
 			return status
-					.flatMap(it -> Mono
-							.usingWhen(Mono.just(it), ignore -> mono, this.transactionManager::commit, (res, err) -> { System.err.println("!!!!!!!!!! "+err+" "+res); return Mono.empty();},
-									this.transactionManager::rollback)
-							.onErrorResume(ex -> rollbackOnException(it, ex).then(Mono.error(ex))));
+					.flatMap(it -> Mono.usingWhen(Mono.just(it), ignore -> mono, this.transactionManager::commit, (res, err) -> {
+						System.err.println("!!!!!!!!!! " + err + " " + res);
+						return Mono.empty();
+					}, this.transactionManager::rollback).onErrorResume(ex -> rollbackOnException(it, ex).then(Mono.error(ex))));
 		}).contextWrite(TransactionContextManager.getOrCreateContext())
 				.contextWrite(TransactionContextManager.getOrCreateContextHolder());
 	}

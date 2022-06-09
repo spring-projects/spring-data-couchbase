@@ -20,25 +20,21 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.transactions.ReplaceLoopThread.updateOutOfTransaction;
 
-import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.springframework.dao.OptimisticLockingFailureException;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
@@ -63,13 +59,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import reactor.util.retry.Retry;
 
 /**
  * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class })
+@SpringJUnitConfig(Config.class)
 public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -116,7 +111,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
-	@Disabled("todo gp: temporarily disabling as sometimes hanging")
+	// @Disabled("todo gp: temporarily disabling as sometimes hanging")
 	@Test
 	// need to fix this to make it deliberately have the CasMismatch by synchronization.
 	// And to *not* do any out-of-tx updates after the tx update has succeeded.
@@ -125,38 +120,17 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		Person person = new Person(UUID.randomUUID(), "Walter", "White");
 		AtomicInteger tryCount = new AtomicInteger(0);
 		Person insertedPerson = cbTmpl.insertById(Person.class).one(person);
-		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
+		Mono<TransactionResult> result = reactiveTransactionsWrapper
+				.run(ctx -> rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
+						.map((pp) -> updateOutOfTransaction(cbTmpl, pp, tryCount.incrementAndGet()))
+						.flatMap(ppp -> rxCBTmpl.replaceById(Person.class).one(ppp.withFirstName("Dave"))));
+		TransactionResult txResult = result.block();
 
-		for (int i = 0; i < 50; i++) { // the transaction sometimes succeeds on the first try
-			ReplaceLoopThread t = new ReplaceLoopThread(switchedPerson);
-			t.start();
-			tryCount.set(0);
-			System.err.println("iteration: " + i);
-			Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> {
-				return rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
-						.flatMap(ppp -> rxCBTmpl.replaceById(Person.class).one(ppp.withFirstName("Dave")))
-						.doOnSuccess(it -> System.err.println("try: success: " + tryCount.incrementAndGet() + " " + it))
-						.doOnError(it -> System.err.println("try: error: " + tryCount.incrementAndGet() + " " + it));
-			});
-			TransactionResult txResult = result.block();
-			t.setStopFlag();
-			try {
-				t.join();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			if (tryCount.get() > 1) {
-				break;
-			}
-		}
 		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		System.err.println("pFound " + pFound);
-		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
+		assertEquals(2, tryCount.get(), "should have been two tries. tries: " + tryCount.get());
 		assertEquals("Dave", pFound.getFirstname(), "should have been changed");
-		//for (int i = 0; i < 10; i++) {
-		//	System.err.println(cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()));
-		//	sleepMs(1000);
-		//}
+
 	}
 
 	@DisplayName("Forcing CAS mismatch causes a transaction retry")
@@ -173,22 +147,10 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 			operations.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
 		});
 
-		reactiveTransactionsWrapper.run(ctx -> {
-			return rxCBTmpl.findById(Person.class).one(id.toString())
-					.flatMap(fetched -> Mono.defer(() -> {
-
-						if (attempts.incrementAndGet() == 1) {
-							forceCASMismatch.start();
-							try {
-								forceCASMismatch.join();
-							} catch (InterruptedException e) {
-								throw new RuntimeException(e);
-							}
-						}
-
-						return rxCBTmpl.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
-					}));
-		}).block();
+		reactiveTransactionsWrapper.run(ctx -> rxCBTmpl.findById(Person.class).one(id.toString()).flatMap(fetched -> {
+			ReplaceLoopThread.updateOutOfTransaction(cbTmpl, fetched, attempts.incrementAndGet());
+			return rxCBTmpl.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+		})).block();
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertEquals("Changed by transaction", fetched.getFirstname());
@@ -301,7 +263,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	public void replacePersonRbCBTransactions() {
 		Person person = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person);
+		Person insertedPerson = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person);
 		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> //
 		rxCBTmpl.findById(Person.class).inScope(sName).inCollection(cName).one(person.getId().toString()) //
 				.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inScope(sName).inCollection(cName)
@@ -325,39 +287,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		assertFalse(docs.isEmpty(), "Should have found " + person);
 		for (Object o : docs) {
 			assertEquals(o, person, "Should have found " + person);
-		}
-	}
-
-	private class ReplaceLoopThread extends Thread {
-		AtomicBoolean stop = new AtomicBoolean(false);
-		Person person;
-		int maxIterations = 100;
-
-		public ReplaceLoopThread(Person person, int... iterations) {
-			this.person = person;
-			if (iterations != null && iterations.length == 1) {
-				this.maxIterations = iterations[0];
-			}
-		}
-
-		public void run() {
-			for (int i = 0; i < maxIterations && !stop.get(); i++) {
-				sleepMs(10);
-				try {
-					// note that this does not go through spring-data, therefore it does not have the @Field , @Version etc.
-					// annotations processed so we just check getFirstname().equals()
-					// switchedPerson has version=0, so it doesn't check CAS
-					couchbaseClientFactory.getBucket().defaultCollection().replace(person.getId().toString(), person);
-					System.out.println("********** replace thread: " + i + " success");
-				} catch (Exception e) {
-					System.out.println("********** replace thread: " + i + " " + e.getClass().getName());
-				}
-			}
-
-		}
-
-		public void setStopFlag() {
-			stop.set(true);
 		}
 	}
 

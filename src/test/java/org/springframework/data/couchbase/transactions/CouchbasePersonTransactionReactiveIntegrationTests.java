@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.transactions;
 
 import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import lombok.Data;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
@@ -93,7 +94,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	}
 
 	@Test
-	//@Disabled("rollback is not taking place")
 	public void shouldRollbackAfterException() {
 		personService.savePersonErrors(new Person(null, "Walter", "White")) //
 				.as(StepVerifier::create) //
@@ -107,18 +107,11 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		Person p = new Person(null, "Walter", "White");
-		try {
+		assertThrowsWithCause(() ->
 			personService.declarativeSavePersonErrors(p) //
 					.as(StepVerifier::create) //
-					.expectComplete();
-		} catch (RuntimeException e) {
-			if (e instanceof SimulateFailureException || (e.getMessage() != null && e.getMessage().contains("poof"))) {
-				System.err.println(e);
-			} else {
-				throw e;
-			}
-		}
-
+					.expectComplete(),
+				TransactionFailedException.class, SimulateFailureException.class);
 	}
 
 	@Test

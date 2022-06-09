@@ -37,6 +37,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
@@ -50,9 +52,10 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		this(couchbaseClientFactory, null);
 	}
 
-	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
+	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory,
+			@Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
-		this.options = options;
+		this.options = options != null ? options : TransactionOptions.transactionOptions();
 	}
 
 	@Override
@@ -63,14 +66,14 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 		if (createNewTransaction) {
 			return executeNewTransaction(callback);
-		}
-		else {
+		} else {
 			return callback.doInTransaction(null);
 		}
 	}
 
 	@Stability.Internal
-	<T> Flux<T> executeReactive(TransactionDefinition definition, org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+	<T> Flux<T> executeReactive(TransactionDefinition definition,
+			org.springframework.transaction.reactive.TransactionCallback<T> callback) {
 		return Flux.defer(() -> {
 			boolean createNewTransaction = handlePropagation(definition);
 
@@ -87,8 +90,9 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
-		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler.  This
-		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.  If this is
+		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler. This
+		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.
+		// If this is
 		// an issue then users need to instead use the standard Couchbase reactive transactions SDK.
 		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
@@ -111,8 +115,10 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		return execResult.get();
 	}
 
-	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+	private <T> Flux<T> executeNewReactiveTransaction(
+			org.springframework.transaction.reactive.TransactionCallback<T> callback) {
 		final AtomicReference<Flux<T>> execResult = new AtomicReference<>();
+		//final List<?> out = new ArrayList<>();
 
 		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			return Mono.defer(() -> {
@@ -141,21 +147,33 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				};
 
 				return Flux.from(callback.doInTransaction(status))
-						.publish(flux -> {
+						//.doOnNext(v -> out.add(v))
+						// when the publish is commented out,
+						// CouchbaseTransactionalOperatorTemplateIntegrationTests.committedRemove() fails
+						.publish(flux -> Flux.defer(() -> {
 							execResult.set(flux);
 							return flux;
-						})
+						}))
+						// when window().map() is commented out,
+						// CouchbasePersonTransactionIntegrationTests.emitMultipleElementsDuringTransaction() and
+						// countShouldWorkInsideTransaction() fail
+						.window(Integer.MAX_VALUE) //
+						.map((r) -> {
+							execResult.set(r);
+							return r;
+						}) //
 						.then(Mono.defer(() -> {
 							if (status.isRollbackOnly()) {
-								return Mono.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
+								return Mono
+										.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
 							}
 							return Mono.empty();
 						}));
 			})
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
-						CouchbaseResourceHolder resourceHolder = couchbaseClientFactory.getResources(
-								TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
+						CouchbaseResourceHolder resourceHolder = couchbaseClientFactory
+								.getResources(AttemptContextReactiveAccessor.getCore(ctx));
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
 
@@ -164,13 +182,15 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		clearTransactionSynchronizationManager();
 
 		return result.thenMany(Flux.defer(() -> execResult.get()));
+		//return result.thenMany(Flux.defer(() -> Flux.fromIterable(out)));
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
 	private boolean handlePropagation(TransactionDefinition definition) {
 		boolean isExistingTransaction = TransactionSynchronizationManager.isActualTransactionActive();
 
-		LOGGER.trace("Deciding propagation behaviour from {} and {}", definition.getPropagationBehavior(), isExistingTransaction);
+		LOGGER.trace("Deciding propagation behaviour from {} and {}", definition.getPropagationBehavior(),
+				isExistingTransaction);
 
 		switch (definition.getPropagationBehavior()) {
 			case TransactionDefinition.PROPAGATION_REQUIRED:
@@ -190,7 +210,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				return false;
 
 			case TransactionDefinition.PROPAGATION_REQUIRES_NEW:
-				// This requires suspension of the active transaction.  This will be possible to support in a future
+				// This requires suspension of the active transaction. This will be possible to support in a future
 				// release, if required.
 				throw new IllegalTransactionStateException(
 						"Propagation level 'requires_new' has been specified which is not currently supported");
@@ -232,7 +252,8 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 			if (!(definition.getIsolationLevel() == TransactionDefinition.ISOLATION_DEFAULT
 					|| definition.getIsolationLevel() == TransactionDefinition.ISOLATION_READ_COMMITTED)) {
-				throw new IllegalArgumentException("Couchbase Transactions run at Read Committed isolation - other isolation levels are not supported");
+				throw new IllegalArgumentException(
+						"Couchbase Transactions run at Read Committed isolation - other isolation levels are not supported");
 			}
 
 			// readonly is ignored as it is documented as being a hint that won't necessarily cause writes to fail
@@ -258,22 +279,24 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	}
 
 	@Override
-	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition)
-			throws TransactionException {
+	public TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException {
 		// All Spring transactional code (currently) does not call the getTransaction, commit or rollback methods if
 		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
-		// So these methods should only be hit if user is using PlatformTransactionManager directly.  Spring supports this,
+		// So these methods should only be hit if user is using PlatformTransactionManager directly. Spring supports this,
 		// but due to the lambda-based nature of our transactions, we cannot.
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new IllegalStateException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void commit(TransactionStatus ignored) throws TransactionException {
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new IllegalStateException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void rollback(TransactionStatus ignored) throws TransactionException {
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new IllegalStateException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 }

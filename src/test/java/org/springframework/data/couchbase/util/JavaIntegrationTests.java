@@ -415,21 +415,19 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		return sb.toString();
 	}
 
-	public static Throwable assertThrowsWithCause(Executable executable, Class<?>... expectedTypes) {
-		Class<?> nextExpectedException = null;
+	public static void assertThrowsWithCause(Executable executable, Class<?>... expectedTypes) {
 		try {
 			executable.execute();
 		} catch (Throwable actualException) {
 			for (Class<?> expectedType : expectedTypes) {
-				nextExpectedException = expectedType;
 				if (actualException == null || !expectedType.isAssignableFrom(actualException.getClass())) {
-					String message = "Expected " + nextExpectedException + " to be thrown/cause, but found " + actualException;
+					String message = "Expected " + expectedType + " to be thrown/cause, but found " + actualException;
 					throw new AssertionFailedError(message, actualException);
 				}
 				actualException = actualException.getCause();
 			}
 			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
-			return actualException;
+			return;
 		}
 
 		String message = "Expected " + expectedTypes[0] + " to be thrown, but nothing was thrown.";
@@ -437,7 +435,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	}
 
 	// Use this to still rely on the return type
-	protected static <T> T throwSimulateFailureException(T entity) {
+	public static <T> T throwSimulateFailureException(T entity) {
 		throw new SimulateFailureException();
 	}
 

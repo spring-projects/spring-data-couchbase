@@ -310,7 +310,7 @@ public class ReactiveCouchbaseTransactionManager extends AbstractReactiveTransac
 
 		ReactiveCouchbaseClientFactory dbFactory = getRequiredDatabaseFactory();
 		// TODO MSR : config should be derived from config that was used for `transactions`
-		Mono<CouchbaseResourceHolder> sess = Mono.just(dbFactory.getResources(options, null));
+		Mono<CouchbaseResourceHolder> sess = Mono.just(dbFactory.getResources(null));
 		return sess;
 	}
 

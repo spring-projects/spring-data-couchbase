@@ -28,23 +28,17 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import com.couchbase.client.java.Cluster;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -141,12 +135,12 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	static class UserService {
 		@Autowired UserRepository userRepo;
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public void run(Consumer<UserRepository> callback) {
 			callback.accept(userRepo);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public List<User> findByFirstname(String name) {
 			return userRepo.findByFirstname(name);
 		}

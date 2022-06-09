@@ -37,6 +37,7 @@ public class TransactionTestUtil {
     }
 
     public static <T> Mono<T> assertInReactiveTransaction(T o) {
+        System.err.println("assertInReactiveTransaction:"+o);
         return org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction().just(o);
     }
 

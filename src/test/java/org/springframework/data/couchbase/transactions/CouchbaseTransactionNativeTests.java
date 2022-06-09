@@ -21,10 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
+import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -33,18 +32,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
@@ -78,7 +72,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	// Also - @Autowired doesn't work here on couchbaseClientFactory even when it is not static, not sure why - oh, it
 	// seems there is not a ReactiveCouchbaseClientFactory bean
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired CouchbaseTransactionManager couchbaseTransactionManager;
+	@Autowired TransactionManager couchbaseTransactionManager;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired PersonRepository repo;
 	@Autowired ReactivePersonRepository repoRx;
@@ -119,7 +113,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 						.flatMap(pp -> rxCbTmpl.replaceById(Person.class).one(pp.withFirstName("Walt")) //
 								.map(ppp -> throwSimulateFailureException(ppp))))
 						.blockLast(),
-				SimulateFailureException.class);
+				TransactionFailedException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
@@ -216,7 +210,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
 		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class)
 				.one(person.getId().toString()).flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
-				.map(it -> throwSimulateFailureException(it))).blockLast(), SimulateFailureException.class);
+				.map(it -> throwSimulateFailureException(it))).blockLast(), TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
 	}

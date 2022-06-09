@@ -19,22 +19,16 @@ package org.springframework.data.couchbase.config;
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_MAPPING_CONTEXT;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.core.transaction.config.CoreTransactionsConfig;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
-import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -52,24 +46,16 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
-import org.springframework.transaction.ReactiveTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
-import org.springframework.transaction.config.TransactionManagementConfigUtils;
-import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
-import org.springframework.transaction.interceptor.TransactionAttributeSource;
-import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import com.couchbase.client.core.cnc.Event;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
@@ -170,7 +156,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
-		configureTransactions(builder);
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -186,15 +171,15 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-											   ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-											   MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
+			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
 		return new CouchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-											   ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-											   MappingCouchbaseConverter mappingCouchbaseConverter) {
+			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return couchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
 	}
@@ -203,14 +188,14 @@ public abstract class AbstractCouchbaseConfiguration {
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
 			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory,  mappingCouchbaseConverter,
+		return new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
 			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return reactiveCouchbaseTemplate( reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
+		return reactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
 	}
 
@@ -292,7 +277,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
-															   CouchbaseCustomConversions couchbaseCustomConversions) {
+			CouchbaseCustomConversions couchbaseCustomConversions) {
 		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
 		converter.setCustomConversions(couchbaseCustomConversions);
 		return converter;
@@ -315,7 +300,6 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
-	 *
 	 */
 	@Bean(COUCHBASE_MAPPING_CONTEXT)
 	public CouchbaseMappingContext couchbaseMappingContext(CustomConversions customConversions) throws Exception {
@@ -345,71 +329,43 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mapper;
 	}
 
+	/**
+	 * The default blocking transaction manager. It is an implementation of CallbackPreferringTransactionManager
+	 * CallbackPreferrringTransactionmanagers do not play well with test-cases that rely
+	 * on @TestTransaction/@BeforeTransaction/@AfterTransaction
+	 *
+	 * @param clientFactory
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
+		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
+	}
 
-	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
-
+	/**
+	 * The default reactive transaction manager. It extends AbstractReactiveTransactionManager and implements
+	 * ReactiveTransactionManager
+	 * 
+	 * @param reactiveCouchbaseClientFactory
+	 * @return
+	 */
 	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
 	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
 			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
 		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
 	}
 
-	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
-	public TransactionalOperator transactionOperator(ReactiveCouchbaseTransactionManager reactiveTransactionManager, TransactionDefinition transactionDefinition){
-		return 	TransactionalOperator.create(reactiveTransactionManager, transactionDefinition);
-	}
-
-	// todo gp what is this used for
-	@Bean(BeanNames.COUCHBASE_TRANSACTION_DEFINITION)
-	public TransactionDefinition transactionDefinition(){
-		return new CouchbaseTransactionDefinition();
-	}
-//	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-//	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
-//		return new CouchbaseTransactionManager(couchbaseClientFactory);
-//	}
-
-	// todo gp experimenting with making  CouchbaseSimpleCallbackTransactionManager the default - but it doesn't play
-	// nice with MR's changes to insert CouchbaseTransactionInterceptor
-	// todo mr THIS DOES NOT WORK WELL with @TestTransaction / @BeforeTransaction / @AfterTransaction etc.
-	// todo mr Maybe it is only useful with @Transactional?
-	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
-		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
-	}
-
-	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
-		return new CouchbaseTransactionManager(clientFactory, options);
-	}
-
-	// todo gpx these would be per-transactions options so it seems odd to have a global bean?  Surely would want to configure everything at global level instead?
-	@Bean
-	public TransactionOptions transactionsOptions(){
-		return TransactionOptions.transactionOptions();
-	}
-
-
-
 	/**
-	 * Can be overridden to customize the configuration of the environment before bootstrap.
+	 * The default TransactionalOperator.
 	 *
-	 * @param builder the builder that can be customized.
-	 */
-	// todo gp is this needed?  Can already configure transactions through the regular ClusterEnvironment, and this method would also permit configuring non-transactional options
-	public void configureTransactions(final ClusterEnvironment.Builder builder) {
-	}
-
-	/**
-	 * Blocking Transaction Manager
-	 *
-	 * @param couchbaseTemplate
+	 * @param couchbaseSimpleCallbackTransactionManager
 	 * @return
 	 */
-//	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
-//	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
-//		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
-//	}
+	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
+	public CouchbaseSimpleTransactionalOperator transactionOperator(
+			CouchbaseSimpleCallbackTransactionManager couchbaseSimpleCallbackTransactionManager) {
+		return new CouchbaseSimpleTransactionalOperator(couchbaseSimpleCallbackTransactionManager);
+	}
 
 	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.
@@ -476,33 +432,33 @@ public abstract class AbstractCouchbaseConfiguration {
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
 	}
-/*
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource) {
-		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
-		interceptor.setTransactionAttributeSource(transactionAttributeSource);
-		return interceptor;
-	}
-
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionAttributeSource transactionAttributeSource() {
-		return new AnnotationTransactionAttributeSource();
-	}
-
-	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
-			TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
-
-		BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-		advisor.setTransactionAttributeSource(transactionAttributeSource);
-		advisor.setAdvice(transactionInterceptor);
-		// if (this.enableTx != null) {
-		// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
-		// }
-		return advisor;
-	}
- */
+	/*
+		@Bean
+		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+		public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource) {
+			TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor();
+			interceptor.setTransactionAttributeSource(transactionAttributeSource);
+			return interceptor;
+		}
+	
+		@Bean
+		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+		public TransactionAttributeSource transactionAttributeSource() {
+			return new AnnotationTransactionAttributeSource();
+		}
+	
+		@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
+		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+		public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor(
+				TransactionAttributeSource transactionAttributeSource, TransactionInterceptor transactionInterceptor) {
+	
+			BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
+			advisor.setTransactionAttributeSource(transactionAttributeSource);
+			advisor.setAdvice(transactionInterceptor);
+			// if (this.enableTx != null) {
+			// advisor.setOrder(this.enableTx.<Integer>getNumber("order"));
+			// }
+			return advisor;
+		}
+	 */
 }

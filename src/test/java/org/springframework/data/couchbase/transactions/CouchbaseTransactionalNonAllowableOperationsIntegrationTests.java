@@ -141,7 +141,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 			personOperations = ops;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 		public <T> T doInTransaction(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
 			tryCount.incrementAndGet();
 			return callback.apply(personOperations);

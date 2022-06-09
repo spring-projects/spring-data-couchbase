@@ -41,14 +41,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	}
 
 	@Override
-	@Bean
-	public TransactionOptions transactionsOptions(){
-		// twenty minutes for debugging in the debugger.
-		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
-	}
-
-	@Override
-	public void configureTransactions(ClusterEnvironment.Builder builder) {
+	public void configureEnvironment(ClusterEnvironment.Builder builder) {
 		// twenty minutes for debugging in the debugger.
 		builder.transactionsConfig(TransactionsConfig.builder().timeout(Duration.ofMinutes(20)));
 	}

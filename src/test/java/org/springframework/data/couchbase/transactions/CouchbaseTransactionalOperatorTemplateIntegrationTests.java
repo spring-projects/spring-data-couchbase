@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +42,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -50,13 +50,14 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for TransactionalOperator, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class })
+@SpringJUnitConfig(Config.class)
 public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
@@ -180,6 +181,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 
 	@DisplayName("A basic golden path remove should succeed")
 	@Test
+	// fails with - java.lang.NullPointerException: The Publisher returned by the supplier is null
 	public void committedRemove() {
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
@@ -203,7 +205,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person insertedPerson = blocking.insertById(Person.class).one(person);
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString())).all().then();
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().next();
 		});
 
 		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
@@ -219,7 +222,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person insertedPersion = blocking.insertById(Person.class).one(person);
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString())).all().then();
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().next();
 		});
 
 		assertEquals(1, rr.attempts);

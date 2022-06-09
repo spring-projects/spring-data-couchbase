@@ -7,7 +7,6 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.Transactions;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
@@ -124,8 +123,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public CouchbaseResourceHolder getResources(TransactionOptions options,
-                                              CoreTransactionAttemptContext atr) {
+	public CouchbaseResourceHolder getResources(CoreTransactionAttemptContext atr) {
 		if (atr == null) {
 			atr = AttemptContextReactiveAccessor
 					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));

@@ -1,5 +1,6 @@
 package org.springframework.data.couchbase.transaction;
 
+import org.springframework.data.couchbase.core.TransactionalSupport;
 import reactor.util.annotation.Nullable;
 
 import java.util.function.Consumer;
@@ -63,14 +64,14 @@ public class TransactionsWrapper /* wraps Transactions */ {
 				CoreTransactionAttemptContext atr = AttemptContextReactiveAccessor.getCore(ctx);
 
 				// from CouchbaseTransactionManager
-				CouchbaseResourceHolder resourceHolder = CouchbaseTransactionManager.newResourceHolder(couchbaseClientFactory,
+				CouchbaseResourceHolder resourceHolder = TransactionalSupport.newResourceHolder(couchbaseClientFactory,
 						/*definition*/ new CouchbaseTransactionDefinition(), TransactionOptions.transactionOptions(), atr);
 				// couchbaseTransactionObject.setResourceHolder(resourceHolder);
 
 				logger
-						.debug(String.format("About to start transaction for session %s.", CouchbaseTransactionManager.debugString(resourceHolder.getCore())));
+						.debug(String.format("About to start transaction for session %s.", TransactionalSupport.debugString(resourceHolder.getCore())));
 
-				logger.debug(String.format("Started transaction for session %s.", CouchbaseTransactionManager.debugString(resourceHolder.getCore())));
+				logger.debug(String.format("Started transaction for session %s.", TransactionalSupport.debugString(resourceHolder.getCore())));
 
 				CouchbaseSimpleCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
 

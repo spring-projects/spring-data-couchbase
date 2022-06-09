@@ -56,7 +56,9 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 	@Transient private boolean isNew;
 
 
-	public Person() {}
+	public Person() {
+		setId( UUID.randomUUID());
+	}
 
 	public Person(String firstname, String lastname) {
 		this();

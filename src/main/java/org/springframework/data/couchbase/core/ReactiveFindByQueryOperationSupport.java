@@ -230,6 +230,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
 						}
+						System.err.println("row: "+row);
 						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
 								null);
 					});
@@ -256,10 +257,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
 						if (!s.isPresent()) {
+							System.err.println("count: tx");
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 									: rs.query(statement, opts);
 						} else {
+							System.err.println("count: tx");
 							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
 							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
 									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);

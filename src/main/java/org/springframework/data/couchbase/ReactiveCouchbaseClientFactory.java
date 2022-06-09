@@ -19,7 +19,6 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
@@ -88,11 +87,10 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	CouchbaseResourceHolder getResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	CouchbaseResourceHolder getResources(CoreTransactionAttemptContext ctx);
 
 	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.ReactiveMongoDatabaseFactory#with(com.mongodb.session.ClientSession)
+	 * Seems only to be used by CouchbaseTransactionalOperator - which maybe discontinued.
 	 */
 	ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
 

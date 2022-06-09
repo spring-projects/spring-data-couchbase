@@ -110,7 +110,6 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		public Mono<T> one(T object) {
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
 			LOG.trace("insertById {}", pArgs);
-			System.err.println("insert txOp: " + pArgs.getTxOp());
 
 			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
