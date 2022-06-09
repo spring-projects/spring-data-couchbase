@@ -124,13 +124,13 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 			this.ops = ops;
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public <T> T doInTransaction(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
 			tryCount.incrementAndGet();
 			return callback.apply(ops);
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, timeout = 2)
+		@Transactional(timeout = 2)
 		public void timeout(String id) {
 			while (true) {
 				Person p = ops.findById(Person.class).one(id);
@@ -138,11 +138,11 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 			}
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, isolation = Isolation.REPEATABLE_READ)
+		@Transactional(isolation = Isolation.REPEATABLE_READ)
 		public void unsupportedIsolation() {
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER, isolation = Isolation.READ_COMMITTED)
+		@Transactional(isolation = Isolation.READ_COMMITTED)
 		public void supportedIsolation() {
 		}
 	}

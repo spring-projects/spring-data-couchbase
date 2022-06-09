@@ -202,8 +202,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 			this.ops = ops;
 		}
 
-		// todo gp once we've settled on an approach, remove `transactionManager` from all tests
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public Mono<Void> doInTransaction(AtomicInteger tryCount, Function<ReactiveCouchbaseOperations, Mono<?>> callback) {
 			return TransactionalSupport.checkForTransactionInThreadLocalStorage(null).flatMap(stat -> {
 				assertTrue(stat.isPresent(), "Not in transaction");
@@ -212,7 +211,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 			});
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public <T> Mono<T> doInTransactionReturningMono(AtomicInteger tryCount,
 				Function<ReactiveCouchbaseOperations, Mono<T>> callback) {
 			return Mono.defer(() -> {
@@ -221,7 +220,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 			});
 		}
 
-		@Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+		@Transactional
 		public <T> Flux<T> doInTransactionReturningFlux(AtomicInteger tryCount,
 				Function<ReactiveCouchbaseOperations, Flux<T>> callback) {
 			return Flux.defer(() -> {
