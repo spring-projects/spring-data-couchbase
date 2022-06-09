@@ -65,12 +65,6 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
 	}
 
-	@Override
-	public void configureTransactions(ClusterEnvironment.Builder builder) {
-		// twenty minutes for debugging in the debugger.
-		builder.transactionsConfig(TransactionsConfig.builder().timeout(Duration.ofMinutes(20)));
-	}
-
 	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);

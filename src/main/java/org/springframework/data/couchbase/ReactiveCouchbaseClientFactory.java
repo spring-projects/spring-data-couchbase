@@ -88,7 +88,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	void close() throws IOException;
 
-	CouchbaseResourceHolder getResources(TransactionOptions options, CoreTransactionAttemptContext ctx);
+	CouchbaseResourceHolder getResources(CoreTransactionAttemptContext ctx);
 
 	/*
 	 * (non-Javadoc)
