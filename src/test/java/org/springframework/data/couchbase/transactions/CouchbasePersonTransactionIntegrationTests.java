@@ -129,8 +129,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		List<EventLog> e1 = cbTmpl.findByQuery(EventLog.class).inScope(sName).inCollection(cName)
 				.withConsistency(REQUEST_PLUS).all();
 
-		Person walterWhite = new Person(1, "Walter", "White");
-		remove(cbTmpl, sName, cName, walterWhite.getId().toString());
 	}
 
 	@DisplayName("rollback after exception using transactionalOperator")
@@ -154,8 +152,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@Test
 	@DisplayName("rollback after exception after using @Transactional(reactive)")
-	// todo mr - inconsistency with shouldRollbackAfterExceptionOfTxAnnotatedMethod
-	// todo mr - which has TransactionFailedException with a cause of SimulateFailureException
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethodReactive() {
 		Person p = new Person("Walter", "White");
 		assertThrowsWithCause(() -> personService.declarativeSavePersonErrorsReactive(p).block(),

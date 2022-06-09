@@ -49,6 +49,7 @@ import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTra
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
+import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
@@ -365,6 +366,17 @@ public abstract class AbstractCouchbaseConfiguration {
 	public CouchbaseSimpleTransactionalOperator transactionOperator(
 			CouchbaseSimpleCallbackTransactionManager couchbaseSimpleCallbackTransactionManager) {
 		return new CouchbaseSimpleTransactionalOperator(couchbaseSimpleCallbackTransactionManager);
+	}
+
+	/**
+	 * A convenience wrapper for reactive transactions.
+	 *
+	 * @param clientFactory
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_REACTIVE_TRANSACTIONS_WRAPPER)
+	ReactiveTransactionsWrapper reactiveTransactionsWrapper(ReactiveCouchbaseClientFactory clientFactory) {
+		return new ReactiveTransactionsWrapper(clientFactory);
 	}
 
 	/**

@@ -65,6 +65,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Autowired ReactiveCouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTemplate ops;
 	@Autowired CouchbaseTemplate blocking;
+	@Autowired ReactiveTransactionsWrapper wrapper;
 
 	@AfterEach
 	public void afterEachTest() {
@@ -87,7 +88,6 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 
 	private RunResult doInTransaction(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> lambda,
 			@Nullable TransactionOptions options) {
-		ReactiveTransactionsWrapper wrapper = new ReactiveTransactionsWrapper(couchbaseClientFactory);
 		AtomicInteger attempts = new AtomicInteger();
 
 		TransactionResult result = wrapper.run(ctx -> {

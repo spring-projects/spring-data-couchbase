@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.transactions;
 
+import com.couchbase.client.core.error.transaction.AttemptExpiredException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,7 +66,8 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
  * Tests for @Transactional, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalTemplateIntegrationTests.PersonService.class} )
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+		CouchbaseTransactionalTemplateIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -84,15 +87,11 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@BeforeEach
 	public void beforeEachTest() {
 		// Skip this as we just one to track TransactionContext
-		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all(); // doesn't work???
+		List<RemoveResult> pr = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<Person> p = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
+		List<RemoveResult> pwovr = operations.removeByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
+		List<PersonWithoutVersion> pwov = operations.findByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
 	}
 
 	@AfterEach
@@ -104,9 +103,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void committedInsert() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-
 		Person inserted = personService.doInTransaction(tryCount, (ops) -> {
-			Person person = new Person(1, "Walter", "White");
+			Person person = new Person( "Walter", "White");
 			ops.insertById(Person.class).one(person);
 			return person;
 		});
@@ -120,7 +118,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void committedReplace() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
 		personService.fetchAndReplace(person.getId().toString(), tryCount, (p) -> {
@@ -137,7 +135,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void committedRemove() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person("Walter", "White");
 		operations.insertById(Person.class).one(person);
 
 		personService.fetchAndRemove(person.getId().toString(), tryCount);
@@ -151,7 +149,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void committedRemoveByQuery() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
 		List<RemoveResult> removed = personService.doInTransaction(tryCount, ops -> {
@@ -168,7 +166,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void committedFindByQuery() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person("Walter", "White");
 		operations.insertById(Person.class).one(person);
 
 		List<Person> found = personService.doInTransaction(tryCount, ops -> {
@@ -184,18 +182,14 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		AtomicInteger tryCount = new AtomicInteger(0);
 		AtomicReference<String> id = new AtomicReference<>();
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
-				Person person = new Person(1, "Walter", "White");
+				Person person = new Person( "Walter", "White");
 				ops.insertById(Person.class).one(person);
 				id.set(person.getId().toString());
 				throw new SimulateFailureException();
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(id.get());
 		assertNull(fetched);
@@ -206,21 +200,17 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void rollbackReplace() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.getId().toString());
 				p.setFirstname("changed");
 				ops.replaceById(Person.class).one(p);
 				throw new SimulateFailureException();
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertEquals("Walter", fetched.getFirstname());
@@ -231,43 +221,35 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void rollbackRemove() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.getId().toString());
 				ops.removeById(Person.class).oneEntity(p);
 				throw new SimulateFailureException();
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertNotNull(fetched);
 		assertEquals(1, tryCount.get());
 	}
 
-
 	@DisplayName("Basic test of doing a removeByQuery then rolling back")
 	@Test
 	public void rollbackRemoveByQuery() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, ops -> {
 				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertNotNull(fetched);
@@ -278,31 +260,24 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void rollbackFindByQuery() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, ops -> {
 				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
 	}
 
 	@Test
 	public void shouldRollbackAfterException() {
-		try {
+		assertThrowsWithCause(() -> {
 			personService.insertThenThrow();
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
@@ -316,8 +291,6 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
-	//@Disabled("because hanging - requires JCBC-1955 fix")
-	// somewhere between 50 and 80 threads, it starts to hang.
 	@Test
 	public void concurrentTxns() {
 		Runnable r = () -> {
@@ -328,7 +301,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			System.out.printf("Finished thread %d %s%n", t.getId(), t.getName());
 		};
 		List<Thread> threads = new ArrayList<>();
-		for (int i = 0; i < 50; i ++) { // somewhere between 50-80 it starts to hang
+		for (int i = 0; i < 50; i++) { // somewhere between 50-80 it starts to hang
 			Thread t = new Thread(r);
 			t.start();
 			threads.add(t);
@@ -348,96 +321,68 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
 	public void replacePerson() {
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
-
 		Person refetched = operations.findById(Person.class).one(person.getId().toString());
 		operations.replaceById(Person.class).one(refetched);
-
 		assertNotEquals(person.getVersion(), refetched.getVersion());
-
 		AtomicInteger tryCount = new AtomicInteger(0);
-		try {
-			personService.replace(person, tryCount);
-			fail();
-		}
-		catch (TransactionFailedException ignored) {
-		}
-
+		assertThrowsWithCause(() -> personService.replace(person, tryCount),
+				TransactionFailedException.class, AttemptExpiredException.class);
 	}
-
 
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
 		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
-
 		operations.insertById(PersonWithoutVersion.class).one(person);
-		try {
-			personService.replaceEntityWithoutVersion(person.getId().toString());
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+
+		assertThrowsWithCause(() -> personService.replaceEntityWithoutVersion(person.getId().toString()),
+				TransactionFailedException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("Entity must have non-zero CAS during replace")
 	@Test
 	public void replaceEntityWithCasZero() {
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
-
 		// switchedPerson here will have CAS=0, which will fail
-		Person switchedPerson = new Person(1, "Dave", "Reynolds");
+		Person switchedPerson = new Person( "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger(0);
 
-		try {
-			personService.replacePerson(switchedPerson, tryCount);
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+		assertThrowsWithCause(() -> personService.replacePerson(switchedPerson, tryCount), TransactionFailedException.class,
+				IllegalArgumentException.class);
 	}
 
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
 		PersonWithoutVersion person = new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White");
-
 		operations.insertById(PersonWithoutVersion.class).one(person);
-		try {
-			personService.removeEntityWithoutVersion(person.getId().toString());
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+
+		assertThrowsWithCause(() -> personService.removeEntityWithoutVersion(person.getId().toString()),
+				TransactionFailedException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("removeById().one(id) isn't allowed in transactions, since we don't have the CAS")
 	@Test
 	public void removeEntityById() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		Person person = new Person(1, "Walter", "White");
+		Person person = new Person( "Walter", "White");
 		operations.insertById(Person.class).one(person);
-
-		try {
-            personService.doInTransaction(tryCount, (ops) -> {
-                Person p = ops.findById(Person.class).one(person.getId().toString());
-                ops.removeById(Person.class).one(p.getId().toString());
-                return p;
-            });
-            fail();
-        }
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+		assertThrowsWithCause(() -> {
+			personService.doInTransaction(tryCount, (ops) -> {
+				Person p = ops.findById(Person.class).one(person.getId().toString());
+				ops.removeById(Person.class).one(p.getId().toString());
+				return p;
+			});
+		}, TransactionFailedException.class, IllegalArgumentException.class);
 	}
 
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static
-	class PersonService {
+	static class PersonService {
 		final CouchbaseOperations personOperations;
 		final ReactiveCouchbaseOperations personOperationsRx;
 
@@ -450,9 +395,11 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		public Person declarativeSavePerson(Person person) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
-			System.out.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
+			System.out
+					.println(String.format("Thread %d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
 			Person ret = personOperations.insertById(Person.class).one(person);
-			System.out.println(String.format("Thread %d (was %d) %s", Thread.currentThread().getId(), currentThreadId, Thread.currentThread().getName()));
+			System.out.println(String.format("Thread %d (was %d) %s", Thread.currentThread().getId(), currentThreadId,
+					Thread.currentThread().getName()));
 			if (currentThreadId != Thread.currentThread().getId()) {
 				throw new IllegalStateException();
 			}
@@ -463,9 +410,11 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		public Person declarativeSavePersonWithThread(Person person, Thread thread) {
 			assertInAnnotationTransaction(true);
 			long currentThreadId = Thread.currentThread().getId();
-			System.out.printf("Thread %d %s, started from %d %s%n", Thread.currentThread().getId(), Thread.currentThread().getName(), thread.getId(), thread.getName());
+			System.out.printf("Thread %d %s, started from %d %s%n", Thread.currentThread().getId(),
+					Thread.currentThread().getName(), thread.getId(), thread.getName());
 			Person ret = personOperations.insertById(Person.class).one(person);
-			System.out.printf("Thread %d (was %d) %s, started from %d %s%n", Thread.currentThread().getId(), currentThreadId, Thread.currentThread().getName(), thread.getId(), thread.getName());
+			System.out.printf("Thread %d (was %d) %s, started from %d %s%n", Thread.currentThread().getId(), currentThreadId,
+					Thread.currentThread().getName(), thread.getId(), thread.getName());
 			if (currentThreadId != Thread.currentThread().getId()) {
 				throw new IllegalStateException();
 			}
@@ -547,6 +496,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			Person p = personOperations.findById(Person.class).one(id);
 			personOperations.removeById(Person.class).oneEntity(p);
 		}
+
 	}
 
 	static void assertInAnnotationTransaction(boolean inTransaction) {

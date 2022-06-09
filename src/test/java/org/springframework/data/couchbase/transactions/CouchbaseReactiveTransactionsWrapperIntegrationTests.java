@@ -74,11 +74,12 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Autowired CouchbaseTemplate cbTmpl;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
 	@Autowired CouchbaseTemplate operations;
+	@Autowired ReactiveTransactionsWrapper reactiveTransactionsWrapper;
 
 	// if these are changed from default, then beforeEach needs to clean up separately
 	String sName = "_default";
 	String cName = "_default";
-	private ReactiveTransactionsWrapper reactiveTransactionsWrapper;
+
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -103,7 +104,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 
 		Person walterWhite = new Person(1, "Walter", "White");
 		remove(cbTmpl, sName, cName, walterWhite.getId().toString());
-		reactiveTransactionsWrapper = new ReactiveTransactionsWrapper(reactiveCouchbaseClientFactory);
 	}
 
 	@AfterEach

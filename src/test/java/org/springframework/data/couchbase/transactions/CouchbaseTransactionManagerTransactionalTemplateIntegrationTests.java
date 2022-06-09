@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Replace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.BeanNames;
@@ -249,27 +250,12 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 	public void casMismatchCausesRetry() {
 		UUID id = UUID.randomUUID();
 		Person person = new Person(id, "Walter", "White");
-		operations.insertById(Person.class).one(person);
+		Person insertedPerson = operations.insertById(Person.class).one(person);
 		AtomicInteger attempts = new AtomicInteger();
-
-		// Needs to take place in a separate thread to bypass the ThreadLocalStorage checks
-		Thread forceCASMismatch = new Thread(() -> {
-			Person fetched = operations.findById(Person.class).one(id.toString());
-			operations.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
-		});
 
 		personService.doInTransaction(attempts, ctx -> {
 			Person fetched = operations.findById(Person.class).one(id.toString());
-
-			if (attempts.get() == 1) {
-				forceCASMismatch.start();
-				try {
-					forceCASMismatch.join();
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
-
+			ReplaceLoopThread.updateOutOfTransaction(operations, insertedPerson.withFirstName("Changed Externally"), attempts.get());
 			return operations.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
 		});
 
