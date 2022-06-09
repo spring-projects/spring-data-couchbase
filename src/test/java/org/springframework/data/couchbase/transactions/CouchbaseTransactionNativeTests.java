@@ -65,7 +65,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseTransactionManager.class)
 // I think these are all redundant (see CouchbaseReactiveTransactionNativeTests). There does not seem to be a blocking
 // form of TransactionalOperator. Also there does not seem to be a need for a CouchbaseTransactionalOperator as
 // TransactionalOperator.create(reactiveCouchbaseTransactionManager) seems to work just fine. (I don't recall what

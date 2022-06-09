@@ -71,7 +71,7 @@ import com.couchbase.client.core.cnc.Event;
 @ExtendWith({ SpringExtension.class })
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseTransactionManager.class)
 public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegrationTests {
 
 	@Configuration

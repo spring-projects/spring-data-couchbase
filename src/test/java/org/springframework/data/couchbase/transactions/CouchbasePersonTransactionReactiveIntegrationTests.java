@@ -19,7 +19,6 @@ package org.springframework.data.couchbase.transactions;
 import com.couchbase.client.java.Cluster;
 import lombok.Data;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -58,13 +57,12 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class, PersonServiceReactive.class } )
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseTransactionManager.class, PersonServiceReactive.class } )
 //@Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and cannot support)")
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
-	@Autowired CouchbaseSimpleCallbackTransactionManager couchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;

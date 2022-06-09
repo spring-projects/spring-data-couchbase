@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests for @Transactional methods, setting all the various options allowed by @Transactional.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -63,7 +63,7 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
+		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach

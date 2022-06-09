@@ -60,7 +60,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	// todo gp can we get @AutoWired working here
 	// @Autowired

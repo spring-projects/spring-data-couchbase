@@ -69,7 +69,7 @@ import reactor.util.retry.Retry;
  * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class })
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class })
 public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;

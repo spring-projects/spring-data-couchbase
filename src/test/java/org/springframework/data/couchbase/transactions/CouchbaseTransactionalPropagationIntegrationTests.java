@@ -65,7 +65,7 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
  * Tests for the various propagation values allowed on @Transactional methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);
 
@@ -78,7 +78,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
+		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach

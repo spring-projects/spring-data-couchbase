@@ -61,7 +61,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { Config.class, CouchbaseTransactionManagerTransactionalTemplateIntegrationTests.PersonService.class })
+		classes = { TransactionsConfigCouchbaseTransactionManager.class, CouchbaseTransactionManagerTransactionalTemplateIntegrationTests.PersonService.class })
 public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
