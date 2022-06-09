@@ -85,6 +85,10 @@ public class CouchbaseTransactionManager extends AbstractPlatformTransactionMana
 	 */
 	public CouchbaseTransactionManager() {}
 
+	public CouchbaseTransactionManager(CouchbaseClientFactory databaseFactory) {
+		this(databaseFactory, null);
+	}
+
 	/**
 	 * Create a new {@link CouchbaseTransactionManager} obtaining sessions from the given {@link CouchbaseClientFactory}
 	 * applying the given {@link TransactionOptions options}, if present, when starting a new transaction.
