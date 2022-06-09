@@ -37,6 +37,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
@@ -50,6 +52,10 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		this(couchbaseClientFactory, null);
 	}
 
+	/**
+	 * This override is for users manually creating a CouchbaseSimpleCallbackTransactionManager, and allows the
+	 * TransactionOptions to be overridden.
+	 */
 	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 		this.options = options;
@@ -112,9 +118,9 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	}
 
 	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
-		final AtomicReference<Flux<T>> execResult = new AtomicReference<>();
+		final List<T> out = new ArrayList<>();
 
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
+		return couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			return Mono.defer(() -> {
 				ReactiveTransaction status = new ReactiveTransaction() {
 					boolean rollbackOnly = false;
@@ -141,10 +147,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 				};
 
 				return Flux.from(callback.doInTransaction(status))
-						.publish(flux -> {
-							execResult.set(flux);
-							return flux;
-						})
+						.doOnNext(v -> out.add(v))
 						.then(Mono.defer(() -> {
 							if (status.isRollbackOnly()) {
 								return Mono.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
@@ -159,11 +162,8 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
 
-		}, this.options);
-
-		clearTransactionSynchronizationManager();
-
-		return result.thenMany(Flux.defer(() -> execResult.get()));
+		}, this.options)
+				.thenMany(Flux.defer(() -> Flux.fromIterable(out)));
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
@@ -264,6 +264,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
 		// So these methods should only be hit if user is using PlatformTransactionManager directly.  Spring supports this,
 		// but due to the lambda-based nature of our transactions, we cannot.
+		// todo gp replace a lot of IllegalStateException with UnsupportedOperationException
 		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
