@@ -130,8 +130,6 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		}
 
-		// todo gpx test reactive @Transactional - we don't support, but what happens. There is no CallbackPreferring ReactiveTransactionManager
-
 		@Override
 		public Flux<? extends T> all(final Collection<String> ids) {
 			return Flux.fromIterable(ids).flatMap(this::one);
