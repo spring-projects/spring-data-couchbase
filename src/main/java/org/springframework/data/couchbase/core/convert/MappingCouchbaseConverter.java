@@ -47,7 +47,6 @@ import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
 import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.couchbase.core.query.N1qlJoin;
-import org.springframework.data.couchbase.repository.TransactionResult;
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.Association;
 import org.springframework.data.mapping.AssociationHandler;
@@ -269,9 +268,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-				if (prop.isAnnotationPresent(TransactionResult.class)) {
-					return;
-				}
 				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
@@ -514,10 +510,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-				if (prop.isAnnotationPresent(TransactionResult.class)) {
-					return;
-				}
-
 				if (prop.equals(idProperty) || (versionProperty != null && prop.equals(versionProperty))) {
 					return;
 				} else if (prop.isAnnotationPresent(N1qlJoin.class)) {
