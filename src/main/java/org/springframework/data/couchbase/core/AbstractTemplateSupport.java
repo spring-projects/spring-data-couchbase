@@ -104,9 +104,6 @@ public abstract class AbstractTemplateSupport {
 		if (cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
-		if (persistentEntity.transactionResultProperty() != null) {
-			accessor.setProperty(persistentEntity.transactionResultProperty(), System.identityHashCode(txResultHolder));
-		}
 		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id, scope, collection);
 
 		if(holder != null){
@@ -142,10 +139,6 @@ public abstract class AbstractTemplateSupport {
 			accessor.setProperty(versionProperty, cas);
 		}
 
-		final CouchbasePersistentProperty transactionResultProperty = persistentEntity.transactionResultProperty();
-		if (transactionResultProperty != null) {
-			accessor.setProperty(transactionResultProperty, System.identityHashCode(txResultHolder));
-		}
 		if(holder != null){
 			holder.transactionResultHolder(txResultHolder, (T)accessor.getBean());
 		}
