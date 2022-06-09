@@ -162,7 +162,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
 						CouchbaseResourceHolder resourceHolder = couchbaseClientFactory.getResources(
-								TransactionOptions.transactionOptions(), AttemptContextReactiveAccessor.getCore(ctx));
+								AttemptContextReactiveAccessor.getCore(ctx));
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
 
