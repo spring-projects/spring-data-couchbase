@@ -65,33 +65,22 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
  * Tests for the various propagation values allowed on @Transactional methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
+@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalPropagationIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	@Autowired
-	CouchbaseTemplate operations;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
+	@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach
 	public void beforeEachTest() {
 		TransactionTestUtil.assertNotInTransaction();
-		personService = context.getBean(PersonService.class);
-
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
 	}
 
 	@AfterEach

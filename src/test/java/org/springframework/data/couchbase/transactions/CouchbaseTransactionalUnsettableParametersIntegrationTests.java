@@ -59,29 +59,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  * These will be rejected at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
+@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
-	}
-
-	@BeforeEach
-	public void beforeEachTest() {
-		personService = context.getBean(PersonService.class); // getting it via autowired results in no @Transactional
-
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
 	}
 
 	void test(Consumer<CouchbaseOperations> r) {

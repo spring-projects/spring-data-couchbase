@@ -51,32 +51,21 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests for @Transactional methods, setting all the various options allowed by @Transactional.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
+@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalOptionsIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	@Autowired
-	CouchbaseTemplate operations;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
+	@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach
 	public void beforeEachTest() {
 		TransactionTestUtil.assertNotInTransaction();
-		personService = context.getBean(PersonService.class);
-
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
 	}
 
 	@DisplayName("@Transactional(timeout = 2) will timeout at around 2 seconds")
