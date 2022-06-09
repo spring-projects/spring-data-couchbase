@@ -348,28 +348,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
 
 
-
-
-	// todo gpx these would be per-transactions options so it seems odd to have a global bean?  Surely would want to configure everything at global level instead?
-	@Bean
-	public TransactionOptions transactionsOptions(){
-		return TransactionOptions.transactionOptions();
-	}
-
-
-
-
-	/**
-	 * Blocking Transaction Manager
-	 *
-	 * @param couchbaseTemplate
-	 * @return
-	 */
-//	@Bean(BeanNames.COUCHBASE_CALLBACK_TRANSACTION_MANAGER)
-//	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseTemplate couchbaseTemplate, ReactiveCouchbaseTemplate couchbaseReactiveTemplate) {
-//		return new CouchbaseCallbackTransactionManager(couchbaseTemplate, couchbaseReactiveTemplate);
-//	}
-
 	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.
 	 */
