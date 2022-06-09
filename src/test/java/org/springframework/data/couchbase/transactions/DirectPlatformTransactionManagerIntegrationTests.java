@@ -44,6 +44,6 @@ public class DirectPlatformTransactionManagerIntegrationTests extends JavaIntegr
 		assertThrowsWithCause(() -> {
 			TransactionDefinition def = new DefaultTransactionDefinition();
 			ptm.getTransaction(def);
-		}, IllegalStateException.class);
+		}, UnsupportedOperationException.class);
 	}
 }

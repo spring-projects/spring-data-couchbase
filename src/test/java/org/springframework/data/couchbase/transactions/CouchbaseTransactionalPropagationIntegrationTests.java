@@ -115,7 +115,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -139,7 +139,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -151,7 +151,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			});
 			fail();
 		}
-		catch (IllegalTransactionStateException ignored) {
+		catch (UnsupportedOperationException ignored) {
 		}
 	}
 
@@ -251,7 +251,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back
@@ -274,7 +274,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back
@@ -320,7 +320,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 			fail();
 		}
 		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
+			assertTrue(err.getCause() instanceof UnsupportedOperationException);
 		}
 
 		// Validate everything rolled back

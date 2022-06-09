@@ -85,7 +85,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			if (createNewTransaction) {
 				return executeNewReactiveTransaction(callback);
 			} else {
-				return Mono.error(new IllegalStateException("Unsupported operation"));
+				return Mono.error(new UnsupportedOperationException("Unsupported operation"));
 			}
 		});
 	}
@@ -183,7 +183,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 
 			case TransactionDefinition.PROPAGATION_SUPPORTS:
 				// Don't appear to have the ability to execute the callback non-transactionally in this layer.
-				throw new IllegalTransactionStateException(
+				throw new UnsupportedOperationException(
 						"Propagation level 'support' has been specified which is not supported");
 
 			case TransactionDefinition.PROPAGATION_MANDATORY:
@@ -196,12 +196,12 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			case TransactionDefinition.PROPAGATION_REQUIRES_NEW:
 				// This requires suspension of the active transaction.  This will be possible to support in a future
 				// release, if required.
-				throw new IllegalTransactionStateException(
+				throw new UnsupportedOperationException(
 						"Propagation level 'requires_new' has been specified which is not currently supported");
 
 			case TransactionDefinition.PROPAGATION_NOT_SUPPORTED:
 				// Don't appear to have the ability to execute the callback non-transactionally in this layer.
-				throw new IllegalTransactionStateException(
+				throw new UnsupportedOperationException(
 						"Propagation level 'not_supported' has been specified which is not supported");
 
 			case TransactionDefinition.PROPAGATION_NEVER:
@@ -214,13 +214,13 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			case TransactionDefinition.PROPAGATION_NESTED:
 				if (isExistingTransaction) {
 					// Couchbase transactions cannot be nested.
-					throw new IllegalTransactionStateException(
+					throw new UnsupportedOperationException(
 							"Propagation level 'nested' has been specified which is not supported");
 				}
 				return true;
 
 			default:
-				throw new IllegalTransactionStateException(
+				throw new UnsupportedOperationException(
 						"Unknown propagation level " + definition.getPropagationBehavior() + " has been specified");
 		}
 	}
@@ -271,17 +271,16 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
 		// So these methods should only be hit if user is using PlatformTransactionManager directly.  Spring supports this,
 		// but due to the lambda-based nature of our transactions, we cannot.
-		// todo gp replace a lot of IllegalStateException with UnsupportedOperationException
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void commit(TransactionStatus ignored) throws TransactionException {
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void rollback(TransactionStatus ignored) throws TransactionException {
-		throw new IllegalStateException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 }
