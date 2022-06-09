@@ -68,13 +68,7 @@ public class TransactionsConfigCouchbaseTransactionManager extends AbstractCouch
 		// twenty minutes for debugging in the debugger.
 		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
 	}
-
-	@Override
-	public void configureTransactions(ClusterEnvironment.Builder builder) {
-		// twenty minutes for debugging in the debugger.
-		builder.transactionsConfig(TransactionsConfig.builder().timeout(Duration.ofMinutes(20)));
-	}
-
+	
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseTransactionManager(clientFactory, options);

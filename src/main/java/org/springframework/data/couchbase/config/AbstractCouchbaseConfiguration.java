@@ -170,7 +170,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
 		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
-		configureTransactions(builder);
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -358,15 +357,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 
-
-	/**
-	 * Can be overridden to customize the configuration of the environment before bootstrap.
-	 *
-	 * @param builder the builder that can be customized.
-	 */
-	// todo gp is this needed?  Can already configure transactions through the regular ClusterEnvironment, and this method would also permit configuring non-transactional options
-	public void configureTransactions(final ClusterEnvironment.Builder builder) {
-	}
 
 
 	/**

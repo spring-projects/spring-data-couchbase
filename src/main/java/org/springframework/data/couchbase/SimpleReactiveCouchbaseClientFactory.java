@@ -124,8 +124,7 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	}
 
 	@Override
-	public CouchbaseResourceHolder getResources(TransactionOptions options,
-                                              CoreTransactionAttemptContext atr) {
+	public CouchbaseResourceHolder getResources(CoreTransactionAttemptContext atr) {
 		if (atr == null) {
 			atr = AttemptContextReactiveAccessor
 					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
