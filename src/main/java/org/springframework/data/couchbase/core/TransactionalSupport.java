@@ -82,16 +82,11 @@ public class TransactionalSupport {
     public static RuntimeException retryTransactionOnCasMismatch(CoreTransactionAttemptContext ctx, long cas1, long cas2) {
         try {
             ctx.logger().info(ctx.attemptId(), "Spring CAS mismatch %s != %s, retrying transaction", cas1, cas2);
-
-            // todo gpx expose this in SDK (now done, need 3.3.1 release)
-            Method method = CoreTransactionAttemptContext.class.getDeclaredMethod("operationFailed", TransactionOperationFailedException.class);
-            method.setAccessible(true);
             TransactionOperationFailedException err = TransactionOperationFailedException.Builder.createError()
                     .retryTransaction()
                     .cause(new CasMismatchException(null))
                     .build();
-            method.invoke(ctx, err);
-            return err;
+            return ctx.operationFailed(err);
         } catch (Throwable err) {
             return new RuntimeException(err);
         }
