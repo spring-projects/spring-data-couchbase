@@ -109,7 +109,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 			personService.declarativeSavePersonErrors(p) //
 					.as(StepVerifier::create) //
 					.expectComplete(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				 SimulateFailureException.class);
 	}
 
 	@Test

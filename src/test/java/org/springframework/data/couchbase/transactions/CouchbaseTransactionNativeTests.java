@@ -113,7 +113,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 						.flatMap(pp -> rxCbTmpl.replaceById(Person.class).one(pp.withFirstName("Walt")) //
 								.map(ppp -> throwSimulateFailureException(ppp))))
 						.blockLast(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
@@ -210,7 +210,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
 		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class)
 				.one(person.getId().toString()).flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
-				.map(it -> throwSimulateFailureException(it))).blockLast(), TransactionFailedException.class, SimulateFailureException.class);
+				.map(it -> throwSimulateFailureException(it))).blockLast(), SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
 	}

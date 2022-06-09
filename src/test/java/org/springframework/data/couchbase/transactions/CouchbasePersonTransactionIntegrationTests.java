@@ -138,7 +138,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void shouldRollbackAfterException() {
 		Person p = new Person( "Walter", "White");
 		assertThrowsWithCause(() -> personService.savePersonErrors(p),
-				TransactionFailedException.class, SimulateFailureException.class);
+				SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -147,7 +147,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception using @Transactional")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		Person p = new Person("Walter", "White");
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(p), TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(p),  SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -181,6 +181,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	}
 
 	@Test
+	/**
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
+	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 */
 	public void replaceInTxAnnotatedCallback() {
 		Person person = new Person(1, "Walter", "White");
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
@@ -212,7 +216,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
 		assertThrowsWithCause(() -> personService.saveWithErrorLogs(new Person("Walter", "White")),
-				TransactionFailedException.class, SimulateFailureException.class);
+				SimulateFailureException.class);
 		List<Person> persons = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		assertEquals(0, persons.size(), "should have done roll back and left 0 entries");
 		List<EventLog> events = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all(); //
@@ -245,8 +249,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		at com.couchbase.client.core.error.transaction.TransactionOperationFailedException$Builder.build(TransactionOperationFailedException.java:136)
 		at com.couchbase.client.core.transaction.CoreTransactionAttemptContext.lambda$handleDocExistsDuringStagedInsert$116(CoreTransactionAttemptContext.java:1801)
 		 */
-		assertThrowsOneOf(() -> personService.savePerson(p), DuplicateKeyException.class,
-				TransactionFailedException.class);
+		assertThrowsOneOf(() -> personService.savePerson(p), TransactionOperationFailedException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
@@ -270,7 +273,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
 				.flatMap(ppp -> assertInReactiveTransaction(ppp)).map(p -> throwSimulateFailureException(p))
 				.as(transactionalOperator::transactional); // tx
-		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::block, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -282,7 +285,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
 				.flatMap(ppp -> rxCBTmpl.insertById(Person.class).one(ppp)) //
 				.as(transactionalOperator::transactional);
-		assertThrowsWithCause(result::block, TransactionFailedException.class, DuplicateKeyException.class);
+		assertThrowsWithCause(result::block,  DuplicateKeyException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -315,6 +318,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	 * This does process retries - by CallbackTransactionManager.execute() -> transactions.run() -> executeTransaction()
 	 * -> retryWhen.
 	 */
+	/**
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
+	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 */
 	@Test
 	public void replaceWithCasConflictResolvedViaRetryAnnotatedCallback() {
 		Person person = new Person(1, "Walter", "White");
@@ -345,7 +352,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person res = personService.declarativeFindReplacePersonReactive(switchedPerson, tryCount)
 				.retryWhen(Retry.backoff(10, Duration.ofMillis(500))
 						.filter(throwable -> throwable instanceof OptimisticLockingFailureException)
-						// CoreTransactionAttemptContext.lambda$handleDocChangedDuringStaging$187
 						.filter(throwable -> throwable instanceof TransactionOperationFailedException)
 						.onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
 							throw new RuntimeException("Transaction failed  after max retries");
@@ -359,7 +365,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@Test
 	/**
-	 * This fails with TransactionOperationFailed {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
 	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
 	 */
 	public void replaceWithCasConflictResolvedViaRetryAnnotated() {

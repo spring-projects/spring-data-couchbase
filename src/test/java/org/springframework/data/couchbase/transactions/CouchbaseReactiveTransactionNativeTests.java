@@ -120,7 +120,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 				.execute((ctx) -> rxCBTmpl.findById(Person.class).one(person.getId().toString())
 						.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 						.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast,  SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -159,7 +159,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 				.execute((ctx) -> rxRepo.withCollection(cName).findById(person.getId().toString())
 						.flatMap(p -> rxRepo.withCollection(cName).save(p.withFirstName("Walt")))
 						.flatMap(it -> Mono.error(new SimulateFailureException())));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast,  SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -171,7 +171,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator
 				.execute((ctx) -> rxRepo.withCollection(cName).save(person) // insert
 						.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast,  SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.getId().toString()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
@@ -208,7 +208,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Mono<?> result = rxCBTmpl.findById(Person.class).one(person.getId().toString())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())).as(txOperator::transactional);
-		assertThrowsWithCause(result::block,TransactionFailedException.class,  SimulateFailureException.class);
+		assertThrowsWithCause(result::block,  SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be "+person.getFirstname());

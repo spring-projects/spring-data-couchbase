@@ -66,6 +66,8 @@ public class BeanNames {
 
 	public static final String COUCHBASE_TRANSACTION_MANAGER = "couchbaseTransactionManager";
 
-  public static final String COUCHBASE_TRANSACTIONAL_OPERATOR = "couchbaseTransactionalOperator" ;
+	public static final String COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER = "couchbaseSimpleCallbackTransactionManager";
 
+  public static final String COUCHBASE_TRANSACTIONAL_OPERATOR = "couchbaseTransactionalOperator" ;
+	public static final String COUCHBASE_TRANSACTION_DEFINITION = "couchbaseTransactionDefinition" ;
 }

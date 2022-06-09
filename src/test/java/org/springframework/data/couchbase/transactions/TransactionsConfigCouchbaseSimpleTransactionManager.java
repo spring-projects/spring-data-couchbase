@@ -28,6 +28,7 @@ import org.springframework.transaction.config.TransactionManagementConfigUtils;
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
+import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 
 /**
  * See comments on TransactionsConfigCouchbaseTransactionManager for why this test exists.
@@ -60,15 +61,10 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 		return ClusterAwareIntegrationTests.bucketName();
 	}
 
-	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
-		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
-	}
-
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
-														 TransactionManager txManager) {
+																											 CallbackPreferringPlatformTransactionManager txManager) {
 		TransactionInterceptor interceptor = new CouchbaseSimpleTransactionInterceptor(txManager, transactionAttributeSource);
 		interceptor.setTransactionAttributeSource(transactionAttributeSource);
 		if (txManager != null) {
@@ -76,4 +72,11 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 		}
 		return interceptor;
 	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionAttributeSource transactionAttributeSource() {
+		return new AnnotationTransactionAttributeSource();
+	}
+
 }

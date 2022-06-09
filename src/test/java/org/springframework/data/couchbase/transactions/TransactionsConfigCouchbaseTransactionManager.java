@@ -82,9 +82,6 @@ public class TransactionsConfigCouchbaseTransactionManager extends AbstractCouch
 	public TransactionDefinition transactionDefinition(){
 		return new CouchbaseTransactionDefinition();
 	}
-//	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-//	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
-//		return new CouchbaseTransactionManager(couchbaseClientFactory);
-//	}
+
 
 }

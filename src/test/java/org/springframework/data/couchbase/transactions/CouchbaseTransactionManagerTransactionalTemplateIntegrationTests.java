@@ -53,15 +53,15 @@ import org.springframework.transaction.annotation.Transactional;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for @Transactional, using the CouchbaseTransactionManager.
- * Some of these tests probably redundantly overlap with those elsewhere - but not all, since some of these fail.
- * These tests fail, and are known to fail.  I'm adding them to demonstrate why I don't feel we can have this
- * CouchbaseTransactionManager: it doesn't provide the crucial 'core loop' functionality, including error handling
- * and retries.  We should standardise on CouchbaseSimpleCallbackTransactionManager instead.
+ * Tests for @Transactional, using the CouchbaseTransactionManager. Some of these tests probably redundantly overlap
+ * with those elsewhere - but not all, since some of these fail. These tests fail, and are known to fail. I'm adding
+ * them to demonstrate why I don't feel we can have this CouchbaseTransactionManager: it doesn't provide the crucial
+ * 'core loop' functionality, including error handling and retries. We should standardise on
+ * CouchbaseSimpleCallbackTransactionManager instead.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(
-		classes = { TransactionsConfigCouchbaseTransactionManager.class, CouchbaseTransactionManagerTransactionalTemplateIntegrationTests.PersonService.class })
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseTransactionManager.class,
+		CouchbaseTransactionManagerTransactionalTemplateIntegrationTests.PersonService.class })
 public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
@@ -145,16 +145,11 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		AtomicInteger tryCount = new AtomicInteger(0);
 		UUID id = UUID.randomUUID();
 
-		try {
-			personService.doInTransaction(tryCount, (ops) -> {
-				Person person = new Person(id, "Walter", "White");
-				ops.insertById(Person.class).one(person);
-				throw new SimulateFailureException();
-			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		assertThrowsWithCause(() -> personService.doInTransaction(tryCount, (ops) -> {
+			Person person = new Person(id, "Walter", "White");
+			ops.insertById(Person.class).one(person);
+			throw new SimulateFailureException();
+		}), SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(id.toString());
 		assertNull(fetched);
@@ -170,17 +165,14 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		Person person = new Person(id, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.getId().toString());
 				p.setFirstname("changed");
 				ops.replaceById(Person.class).one(p);
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertEquals("Walter", fetched.getFirstname());
@@ -196,16 +188,13 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		Person person = new Person(id, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> { 
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.getId().toString());
 				ops.removeById(Person.class).oneEntity(p);
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, SimulateFailureException.class );
 
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertNotNull(fetched);
@@ -221,16 +210,10 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		Person person = new Person(id, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
-			personService.doInTransaction(tryCount, ops -> {
-				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
-				throw new SimulateFailureException();
-			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
-
+		assertThrowsWithCause(() -> personService.doInTransaction(tryCount, ops -> {
+			ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+			throw new SimulateFailureException();
+		}), SimulateFailureException.class);
 		Person fetched = operations.findById(Person.class).one(person.getId().toString());
 		assertNotNull(fetched);
 		assertEquals(1, tryCount.get());
@@ -245,21 +228,22 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		Person person = new Person(id, "Walter", "White");
 		operations.insertById(Person.class).one(person);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, ops -> {
 				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, SimulateFailureException.class);
 
 		assertEquals(1, tryCount.get());
 	}
 
 	// gp: this test fails because it's not retrying - because CouchbaseTransactionManager is not doing (and probably
 	// cannot do) the requisite error handling and retries.
+	/**
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
+	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 */
 	@DisplayName("Forcing CAS mismatch causes a transaction retry")
 	@Test
 	public void casMismatchCausesRetry() {
