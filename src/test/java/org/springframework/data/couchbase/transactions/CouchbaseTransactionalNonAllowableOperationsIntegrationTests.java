@@ -52,31 +52,20 @@ import static org.junit.jupiter.api.Assertions.fail;
  * They should be prevented at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
+@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalNonAllowableOperationsIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	PersonService personService;
-	static GenericApplicationContext context;
+	@Autowired PersonService personService;
 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		// todo gp patch this
-		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach
 	public void beforeEachTest() {
 		TransactionTestUtil.assertNotInTransaction();
-		personService = context.getBean(PersonService.class);
-
-		Person walterWhite = new Person(1, "Walter", "White");
-		try {
-			couchbaseClientFactory.getBucket().defaultCollection().remove(walterWhite.getId().toString());
-		} catch (Exception ex) {
-			// System.err.println(ex);
-		}
 	}
 
 	void test(Consumer<CouchbaseOperations> r) {
