@@ -62,13 +62,6 @@ public class TransactionsConfigCouchbaseTransactionManager extends AbstractCouch
 		return ClusterAwareIntegrationTests.bucketName();
 	}
 
-	@Override
-	@Bean
-	public TransactionOptions transactionsOptions(){
-		// twenty minutes for debugging in the debugger.
-		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
-	}
-	
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseTransactionManager(clientFactory, options);

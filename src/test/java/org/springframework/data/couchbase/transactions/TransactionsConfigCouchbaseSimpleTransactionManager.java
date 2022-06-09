@@ -58,13 +58,6 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 		return ClusterAwareIntegrationTests.bucketName();
 	}
 
-	@Override
-	@Bean
-	public TransactionOptions transactionsOptions(){
-		// twenty minutes for debugging in the debugger.
-		return TransactionOptions.transactionOptions().timeout(Duration.ofMinutes(20));
-	}
-
 	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
 	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
