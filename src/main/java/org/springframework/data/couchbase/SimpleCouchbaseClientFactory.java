@@ -139,22 +139,11 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 		return atr;
 	}
 
-	// @Override
-	// public CouchbaseClientFactory with(CouchbaseStuffHandle txOp) {
-	// return new SimpleCouchbaseClientFactory(cluster, bucket.name(), scope.name(), txOp);
-	// }
-
-	// @Override
-	// public CouchbaseStuffHandle getTransactionalOperator() {
-	// return (CouchbaseStuffHandle) transactionalOperator;
-	// }
-
 	@Override
 	public void close() {
-		// todo gp
-		// if (cluster instanceof OwnedSupplier) {
-		// cluster.get().disconnect();
-		// }
+		if (cluster instanceof OwnedSupplier) {
+			cluster.get().disconnect();
+		}
 	}
 
 	private static Duration now() {
