@@ -4,7 +4,6 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -27,14 +26,11 @@ import static org.springframework.data.couchbase.util.Util.assertInAnnotationTra
 class PersonService {
 
   final CouchbaseOperations personOperations;
-  final CouchbaseSimpleCallbackTransactionManager manager; // final ReactiveCouchbaseTransactionManager manager;
   final ReactiveCouchbaseOperations personOperationsRx;
   final ReactiveCouchbaseTransactionManager managerRx;
 
-  public PersonService(CouchbaseOperations ops, CouchbaseSimpleCallbackTransactionManager mgr,
-                       ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
+  public PersonService(CouchbaseOperations ops, ReactiveCouchbaseOperations opsRx, ReactiveCouchbaseTransactionManager mgrRx) {
     personOperations = ops;
-    manager = mgr;
     personOperationsRx = opsRx;
     managerRx = mgrRx;
     return;
@@ -145,14 +141,14 @@ class PersonService {
   // org.springframework.beans.factory.NoUniqueBeanDefinitionException:
   // No qualifying bean of type 'org.springframework.transaction.TransactionManager' available: expected single
   // matching bean but found 2: reactiveCouchbaseTransactionManager,couchbaseTransactionManager
-  @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+  @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
   public Person declarativeSavePerson(Person person) {
     assertInAnnotationTransaction(true);
     return personOperations.insertById(Person.class)
         .one(person);
   }
 
-  @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+  @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
   public Person declarativeSavePersonErrors(Person person) {
     assertInAnnotationTransaction(true);
     Person p = personOperations.insertById(Person.class)
@@ -167,7 +163,7 @@ class PersonService {
    * @param person
    * @return
    */
-  @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+  @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
   public Person declarativeFindReplacePersonCallback(Person person, AtomicInteger tryCount) {
     assertInAnnotationTransaction(true);
     System.err.println("declarativeFindReplacePersonCallback try: " + tryCount.incrementAndGet());
@@ -202,7 +198,7 @@ class PersonService {
    * @param person
    * @return
    */
-  @Transactional(transactionManager = BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
+  @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
   public Person declarativeFindReplacePerson(Person person, AtomicInteger tryCount) {
     assertInAnnotationTransaction(true);
     System.err.println("declarativeFindReplacePerson try: " + tryCount.incrementAndGet());

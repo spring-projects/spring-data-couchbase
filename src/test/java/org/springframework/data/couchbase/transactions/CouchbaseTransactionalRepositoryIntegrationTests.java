@@ -60,7 +60,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * Tests @Transactional with repository methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { Config.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
 public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired UserRepository userRepo;

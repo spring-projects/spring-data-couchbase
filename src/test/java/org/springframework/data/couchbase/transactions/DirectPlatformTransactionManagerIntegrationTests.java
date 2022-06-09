@@ -33,7 +33,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * We do not support direct use of the PlatformTransactionManager.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class DirectPlatformTransactionManagerIntegrationTests extends JavaIntegrationTests {
 	@Autowired ReactiveCouchbaseClientFactory couchbaseClientFactory;
 

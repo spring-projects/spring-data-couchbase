@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * These will be rejected at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -69,7 +69,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
+		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach

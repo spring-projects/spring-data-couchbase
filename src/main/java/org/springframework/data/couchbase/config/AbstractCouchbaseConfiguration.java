@@ -348,36 +348,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/*****  ALL THIS TX SHOULD BE MOVED OUT INTO THE IMPL OF AbstractCouchbaseConfiguration *****/
 
-	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
-		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
-	}
 
-	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
-	public TransactionalOperator transactionOperator(ReactiveCouchbaseTransactionManager reactiveTransactionManager, TransactionDefinition transactionDefinition){
-		return 	TransactionalOperator.create(reactiveTransactionManager, transactionDefinition);
-	}
 
-	// todo gp what is this used for
-	@Bean(BeanNames.COUCHBASE_TRANSACTION_DEFINITION)
-	public TransactionDefinition transactionDefinition(){
-		return new CouchbaseTransactionDefinition();
-	}
-//	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-//	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory couchbaseClientFactory) {
-//		return new CouchbaseTransactionManager(couchbaseClientFactory);
-//	}
-
-	@Bean(BeanNames.COUCHBASE_SIMPLE_CALLBACK_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory, TransactionOptions options) {
-		return new CouchbaseSimpleCallbackTransactionManager(clientFactory, options);
-	}
-
-	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseTransactionManager transactionManager(CouchbaseClientFactory clientFactory, TransactionOptions options) {
-		return new CouchbaseTransactionManager(clientFactory, options);
-	}
 
 	// todo gpx these would be per-transactions options so it seems odd to have a global bean?  Surely would want to configure everything at global level instead?
 	@Bean
@@ -395,6 +367,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	// todo gp is this needed?  Can already configure transactions through the regular ClusterEnvironment, and this method would also permit configuring non-transactional options
 	public void configureTransactions(final ClusterEnvironment.Builder builder) {
 	}
+
 
 	/**
 	 * Blocking Transaction Manager

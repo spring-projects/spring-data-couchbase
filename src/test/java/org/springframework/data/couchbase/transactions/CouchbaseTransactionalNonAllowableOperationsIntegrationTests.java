@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * They should be prevented at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
 public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -62,7 +62,8 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
-		context = new AnnotationConfigApplicationContext(Config.class, PersonService.class);
+		// todo gp patch this
+		context = new AnnotationConfigApplicationContext(TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonService.class);
 	}
 
 	@BeforeEach
