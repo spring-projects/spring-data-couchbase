@@ -104,7 +104,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			try {
 				T res = callback.doInTransaction(status);
 				if (res instanceof Mono || res instanceof Flux) {
-					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.");
+					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.");
 				}
 				execResult.set(res);
 			} finally {
