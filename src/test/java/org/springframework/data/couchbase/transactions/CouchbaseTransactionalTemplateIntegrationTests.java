@@ -350,8 +350,6 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		});
 	}
 
-	// todo gpx investigate how @Transactional @Rollback/@Commit interacts with us
-
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
 	public void replacePerson() {
