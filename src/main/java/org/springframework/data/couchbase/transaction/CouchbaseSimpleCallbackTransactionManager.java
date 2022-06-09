@@ -102,7 +102,11 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 			populateTransactionSynchronizationManager(ctx);
 
 			try {
-				execResult.set(callback.doInTransaction(status));
+				T res = callback.doInTransaction(status);
+				if (res instanceof Mono || res instanceof Flux) {
+					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.");
+				}
+				execResult.set(res);
 			} finally {
 				clearTransactionSynchronizationManager();
 			}
