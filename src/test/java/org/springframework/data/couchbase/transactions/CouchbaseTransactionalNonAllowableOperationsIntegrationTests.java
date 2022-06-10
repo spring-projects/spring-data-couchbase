@@ -58,6 +58,8 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
 
+	Person WalterWhite;
+
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
@@ -65,6 +67,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
@@ -89,8 +92,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	@Test
 	public void existsById() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.existsById(Person.class).one(person.getId().toString());
+			ops.existsById(Person.class).one(WalterWhite.id());
 		});
 	}
 
@@ -106,8 +108,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	@Test
 	public void findFromReplicasById() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.findFromReplicasById(Person.class).any(person.getId().toString());
+			ops.findFromReplicasById(Person.class).any(WalterWhite.id());
 		});
 	}
 
@@ -115,8 +116,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	@Test
 	public void upsertById() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.upsertById(Person.class).one(person);
+			ops.upsertById(Person.class).one(WalterWhite);
 		});
 	}
 

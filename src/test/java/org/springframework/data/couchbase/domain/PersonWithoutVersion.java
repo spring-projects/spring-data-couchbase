@@ -32,6 +32,12 @@ public class PersonWithoutVersion extends AbstractEntity
 		lastname = Optional.empty();
 	}
 
+	public PersonWithoutVersion(String firstname, String lastname) {
+		this.firstname = Optional.of(firstname);
+		this.lastname = Optional.of(lastname);
+		setId(UUID.randomUUID());
+	}
+
 	public PersonWithoutVersion(UUID id, String firstname, String lastname) {
 		this.firstname = Optional.of(firstname);
 		this.lastname = Optional.of(lastname);

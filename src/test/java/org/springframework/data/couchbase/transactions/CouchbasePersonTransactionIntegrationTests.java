@@ -93,9 +93,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Autowired PersonService personService;
 	@Autowired TransactionalOperator transactionalOperator;
 
-	// if these are changed from default, then beforeEach needs to clean up separately
 	String sName = "_default";
 	String cName = "_default";
+	
+	Person WalterWhite;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -114,6 +115,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).inScope(sName).inCollection(cName)
@@ -134,9 +136,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception using transactionalOperator")
 	@Test
 	public void shouldRollbackAfterException() {
-		Person p = new Person( "Walter", "White");
-		assertThrowsWithCause(() -> personService.savePersonErrors(p),
-				SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -144,8 +144,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	@DisplayName("rollback after exception using @Transactional")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		Person p = new Person("Walter", "White");
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(p),  SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -153,8 +152,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	@DisplayName("rollback after exception after using @Transactional(reactive)")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethodReactive() {
-		Person p = new Person("Walter", "White");
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrorsReactive(p).block(),
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrorsReactive(WalterWhite).block(),
 				SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
@@ -162,46 +160,43 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@Test
 	public void commitShouldPersistTxEntries() {
-		Person p = new Person("Walter", "White");
-		Person s = personService.savePerson(p);
+		Person p = personService.savePerson(WalterWhite);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
 	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
-		Person p = new Person( "Walter", "White");
-		Person s = personService.declarativeSavePerson(p);
+		Person p = personService.declarativeSavePerson(WalterWhite);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
 	@Test
 	/**
-	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
-	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't
+	 * know why it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
 	 */
 	public void replaceInTxAnnotatedCallback() {
-		Person person = new Person(1, "Walter", "White");
+		Person person = cbTmpl.insertById(Person.class).one(new Person(1, "Walter", "White"));
 		Person switchedPerson = new Person(1, "Dave", "Reynolds");
-		cbTmpl.insertById(Person.class).one(person);
+
 		AtomicInteger tryCount = new AtomicInteger(0);
 		Person p = personService.declarativeFindReplacePersonCallback(switchedPerson, tryCount);
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 	}
 
 	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethodReactive() {
-		Person p = new Person( "Walter", "White");
-		Person s = personService.declarativeSavePersonReactive(p).block();
+		Person p = personService.declarativeSavePersonReactive(WalterWhite).block();
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}
 
 	@Test
 	public void commitShouldPersistTxEntriesAcrossCollections() {
-		List<EventLog> persons = personService.saveWithLogs(new Person ("Walter", "White"));
+		List<EventLog> persons = personService.saveWithLogs(WalterWhite);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 		Long countEvents = cbTmpl.count(new Query(), EventLog.class); //
@@ -211,7 +206,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
-		assertThrowsWithCause(() -> personService.saveWithErrorLogs(new Person("Walter", "White")),
+		assertThrowsWithCause(() -> personService.saveWithErrorLogs(WalterWhite),
 				SimulateFailureException.class);
 		List<Person> persons = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		assertEquals(0, persons.size(), "should have done roll back and left 0 entries");
@@ -221,21 +216,21 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@Test
 	public void countShouldWorkInsideTransaction() {
-		Long count = personService.countDuringTx(new Person( "Walter", "White"));
+		Long count = personService.countDuringTx(WalterWhite);
 		assertEquals(1, count, "should have counted 1 during tx");
 	}
 
 	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void emitMultipleElementsDuringTransaction() {
-		List<EventLog> docs = personService.saveWithLogs(new Person("Walter", "White"));
+		List<EventLog> docs = personService.saveWithLogs(WalterWhite);
 		assertEquals(4, docs.size(), "should have found 4 eventlogs");
 	}
 
 	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
-		Person p = personService.savePerson(new Person( "Walter", "White"));
+		Person p = personService.savePerson(WalterWhite);
 		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException. This is happening as
 		// TransactionOperator does not support the automatic retries and error handling we depend on. As argued on Slack,
 		// we cannot support it because of this.
@@ -252,37 +247,34 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	@Test
 	public void replacePersonCBTransactionsRxTmpl() {
-		Person person = new Person(1, "Walter", "White");
-		cbTmpl.insertById(Person.class).one(person);
-		Mono<Person> result = rxCBTmpl.findById(Person.class).one(person.getId().toString()) //
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
+		Mono<Person> result = rxCBTmpl.findById(Person.class).one(person.id()) //
 				.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp)).flatMap(ppp -> assertInReactiveTransaction(ppp))
 				.as(transactionalOperator::transactional);
 		result.block();
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertEquals(person, pFound, "should have found expected " + person);
 	}
 
 	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertPersonCBTransactionsRxTmplRollback() {
-		Person person = new Person(1, "Walter", "White");
-		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
+		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
 				.flatMap(ppp -> assertInReactiveTransaction(ppp)).map(p -> throwSimulateFailureException(p))
 				.as(transactionalOperator::transactional); // tx
 		assertThrowsWithCause(result::block, SimulateFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
 	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertTwicePersonCBTransactionsRxTmplRollback() {
-		Person person = new Person(1, "Walter", "White");
-		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(person) //
+		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
 				.flatMap(ppp -> rxCBTmpl.insertById(Person.class).one(ppp)) //
 				.as(transactionalOperator::transactional);
-		assertThrowsWithCause(result::block,  DuplicateKeyException.class);
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		assertThrowsWithCause(result::block, DuplicateKeyException.class);
+		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
@@ -292,20 +284,18 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Disabled("todo gp: disabling temporarily as hanging intermittently")
 	@Test
 	public void wrapperReplaceWithCasConflictResolvedViaRetry() {
-		Person person = new Person(1, "Walter", "White");
-		AtomicInteger tryCount = new AtomicInteger(0);
-		Person insertedPerson = cbTmpl.insertById(Person.class).one(person);
+		AtomicInteger tryCount = new AtomicInteger();
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
 		String newName = "Dave";
 
-		tryCount.set(0);
 		TransactionsWrapper transactionsWrapper = new TransactionsWrapper(couchbaseClientFactory);
 		TransactionResult txResult = transactionsWrapper.run(ctx -> {
-			Person ppp = cbTmpl.findById(Person.class).one(person.getId().toString());
-			ReplaceLoopThread.updateOutOfTransaction(cbTmpl, insertedPerson, tryCount.incrementAndGet());
+			Person ppp = cbTmpl.findById(Person.class).one(person.id());
+			ReplaceLoopThread.updateOutOfTransaction(cbTmpl, person, tryCount.incrementAndGet());
 			Person pppp = cbTmpl.replaceById(Person.class).one(ppp.withFirstName(newName));
 		});
 
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 		assertEquals(newName, pFound.getFirstname(), "should have been switched");
 	}
@@ -315,18 +305,17 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	 * -> retryWhen.
 	 */
 	/**
-	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
-	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't
+	 * know why it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
 	 */
 	@Test
 	public void replaceWithCasConflictResolvedViaRetryAnnotatedCallback() {
-		Person person = new Person(1, "Walter", "White");
-		Person switchedPerson = new Person(1, "Dave", "Reynolds");
-		AtomicInteger tryCount = new AtomicInteger(0);
-		cbTmpl.insertById(Person.class).one(person);
-		tryCount.set(0);
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
+		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
+		AtomicInteger tryCount = new AtomicInteger();
+
 		Person p = personService.declarativeFindReplacePersonCallback(switchedPerson, tryCount);
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 	}
@@ -339,10 +328,9 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	// TransactionOperationFailedException for one")
 	@Test
 	public void replaceWithCasConflictResolvedViaRetryAnnotatedReactive() {
-		Person person = new Person(1, "Walter", "White");
-		Person switchedPerson = new Person(1, "Dave", "Reynolds");
-		cbTmpl.insertById(Person.class).one(person);
-		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
+		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
+		AtomicInteger tryCount = new AtomicInteger();
 
 		// TODO mr - Graham says not to do delegate retries to user. He's a party pooper.
 		Person res = personService.declarativeFindReplacePersonReactive(switchedPerson, tryCount)
@@ -354,52 +342,25 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 						}))
 				.block();
 
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 	}
 
 	@Test
 	/**
-	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't know why
-	 * it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
+	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't
+	 * know why it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
 	 */
 	public void replaceWithCasConflictResolvedViaRetryAnnotated() {
-		Person person = new Person(1, "Walter", "White");
-		Person insertedPerson = cbTmpl.insertById(Person.class).one(person);
-		Person switchedPerson = insertedPerson.withFirstName("Dave");
-		AtomicInteger tryCount = new AtomicInteger(0);
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
+		Person switchedPerson = person.withFirstName("Dave");
+		AtomicInteger tryCount = new AtomicInteger();
 		Person p = personService.declarativeFindReplacePerson(switchedPerson, tryCount);
-		Person pFound = cbTmpl.findById(Person.class).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		System.out.println("pFound: " + pFound);
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
-	}
-
-	void remove(Collection col, String id) {
-		remove(col.reactive(), id);
-	}
-
-	void remove(ReactiveCollection col, String id) {
-		try {
-			col.remove(id, RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10))).block();
-		} catch (DocumentNotFoundException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
-		}
-	}
-
-	void remove(CouchbaseTemplate template, String scope, String collection, String id) {
-		remove(template.reactive(), scope, collection, id);
-	}
-
-	void remove(ReactiveCouchbaseTemplate template, String scope, String collection, String id) {
-		try {
-			template.removeById(Person.class).inScope(scope).inCollection(collection).one(id).block();
-			List<Person> ps = template.findByQuery(Person.class).inScope(scope).inCollection(collection)
-					.withConsistency(REQUEST_PLUS).all().collectList().block();
-		} catch (DocumentNotFoundException | DataRetrievalFailureException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
-		}
 	}
 
 	@Data

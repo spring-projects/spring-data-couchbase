@@ -58,6 +58,8 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 	@Autowired PersonService personService;
 	@Autowired CouchbaseTemplate operations;
 
+	Person WalterWhite;
+
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
@@ -65,6 +67,7 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
@@ -72,10 +75,9 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 	@Test
 	public void timeout() {
 		long start = System.nanoTime();
-		Person person = new Person(1, "Walter", "White");
-		operations.insertById(Person.class).one(person);
+		Person person = operations.insertById(Person.class).one(WalterWhite);
 		try {
-			personService.timeout(person.getId().toString());
+			personService.timeout(person.id());
 			fail();
 		}
 		catch (TransactionFailedException err) {

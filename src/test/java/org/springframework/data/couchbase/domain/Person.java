@@ -172,6 +172,7 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 		return p;
 	}
 
+	// A with-er that returns the same object ??
 	public Person withVersion(Long version) {
 		//Person p = new Person(this.getId(), this.getFirstname(), this.getLastname());
 		this.version = version;
@@ -200,4 +201,9 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 	public void isNew(boolean isNew){
 		this.isNew = isNew;
 	}
+
+  public Person withIdFirstname() {
+		return this.withFirstName(getId().toString());
+  }
+
 }

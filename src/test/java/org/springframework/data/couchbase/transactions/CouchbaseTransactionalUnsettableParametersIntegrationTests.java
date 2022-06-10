@@ -63,6 +63,13 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
 
+	Person WalterWhite;
+
+	@BeforeEach
+	public void beforeEachTest(){
+		WalterWhite = new Person("Walter","White");
+	}
+
 	@BeforeAll
 	public static void beforeAll() {
 		callSuperBeforeAll(new Object() {});
@@ -89,8 +96,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void insertWithDurability() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.insertById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).one(person);
+			ops.insertById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).one(WalterWhite);
 		});
 	}
 
@@ -98,8 +104,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void insertWithExpiry() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.insertById(Person.class).withExpiry(Duration.ofSeconds(3)).one(person);
+			ops.insertById(Person.class).withExpiry(Duration.ofSeconds(3)).one(WalterWhite);
 		});
 	}
 
@@ -107,8 +112,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void insertWithOptions() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.insertById(Person.class).withOptions(InsertOptions.insertOptions()).one(person);
+			ops.insertById(Person.class).withOptions(InsertOptions.insertOptions()).one(WalterWhite);
 		});
 	}
 
@@ -116,8 +120,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void replaceWithDurability() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.replaceById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).one(person);
+			ops.replaceById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).one(WalterWhite);
 		});
 	}
 
@@ -125,8 +128,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void replaceWithExpiry() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.replaceById(Person.class).withExpiry(Duration.ofSeconds(3)).one(person);
+			ops.replaceById(Person.class).withExpiry(Duration.ofSeconds(3)).one(WalterWhite);
 		});
 	}
 
@@ -134,8 +136,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void replaceWithOptions() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.replaceById(Person.class).withOptions(ReplaceOptions.replaceOptions()).one(person);
+			ops.replaceById(Person.class).withOptions(ReplaceOptions.replaceOptions()).one(WalterWhite);
 		});
 	}
 
@@ -143,8 +144,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void removeWithDurability() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.removeById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).oneEntity(person);
+			ops.removeById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).oneEntity(WalterWhite);
 		});
 	}
 
@@ -152,8 +152,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Test
 	public void removeWithOptions() {
 		test((ops) -> {
-			Person person = new Person(1, "Walter", "White");
-			ops.removeById(Person.class).withOptions(RemoveOptions.removeOptions()).oneEntity(person);
+			ops.removeById(Person.class).withOptions(RemoveOptions.removeOptions()).oneEntity(WalterWhite);
 		});
 	}
 

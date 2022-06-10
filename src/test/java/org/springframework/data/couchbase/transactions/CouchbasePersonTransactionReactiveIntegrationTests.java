@@ -16,36 +16,38 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import lombok.Data;
-import org.junit.jupiter.api.Disabled;
-import org.springframework.data.annotation.Version;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.QueryCriteria;
-import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
-import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
+import org.springframework.data.couchbase.core.RemoveResult;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.time.Duration;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
 import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
+import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -53,15 +55,9 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.ReactiveCollection;
-import com.couchbase.client.java.kv.RemoveOptions;
-
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import com.couchbase.client.java.Cluster;
+import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
@@ -88,6 +84,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	// if these are changed from default, then beforeEach needs to clean up separately
 	String sName = "_default";
 	String cName = "_default";
+	Person WalterWhite;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -101,16 +98,17 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
-		operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
-		operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
-		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
-		operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+		List<RemoveResult> pr = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+		List<RemoveResult> er = operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+		List<Person> p = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+		List<EventLog> e = operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 	}
 
 	@Test
 	public void shouldRollbackAfterException() {
-		personService.savePersonErrors(new Person(null, "Walter", "White")) //
+		personService.savePersonErrors(WalterWhite) //
 				.as(StepVerifier::create) //
 				.verifyError(RuntimeException.class);
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
@@ -121,8 +119,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		Person p = new Person(null, "Walter", "White");
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(p) //
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(new Person( "Walter", "White")) //
 				.as(StepVerifier::create) //
 				.expectComplete(), SimulateFailureException.class);
 	}
@@ -130,12 +127,10 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void commitShouldPersistTxEntries() {
 
-		personService.savePerson(new Person(null, "Walter", "White")) //
+		personService.savePerson(WalterWhite) //
 				.as(StepVerifier::create) //
 				.expectNextCount(1) //
 				.verifyComplete();
-
-		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count().block();
 
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
@@ -146,7 +141,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
-		personService.declarativeSavePerson(new Person(null, "Walter", "White")).as(StepVerifier::create) //
+		personService.declarativeSavePerson(WalterWhite).as(StepVerifier::create) //
 				.expectNextCount(1) //
 				.verifyComplete();
 
@@ -160,7 +155,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void commitShouldPersistTxEntriesAcrossCollections() {
 
-		personService.saveWithLogs(new Person(null, "Walter", "White")) //
+		personService.saveWithLogs(WalterWhite) //
 				.then() //
 				.as(StepVerifier::create) //
 				.verifyComplete();
@@ -177,10 +172,9 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	}
 
 	@Test
-	// @Disabled("the rollback is not occurring")
 	public void rollbackShouldAbortAcrossCollections() {
 
-		personService.saveWithErrorLogs(new Person(null, "Walter", "White")) //
+		personService.saveWithErrorLogs(WalterWhite) //
 				.then() //
 				.as(StepVerifier::create) //
 				.verifyError();
@@ -198,7 +192,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void countShouldWorkInsideTransaction() {
-		personService.countDuringTx(new Person(null, "Walter", "White")) //
+		personService.countDuringTx(WalterWhite) //
 				.as(StepVerifier::create) //
 				.expectNext(1L) //
 				.verifyComplete();
@@ -206,7 +200,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void emitMultipleElementsDuringTransaction() {
-		personService.saveWithLogs(new Person(null, "Walter", "White")) //
+		personService.saveWithLogs(WalterWhite) //
 				.as(StepVerifier::create) //
 				.expectNextCount(4L) //
 				.verifyComplete();
@@ -215,9 +209,8 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 
-		Person p = new Person(1, "Walter", "White");
-		personService.savePerson(p) //
-				.then(Mono.error(new RuntimeException("my big bad evil error"))).as(StepVerifier::create) //
+		personService.savePerson(WalterWhite) //
+				.then(Mono.error(new SimulateFailureException())).as(StepVerifier::create) //
 				.expectError().verify();
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
@@ -229,32 +222,26 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	// until we have spring-managed TransactionResult to re-use
 	@Disabled("removeById().one(id) will fail as there is no cas.  Use removeById().oneEntity(entity) instead")
 	public void deletePersonCBTransactionsRxTmpl() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		rxCBTmpl.insertById(Person.class).inCollection(cName).one(person).block();
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.getId().toString())
-					.then();
+			return rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.id());
 		}));
 		result.block();
-		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString()).block();
+		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertNull(pFound, "Should not have found " + pFound);
 	}
 
 	@Test
 	public void deletePersonCBTransactionsRxTmplFail() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.getId().toString())
-					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.getId().toString()))
-					.then();
+			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)
+					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person));
 		}));
-		assertThrows(TransactionFailedException.class, result::block);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		assertThrowsWithCause(result::block, TransactionFailedException.class, DataRetrievalFailureException.class);
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertEquals(pFound, person, "Should have found " + person);
 	}
 
@@ -264,45 +251,38 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	// until we have spring-managed TransactionResult to re-use
 	@Disabled("deleteById(id) will fail as there is no cas.  Use delete(entity) instead")
 	public void deletePersonCBTransactionsRxRepo() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		rxRepo.withCollection(cName).save(person).block();
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxRepo.withCollection(cName).deleteById(person.getId().toString()).then();
+			return rxRepo.withCollection(cName).deleteById(person.id()).then();
 		}));
 		result.block();
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertNull(pFound, "Should not have found " + pFound);
 	}
 
 	@Test
 	public void deletePersonCBTransactionsRxRepoFail() {
-		Person person = new Person("Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		rxRepo.withCollection(cName).save(person).block();
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxRepo.withCollection(cName).deleteById(person.getId().toString())
-					.then(rxRepo.withCollection(cName).deleteById(person.getId().toString())).then();
+			return rxRepo.withCollection(cName).delete(person).then(rxRepo.withCollection(cName).delete(person));
 		}));
-		assertThrows(TransactionFailedException.class, result::block);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		assertThrowsWithCause(result::block, TransactionFailedException.class, DataRetrievalFailureException.class);
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertEquals(pFound, person, "Should have found " + person);
 	}
 
 	@Test
 	public void findPersonCBTransactions() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
+		Mono<TransactionResult> result = wrapper.run(((ctx) -> {
 			return rxCBTmpl.findByQuery(Person.class).inCollection(cName).matching(q).one().map(doc -> {
 				docs.add(doc);
 				return doc;
-			}).then();
+			});
 		}));
 		result.block();
 		assertFalse(docs.isEmpty(), "Should have found " + person);
@@ -314,89 +294,50 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	// Failed to retrieve PlatformTransactionManager for @Transactional test:
 	public void insertPersonRbCBTransactions() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
+		Person person = WalterWhite;
 
 		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
 			return rxCBTmpl.insertById(Person.class).inCollection(cName).one(person)
-					.<Person> flatMap(it -> Mono.error(new SimulateFailureException())).then();
+					.flatMap(it -> Mono.error(new SimulateFailureException()));
 		});
 
-		try {
-			result.block();
-		} catch (TransactionFailedException e) {
-			e.printStackTrace();
-			if (e.getCause() instanceof SimulateFailureException) {
-				Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
-				assertNull(pFound, "Should not have found " + pFound);
-				return;
-			} else {
-				e.printStackTrace();
-			}
-		}
-		throw new RuntimeException("Should have been a TransactionFailedException exception with a cause of PoofException");
+		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
+		assertNull(pFound, "Should not have found " + pFound);
+
 	}
 
 	@Test
 
 	public void replacePersonRbCBTransactions() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+
 		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
-			return rxCBTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString())
-					.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inCollection(cName)
-							.one(pFound.withFirstName("Walt"))).map((p) -> throwSimulateFailureException(p));
+			return rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id())
+					.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inCollection(cName).one(pFound.withFirstName("Walt")))
+					.map((p) -> throwSimulateFailureException(p));
 		});
 
-		assertThrowsWithCause(() -> result.block(), TransactionFailedException.class, SimulateFailureException.class);
-
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
-		assertEquals(person, pFound, "should have found "+person);
+		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
+		assertEquals(person, pFound, "should have found " + person);
 	}
 
 	@Test
 	public void findPersonSpringTransactions() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
+		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
 		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
 			return rxCBTmpl.findByQuery(Person.class).inCollection(cName).matching(q).one().map(doc -> {
 				docs.add(doc);
 				return doc;
-			}).then();
+			});
 		});
 		result.block();
 		assertFalse(docs.isEmpty(), "Should have found " + person);
 		for (Object o : docs) {
 			assertEquals(o, person, "Should have found " + person);
-		}
-	}
-
-	void remove(Collection col, String id) {
-		remove(col.reactive(), id);
-	}
-
-	void remove(ReactiveCollection col, String id) {
-		try {
-			col.remove(id, RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10))).block();
-		} catch (DocumentNotFoundException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
-		}
-	}
-
-	void remove(CouchbaseTemplate template, String collection, String id) {
-		remove(template.reactive(), collection, id);
-	}
-
-	void remove(ReactiveCouchbaseTemplate template, String collection, String id) {
-		try {
-			template.removeById(Person.class).inCollection(collection).one(id).block();
-			System.out.println("removed " + id);
-		} catch (DocumentNotFoundException | DataRetrievalFailureException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
 		}
 	}
 

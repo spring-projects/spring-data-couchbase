@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.data.couchbase.transaction.ReactiveSpringTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
@@ -50,7 +52,6 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.transaction.AttemptExpiredException;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
@@ -66,6 +67,13 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Autowired ReactiveCouchbaseTemplate ops;
 	@Autowired CouchbaseTemplate blocking;
 	@Autowired ReactiveTransactionsWrapper wrapper;
+
+	Person WalterWhite;
+
+	@BeforeEach
+	public void beforeEachTest(){
+		WalterWhite = new Person ("Walter", "White");
+	}
 
 	@AfterEach
 	public void afterEachTest() {
@@ -105,16 +113,14 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("A basic golden path insert should succeed")
 	@Test
 	public void committedInsert() {
-		UUID id = UUID.randomUUID();
 
 		RunResult rr = doInTransaction(ctx -> {
 			return Mono.defer(() -> {
-				Person person = new Person(id, "Walter", "White");
-				return ops.insertById(Person.class).one(person);
+				return ops.insertById(Person.class).one(WalterWhite);
 			});
 		});
 
-		Person fetched = blocking.findById(Person.class).one(id.toString());
+		Person fetched = blocking.findById(Person.class).one(WalterWhite.id());
 		assertEquals("Walter", fetched.getFirstname());
 		assertEquals(1, rr.attempts);
 	}
@@ -122,18 +128,17 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("A basic golden path replace should succeed")
 	@Test
 	public void committedReplace() {
-		UUID id = UUID.randomUUID();
-		Person initial = new Person(id, "Walter", "White");
-		Person p = blocking.insertById(Person.class).one(initial);
+
+		Person initial = blocking.insertById(Person.class).one(WalterWhite);
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.findById(Person.class).one(id.toString()).flatMap(person -> {
+			return ops.findById(Person.class).one(WalterWhite.id()).flatMap(person -> {
 				person.setFirstname("changed");
 				return ops.replaceById(Person.class).one(person);
 			});
 		});
 
-		Person fetched = blocking.findById(Person.class).one(initial.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(initial.id());
 		assertEquals("changed", fetched.getFirstname());
 		assertEquals(1, rr.attempts);
 	}
@@ -141,16 +146,14 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("A basic golden path remove should succeed")
 	@Test
 	public void committedRemove() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.findById(Person.class).one(id.toString())
+			return ops.findById(Person.class).one(person.id())
 					.flatMap(fetched -> ops.removeById(Person.class).oneEntity(fetched));
 		});
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNull(fetched);
 		assertEquals(1, rr.attempts);
 	}
@@ -158,15 +161,15 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("A basic golden path removeByQuery should succeed")
 	@Test
 	public void committedRemoveByQuery() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, id.toString(), "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+
+		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString())).all().then();
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(WalterWhite.id()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().then();
 		});
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNull(fetched);
 		assertEquals(1, rr.attempts);
 	}
@@ -174,12 +177,10 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("A basic golden path findByQuery should succeed")
 	@Test
 	public void committedFindByQuery() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, id.toString(), "White");
-		Person insertedPersion = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString())).all().then();
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(WalterWhite.getFirstname())).all().then();
 		});
 
 		assertEquals(1, rr.attempts);
@@ -189,15 +190,13 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Test
 	public void rollbackInsert() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			Person person = new Person(id, "Walter", "White");
-			return ops.insertById(Person.class).one(person).map((p) -> throwSimulateFailureException(p));
+			return ops.insertById(Person.class).one(WalterWhite).map((p) -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = blocking.findById(Person.class).one(id.toString());
+		Person fetched = blocking.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -206,18 +205,16 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Test
 	public void rollbackReplace() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.findById(Person.class).one(person.getId().toString()) //
+			return ops.findById(Person.class).one(person.id()) //
 					.flatMap(p -> ops.replaceById(Person.class).one(p.withFirstName("changed"))) //
 					.map(p -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertEquals("Walter", fetched.getFirstname());
 		assertEquals(1, attempts.get());
 	}
@@ -226,18 +223,16 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Test
 	public void rollbackRemove() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.findById(Person.class).one(person.getId().toString())
+			return ops.findById(Person.class).one(person.id())
 					.flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
 					.doOnSuccess(p -> throwSimulateFailureException(p)); // remove has no result
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -246,17 +241,15 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Test
 	public void rollbackRemoveByQuery() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all().elementAt(0)
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all().elementAt(0)
 					.map(p -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -265,13 +258,11 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Test
 	public void rollbackFindByQuery() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all().elementAt(0)
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all().elementAt(0)
 					.map(p -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
@@ -281,16 +272,15 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("Create a Person outside a @Transactional block, modify it, and then replace that person in the @Transactional.  The transaction will retry until timeout.")
 	@Test
 	public void replacePerson() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
-		Person refetched = blocking.findById(Person.class).one(person.getId().toString());
-		blocking.replaceById(Person.class).one(refetched);
+		Person refetched = blocking.findById(Person.class).one(person.id());
+		refetched = blocking.replaceById(Person.class).one(refetched); // new cas
 
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
-		assertThrowsWithCause(() -> doInTransaction(ctx -> ops.replaceById(Person.class).one(person), TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class,
+		assertThrowsWithCause(() -> doInTransaction(ctx -> ops.replaceById(Person.class).one(person), // old cas
+				TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class,
 				AttemptExpiredException.class);
 
 	}
@@ -298,24 +288,23 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
-		PersonWithoutVersion person = new PersonWithoutVersion(id, "Walter", "White");
-
-		PersonWithoutVersion insertedPerson = blocking.insertById(PersonWithoutVersion.class).one(person);
-		assertThrowsWithCause(() -> doInTransaction(ctx -> ops.findById(PersonWithoutVersion.class).one(id.toString())
-				.flatMap(fetched -> ops.replaceById(PersonWithoutVersion.class).one(fetched))), TransactionFailedException.class, IllegalArgumentException.class);
+		;
+		PersonWithoutVersion person = blocking.insertById(PersonWithoutVersion.class)
+				.one(new PersonWithoutVersion("Walter", "White"));
+		assertThrowsWithCause(
+				() -> doInTransaction(ctx -> ops.findById(PersonWithoutVersion.class).one(person.id())
+						.flatMap(fetched -> ops.replaceById(PersonWithoutVersion.class).one(fetched))),
+				TransactionFailedException.class, IllegalArgumentException.class);
 
 	}
 
 	@DisplayName("Entity must have non-zero CAS during replace")
 	@Test
 	public void replaceEntityWithCasZero() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		// switchedPerson here will have CAS=0, which will fail
-		Person switchedPerson = new Person(id, "Dave", "Reynolds");
+		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			return ops.replaceById(Person.class).one(switchedPerson);
@@ -326,12 +315,9 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
-		PersonWithoutVersion person = new PersonWithoutVersion(id, "Walter", "White");
-
-		PersonWithoutVersion insertedPerson = blocking.insertById(PersonWithoutVersion.class).one(person);
+		PersonWithoutVersion person = blocking.insertById(PersonWithoutVersion.class).one(new PersonWithoutVersion("Walter", "White"));
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
-			return ops.findById(PersonWithoutVersion.class).one(id.toString())
+			return ops.findById(PersonWithoutVersion.class).one(person.id())
 					.flatMap(fetched -> ops.removeById(PersonWithoutVersion.class).oneEntity(fetched));
 		}), TransactionFailedException.class, IllegalArgumentException.class);
 
@@ -340,13 +326,11 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("removeById().one(id) isn't allowed in transactions, since we don't have the CAS")
 	@Test
 	public void removeEntityById() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		Person insertedPerson = blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
-			return ops.findById(Person.class).one(person.getId().toString())
-					.flatMap(p -> ops.removeById(Person.class).one(p.getId().toString()));
+			return ops.findById(Person.class).one(person.id())
+					.flatMap(p -> ops.removeById(Person.class).one(p.id()));
 		}), TransactionFailedException.class, IllegalArgumentException.class);
 
 	}
@@ -354,35 +338,18 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@DisplayName("Forcing CAS mismatch causes a transaction retry")
 	@Test
 	public void casMismatchCausesRetry() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 		AtomicInteger attempts = new AtomicInteger();
 
-		// Needs to take place in a separate thread to bypass the ThreadLocalStorage checks
-		Thread forceCASMismatch = new Thread(() -> {
-			Person fetched = blocking.findById(Person.class).one(id.toString());
-			blocking.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
-		});
-
 		doInTransaction(ctx -> {
-			return ops.findById(Person.class).one(id.toString())
-					.flatMap(fetched -> Mono.defer(() -> {
-
-						if (attempts.incrementAndGet() == 1) {
-							forceCASMismatch.start();
-							try {
-								forceCASMismatch.join();
-							} catch (InterruptedException e) {
-								throw new RuntimeException(e);
-							}
-						}
-
-						return ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
-					}));
+			return ops.findById(Person.class).one(person.id()).flatMap(fetched -> Mono.defer(() -> {
+				ReplaceLoopThread.updateOutOfTransaction(blocking, person.withFirstName("Changed externally"),
+						attempts.incrementAndGet());
+				return ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+			}));
 		});
 
-		Person fetched = blocking.findById(Person.class).one(person.getId().toString());
+		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertEquals("Changed by transaction", fetched.getFirstname());
 		assertEquals(2, attempts.get());
 	}
