@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.transactions;
 
+import com.couchbase.client.core.error.transaction.AttemptExpiredException;
+import com.couchbase.client.java.transactions.error.TransactionExpiredException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +38,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.TransactionTimedOutException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,7 +54,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests for @Transactional methods, setting all the various options allowed by @Transactional.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalOptionsIntegrationTests.PersonService.class})
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+		CouchbaseTransactionalOptionsIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -76,26 +80,21 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 	public void timeout() {
 		long start = System.nanoTime();
 		Person person = operations.insertById(Person.class).one(WalterWhite);
-		try {
+		assertThrowsWithCause(() -> {
 			personService.timeout(person.id());
-			fail();
-		}
-		catch (TransactionFailedException err) {
-		}
+		}, TransactionExpiredException.class, AttemptExpiredException.class);
 		Duration timeTaken = Duration.ofNanos(System.nanoTime() - start);
 		assertTrue(timeTaken.toMillis() >= 2000);
-		assertTrue(timeTaken.toMillis() < 10_000);  // Default transaction timeout is 15s
+		assertTrue(timeTaken.toMillis() < 10_000); // Default transaction timeout is 15s
 	}
 
 	@DisplayName("@Transactional(isolation = Isolation.ANYTHING_BUT_READ_COMMITTED) will fail")
 	@Test
 	public void unsupportedIsolation() {
-		try {
+		assertThrowsWithCause(() -> {
 			personService.unsupportedIsolation();
-			fail();
-		}
-		catch (IllegalArgumentException err) {
-		}
+		}, IllegalArgumentException.class);
+
 	}
 
 	@DisplayName("@Transactional(isolation = Isolation.READ_COMMITTED) will succeed")
@@ -107,8 +106,7 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static
-	class PersonService {
+	static class PersonService {
 		final CouchbaseOperations ops;
 
 		public PersonService(CouchbaseOperations ops) {
@@ -130,11 +128,9 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 		}
 
 		@Transactional(isolation = Isolation.REPEATABLE_READ)
-		public void unsupportedIsolation() {
-		}
+		public void unsupportedIsolation() {}
 
 		@Transactional(isolation = Isolation.READ_COMMITTED)
-		public void supportedIsolation() {
-		}
+		public void supportedIsolation() {}
 	}
 }

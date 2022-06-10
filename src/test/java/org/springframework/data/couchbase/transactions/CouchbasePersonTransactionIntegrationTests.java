@@ -35,7 +35,6 @@ import reactor.util.retry.Retry;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterAll;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
@@ -63,11 +61,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
-import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.ReactiveCollection;
-import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
@@ -136,7 +130,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception using transactionalOperator")
 	@Test
 	public void shouldRollbackAfterException() {
-		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), TransactionFailedException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -144,7 +138,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	@DisplayName("rollback after exception using @Transactional")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), TransactionFailedException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -178,8 +172,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	 * know why it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
 	 */
 	public void replaceInTxAnnotatedCallback() {
-		Person person = cbTmpl.insertById(Person.class).one(new Person(1, "Walter", "White"));
-		Person switchedPerson = new Person(1, "Dave", "Reynolds");
+		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
+		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
 
 		AtomicInteger tryCount = new AtomicInteger(0);
 		Person p = personService.declarativeFindReplacePersonCallback(switchedPerson, tryCount);
@@ -262,7 +256,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
 				.flatMap(ppp -> assertInReactiveTransaction(ppp)).map(p -> throwSimulateFailureException(p))
 				.as(transactionalOperator::transactional); // tx
-		assertThrowsWithCause(result::block, SimulateFailureException.class);
+		assertThrowsWithCause(result::block,  TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -273,7 +267,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
 				.flatMap(ppp -> rxCBTmpl.insertById(Person.class).one(ppp)) //
 				.as(transactionalOperator::transactional);
-		assertThrowsWithCause(result::block, DuplicateKeyException.class);
+		assertThrowsWithCause(result::block, TransactionFailedException.class, DuplicateKeyException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -348,10 +342,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	}
 
 	@Test
-	/**
-	 * This fails with TransactionOperationFailedException {ec:FAIL_CAS_MISMATCH, retry:true, autoRollback:true}. I don't
-	 * know why it isn't retried. This seems like it is due to the functioning of AbstractPlatformTransactionManager
-	 */
 	public void replaceWithCasConflictResolvedViaRetryAnnotated() {
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
 		Person switchedPerson = person.withFirstName("Dave");

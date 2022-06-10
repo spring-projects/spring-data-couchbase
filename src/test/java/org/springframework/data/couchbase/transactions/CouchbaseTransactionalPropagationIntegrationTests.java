@@ -16,8 +16,17 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import com.couchbase.client.core.error.transaction.RetryTransactionException;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
@@ -47,23 +53,15 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
+import com.couchbase.client.core.error.transaction.RetryTransactionException;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for the various propagation values allowed on @Transactional methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalPropagationIntegrationTests.PersonService.class})
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+		CouchbaseTransactionalPropagationIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);
 
@@ -97,49 +95,26 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	@DisplayName("Call @Transactional(propagation = SUPPORTS) - fails as unsupported")
 	@Test
 	public void callSupports() {
-		try {
-			personService.propagationSupports(ops -> {
-			});
-			fail();
-		}
-		catch (UnsupportedOperationException ignored) {
-		}
+		assertThrowsWithCause(() -> personService.propagationSupports(ops -> {}), UnsupportedOperationException.class);
 	}
 
 	@DisplayName("Call @Transactional(propagation = MANDATORY) - fails as not in an active transaction")
 	@Test
 	public void callMandatory() {
-		try {
-			personService.propagationMandatory(ops -> {
-			});
-			fail();
-		}
-		catch (IllegalTransactionStateException ignored) {
-		}
+		assertThrowsWithCause(() -> personService.propagationMandatory(ops -> {}), IllegalTransactionStateException.class);
 	}
 
 	@DisplayName("Call @Transactional(propagation = REQUIRES_NEW) - fails as unsupported")
 	@Test
 	public void callRequiresNew() {
-		try {
-			personService.propagationRequiresNew(ops -> {
-			});
-			fail();
-		}
-		catch (UnsupportedOperationException ignored) {
-		}
+		assertThrowsWithCause(() -> personService.propagationRequiresNew(ops -> {}), UnsupportedOperationException.class);
+
 	}
 
 	@DisplayName("Call @Transactional(propagation = NOT_SUPPORTED) - fails as unsupported")
 	@Test
 	public void callNotSupported() {
-		try {
-			personService.propagationNotSupported(ops -> {
-			});
-			fail();
-		}
-		catch (UnsupportedOperationException ignored) {
-		}
+		assertThrowsWithCause(() -> personService.propagationNotSupported(ops -> {}), UnsupportedOperationException.class);
 	}
 
 	@DisplayName("Call @Transactional(propagation = NEVER) - succeeds as not in a transaction, starts one")
@@ -227,19 +202,10 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	public void callDefaultThatCallsRequiresNew() {
 		UUID id1 = UUID.randomUUID();
 
-		try {
-			personService.propagationDefault(ops -> {
-				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
-
-				personService.propagationRequiresNew(ops2 -> {
-					fail();
-				});
-			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof UnsupportedOperationException);
-		}
+		assertThrowsWithCause(() -> personService.propagationDefault(ops -> {
+			ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
+			personService.propagationRequiresNew(ops2 -> {});
+		}), TransactionFailedException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -250,19 +216,12 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	public void callDefaultThatCallsNotSupported() {
 		UUID id1 = UUID.randomUUID();
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.propagationDefault(ops -> {
 				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
-
-				personService.propagationNotSupported(ops2 -> {
-					fail();
-				});
+				personService.propagationNotSupported(ops2 -> {});
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof UnsupportedOperationException);
-		}
+		}, TransactionFailedException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -273,19 +232,12 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	public void callDefaultThatCallsNever() {
 		UUID id1 = UUID.randomUUID();
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.propagationDefault(ops -> {
 				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
-
-				personService.propagationNever(ops2 -> {
-					fail();
-				});
+				personService.propagationNever(ops2 -> {});
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalTransactionStateException);
-		}
+		}, TransactionFailedException.class, IllegalTransactionStateException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -296,19 +248,13 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 	public void callDefaultThatCallsNested() {
 		UUID id1 = UUID.randomUUID();
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.propagationDefault(ops -> {
 				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
 
-				personService.propagationNested(ops2 -> {
-					fail();
-				});
+				personService.propagationNested(ops2 -> {});
 			});
-			fail();
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof UnsupportedOperationException);
-		}
+		}, TransactionFailedException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -338,7 +284,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 		assertEquals(3, attempts.get());
-  }
+	}
 
 	void assertInTransaction() {
 		assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
@@ -346,17 +292,15 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 
 	void assertNotInTransaction() {
 		try {
-			assertFalse(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
-		}
-		catch (NoTransactionException ignored) {
-		}
+			assertFalse(
+					org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
+		} catch (NoTransactionException ignored) {}
 	}
 
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static
-	class PersonService {
+	static class PersonService {
 		final CouchbaseOperations ops;
 
 		public PersonService(CouchbaseOperations ops) {
@@ -366,49 +310,57 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		@Transactional
 		public void propagationDefault(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationDefault");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.REQUIRED)
 		public void propagationRequired(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequired");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.MANDATORY)
 		public void propagationMandatory(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationMandatory");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.NESTED)
 		public void propagationNested(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.SUPPORTS)
 		public void propagationSupports(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationSupports");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.NOT_SUPPORTED)
 		public void propagationNotSupported(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNotSupported");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.REQUIRES_NEW)
 		public void propagationRequiresNew(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationRequiresNew");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 
 		@Transactional(propagation = Propagation.NEVER)
 		public void propagationNever(@Nullable Consumer<CouchbaseOperations> callback) {
 			LOGGER.info("propagationNever");
-			if (callback != null) callback.accept(ops);
+			if (callback != null)
+				callback.accept(ops);
 		}
 	}
 }

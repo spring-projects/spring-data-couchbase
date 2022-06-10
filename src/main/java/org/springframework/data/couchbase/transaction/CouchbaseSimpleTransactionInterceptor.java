@@ -30,51 +30,55 @@ import reactor.core.publisher.Mono;
 /**
  * Simplest possible TransactionInterceptor implementation, which does not take a TransactionManager at all.
  */
-public class CouchbaseSimpleTransactionInterceptor extends TransactionInterceptor implements MethodInterceptor, Serializable {
+public class CouchbaseSimpleTransactionInterceptor extends TransactionInterceptor
+		implements MethodInterceptor, Serializable {
 
-  public CouchbaseSimpleTransactionInterceptor(TransactionManager ptm, TransactionAttributeSource tas) {
-    super(ptm, tas);
-  }
+	public CouchbaseSimpleTransactionInterceptor(TransactionManager ptm, TransactionAttributeSource tas) {
+		super(ptm, tas);
+	}
 
-  @Nullable
-  protected Object invokeWithinTransaction(Method method, @Nullable Class<?> targetClass,
-                                           final InvocationCallback invocation) throws Throwable {
-    final TransactionAttributeSource tas = getTransactionAttributeSource();
-    final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
+	@Nullable
+	protected Object invokeWithinTransaction(Method method, @Nullable Class<?> targetClass,
+			final InvocationCallback invocation) throws Throwable {
+		final TransactionAttributeSource tas = getTransactionAttributeSource();
+		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
 
-    if (getTransactionManager() instanceof CouchbaseSimpleCallbackTransactionManager) {
-      CouchbaseSimpleCallbackTransactionManager manager = (CouchbaseSimpleCallbackTransactionManager) getTransactionManager();
+		if (getTransactionManager() instanceof CouchbaseSimpleCallbackTransactionManager) {
+			CouchbaseSimpleCallbackTransactionManager manager = (CouchbaseSimpleCallbackTransactionManager) getTransactionManager();
 
-      if (Mono.class.isAssignableFrom(method.getReturnType())) {
-        return manager.executeReactive(txAttr, ignored -> {
-          try {
-            return (Mono<?>) invocation.proceedWithInvocation();
-          } catch (Throwable e) {
-            throw new RuntimeException(e);
-          }
-        }).singleOrEmpty();
-      } else if (Flux.class.isAssignableFrom(method.getReturnType())) {
-        return manager.executeReactive(txAttr, ignored -> {
-          try {
-            return (Flux<?>) invocation.proceedWithInvocation();
-          } catch (Throwable e) {
-            throw new RuntimeException(e);
-          }
-        });
-      } else {
-        return manager.execute(txAttr, ignored -> {
-          try {
-            return invocation.proceedWithInvocation();
-          } catch (RuntimeException e) {
-            throw e;
-          } catch (Throwable e) {
-            throw new RuntimeException(e);
-          }
-        });
-      }
-    }
-    else {
-      return super.invokeWithinTransaction(method, targetClass, invocation);
-    }
-  }
+			if (Mono.class.isAssignableFrom(method.getReturnType())) {
+				return manager.executeReactive(txAttr, ignored -> {
+					try {
+						return (Mono<?>) invocation.proceedWithInvocation();
+					} catch (RuntimeException e) {
+						throw e;
+					} catch (Throwable e) {
+						throw new RuntimeException(e);
+					}
+				}).singleOrEmpty();
+			} else if (Flux.class.isAssignableFrom(method.getReturnType())) {
+				return manager.executeReactive(txAttr, ignored -> {
+					try {
+						return (Flux<?>) invocation.proceedWithInvocation();
+					} catch (RuntimeException e) {
+						throw e;
+					} catch (Throwable e) {
+						throw new RuntimeException(e);
+					}
+				});
+			} else {
+				return manager.execute(txAttr, ignored -> {
+					try {
+						return invocation.proceedWithInvocation();
+					} catch (RuntimeException e) {
+						throw e;
+					} catch (Throwable e) {
+						throw new RuntimeException(e);
+					}
+				});
+			}
+		} else {
+			return super.invokeWithinTransaction(method, targetClass, invocation);
+		}
+	}
 }

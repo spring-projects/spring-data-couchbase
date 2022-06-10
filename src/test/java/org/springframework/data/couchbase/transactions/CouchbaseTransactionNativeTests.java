@@ -25,14 +25,12 @@ import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
-import java.time.Duration;
 import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
@@ -47,10 +45,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
-import com.couchbase.client.java.Collection;
-import com.couchbase.client.java.ReactiveCollection;
-import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
@@ -67,10 +61,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 // @Disabled("gp: disabling as these use CouchbaseTransactionalOperator which I've done broke (but also feel we should
 // remove)")
 public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
-
-	// @Autowired not supported on static fields. These are initialized in beforeAll()
-	// Also - @Autowired doesn't work here on couchbaseClientFactory even when it is not static, not sure why - oh, it
-	// seems there is not a ReactiveCouchbaseClientFactory bean
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired TransactionManager couchbaseTransactionManager;
 	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
@@ -80,6 +70,8 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	@Autowired ReactiveCouchbaseTemplate rxCbTmpl;
 	@Autowired TransactionalOperator txOperator;
 	static String cName; // short name
+
+	Person WalterWhite;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -95,6 +87,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 
 	@BeforeEach
 	public void beforeEach() {
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
@@ -105,74 +98,59 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 
 	@Test
 	public void replacePersonTemplate() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
-		assertThrowsWithCause(
-				() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.getId().toString()) //
-						.flatMap(pp -> rxCbTmpl.replaceById(Person.class).one(pp.withFirstName("Walt")) //
-								.map(ppp -> throwSimulateFailureException(ppp))))
-						.blockLast(),
-				SimulateFailureException.class);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.id()) //
+				.flatMap(pp -> rxCbTmpl.replaceById(Person.class).one(pp.withIdFirstname()) //
+						.map(ppp -> throwSimulateFailureException(ppp))))
+				.blockLast(), TransactionFailedException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
-		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
+		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());
 
 	}
 
 	@Test
 	public void replacePersonRbTemplate() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
-		TransactionalOperator txOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 		assertThrowsWithCause(
 				() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.getId().toString()) //
-						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt"))) //
+						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withIdFirstname())) //
 						.map(ppp -> throwSimulateFailureException(ppp))).blockLast(), //
-				SimulateFailureException.class);
+				TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
-		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
+		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());
 
 	}
 
 	@Test
 	public void insertPersonTemplate() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
-		txOperator.reactive((ctx) -> ctx.template(cbTmpl.reactive()).insertById(Person.class).one(person)
-				.flatMap(p -> ctx.template(cbTmpl.reactive()).replaceById(Person.class).one(p.withFirstName("Walt"))).then())
-				.block();
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(WalterWhite)
+				.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))).blockLast();
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertEquals("Walt", pFound.getFirstname(), "firstname should be Walt");
 	}
 
 	@Test
 	public void insertPersonRbTemplate() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		TransactionalOperator txOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
-		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(person)
+		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(WalterWhite)
 				.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
-				.map(it -> throwSimulateFailureException(it))).blockLast(), SimulateFailureException.class);
+				.map(it -> throwSimulateFailureException(it))).blockLast(),TransactionFailedException.class,  SimulateFailureException.class);
 
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
 
 	@Test
+	// todo mr - left this test as-is. Is ctx.repository() and ctx.template() necessary?
 	public void replacePersonRbRepo() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		repo.withCollection(cName).save(person);
-
-		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
-		assertThrowsWithCause(() -> txOperator.run(ctx -> {
+		Person person = repo.withCollection(cName).save(WalterWhite);
+		CouchbaseTransactionalOperator myTxOperator = new CouchbaseTransactionalOperator(
+				reactiveCouchbaseTransactionManager);
+		assertThrowsWithCause(() -> myTxOperator.run(ctx -> {
 			ctx.repository(repoRx).withCollection(cName).findById(person.getId().toString())
 					.flatMap(p -> ctx.repository(repoRx).withCollection(cName).save(p.withFirstName("Walt")));
-			throw new PoofException();
-		}), TransactionFailedException.class, PoofException.class);
+			throw new SimulateFailureException();
+		}), TransactionFailedException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals(person, pFound, "Should have found " + person);
@@ -180,66 +158,33 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 
 	@Test
 	public void insertPersonRbRepo() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		TransactionalOperator txOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
-		assertThrowsWithCause(() -> txOperator.execute((ctx) -> repoRx.withCollection(cName).save(person) // insert
+		assertThrowsWithCause(() -> txOperator.execute((ctx) -> repoRx.withCollection(cName).save(WalterWhite) // insert
 				.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt"))) // replace
-				.map(it -> throwSimulateFailureException(it))).blockLast(), SimulateFailureException.class);
+				.map(it -> throwSimulateFailureException(it))).blockLast(),TransactionFailedException.class, SimulateFailureException.class);
 
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
 
 	@Test
 	public void insertPersonRepo() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		CouchbaseTransactionalOperator txOperator = new CouchbaseTransactionalOperator(reactiveCouchbaseTransactionManager);
-		txOperator.reactive((ctx) -> ctx.repository(repoRx).withCollection(cName).save(person) // insert
-				.flatMap(p -> ctx.repository(repoRx).withCollection(cName).save(p.withFirstName("Walt"))) // replace
-				.then()).block();
-		Optional<Person> pFound = repo.withCollection(cName).findById(person.getId().toString());
+		txOperator.execute((ctx) -> repoRx.withCollection(cName).save(WalterWhite) // insert
+				.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt"))) // replace
+		).blockFirst();
+		Optional<Person> pFound = repo.withCollection(cName).findById(WalterWhite.id());
 		assertEquals("Walt", pFound.get().getFirstname(), "firstname should be Walt");
 	}
 
 	@Test
 	public void replacePersonRbSpringTransactional() {
-		Person person = new Person(1, "Walter", "White");
-		remove(cbTmpl, cName, person.getId().toString());
-		cbTmpl.insertById(Person.class).inCollection(cName).one(person);
-		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class)
-				.one(person.getId().toString()).flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
-				.map(it -> throwSimulateFailureException(it))).blockLast(), SimulateFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
-		assertEquals("Walter", pFound.getFirstname(), "firstname should be Walter");
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		assertThrowsWithCause(
+				() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.getId().toString())
+						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
+						.map(it -> throwSimulateFailureException(it))).blockLast(),
+				TransactionFailedException.class, SimulateFailureException.class);
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
+		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be Walter");
 	}
-
-	void remove(Collection col, String id) {
-		remove(col.reactive(), id);
-	}
-
-	void remove(ReactiveCollection col, String id) {
-		try {
-			col.remove(id, RemoveOptions.removeOptions().timeout(Duration.ofSeconds(10)));
-		} catch (DocumentNotFoundException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
-		}
-	}
-
-	void remove(CouchbaseTemplate template, String collection, String id) {
-		remove(template.reactive(), collection, id);
-	}
-
-	void remove(ReactiveCouchbaseTemplate template, String collection, String id) {
-		try {
-			template.removeById(Person.class).inCollection(collection).one(id).block();
-			System.out.println("removed " + id);
-		} catch (DocumentNotFoundException | DataRetrievalFailureException nfe) {
-			System.out.println(id + " : " + "DocumentNotFound when deleting");
-		}
-	}
-
-	static class PoofException extends RuntimeException {};
 
 }

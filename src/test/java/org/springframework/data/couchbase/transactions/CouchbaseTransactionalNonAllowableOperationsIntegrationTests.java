@@ -74,16 +74,12 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 	void test(Consumer<CouchbaseOperations> r) {
 		AtomicInteger tryCount = new AtomicInteger(0);
 
-		try {
+assertThrowsWithCause( () -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				r.accept(ops);
 				return null;
 			});
-			fail("Transaction should not succeed");
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+		}, TransactionFailedException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
 	}

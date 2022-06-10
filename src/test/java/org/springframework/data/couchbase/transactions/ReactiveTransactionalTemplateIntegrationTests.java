@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import reactor.core.publisher.Flux;
@@ -28,7 +27,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -40,7 +38,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.TransactionalSupport;
@@ -57,7 +54,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for reactive @Transactional, using the CouchbaseSimpleTransactionInterceptor (and not the ReactiveCouchbaseTransactionManager).
+ * Tests for reactive @Transactional, using the CouchbaseSimpleTransactionInterceptor (and not the
+ * ReactiveCouchbaseTransactionManager).
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
@@ -66,6 +64,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
 	@Autowired CouchbaseTemplate blocking;
+	Person WalterWhite;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -79,6 +78,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		assertNotInTransaction();
 	}
 
@@ -90,40 +90,33 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 	@DisplayName("A basic golden path insert should succeed")
 	@Test
 	public void committedInsert() {
-		UUID id = UUID.randomUUID();
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		personService.doInTransaction(tryCount, (ops) -> {
 			return Mono.defer(() -> {
-				Person person = new Person(id, "Walter", "White");
-				return ops.insertById(Person.class).one(person);
+				return ops.insertById(Person.class).one(WalterWhite);
 			});
 		}).block();
 
-		Person fetched = blocking.findById(Person.class).one(id.toString());
-		assertEquals("Walter", fetched.getFirstname());
+		Person fetched = blocking.findById(Person.class).one(WalterWhite.id());
+		assertEquals(WalterWhite.getFirstname(), fetched.getFirstname());
 		assertEquals(1, tryCount.get());
 	}
 
 	@DisplayName("Basic test of doing an insert then rolling back")
 	@Test
 	public void rollbackInsert() {
-		AtomicInteger tryCount = new AtomicInteger(0);
-		UUID id = UUID.randomUUID();
+		AtomicInteger tryCount = new AtomicInteger();
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				return Mono.defer(() -> {
-					Person person = new Person(id, "Walter", "White");
-					return ops.insertById(Person.class).one(person).then(Mono.error(new SimulateFailureException()));
+					return ops.insertById(Person.class).one(WalterWhite).then(Mono.error(new SimulateFailureException()));
 				});
 			}).block();
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = blocking.findById(Person.class).one(id.toString());
+		Person fetched = blocking.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
 		assertEquals(1, tryCount.get());
 	}
@@ -131,28 +124,12 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 	@DisplayName("Forcing CAS mismatch causes a transaction retry")
 	@Test
 	public void casMismatchCausesRetry() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		blocking.insertById(Person.class).one(person);
+		Person person = blocking.insertById(Person.class).one(WalterWhite);
 		AtomicInteger attempts = new AtomicInteger();
 
-		// Needs to take place in a separate thread to bypass the ThreadLocalStorage checks
-		Thread forceCASMismatch = new Thread(() -> {
-			Person fetched = blocking.findById(Person.class).one(id.toString());
-			blocking.replaceById(Person.class).one(fetched.withFirstName("Changed externally"));
-		});
-
 		personService.doInTransaction(attempts, ops -> {
-			return ops.findById(Person.class).one(id.toString()).flatMap(fetched -> Mono.fromRunnable(() -> {
-
-				if (attempts.get() == 1) {
-					forceCASMismatch.start();
-					try {
-						forceCASMismatch.join();
-					} catch (InterruptedException e) {
-						throw new RuntimeException(e);
-					}
-				}
+			return ops.findById(Person.class).one(person.id()).flatMap(fetched -> Mono.fromRunnable(() -> {
+				ReplaceLoopThread.updateOutOfTransaction(blocking, person.withFirstName("ChangedExternally"), attempts.get());
 			}).then(ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"))));
 		}).block();
 
@@ -163,29 +140,26 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 
 	@Test
 	public void returnMono() {
-		UUID id = UUID.randomUUID();
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		Person fromLambda = personService.doInTransactionReturningMono(tryCount, (ops) -> {
 			return Mono.defer(() -> {
-				Person person = new Person(id, "Walter", "White");
-				return ops.insertById(Person.class).one(person).log("source");
+				return ops.insertById(Person.class).one(WalterWhite).log("source");
 			}).log("returnMono test");
 		}).block();
 
 		assertNotNull(fromLambda);
-		assertEquals("Walter", fromLambda.getFirstname());
+		assertEquals(WalterWhite.getFirstname(), fromLambda.getFirstname());
 	}
 
 	@Test
 	public void returnFlux() {
-		UUID id = UUID.randomUUID();
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		List<Integer> fromLambda = personService.doInTransactionReturningFlux(tryCount, (ops) -> {
 			return Flux.defer(() -> {
-				Person person = new Person(id, "Walter", "White");
-				return ops.insertById(Person.class).one(person).thenMany(Flux.fromIterable(Arrays.asList(1, 2, 3)).log("1"));
+				return ops.insertById(Person.class).one(WalterWhite)
+						.thenMany(Flux.fromIterable(Arrays.asList(1, 2, 3)).log("1"));
 			});
 		}).collectList().block();
 

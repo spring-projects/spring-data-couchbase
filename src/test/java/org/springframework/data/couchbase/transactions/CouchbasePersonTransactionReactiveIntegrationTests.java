@@ -54,7 +54,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.DocumentNotFoundException;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
@@ -65,7 +64,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseTransactionManager.class, PersonServiceReactive.class })
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonServiceReactive.class })
 // @Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and
 // cannot support)")
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
@@ -100,8 +99,10 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public void beforeEachTest() {
 		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
-		List<RemoveResult> pr = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
-		List<RemoveResult> er = operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+		List<RemoveResult> pr = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList()
+				.block();
+		List<RemoveResult> er = operations.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList()
+				.block();
 		List<Person> p = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		List<EventLog> e = operations.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 	}
@@ -110,7 +111,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public void shouldRollbackAfterException() {
 		personService.savePersonErrors(WalterWhite) //
 				.as(StepVerifier::create) //
-				.verifyError(RuntimeException.class);
+				.verifyError(TransactionFailedException.class);
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
@@ -119,9 +120,8 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(new Person( "Walter", "White")) //
-				.as(StepVerifier::create) //
-				.expectComplete(), SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite).blockLast(),
+				TransactionFailedException.class, SimulateFailureException.class);
 	}
 
 	@Test
@@ -139,6 +139,10 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	}
 
 	@Test
+	/* todo - does this need to be in
+	Caused by: java.lang.UnsupportedOperationException: Return type is Mono or Flux, indicating a reactive transaction
+	is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.
+	 */
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
 		personService.declarativeSavePerson(WalterWhite).as(StepVerifier::create) //
@@ -211,7 +215,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 		personService.savePerson(WalterWhite) //
 				.then(Mono.error(new SimulateFailureException())).as(StepVerifier::create) //
-				.expectError().verify();
+				.verifyError();
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(1L) //
@@ -222,7 +226,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	// until we have spring-managed TransactionResult to re-use
 	@Disabled("removeById().one(id) will fail as there is no cas.  Use removeById().oneEntity(entity) instead")
 	public void deletePersonCBTransactionsRxTmpl() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.id());
@@ -251,7 +255,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	// until we have spring-managed TransactionResult to re-use
 	@Disabled("deleteById(id) will fail as there is no cas.  Use delete(entity) instead")
 	public void deletePersonCBTransactionsRxRepo() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
 			return rxRepo.withCollection(cName).deleteById(person.id()).then();
@@ -263,7 +267,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void deletePersonCBTransactionsRxRepoFail() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
 			return rxRepo.withCollection(cName).delete(person).then(rxRepo.withCollection(cName).delete(person));
@@ -275,7 +279,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void findPersonCBTransactions() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
 		Mono<TransactionResult> result = wrapper.run(((ctx) -> {
@@ -310,7 +314,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 
 	public void replacePersonRbCBTransactions() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 
 		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
 			return rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id())
@@ -325,7 +329,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void findPersonSpringTransactions() {
-		Person person= cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
 		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx

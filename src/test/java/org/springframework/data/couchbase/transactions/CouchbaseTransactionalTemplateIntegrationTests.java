@@ -26,7 +26,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
@@ -286,8 +285,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		Runnable r = () -> {
 			Thread t = Thread.currentThread();
 			System.out.printf("Started thread %d %s%n", t.getId(), t.getName());
-			Person p = new Person("Walter", "White");
-			Person s = personService.declarativeSavePersonWithThread(p, t);
+			Person p = personService.declarativeSavePersonWithThread(WalterWhite, t);
 			System.out.printf("Finished thread %d %s%n", t.getId(), t.getName());
 		};
 		List<Thread> threads = new ArrayList<>();
@@ -303,7 +301,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				t.join();
 				System.out.printf("Finished waiting for thread %d %s%n", t.getId(), t.getName());
 			} catch (InterruptedException e) {
-				fail();
+				fail(); // interrupted
 			}
 		});
 	}
@@ -411,7 +409,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		@Transactional
 		public void insertThenThrow() {
 			assertInAnnotationTransaction(true);
-			personOperations.insertById(Person.class).one(new Person(null, "Walter", "White"));
+			Person person = personOperations.insertById(Person.class).one(new Person( "Walter", "White"));
 			SimulateFailureException.throwEx();
 		}
 

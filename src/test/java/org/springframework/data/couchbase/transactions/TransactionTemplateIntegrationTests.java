@@ -16,12 +16,12 @@
 
 package org.springframework.data.couchbase.transactions;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import java.util.List;
@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -67,6 +68,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseSimpleCallbackTransactionManager transactionManager;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired CouchbaseTemplate ops;
+	Person WalterWhite;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -80,7 +82,10 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 
 	@BeforeEach
 	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 		assertNotInTransaction();
+		List<RemoveResult> rp0 = ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
+		List<RemoveResult> rp1 = ops.removeByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
 
 		template = new TransactionTemplate(transactionManager);
 	}
@@ -99,7 +104,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	}
 
 	private RunResult doInTransaction(Consumer<TransactionStatus> lambda) {
-		AtomicInteger tryCount = new AtomicInteger(0);
+		AtomicInteger tryCount = new AtomicInteger();
 
 		template.executeWithoutResult(status -> {
 			TransactionTestUtil.assertInTransaction();
@@ -120,32 +125,26 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("A basic golden path insert should succeed")
 	@Test
 	public void committedInsert() {
-		UUID id = UUID.randomUUID();
-
 		RunResult rr = doInTransaction(status -> {
-			Person person = new Person(id, "Walter", "White");
-			ops.insertById(Person.class).one(person);
+			ops.insertById(Person.class).one(WalterWhite);
 		});
 
-		Person fetched = ops.findById(Person.class).one(id.toString());
-		assertEquals("Walter", fetched.getFirstname());
+		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
+		assertEquals(WalterWhite.getFirstname(), fetched.getFirstname());
 		assertEquals(1, rr.attempts);
 	}
 
 	@DisplayName("A basic golden path replace should succeed")
 	@Test
 	public void committedReplace() {
-		UUID id = UUID.randomUUID();
-		Person initial = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(initial);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		RunResult rr = doInTransaction(status -> {
-			Person person = ops.findById(Person.class).one(id.toString());
-			person.setFirstname("changed");
-			ops.replaceById(Person.class).one(person);
+			Person p = ops.findById(Person.class).one(person.id());
+			ops.replaceById(Person.class).one(p.withFirstName("changed"));
 		});
 
-		Person fetched = ops.findById(Person.class).one(initial.getId().toString());
+		Person fetched = ops.findById(Person.class).one(person.id());
 		assertEquals("changed", fetched.getFirstname());
 		assertEquals(1, rr.attempts);
 	}
@@ -153,16 +152,14 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("A basic golden path remove should succeed")
 	@Test
 	public void committedRemove() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		RunResult rr = doInTransaction(status -> {
-			Person fetched = ops.findById(Person.class).one(id.toString());
+			Person fetched = ops.findById(Person.class).one(person.id());
 			ops.removeById(Person.class).oneEntity(fetched);
 		});
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		Person fetched = ops.findById(Person.class).one(person.id());
 		assertNull(fetched);
 		assertEquals(1, rr.attempts);
 	}
@@ -170,17 +167,16 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("A basic golden path removeByQuery should succeed")
 	@Test
 	public void committedRemoveByQuery() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, id.toString(), "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(status -> {
 			List<RemoveResult> removed = ops.removeByQuery(Person.class)
-					.matching(QueryCriteria.where("firstname").eq(id.toString())).all();
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			assertEquals(1, removed.size());
 		});
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		Person fetched = ops.findById(Person.class).one(person.id());
 		assertNull(fetched);
 		assertEquals(1, rr.attempts);
 	}
@@ -188,13 +184,12 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("A basic golden path findByQuery should succeed")
 	@Test
 	public void committedFindByQuery() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, id.toString(), "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(status -> {
-			List<Person> found = ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(id.toString()))
-					.all();
+			List<Person> found = ops.findByQuery(Person.class)
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			assertEquals(1, found.size());
 		});
 
@@ -205,16 +200,14 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void rollbackInsert() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			Person person = new Person(id, "Walter", "White");
-			ops.insertById(Person.class).one(person);
+			Person person = ops.insertById(Person.class).one(WalterWhite);
 			throw new SimulateFailureException();
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = ops.findById(Person.class).one(id.toString());
+		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -223,20 +216,18 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void rollbackReplace() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			Person p = ops.findById(Person.class).one(person.getId().toString());
+			Person p = ops.findById(Person.class).one(person.id());
 			p.setFirstname("changed");
 			ops.replaceById(Person.class).one(p);
 			throw new SimulateFailureException();
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
-		assertEquals("Walter", fetched.getFirstname());
+		Person fetched = ops.findById(Person.class).one(person.id());
+		assertEquals(person.getFirstname(), fetched.getFirstname());
 		assertEquals(1, attempts.get());
 	}
 
@@ -244,18 +235,16 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void rollbackRemove() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			Person p = ops.findById(Person.class).one(person.getId().toString());
+			Person p = ops.findById(Person.class).one(person.id());
 			ops.removeById(Person.class).oneEntity(p);
 			throw new SimulateFailureException();
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		Person fetched = ops.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -264,17 +253,16 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void rollbackRemoveByQuery() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+			ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			throw new SimulateFailureException();
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		Person fetched = ops.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
 		assertEquals(1, attempts.get());
 	}
@@ -283,13 +271,12 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void rollbackFindByQuery() {
 		AtomicInteger attempts = new AtomicInteger();
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq("Walter")).all();
+			ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 			throw new SimulateFailureException();
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
@@ -299,30 +286,24 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
-		PersonWithoutVersion person = new PersonWithoutVersion(id, "Walter", "White");
-
-		ops.insertById(PersonWithoutVersion.class).one(person);
-		try {
+		PersonWithoutVersion person = ops.insertById(PersonWithoutVersion.class)
+				.one(new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White"));
+		assertThrowsWithCause(() -> {
 			doInTransaction(status -> {
-				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(id.toString());
+				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(person.id());
 				ops.replaceById(PersonWithoutVersion.class).one(fetched);
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+		}, TransactionFailedException.class, IllegalArgumentException.class);
+
 	}
 
 	@DisplayName("Entity must have non-zero CAS during replace")
 	@Test
 	public void replaceEntityWithCasZero() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		// switchedPerson here will have CAS=0, which will fail
-		Person switchedPerson = new Person(id, "Dave", "Reynolds");
+		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			ops.replaceById(Person.class).one(switchedPerson);
@@ -332,12 +313,10 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
-		PersonWithoutVersion person = new PersonWithoutVersion(id, "Walter", "White");
-
-		ops.insertById(PersonWithoutVersion.class).one(person);
+		PersonWithoutVersion person = ops.insertById(PersonWithoutVersion.class)
+				.one(new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White"));
 		assertThrowsWithCause(() -> doInTransaction(status -> {
-			PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(id.toString());
+			PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(person.id());
 			ops.removeById(PersonWithoutVersion.class).oneEntity(fetched);
 		}), TransactionFailedException.class, IllegalArgumentException.class);
 	}
@@ -345,28 +324,24 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("removeById().one(id) isn't allowed in transactions, since we don't have the CAS")
 	@Test
 	public void removeEntityById() {
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		ops.insertById(Person.class).one(person);
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
-			Person p = ops.findById(Person.class).one(person.getId().toString());
-			ops.removeById(Person.class).one(p.getId().toString());
+			Person p = ops.findById(Person.class).one(person.id());
+			ops.removeById(Person.class).one(p.id());
 		}), TransactionFailedException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("setRollbackOnly should cause a rollback")
 	@Test
 	public void setRollbackOnly() {
-		UUID id = UUID.randomUUID();
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			status.setRollbackOnly();
-			Person person = new Person(id, "Walter", "White");
-			ops.insertById(Person.class).one(person);
+			Person person = ops.insertById(Person.class).one(WalterWhite);
 		}), TransactionFailedException.class);
 
-		Person fetched = ops.findById(Person.class).one(id.toString());
+		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
 	}
 
@@ -375,8 +350,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	public void unsupportedIsolationLevel() {
 		template.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
 
-		assertThrowsWithCause(() -> doInTransaction(status -> {
-		}), IllegalArgumentException.class);
+		assertThrowsWithCause(() -> doInTransaction(status -> {}), IllegalArgumentException.class);
 	}
 
 	@DisplayName("Setting PROPAGATION_MANDATORY should fail, as not in a transaction")
@@ -384,8 +358,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	public void propagationMandatoryOutsideTransaction() {
 		template.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
 
-		assertThrowsWithCause(() -> doInTransaction(status -> {
-		}), IllegalTransactionStateException.class);
+		assertThrowsWithCause(() -> doInTransaction(status -> {}), IllegalTransactionStateException.class);
 	}
 
 	@Test
@@ -393,16 +366,13 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		TransactionTemplate template2 = new TransactionTemplate(transactionManager);
 		template2.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
 
-		UUID id = UUID.randomUUID();
-
 		template.executeWithoutResult(status -> {
 			template2.executeWithoutResult(status2 -> {
-				Person person = new Person(id, "Walter", "White");
-				ops.insertById(Person.class).one(person);
+				Person person = ops.insertById(Person.class).one(WalterWhite);
 			});
 		});
 
-		Person fetched = ops.findById(Person.class).one(id.toString());
+		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
 		assertEquals("Walter", fetched.getFirstname());
 	}
 

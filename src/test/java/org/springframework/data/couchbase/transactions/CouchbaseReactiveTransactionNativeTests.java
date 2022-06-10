@@ -20,6 +20,7 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -110,7 +111,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.findById(Person.class).one(person.id())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -143,7 +144,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).findById(person.id())
 				.flatMap(p -> rxRepo.withCollection(cName).save(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())));
-		assertThrowsWithCause(result::blockLast, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -153,7 +154,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Person person = WalterWhite;
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).save(person) // insert
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
@@ -185,7 +186,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Mono<?> result = rxCBTmpl.findById(Person.class).one(person.id())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())).as(txOperator::transactional);
-		assertThrowsWithCause(result::block, SimulateFailureException.class);
+		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());
@@ -194,9 +195,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 	@Test
 	public void findReplacePersonCBTransactionsRxTmpl() {
 		Person person = rxCBTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite).block();
-		Flux<Person> result = txOperator
-				.execute(ctx -> rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id())
-						.flatMap(pGet -> rxCBTmpl.replaceById(Person.class).inCollection(cName).one(pGet.withFirstName("Walt"))));
+		Flux<Person> result = txOperator.execute(ctx -> rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id())
+				.flatMap(pGet -> rxCBTmpl.replaceById(Person.class).inCollection(cName).one(pGet.withFirstName("Walt"))));
 		result.blockLast();
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person.withFirstName("Walt"), pFound, "Should have found Walt");

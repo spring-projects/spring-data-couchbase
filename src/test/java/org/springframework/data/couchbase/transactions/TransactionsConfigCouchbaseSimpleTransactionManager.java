@@ -1,34 +1,20 @@
 package org.springframework.data.couchbase.transactions;
 
-import java.time.Duration;
-
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionInterceptor;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionManager;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.config.TransactionsConfig;
-import org.springframework.transaction.config.TransactionManagementConfigUtils;
-import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
-import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 
 /**
  * See comments on TransactionsConfigCouchbaseTransactionManager for why this test exists.
@@ -36,8 +22,6 @@ import org.springframework.transaction.support.CallbackPreferringPlatformTransac
 @Configuration
 @EnableCouchbaseRepositories("org.springframework.data.couchbase")
 @EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-// todo gpx it seems to get CouchbaseSimpleTransactionInterceptor picked up requires this.  It's unfortunate as we
-//  want txns to work OOTB (and presumably don't want to put this annotation on AbstractCouchbaseConfiguration?) - any solutions?
 @EnableTransactionManagement
 public class TransactionsConfigCouchbaseSimpleTransactionManager extends AbstractCouchbaseConfiguration {
 
@@ -63,20 +47,14 @@ public class TransactionsConfigCouchbaseSimpleTransactionManager extends Abstrac
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionInterceptor transactionInterceptor(TransactionAttributeSource transactionAttributeSource,
-																											 CallbackPreferringPlatformTransactionManager txManager) {
-		TransactionInterceptor interceptor = new CouchbaseSimpleTransactionInterceptor(txManager, transactionAttributeSource);
+	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
+		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
+		TransactionInterceptor interceptor = new CouchbaseSimpleTransactionInterceptor(couchbaseTransactionManager, transactionAttributeSource);
 		interceptor.setTransactionAttributeSource(transactionAttributeSource);
-		if (txManager != null) {
-			interceptor.setTransactionManager(txManager);
+		if (couchbaseTransactionManager != null) {
+			interceptor.setTransactionManager(couchbaseTransactionManager);
 		}
 		return interceptor;
-	}
-
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionAttributeSource transactionAttributeSource() {
-		return new AnnotationTransactionAttributeSource();
 	}
 
 }

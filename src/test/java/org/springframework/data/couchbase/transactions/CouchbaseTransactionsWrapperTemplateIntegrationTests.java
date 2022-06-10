@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+
+import reactor.util.annotation.Nullable;
 
 import java.time.Duration;
 import java.util.List;
@@ -31,10 +31,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.couchbase.client.core.error.transaction.AttemptExpiredException;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -54,8 +50,10 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
+import com.couchbase.client.java.transactions.error.TransactionExpiredException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import reactor.util.annotation.Nullable;
 
 /**
  * Tests for TransactionsWrapper, using template methods (findById etc.)
@@ -119,7 +117,7 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 		});
 
 		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
-		assertEquals("Walter", fetched.getFirstname());
+		assertEquals(WalterWhite.getFirstname(), fetched.getFirstname());
 		assertEquals(1, rr.attempts);
 	}
 
@@ -189,16 +187,13 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 	public void rollbackInsert() {
 		AtomicInteger attempts = new AtomicInteger();
 
-		try {
+		assertThrowsWithCause(() -> {
 			doInTransaction(ctx -> {
 				attempts.incrementAndGet();
 				Person person = ops.insertById(Person.class).one(WalterWhite);
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = ops.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
@@ -211,7 +206,7 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 		AtomicInteger attempts = new AtomicInteger();
 		Person person = ops.insertById(Person.class).one(WalterWhite);
 
-		try {
+		assertThrowsWithCause(() -> {
 			doInTransaction(ctx -> {
 				attempts.incrementAndGet();
 				Person p = ops.findById(Person.class).one(person.id());
@@ -219,13 +214,10 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 				ops.replaceById(Person.class).one(p);
 				throw new SimulateFailureException();
 			});
-			fail();
-		} catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof SimulateFailureException);
-		}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = ops.findById(Person.class).one(person.id());
-		assertEquals("Walter", fetched.getFirstname());
+		assertEquals(WalterWhite.getFirstname(), fetched.getFirstname());
 		assertEquals(1, attempts.get());
 	}
 
@@ -299,19 +291,18 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 			doInTransaction(ctx -> {
 				ops.replaceById(Person.class).one(person);
 			}, TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2)));
-		}, TransactionFailedException.class, AttemptExpiredException.class);
+		}, TransactionFailedException.class);
 
 	}
 
 	@DisplayName("Entity must have CAS field during replace")
 	@Test
 	public void replaceEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
 		PersonWithoutVersion person = ops.insertById(PersonWithoutVersion.class)
-				.one(new PersonWithoutVersion(id, "Walter", "White"));
+				.one(new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White"));
 		assertThrowsWithCause(() -> {
 			doInTransaction(ctx -> {
-				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(id.toString());
+				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(person.id());
 				ops.replaceById(PersonWithoutVersion.class).one(fetched);
 			});
 		}, TransactionFailedException.class, IllegalArgumentException.class);
@@ -320,7 +311,7 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 	@DisplayName("Entity must have non-zero CAS during replace")
 	@Test
 	public void replaceEntityWithCasZero() {
-		Person person = ops.insertById(Person.class).one(new Person("Walter", "White"));
+		Person person = ops.insertById(Person.class).one(WalterWhite);
 
 		// switchedPerson here will have CAS=0, which will fail
 		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
@@ -335,12 +326,11 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		UUID id = UUID.randomUUID();
 		PersonWithoutVersion person = ops.insertById(PersonWithoutVersion.class)
-				.one(new PersonWithoutVersion(id, "Walter", "White"));
+				.one(new PersonWithoutVersion(UUID.randomUUID(), "Walter", "White"));
 		assertThrowsWithCause(() -> {
 			doInTransaction(ctx -> {
-				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(id.toString());
+				PersonWithoutVersion fetched = ops.findById(PersonWithoutVersion.class).one(person.id());
 				ops.removeById(PersonWithoutVersion.class).oneEntity(fetched);
 			});
 		}, TransactionFailedException.class, IllegalArgumentException.class);

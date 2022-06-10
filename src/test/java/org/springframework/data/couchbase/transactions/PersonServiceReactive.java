@@ -23,11 +23,12 @@ class PersonServiceReactive {
 
 	public PersonServiceReactive(CouchbaseOperations ops,
 			/* CouchbaseCallbackTransactionManager mgr, */ ReactiveCouchbaseOperations opsRx,
-			ReactiveCouchbaseTransactionManager mgrRx) {
-		personOperations = ops;
-		personOperationsRx = opsRx;
-		managerRx = mgrRx;
-		transactionalOperator = TransactionalOperator.create(managerRx, new DefaultTransactionDefinition());
+			ReactiveCouchbaseTransactionManager mgrRx,
+															 TransactionalOperator transactionalOperator) {
+		this.personOperations = ops;
+		this.personOperationsRx = opsRx;
+		this.managerRx = mgrRx;
+		this.transactionalOperator = transactionalOperator;
 		return;
 	}
 
@@ -82,7 +83,7 @@ class PersonServiceReactive {
 				.as(transactionalOperator::transactional);
 	}
 
-	@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	//@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	public Flux<Person> declarativeSavePerson(Person person) {
 		return transactionalOperator.execute(reactiveTransaction -> personOperationsRx.save(person));
 	}

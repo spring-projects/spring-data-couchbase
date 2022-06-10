@@ -40,6 +40,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,11 +54,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Tests for @Transactional methods, where parameters/options are being set that aren't support in a transaction.
- * These will be rejected at runtime.
+ * Tests for @Transactional methods, where parameters/options are being set that aren't support in a transaction. These
+ * will be rejected at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class})
+@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+		CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -66,8 +68,8 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	Person WalterWhite;
 
 	@BeforeEach
-	public void beforeEachTest(){
-		WalterWhite = new Person("Walter","White");
+	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 	}
 
 	@BeforeAll
@@ -78,16 +80,12 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	void test(Consumer<CouchbaseOperations> r) {
 		AtomicInteger tryCount = new AtomicInteger(0);
 
-		try {
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				r.accept(ops);
 				return null;
 			});
-			fail("Transaction should not succeed");
-		}
-		catch (TransactionFailedException err) {
-			assertTrue(err.getCause() instanceof IllegalArgumentException);
-		}
+		}, TransactionFailedException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
 	}
@@ -159,8 +157,7 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	@Service
 	@Component
 	@EnableTransactionManagement
-	static
-	class PersonService {
+	static class PersonService {
 		final CouchbaseOperations personOperations;
 
 		public PersonService(CouchbaseOperations ops) {

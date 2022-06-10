@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Replace;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.BeanNames;
@@ -94,17 +92,14 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 	@DisplayName("A basic golden path insert should succeed")
 	@Test
 	public void committedInsert() {
-		UUID id = UUID.randomUUID();
-		AtomicInteger tryCount = new AtomicInteger(0);
+		AtomicInteger tryCount = new AtomicInteger();
 
 		Person inserted = personService.doInTransaction(tryCount, (ops) -> {
-			Person person = new Person(id, "Walter", "White");
-			ops.insertById(Person.class).one(person);
-			return person;
+			return ops.insertById(Person.class).one(WalterWhite);
 		});
 
 		Person fetched = operations.findById(Person.class).one(inserted.id());
-		assertEquals("Walter", fetched.getFirstname());
+		assertEquals(WalterWhite.getFirstname(), fetched.getFirstname());
 		assertEquals(1, tryCount.get());
 	}
 
@@ -112,9 +107,7 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 	@Test
 	public void committedReplace() {
 		AtomicInteger tryCount = new AtomicInteger(0);
-		UUID id = UUID.randomUUID();
-		Person person = new Person(id, "Walter", "White");
-		operations.insertById(Person.class).one(person);
+		Person person = operations.insertById(Person.class).one(WalterWhite);
 
 		personService.fetchAndReplace(person.id(), tryCount, (p) -> {
 			p.setFirstname("changed");
@@ -149,7 +142,7 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		assertThrowsWithCause(() -> personService.doInTransaction(tryCount, (ops) -> {
 			ops.insertById(Person.class).one(WalterWhite);
 			throw new SimulateFailureException();
-		}), SimulateFailureException.class);
+		}), TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);
@@ -170,7 +163,7 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 				ops.replaceById(Person.class).one(p);
 				throw new SimulateFailureException();
 			});
-		}, SimulateFailureException.class);
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertEquals(person.getFirstname(), fetched.getFirstname());
@@ -185,13 +178,13 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 
 		Person person =		operations.insertById(Person.class).one(WalterWhite);
 
-		assertThrowsWithCause(() -> { 
+		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.id());
 				ops.removeById(Person.class).oneEntity(p);
 				throw new SimulateFailureException();
 			});
-		}, SimulateFailureException.class );
+		}, TransactionFailedException.class, SimulateFailureException.class );
 
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
@@ -208,7 +201,7 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 		assertThrowsWithCause(() -> personService.doInTransaction(tryCount, ops -> {
 			ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 			throw new SimulateFailureException();
-		}), SimulateFailureException.class);
+		}), TransactionFailedException.class, SimulateFailureException.class);
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
 		assertEquals(1, tryCount.get());
@@ -226,7 +219,7 @@ public class CouchbaseTransactionManagerTransactionalTemplateIntegrationTests ex
 				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 				throw new SimulateFailureException();
 			});
-		}, SimulateFailureException.class);
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		assertEquals(1, tryCount.get());
 	}

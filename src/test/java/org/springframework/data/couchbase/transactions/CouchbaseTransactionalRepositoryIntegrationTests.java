@@ -96,13 +96,13 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		userService.run(repo -> {
 			assertInTransaction();
 
-			repo.save(new User(id, "Ada", "Lovelace"));
+			User user0 = repo.save(new User(id, "Ada", "Lovelace"));
 
 			assertInTransaction();
 
 			// read your own write
-			User user = operations.findById(User.class).one(id);
-			assertNotNull(user);
+			User user1 = operations.findById(User.class).one(id);
+			assertNotNull(user1);
 
 			assertInTransaction();
 
@@ -117,13 +117,12 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	public void saveRolledBack() {
 		String id = UUID.randomUUID().toString();
 
-		try {
+		assertThrowsWithCause( () -> {;
 			userService.run(repo -> {
-				repo.save(new User(id, "Ada", "Lovelace"));
+				User user = repo.save(new User(id, "Ada", "Lovelace"));
 				SimulateFailureException.throwEx("fail");
 			});
-			fail();
-		} catch (TransactionFailedException ignored) {}
+		}, TransactionFailedException.class, SimulateFailureException.class);
 
 		User user = operations.findById(User.class).one(id);
 		assertNull(user);
