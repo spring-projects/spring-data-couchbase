@@ -97,7 +97,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	private RunResult doMonoInTransaction(Supplier<Mono<?>> lambda) {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
+		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 		AtomicInteger attempts = new AtomicInteger();
 
 		operator.transactional(Mono.fromRunnable(() -> attempts.incrementAndGet()).then(lambda.get())).block();
@@ -112,7 +112,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	public void committedInsertWithExecute() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
+		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		operator.execute(v -> {
 			return Mono.defer(() -> {
@@ -129,7 +129,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	public void committedInsertWithFlux() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
+		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		Flux<Person> flux = Flux.defer(() -> {
 			return ops.insertById(Person.class).one(WalterWhite);

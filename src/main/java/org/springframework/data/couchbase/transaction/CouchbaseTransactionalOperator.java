@@ -28,9 +28,12 @@ import reactor.core.publisher.Mono;
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	private final CouchbaseCallbackTransactionManager manager;
 
-	// todo gpx static or ctor?
-	public CouchbaseTransactionalOperator(CouchbaseCallbackTransactionManager manager) {
+	CouchbaseTransactionalOperator(CouchbaseCallbackTransactionManager manager) {
 		this.manager = manager;
+	}
+
+	public static CouchbaseTransactionalOperator create(CouchbaseCallbackTransactionManager manager) {
+		return new CouchbaseTransactionalOperator(manager);
 	}
 
 	@Override

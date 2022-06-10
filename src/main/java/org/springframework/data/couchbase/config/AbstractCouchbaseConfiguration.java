@@ -354,7 +354,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
 	public CouchbaseTransactionalOperator transactionalOperator(
 			CouchbaseCallbackTransactionManager couchbaseCallbackTransactionManager) {
-		return new CouchbaseTransactionalOperator(couchbaseCallbackTransactionManager);
+		return CouchbaseTransactionalOperator.create(couchbaseCallbackTransactionManager);
 	}
 
 	/**
