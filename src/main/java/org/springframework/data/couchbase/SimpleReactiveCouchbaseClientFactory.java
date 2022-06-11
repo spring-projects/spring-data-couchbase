@@ -62,11 +62,13 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 	@Override
 	public Mono<Collection> getCollectionMono(String collectionName) {
+		getScopeNameForCollection(collectionName);
 		return Mono.just(getScope()).map((s) -> s.collection(getCollectionName(collectionName)));
 	}
 
 	@Override
 	public Collection getCollection(String collectionName) {
+		getScopeNameForCollection(collectionName);
 		return cluster.bucket(bucketName).scope(getScopeNameForCollection(collectionName))
 				.collection(getCollectionName(collectionName));
 	}

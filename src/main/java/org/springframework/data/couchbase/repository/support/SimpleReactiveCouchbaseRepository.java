@@ -223,26 +223,4 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		return operations;
 	}
 
-	/**
-	 * Get the TransactionalOperator from <br>
-	 * 1. The template.clientFactory<br>
-	 * 2. The template.threadLocal<br>
-	 * 3. otherwise null<br>
-	 * This can be overriden in the operation method by<br>
-	 * 1. repository.withCollection()
-	 */
-	/*
-	private CouchbaseStuffHandle getTransactionalOperator() {
-		if (operations.getCouchbaseClientFactory().getTransactionalOperator() != null) {
-			return operations.getCouchbaseClientFactory().getTransactionalOperator();
-		}
-		ReactiveCouchbaseTemplate t = (ReactiveCouchbaseTemplate) operations;
-		PseudoArgs pArgs = t.getPseudoArgs();
-		if (pArgs != null && pArgs.getTxOp() != null) {
-			return pArgs.getTxOp();
-		}
-		return null;
-	}
-	 */
-
 }
