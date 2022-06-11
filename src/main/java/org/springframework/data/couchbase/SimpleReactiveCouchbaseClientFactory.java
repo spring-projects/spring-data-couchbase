@@ -7,7 +7,6 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.Transactions;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
@@ -25,23 +24,15 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	final PersistenceExceptionTranslator exceptionTranslator;
 	JsonSerializer serializer;
 	Transactions transactions;
-	CouchbaseTransactionalOperator transactionalOperator;
 
-	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName,
-			CouchbaseTransactionalOperator transactionalOperator) {
+	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName) {
 		this.cluster = cluster;
 		this.bucketName = bucketName;
 		this.scopeName = scopeName;
 		this.exceptionTranslator = new CouchbaseExceptionTranslator();
 		this.serializer = cluster.environment().jsonSerializer();
 		this.transactions = cluster.transactions();
-		this.transactionalOperator = transactionalOperator;
 	}
-
-	public SimpleReactiveCouchbaseClientFactory(Cluster cluster, String bucketName, String scopeName) {
-		this(cluster, bucketName, scopeName, null);
-	}
-
 
 	@Override
 	public Cluster getCluster() {
@@ -59,7 +50,8 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 				.scope(scopeName != null ? scopeName : (this.scopeName != null ? this.scopeName : DEFAULT_SCOPE));
 	}
 
-	@Override public Scope getScope(){
+	@Override
+	public Scope getScope() {
 		return getScope(null);
 	}
 
@@ -70,40 +62,37 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 
 	@Override
 	public Mono<Collection> getCollectionMono(String collectionName) {
-		if (getScopeName() != null && !DEFAULT_SCOPE.equals(getScopeName())) {
-			if (collectionName == null || DEFAULT_COLLECTION.equals(collectionName)) {
-				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used.");
-			}
-		}
-		if (getScopeName() == null || DEFAULT_SCOPE.equals(getScopeName())) {
-			if (collectionName != null && !DEFAULT_COLLECTION.equals(collectionName)) {
-				throw new IllegalStateException(
-						"A collectionName must be null or " + DEFAULT_COLLECTION + " if scope is null or " + DEFAULT_SCOPE);
-			}
-		}
-		return Mono.just(getScope()).map((s) -> s.collection(collectionName != null ? collectionName : DEFAULT_COLLECTION));
+		return Mono.just(getScope()).map((s) -> s.collection(getCollectionName(collectionName)));
 	}
 
 	@Override
 	public Collection getCollection(String collectionName) {
+		return cluster.bucket(bucketName).scope(getScopeNameForCollection(collectionName))
+				.collection(getCollectionName(collectionName));
+	}
+
+	private String getScopeNameForCollection(String collectionName){
 		if (getScopeName() != null && !DEFAULT_SCOPE.equals(getScopeName())) {
 			if (collectionName == null || DEFAULT_COLLECTION.equals(collectionName)) {
 				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used.");
 			}
 		}
+		return scopeName != null ? scopeName : DEFAULT_SCOPE;
+	}
+
+	private String getCollectionName(String collectionName) {
 		if (getScopeName() == null || DEFAULT_SCOPE.equals(getScopeName())) {
 			if (collectionName != null && !DEFAULT_COLLECTION.equals(collectionName)) {
 				throw new IllegalStateException(
 						"A collectionName must be null or " + DEFAULT_COLLECTION + " if scope is null or " + DEFAULT_SCOPE);
 			}
 		}
-		return cluster.bucket(bucketName).scope(scopeName != null ? scopeName : DEFAULT_SCOPE)
-				.collection(collectionName != null ? collectionName : DEFAULT_COLLECTION);
+		return collectionName != null ? collectionName : DEFAULT_COLLECTION;
 	}
 
 	@Override
 	public ReactiveCouchbaseClientFactory withScope(String scopeName) {
-		return new SimpleReactiveCouchbaseClientFactory((Cluster) cluster, bucketName,
+		return new SimpleReactiveCouchbaseClientFactory(cluster, bucketName,
 				scopeName != null ? scopeName : this.scopeName);
 	}
 
@@ -131,13 +120,4 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 		return new CouchbaseResourceHolder(atr);
 	}
 
-	@Override
-	public CouchbaseTransactionalOperator getTransactionalOperator() {
-		return transactionalOperator;
-	}
-
-	@Override
-	public ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp) {
-		return new SimpleReactiveCouchbaseClientFactory((Cluster) getCluster(), bucketName, scopeName, txOp);
-	}
 }

@@ -23,19 +23,16 @@ import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
 	private final String scopeName;
 	private final String collectionName;
-	private final CouchbaseTransactionalOperator transactionalOperator;
 
-	public PseudoArgs(String scopeName, String collectionName, OPTS options, CouchbaseTransactionalOperator transactionalOperator) {
+	public PseudoArgs(String scopeName, String collectionName, OPTS options) {
 		this.options = options;
 		this.scopeName = scopeName;
 		this.collectionName = collectionName;
-		this.transactionalOperator = transactionalOperator;
 	}
 
 	/**
@@ -43,20 +40,18 @@ public class PseudoArgs<OPTS> {
 	 * 1) values from fluent api<br>
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
-	 *
-	 * @param template which holds ThreadLocal pseudo args
+	 *  @param template which holds ThreadLocal pseudo args
 	 * @param scope - from calling operation
 	 * @param collection - from calling operation
 	 * @param options - from calling operation
 	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
-					  CouchbaseTransactionalOperator transactionalOperator, Class<?> domainType) {
+										Class<?> domainType) {
 
 		String scopeForQuery = null;
 		String collectionForQuery = null;
 		OPTS optionsForQuery = null;
-		CouchbaseTransactionalOperator txOpForQuery = null;
 
 		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
 
@@ -66,15 +61,11 @@ public class PseudoArgs<OPTS> {
 			scopeForQuery = threadLocal.getScope();
 			collectionForQuery = threadLocal.getCollection();
 			optionsForQuery = threadLocal.getOptions();
-			//throw new RuntimeException("PseudoArgs fix me 1");
-			txOpForQuery = threadLocal.getTxOp();
-			//System.err.println("threadLocal: txOpForQuery: "+txOpForQuery+" session: ");
 		}
 
 		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
 		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
 		optionsForQuery = fromFirst(null, options, optionsForQuery);
-		txOpForQuery = fromFirst( null, transactionalOperator, txOpForQuery , template.txOperator() );
 
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
@@ -97,7 +88,6 @@ public class PseudoArgs<OPTS> {
 			throw new CouchbaseException(new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
 		}
 		this.options = optionsForQuery;
-		this.transactionalOperator = txOpForQuery;
 
 	}
 
@@ -122,16 +112,9 @@ public class PseudoArgs<OPTS> {
 		return this.collectionName;
 	}
 
-	/**
-	 * @return the attempt context
-	 */
-	public CouchbaseTransactionalOperator getTxOp() {
-		return transactionalOperator;
-	}
-
 	@Override
 	public String toString() {
-		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions()+" txOp: "+transactionalOperator;
+		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
 	}
 
 }

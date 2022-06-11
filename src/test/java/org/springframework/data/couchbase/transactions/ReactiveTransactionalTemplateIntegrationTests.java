@@ -178,7 +178,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 
 		@Transactional
 		public Mono<Void> doInTransaction(AtomicInteger tryCount, Function<ReactiveCouchbaseOperations, Mono<?>> callback) {
-			return TransactionalSupport.checkForTransactionInThreadLocalStorage(null).flatMap(stat -> {
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(stat -> {
 				assertTrue(stat.isPresent(), "Not in transaction");
 				tryCount.incrementAndGet();
 				return callback.apply(ops).then();

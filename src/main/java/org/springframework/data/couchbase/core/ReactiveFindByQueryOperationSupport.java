@@ -25,7 +25,6 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.CouchbaseException;
@@ -57,7 +56,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null, null,
-				null, null, template.support());
+				null,
+				template.support());
 	}
 
 	static class ReactiveFindByQuerySupport<T> implements ReactiveFindByQuery<T> {
@@ -72,13 +72,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final String[] distinctFields;
 		private final String[] fields;
 		private final QueryOptions options;
-		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
-				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-				final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
-				final CouchbaseTransactionalOperator txCtx, final ReactiveTemplateSupport support) {
+															 final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
+															 final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
+															 final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 			this.template = template;
@@ -92,7 +91,6 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			this.distinctFields = distinctFields;
 			this.fields = fields;
 			this.support = support;
-			this.txCtx = txCtx;
 		}
 
 		@Override
@@ -105,45 +103,52 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				scanCons = scanConsistency;
 			}
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanCons, scope, collection,
-					options, distinctFields, fields, txCtx, support);
+					options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		public FindByQueryWithQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		public FindByQueryWithDistinct<T> inCollection(final String collection) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		@Deprecated
 		public FindByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> withConsistency(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		public <R> FindByQueryWithProjecting<R> as(Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -151,7 +156,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			Assert.notNull(fields, "Fields must not be null");
 			Assert.isNull(distinctFields, "only one of project(fields) and distinct(distinctFields) can be specified");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -163,14 +169,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, dFields, fields, txCtx, support);
+					collection, options, dFields, fields,
+					support);
 		}
 
 		@Override
-		public FindByQueryWithTransaction<T> transaction(CouchbaseTransactionalOperator txCtx) {
-			Assert.notNull(txCtx, "txCtx must not be null!");
+		public FindByQueryWithTransaction<T> transaction() {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, txCtx, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -185,14 +192,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public Flux<T> all() {
-			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
 			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 
-			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 						if (!s.isPresent()) {
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
@@ -248,16 +256,17 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public Mono<Long> count() {
-			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, txCtx, domainType);
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
 			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 
-			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 						if (!s.isPresent()) {
-							System.err.println("count: tx");
+							System.err.println("count: no-tx");
 							QueryOptions opts = buildOptions(pArgs.getOptions());
 							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 									: rs.query(statement, opts);

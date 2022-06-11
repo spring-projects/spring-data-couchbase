@@ -19,7 +19,6 @@ import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
 import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryOptions;
@@ -37,7 +36,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 	@Override
 	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null, null);
+		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
 	}
 
 	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
@@ -50,21 +49,18 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final CouchbaseTransactionalOperator txCtx;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-									   final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-									   CouchbaseTransactionalOperator txCtx) {
+																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
 			this.reactiveSupport = new ReactiveRemoveByQuerySupport<>(template.reactive(), domainType, query, scanConsistency,
-					scope, collection, options, txCtx);
+					scope, collection, options);
 			this.scanConsistency = scanConsistency;
 			this.scope = scope;
 			this.collection = collection;
 			this.options = options;
-			this.txCtx = txCtx;
 		}
 
 		@Override
@@ -75,45 +71,45 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		@Override
 		public RemoveByQueryWithTxOrNot<T> matching(final Query query) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		@Deprecated
 		public RemoveByQueryInScope<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryWithQuery<T> inCollection(final String collection) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryWithQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
-		public TerminatingRemoveByQuery<T> transaction(final CouchbaseTransactionalOperator txCtx) {
+		public TerminatingRemoveByQuery<T> transaction() {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 	}

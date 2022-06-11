@@ -19,7 +19,6 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
@@ -64,7 +63,7 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 *
 	 * @param name the name of the collection. If null is passed in, the default collection is assumed.
 	 */
-	 Collection getCollection(String collectionName);
+	 Collection getCollection(String name);
 
 	/**
 	 * Returns a new {@link CouchbaseClientFactory} set to the scope given as an argument.
@@ -89,10 +88,4 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 
 	CouchbaseResourceHolder getResources(CoreTransactionAttemptContext ctx);
 
-	/*
-	 * Seems only to be used by CouchbaseTransactionalOperator - which maybe discontinued.
-	 */
-	ReactiveCouchbaseClientFactory with(CouchbaseTransactionalOperator txOp);
-
-	CouchbaseTransactionalOperator getTransactionalOperator();
 }

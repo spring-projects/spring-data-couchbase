@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
 
+import com.couchbase.client.core.error.DocumentExistsException;
 import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,7 +53,6 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.TransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -79,7 +79,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
-	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired PersonRepository repo;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired CouchbaseTemplate cbTmpl;
@@ -147,7 +146,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception after using @Transactional(reactive)")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethodReactive() {
 		assertThrowsWithCause(() -> personService.declarativeSavePersonErrorsReactive(WalterWhite).block(),
-				SimulateFailureException.class);
+				TransactionFailedException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -201,7 +200,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
 		assertThrowsWithCause(() -> personService.saveWithErrorLogs(WalterWhite),
-				SimulateFailureException.class);
+				TransactionFailedException.class, SimulateFailureException.class);
 		List<Person> persons = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		assertEquals(0, persons.size(), "should have done roll back and left 0 entries");
 		List<EventLog> events = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all(); //
@@ -225,16 +224,13 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(WalterWhite);
-		// todo gp user shouldn't be getting exposed to TransactionOperationFailedException. This is happening as
-		// TransactionOperator does not support the automatic retries and error handling we depend on. As argued on Slack,
-		// we cannot support it because of this.
-		// todo mr
 		/*
 		TransactionOperationFailedException {cause:com.couchbase.client.core.error.DocumentExistsException, retry:false, autoRollback:true, raise:TRANSACTION_FAILED}
 		at com.couchbase.client.core.error.transaction.TransactionOperationFailedException$Builder.build(TransactionOperationFailedException.java:136)
 		at com.couchbase.client.core.transaction.CoreTransactionAttemptContext.lambda$handleDocExistsDuringStagedInsert$116(CoreTransactionAttemptContext.java:1801)
 		 */
-		assertThrowsOneOf(() -> personService.savePerson(p), TransactionOperationFailedException.class);
+		assertThrowsOneOf(() -> personService.savePerson(p), TransactionFailedException.class,
+				DocumentExistsException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
 	}

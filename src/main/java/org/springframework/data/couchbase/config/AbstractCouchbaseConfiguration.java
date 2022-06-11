@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -47,13 +46,10 @@ import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOp
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionDefinition;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
-import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -341,19 +337,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
 		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
-	}
-
-	/**
-	 * The default reactive transaction manager. It extends AbstractReactiveTransactionManager and implements
-	 * ReactiveTransactionManager
-	 * 
-	 * @param reactiveCouchbaseClientFactory
-	 * @return
-	 */
-	@Bean(BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-	ReactiveCouchbaseTransactionManager reactiveTransactionManager(
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
-		return new ReactiveCouchbaseTransactionManager(reactiveCouchbaseClientFactory);
 	}
 
 	/**

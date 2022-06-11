@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.core.support;
 
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-
 /**
  * Interface for operations that take distinct fields
  *
@@ -27,7 +25,6 @@ public interface WithTransaction<T> {
 	/**
 	 * Specify transactions
 	 *
-	 * @param txCtx
 	 */
-	Object transaction(CouchbaseTransactionalOperator txCtx);
+	Object transaction();
 }

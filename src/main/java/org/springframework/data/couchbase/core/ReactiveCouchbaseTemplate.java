@@ -35,7 +35,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
@@ -59,16 +58,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 	private final QueryScanConsistency scanConsistency;
-
-	public ReactiveCouchbaseTemplate with(CouchbaseTransactionalOperator txOp) {
-		// TODO: why does txOp go on the clientFactory? can't we just put it on the template??
-		return new ReactiveCouchbaseTemplate(getCouchbaseClientFactory().with(txOp), getConverter(),
-				support().getTranslationService(), getConsistency());
-	}
-
-	public CouchbaseTransactionalOperator txOperator() {
-		return clientFactory.getTransactionalOperator();
-	}
 
 	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
 			final CouchbaseConverter converter) {

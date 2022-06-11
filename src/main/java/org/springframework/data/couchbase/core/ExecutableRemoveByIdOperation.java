@@ -30,7 +30,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Remove Operations on KV service.
@@ -121,7 +120,7 @@ public interface ExecutableRemoveByIdOperation {
 
 	interface RemoveByIdWithTransaction extends TerminatingRemoveById, WithTransaction<RemoveResult> {
 		@Override
-		TerminatingRemoveById transaction(CouchbaseTransactionalOperator txCtx);
+		TerminatingRemoveById transaction();
 	}
 
 	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}

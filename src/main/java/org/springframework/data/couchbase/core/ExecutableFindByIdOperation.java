@@ -27,7 +27,6 @@ import org.springframework.data.couchbase.core.support.WithProjectionId;
 import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.kv.GetOptions;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Get Operations
@@ -113,12 +112,11 @@ public interface ExecutableFindByIdOperation {
 		/**
 		 * Finds the distinct values for a specified {@literal field} across a single collection
 		 *
-		 * @param txCtx Must not be {@literal null}.
 		 * @return new instance of {@link ExecutableFindById}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		FindByIdWithProjection<T> transaction(CouchbaseTransactionalOperator txCtx);
+		FindByIdWithProjection<T> transaction();
 	}
 
 	interface FindByIdTxOrNot<T> extends FindByIdWithExpiry<T>, FindByIdWithTransaction<T> {}

@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -80,10 +79,9 @@ public interface ReactiveFindByIdOperation {
 		/**
 		 * Provide transaction
 		 *
-		 * @param txCtx
 		 * @return
 		 */
-		TerminatingFindById<T> transaction(CouchbaseTransactionalOperator txCtx);
+		TerminatingFindById<T> transaction();
 	}
 
 	/**

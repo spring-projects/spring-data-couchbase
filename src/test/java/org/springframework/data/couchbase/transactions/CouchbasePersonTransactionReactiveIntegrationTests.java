@@ -45,7 +45,6 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
@@ -70,7 +69,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired CouchbaseTemplate cbTmpl;

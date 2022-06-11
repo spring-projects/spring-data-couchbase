@@ -72,8 +72,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			if (garOptions.build().transcoder() == null) {
 				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 			}
-			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, null,
-					domainType);
+			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions,
+          domainType);
 			LOG.trace("getAnyReplica {}", pArgs);
 			return TransactionalSupport.verifyNotInTransaction("findFromReplicasById")
 					.then(Mono.just(id))

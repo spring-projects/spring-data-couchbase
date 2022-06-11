@@ -29,11 +29,11 @@ public class TransactionTestUtil {
     private TransactionTestUtil() {}
 
     public static void assertInTransaction() {
-        assertTrue(TransactionalSupport.checkForTransactionInThreadLocalStorage(null).block().isPresent());
+        assertTrue(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
     }
 
     public static void assertNotInTransaction() {
-        assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage(null).block().isPresent());
+        assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
     }
 
     public static <T> Mono<T> assertInReactiveTransaction(T o) {

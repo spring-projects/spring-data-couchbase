@@ -37,8 +37,6 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -63,7 +61,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired TransactionManager couchbaseTransactionManager;
-	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired PersonRepository repo;
 	@Autowired ReactivePersonRepository repoRx;
 	@Autowired CouchbaseTemplate cbTmpl;
@@ -132,27 +129,26 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 
 	@Test
 	public void insertPersonRbTemplate() {
-		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(WalterWhite)
-				.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
-				.map(it -> throwSimulateFailureException(it))).blockLast(),TransactionFailedException.class,  SimulateFailureException.class);
+		assertThrowsWithCause(
+				() -> txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(WalterWhite)
+						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
+						.map(it -> throwSimulateFailureException(it))).blockLast(),
+				TransactionFailedException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
 
 	@Test
-	// todo mr - left this test as-is. Is ctx.repository() and ctx.template() necessary?
 	public void replacePersonRbRepo() {
 		Person person = repo.withCollection(cName).save(WalterWhite);
-		CouchbaseTransactionalOperator myTxOperator = new CouchbaseTransactionalOperator(
-				reactiveCouchbaseTransactionManager);
-		assertThrowsWithCause(() -> myTxOperator.run(ctx -> {
-			ctx.repository(repoRx).withCollection(cName).findById(person.getId().toString())
-					.flatMap(p -> ctx.repository(repoRx).withCollection(cName).save(p.withFirstName("Walt")));
-			throw new SimulateFailureException();
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> txOperator.execute(ctx -> {
+			return repoRx.withCollection(cName).findById(person.id())
+					.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt")))
+					.map(pp -> throwSimulateFailureException(pp));
+		}).blockLast(), TransactionFailedException.class, SimulateFailureException.class);
 
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
+		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertEquals(person, pFound, "Should have found " + person);
 	}
 
@@ -160,7 +156,8 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	public void insertPersonRbRepo() {
 		assertThrowsWithCause(() -> txOperator.execute((ctx) -> repoRx.withCollection(cName).save(WalterWhite) // insert
 				.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt"))) // replace
-				.map(it -> throwSimulateFailureException(it))).blockLast(),TransactionFailedException.class, SimulateFailureException.class);
+				.map(it -> throwSimulateFailureException(it))).blockLast(), TransactionFailedException.class,
+				SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertNull(pFound, "Should NOT have found " + pFound);

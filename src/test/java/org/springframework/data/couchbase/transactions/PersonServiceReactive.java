@@ -1,33 +1,28 @@
 package org.springframework.data.couchbase.transactions;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
 // @RequiredArgsConstructor
 class PersonServiceReactive {
 
 	final ReactiveCouchbaseOperations personOperationsRx;
-	final ReactiveCouchbaseTransactionManager managerRx;
 	final CouchbaseOperations personOperations;
 	final TransactionalOperator transactionalOperator;
 
-	public PersonServiceReactive(CouchbaseOperations ops,
-			/* CouchbaseCallbackTransactionManager mgr, */ ReactiveCouchbaseOperations opsRx,
-			ReactiveCouchbaseTransactionManager mgrRx,
-															 TransactionalOperator transactionalOperator) {
+	public PersonServiceReactive(CouchbaseOperations ops, ReactiveCouchbaseOperations opsRx,
+			TransactionalOperator transactionalOperator) {
 		this.personOperations = ops;
 		this.personOperationsRx = opsRx;
-		this.managerRx = mgrRx;
 		this.transactionalOperator = transactionalOperator;
 		return;
 	}
@@ -83,7 +78,7 @@ class PersonServiceReactive {
 				.as(transactionalOperator::transactional);
 	}
 
-	//@Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	// @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
 	public Flux<Person> declarativeSavePerson(Person person) {
 		return transactionalOperator.execute(reactiveTransaction -> personOperationsRx.save(person));
 	}

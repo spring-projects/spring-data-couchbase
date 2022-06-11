@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.error.DocumentNotFoundException;
@@ -53,7 +52,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 	@Override
 	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
-		return new ReactiveFindByIdSupport<>(template, domainType, null, null, null, null, null, null, template.support());
+		return new ReactiveFindByIdSupport<>(template, domainType, null, null, null, null, null,
+				template.support());
 	}
 
 	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
@@ -64,13 +64,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final String collection;
 		private final CommonOptions<?> options;
 		private final List<String> fields;
-		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveTemplateSupport support;
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, CouchbaseTransactionalOperator txCtx,
-				ReactiveTemplateSupport support) {
+														CommonOptions<?> options, List<String> fields, Duration expiry,
+														ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -78,7 +77,6 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			this.options = options;
 			this.fields = fields;
 			this.expiry = expiry;
-			this.txCtx = txCtx;
 			this.support = support;
 		}
 
@@ -88,13 +86,14 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		public Mono<T> one(final String id) {
 
 			CommonOptions<?> gOptions = initGetOptions();
-			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, txCtx, domainType);
+			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions,
+					domainType);
 			LOG.trace("findById {}", pArgs);
 
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollection(pArgs.getCollection()).reactive();
 
-			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
+			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 				if (!ctxOpt.isPresent()) {
 					System.err.println("find no-tx");
 					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
@@ -138,19 +137,19 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		@Override
 		public FindByIdInScope<T> withOptions(final GetOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
 					support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inCollection(final String collection) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
 					support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
 					support);
 		}
 
@@ -158,19 +157,19 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		public FindByIdWithOptions<T> project(String... fields) {
 			Assert.notNull(fields, "Fields must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
-					expiry, txCtx, support);
-		}
-
-		@Override
-		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
+					expiry,
 					support);
 		}
 
 		@Override
-		public FindByIdWithProjection<T> transaction(CouchbaseTransactionalOperator txCtx) {
-			Assert.notNull(txCtx, "txCtx must not be null");
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, txCtx,
+		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
+					support);
+		}
+
+		@Override
+		public FindByIdWithProjection<T> transaction() {
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
 					support);
 		}
 

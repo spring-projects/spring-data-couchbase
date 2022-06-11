@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -148,11 +147,10 @@ public interface ReactiveFindByQueryOperation {
 		/**
 		 * Finds the distinct values for a specified {@literal field} across a single {@link } or view.
 		 *
-		 * @param txCtx Must not be {@literal null}.
 		 * @return new instance of {@link ReactiveFindByQuery}.
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
-		TerminatingFindByQuery<T> transaction(CouchbaseTransactionalOperator txCtx);
+		TerminatingFindByQuery<T> transaction();
 	}
 
 	/**

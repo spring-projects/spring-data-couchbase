@@ -19,7 +19,6 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -39,7 +38,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 	public <T> ExecutableReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ExecutableReplaceByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, null);
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ExecutableReplaceByIdSupport<T> implements ExecutableReplaceById<T> {
@@ -53,12 +52,11 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveReplaceByIdSupport<T> reactiveSupport;
 
 		ExecutableReplaceByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-									 final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-									 final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx) {
+																 final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+																 final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -68,9 +66,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.txCtx = txCtx;
 			this.reactiveSupport = new ReactiveReplaceByIdSupport<>(template.reactive(), domainType, scope, collection,
-					options, persistTo, replicateTo, durabilityLevel, expiry, txCtx,
+					options, persistTo, replicateTo, durabilityLevel, expiry,
 					new NonReactiveSupportWrapper(template.support()));
 		}
 
@@ -87,14 +84,14 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		@Override
 		public ReplaceByIdTxOrNot<T> inCollection(final String collection) {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public ReplaceByIdInScope<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
@@ -102,34 +99,33 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
-		public ReplaceByIdWithExpiry<T> transaction(final CouchbaseTransactionalOperator txCtx) {
-			Assert.notNull(txCtx, "txCtx must not be null.");
+		public ReplaceByIdWithExpiry<T> transaction() {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public TerminatingReplaceById<T> withOptions(final ReplaceOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry, txCtx);
+					replicateTo, durabilityLevel, expiry);
 		}
 
 	}

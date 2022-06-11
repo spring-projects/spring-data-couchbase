@@ -30,7 +30,6 @@ import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 
 /**
  * Replace Operations
@@ -102,7 +101,7 @@ public interface ExecutableReplaceByIdOperation {
 	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
 		// todo gp is this staying?  It's confusing when doing ops.replaceById() inside @Transactional to get this transaction() method - unclear as a user whether I need to call it or not
 		@Override
-		TerminatingReplaceById<T> transaction(CouchbaseTransactionalOperator txCtx);
+		TerminatingReplaceById<T> transaction();
 	}
 
 	interface ReplaceByIdTxOrNot<T> extends ReplaceByIdWithExpiry<T>, ReplaceByIdWithTransaction<T> {}

@@ -5,7 +5,6 @@ import com.couchbase.client.core.error.transaction.TransactionOperationFailedExc
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.reactive.TransactionContext;
@@ -13,7 +12,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.util.ClassUtils;
 import reactor.core.publisher.Mono;
 
-import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.springframework.lang.Nullable;
@@ -30,13 +28,8 @@ public class TransactionalSupport {
      * Or a blocking operation inside a ReactiveTransactionsWrapper transaction (which would be a bad idea).
      * So, need to check both thread-local storage and reactive context.
      */
-    public static Mono<Optional<CouchbaseResourceHolder>> checkForTransactionInThreadLocalStorage(@Nullable CouchbaseTransactionalOperator operator) {
+    public static Mono<Optional<CouchbaseResourceHolder>> checkForTransactionInThreadLocalStorage() {
         return Mono.deferContextual(ctx -> {
-            if (operator != null) {
-                // gp: this isn't strictly correct, as it won't preserve the result map correctly, but tbh want to remove CouchbaseTransactionalOperator anyway
-                return Mono.just(Optional.of(new CouchbaseResourceHolder(operator.getAttemptContext())));
-            }
-
             // need to make usage of TransactionSynchronizationManager consistent.
             // ReactiveTransactionWrapper stores CouchbaseResourceHolder directly as a TSM.resource
             // ReactiveCouchbaseTransactionManager (and by extension TransactionalOperator)
@@ -72,7 +65,7 @@ public class TransactionalSupport {
     }
 
     public static Mono<Void> verifyNotInTransaction(String methodName) {
-        return checkForTransactionInThreadLocalStorage(null)
+        return checkForTransactionInThreadLocalStorage()
                 .flatMap(s -> {
                     if (s.isPresent()) {
                         return Mono.error(new IllegalArgumentException(methodName + "can not be used inside a transaction"));

@@ -71,7 +71,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public Mono<Boolean> one(final String id) {
-			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, null, domainType);
+			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
+          domainType);
 			LOG.trace("existsById {}", pArgs);
 
 			return TransactionalSupport.verifyNotInTransaction("existsById")

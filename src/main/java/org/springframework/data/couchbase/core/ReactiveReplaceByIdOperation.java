@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -101,7 +100,7 @@ public interface ReactiveReplaceByIdOperation {
 
 	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
 		@Override
-		ReplaceByIdWithExpiry<T> transaction(final CouchbaseTransactionalOperator txCtx);
+		ReplaceByIdWithExpiry<T> transaction();
 	}
 
 	interface ReplaceByIdTxOrNot<T> extends ReplaceByIdWithExpiry<T>, ReplaceByIdWithTransaction<T> {}

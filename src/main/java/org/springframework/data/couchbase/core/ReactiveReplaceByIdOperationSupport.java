@@ -19,7 +19,6 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.transaction.util.DebugUtil;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -31,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -54,7 +52,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 	public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveReplaceByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, null, template.support());
+				DurabilityLevel.NONE, null,
+				template.support());
 	}
 
 	static class ReactiveReplaceByIdSupport<T> implements ReactiveReplaceById<T> {
@@ -68,13 +67,12 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Duration expiry;
-		private final CouchbaseTransactionalOperator txCtx;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveReplaceByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-								   final String collection, final ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-								   final DurabilityLevel durabilityLevel, final Duration expiry, final CouchbaseTransactionalOperator txCtx,
-								   ReactiveTemplateSupport support) {
+															 final String collection, final ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+															 final DurabilityLevel durabilityLevel, final Duration expiry,
+															 ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -84,18 +82,18 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
-			this.txCtx = txCtx;
 			this.support = support;
 		}
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
+			PseudoArgs<ReplaceOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
+					domainType);
 			LOG.trace("replaceById {}", pArgs);
 
 			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
-							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(ctxOpt -> {
+							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									System.err.println("replace: non-tx");
 									return collection.reactive()
@@ -159,26 +157,30 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 		public TerminatingReplaceById<T> withOptions(final ReplaceOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public ReplaceByIdTxOrNot<T> inCollection(final String collection) {
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public ReplaceByIdInScope<T> withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
@@ -186,21 +188,23 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
-		public ReplaceByIdWithExpiry<T> transaction(final CouchbaseTransactionalOperator txCtx) {
-			Assert.notNull(txCtx, "txCtx must not be null.");
+		public ReplaceByIdWithExpiry<T> transaction() {
 			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, txCtx, support);
+					durabilityLevel, expiry,
+					support);
 		}
 
 	}

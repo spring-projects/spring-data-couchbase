@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -56,7 +55,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 	@Override
 	public ReactiveRemoveById removeById(Class<?> domainType) {
 		return new ReactiveRemoveByIdSupport(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, null);
+				DurabilityLevel.NONE, null);
 	}
 
 	static class ReactiveRemoveByIdSupport implements ReactiveRemoveById {
@@ -70,11 +69,10 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		private final ReplicateTo replicateTo;
 		private final DurabilityLevel durabilityLevel;
 		private final Long cas;
-		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByIdSupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType, final String scope,
-								  final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-								  final DurabilityLevel durabilityLevel, Long cas, CouchbaseTransactionalOperator txCtx) {
+															final String collection, final RemoveOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+															final DurabilityLevel durabilityLevel, Long cas) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -84,18 +82,18 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			this.replicateTo = replicateTo;
 			this.durabilityLevel = durabilityLevel;
 			this.cas = cas;
-			this.txCtx = txCtx;
 		}
 
 		@Override
 		public Mono<RemoveResult> one(final String id) {
-			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
+			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
+					domainType);
 			LOG.trace("removeById {}", pArgs);
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 					.reactive();
 
-			return TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx).flatMap(s -> {
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 				if (!s.isPresent()) {
 					System.err.println("non-tx remove");
 					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
@@ -138,7 +136,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		@Override
 		public Mono<RemoveResult> oneEntity(Object entity) {
 			ReactiveRemoveByIdSupport op = new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, template.support().getCas(entity), txCtx);
+					durabilityLevel, template.support().getCas(entity));
 			return op.one(template.support().getId(entity).toString());
 		}
 
@@ -160,7 +158,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		public RemoveByIdInScope withDurability(final DurabilityLevel durabilityLevel) {
 			Assert.notNull(durabilityLevel, "Durability Level must not be null.");
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
@@ -168,38 +166,38 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			Assert.notNull(persistTo, "PersistTo must not be null.");
 			Assert.notNull(replicateTo, "ReplicateTo must not be null.");
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdTxOrNot inCollection(final String collection) {
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
 		public TerminatingRemoveById withOptions(final RemoveOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdWithDurability withCas(Long cas) {
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 		@Override
-		public RemoveByIdWithCas transaction(CouchbaseTransactionalOperator txCtx) {
+		public RemoveByIdWithCas transaction() {
 			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas, txCtx);
+					durabilityLevel, cas);
 		}
 
 	}

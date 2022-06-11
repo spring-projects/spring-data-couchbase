@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -117,7 +116,7 @@ public interface ReactiveRemoveByIdOperation {
 	}
 
 	interface RemoveByIdWithTransaction extends RemoveByIdWithCas, WithTransaction<RemoveResult> {
-		RemoveByIdWithCas transaction(CouchbaseTransactionalOperator txCtx);
+		RemoveByIdWithCas transaction();
 	}
 
 	interface RemoveByIdTxOrNot extends RemoveByIdWithCas, RemoveByIdWithTransaction {}

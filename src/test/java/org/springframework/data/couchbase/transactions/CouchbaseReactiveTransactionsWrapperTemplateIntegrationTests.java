@@ -98,7 +98,7 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		AtomicInteger attempts = new AtomicInteger();
 
 		TransactionResult result = wrapper.run(ctx -> {
-			return TransactionalSupport.checkForTransactionInThreadLocalStorage(null).then(Mono.defer(() -> {
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage().then(Mono.defer(() -> {
 				attempts.incrementAndGet();
 				return lambda.apply(ctx);
 			}));
@@ -279,8 +279,8 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> ops.replaceById(Person.class).one(person), // old cas
-				TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class,
-				AttemptExpiredException.class);
+				TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class ,
+				Exception.class );
 
 	}
 

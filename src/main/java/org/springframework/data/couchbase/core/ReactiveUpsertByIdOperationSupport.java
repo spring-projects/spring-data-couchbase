@@ -79,7 +79,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, null, domainType);
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
 			LOG.trace("upsertById {}", pArgs);
 			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
 					.then(support.encodeEntity(object))

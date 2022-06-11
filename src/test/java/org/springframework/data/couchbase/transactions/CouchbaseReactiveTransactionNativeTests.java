@@ -38,7 +38,6 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.ReactiveCouchbaseTransactionManager;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -59,7 +58,6 @@ import org.springframework.transaction.reactive.TransactionalOperator;
 public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired ReactiveCouchbaseTransactionManager reactiveCouchbaseTransactionManager;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired CouchbaseTemplate cbTmpl;
@@ -129,11 +127,10 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 	@Test
 	public void insertPersonRbTemplate() {
 		Person person = WalterWhite;
-		TransactionalOperator txOperator = TransactionalOperator.create(reactiveCouchbaseTransactionManager);
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.insertById(Person.class).one(person)
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}

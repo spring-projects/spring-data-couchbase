@@ -16,13 +16,10 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
-import com.couchbase.client.core.transaction.support.OptionsUtil;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -52,7 +49,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null, null);
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -64,11 +61,9 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final String scope;
 		private final String collection;
 		private final QueryOptions options;
-		private final CouchbaseTransactionalOperator txCtx;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-									 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options,
-									 CouchbaseTransactionalOperator txCtx) {
+																 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -76,18 +71,18 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			this.scope = scope;
 			this.collection = collection;
 			this.options = options;
-			this.txCtx = txCtx;
 		}
 
 		@Override
 		public Flux<RemoveResult> all() {
-			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, txCtx, domainType);
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
+					domainType);
 			String statement = assembleDeleteQuery(pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
 			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
 
-			return TransactionalSupport.checkForTransactionInThreadLocalStorage(txCtx)
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage()
 					.flatMapMany(transactionContext -> {
 
 						if (!transactionContext.isPresent()) {
@@ -117,26 +112,26 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public RemoveByQueryTxOrNot<T> matching(final Query query) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryWithQuery<T> inCollection(final String collection) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		@Deprecated
 		public RemoveByQueryInScope<T> consistentWith(final QueryScanConsistency scanConsistency) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryConsistentWith<T> withConsistency(final QueryScanConsistency scanConsistency) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		private String assembleDeleteQuery(String collection) {
@@ -147,19 +142,19 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		public RemoveByQueryWithQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 		@Override
-		public RemoveByQueryWithConsistency<T> transaction(final CouchbaseTransactionalOperator txCtx) {
+		public RemoveByQueryWithConsistency<T> transaction() {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options, txCtx);
+					options);
 		}
 
 	}
