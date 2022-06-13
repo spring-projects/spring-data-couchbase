@@ -107,19 +107,4 @@ public class SimpleReactiveCouchbaseClientFactory implements ReactiveCouchbaseCl
 	public void close() {
 		cluster.disconnect();
 	}
-
-	@Override
-	public CouchbaseResourceHolder getResources() {
-		return new CouchbaseResourceHolder(null);
-	}
-
-	@Override
-	public CouchbaseResourceHolder getResources(CoreTransactionAttemptContext atr) {
-		if (atr == null) {
-			atr = AttemptContextReactiveAccessor
-					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(transactions));
-		}
-		return new CouchbaseResourceHolder(atr);
-	}
-
 }

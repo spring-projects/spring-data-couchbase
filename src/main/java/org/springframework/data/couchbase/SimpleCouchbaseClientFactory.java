@@ -128,18 +128,6 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	}
 
 	@Override
-	public CoreTransactionAttemptContext getCore(TransactionOptions options, CoreTransactionAttemptContext atr) {
-		// can't we just use AttemptContextReactive everywhere? Instead of creating AttemptContext(atr), then
-		// accessing at.getACR() ?
-		if (atr == null) {
-			atr = AttemptContextReactiveAccessor
-					.newCoreTranactionAttemptContext(AttemptContextReactiveAccessor.reactive(getCluster().transactions()));
-		}
-
-		return atr;
-	}
-
-	@Override
 	public void close() {
 		if (cluster instanceof OwnedSupplier) {
 			cluster.get().disconnect();

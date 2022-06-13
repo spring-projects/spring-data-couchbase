@@ -163,7 +163,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 			})
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
-						CouchbaseResourceHolder resourceHolder = couchbaseClientFactory.getResources(
+						CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
 								AttemptContextReactiveAccessor.getCore(ctx));
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
