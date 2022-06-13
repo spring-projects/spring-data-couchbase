@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * will be rejected at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+@SpringJUnitConfig(classes = { TransactionsConfig.class,
 		CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends JavaIntegrationTests {
 

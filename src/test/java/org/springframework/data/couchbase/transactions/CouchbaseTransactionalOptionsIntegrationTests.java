@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Tests for @Transactional methods, setting all the various options allowed by @Transactional.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+@SpringJUnitConfig(classes = { TransactionsConfig.class,
 		CouchbaseTransactionalOptionsIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrationTests {
 

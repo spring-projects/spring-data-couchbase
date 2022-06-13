@@ -52,7 +52,7 @@ import org.springframework.transaction.reactive.TransactionalOperator;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseTransactionManager.class)
+@SpringJUnitConfig(TransactionsConfig.class)
 // @Disabled("gp: disabling as these use CouchbaseTransactionalOperator which I've done broke (but also feel we should
 // remove)")
 public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {

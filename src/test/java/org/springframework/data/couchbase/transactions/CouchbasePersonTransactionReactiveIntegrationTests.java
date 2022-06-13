@@ -63,7 +63,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class, PersonServiceReactive.class })
+@SpringJUnitConfig(classes = { TransactionsConfig.class, PersonServiceReactive.class })
 // @Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and
 // cannot support)")
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {

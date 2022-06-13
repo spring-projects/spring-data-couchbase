@@ -1,9 +1,6 @@
 package org.springframework.data.couchbase.transactions;
 
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.config.TransactionsConfig;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
@@ -18,7 +15,7 @@ import java.time.Duration;
 @EnableCouchbaseRepositories("org.springframework.data.couchbase")
 @EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
 @EnableTransactionManagement
-public class Config extends AbstractCouchbaseConfiguration {
+public class TransactionsConfig extends AbstractCouchbaseConfiguration {
 
 	@Override
 	public String getConnectionString() {
@@ -43,7 +40,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 	@Override
 	public void configureEnvironment(ClusterEnvironment.Builder builder) {
 		// twenty minutes for debugging in the debugger.
-		builder.transactionsConfig(TransactionsConfig.builder().timeout(Duration.ofMinutes(20)));
+		builder.transactionsConfig(com.couchbase.client.java.transactions.config.TransactionsConfig.builder().timeout(Duration.ofMinutes(20)));
 	}
 
 }

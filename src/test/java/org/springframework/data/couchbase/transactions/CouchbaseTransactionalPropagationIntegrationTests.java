@@ -60,7 +60,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * Tests for the various propagation values allowed on @Transactional methods.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+@SpringJUnitConfig(classes = { TransactionsConfig.class,
 		CouchbaseTransactionalPropagationIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);

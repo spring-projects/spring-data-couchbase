@@ -65,7 +65,7 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
  * Tests for @Transactional, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfigCouchbaseSimpleTransactionManager.class,
+@SpringJUnitConfig(classes = { TransactionsConfig.class,
 		CouchbaseTransactionalTemplateIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
