@@ -47,7 +47,7 @@ import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOp
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionInterceptor;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
@@ -352,9 +352,9 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return
 	 */
 	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
-	public CouchbaseSimpleTransactionalOperator transactionalOperator(
+	public CouchbaseTransactionalOperator transactionalOperator(
 			CouchbaseCallbackTransactionManager couchbaseCallbackTransactionManager) {
-		return new CouchbaseSimpleTransactionalOperator(couchbaseCallbackTransactionManager);
+		return new CouchbaseTransactionalOperator(couchbaseCallbackTransactionManager);
 	}
 
 	/**
