@@ -43,8 +43,8 @@ public class CouchbaseTransactionInterceptor extends TransactionInterceptor
 		final TransactionAttributeSource tas = getTransactionAttributeSource();
 		final TransactionAttribute txAttr = (tas != null ? tas.getTransactionAttribute(method, targetClass) : null);
 
-		if (getTransactionManager() instanceof CouchbaseSimpleCallbackTransactionManager) {
-			CouchbaseSimpleCallbackTransactionManager manager = (CouchbaseSimpleCallbackTransactionManager) getTransactionManager();
+		if (getTransactionManager() instanceof CouchbaseCallbackTransactionManager) {
+			CouchbaseCallbackTransactionManager manager = (CouchbaseCallbackTransactionManager) getTransactionManager();
 
 			if (Mono.class.isAssignableFrom(method.getReturnType())) {
 				return manager.executeReactive(txAttr, ignored -> {

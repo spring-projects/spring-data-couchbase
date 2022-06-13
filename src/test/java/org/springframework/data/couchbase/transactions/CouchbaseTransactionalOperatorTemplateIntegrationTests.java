@@ -40,7 +40,7 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -95,7 +95,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	}
 
 	private RunResult doMonoInTransaction(Supplier<Mono<?>> lambda) {
-		CouchbaseSimpleCallbackTransactionManager manager = new CouchbaseSimpleCallbackTransactionManager(
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
 		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
 		AtomicInteger attempts = new AtomicInteger();
@@ -110,7 +110,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@DisplayName("A basic golden path insert using CouchbaseSimpleTransactionalOperator.execute should succeed")
 	@Test
 	public void committedInsertWithExecute() {
-		CouchbaseSimpleCallbackTransactionManager manager = new CouchbaseSimpleCallbackTransactionManager(
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
 		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
 
@@ -127,7 +127,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@DisplayName("A basic golden path insert using CouchbaseSimpleTransactionalOperator.transactional(Flux) should succeed")
 	@Test
 	public void committedInsertWithFlux() {
-		CouchbaseSimpleCallbackTransactionManager manager = new CouchbaseSimpleCallbackTransactionManager(
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
 		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
 

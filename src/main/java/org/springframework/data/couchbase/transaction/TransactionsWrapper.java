@@ -72,11 +72,11 @@ public class TransactionsWrapper {
 
 				logger.debug(String.format("Started transaction for session %s.", TransactionalSupport.debugString(resourceHolder.getCore())));
 
-				CouchbaseSimpleCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
+				CouchbaseCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
 
 				transactionLogic.accept(new SpringTransactionAttemptContext(ctx));
 			} finally {
-				CouchbaseSimpleCallbackTransactionManager.clearTransactionSynchronizationManager();
+				CouchbaseCallbackTransactionManager.clearTransactionSynchronizationManager();
 			}
 		};
 

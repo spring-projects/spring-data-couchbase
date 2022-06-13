@@ -33,7 +33,7 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -413,7 +413,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			SimulateFailureException.throwEx();
 		}
 
-		@Autowired CouchbaseSimpleCallbackTransactionManager callbackTm;
+		@Autowired
+        CouchbaseCallbackTransactionManager callbackTm;
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry
