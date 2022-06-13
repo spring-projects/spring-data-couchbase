@@ -28,12 +28,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Simplest possible TransactionInterceptor implementation, which does not take a TransactionManager at all.
+ * Simplest possible TransactionInterceptor implementation.
  */
-public class CouchbaseSimpleTransactionInterceptor extends TransactionInterceptor
+public class CouchbaseTransactionInterceptor extends TransactionInterceptor
 		implements MethodInterceptor, Serializable {
 
-	public CouchbaseSimpleTransactionInterceptor(TransactionManager ptm, TransactionAttributeSource tas) {
+	public CouchbaseTransactionInterceptor(TransactionManager ptm, TransactionAttributeSource tas) {
 		super(ptm, tas);
 	}
 

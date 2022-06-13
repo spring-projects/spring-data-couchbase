@@ -46,7 +46,7 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionInterceptor;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionInterceptor;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
@@ -372,7 +372,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
 		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
-		TransactionInterceptor interceptor = new CouchbaseSimpleTransactionInterceptor(couchbaseTransactionManager, transactionAttributeSource);
+		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor(couchbaseTransactionManager, transactionAttributeSource);
 		interceptor.setTransactionAttributeSource(transactionAttributeSource);
 		if (couchbaseTransactionManager != null) {
 			interceptor.setTransactionManager(couchbaseTransactionManager);
