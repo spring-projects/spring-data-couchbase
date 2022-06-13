@@ -175,7 +175,6 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 
 	@DisplayName("A basic golden path remove should succeed")
 	@Test
-	// fails with - java.lang.NullPointerException: The Publisher returned by the supplier is null
 	public void committedRemove() {
 
 		Person person = blocking.insertById(Person.class).one(WalterWhite);
