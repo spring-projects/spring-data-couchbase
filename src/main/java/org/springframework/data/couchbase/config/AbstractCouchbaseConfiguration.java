@@ -28,6 +28,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -45,11 +46,16 @@ import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionInterceptor;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -360,6 +366,18 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean(BeanNames.COUCHBASE_REACTIVE_TRANSACTIONS_WRAPPER)
 	ReactiveTransactionsWrapper reactiveTransactionsWrapper(ReactiveCouchbaseClientFactory clientFactory) {
 		return new ReactiveTransactionsWrapper(clientFactory);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
+		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
+		TransactionInterceptor interceptor = new CouchbaseSimpleTransactionInterceptor(couchbaseTransactionManager, transactionAttributeSource);
+		interceptor.setTransactionAttributeSource(transactionAttributeSource);
+		if (couchbaseTransactionManager != null) {
+			interceptor.setTransactionManager(couchbaseTransactionManager);
+		}
+		return interceptor;
 	}
 
 	/**

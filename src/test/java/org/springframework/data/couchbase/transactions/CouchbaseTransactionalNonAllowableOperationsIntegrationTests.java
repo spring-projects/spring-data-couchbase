@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * They should be prevented at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfigCouchbaseSimpleTransactionManager.class, CouchbaseTransactionalNonAllowableOperationsIntegrationTests.PersonService.class})
+@SpringJUnitConfig(classes = {TransactionsConfig.class, CouchbaseTransactionalNonAllowableOperationsIntegrationTests.PersonService.class})
 public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;

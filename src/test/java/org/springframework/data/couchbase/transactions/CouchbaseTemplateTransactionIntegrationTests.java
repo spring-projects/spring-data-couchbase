@@ -65,7 +65,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ExtendWith({ SpringExtension.class })
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @Transactional(transactionManager = BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-@SpringJUnitConfig(TransactionsConfigCouchbaseTransactionManager.class)
+@SpringJUnitConfig(TransactionsConfig.class)
 public class CouchbaseTemplateTransactionIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseTemplate template;

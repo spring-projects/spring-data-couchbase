@@ -61,7 +61,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(TransactionsConfigCouchbaseSimpleTransactionManager.class)
+@SpringJUnitConfig(TransactionsConfig.class)
 public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
