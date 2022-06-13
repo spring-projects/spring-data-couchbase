@@ -89,29 +89,4 @@ public class TransactionalSupport {
         }
 
     }
-
-    // todo mr - if TransactionsWrapper is the only class that uses this, move to that class (or just inline there)
-    public static CouchbaseResourceHolder newResourceHolder(CouchbaseClientFactory databaseFactory, TransactionDefinition definition,
-                                                            TransactionOptions options, CoreTransactionAttemptContext atr) {
-        CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
-            databaseFactory.getCore(options, atr));
-        return resourceHolder;
-    }
-
-    // todo mr - if TransactionsWrapper is the only class that uses this, move to that class
-    public static String debugString(@Nullable CoreTransactionAttemptContext ctx) {
-        if (ctx == null) {
-            return "null";
-        }
-        StringBuffer debugString = new StringBuffer(String.format("[%s@%s ", ClassUtils.getShortName(ctx.getClass()),
-            Integer.toHexString(ctx.hashCode())));
-        try {
-            debugString.append(String.format("core=%s", ctx));
-        } catch (RuntimeException e) {
-            debugString.append(String.format("error = %s", e.getMessage()));
-        }
-        debugString.append("]");
-        return debugString.toString();
-    }
-
 }

@@ -30,8 +30,8 @@ public class ReactiveTransactionsWrapper {
 
 					// This reactive context is what tells Spring operations they're inside a transaction.
 					.contextWrite(reactiveContext -> {
-						CouchbaseResourceHolder resourceHolder = reactiveCouchbaseClientFactory.getResources(
-								printThrough("core: ",AttemptContextReactiveAccessor.getCore(ctx)));
+						CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
+								AttemptContextReactiveAccessor.getCore(ctx));
 						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
 					});
 		};

@@ -78,14 +78,9 @@ public interface ReactiveCouchbaseClientFactory /*extends CodecRegistryProvider*
 	 */
 	PersistenceExceptionTranslator getExceptionTranslator();
 
-	CouchbaseResourceHolder getResources();
-
 	String getBucketName();
 
 	String getScopeName();
 
 	void close() throws IOException;
-
-	CouchbaseResourceHolder getResources(CoreTransactionAttemptContext ctx);
-
 }

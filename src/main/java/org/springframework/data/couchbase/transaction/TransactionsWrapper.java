@@ -57,31 +57,21 @@ public class TransactionsWrapper {
 
 	public TransactionResult run(Consumer<SpringTransactionAttemptContext> transactionLogic,
 			@Nullable TransactionOptions options) {
-		Consumer<TransactionAttemptContext> newTransactionLogic = (ctx) -> {
-			try {
-				CoreTransactionLogger logger = AttemptContextReactiveAccessor.getLogger(ctx);
-				CoreTransactionAttemptContext atr = AttemptContextReactiveAccessor.getCore(ctx);
-
-				// from CouchbaseTransactionManager
-				CouchbaseResourceHolder resourceHolder = TransactionalSupport.newResourceHolder(couchbaseClientFactory,
-						/*definition*/ new CouchbaseTransactionDefinition(), TransactionOptions.transactionOptions(), atr);
-				// couchbaseTransactionObject.setResourceHolder(resourceHolder);
-
-				logger
-						.debug(String.format("About to start transaction for session %s.", TransactionalSupport.debugString(resourceHolder.getCore())));
-
-				logger.debug(String.format("Started transaction for session %s.", TransactionalSupport.debugString(resourceHolder.getCore())));
-
-				CouchbaseCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
-
-				transactionLogic.accept(new SpringTransactionAttemptContext(ctx));
-			} finally {
-				CouchbaseCallbackTransactionManager.clearTransactionSynchronizationManager();
-			}
-		};
-
-		return AttemptContextReactiveAccessor.run(couchbaseClientFactory.getCluster().transactions(), newTransactionLogic,
-				options == null ? null : options.build());
+		try {
+			return couchbaseClientFactory.getCluster().transactions().run((ctx) -> {
+				try {
+					CouchbaseCallbackTransactionManager.populateTransactionSynchronizationManager(ctx);
+					SpringTransactionAttemptContext wrapped = new SpringTransactionAttemptContext(ctx);
+					transactionLogic.accept(wrapped);
+				}
+				finally {
+					CouchbaseCallbackTransactionManager.clearTransactionSynchronizationManager();
+				}
+			}, options);
+		}
+		finally {
+			CouchbaseCallbackTransactionManager.clearTransactionSynchronizationManager();
+		}
 	}
 
 	/**
