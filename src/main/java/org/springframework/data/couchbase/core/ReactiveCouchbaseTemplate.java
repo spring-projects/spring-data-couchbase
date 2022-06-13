@@ -242,30 +242,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return new ReactiveCouchbaseTemplate(clientFactory, converter);
 	}
 
-	class IndexCreatorEventListener implements ApplicationListener<MappingContextEvent<?, ?>> {
-
-		final Consumer<Throwable> subscriptionExceptionHandler;
-
-		public IndexCreatorEventListener(Consumer<Throwable> subscriptionExceptionHandler) {
-			this.subscriptionExceptionHandler = subscriptionExceptionHandler;
-		}
-
-		@Override
-		public void onApplicationEvent(MappingContextEvent<?, ?> event) {
-
-			if (!event.wasEmittedBy(converter.getMappingContext())) {
-				return;
-			}
-
-			// PersistentEntity<?, ?> entity = event.getPersistentEntity();
-
-			// Double check type as Spring infrastructure does not consider nested generics
-			// if (entity instanceof MongoPersistentEntity) {
-			// onCheckForIndexes((MongoPersistentEntity<?>) entity, subscriptionExceptionHandler);
-			// }
-		}
-	}
-
 	/**
 	 * Value object chaining together a given source document with its mapped representation and the collection to persist
 	 * it to.
