@@ -45,7 +45,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionInterceptor;
 import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
 import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
@@ -341,20 +341,20 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return
 	 */
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseSimpleCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
-		return new CouchbaseSimpleCallbackTransactionManager(clientFactory);
+	CouchbaseCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
+		return new CouchbaseCallbackTransactionManager(clientFactory);
 	}
 
 	/**
 	 * The default TransactionalOperator.
 	 *
-	 * @param couchbaseSimpleCallbackTransactionManager
+	 * @param couchbaseCallbackTransactionManager
 	 * @return
 	 */
 	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
 	public CouchbaseSimpleTransactionalOperator transactionalOperator(
-			CouchbaseSimpleCallbackTransactionManager couchbaseSimpleCallbackTransactionManager) {
-		return new CouchbaseSimpleTransactionalOperator(couchbaseSimpleCallbackTransactionManager);
+			CouchbaseCallbackTransactionManager couchbaseCallbackTransactionManager) {
+		return new CouchbaseSimpleTransactionalOperator(couchbaseCallbackTransactionManager);
 	}
 
 	/**

@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.transactions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -39,7 +39,7 @@ public class DirectPlatformTransactionManagerIntegrationTests extends JavaIntegr
 
 	@Test
 	public void directUseAlwaysFails() {
-		PlatformTransactionManager ptm = new CouchbaseSimpleCallbackTransactionManager(couchbaseClientFactory);
+		PlatformTransactionManager ptm = new CouchbaseCallbackTransactionManager(couchbaseClientFactory);
 
 		assertThrowsWithCause(() -> {
 			TransactionDefinition def = new DefaultTransactionDefinition();

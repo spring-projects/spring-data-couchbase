@@ -41,14 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class CouchbaseSimpleCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
+public class CouchbaseCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseSimpleCallbackTransactionManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseCallbackTransactionManager.class);
 
 	private final ReactiveCouchbaseClientFactory couchbaseClientFactory;
 	private @Nullable TransactionOptions options;
 
-	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory) {
+	public CouchbaseCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory) {
 		this(couchbaseClientFactory, null);
 	}
 
@@ -56,7 +56,7 @@ public class CouchbaseSimpleCallbackTransactionManager implements CallbackPrefer
 	 * This override is for users manually creating a CouchbaseSimpleCallbackTransactionManager, and allows the
 	 * TransactionOptions to be overridden.
 	 */
-	public CouchbaseSimpleCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
+	public CouchbaseCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 		this.options = options != null ? options : TransactionOptions.transactionOptions();
 	}

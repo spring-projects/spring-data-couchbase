@@ -43,7 +43,7 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -65,7 +65,8 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 @SpringJUnitConfig(TransactionsConfig.class)
 public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	TransactionTemplate template;
-	@Autowired CouchbaseSimpleCallbackTransactionManager transactionManager;
+	@Autowired
+	CouchbaseCallbackTransactionManager transactionManager;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired CouchbaseTemplate ops;
 	Person WalterWhite;
