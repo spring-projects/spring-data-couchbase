@@ -37,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
@@ -65,7 +64,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired PersonRepository repo;
 	@Autowired CouchbaseTemplate cbTmpl;

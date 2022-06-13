@@ -89,8 +89,8 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 					domainType);
 			LOG.trace("insertById {}", pArgs);
 
-			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
+			return Mono.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollection(pArgs.getCollection())).flatMap(collection -> support.encodeEntity(object)
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									System.err.println("insert non-tx");
@@ -110,7 +110,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 								}
 							})).onErrorMap(throwable -> {
 								if (throwable instanceof RuntimeException) {
-									return template.doGetTemplate().potentiallyConvertRuntimeException((RuntimeException) throwable);
+									return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 								} else {
 									return throwable;
 								}

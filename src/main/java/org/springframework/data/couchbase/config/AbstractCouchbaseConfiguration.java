@@ -32,9 +32,7 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
-import org.springframework.data.couchbase.SimpleReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
@@ -139,12 +137,12 @@ public abstract class AbstractCouchbaseConfiguration {
 	public CouchbaseClientFactory couchbaseClientFactory(final Cluster couchbaseCluster) {
 		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
-
+/*
 	@Bean
 	public ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory(final Cluster couchbaseCluster) {
 		return new SimpleReactiveCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
-
+*/
 	@Bean(destroyMethod = "disconnect")
 	public Cluster couchbaseCluster(ClusterEnvironment couchbaseClusterEnvironment) {
 		Cluster c = Cluster.connect(getConnectionString(),
@@ -174,31 +172,31 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new CouchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
+																						 MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
+		return new CouchbaseTemplate(couchbaseClientFactory,
+				mappingCouchbaseConverter,
 				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return couchbaseTemplate(couchbaseClientFactory, reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
+																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return couchbaseTemplate(couchbaseClientFactory,
+				mappingCouchbaseConverter,
 				new JacksonTranslationService());
 	}
 
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+			CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
 				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
-			ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory,
+			CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return reactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, mappingCouchbaseConverter,
+		return reactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
 	}
 
@@ -341,7 +339,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return
 	 */
 	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
-	CouchbaseCallbackTransactionManager callbackTransactionManager(ReactiveCouchbaseClientFactory clientFactory) {
+	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseClientFactory clientFactory) {
 		return new CouchbaseCallbackTransactionManager(clientFactory);
 	}
 
@@ -364,7 +362,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return
 	 */
 	@Bean(BeanNames.COUCHBASE_REACTIVE_TRANSACTIONS_WRAPPER)
-	ReactiveTransactionsWrapper reactiveTransactionsWrapper(ReactiveCouchbaseClientFactory clientFactory) {
+	ReactiveTransactionsWrapper reactiveTransactionsWrapper(CouchbaseClientFactory clientFactory) {
 		return new ReactiveTransactionsWrapper(clientFactory);
 	}
 

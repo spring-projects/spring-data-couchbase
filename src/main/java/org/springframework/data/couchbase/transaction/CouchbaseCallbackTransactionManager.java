@@ -22,7 +22,7 @@ import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
@@ -45,10 +45,10 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseCallbackTransactionManager.class);
 
-	private final ReactiveCouchbaseClientFactory couchbaseClientFactory;
+	private final CouchbaseClientFactory couchbaseClientFactory;
 	private @Nullable TransactionOptions options;
 
-	public CouchbaseCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory) {
+	public CouchbaseCallbackTransactionManager(CouchbaseClientFactory couchbaseClientFactory) {
 		this(couchbaseClientFactory, null);
 	}
 
@@ -56,7 +56,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	 * This override is for users manually creating a CouchbaseSimpleCallbackTransactionManager, and allows the
 	 * TransactionOptions to be overridden.
 	 */
-	public CouchbaseCallbackTransactionManager(ReactiveCouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
+	public CouchbaseCallbackTransactionManager(CouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 		this.options = options != null ? options : TransactionOptions.transactionOptions();
 	}

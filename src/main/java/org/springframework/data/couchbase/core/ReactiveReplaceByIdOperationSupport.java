@@ -91,8 +91,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 					domainType);
 			LOG.trace("replaceById {}", pArgs);
 
-			return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
-					.getCollectionMono(pArgs.getCollection()).flatMap(collection -> support.encodeEntity(object)
+			return Mono.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollection(pArgs.getCollection())).flatMap(collection -> support.encodeEntity(object)
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									System.err.println("replace: non-tx");
@@ -124,7 +124,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 								}
 							})).onErrorMap(throwable -> {
 								if (throwable instanceof RuntimeException) {
-									return template.doGetTemplate().potentiallyConvertRuntimeException((RuntimeException) throwable);
+									return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 								} else {
 									return throwable;
 								}

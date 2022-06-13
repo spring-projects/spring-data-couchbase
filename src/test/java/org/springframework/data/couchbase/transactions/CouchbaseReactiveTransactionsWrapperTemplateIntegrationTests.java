@@ -24,6 +24,7 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.ReactiveSpringTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
@@ -36,7 +37,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.TransactionalSupport;
@@ -50,7 +50,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.error.transaction.AttemptExpiredException;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
@@ -62,7 +61,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 @SpringJUnitConfig(TransactionsConfig.class)
 public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
-	@Autowired ReactiveCouchbaseClientFactory couchbaseClientFactory;
+	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTemplate ops;
 	@Autowired CouchbaseTemplate blocking;
 	@Autowired ReactiveTransactionsWrapper wrapper;

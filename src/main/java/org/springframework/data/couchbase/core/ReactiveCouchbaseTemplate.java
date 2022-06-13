@@ -18,16 +18,12 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
 
-import java.util.function.Consumer;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -35,7 +31,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
-import org.springframework.data.mapping.context.MappingContextEvent;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
@@ -52,19 +47,19 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  */
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
-	private final ReactiveCouchbaseClientFactory clientFactory;
+	private final CouchbaseClientFactory clientFactory;
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 	private final QueryScanConsistency scanConsistency;
 
-	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
 			final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService(), null);
 	}
 
-	public ReactiveCouchbaseTemplate(final ReactiveCouchbaseClientFactory clientFactory,
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
 			final CouchbaseConverter converter, final TranslationService translationService,
 			final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
@@ -166,16 +161,16 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 	@Override
 	public String getBucketName() {
-		return clientFactory.getBucketName();
+		return clientFactory.getBucket().name();
 	}
 
 	@Override
 	public String getScopeName() {
-		return clientFactory.getScopeName();
+		return clientFactory.getScope().name();
 	}
 
 	@Override
-	public ReactiveCouchbaseClientFactory getCouchbaseClientFactory() {
+	public CouchbaseClientFactory getCouchbaseClientFactory() {
 		return clientFactory;
 	}
 
@@ -236,10 +231,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public QueryScanConsistency getConsistency() {
 		return scanConsistency;
-	}
-
-	protected ReactiveCouchbaseTemplate doGetTemplate() {
-		return new ReactiveCouchbaseTemplate(clientFactory, converter);
 	}
 
 	/**

@@ -15,12 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
@@ -197,8 +197,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
-			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
 
 			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 						if (!s.isPresent()) {
@@ -261,8 +261,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
-			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
 
 			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 						if (!s.isPresent()) {

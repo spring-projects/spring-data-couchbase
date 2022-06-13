@@ -29,12 +29,9 @@ import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Disabled;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,7 +42,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
@@ -61,7 +57,6 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
-import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
@@ -78,7 +73,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired PersonRepository repo;
 	@Autowired ReactivePersonRepository rxRepo;
 	@Autowired CouchbaseTemplate cbTmpl;

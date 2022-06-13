@@ -85,8 +85,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
 					.then(support.encodeEntity(object))
 					.flatMap(converted -> {
-						return template.doGetTemplate().getCouchbaseClientFactory().withScope(pArgs.getScope())
-								.getCollectionMono(pArgs.getCollection()).flatMap(collection -> collection.reactive()
+						return Mono.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+								.getCollection(pArgs.getCollection())).flatMap(collection -> collection.reactive()
 										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 					});

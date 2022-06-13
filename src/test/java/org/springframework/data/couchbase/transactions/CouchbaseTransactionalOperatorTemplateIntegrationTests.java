@@ -35,7 +35,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
@@ -59,7 +58,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 @SpringJUnitConfig(TransactionsConfig.class)
 public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
-	@Autowired ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTemplate ops;
 	@Autowired CouchbaseTemplate blocking;
 
@@ -96,7 +94,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 
 	private RunResult doMonoInTransaction(Supplier<Mono<?>> lambda) {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				reactiveCouchbaseClientFactory);
+				couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 		AtomicInteger attempts = new AtomicInteger();
 
@@ -111,7 +109,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@Test
 	public void committedInsertWithExecute() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				reactiveCouchbaseClientFactory);
+				couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		operator.execute(v -> {
@@ -128,7 +126,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@Test
 	public void committedInsertWithFlux() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				reactiveCouchbaseClientFactory);
+				couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		Flux<Person> flux = Flux.defer(() -> {

@@ -50,7 +50,6 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	private final Bucket bucket;
 	private final Scope scope;
 	private final PersistenceExceptionTranslator exceptionTranslator;
-	//private JsonSerializer serializer = null;
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
 										final String bucketName) {
@@ -69,12 +68,10 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 				new OwnedSupplier<>(
 						Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))),
 				bucketName, scopeName);
-		//this.serializer = environment.jsonSerializer();
 	}
 
 	public SimpleCouchbaseClientFactory(final Cluster cluster, final String bucketName, final String scopeName) {
 		this(() -> cluster, bucketName, scopeName);
-		//this.serializer = cluster.environment().jsonSerializer();
 	}
 
 	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName,

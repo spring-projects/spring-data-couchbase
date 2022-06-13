@@ -23,7 +23,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -57,23 +56,25 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter) {
-		this(clientFactory, reactiveCouchbaseClientFactory, converter, new JacksonTranslationService());
+													 final CouchbaseConverter converter) {
+		this(clientFactory,
+				converter, new JacksonTranslationService());
 	}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, CouchbaseConverter converter,
-							 final TranslationService translationService) {
-		this(clientFactory, reactiveCouchbaseClientFactory, converter, translationService, null);
+													 CouchbaseConverter converter,
+													 final TranslationService translationService) {
+		this(clientFactory,
+				converter, translationService, null);
 	}
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-							 final ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory, final CouchbaseConverter converter,
-							 final TranslationService translationService, QueryScanConsistency scanConsistency) {
+													 final CouchbaseConverter converter,
+													 final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(reactiveCouchbaseClientFactory, converter,
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter,
 				translationService, scanConsistency);
 		this.scanConsistency = scanConsistency;
 

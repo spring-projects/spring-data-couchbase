@@ -1,10 +1,9 @@
 package org.springframework.data.couchbase.transaction;
 
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
-
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 
 import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
@@ -12,10 +11,10 @@ import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 
 public class ReactiveTransactionsWrapper {
-	ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory;
+	CouchbaseClientFactory couchbaseClientFactory;
 
-	public ReactiveTransactionsWrapper(ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory) {
-		this.reactiveCouchbaseClientFactory = reactiveCouchbaseClientFactory;
+	public ReactiveTransactionsWrapper(CouchbaseClientFactory couchbaseClientFactory) {
+		this.couchbaseClientFactory = couchbaseClientFactory;
 	}
 
 	public Mono<TransactionResult> run(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> transactionLogic) {
@@ -36,13 +35,9 @@ public class ReactiveTransactionsWrapper {
 					});
 		};
 
-		return reactiveCouchbaseClientFactory.getCluster().reactive().transactions().run(newTransactionLogic,
+		return couchbaseClientFactory.getCluster().reactive().transactions().run(newTransactionLogic,
 				perConfig);
 
 	}
 
-	private static <T> T printThrough(String label, T obj){
-		System.err.println(label+obj);
-		return obj;
-	}
 }

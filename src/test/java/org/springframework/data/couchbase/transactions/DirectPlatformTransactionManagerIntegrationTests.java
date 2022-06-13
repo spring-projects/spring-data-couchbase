@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.transactions;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -35,7 +35,8 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
 public class DirectPlatformTransactionManagerIntegrationTests extends JavaIntegrationTests {
-	@Autowired ReactiveCouchbaseClientFactory couchbaseClientFactory;
+	@Autowired
+	CouchbaseClientFactory couchbaseClientFactory;
 
 	@Test
 	public void directUseAlwaysFails() {

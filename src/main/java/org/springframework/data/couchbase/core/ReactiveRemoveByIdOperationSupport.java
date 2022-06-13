@@ -17,7 +17,7 @@ package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -89,7 +89,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
 					domainType);
 			LOG.trace("removeById {}", pArgs);
-			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
 			ReactiveCollection rc = clientFactory.withScope(pArgs.getScope()).getCollection(pArgs.getCollection())
 					.reactive();
 

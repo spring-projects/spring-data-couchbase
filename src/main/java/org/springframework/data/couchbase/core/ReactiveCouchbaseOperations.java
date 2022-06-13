@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Query;
 import reactor.core.publisher.Mono;
@@ -50,7 +49,7 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	/**
 	 * Returns the underlying client factory.
 	 */
-	ReactiveCouchbaseClientFactory getCouchbaseClientFactory();
+	CouchbaseClientFactory getCouchbaseClientFactory();
 
 	<T> Mono<T> save(T entity);
 

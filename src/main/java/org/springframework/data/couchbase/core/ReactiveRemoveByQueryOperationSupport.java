@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.core;
 import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
-import org.springframework.data.couchbase.ReactiveCouchbaseClientFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import reactor.core.publisher.Flux;
 
@@ -79,8 +79,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 					domainType);
 			String statement = assembleDeleteQuery(pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
-			ReactiveCouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
-			ReactiveScope rs = clientFactory.getScope(pArgs.getScope()).reactive();
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
 
 			return TransactionalSupport.checkForTransactionInThreadLocalStorage()
 					.flatMapMany(transactionContext -> {
