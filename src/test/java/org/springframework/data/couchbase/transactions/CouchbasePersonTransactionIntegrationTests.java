@@ -314,22 +314,13 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	 * Reactive @Transactional does not retry write-write conflicts. It throws RetryTransactionException up to the client
 	 * and expects the client to retry.
 	 */
-	// @Disabled("todo gp: disabled as failing and there's things to dig into here. This should not be raising
-	// TransactionOperationFailedException for one")
 	@Test
 	public void replaceWithCasConflictResolvedViaRetryAnnotatedReactive() {
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
 		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger();
 
-		// TODO mr - Graham says not to do delegate retries to user. He's a party pooper.
 		Person res = personService.declarativeFindReplacePersonReactive(switchedPerson, tryCount)
-				.retryWhen(Retry.backoff(10, Duration.ofMillis(500))
-						.filter(throwable -> throwable instanceof OptimisticLockingFailureException)
-						.filter(throwable -> throwable instanceof TransactionOperationFailedException)
-						.onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
-							throw new RuntimeException("Transaction failed  after max retries");
-						}))
 				.block();
 
 		Person pFound = cbTmpl.findById(Person.class).one(person.id());
