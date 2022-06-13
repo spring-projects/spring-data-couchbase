@@ -25,11 +25,11 @@ import reactor.core.publisher.Mono;
 /**
  * The simplest possible implementation of TransactionalOperator.
  */
-public class CouchbaseSimpleTransactionalOperator implements TransactionalOperator {
+public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	private final CouchbaseCallbackTransactionManager manager;
 
 	// todo gpx static or ctor?
-	public CouchbaseSimpleTransactionalOperator(CouchbaseCallbackTransactionManager manager) {
+	public CouchbaseTransactionalOperator(CouchbaseCallbackTransactionManager manager) {
 		this.manager = manager;
 	}
 

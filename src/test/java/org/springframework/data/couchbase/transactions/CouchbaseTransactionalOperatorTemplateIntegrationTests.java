@@ -41,7 +41,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
-import org.springframework.data.couchbase.transaction.CouchbaseSimpleTransactionalOperator;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -97,7 +97,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	private RunResult doMonoInTransaction(Supplier<Mono<?>> lambda) {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
+		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
 		AtomicInteger attempts = new AtomicInteger();
 
 		operator.transactional(Mono.fromRunnable(() -> attempts.incrementAndGet()).then(lambda.get())).block();
@@ -112,7 +112,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	public void committedInsertWithExecute() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
+		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
 
 		operator.execute(v -> {
 			return Mono.defer(() -> {
@@ -129,7 +129,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	public void committedInsertWithFlux() {
 		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
 				reactiveCouchbaseClientFactory);
-		TransactionalOperator operator = new CouchbaseSimpleTransactionalOperator(manager);
+		TransactionalOperator operator = new CouchbaseTransactionalOperator(manager);
 
 		Flux<Person> flux = Flux.defer(() -> {
 			return ops.insertById(Person.class).one(WalterWhite);
