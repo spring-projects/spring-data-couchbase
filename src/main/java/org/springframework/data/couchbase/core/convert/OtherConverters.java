@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +48,8 @@ public final class OtherConverters {
 		converters.add(StringToUuid.INSTANCE);
 		converters.add(BigIntegerToString.INSTANCE);
 		converters.add(StringToBigInteger.INSTANCE);
+		converters.add(BigDecimalToString.INSTANCE);
+		converters.add(StringToBigDecimal.INSTANCE);
 
 		return converters;
 	}
@@ -88,6 +91,26 @@ public final class OtherConverters {
 		@Override
 		public BigInteger convert(String source) {
 			return source == null ? null : new BigInteger(source);
+		}
+	}
+
+	@WritingConverter
+	public enum BigDecimalToString implements Converter<BigDecimal, String> {
+		INSTANCE;
+
+		@Override
+		public String convert(BigDecimal source) {
+			return source == null ? null : source.toPlainString();
+		}
+	}
+
+	@ReadingConverter
+	public enum StringToBigDecimal implements Converter<String, BigDecimal> {
+		INSTANCE;
+
+		@Override
+		public BigDecimal convert(String source) {
+			return source == null ? null : new BigDecimal(source);
 		}
 	}
 }
