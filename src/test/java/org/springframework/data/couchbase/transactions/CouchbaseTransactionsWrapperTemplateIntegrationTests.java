@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import reactor.util.annotation.Nullable;
 
 import java.time.Duration;
@@ -42,8 +43,6 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
-import org.springframework.data.couchbase.transaction.SpringTransactionAttemptContext;
-import org.springframework.data.couchbase.transaction.TransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -52,11 +51,10 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.error.TransactionExpiredException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for TransactionsWrapper, using template methods (findById etc.)
+ * Tests for using template methods (findById etc.) inside a regular SDK transaction.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -88,16 +86,15 @@ public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIn
 		}
 	}
 
-	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda) {
+	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda) {
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Consumer<SpringTransactionAttemptContext> lambda,
+	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda,
 			@Nullable TransactionOptions options) {
-		TransactionsWrapper wrapper = new TransactionsWrapper(couchbaseClientFactory);
 		AtomicInteger attempts = new AtomicInteger();
 
-		TransactionResult result = wrapper.run(ctx -> {
+		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			assertInTransaction();
 			attempts.incrementAndGet();
 			lambda.accept(ctx);

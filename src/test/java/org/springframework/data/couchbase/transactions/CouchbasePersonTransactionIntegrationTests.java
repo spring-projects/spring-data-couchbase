@@ -49,7 +49,6 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.TransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -272,8 +271,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
 		String newName = "Dave";
 
-		TransactionsWrapper transactionsWrapper = new TransactionsWrapper(couchbaseClientFactory);
-		TransactionResult txResult = transactionsWrapper.run(ctx -> {
+		TransactionResult txResult = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			Person ppp = cbTmpl.findById(Person.class).one(person.id());
 			ReplaceLoopThread.updateOutOfTransaction(cbTmpl, person, tryCount.incrementAndGet());
 			Person pppp = cbTmpl.replaceById(Person.class).one(ppp.withFirstName(newName));
