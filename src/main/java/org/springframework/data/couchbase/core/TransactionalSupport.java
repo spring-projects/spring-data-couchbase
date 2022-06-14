@@ -59,11 +59,6 @@ public class TransactionalSupport {
         });
     }
 
-    private static <T> T printThrough(String label, T obj){
-        System.err.println(label+obj);
-        return obj;
-    }
-
     public static Mono<Void> verifyNotInTransaction(String methodName) {
         return checkForTransactionInThreadLocalStorage()
                 .flatMap(s -> {

@@ -97,7 +97,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.
 		// If this is
 		// an issue then users need to instead use the standard Couchbase reactive transactions SDK.
-		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
+		TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
 			populateTransactionSynchronizationManager(ctx);

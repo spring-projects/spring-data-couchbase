@@ -47,30 +47,6 @@ public class CouchbaseResourceHolder extends ResourceHolderSupport {
 		return core;
 	}
 
-	/**
-	 * @return the required associated {@link CoreTransactionAttemptContext}.
-	 * @throws IllegalStateException if no session is associated.
-	 */
-	CoreTransactionAttemptContext getRequiredCore() {
-		CoreTransactionAttemptContext core = getCore();
-		if (core == null) {
-			throw new IllegalStateException("No CoreTransactionAttemptContext associated");
-		}
-		return core;
-	}
-
-	/**
-	 * @return {@literal true} if session is not {@literal null}.
-	 */
-	boolean hasCore() {
-		return core != null;
-	}
-
-	public boolean hasActiveTransaction() {
-		return getCore() != null;
-	}
-
-
 	public TransactionResultHolder transactionResultHolder(TransactionResultHolder holder, Object o) {
 		System.err.println("PUT: "+System.identityHashCode(o)+" "+o);
 		getResultMap.put(System.identityHashCode(o), holder);
