@@ -73,13 +73,14 @@ public class N1qlJoinResolver {
 		String from = "FROM " + keySpacePair.lhs.keyspace + " lks " + useLKS + joinType + " " + keySpacePair.rhs.keyspace
 				+ " rks";
 
-		StringBasedN1qlQueryParser.N1qlSpelValues n1qlL = Query.getN1qlSpelValues(template, keySpacePair.lhs.collection,
-				parameters.getEntityTypeInfo().getType(), parameters.getEntityTypeInfo().getType(), false, null, null);
+		StringBasedN1qlQueryParser.N1qlSpelValues n1qlL = Query.getN1qlSpelValues(template, null,
+				keySpacePair.lhs.collection, parameters.getEntityTypeInfo().getType(), parameters.getEntityTypeInfo().getType(),
+				false, null, null);
 		String onLks = "lks." + n1qlL.filter;
 
-		StringBasedN1qlQueryParser.N1qlSpelValues n1qlR = Query.getN1qlSpelValues(template, keySpacePair.rhs.collection,
-				parameters.getAssociatedEntityTypeInfo().getType(), parameters.getAssociatedEntityTypeInfo().getType(), false,
-				null, null);
+		StringBasedN1qlQueryParser.N1qlSpelValues n1qlR = Query.getN1qlSpelValues(template, null,
+				keySpacePair.rhs.collection, parameters.getAssociatedEntityTypeInfo().getType(),
+				parameters.getAssociatedEntityTypeInfo().getType(), false, null, null);
 		String onRks = "rks." + n1qlR.filter;
 
 		StringBuilder useRKSBuilder = new StringBuilder();

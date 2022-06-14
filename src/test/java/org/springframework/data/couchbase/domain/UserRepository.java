@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
+import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -58,6 +60,11 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 	List<User> findByIdIsNotNullAndFirstnameEquals(String firstname);
 
 	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
+
+	@Query("#{#n1ql.selectEntity}|#{#n1ql.filter}|#{#n1ql.bucket}|#{#n1ql.scope}|#{#n1ql.collection}")
+	@Scope("thisScope")
+	@Collection("thisCollection")
+	List<User> spelTests();
 
 	// simulate a slow operation
 	@Cacheable("mySpringCache")

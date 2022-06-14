@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,11 @@ import java.util.Optional;
 
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.query.StringQuery;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.repository.core.NamedQueries;
@@ -39,13 +37,7 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-import org.springframework.data.util.ClassTypeInformation;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValue;
 
 /**
  * @author Michael Reiche
@@ -53,17 +45,17 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria> {
 
+	// everything we need in the StringQuery such that we can doParse() later when we have the scope and collection
 	private final ParameterAccessor accessor;
 	private final MappingContext<?, CouchbasePersistentProperty> context;
-	private final SpelExpressionParser parser;
 	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
-	private final StringBasedN1qlQueryParser queryParser;
-	private final QueryMethod queryMethod;
+	private final CouchbaseQueryMethod queryMethod;
 	private final CouchbaseConverter couchbaseConverter;
-	private final N1QLExpression parsedExpression;
+	private final String queryString;
+	private final SpelExpressionParser spelExpressionParser;
 
 	public StringN1qlQueryCreator(final ParameterAccessor accessor, CouchbaseQueryMethod queryMethod,
-			CouchbaseConverter couchbaseConverter, String bucketName, SpelExpressionParser spelExpressionParser,
+			CouchbaseConverter couchbaseConverter, SpelExpressionParser spelExpressionParser,
 			QueryMethodEvaluationContextProvider evaluationContextProvider, NamedQueries namedQueries) {
 
 		// AbstractQueryCreator needs a PartTree, so we give it a dummy one.
@@ -76,27 +68,19 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 		this.context = couchbaseConverter.getMappingContext();
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
+		this.spelExpressionParser = spelExpressionParser;
 		this.evaluationContextProvider = evaluationContextProvider;
 		final String namedQueryName = queryMethod.getNamedQueryName();
-		String queryString;
+		String qString;
 		if (queryMethod.hasInlineN1qlQuery()) {
-			queryString = queryMethod.getInlineN1qlQuery();
+			qString = queryMethod.getInlineN1qlQuery();
 		} else if (namedQueries.hasQuery(namedQueryName)) {
-			queryString = namedQueries.getQuery(namedQueryName);
+			qString = namedQueries.getQuery(namedQueryName);
 		} else {
 			throw new IllegalArgumentException("query has no inline Query or named Query not found");
 		}
-		Class javaType = getType();
-		String typeValue = javaType.getName();
-		TypeInformation<?> typeInfo = ClassTypeInformation.from(javaType);
-		Alias alias = couchbaseConverter.getTypeAlias(typeInfo);
-		if (alias != null && alias.isPresent()) {
-			typeValue = alias.toString();
-		}
-		this.queryParser = new StringBasedN1qlQueryParser(queryString, queryMethod, bucketName, couchbaseConverter,
-				getTypeField(), typeValue, accessor, spelExpressionParser, evaluationContextProvider);
-		this.parser = spelExpressionParser;
-		this.parsedExpression = this.queryParser.parsedExpression;
+		// Save the query string to be parsed later after we have the scope and collection to be used in the query
+		this.queryString = qString;
 	}
 
 	protected QueryMethod getQueryMethod() {
@@ -148,13 +132,9 @@ public class StringN1qlQueryCreator extends AbstractQueryCreator<Query, QueryCri
 
 	@Override
 	protected Query complete(QueryCriteria criteria, Sort sort) {
-		Query q = new StringQuery(parsedExpression.toString()).with(sort);
-		JsonValue params = queryParser.getPlaceholderValues(accessor);
-		if (params instanceof JsonArray) {
-			q.setPositionalParameters((JsonArray) params);
-		} else {
-			q.setNamedParameters((JsonObject) params);
-		}
+		// everything we need in the StringQuery such that we can doParse() later when we have the scope and collection
+		Query q = new StringQuery(queryMethod, queryString, evaluationContextProvider, accessor, spelExpressionParser)
+				.with(sort);
 		return q;
 	}
 

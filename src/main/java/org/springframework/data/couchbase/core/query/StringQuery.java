@@ -18,9 +18,20 @@ package org.springframework.data.couchbase.core.query;
 import java.util.Locale;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
+import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
+import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
+import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
+import org.springframework.data.mapping.Alias;
+import org.springframework.data.repository.query.ParameterAccessor;
+import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
 
 /**
@@ -38,32 +49,46 @@ import com.couchbase.client.java.json.JsonValue;
  */
 public class StringQuery extends Query {
 
+	private final CouchbaseQueryMethod queryMethod;
 	private final String inlineN1qlQuery;
+	private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+	private final ParameterAccessor parameterAccessor;
+	private final SpelExpressionParser spelExpressionParser;
 
-	public StringQuery(String n1qlString) {
-		inlineN1qlQuery = n1qlString;
-	}
-
-	/**
-	 * inlineN1qlQuery (Query Annotation) append the string query to the provided StringBuilder. To be used along with the
-	 * other append*() methods to construct the N1QL statement
-	 * 
-	 * @param sb - StringBuilder
-	 */
-	private void appendInlineN1qlStatement(final StringBuilder sb) {
-		sb.append(inlineN1qlQuery);
+	public StringQuery(CouchbaseQueryMethod queryMethod, String n1qlString,
+			QueryMethodEvaluationContextProvider queryMethodEvaluationContextProvider, ParameterAccessor parameterAccessor,
+			SpelExpressionParser spelExpressionParser) {
+		this.queryMethod = queryMethod;
+		this.inlineN1qlQuery = n1qlString;
+		this.evaluationContextProvider = queryMethodEvaluationContextProvider;
+		this.parameterAccessor = parameterAccessor;
+		this.spelExpressionParser = spelExpressionParser;
 	}
 
 	@Override
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String collection, Class domainClass,
-			Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
+	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String scope, String collection,
+			Class domainClass, Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
+
+		StringBasedN1qlQueryParser parser = getStringN1qlQueryParser(template, scope, collection, domainClass,
+				distinctFields, fields);
+
+		N1QLExpression parsedExpression = parser.getExpression(inlineN1qlQuery, queryMethod, parameterAccessor,
+				spelExpressionParser, evaluationContextProvider);
+
+		String queryString = parsedExpression.toString();
+
+		JsonValue parameters = parser.getPlaceholderValues(parameterAccessor);
+		if (parameters instanceof JsonArray) {
+			this.setPositionalParameters((JsonArray) parameters);
+		} else {
+			this.setNamedParameters((JsonObject) parameters);
+		}
 		final StringBuilder statement = new StringBuilder();
-		boolean makeCount = isCount && inlineN1qlQuery != null
-				&& !inlineN1qlQuery.toLowerCase(Locale.ROOT).contains("count(");
+		boolean makeCount = isCount && queryString != null && !queryString.toLowerCase(Locale.ROOT).contains("count(");
 		if (makeCount) {
 			statement.append("SELECT COUNT(*) AS " + TemplateUtils.SELECT_COUNT + " FROM (");
 		}
-		appendInlineN1qlStatement(statement); // apply the string statement
+		statement.append(queryString); // apply the string statement
 		// To use generated parameters for literals
 		// we need to figure out if we must use positional or named parameters
 		// If we are using positional parameters, we need to start where
@@ -86,6 +111,26 @@ public class StringQuery extends Query {
 		return statement.toString();
 	}
 
+	private StringBasedN1qlQueryParser getStringN1qlQueryParser(ReactiveCouchbaseTemplate template, String scopeName,
+			String collectionName, Class domainClass, String[] distinctFields, String[] fields) {
+		String typeKey = template.getConverter().getTypeKey();
+		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
+				.getRequiredPersistentEntity(domainClass);
+		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
+		String typeValue = info.getJavaType().getName();
+		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
+		Alias alias = template.getConverter().getTypeAlias(typeInfo);
+		if (alias != null && alias.isPresent()) {
+			typeValue = alias.toString();
+		}
+		// there are no options for distinct and fields for @Query
+		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(inlineN1qlQuery, queryMethod,
+				template.getBucketName(), scopeName, collectionName, template.getConverter(), typeKey, typeValue,
+				parameterAccessor, new SpelExpressionParser(), evaluationContextProvider);
+
+		return sbnqp;
+	}
+
 	/**
 	 * toN1qlRemoveString - use toN1qlSelectString
 	 * 
@@ -94,7 +139,8 @@ public class StringQuery extends Query {
 	 * @param domainClass
 	 */
 	@Override
-	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String collectionName, Class domainClass) {
-		return toN1qlSelectString(template, collectionName, domainClass, domainClass, false, null, null);
+	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String scopeName, String collectionName,
+			Class domainClass) {
+		return toN1qlSelectString(template, scopeName, collectionName, domainClass, domainClass, false, null, null);
 	}
 }

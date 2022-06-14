@@ -66,9 +66,9 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@SpringJUnitConfig(StringN1qlQueryCreatorTests.Config.class)
+@SpringJUnitConfig(StringN1qlQueryCreatorIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
+class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
 	CouchbaseConverter converter;
@@ -98,8 +98,8 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 					converter.getMappingContext());
 
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					namedQueries);
 
 			Query query = creator.createQuery();
 
@@ -131,8 +131,8 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 					converter.getMappingContext());
 
 			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					namedQueries);
 
 			Query query = creator.createQuery();
 

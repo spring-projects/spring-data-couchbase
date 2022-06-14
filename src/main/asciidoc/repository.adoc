@@ -133,6 +133,8 @@ A few N1QL-specific values are provided through SpEL:
 - `#n1ql.selectEntity` allows to easily make sure the statement will select all the fields necessary to build the full entity (including document ID and CAS value).
 - `#n1ql.filter` in the WHERE clause adds a criteria matching the entity type with the field that Spring Data uses to store type information.
 - `#n1ql.bucket` will be replaced by the name of the bucket the entity is stored in, escaped in backticks.
+- `#n1ql.scope` will be replaced by the name of the scope the entity is stored in, escaped in backticks.
+- `#n1ql.collection` will be replaced by the name of the collection the entity is stored in, escaped in backticks.
 - `#n1ql.fields` will be replaced by the list of fields (eg. for a SELECT clause) necessary to reconstruct the entity.
 - `#n1ql.delete` will be replaced by the `delete from` statement.
 - `#n1ql.returning` will be replaced by returning clause needed for reconstructing entity.
@@ -164,7 +166,7 @@ This is *NOT* intended for projections to DTOs.
 Another example: +
 `#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND test = $1` +
 is equivalent to +
-`SELECT #{#n1ql.fields} FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND test = $1`
+`SELECT #{#n1ql.fields} FROM #{#n1ql.collection} WHERE #{#n1ql.filter} AND test = $1`
 
 .A practical application of SpEL with Spring Security
 ****
