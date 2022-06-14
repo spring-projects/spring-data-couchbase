@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.transactions;
+package org.springframework.data.couchbase.transactions.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -28,8 +27,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -38,17 +38,17 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import reactor.core.publisher.Mono;
 
 /**
- * Tests for regular SDK transactions, where Spring operations that aren't supported in a transaction are being used.
+ * Tests for regular reactive SDK transactions, where Spring operations that aren't supported in a transaction are being used.
  * They should be prevented at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfig.class, NativeTransactionsNonAllowableOperationsIntegrationTests.PersonService.class})
-public class NativeTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
+@SpringJUnitConfig(classes = {TransactionsConfig.class, SDKReactiveTransactionsNonAllowableOperationsIntegrationTests.PersonService.class})
+public class SDKReactiveTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
@@ -66,16 +66,15 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
-	void test(Consumer<CouchbaseOperations> r) {
+	void test(Function<ReactiveCouchbaseOperations, Mono<?>> r) {
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		assertThrowsWithCause(() -> {
-			couchbaseClientFactory.getCluster().transactions().run(ignored -> {
-				personService.doInService(tryCount, (ops) -> {
-					r.accept(ops);
-					return null;
+			couchbaseClientFactory.getCluster().reactive().transactions().run(ignored -> {
+				return personService.doInService(tryCount, (ops) -> {
+					return r.apply(ops);
 				});
-			});
+			}).block();
 		}, TransactionFailedException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
@@ -85,7 +84,7 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 	@Test
 	public void existsById() {
 		test((ops) -> {
-			ops.existsById(Person.class).one(WalterWhite.id());
+			return ops.existsById(Person.class).one(WalterWhite.id());
 		});
 	}
 
@@ -93,7 +92,7 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 	@Test
 	public void findByAnalytics() {
 		test((ops) -> {
-			ops.findByAnalytics(Person.class).one();
+			return ops.findByAnalytics(Person.class).one();
 		});
 	}
 
@@ -101,7 +100,7 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 	@Test
 	public void findFromReplicasById() {
 		test((ops) -> {
-			ops.findFromReplicasById(Person.class).any(WalterWhite.id());
+			return ops.findFromReplicasById(Person.class).any(WalterWhite.id());
 		});
 	}
 
@@ -109,7 +108,7 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 	@Test
 	public void upsertById() {
 		test((ops) -> {
-			ops.upsertById(Person.class).one(WalterWhite);
+			return ops.upsertById(Person.class).one(WalterWhite);
 		});
 	}
 
@@ -118,13 +117,13 @@ public class NativeTransactionsNonAllowableOperationsIntegrationTests extends Ja
 	@Component
 	static
 	class PersonService {
-		final CouchbaseOperations personOperations;
+		final ReactiveCouchbaseOperations personOperations;
 
-		public PersonService(CouchbaseOperations ops) {
+		public PersonService(ReactiveCouchbaseOperations ops) {
 			personOperations = ops;
 		}
 
-		public <T> T doInService(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
+		public <T> Mono<T> doInService(AtomicInteger tryCount, Function<ReactiveCouchbaseOperations, Mono<T>> callback) {
 			tryCount.incrementAndGet();
 			return callback.apply(personOperations);
 		}
