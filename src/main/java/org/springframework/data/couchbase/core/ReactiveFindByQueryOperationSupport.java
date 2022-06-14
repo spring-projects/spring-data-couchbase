@@ -169,7 +169,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public Flux<T> all() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
+			String statement = assembleEntityQuery(false, distinctFields, pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
 					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
@@ -214,7 +214,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		@Override
 		public Mono<Long> count() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
+			String statement = assembleEntityQuery(true, distinctFields, pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
 					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
@@ -236,8 +236,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return count().map(count -> count > 0); // not efficient, just need the first one
 		}
 
-		private String assembleEntityQuery(final boolean count, String[] distinctFields, String collection) {
-			return query.toN1qlSelectString(template, collection, this.domainType, this.returnType, count,
+		private String assembleEntityQuery(final boolean count, String[] distinctFields, String scope, String collection) {
+			return query.toN1qlSelectString(template, scope, collection, this.domainType, this.returnType, count,
 					query.getDistinctFields() != null ? query.getDistinctFields() : distinctFields, fields);
 		}
 	}

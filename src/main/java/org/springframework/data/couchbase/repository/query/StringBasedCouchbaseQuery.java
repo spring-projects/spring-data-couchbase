@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,8 +75,7 @@ public class StringBasedCouchbaseQuery extends AbstractCouchbaseQuery {
 	protected Query createQuery(ParametersParameterAccessor accessor) {
 
 		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(accessor, getQueryMethod(),
-				getOperations().getConverter(), getOperations().getBucketName(), expressionParser, evaluationContextProvider,
-				namedQueries);
+				getOperations().getConverter(), expressionParser, evaluationContextProvider, namedQueries);
 		Query query = creator.createQuery();
 
 		if (LOG.isTraceEnabled()) {

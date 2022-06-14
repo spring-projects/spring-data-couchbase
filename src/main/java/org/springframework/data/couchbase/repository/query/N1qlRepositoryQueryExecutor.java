@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,15 +65,16 @@ public class N1qlRepositoryQueryExecutor {
 		Query query;
 		ExecutableFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
-			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), operations.getBucketName(),
-					SPEL_PARSER, evaluationContextProvider, namedQueries).createQuery();
+			query = new StringN1qlQueryCreator(accessor, queryMethod, operations.getConverter(), SPEL_PARSER,
+					evaluationContextProvider, namedQueries).createQuery();
 		} else {
 			final PartTree tree = new PartTree(queryMethod.getName(), domainClass);
-			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName()).createQuery();
+			query = new N1qlQueryCreator(tree, accessor, queryMethod, operations.getConverter(), operations.getBucketName())
+					.createQuery();
 		}
 
-		ExecutableFindByQuery<?> operation = (ExecutableFindByQuery<?>) operations
-				.findByQuery(domainClass).withConsistency(buildQueryScanConsistency());
+		ExecutableFindByQuery<?> operation = (ExecutableFindByQuery<?>) operations.findByQuery(domainClass)
+				.withConsistency(buildQueryScanConsistency());
 		if (queryMethod.isCountQuery()) {
 			return operation.matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {

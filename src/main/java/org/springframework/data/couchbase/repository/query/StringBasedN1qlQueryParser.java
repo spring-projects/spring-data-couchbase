@@ -44,7 +44,6 @@ import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.ReturnedType;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -75,6 +74,18 @@ public class StringBasedN1qlQueryParser {
 	 * <code>"SELECT * FROM #{{@value SPEL_BUCKET}} LIMIT 3"</code>.
 	 */
 	public static final String SPEL_BUCKET = "#" + SPEL_PREFIX + ".bucket";
+	/**
+	 * Use this variable in a SpEL expression in a {@link Query @Query} annotation's inline statement. This will be
+	 * replaced by the (escaped) scope name. Eg.
+	 * <code>"SELECT * FROM #{{@value SPEL_SCOPE}}.#{{@value SPEL_COLLECTION}} LIMIT 3"</code>.
+	 */
+	public static final String SPEL_SCOPE = "#" + SPEL_PREFIX + ".scope";
+	/**
+	 * Use this variable in a SpEL expression in a {@link Query @Query} annotation's inline statement. This will be
+	 * replaced by the (escaped) collection name. Eg.
+	 * <code>"SELECT * FROM #{{@value SPEL_SCOPE}}.#{{@value SPEL_COLLECTION}} LIMIT 3"</code>.
+	 */
+	public static final String SPEL_COLLECTION = "#" + SPEL_PREFIX + ".collection";
 	/**
 	 * Use this variable in a SpEL expression in a {@link Query @Query} annotation's inline statement. This will be
 	 * replaced by the fields allowing to construct the repository's entity (SELECT clause). Eg.
@@ -118,48 +129,84 @@ public class StringBasedN1qlQueryParser {
 	private final CouchbaseQueryMethod queryMethod;
 	private PlaceholderType placeHolderType;
 	private final N1qlSpelValues statementContext;
-	private final N1qlSpelValues countContext;
 	private final CouchbaseConverter couchbaseConverter;
-	private final Collection<String> parameterNames = new HashSet<String>();
+	private final Collection<String> parameterNames = new HashSet<>();
 	public final N1QLExpression parsedExpression;
 
-	public StringBasedN1qlQueryParser(String statement, CouchbaseQueryMethod queryMethod, String bucketName,
-			CouchbaseConverter couchbaseConverter, String typeField, String typeValue, ParameterAccessor accessor,
-			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
+	/**
+	 * This constructor is to allow for generating the n1ql spel expressions from @Queries.
+	 *
+	 * @param statement
+	 * @param queryMethod
+	 * @param bucketName
+	 * @param scope
+	 * @param collection
+	 * @param couchbaseConverter
+	 * @param typeField
+	 * @param typeValue
+	 * @param accessor
+	 * @param spelExpressionParser
+	 * @param evaluationContextProvider
+	 */
+	public StringBasedN1qlQueryParser(String statement, CouchbaseQueryMethod queryMethod, String bucketName, String scope,
+			String collection, CouchbaseConverter couchbaseConverter, String typeField, String typeValue,
+			ParameterAccessor accessor, SpelExpressionParser spelExpressionParser,
+			QueryMethodEvaluationContextProvider evaluationContextProvider) {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
-		String collection = queryMethod.getCollection();
-		this.statementContext = createN1qlSpelValues(bucketName, collection,
-				queryMethod.getEntityInformation().getJavaType(), queryMethod.getReturnedObjectType(), typeField, typeValue,
-				false, null, null);
-		this.countContext = createN1qlSpelValues(bucketName, collection, queryMethod.getEntityInformation().getJavaType(),
-				queryMethod.getReturnedObjectType(), typeField, typeValue, true, null, null);
-		this.parsedExpression = getExpression(accessor, null, parser, evaluationContextProvider);
-		checkPlaceholders(this.parsedExpression.toString());
+		this.statementContext = createN1qlSpelValues(collection != null ? collection : bucketName, scope, collection,
+				queryMethod.getEntityInformation().getJavaType(), typeField, typeValue, queryMethod.isCountQuery(), null, null);
+		this.parsedExpression = getExpression(statement, queryMethod, accessor, spelExpressionParser,
+				evaluationContextProvider);
 	}
 
-	public StringBasedN1qlQueryParser(String bucketName, String collection, CouchbaseConverter couchbaseConverter,
-			Class domainClass, Class resultClass, String typeField, String typeValue, boolean isCount,
-			String[] distinctFields, String[] fields) {
+	/**
+	 * This constructor is to allow for generating the n1ql spel expressions from NON-@Queries. For selects,
+	 * n1ql.selectEntity and n1ql.filter. FOr deletes, n1ql.delete, n1ql.filter and n1ql.returning
+	 *
+	 * @param bucketName
+	 * @param scope
+	 * @param collection
+	 * @param couchbaseConverter
+	 * @param domainClass
+	 * @param resultClass
+	 * @param typeField
+	 * @param typeValue
+	 * @param isCount
+	 * @param distinctFields
+	 * @param fields
+	 */
+	public StringBasedN1qlQueryParser(String bucketName, String scope, String collection,
+			CouchbaseConverter couchbaseConverter, Class<?> domainClass, Class<?> resultClass, String typeField,
+			String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
 		this.statement = null;
 		this.queryMethod = null;
 		this.couchbaseConverter = couchbaseConverter;
-		if (!isCount) {
-			this.statementContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField,
-					typeValue, false, distinctFields, fields);
-			this.countContext = null;
-		} else {
-			this.statementContext = null;
-			this.countContext = createN1qlSpelValues(bucketName, collection, domainClass, resultClass, typeField, typeValue,
-					true, distinctFields, fields);
-		}
+		this.statementContext = createN1qlSpelValues(bucketName, scope, collection, domainClass, typeField, typeValue,
+				isCount, distinctFields, fields);
 		this.parsedExpression = null;
 	}
 
-	public N1qlSpelValues createN1qlSpelValues(String bucketName, String collection, Class domainClass, Class resultClass,
+	/**
+	 * Create the n1ql spel values. The domainClass is needed, but not the returnClass. Mapping the domainClass to the
+	 * returnClass is the responsibility of decoding.
+	 *
+	 * @param bucketName
+	 * @param scope
+	 * @param collection
+	 * @param domainClass
+	 * @param typeField
+	 * @param typeValue
+	 * @param isCount
+	 * @param distinctFields
+	 * @param fields
+	 * @return
+	 */
+	public N1qlSpelValues createN1qlSpelValues(String bucketName, String scope, String collection, Class domainClass,
 			String typeField, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
-		String b = collection != null ? collection : bucketName;
+		String b = bucketName;
+		String keyspace = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
 				"only one of project(fields) and distinct(distinctFields) can be specified");
 		String entityFields = "";
@@ -167,24 +214,26 @@ public class StringBasedN1qlQueryParser {
 		if (distinctFields != null) {
 			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
 			if (isCount) {
-				selectEntity = "SELECT COUNT( DISTINCT {" + distinctFieldsStr + "} ) " + CountFragment.COUNT_ALIAS + " FROM "
-						+ i(b);
+				selectEntity = N1QLExpression.select(N1QLExpression.count(N1QLExpression.distinct(x(distinctFieldsStr)))
+						.as(i(CountFragment.COUNT_ALIAS)).from(keyspace)).toString();
 			} else {
-				selectEntity = "SELECT DISTINCT " + distinctFieldsStr + " FROM " + i(b);
+				selectEntity = N1QLExpression.select(N1QLExpression.distinct(x(distinctFieldsStr))).from(keyspace).toString();
 			}
 		} else if (isCount) {
-			selectEntity = "SELECT " + "COUNT(*) AS " + CountFragment.COUNT_ALIAS + " FROM " + i(b);
+			selectEntity = N1QLExpression.select(N1QLExpression.count(x("\"*\"")).as(i(CountFragment.COUNT_ALIAS)))
+					.from(keyspace).toString();
 		} else {
-			String projectedFields = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
+			String projectedFields = getProjectedOrDistinctFields(keyspace, domainClass, typeField, fields, distinctFields);
 			entityFields = projectedFields;
-			selectEntity = "SELECT " + projectedFields + " FROM " + i(b);
+			selectEntity = N1QLExpression.select(x(projectedFields)).from(keyspace).toString();
 		}
 		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
 
-		String delete = N1QLExpression.delete().from(b).toString();
-		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(b).toString();
+		String delete = N1QLExpression.delete().from(keyspace).toString();
+		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(keyspace);
 
-		return new N1qlSpelValues(selectEntity, entityFields, i(b).toString(), typeSelection, delete, returning);
+		return new N1qlSpelValues(selectEntity, entityFields, i(b).toString(), i(scope).toString(),
+				i(collection).toString(), typeSelection, delete, returning);
 	}
 
 	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
@@ -193,8 +242,15 @@ public class StringBasedN1qlQueryParser {
 			return i(distinctFields).toString();
 		}
 		String projectedFields;
+		PersistentEntity persistentEntity = null;
 		if (resultClass != null && !Modifier.isAbstract(resultClass.getModifiers())) {
-			PersistentEntity persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+			try {
+				persistentEntity = couchbaseConverter.getMappingContext().getPersistentEntity(resultClass);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		if (persistentEntity != null) {
 			StringBuilder sb = new StringBuilder();
 			getProjectedFieldsInternal(b, null, sb, persistentEntity, typeField, fields, distinctFields != null);
 			projectedFields = sb.toString();
@@ -300,14 +356,11 @@ public class StringBasedN1qlQueryParser {
 
 	// this static method can be used to test the parsing behavior for Couchbase specific spel variables
 	// in isolation from the rest of the spel parser initialization chain.
-	public String doParse(SpelExpressionParser parser, EvaluationContext evaluationContext, boolean isCountQuery) {
-		org.springframework.expression.Expression parsedExpression = parser.parseExpression(this.getStatement(),
+	public static String doParse(String statement, SpelExpressionParser parser, EvaluationContext evaluationContext,
+			N1qlSpelValues n1qlSpelValues) {
+		org.springframework.expression.Expression parsedExpression = parser.parseExpression(statement,
 				new TemplateParserContext());
-		if (isCountQuery) {
-			evaluationContext.setVariable(SPEL_PREFIX, this.getCountContext());
-		} else {
-			evaluationContext.setVariable(SPEL_PREFIX, this.getStatementContext());
-		}
+		evaluationContext.setVariable(SPEL_PREFIX, n1qlSpelValues);
 		return parsedExpression.getValue(evaluationContext, String.class);
 	}
 
@@ -425,7 +478,7 @@ public class StringBasedN1qlQueryParser {
 		return namedValues;
 	}
 
-	protected JsonValue getPlaceholderValues(ParameterAccessor accessor) {
+	public JsonValue getPlaceholderValues(ParameterAccessor accessor) {
 		switch (this.placeHolderType) {
 			case NAMED:
 				return getNamedPlaceholderValues(accessor);
@@ -483,10 +536,6 @@ public class StringBasedN1qlQueryParser {
 		return this.statement.contains(SPEL_SELECT_FROM_CLAUSE);
 	}
 
-	public N1qlSpelValues getCountContext() {
-		return this.countContext;
-	}
-
 	public N1qlSpelValues getStatementContext() {
 		return this.statementContext;
 	}
@@ -528,6 +577,18 @@ public class StringBasedN1qlQueryParser {
 		public final String bucket;
 
 		/**
+		 * <code>#{{@value SPEL_SCOPE}.
+		 * bucket</code> will be replaced by (escaped) scope name in which the entity is stored.
+		 */
+		public final String scope;
+
+		/**
+		 * <code>#{{@value SPEL_COLLECTION}.
+		 * bucket</code> will be replaced by (escaped) collection name in which the entity is stored.
+		 */
+		public final String collection;
+
+		/**
 		 * <code>#{{@value SPEL_FILTER}}.
 		 * filter</code> will be replaced by an expression allowing to select only entries matching the entity in a WHERE
 		 * clause.
@@ -547,25 +608,37 @@ public class StringBasedN1qlQueryParser {
 		 */
 		public final String returning;
 
-		public N1qlSpelValues(String selectClause, String entityFields, String bucket, String filter, String delete,
-				String returning) {
+		public N1qlSpelValues(String selectClause, String entityFields, String bucket, String scope, String collection,
+				String filter, String delete, String returning) {
 			this.selectEntity = selectClause;
 			this.fields = entityFields;
 			this.bucket = bucket;
+			this.scope = scope;
+			this.collection = collection;
 			this.filter = filter;
 			this.delete = delete;
 			this.returning = returning;
 		}
 	}
 
-	// copied from StringN1qlBasedQuery
-	private N1QLExpression getExpression(ParameterAccessor accessor, ReturnedType returnedType,
+	/**
+	 * Creates the N1QLExpression and parameterNames
+	 *
+	 * @param statement
+	 * @param queryMethod
+	 * @param accessor
+	 * @param parser
+	 * @param evaluationContextProvider
+	 * @return
+	 */
+
+	public N1QLExpression getExpression(String statement, CouchbaseQueryMethod queryMethod, ParameterAccessor accessor,
 			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		boolean isCountQuery = queryMethod.isCountQuery();
 		Object[] runtimeParameters = getParameters(accessor);
 		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(queryMethod.getParameters(),
 				runtimeParameters);
-		N1QLExpression parsedStatement = x(this.doParse(parser, evaluationContext, isCountQuery));
+		N1QLExpression parsedStatement = x(doParse(statement, parser, evaluationContext, this.getStatementContext()));
+		checkPlaceholders(parsedStatement.toString());
 		return parsedStatement;
 	}
 
