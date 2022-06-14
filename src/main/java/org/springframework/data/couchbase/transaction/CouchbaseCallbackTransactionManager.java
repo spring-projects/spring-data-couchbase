@@ -41,6 +41,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * The Couchbase transaction manager, providing support for @Transactional methods.
+ */
 public class CouchbaseCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseCallbackTransactionManager.class);
@@ -94,9 +97,8 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		final AtomicReference<T> execResult = new AtomicReference<>();
 
 		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler. This
-		// scheduler is effectivel unlimited, but this can still potentially lead to high thread usage by the application.
-		// If this is
-		// an issue then users need to instead use the standard Couchbase reactive transactions SDK.
+		// scheduler is effectively unlimited, but this can still potentially lead to high thread usage by the application.
+		// If this is an issue then users need to instead use the standard Couchbase reactive transactions SDK.
 		TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
@@ -123,6 +125,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	}
 
 	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+		// Buffer the output rather than attempting to stream results back from a now-defunct lambda.
 		final List<T> out = new ArrayList<>();
 
 		return couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {

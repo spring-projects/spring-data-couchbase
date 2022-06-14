@@ -54,8 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for reactive @Transactional, using the CouchbaseSimpleTransactionInterceptor (and not the
- * ReactiveCouchbaseTransactionManager).
+ * Tests for reactive @Transactional, using the CouchbaseTransactionInterceptor.
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class,
