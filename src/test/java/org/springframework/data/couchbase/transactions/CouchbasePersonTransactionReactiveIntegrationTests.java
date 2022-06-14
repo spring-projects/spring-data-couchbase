@@ -45,7 +45,6 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -76,7 +75,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Autowired Cluster myCluster;
 	@Autowired PersonServiceReactive personService;
 	@Autowired ReactiveCouchbaseTemplate operations;
-	@Autowired ReactiveTransactionsWrapper wrapper;
 
 	// if these are changed from default, then beforeEach needs to clean up separately
 	String sName = "_default";
@@ -220,128 +218,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Test
-	// until we have spring-managed TransactionResult to re-use
-	@Disabled("removeById().one(id) will fail as there is no cas.  Use removeById().oneEntity(entity) instead")
-	public void deletePersonCBTransactionsRxTmpl() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxCBTmpl.removeById(Person.class).inCollection(cName).one(person.id());
-		}));
-		result.block();
-		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
-		assertNull(pFound, "Should not have found " + pFound);
-	}
-
-	@Test
-	public void deletePersonCBTransactionsRxTmplFail() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)
-					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person));
-		}));
-		assertThrowsWithCause(result::block, TransactionFailedException.class, DataRetrievalFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
-		assertEquals(pFound, person, "Should have found " + person);
-	}
-
-	// RxRepo ////////////////////////////////////////////////////////////////////////////////////////////
-
-	@Test
-	// until we have spring-managed TransactionResult to re-use
-	@Disabled("deleteById(id) will fail as there is no cas.  Use delete(entity) instead")
-	public void deletePersonCBTransactionsRxRepo() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxRepo.withCollection(cName).deleteById(person.id()).then();
-		}));
-		result.block();
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
-		assertNull(pFound, "Should not have found " + pFound);
-	}
-
-	@Test
-	public void deletePersonCBTransactionsRxRepoFail() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> { // get the ctx
-			return rxRepo.withCollection(cName).delete(person).then(rxRepo.withCollection(cName).delete(person));
-		}));
-		assertThrowsWithCause(result::block, TransactionFailedException.class, DataRetrievalFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
-		assertEquals(pFound, person, "Should have found " + person);
-	}
-
-	@Test
-	public void findPersonCBTransactions() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		List<Object> docs = new LinkedList<>();
-		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = wrapper.run(((ctx) -> {
-			return rxCBTmpl.findByQuery(Person.class).inCollection(cName).matching(q).one().map(doc -> {
-				docs.add(doc);
-				return doc;
-			});
-		}));
-		result.block();
-		assertFalse(docs.isEmpty(), "Should have found " + person);
-		for (Object o : docs) {
-			assertEquals(o, person, "Should have found " + person);
-		}
-	}
-
-	@Test
-	// Failed to retrieve PlatformTransactionManager for @Transactional test:
-	public void insertPersonRbCBTransactions() {
-		Person person = WalterWhite;
-
-		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
-			return rxCBTmpl.insertById(Person.class).inCollection(cName).one(person)
-					.flatMap(it -> Mono.error(new SimulateFailureException()));
-		});
-
-		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
-		assertNull(pFound, "Should not have found " + pFound);
-
-	}
-
-	@Test
-
-	public void replacePersonRbCBTransactions() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-
-		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
-			return rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id())
-					.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inCollection(cName).one(pFound.withFirstName("Walt")))
-					.map((p) -> throwSimulateFailureException(p));
-		});
-
-		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
-		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
-		assertEquals(person, pFound, "should have found " + person);
-	}
-
-	@Test
-	public void findPersonSpringTransactions() {
-		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		List<Object> docs = new LinkedList<>();
-		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = wrapper.run((ctx) -> { // get the ctx
-			return rxCBTmpl.findByQuery(Person.class).inCollection(cName).matching(q).one().map(doc -> {
-				docs.add(doc);
-				return doc;
-			});
-		});
-		result.block();
-		assertFalse(docs.isEmpty(), "Should have found " + person);
-		for (Object o : docs) {
-			assertEquals(o, person, "Should have found " + person);
-		}
-	}
 
 	@Data
 	// @AllArgsConstructor
