@@ -17,6 +17,9 @@ package org.springframework.data.couchbase.transaction.error;
 
 import com.couchbase.client.core.error.CouchbaseException;
 
+/**
+ * A transaction rollback has been requested.
+ */
 public class TransactionRollbackRequestedException extends CouchbaseException  {
     public TransactionRollbackRequestedException(String message) {
         super(message);
