@@ -1,6 +1,5 @@
 package org.springframework.data.couchbase.transaction;
 
-import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 
 public class CouchbaseTransactionStatus extends DefaultTransactionStatus {

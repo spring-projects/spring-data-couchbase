@@ -22,13 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
 
 import com.couchbase.client.core.error.DocumentExistsException;
 import lombok.Data;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Disabled;
+import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Mono;
 
@@ -232,7 +232,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	public void replacePersonCBTransactionsRxTmpl() {
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
 		Mono<Person> result = rxCBTmpl.findById(Person.class).one(person.id()) //
-				.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp)).flatMap(ppp -> assertInReactiveTransaction(ppp))
+				.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp)).doOnNext(ppp -> TransactionalSupport
+						.checkForTransactionInThreadLocalStorage().doOnNext(v -> assertTrue(v.isPresent())))
 				.as(transactionalOperator::transactional);
 		result.block();
 		Person pFound = cbTmpl.findById(Person.class).one(person.id());
@@ -243,8 +244,9 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void insertPersonCBTransactionsRxTmplRollback() {
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
-				.flatMap(ppp -> assertInReactiveTransaction(ppp)).map(p -> throwSimulateFailureException(p))
-				.as(transactionalOperator::transactional); // tx
+				.doOnNext(ppp -> TransactionalSupport.checkForTransactionInThreadLocalStorage()
+						.doOnNext(v -> assertTrue(v.isPresent())))
+				.map(p -> throwSimulateFailureException(p)).as(transactionalOperator::transactional); // tx
 		assertThrowsWithCause(result::block,  TransactionFailedException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
