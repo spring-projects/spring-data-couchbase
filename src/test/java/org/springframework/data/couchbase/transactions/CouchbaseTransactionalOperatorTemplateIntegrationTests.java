@@ -52,7 +52,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for TransactionalOperator, using template methods (findById etc.)
+ * Tests for CouchbaseTransactionalOperator, using template methods (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)

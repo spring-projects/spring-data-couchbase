@@ -9,7 +9,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class ReplaceLoopThread extends Thread {
+public class ReplaceLoopThread extends Thread {
   private final CouchbaseOperations couchbaseOperations;
   AtomicBoolean stop = new AtomicBoolean(false);
   UUID id;
@@ -47,7 +47,7 @@ class ReplaceLoopThread extends Thread {
     stop.set(true);
   }
 
-  static Person updateOutOfTransaction(CouchbaseOperations couchbaseOperations, Person pp, int tryCount) {
+  public static Person updateOutOfTransaction(CouchbaseOperations couchbaseOperations, Person pp, int tryCount) {
     System.err.println("updateOutOfTransaction: "+tryCount);
     if (tryCount < 1) {
       throw new RuntimeException("increment before calling updateOutOfTransactions");

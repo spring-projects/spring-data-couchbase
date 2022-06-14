@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.transactions;
+package org.springframework.data.couchbase.transactions.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -41,15 +41,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import reactor.core.publisher.Mono;
 
 /**
- * Tests for regular reactive SDK transactions, where Spring operations that aren't supported in a transaction are being used.
+ * Tests for regular SDK transactions, where Spring operations that aren't supported in a transaction are being used.
  * They should be prevented at runtime.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfig.class, ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests.PersonService.class})
-public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
+@SpringJUnitConfig(classes = {TransactionsConfig.class, SDKTransactionsNonAllowableOperationsIntegrationTests.PersonService.class})
+public class SDKTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
@@ -67,15 +66,16 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
-	void test(Function<ReactiveCouchbaseOperations, Mono<?>> r) {
+	void test(Consumer<CouchbaseOperations> r) {
 		AtomicInteger tryCount = new AtomicInteger(0);
 
 		assertThrowsWithCause(() -> {
-			couchbaseClientFactory.getCluster().reactive().transactions().run(ignored -> {
-				return personService.doInService(tryCount, (ops) -> {
-					return r.apply(ops);
+			couchbaseClientFactory.getCluster().transactions().run(ignored -> {
+				personService.doInService(tryCount, (ops) -> {
+					r.accept(ops);
+					return null;
 				});
-			}).block();
+			});
 		}, TransactionFailedException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
@@ -85,7 +85,7 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 	@Test
 	public void existsById() {
 		test((ops) -> {
-			return ops.existsById(Person.class).one(WalterWhite.id());
+			ops.existsById(Person.class).one(WalterWhite.id());
 		});
 	}
 
@@ -93,7 +93,7 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 	@Test
 	public void findByAnalytics() {
 		test((ops) -> {
-			return ops.findByAnalytics(Person.class).one();
+			ops.findByAnalytics(Person.class).one();
 		});
 	}
 
@@ -101,7 +101,7 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 	@Test
 	public void findFromReplicasById() {
 		test((ops) -> {
-			return ops.findFromReplicasById(Person.class).any(WalterWhite.id());
+			ops.findFromReplicasById(Person.class).any(WalterWhite.id());
 		});
 	}
 
@@ -109,7 +109,7 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 	@Test
 	public void upsertById() {
 		test((ops) -> {
-			return ops.upsertById(Person.class).one(WalterWhite);
+			ops.upsertById(Person.class).one(WalterWhite);
 		});
 	}
 
@@ -118,13 +118,13 @@ public class ReactiveNativeTransactionsNonAllowableOperationsIntegrationTests ex
 	@Component
 	static
 	class PersonService {
-		final ReactiveCouchbaseOperations personOperations;
+		final CouchbaseOperations personOperations;
 
-		public PersonService(ReactiveCouchbaseOperations ops) {
+		public PersonService(CouchbaseOperations ops) {
 			personOperations = ops;
 		}
 
-		public <T> Mono<T> doInService(AtomicInteger tryCount, Function<ReactiveCouchbaseOperations, Mono<T>> callback) {
+		public <T> T doInService(AtomicInteger tryCount, Function<CouchbaseOperations, T> callback) {
 			tryCount.incrementAndGet();
 			return callback.apply(personOperations);
 		}

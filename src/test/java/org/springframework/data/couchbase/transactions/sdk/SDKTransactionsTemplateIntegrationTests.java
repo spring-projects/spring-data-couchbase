@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.transactions;
+package org.springframework.data.couchbase.transactions.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -24,6 +24,9 @@ import static org.springframework.data.couchbase.transactions.util.TransactionTe
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import reactor.util.annotation.Nullable;
 
 import java.time.Duration;
@@ -58,7 +61,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
-public class CouchbaseTransactionsWrapperTemplateIntegrationTests extends JavaIntegrationTests {
+public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired CouchbaseTemplate ops;

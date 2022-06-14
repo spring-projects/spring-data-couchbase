@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.data.couchbase.transactions;
+package org.springframework.data.couchbase.transactions.sdk;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.ReplaceLoopThread.updateOutOfTransaction;
 
+import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedList;
@@ -61,7 +64,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
-public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIntegrationTests {
+public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactivePersonRepository rxRepo;
