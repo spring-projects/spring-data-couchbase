@@ -16,14 +16,32 @@
 
 package org.springframework.data.couchbase.core.mapping;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.data.Offset.offset;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.ChoiceFormat;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.convert.converter.Converter;
@@ -35,7 +53,11 @@ import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbaseJsr310Converters.LocalDateTimeToLongConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.id.*;
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue;
+import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
+import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix;
+import org.springframework.data.couchbase.core.mapping.id.IdSuffix;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Person;
@@ -70,8 +92,9 @@ public class MappingCouchbaseConverterTests {
 	void doesNotAllowSimpleType1() {
 		try {
 			converter.write("hello", new CouchbaseDocument());
-		} catch(Exception e){
-			if(!(e instanceof MappingException) && !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")){
+		} catch (Exception e) {
+			if (!(e instanceof MappingException)
+					&& !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")) {
 				throw new RuntimeException("Should have thrown MappingException or InaccessibleObjectException", e);
 			}
 		}
@@ -81,8 +104,9 @@ public class MappingCouchbaseConverterTests {
 	void doesNotAllowSimpleType2() {
 		try {
 			converter.write(true, new CouchbaseDocument());
-		} catch(Exception e){
-			if(!(e instanceof MappingException) && !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")){
+		} catch (Exception e) {
+			if (!(e instanceof MappingException)
+					&& !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")) {
 				throw new RuntimeException("Should have thrown MappingException or InaccessibleObjectException", e);
 			}
 		}
@@ -92,8 +116,9 @@ public class MappingCouchbaseConverterTests {
 	void doesNotAllowSimpleType3() {
 		try {
 			converter.write(42, new CouchbaseDocument());
-		} catch(Exception e){
-			if(!(e instanceof MappingException) && !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")){
+		} catch (Exception e) {
+			if (!(e instanceof MappingException)
+					&& !e.getClass().getName().equals("java.lang.reflect.InaccessibleObjectException")) {
 				throw new RuntimeException("Should have thrown MappingException or InaccessibleObjectException", e);
 			}
 		}
@@ -112,7 +137,7 @@ public class MappingCouchbaseConverterTests {
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
 		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
-		assertThat(result.get("attr0")).isEqualTo("foobar");
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0);
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
@@ -123,7 +148,51 @@ public class MappingCouchbaseConverterTests {
 		source.put("attr0", "foobar");
 
 		StringEntity converted = converter.read(StringEntity.class, source);
-		assertThat(converted.attr0).isEqualTo("foobar");
+		assertThat(converted.attr0).isEqualTo(source.get("attr0"));
+	}
+
+	@Test
+	void writesBigInteger() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		BigIntegerEntity entity = new BigIntegerEntity(new BigInteger("12345"));
+
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0.toString());
+		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
+	}
+
+	@Test
+	void readsBigInteger() {
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", BigIntegerEntity.class.getName());
+		source.put("attr0", "12345");
+
+		BigIntegerEntity converted = converter.read(BigIntegerEntity.class, source);
+		assertThat(converted.attr0).isEqualTo(new BigInteger((String) source.get("attr0")));
+	}
+
+	@Test
+	void writesBigDecimal() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		BigDecimalEntity entity = new BigDecimalEntity(new BigDecimal("123.45"));
+
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0.toString());
+		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
+	}
+
+	@Test
+	void readsBigDecimal() {
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", BigDecimalEntity.class.getName());
+		source.put("attr0", "123.45");
+
+		BigDecimalEntity converted = converter.read(BigDecimalEntity.class, source);
+		assertThat(converted.attr0).isEqualTo(new BigDecimal((String) source.get("attr0")));
 	}
 
 	@Test
@@ -438,8 +507,8 @@ public class MappingCouchbaseConverterTests {
 	@Test
 	void writesAndReadsCustomConvertedClass() {
 		List<Object> converters = new ArrayList<>();
-		converters.add(BigDecimalToStringConverter.INSTANCE);
-		converters.add(StringToBigDecimalConverter.INSTANCE);
+		converters.add(ChoiceFormatToStringConverter.INSTANCE);
+		converters.add(StringToChoiceFormatConverter.INSTANCE);
 		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
 		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
@@ -448,14 +517,14 @@ public class MappingCouchbaseConverterTests {
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 
-		final String valueStr = "12.345";
-		final BigDecimal value = new BigDecimal(valueStr);
-		final String value2Str = "0.6789";
-		final BigDecimal value2 = new BigDecimal(value2Str);
-		List<BigDecimal> listOfValues = new ArrayList<>();
+		final String valueStr = "1.0,2.0,3.0,4.0,5.0,6.0,7.0|Sun,Mon,Tue,Wed,Thur,Fri,Sat";
+		final ChoiceFormat value = fromString(valueStr);
+		final String value2Str = "1.0,2.0,3.0|Jan,Feb,Mar";
+		final ChoiceFormat value2 = fromString(value2Str);
+		List<ChoiceFormat> listOfValues = new ArrayList<>();
 		listOfValues.add(value);
 		listOfValues.add(value2);
-		Map<String, BigDecimal> mapOfValues = new TreeMap<>();
+		Map<String, ChoiceFormat> mapOfValues = new TreeMap<>();
 		mapOfValues.put("val1", value);
 		mapOfValues.put("val2", value2);
 
@@ -486,11 +555,25 @@ public class MappingCouchbaseConverterTests {
 		assertThat(readConverted.mapOfValues.get("val2")).isEqualTo(mapOfValues.get("val2"));
 	}
 
+	static private String toString(ChoiceFormat choiceFormat) {
+		String limits = Arrays.stream(choiceFormat.getLimits()).mapToObj(String::valueOf).collect(Collectors.joining(","));
+		String formats = Arrays.stream(choiceFormat.getFormats()).map((o) -> String.valueOf(o))
+				.collect(Collectors.joining(","));
+		return limits + "|" + formats;
+	}
+
+	static private ChoiceFormat fromString(String source) {
+		String[] split = source.split("\\|");
+		double[] limits = Arrays.stream(split[0].split(",")).mapToDouble(Double::parseDouble).toArray();
+		String[] formats = split[1].split(",");
+		return new ChoiceFormat(limits, formats);
+	}
+
 	@Test
 	void writesAndReadsCustomFieldsConvertedClass() {
 		List<Object> converters = new ArrayList<>();
-		converters.add(BigDecimalToStringConverter.INSTANCE);
-		converters.add(StringToBigDecimalConverter.INSTANCE);
+		converters.add(ChoiceFormatToStringConverter.INSTANCE);
+		converters.add(StringToChoiceFormatConverter.INSTANCE);
 		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
 		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
@@ -499,14 +582,14 @@ public class MappingCouchbaseConverterTests {
 
 		CouchbaseDocument converted = new CouchbaseDocument();
 
-		final String valueStr = "12.345";
-		final BigDecimal value = new BigDecimal(valueStr);
-		final String value2Str = "0.6789";
-		final BigDecimal value2 = new BigDecimal(value2Str);
-		List<BigDecimal> listOfValues = new ArrayList<>();
+		final String valueStr = "1.0,2.0,3.0,4.0,5.0,6.0,7.0|Sun,Mon,Tue,Wed,Thur,Fri,Sat";
+		final ChoiceFormat value = fromString(valueStr);
+		final String value2Str = "1.0,2.0,3.0|Jan,Feb,Mar";
+		final ChoiceFormat value2 = fromString(value2Str);
+		List<ChoiceFormat> listOfValues = new ArrayList<>();
 		listOfValues.add(value);
 		listOfValues.add(value2);
-		Map<String, BigDecimal> mapOfValues = new HashMap<>();
+		Map<String, ChoiceFormat> mapOfValues = new TreeMap<>();
 		mapOfValues.put("val1", value);
 		mapOfValues.put("val2", value2);
 
@@ -515,18 +598,18 @@ public class MappingCouchbaseConverterTests {
 
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", CustomFieldsEntity.class.getName());
-		source.put("decimalValue", valueStr);
+		source.put("choiceFormatValue", valueStr);
 		CouchbaseList listOfValuesDoc = new CouchbaseList();
 		listOfValuesDoc.put(valueStr);
 		listOfValuesDoc.put(value2Str);
-		source.put("listOfDecimalValues", listOfValuesDoc);
+		source.put("listOfChoiceFormatValues", listOfValuesDoc);
 		CouchbaseDocument mapOfValuesDoc = new CouchbaseDocument();
 		mapOfValuesDoc.put("val1", valueStr);
 		mapOfValuesDoc.put("val2", value2Str);
-		source.put("mapOfDecimalValues", mapOfValuesDoc);
+		source.put("mapOfChoiceFormatValues", mapOfValuesDoc);
 
-		assertThat(valueStr).isEqualTo(((CouchbaseList) converted.getContent().get("listOfDecimalValues")).get(0));
-		assertThat(value2Str).isEqualTo(((CouchbaseList) converted.getContent().get("listOfDecimalValues")).get(1));
+		assertThat(valueStr).isEqualTo(((CouchbaseList) converted.getContent().get("listOfChoiceFormatValues")).get(0));
+		assertThat(value2Str).isEqualTo(((CouchbaseList) converted.getContent().get("listOfChoiceFormatValues")).get(1));
 		assertThat(converted.export().toString()).isEqualTo(source.export().toString());
 
 		CustomFieldsEntity readConverted = converter.read(CustomFieldsEntity.class, source);
@@ -540,8 +623,8 @@ public class MappingCouchbaseConverterTests {
 	@Test
 	void writesAndReadsClassContainingCustomConvertedObjects() {
 		List<Object> converters = new ArrayList<>();
-		converters.add(BigDecimalToStringConverter.INSTANCE);
-		converters.add(StringToBigDecimalConverter.INSTANCE);
+		converters.add(ChoiceFormatToStringConverter.INSTANCE);
+		converters.add(StringToChoiceFormatConverter.INSTANCE);
 		CustomConversions customConversions = new CouchbaseCustomConversions(converters);
 		converter.setCustomConversions(customConversions);
 		converter.afterPropertiesSet();
@@ -635,22 +718,22 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	@WritingConverter
-	public enum BigDecimalToStringConverter implements Converter<BigDecimal, String> {
+	public enum ChoiceFormatToStringConverter implements Converter<ChoiceFormat, String> {
 		INSTANCE;
 
 		@Override
-		public String convert(BigDecimal source) {
-			return source.toPlainString();
+		public String convert(ChoiceFormat source) {
+			return MappingCouchbaseConverterTests.toString(source);
 		}
 	}
 
 	@ReadingConverter
-	public enum StringToBigDecimalConverter implements Converter<String, BigDecimal> {
+	public enum StringToChoiceFormatConverter implements Converter<String, ChoiceFormat> {
 		INSTANCE;
 
 		@Override
-		public BigDecimal convert(String source) {
-			return new BigDecimal(source);
+		public ChoiceFormat convert(String source) {
+			return MappingCouchbaseConverterTests.fromString(source);
 		}
 	}
 
@@ -672,6 +755,22 @@ public class MappingCouchbaseConverterTests {
 		private String attr0;
 
 		public StringEntity(String attr0) {
+			this.attr0 = attr0;
+		}
+	}
+
+	static class BigIntegerEntity extends BaseEntity {
+		private BigInteger attr0;
+
+		public BigIntegerEntity(BigInteger attr0) {
+			this.attr0 = attr0;
+		}
+	}
+
+	static class BigDecimalEntity extends BaseEntity {
+		private BigDecimal attr0;
+
+		public BigDecimalEntity(BigDecimal attr0) {
 			this.attr0 = attr0;
 		}
 	}
@@ -770,11 +869,11 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	static class CustomEntity extends BaseEntity {
-		private BigDecimal value;
-		private List<BigDecimal> listOfValues;
-		private Map<String, BigDecimal> mapOfValues;
+		private ChoiceFormat value;
+		private List<ChoiceFormat> listOfValues;
+		private Map<String, ChoiceFormat> mapOfValues;
 
-		public CustomEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
+		public CustomEntity(ChoiceFormat value, List<ChoiceFormat> listOfValues, Map<String, ChoiceFormat> mapOfValues) {
 			this.value = value;
 			this.listOfValues = listOfValues;
 			this.mapOfValues = mapOfValues;
@@ -782,11 +881,12 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	static class CustomFieldsEntity extends BaseEntity {
-		@Field("decimalValue") private BigDecimal value;
-		@Field("listOfDecimalValues") private List<BigDecimal> listOfValues;
-		@Field("mapOfDecimalValues") private Map<String, BigDecimal> mapOfValues;
+		@Field("choiceFormatValue") private ChoiceFormat value;
+		@Field("listOfChoiceFormatValues") private List<ChoiceFormat> listOfValues;
+		@Field("mapOfChoiceFormatValues") private Map<String, ChoiceFormat> mapOfValues;
 
-		public CustomFieldsEntity(BigDecimal value, List<BigDecimal> listOfValues, Map<String, BigDecimal> mapOfValues) {
+		public CustomFieldsEntity(ChoiceFormat value, List<ChoiceFormat> listOfValues,
+				Map<String, ChoiceFormat> mapOfValues) {
 			this.value = value;
 			this.listOfValues = listOfValues;
 			this.mapOfValues = mapOfValues;
