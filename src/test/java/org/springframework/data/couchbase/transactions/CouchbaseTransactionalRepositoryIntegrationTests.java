@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInReactiveTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import java.util.List;
@@ -71,13 +70,11 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 	@BeforeEach
 	public void beforeEachTest() {
 		assertNotInTransaction();
-		assertNotInReactiveTransaction();
 	}
 
 	@AfterEach
 	public void afterEachTest() {
 		assertNotInTransaction();
-		assertNotInReactiveTransaction();
 	}
 
 	@Test

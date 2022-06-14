@@ -35,18 +35,4 @@ public class TransactionTestUtil {
     public static void assertNotInTransaction() {
         assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
     }
-
-    public static <T> Mono<T> assertInReactiveTransaction(T o) {
-        System.err.println("assertInReactiveTransaction:"+o);
-        return org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction().just(o);
-    }
-
-    public static void assertNotInReactiveTransaction() {
-        try {
-            org.springframework.transaction.reactive.TransactionSynchronizationManager.forCurrentTransaction().block();
-        }
-        catch (NoTransactionException ignored) {
-        }
-    }
-
 }

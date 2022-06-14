@@ -23,6 +23,7 @@ import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
@@ -32,7 +33,6 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -102,24 +102,16 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
 			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
-			populateTransactionSynchronizationManager(ctx);
-
-			try {
-				T res = callback.doInTransaction(status);
-				if (res instanceof Mono || res instanceof Flux) {
-					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.");
-				}
-				execResult.set(res);
-			} finally {
-				clearTransactionSynchronizationManager();
+			T res = callback.doInTransaction(status);
+			if (res instanceof Mono || res instanceof Flux) {
+				throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.");
 			}
+			execResult.set(res);
 
 			if (status.isRollbackOnly()) {
 				throw new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set");
 			}
 		}, this.options);
-
-		clearTransactionSynchronizationManager();
 
 		return execResult.get();
 	}
@@ -163,13 +155,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 							}
 							return Mono.empty();
 						}));
-			})
-					// This reactive context is what tells Spring operations they're inside a transaction.
-					.contextWrite(reactiveContext -> {
-						CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(
-								AttemptContextReactiveAccessor.getCore(ctx));
-						return reactiveContext.put(CouchbaseResourceHolder.class, resourceHolder);
-					});
+			});
 
 		}, this.options)
 				.thenMany(Flux.defer(() -> Flux.fromIterable(out)));
@@ -177,7 +163,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
 	private boolean handlePropagation(TransactionDefinition definition) {
-		boolean isExistingTransaction = TransactionSynchronizationManager.isActualTransactionActive();
+		boolean isExistingTransaction = TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent();
 
 		LOGGER.trace("Deciding propagation behaviour from {} and {}", definition.getPropagationBehavior(),
 				isExistingTransaction);
@@ -252,23 +238,6 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 			// readonly is ignored as it is documented as being a hint that won't necessarily cause writes to fail
 		}
 
-	}
-
-	// Setting ThreadLocal storage.
-	// Note there is reactive-equivalent code in ReactiveTransactionsWrapper to sync with
-	@Stability.Internal
-	public static void populateTransactionSynchronizationManager(TransactionAttemptContext ctx) {
-		TransactionSynchronizationManager.setActualTransactionActive(true);
-		TransactionSynchronizationManager.initSynchronization();
-		CouchbaseResourceHolder resourceHolder = new CouchbaseResourceHolder(AttemptContextReactiveAccessor.getCore(ctx));
-		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
-		TransactionSynchronizationManager.bindResource(CouchbaseResourceHolder.class, resourceHolder);
-	}
-
-	@Stability.Internal
-	public static void clearTransactionSynchronizationManager() {
-		TransactionSynchronizationManager.unbindResourceIfPossible(CouchbaseResourceHolder.class);
-		TransactionSynchronizationManager.clear();
 	}
 
 	@Override

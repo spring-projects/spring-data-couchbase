@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,7 +78,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 
 	@BeforeEach
 	public void beforeEachTest() {
-		TransactionTestUtil.assertNotInTransaction();
+		assertNotInTransaction();
 	}
 
 	@AfterEach
@@ -284,17 +286,6 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		assertNotNull(operations.findById(Person.class).one(id1.toString()));
 		assertNotNull(operations.findById(Person.class).one(id2.toString()));
 		assertEquals(3, attempts.get());
-	}
-
-	void assertInTransaction() {
-		assertTrue(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
-	}
-
-	void assertNotInTransaction() {
-		try {
-			assertFalse(
-					org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive());
-		} catch (NoTransactionException ignored) {}
 	}
 
 	@Service
