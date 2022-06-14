@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import com.couchbase.client.core.annotation.Stability;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
@@ -24,6 +25,7 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import java.util.HashMap;
 import java.util.Map;
 
+@Stability.Internal
 public class CouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable CoreTransactionAttemptContext core; // which holds the atr

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.transaction;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
+import com.couchbase.client.core.annotation.Stability;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.TransactionManager;
@@ -30,6 +31,7 @@ import reactor.core.publisher.Mono;
 /**
  * Simplest possible TransactionInterceptor implementation.
  */
+@Stability.Internal
 public class CouchbaseTransactionInterceptor extends TransactionInterceptor
 		implements MethodInterceptor, Serializable {
 
