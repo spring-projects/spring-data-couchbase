@@ -19,8 +19,10 @@ package org.springframework.data.couchbase.transactions;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -47,14 +49,12 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
 /**
- * Tests for com.couchbase.transactions without using the spring data transactions framework
+ * Tests for CouchbaseTransactionalOperator.
  *
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
-// @Disabled("gp: disabling as these use CouchbaseTransactionalOperator which I've done broke (but also feel we should
-// remove)")
 public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -63,6 +63,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 	@Autowired CouchbaseTemplate cbTmpl;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
 	@Autowired ReactiveCouchbaseTemplate operations;
+	// This will pick up CouchbaseTransactionalOperator
 	@Autowired TransactionalOperator txOperator;
 
 	String sName = "_default";
@@ -82,6 +83,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 
 	@BeforeEach
 	public void beforeEachTest() {
+		assertTrue(txOperator instanceof CouchbaseTransactionalOperator);
 		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		TransactionTestUtil.assertNotInTransaction();

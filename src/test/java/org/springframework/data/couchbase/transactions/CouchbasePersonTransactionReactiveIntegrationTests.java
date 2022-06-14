@@ -58,13 +58,13 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
+ * <p>
+ * todo gp: these tests are using the `.as(transactionalOperator::transactional)` method which is for the chopping block, so presumably these tests are too
  *
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class, PersonServiceReactive.class })
-// @Disabled("gp: disabling as these use TransactionalOperator which I've done broke (but also feel we should not and
-// cannot support)")
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;

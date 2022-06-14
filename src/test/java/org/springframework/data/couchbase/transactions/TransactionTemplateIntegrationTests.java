@@ -58,7 +58,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for Spring's TransactionTemplate, used CouchbaseSimpleCallbackTransactionManager, using template methods
+ * Tests for Spring's TransactionTemplate, used CouchbaseCallbackTransactionManager, using template methods
  * (findById etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)

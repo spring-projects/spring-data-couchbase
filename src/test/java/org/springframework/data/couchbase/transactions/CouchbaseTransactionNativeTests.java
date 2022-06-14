@@ -18,9 +18,11 @@ package org.springframework.data.couchbase.transactions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -47,6 +49,8 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
+ * <p>
+ * Tests CouchbaseTransactionalOperator.
  *
  * @author Michael Reiche
  */
@@ -56,8 +60,6 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 // form of TransactionalOperator. Also there does not seem to be a need for a CouchbaseTransactionalOperator as
 // TransactionalOperator.create(reactiveCouchbaseTransactionManager) seems to work just fine. (I don't recall what
 // merits the "Native" in the name).
-// @Disabled("gp: disabling as these use CouchbaseTransactionalOperator which I've done broke (but also feel we should
-// remove)")
 public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired TransactionManager couchbaseTransactionManager;
@@ -84,6 +86,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 
 	@BeforeEach
 	public void beforeEach() {
+		assertTrue(txOperator instanceof CouchbaseTransactionalOperator);
 		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 	}
