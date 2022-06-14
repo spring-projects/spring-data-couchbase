@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		@Override
 		public Flux<RemoveResult> all() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			String statement = assembleDeleteQuery(pArgs.getCollection());
+			String statement = assembleDeleteQuery(pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
 			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
 					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
@@ -119,8 +119,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 					options);
 		}
 
-		private String assembleDeleteQuery(String collection) {
-			return query.toN1qlRemoveString(template, collection, this.domainType);
+		private String assembleDeleteQuery(String scope, String collection) {
+			return query.toN1qlRemoveString(template, scope, collection, this.domainType);
 		}
 
 		@Override
