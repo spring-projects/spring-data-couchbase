@@ -23,7 +23,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * The simplest possible implementation of TransactionalOperator.
+ * The TransactionalOperator interface is another method to perform reactive transactions with Spring.
+ * <p>
+ * We recommend instead using a regular reactive SDK transaction, and performing Spring operations inside it.
  */
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	private final CouchbaseCallbackTransactionManager manager;

@@ -29,7 +29,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
- * Simplest possible TransactionInterceptor implementation.
+ * This allows reactive @Transactional support with Couchbase transactions.
+ * <p>
+ * The ReactiveTransactionManager does not support the lambda-based nature of Couchbase transactions,
+ * and there is no reactive equivalent of CallbackPreferringTransactionManager (which does).
+ * <p>
+ * The solution: override the standard TransactionInterceptor and, if the
+ * CouchbaseCallbackTransactionManager is the provided TransactionManager, defer to that.
  */
 @Stability.Internal
 public class CouchbaseTransactionInterceptor extends TransactionInterceptor
