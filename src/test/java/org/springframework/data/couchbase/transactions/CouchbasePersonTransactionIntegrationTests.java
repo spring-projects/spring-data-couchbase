@@ -189,7 +189,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(4, countEvents, "should have saved and found 4");
 	}
 
-	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
 		assertThrowsWithCause(() -> personService.saveWithErrorLogs(WalterWhite),
@@ -206,22 +205,15 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(1, count, "should have counted 1 during tx");
 	}
 
-	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void emitMultipleElementsDuringTransaction() {
 		List<EventLog> docs = personService.saveWithLogs(WalterWhite);
 		assertEquals(4, docs.size(), "should have found 4 eventlogs");
 	}
 
-	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(WalterWhite);
-		/*
-		TransactionOperationFailedException {cause:com.couchbase.client.core.error.DocumentExistsException, retry:false, autoRollback:true, raise:TRANSACTION_FAILED}
-		at com.couchbase.client.core.error.transaction.TransactionOperationFailedException$Builder.build(TransactionOperationFailedException.java:136)
-		at com.couchbase.client.core.transaction.CoreTransactionAttemptContext.lambda$handleDocExistsDuringStagedInsert$116(CoreTransactionAttemptContext.java:1801)
-		 */
 		assertThrowsOneOf(() -> personService.savePerson(p), TransactionFailedException.class,
 				DocumentExistsException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
@@ -240,7 +232,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertEquals(person, pFound, "should have found expected " + person);
 	}
 
-	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertPersonCBTransactionsRxTmplRollback() {
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
@@ -252,7 +243,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertNull(pFound, "insert should have been rolled back");
 	}
 
-	// @Disabled("gp: as CouchbaseTransactionOperation or TransactionalOperator user")
 	@Test
 	public void insertTwicePersonCBTransactionsRxTmplRollback() {
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //

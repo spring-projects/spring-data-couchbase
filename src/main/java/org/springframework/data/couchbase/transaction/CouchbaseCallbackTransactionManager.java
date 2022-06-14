@@ -56,7 +56,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	}
 
 	/**
-	 * This override is for users manually creating a CouchbaseSimpleCallbackTransactionManager, and allows the
+	 * This override is for users manually creating a CouchbaseCallbackTransactionManager, and allows the
 	 * TransactionOptions to be overridden.
 	 */
 	public CouchbaseCallbackTransactionManager(CouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
@@ -104,7 +104,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 
 			T res = callback.doInTransaction(status);
 			if (res instanceof Mono || res instanceof Flux) {
-				throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.");
+				throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseTransactionInterceptor is not in use.");
 			}
 			execResult.set(res);
 
