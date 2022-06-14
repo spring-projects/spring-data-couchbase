@@ -18,7 +18,7 @@
     </parent>
 
     <properties>
-        <couchbase>3.3.1</couchbase>
+        <couchbase>3.3.2-SNAPSHOT</couchbase>
         <couchbase.osgi>3.3.1</couchbase.osgi>
         <springdata.commons>2.7.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>

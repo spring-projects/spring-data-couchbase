@@ -23,9 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.transaction.ReactiveSpringTransactionAttemptContext;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -43,7 +43,6 @@ import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
-import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -55,7 +54,7 @@ import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for ReactiveTransactionsWrapper, using template methods (findById etc.)
+ * Tests using template methods (findById etc.) inside a regular reactive SDK transaction.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -64,7 +63,6 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTemplate ops;
 	@Autowired CouchbaseTemplate blocking;
-	@Autowired ReactiveTransactionsWrapper wrapper;
 
 	Person WalterWhite;
 
@@ -88,15 +86,15 @@ public class CouchbaseReactiveTransactionsWrapperTemplateIntegrationTests extend
 		}
 	}
 
-	private RunResult doInTransaction(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> lambda) {
+	private RunResult doInTransaction(Function<ReactiveTransactionAttemptContext, Mono<?>> lambda) {
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Function<ReactiveSpringTransactionAttemptContext, Mono<?>> lambda,
+	private RunResult doInTransaction(Function<ReactiveTransactionAttemptContext, Mono<?>> lambda,
 			@Nullable TransactionOptions options) {
 		AtomicInteger attempts = new AtomicInteger();
 
-		TransactionResult result = wrapper.run(ctx -> {
+		TransactionResult result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			return TransactionalSupport.checkForTransactionInThreadLocalStorage().then(Mono.defer(() -> {
 				attempts.incrementAndGet();
 				return lambda.apply(ctx);

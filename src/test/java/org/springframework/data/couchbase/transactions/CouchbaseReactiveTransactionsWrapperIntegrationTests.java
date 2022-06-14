@@ -45,7 +45,6 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
-import org.springframework.data.couchbase.transaction.ReactiveTransactionsWrapper;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -58,6 +57,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
+ * Now ReactiveTransactionsWrapper is removed, these are testing the same operations inside a regular SDK transaction.
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -69,7 +69,6 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Autowired CouchbaseTemplate cbTmpl;
 	@Autowired ReactiveCouchbaseTemplate rxCBTmpl;
 	@Autowired CouchbaseTemplate operations;
-	@Autowired ReactiveTransactionsWrapper reactiveTransactionsWrapper;
 
 	String sName = "_default";
 	String cName = "_default";
@@ -112,7 +111,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	public void wrapperReplaceWithCasConflictResolvedViaRetryReactive() {
 		AtomicInteger tryCount = new AtomicInteger();
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions()
 				.run(ctx -> rxCBTmpl.findById(Person.class).one(person.id()) //
 						.map((pp) -> updateOutOfTransaction(cbTmpl, pp, tryCount.incrementAndGet()))
 						.flatMap(ppp -> rxCBTmpl.replaceById(Person.class).one(ppp.withFirstName("Dave"))));
@@ -131,7 +130,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		Person person = operations.insertById(Person.class).one(WalterWhite);
 		AtomicInteger attempts = new AtomicInteger();
 
-		reactiveTransactionsWrapper
+		couchbaseClientFactory.getCluster().reactive().transactions()
 				.run(ctx -> rxCBTmpl.findById(Person.class).one(person.id()).flatMap(fetched -> {
 					ReplaceLoopThread.updateOutOfTransaction(cbTmpl, fetched, attempts.incrementAndGet());
 					return rxCBTmpl.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
@@ -146,7 +145,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	public void replacePersonCBTransactionsRxTmplRollback() {
 		String newName = "Walt";
 		Person person = cbTmpl.insertById(Person.class).one(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { //
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { //
 			return rxCBTmpl.findById(Person.class).one(person.id()) //
 					.flatMap(pp -> rxCBTmpl.replaceById(Person.class).one(pp.withFirstName(newName))).then(Mono.empty());
 		});
@@ -159,7 +158,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test
 	public void deletePersonCBTransactionsRxTmpl() {
 		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person).then();
 		});
 		result.block();
@@ -170,7 +169,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test // ok
 	public void deletePersonCBTransactionsRxTmplFail() {
 		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)
 					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person));
 		});
@@ -182,7 +181,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test
 	public void deletePersonCBTransactionsRxRepo() {
 		Person person = repo.withCollection(cName).save(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			return rxRepo.withCollection(cName).delete(person).then();
 		});
 		result.block();
@@ -193,7 +192,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test
 	public void deletePersonCBTransactionsRxRepoFail() {
 		Person person = repo.withCollection(cName).save(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
 			return rxRepo.withCollection(cName).findById(person.id())
 					.flatMap(pp -> rxRepo.withCollection(cName).delete(pp).then(rxRepo.withCollection(cName).delete(pp))).then();
 		});
@@ -208,7 +207,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 				.one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> {
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			return rxCBTmpl.findByQuery(Person.class).inScope(sName).inCollection(cName).matching(q)
 					.withConsistency(REQUEST_PLUS).one().doOnSuccess(doc -> {
 						System.err.println("doc: " + doc);
@@ -225,7 +224,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test
 	public void insertPersonRbCBTransactions() {
 		Person person = WalterWhite;
-		Mono<TransactionResult> result = reactiveTransactionsWrapper
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions()
 				.run(ctx -> rxCBTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(person)
 						.<Person> flatMap(it -> Mono.error(new SimulateFailureException())));
 		assertThrowsWithCause(() -> result.block(), TransactionFailedException.class, SimulateFailureException.class);
@@ -236,7 +235,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 	@Test
 	public void replacePersonRbCBTransactions() {
 		Person person = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(WalterWhite);
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> //
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> //
 		rxCBTmpl.findById(Person.class).inScope(sName).inCollection(cName).one(person.id()) //
 				.flatMap(pFound -> rxCBTmpl.replaceById(Person.class).inScope(sName).inCollection(cName)
 						.one(pFound.withFirstName("Walt")))
@@ -251,7 +250,7 @@ public class CouchbaseReactiveTransactionsWrapperIntegrationTests extends JavaIn
 		Person person = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = reactiveTransactionsWrapper.run(ctx -> rxCBTmpl.findByQuery(Person.class)
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> rxCBTmpl.findByQuery(Person.class)
 				.inScope(sName).inCollection(cName).matching(q).one().doOnSuccess(r -> docs.add(r)));
 		result.block();
 		assertFalse(docs.isEmpty(), "Should have found " + person);
