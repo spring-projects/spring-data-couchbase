@@ -142,6 +142,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		super.beforeEach();
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all();
 		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 	}
 
 	@Test

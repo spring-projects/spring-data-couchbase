@@ -359,4 +359,28 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		}
 	}
 
+	@Test
+	void stringDeleteCollectionTest() {
+		String key0 = loc();
+		String key1 = loc();
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			airportRepository.withScope(scopeName).withCollection(collectionName).deleteById(airport.getId());
+		} catch (DataRetrievalFailureException drfe) {}
+		try {
+			airportRepository.withScope(scopeName).withCollection(collectionName).deleteById(otherAirport.getId());
+		} catch (DataRetrievalFailureException drfe) {}
+		try {
+			airportRepository.withScope(scopeName).withCollection(collectionName).save(airport);
+			airportRepository.withScope(scopeName).withCollection(collectionName).save(otherAirport);
+			assertEquals(1, airportRepository.withScope(scopeName).withCollection(collectionName).deleteByIata(airport.getIata()).size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			airportRepository.withScope(scopeName).withCollection(collectionName).deleteById(otherAirport.getId());
+		}
+	}
+
 }

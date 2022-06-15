@@ -80,7 +80,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			LOG.trace("upsertById {}", pArgs);
+			LOG.trace("upsertById object={} {}", object, pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()

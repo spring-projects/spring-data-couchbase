@@ -215,4 +215,12 @@ public abstract class ClusterAwareIntegrationTests {
 		}
 	}
 
+	/**
+	 * @return unique identifier for line - to use as key for documents to identify where they were created
+	 */
+	public static String loc() {
+		StackTraceElement ste = Thread.currentThread().getStackTrace()[2];
+		return ste.getClassName() + ":" + ste.getMethodName() + ":" + ste.getLineNumber();
+	}
+
 }

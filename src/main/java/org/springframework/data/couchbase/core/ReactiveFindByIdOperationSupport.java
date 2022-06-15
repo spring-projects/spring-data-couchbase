@@ -80,7 +80,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 			CommonOptions<?> gOptions = initGetOptions();
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
-			LOG.trace("findById {}", pArgs);
+			LOG.trace("findById key={} {}", id, pArgs);
 
 			return Mono.just(id).flatMap(docId -> {
 				ReactiveCollection reactive = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
