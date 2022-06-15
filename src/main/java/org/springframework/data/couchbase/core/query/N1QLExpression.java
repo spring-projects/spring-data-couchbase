@@ -210,6 +210,13 @@ public class N1QLExpression {
 	}
 
 	/**
+	 * Returned expression results in distinct of the expression
+	 */
+	public static N1QLExpression distinct(N1QLExpression expression) {
+		return  x("distinct{" + expression.toString() + "}");
+	}
+
+	/**
 	 * Helper method to wrap varargs with the given character.
 	 *
 	 * @param wrapper the wrapper character.
