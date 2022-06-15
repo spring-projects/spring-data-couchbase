@@ -73,7 +73,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 			}
 			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
-			LOG.trace("getAnyReplica {}", pArgs);
+			LOG.trace("getAnyReplica key={} {}", id, pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))

@@ -81,7 +81,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		@Override
 		public Mono<RemoveResult> one(final String id) {
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("removeById {}", pArgs);
+			LOG.trace("removeById key={} {}", id, pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().remove(id, buildRemoveOptions(pArgs.getOptions()))
