@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -29,13 +30,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AddressAnnotated;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
+import org.springframework.data.couchbase.domain.AirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
@@ -48,13 +48,14 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryScanConsistency;
 
+@SpringJUnitConfig(Config.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
@@ -62,6 +63,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 	@Autowired UserColRepository userColRepository; // initialized in beforeEach()
 	@Autowired UserSubmissionAnnotatedRepository userSubmissionAnnotatedRepository; // initialized in beforeEach()
 	@Autowired UserSubmissionUnannotatedRepository userSubmissionUnannotatedRepository; // initialized in beforeEach()
+	@Autowired AirportRepositoryAnnotated airportRepositoryAnnotated;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -86,14 +88,9 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// then do processing for this class
 		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).all();
 		couchbaseTemplate.removeByQuery(UserCol.class).inScope(otherScope).inCollection(otherCollection).all();
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		// seems that @Autowired is not adequate, so ...
-		airportRepository = (AirportRepository) ac.getBean("airportRepository");
-		userColRepository = (UserColRepository) ac.getBean("userColRepository");
-		userSubmissionAnnotatedRepository = (UserSubmissionAnnotatedRepository) ac
-				.getBean("userSubmissionAnnotatedRepository");
-		userSubmissionUnannotatedRepository = (UserSubmissionUnannotatedRepository) ac
-				.getBean("userSubmissionUnannotatedRepository");
+		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName2).all();
+		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inCollection(collectionName).all();
 	}
 
 	@AfterEach
@@ -149,8 +146,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 
 			// valid scope, collection in options
 			Airport airport2 = ar.withCollection(collectionName)
-					.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+					.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).iata(vie.getIata());
 			assertEquals(saved, airport2);
 
 			// given bad collectionName in fluent
@@ -159,8 +155,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			// given bad scopeName in fluent
 			assertThrows(IndexFailureException.class, () -> ar.withScope("bogusScope").iata(vie.getIata()));
 
-			Airport airport6 = ar.withOptions(QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS))
-					.iata(vie.getIata());
+			Airport airport6 = ar.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).iata(vie.getIata());
 			assertEquals(saved, airport6);
 
 		} catch (Exception e) {
@@ -180,8 +175,8 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		try {
 			Airport saved = ar.save(vie);
 
-			Airport airport3 = ar.withOptions(
-					QueryOptions.queryOptions().scanConsistency(QueryScanConsistency.REQUEST_PLUS).parameters(positionalParams))
+			Airport airport3 = ar
+					.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS).parameters(positionalParams))
 					.iata(vie.getIata());
 			assertEquals(saved, airport3);
 
@@ -278,8 +273,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
-					.inScope(scopeName).all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionAnnotated> users = userSubmissionAnnotatedRepository.findByUsername(user.getUsername());
@@ -333,8 +327,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(QueryScanConsistency.REQUEST_PLUS)
-					.inScope(scopeName).all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionUnannotated> users = userSubmissionUnannotatedRepository.findByUsername(user.getUsername());
@@ -359,4 +352,57 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		}
 	}
 
+	@Test
+	void stringDeleteCollectionTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			airport = airportRepository.withScope(scopeName).withCollection(collectionName).save(airport);
+			otherAirport = airportRepository.withScope(scopeName).withCollection(collectionName).save(otherAirport);
+			assertEquals(1,
+					airportRepository.withScope(scopeName).withCollection(collectionName).deleteByIata(airport.getIata()).size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			airportRepository.withScope(scopeName).withCollection(collectionName).deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test
+	void stringDeleteWithRepositoryAnnotationTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			airport = airportRepositoryAnnotated.withScope(scopeName).save(airport);
+			otherAirport = airportRepositoryAnnotated.withScope(scopeName).save(otherAirport);
+			// don't specify a collection - should get collection from AirportRepositoryAnnotated
+			assertEquals(1, airportRepositoryAnnotated.withScope(scopeName).deleteByIata(airport.getIata()).size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			// this will fail if the above didn't use collectionName2
+			airportRepository.withScope(scopeName).withCollection(collectionName2).deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test
+	void stringDeleteWithMethodAnnotationTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			Airport airportSaved = airportRepositoryAnnotated.withScope(scopeName).save(airport);
+			Airport otherAirportSaved = airportRepositoryAnnotated.withScope(scopeName).save(otherAirport);
+			// don't specify a collection - should get collection from deleteByIataAnnotated method
+			assertThrows(IndexFailureException.class, () -> assertEquals(1,
+					airportRepositoryAnnotated.withScope(scopeName).deleteByIataAnnotated(airport.getIata()).size()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			// this will fail if the above didn't use collectionName2
+			airportRepository.withScope(scopeName).withCollection(collectionName2).deleteById(otherAirport.getId());
+		}
+	}
 }

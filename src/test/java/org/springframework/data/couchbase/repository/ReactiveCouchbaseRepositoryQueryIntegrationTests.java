@@ -72,7 +72,8 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 
 	@Autowired CouchbaseClientFactory clientFactory;
 
-	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
+	@Autowired ReactiveAirportRepository reactiveAirportRepository; // intellij flags "Could not Autowire", but it runs
+																																	// ok.
 	@Autowired ReactiveUserRepository userRepository; // intellij flags "Could not Autowire", but it runs ok.
 
 	@Test
@@ -81,18 +82,18 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		Airport jfk = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "low1");
-			airportRepository.save(vie).block();
+			reactiveAirportRepository.save(vie).block();
 			jfk = new Airport("airports::jfk", "JFK", "xxxx");
-			airportRepository.save(jfk).block();
+			reactiveAirportRepository.save(jfk).block();
 
-			List<Airport> all = airportRepository.findAll().toStream().collect(Collectors.toList());
+			List<Airport> all = reactiveAirportRepository.findAll().toStream().collect(Collectors.toList());
 
 			assertFalse(all.isEmpty());
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::jfk")));
 		} finally {
-			airportRepository.delete(vie).block();
-			airportRepository.delete(jfk).block();
+			reactiveAirportRepository.delete(vie).block();
+			reactiveAirportRepository.delete(jfk).block();
 		}
 	}
 
@@ -101,20 +102,20 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "low2");
-			airportRepository.save(vie).block();
-			List<Airport> airports1 = airportRepository.findAllByIata("vie").collectList().block();
+			reactiveAirportRepository.save(vie).block();
+			List<Airport> airports1 = reactiveAirportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1, airports1.size());
-			List<Airport> airports2 = airportRepository.findAllByIata("vie").collectList().block();
+			List<Airport> airports2 = reactiveAirportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1, airports2.size());
-			vie = airportRepository.save(vie).block();
-			List<Airport> airports = airportRepository.findAllByIata("vie").collectList().block();
+			vie = reactiveAirportRepository.save(vie).block();
+			List<Airport> airports = reactiveAirportRepository.findAllByIata("vie").collectList().block();
 			assertEquals(1, airports.size());
-			Airport airport1 = airportRepository.findById(airports.get(0).getId()).block();
+			Airport airport1 = reactiveAirportRepository.findById(airports.get(0).getId()).block();
 			assertEquals(airport1.getIata(), vie.getIata());
-			Airport airport2 = airportRepository.findByIata(airports.get(0).getIata()).block();
+			Airport airport2 = reactiveAirportRepository.findByIata(airports.get(0).getIata()).block();
 			assertEquals(airport1.getId(), vie.getId());
 		} finally {
-			airportRepository.delete(vie).block();
+			reactiveAirportRepository.delete(vie).block();
 		}
 	}
 
@@ -133,27 +134,27 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	@Test
 	void limitTest() {
 		Airport vie = new Airport("airports::vie", "vie", "low3");
-		Airport saved1 = airportRepository.save(vie).block();
-		Airport saved2 = airportRepository.save(vie.withId(UUID.randomUUID().toString())).block();
+		Airport saved1 = reactiveAirportRepository.save(vie).block();
+		Airport saved2 = reactiveAirportRepository.save(vie.withId(UUID.randomUUID().toString())).block();
 		try {
-			airportRepository.findAll().collectList().block(); // findAll has QueryScanConsistency;
-			Mono<Airport> airport = airportRepository.findPolicySnapshotByPolicyIdAndEffectiveDateTime("any", 0);
+			reactiveAirportRepository.findAll().collectList().block(); // findAll has QueryScanConsistency;
+			Mono<Airport> airport = reactiveAirportRepository.findPolicySnapshotByPolicyIdAndEffectiveDateTime("any", 0);
 			System.out.println("------------------------------");
 			System.out.println(airport.block());
 			System.out.println("------------------------------");
-			Flux<Airport> airports = airportRepository.findPolicySnapshotAll();
+			Flux<Airport> airports = reactiveAirportRepository.findPolicySnapshotAll();
 			System.out.println(airports.collectList().block());
 			System.out.println("------------------------------");
 			Mono<Airport> ap = getPolicyByIdAndEffectiveDateTime("x", Instant.now());
 			System.out.println(ap.block());
 		} finally {
-			airportRepository.delete(saved1).block();
-			airportRepository.delete(saved2).block();
+			reactiveAirportRepository.delete(saved1).block();
+			reactiveAirportRepository.delete(saved2).block();
 		}
 	}
 
 	public Mono<Airport> getPolicyByIdAndEffectiveDateTime(String policyId, Instant effectiveDateTime) {
-		return airportRepository
+		return reactiveAirportRepository
 				.findPolicySnapshotByPolicyIdAndEffectiveDateTime(policyId, effectiveDateTime.toEpochMilli())
 				// .map(Airport::getEntity)
 				.doOnError(
@@ -177,36 +178,36 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 			Callable<Boolean>[] suppliers = new Callable[iatas.size()];
 			for (String iata : iatas) {
 				Airport airport = new Airport("airports::" + iata, iata, iata.toLowerCase() /* lcao */);
-				airportRepository.save(airport).block();
+				reactiveAirportRepository.save(airport).block();
 			}
 
 			int page = 0;
 
-			airportRepository.findAllByIataLike("S%", PageRequest.of(page++, 2)).as(StepVerifier::create) //
+			reactiveAirportRepository.findAllByIataLike("S%", PageRequest.of(page++, 2)).as(StepVerifier::create) //
 					.expectNextMatches(a -> {
 						return iatas.contains(a.getIata());
 					}).expectNextMatches(a -> iatas.contains(a.getIata())).verifyComplete();
 
-			airportRepository.findAllByIataLike("S%", PageRequest.of(page++, 2)).as(StepVerifier::create) //
+			reactiveAirportRepository.findAllByIataLike("S%", PageRequest.of(page++, 2)).as(StepVerifier::create) //
 					.expectNextMatches(a -> iatas.contains(a.getIata())).verifyComplete();
 
-			Long airportCount = airportRepository.count().block();
+			Long airportCount = reactiveAirportRepository.count().block();
 			assertEquals(iatas.size(), airportCount);
 
-			airportCount = airportRepository.countByIataIn("JFK", "IAD", "SFO").block();
+			airportCount = reactiveAirportRepository.countByIataIn("JFK", "IAD", "SFO").block();
 			assertEquals(3, airportCount);
 
-			airportCount = airportRepository.countByIcaoAndIataIn("jfk", "JFK", "IAD", "SFO", "XXX").block();
+			airportCount = reactiveAirportRepository.countByIcaoAndIataIn("jfk", "JFK", "IAD", "SFO", "XXX").block();
 			assertEquals(1, airportCount);
 
-			airportCount = airportRepository.countByIataIn("XXX").block();
+			airportCount = reactiveAirportRepository.countByIataIn("XXX").block();
 			assertEquals(0, airportCount);
 
 		} finally {
 			for (String iata : iatas) {
 				Airport airport = new Airport("airports::" + iata, iata, iata.toLowerCase() /* lcao */);
 				try {
-					airportRepository.delete(airport).block();
+					reactiveAirportRepository.delete(airport).block();
 				} catch (DataRetrievalFailureException drfe) {
 					System.out.println("Failed to delete: " + airport);
 				}
@@ -224,17 +225,17 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 
 		try {
 			// This failed once against Capella - not sure why.
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).blockLast();
+			reactiveAirportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).blockLast();
 
-			airportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId())).as(StepVerifier::create)
+			reactiveAirportRepository.deleteAllById(asList(vienna.getId(), losAngeles.getId())).as(StepVerifier::create)
 					.verifyComplete();
 
-			airportRepository.findAll().as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
+			reactiveAirportRepository.findAll().as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
 
 		} finally {
-			List<Airport> airports = airportRepository.findAll().collectList().block(); // .as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
+			List<Airport> airports = reactiveAirportRepository.findAll().collectList().block(); // .as(StepVerifier::create).expectNext(frankfurt).verifyComplete();
 			System.out.println(airports);
-			airportRepository.deleteAll().block();
+			reactiveAirportRepository.deleteAll().block();
 		}
 	}
 
@@ -246,14 +247,14 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
 
 		try {
-			airportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).blockLast();
+			reactiveAirportRepository.saveAll(asList(vienna, frankfurt, losAngeles)).blockLast();
 
-			airportRepository.deleteAll().as(StepVerifier::create).verifyComplete();
+			reactiveAirportRepository.deleteAll().as(StepVerifier::create).verifyComplete();
 
-			airportRepository.findAll().as(StepVerifier::create).verifyComplete();
+			reactiveAirportRepository.findAll().as(StepVerifier::create).verifyComplete();
 
 		} finally {
-			airportRepository.deleteAll().block();
+			reactiveAirportRepository.deleteAll().block();
 		}
 	}
 
@@ -263,13 +264,13 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
 
 		try {
-			Airport ap = airportRepository.save(vienna).block();
+			Airport ap = reactiveAirportRepository.save(vienna).block();
 			assertEquals(vienna.getId(), ap.getId(), "should have saved what was provided");
-			airportRepository.delete(vienna).as(StepVerifier::create).verifyComplete();
+			reactiveAirportRepository.delete(vienna).as(StepVerifier::create).verifyComplete();
 
-			airportRepository.findAll().as(StepVerifier::create).verifyComplete();
+			reactiveAirportRepository.findAll().as(StepVerifier::create).verifyComplete();
 		} finally {
-			airportRepository.deleteAll().block();
+			reactiveAirportRepository.deleteAll().block();
 		}
 	}
 

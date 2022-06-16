@@ -104,6 +104,11 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<RemoveResult> deleteByIata(String iata);
 
+	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and  iata = $1 #{#n1ql.returning}")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Collection("bogus_collection")
+	List<RemoveResult> deleteByIataAnnotated(String iata);
+
 	@Query("SELECT __cas, * from #{#n1ql.bucket} where iata = $1")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> getAllByIataNoID(String iata);

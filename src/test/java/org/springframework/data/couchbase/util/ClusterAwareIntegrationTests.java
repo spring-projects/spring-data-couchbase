@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
@@ -48,6 +49,8 @@ import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
 
 /**
  * Parent class which drives all dynamic integration tests based on the configured cluster setup.
+ *
+ * @author Michael Reiche
  *
  * @since 2.0.0
  */
@@ -213,6 +216,16 @@ public abstract class ClusterAwareIntegrationTests {
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * @return unique identifier for line - to use as key for documents to identify where they were created
+	 */
+	public static String loc() {
+		String uuid = UUID.randomUUID().toString();
+		String uid = uuid.substring(uuid.length() - 4);
+		StackTraceElement ste = Thread.currentThread().getStackTrace()[2];
+		return ste.getClassName() + ":" + ste.getMethodName() + ":" + ste.getLineNumber() + ":" + uid;
 	}
 
 }

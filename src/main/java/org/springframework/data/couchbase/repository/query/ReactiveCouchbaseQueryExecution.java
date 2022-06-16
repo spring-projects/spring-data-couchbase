@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -39,12 +39,10 @@ interface ReactiveCouchbaseQueryExecution {
 
 	final class DeleteExecution implements ReactiveCouchbaseQueryExecution {
 
-		private final ReactiveCouchbaseOperations operations;
-		private final CouchbaseQueryMethod method;
+		private final ReactiveRemoveByQueryOperation.ReactiveRemoveByQuery removeOp;
 
-		public DeleteExecution(ReactiveCouchbaseOperations operations, CouchbaseQueryMethod method) {
-			this.operations = operations;
-			this.method = method;
+		public DeleteExecution(ReactiveRemoveByQueryOperation.ReactiveRemoveByQuery<?> removeOp) {
+			this.removeOp = removeOp;
 		}
 
 		/*
@@ -53,7 +51,7 @@ interface ReactiveCouchbaseQueryExecution {
 		 */
 		@Override
 		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return operations.removeByQuery(type)/*.inCollection(collection)*/.matching(query).all();
+			return removeOp.matching(query).all();
 		}
 
 	}

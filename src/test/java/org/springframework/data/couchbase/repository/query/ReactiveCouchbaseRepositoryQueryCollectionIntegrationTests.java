@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -26,12 +27,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
+import org.springframework.data.couchbase.domain.ReactiveAirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.core.io.CollectionIdentifier;
@@ -46,11 +47,18 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * Reactive Repository Query tests with Collections
+ *
+ * @author Michael Reiche
+ */
+@SpringJUnitConfig(Config.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
-	@Autowired ReactiveAirportRepository airportRepository;
+	@Autowired ReactiveAirportRepository reactiveAirportRepository;
 	@Autowired ReactiveUserColRepository userColRepository;
+	@Autowired ReactiveAirportRepositoryAnnotated reactiveAirportRepositoryAnnotated;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -75,11 +83,9 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 		// then do processing for this class
 		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).all();
 		couchbaseTemplate.removeByQuery(UserCol.class).inScope(otherScope).inCollection(otherCollection).all();
-
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		// seems that @Autowired is not adequate, so ...
-		airportRepository = (ReactiveAirportRepository) ac.getBean("reactiveAirportRepository");
-		userColRepository = (ReactiveUserColRepository) ac.getBean("reactiveUserColRepository");
+		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName2).all();
+		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inCollection(collectionName).all();
 	}
 
 	@AfterEach
@@ -94,7 +100,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 	@Test
 	public void myTest() {
 
-		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
+		ReactiveAirportRepository ar = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName);
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		try {
 			Airport saved = ar.save(vie).block();
@@ -119,7 +125,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 
 		Airport vie = new Airport("airports::vie", "vie", "loww");
 		// create proxy with scope, collection
-		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
+		ReactiveAirportRepository ar = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName);
 		try {
 			Airport saved = ar.save(vie).block();
 
@@ -150,7 +156,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 	void findBySimplePropertyWithOptions() {
 
 		Airport vie = new Airport("airports::vie", "vie", "loww");
-		ReactiveAirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
+		ReactiveAirportRepository ar = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName);
 		JsonArray positionalParams = JsonArray.create().add("\"this parameter will be overridden\"");
 		try {
 			Airport saved = ar.save(vie).block();
@@ -212,4 +218,61 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 			} catch (DataRetrievalFailureException drfe) {}
 		}
 	}
+
+	@Test
+	void stringDeleteCollectionTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			airport = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).save(airport).block();
+			otherAirport = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).save(otherAirport)
+					.block();
+			assertEquals(1, reactiveAirportRepository.withScope(scopeName).withCollection(collectionName)
+					.deleteByIata(airport.getIata()).collectList().block().size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test
+	void stringDeleteWithRepositoryAnnotationTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			airport = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(airport).block();
+			otherAirport = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(otherAirport).block();
+			// don't specify a collection - should get collection from AirportRepositoryAnnotated
+			assertEquals(1, reactiveAirportRepositoryAnnotated.withScope(scopeName).deleteByIata(airport.getIata())
+					.collectList().block().size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			// this will fail if the above didn't use collectionName2
+			reactiveAirportRepository.withScope(scopeName).withCollection(collectionName2).deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test
+	void stringDeleteWithMethodAnnotationTest() {
+		Airport airport = new Airport(loc(), "vie", "abc");
+		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
+		try {
+			Airport airportSaved = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(airport).block();
+			Airport otherAirportSaved = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(otherAirport).block();
+			// don't specify a collection - should get collection from deleteByIataAnnotated method
+			assertThrows(IndexFailureException.class, () -> assertEquals(1, reactiveAirportRepositoryAnnotated
+					.withScope(scopeName).deleteByIataAnnotated(airport.getIata()).collectList().block().size()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			// this will fail if the above didn't use collectionName2
+			reactiveAirportRepository.withScope(scopeName).withCollection(collectionName2).deleteById(otherAirport.getId());
+		}
+	}
+
 }
