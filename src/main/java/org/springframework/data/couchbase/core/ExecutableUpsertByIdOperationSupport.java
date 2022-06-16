@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveUpsertByIdOperationSupport.ReactiveUpsertByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -37,8 +38,9 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 	@Override
 	public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ExecutableUpsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+		return new ExecutableUpsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ExecutableUpsertByIdSupport<T> implements ExecutableUpsertById<T> {
@@ -89,14 +91,14 @@ public class ExecutableUpsertByIdOperationSupport implements ExecutableUpsertByI
 
 		@Override
 		public UpsertByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry);
+			return new ExecutableUpsertByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public UpsertByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry);
+			return new ExecutableUpsertByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override

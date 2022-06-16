@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2021 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,73 +65,6 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	}
 
 	/**
-	 * If the method has a @View annotation.
-	 *
-	 * @return true if it has the annotation, false otherwise.
-	 */
-	public boolean hasViewAnnotation() {
-		return getViewAnnotation() != null;
-	}
-
-	/**
-	 * If the method has a @View annotation with the designDocument and viewName specified.
-	 *
-	 * @return true if it has the annotation and full view specified.
-	 */
-	public boolean hasViewSpecification() {
-		return hasDesignDoc() && hasViewName();
-	}
-
-	/**
-	 * If the method has a @View annotation with the designDocument specified.
-	 *
-	 * @return true if it has the design document specified.
-	 */
-	public boolean hasDesignDoc() {
-		View annotation = getViewAnnotation();
-		if (annotation == null) {
-			return false;
-		}
-		return StringUtils.hasText(annotation.designDocument());
-	}
-
-	/**
-	 * If the method has a @View annotation with the viewName specified.
-	 *
-	 * @return true if it has the view name specified.
-	 */
-	public boolean hasViewName() {
-		View annotation = getViewAnnotation();
-		if (annotation == null) {
-			return false;
-		}
-		return StringUtils.hasText(annotation.viewName());
-	}
-
-	/**
-	 * Returns the @View annotation if set, null otherwise.
-	 *
-	 * @return the view annotation of present.
-	 */
-	public View getViewAnnotation() {
-		return method.getAnnotation(View.class);
-	}
-
-	/**
-	 * @return true if the method has a @Dimensional annotation, false otherwise.
-	 */
-	public boolean hasDimensionalAnnotation() {
-		return getDimensionalAnnotation() != null;
-	}
-
-	/**
-	 * @return the @Dimensional annotation if set, null otherwise.
-	 */
-	public Dimensional getDimensionalAnnotation() {
-		return AnnotationUtils.findAnnotation(method, Dimensional.class);
-	}
-
-	/**
 	 * If the method has a @Query annotation.
 	 *
 	 * @return true if it has the annotation, false otherwise.
@@ -194,33 +127,6 @@ public class CouchbaseQueryMethod extends QueryMethod {
 	 */
 	public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
 		return AnnotatedElementUtils.findMergedAnnotation(method, annotationClass);
-	}
-
-	/**
-	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
-	 * 
-	 * @return annotation
-	 */
-	public <A extends Annotation> A getClassAnnotation(Class<A> annotationClass) {
-		return AnnotatedElementUtils.findMergedAnnotation(method.getDeclaringClass(), annotationClass);
-	}
-
-	/**
-	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
-	 * 
-	 * @return annotation
-	 */
-	public <A extends Annotation> A getEntityAnnotation(Class<A> annotationClass) {
-		return AnnotatedElementUtils.findMergedAnnotation(getEntityInformation().getJavaType(), annotationClass);
-	}
-
-	/**
-	 * Caution: findMergedAnnotation() will return the default if there are any annotations but not this annotation
-	 * 
-	 * @return annotation
-	 */
-	public <A extends Annotation> A getRepositoryAnnotation(Class<A> annotationClass) {
-		return AnnotatedElementUtils.findMergedAnnotation(repositoryMetadata.getRepositoryInterface(), annotationClass);
 	}
 
 	/**

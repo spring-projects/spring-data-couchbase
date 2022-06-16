@@ -19,6 +19,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
@@ -38,7 +39,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 	@Override
 	public <T> ReactiveFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ReactiveFindByAnalyticsSupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null,
+		return new ReactiveFindByAnalyticsSupport<>(template, domainType, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null,
 				template.support());
 	}
 
@@ -165,14 +167,14 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 		@Override
 		public FindByAnalyticsInCollection<T> inScope(final String scope) {
-			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, support);
+			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options, support);
 		}
 
 		@Override
 		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, support);
+					collection != null ? collection : this.collection, options, support);
 		}
 
 		private String assembleEntityQuery(final boolean count) {

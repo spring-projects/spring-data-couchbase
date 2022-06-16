@@ -53,6 +53,7 @@ import com.couchbase.client.java.query.QueryOptions;
  * N1qlJoinResolver resolves by converting the join definition to query statement and executing using CouchbaseTemplate
  *
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  */
 public class N1qlJoinResolver {
 	private static final Logger LOGGER = LoggerFactory.getLogger(N1qlJoinResolver.class);

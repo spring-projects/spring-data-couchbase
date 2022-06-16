@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 package org.springframework.data.couchbase.core.support;
 
 import static org.springframework.data.couchbase.core.query.OptionsBuilder.fromFirst;
-import static org.springframework.data.couchbase.core.query.OptionsBuilder.getCollectionFrom;
-import static org.springframework.data.couchbase.core.query.OptionsBuilder.getScopeFrom;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
 
+/**
+ * determine the arguments to be used in the operation from various sources
+ *
+ * @author Michael Reiche
+ *
+ * @param <OPTS>
+ */
 public class PseudoArgs<OPTS> {
 	private final OPTS options;
 	private final String scopeName;
@@ -53,7 +58,12 @@ public class PseudoArgs<OPTS> {
 		String collectionForQuery = null;
 		OPTS optionsForQuery = null;
 
-		// 1) repository from DynamicProxy via template threadLocal - has precedence over annotation
+		// threadlocal comes from the scope/collection of a repository from DynamicProxy via template threadLocal
+		// it - has precedence over the annotation of the method/entityClass/repositoryClass in the scope/collection args.
+		// note that there is no withScope()/withCollection() for repositories, so the scope/collection args can
+		// only be from annotations when scopeForQuery/collectionForQuery are non-null.
+		//
+		// for templates, there is no threadLocal, therefore scopeForQuery/collectionForQuery are always null
 
 		PseudoArgs<OPTS> threadLocal = (PseudoArgs<OPTS>) template.getPseudoArgs();
 		template.setPseudoArgs(null);
@@ -63,8 +73,24 @@ public class PseudoArgs<OPTS> {
 			optionsForQuery = threadLocal.getOptions();
 		}
 
-		scopeForQuery = fromFirst(null, scopeForQuery, scope, getScopeFrom(domainType));
-		collectionForQuery = fromFirst(null, collectionForQuery, collection, getCollectionFrom(domainType));
+		// the scope and collection args can come from
+		// - an annotation on the entity class in creation of the operation
+		// i.e. new ExecutableFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+		// OptionsBuilder.getCollectionFrom(domainType)...
+		//
+		// - from CouchbaseRepositoryBase.getScope() that checks
+		// 1) crudMethodMetadata
+		// 2) entityClass annotation
+		// 3) repositoryClass annotation
+		// Note that it does not have the method to check for annotations. Only methods implemented in the base class
+		// are processed through the CouchbaseRepository class.
+		//
+		// - from the constructor of AbstractCouchbaseQueryBase.
+		// findOp = (ExecutableFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
+		// so is it also needed in the execute???
+
+		scopeForQuery = fromFirst(null, scopeForQuery, scope);
+		collectionForQuery = fromFirst(null, collectionForQuery, collection);
 		optionsForQuery = fromFirst(null, options, optionsForQuery);
 
 		// if a collection was specified but no scope, use the scope from the clientFactory
