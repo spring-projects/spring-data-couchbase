@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableRemoveByQueryOperation.ExecutableRemoveByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.util.Assert;
 
 /**
@@ -47,12 +46,10 @@ interface CouchbaseQueryExecution {
 
 	final class DeleteExecution implements CouchbaseQueryExecution {
 
-		private final CouchbaseOperations operations;
-		private final QueryMethod method;
+		private final ExecutableRemoveByQuery<?> removeOperation;
 
-		public DeleteExecution(CouchbaseOperations operations, QueryMethod method) {
-			this.operations = operations;
-			this.method = method;
+		public DeleteExecution(ExecutableRemoveByQuery<?> removeOperation) {
+			this.removeOperation = removeOperation;
 		}
 
 		/*
@@ -61,7 +58,7 @@ interface CouchbaseQueryExecution {
 		 */
 		@Override
 		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return operations.removeByQuery(type).matching(query).all();
+			return removeOperation.matching(query).all();
 		}
 
 	}

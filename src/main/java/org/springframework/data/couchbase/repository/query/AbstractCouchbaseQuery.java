@@ -19,6 +19,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableRemoveByQueryOperation.ExecutableRemoveByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.PagedExecution;
@@ -43,6 +44,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		implements RepositoryQuery {
 
 	private final ExecutableFindByQuery<?> findOperationWithProjection;
+	private final ExecutableRemoveByQuery<?> removeOp;
 
 	/**
 	 * Creates a new {@link AbstractCouchbaseQuery} from the given {@link ReactiveCouchbaseQueryMethod} and
@@ -65,6 +67,8 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		ExecutableFindByQuery<?> findOp = operations.findByQuery(type);
 		findOp = (ExecutableFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
 		this.findOperationWithProjection = findOp;
+		this.removeOp = (ExecutableRemoveByQuery<?>) (operations.removeByQuery(type).inScope(method.getScope())
+				.inCollection(method.getCollection()));
 	}
 
 	/**
@@ -114,7 +118,7 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor, ExecutableFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
-			return new DeleteExecution(getOperations(), getQueryMethod());
+			return new DeleteExecution(removeOp);
 		} else if (isTailable(getQueryMethod())) {
 			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
 			// all()

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation;
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperation.ReactiveFindByQuery;
+import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperation.ReactiveRemoveByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.ReactiveCouchbaseQueryExecution.ResultProcessingExecution;
@@ -41,7 +42,8 @@ import org.springframework.util.Assert;
 public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQueryBase<ReactiveCouchbaseOperations>
 		implements RepositoryQuery {
 
-	private final ReactiveFindByQuery<?> findOperationWithProjection;
+	private final ReactiveFindByQuery<?> findOp;
+	private final ReactiveRemoveByQuery<?> removeOp;
 
 	/**
 	 * Creates a new {@link AbstractReactiveCouchbaseQuery} from the given {@link ReactiveCouchbaseQueryMethod} and
@@ -62,9 +64,10 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();
-		ReactiveFindByQuery<?> findOp = operations.findByQuery(type);
-		findOp = (ReactiveFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
-		this.findOperationWithProjection = findOp;
+		this.findOp = (ReactiveFindByQuery<?>) (operations.findByQuery(type).inScope(method.getScope())
+				.inCollection(method.getCollection()));
+		this.removeOp = (ReactiveRemoveByQuery<?>) (operations.removeByQuery(type).inScope(method.getScope())
+				.inCollection(method.getCollection()));
 	}
 
 	/**
@@ -83,10 +86,8 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 		query = applyQueryMetaAttributesIfPresent(query, typeToRead);
 
-		ReactiveFindByQuery<?> find = findOperationWithProjection;
-
 		ReactiveCouchbaseQueryExecution execution = getExecution(accessor,
-				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
+				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), findOp);
 		return execution.execute(query, processor.getReturnedType().getDomainType(), typeToRead, null);
 	}
 
@@ -113,7 +114,7 @@ public abstract class AbstractReactiveCouchbaseQuery extends AbstractCouchbaseQu
 			ReactiveFindByQuery<?> operation) {
 
 		if (isDeleteQuery()) {
-			return new DeleteExecution(getOperations(), getQueryMethod());
+			return new DeleteExecution(removeOp);
 		} else if (isTailable(getQueryMethod())) {
 			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
 																																															// all()

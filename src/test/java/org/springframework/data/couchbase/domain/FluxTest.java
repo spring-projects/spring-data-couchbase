@@ -105,7 +105,7 @@ public class FluxTest extends JavaIntegrationTests {
 	static List<String> keyList = Arrays.asList("a", "b", "c", "d", "e");
 	static Collection collection;
 	static ReactiveCollection rCollection;
-	@Autowired ReactiveAirportRepository airportRepository; // intellij flags "Could not Autowire", but it runs ok.
+	@Autowired ReactiveAirportRepository reactiveAirportRepository; // intellij flags "Could not Autowire", runs ok
 
 	AtomicInteger rCat = new AtomicInteger(0);
 	AtomicInteger rFlat = new AtomicInteger(0);
@@ -136,7 +136,7 @@ public class FluxTest extends JavaIntegrationTests {
 			listOfLists.add(list);
 		}
 		Flux<Object> af = Flux.fromIterable(listOfLists).concatMap(catalogToStore -> Flux.fromIterable(catalogToStore)
-				.parallel(4).runOn(Schedulers.parallel()).concatMap((entity) -> airportRepository.save(entity)));
+				.parallel(4).runOn(Schedulers.parallel()).concatMap((entity) -> reactiveAirportRepository.save(entity)));
 		List<Object> saved = af.collectList().block();
 		System.out.println("results.size() : " + saved.size());
 
@@ -152,7 +152,7 @@ public class FluxTest extends JavaIntegrationTests {
 			e.printStackTrace();
 			throw e;
 		}
-		List<Airport> airports = airportRepository.findAll().collectList().block();
+		List<Airport> airports = reactiveAirportRepository.findAll().collectList().block();
 		assertEquals(0, airports.size(), "should have been all deleted");
 	}
 
@@ -164,11 +164,11 @@ public class FluxTest extends JavaIntegrationTests {
 		for (int i = 0; i < 5; i++) {
 			list.add(a.withId(UUID.randomUUID().toString()));
 		}
-		Flux<Object> af = Flux.fromIterable(list).concatMap((entity) -> airportRepository.save(entity));
+		Flux<Object> af = Flux.fromIterable(list).concatMap((entity) -> reactiveAirportRepository.save(entity));
 		List<Object> saved = af.collectList().block();
 		System.out.println("results.size() : " + saved.size());
 		Flux<Pair<String, Mono<Airport>>> pairFlux = Flux.fromIterable(list)
-				.map((airport) -> Pair.of(airport.getId(), airportRepository.findById(airport.getId())));
+				.map((airport) -> Pair.of(airport.getId(), reactiveAirportRepository.findById(airport.getId())));
 		List<Pair<String, Mono<Airport>>> airportPairs = pairFlux.collectList().block();
 		for (Pair<String, Mono<Airport>> airportPair : airportPairs) {
 			System.out.println("id: " + airportPair.getFirst() + " airport: " + airportPair.getSecond().block());
