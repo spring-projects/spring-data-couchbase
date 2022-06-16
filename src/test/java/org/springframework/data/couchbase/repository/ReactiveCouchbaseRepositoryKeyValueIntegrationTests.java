@@ -60,7 +60,7 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 
 	@Autowired ReactiveUserRepository userRepository;
 
-	@Autowired ReactiveAirportRepository airportRepository;
+	@Autowired ReactiveAirportRepository reactiveAirportRepository;
 
 	@Autowired ReactiveAirlineRepository airlineRepository;
 
@@ -108,13 +108,13 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		Airport vie = null;
 		try {
 			vie = new Airport("airports::vie", "vie", "low2");
-			Airport saved = airportRepository.save(vie).block();
-			Airport airport1 = airportRepository.findById(saved.getId()).block();
+			Airport saved = reactiveAirportRepository.save(vie).block();
+			Airport airport1 = reactiveAirportRepository.findById(saved.getId()).block();
 			assertEquals(airport1, saved);
 			assertEquals(saved.getCreatedBy(), ReactiveNaiveAuditorAware.AUDITOR); // ReactiveNaiveAuditorAware will provide
 																																							// this
 		} finally {
-			airportRepository.delete(vie).block();
+			reactiveAirportRepository.delete(vie).block();
 		}
 	}
 

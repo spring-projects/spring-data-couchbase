@@ -53,6 +53,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Christoph Strobl
  * @author Mark Paluch
  * @author Jens Schauder
+ * @author Michael Reiche
  */
 class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, BeanClassLoaderAware {
 
@@ -137,6 +138,9 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 			Method method = invocation.getMethod();
 
+			// this skips collecting metadata for methods defined in the repository by the user because
+			// the repository class is accessible by the repository method
+
 			if (!implementations.contains(method)) {
 				return invocation.proceed();
 			}
@@ -155,7 +159,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 
 				if (methodMetadata == null) {
 
-					methodMetadata = new DefaultCrudMethodMetadata(method);
+					methodMetadata = new DefaultCrudMethodMetadata(invocation, method);
 					CrudMethodMetadata tmp = metadataCache.putIfAbsent(method, methodMetadata);
 
 					if (tmp != null) {
@@ -196,7 +200,7 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 		 * 
 		 * @param method must not be {@literal null}.
 		 */
-		DefaultCrudMethodMetadata(Method method) {
+		DefaultCrudMethodMetadata(MethodInvocation invocation, Method method) {
 			Assert.notNull(method, "Method must not be null!");
 			this.method = method;
 			String n = method.getName();
@@ -210,11 +214,15 @@ class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, B
 			}
 
 			AnnotatedElement[] annotated = new AnnotatedElement[] { method, method.getDeclaringClass() };
+
 			this.scanConsistency = OptionsBuilder.annotation(ScanConsistency.class, "query", QueryScanConsistency.NOT_BOUNDED,
 					annotated);
+
 			this.scope = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE, annotated);
+
 			this.collection = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
 					annotated);
+
 		}
 
 		/*

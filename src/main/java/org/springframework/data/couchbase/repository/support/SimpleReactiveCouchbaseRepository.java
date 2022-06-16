@@ -227,18 +227,18 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 	@Override
 	public Mono<Void> deleteAll() {
-		return operations.removeByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		return operations.removeByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).all().then();
 	}
 
 	@Override
 	public Mono<Long> count() {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		return operations.findByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).count();
 	}
 
 	private Flux<T> findAll(Query query) {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		return operations.findByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).matching(query).all();
 	}
 

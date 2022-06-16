@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -44,7 +45,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 	@Override
 	public <T> ReactiveRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
+		return new ReactiveRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ReactiveRemoveByQuerySupport<T> implements ReactiveRemoveByQuery<T> {
@@ -102,8 +104,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
-			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
@@ -132,8 +134,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 
 		@Override
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
-			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options);
 		}
 	}
 

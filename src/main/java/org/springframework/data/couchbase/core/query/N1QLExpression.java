@@ -213,7 +213,7 @@ public class N1QLExpression {
 	 * Returned expression results in distinct of the expression
 	 */
 	public static N1QLExpression distinct(N1QLExpression expression) {
-		return  x("distinct{" + expression.toString() + "}");
+		return x("distinct{" + expression.toString() + "}");
 	}
 
 	/**

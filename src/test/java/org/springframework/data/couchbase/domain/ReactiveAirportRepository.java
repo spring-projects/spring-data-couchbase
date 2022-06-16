@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 
+import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
@@ -98,6 +100,15 @@ public interface ReactiveAirportRepository
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> findByIata(String iata);
+
+	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and  iata = $1 #{#n1ql.returning}")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<RemoveResult> deleteByIata(String iata);
+
+	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and  iata = $1 #{#n1ql.returning}")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Collection("bogus_collection")
+	Flux<RemoveResult> deleteByIataAnnotated(String iata);
 
 	// This is not efficient. See findAllByIataLike for efficient reactive paging
 	default public Mono<Page<Airport>> findAllAirportsPaged(Pageable pageable) {

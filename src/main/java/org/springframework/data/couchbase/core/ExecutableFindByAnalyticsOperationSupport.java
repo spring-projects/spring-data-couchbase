@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveFindByAnalyticsOperationSupport.ReactiveFindByAnalyticsSupport;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.analytics.AnalyticsOptions;
@@ -37,7 +38,8 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 	@Override
 	public <T> ExecutableFindByAnalytics<T> findByAnalytics(final Class<T> domainType) {
-		return new ExecutableFindByAnalyticsSupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null);
+		return new ExecutableFindByAnalyticsSupport<>(template, domainType, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ExecutableFindByAnalyticsSupport<T> implements ExecutableFindByAnalytics<T> {
@@ -97,14 +99,14 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 
 		@Override
 		public FindByAnalyticsInCollection<T> inScope(final String scope) {
-			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options);
+			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options);
 		}
 
 		@Override
 		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options);
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override

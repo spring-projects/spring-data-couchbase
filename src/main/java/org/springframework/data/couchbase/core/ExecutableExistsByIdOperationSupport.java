@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.data.couchbase.core.ReactiveExistsByIdOperationSupport.ReactiveExistsByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.ExistsOptions;
@@ -39,7 +40,8 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 
 	@Override
 	public ExecutableExistsById existsById(Class<?> domainType) {
-		return new ExecutableExistsByIdSupport(template, domainType, null, null, null);
+		return new ExecutableExistsByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ExecutableExistsByIdSupport implements ExecutableExistsById {
@@ -74,7 +76,8 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 
 		@Override
 		public ExistsByIdWithOptions inCollection(final String collection) {
-			return new ExecutableExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ExecutableExistsByIdSupport(template, domainType, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
@@ -85,7 +88,8 @@ public class ExecutableExistsByIdOperationSupport implements ExecutableExistsByI
 
 		@Override
 		public ExistsByIdInCollection inScope(final String scope) {
-			return new ExecutableExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ExecutableExistsByIdSupport(template, domainType, scope != null ? scope : this.scope, collection,
+					options);
 		}
 	}
 
