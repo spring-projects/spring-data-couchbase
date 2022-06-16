@@ -49,7 +49,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 	@Override
 	public ReactiveExistsById existsById(Class<?> domainType) {
-		return new ReactiveExistsByIdSupport(template, domainType, null, null, null);
+		return new ReactiveExistsByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ReactiveExistsByIdSupport implements ReactiveExistsById {
@@ -98,7 +99,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public ExistsByIdWithOptions inCollection(final String collection) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, domainType, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
@@ -109,7 +111,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public ExistsByIdInCollection inScope(final String scope) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, domainType, scope != null ? scope : this.scope, collection,
+					options);
 		}
 
 	}

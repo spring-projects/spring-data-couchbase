@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
+import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperation.ReactiveRemoveByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -31,7 +31,7 @@ import org.springframework.util.Assert;
 @FunctionalInterface
 interface ReactiveCouchbaseQueryExecution {
 
-	Object execute(Query query, Class<?> type, Class<?> returnType, String collection);
+	Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection);
 
 	/**
 	 * {@link ReactiveCouchbaseQueryExecution} removing documents matching the query.
@@ -39,12 +39,10 @@ interface ReactiveCouchbaseQueryExecution {
 
 	final class DeleteExecution implements ReactiveCouchbaseQueryExecution {
 
-		private final ReactiveCouchbaseOperations operations;
-		private final CouchbaseQueryMethod method;
+		private final ReactiveRemoveByQuery removeOp;
 
-		public DeleteExecution(ReactiveCouchbaseOperations operations, CouchbaseQueryMethod method) {
-			this.operations = operations;
-			this.method = method;
+		public DeleteExecution(ReactiveRemoveByQuery<?> removeOp) {
+			this.removeOp = removeOp;
 		}
 
 		/*
@@ -52,8 +50,8 @@ interface ReactiveCouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery.Execution#execute(org.springframework.data.couchbase.core.query.Query, java.lang.Class, java.lang.String)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return operations.removeByQuery(type)/*.inCollection(collection)*/.matching(query).all();
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
+			return removeOp.inScope(scope).inCollection(collection).matching(query).all();
 		}
 
 	}
@@ -75,8 +73,8 @@ interface ReactiveCouchbaseQueryExecution {
 		}
 
 		@Override
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return converter.convert(delegate.execute(query, type, returnType, collection));
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
+			return converter.convert(delegate.execute(query, type, returnType, scope, collection));
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.ReactiveFindByQueryOperationSupport.ReactiveFindByQuerySupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -43,8 +44,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 	@Override
 	public <T> ExecutableFindByQuery<T> findByQuery(final Class<T> domainType) {
-		return new ExecutableFindByQuerySupport<T>(template, domainType, domainType, ALL_QUERY, null, null, null, null,
-				null, null);
+		return new ExecutableFindByQuerySupport<T>(template, domainType, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null, null, null);
 	}
 
 	static class ExecutableFindByQuerySupport<T> implements ExecutableFindByQuery<T> {
@@ -174,14 +175,14 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
-			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields);
+			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options, distinctFields, fields);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields);
+					collection != null ? collection : this.collection, options, distinctFields, fields);
 		}
 
 	}

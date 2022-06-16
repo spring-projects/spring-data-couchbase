@@ -45,8 +45,9 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 	@Override
 	public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ReactiveReplaceByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, template.support());
+		return new ReactiveReplaceByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null, template.support());
 	}
 
 	static class ReactiveReplaceByIdSupport<T> implements ReactiveReplaceById<T> {
@@ -115,14 +116,15 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 
 		@Override
 		public ReplaceByIdWithDurability<T> inCollection(final String collection) {
-			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveReplaceByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveReplaceByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry, support);
 		}
 
 		@Override

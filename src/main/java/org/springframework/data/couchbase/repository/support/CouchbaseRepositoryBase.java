@@ -42,6 +42,10 @@ public class CouchbaseRepositoryBase<T, ID> {
 		this.repositoryInterface = repositoryInterface;
 	}
 
+	public Class<?> getRepositoryInterface() {
+		return repositoryInterface;
+	}
+
 	/**
 	 * Returns the information for the underlying template.
 	 *
@@ -71,7 +75,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	protected String getScope() {
 		String fromAnnotation = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE,
 				new AnnotatedElement[] { getJavaType(), repositoryInterface });
-		String fromMetadata = crudMethodMetadata.getScope();
+		String fromMetadata = crudMethodMetadata != null ? crudMethodMetadata.getScope() : null;
 		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_SCOPE, fromMetadata, fromAnnotation);
 	}
 
@@ -86,7 +90,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	protected String getCollection() {
 		String fromAnnotation = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
 				new AnnotatedElement[] { getJavaType(), repositoryInterface });
-		String fromMetadata = crudMethodMetadata.getCollection();
+		String fromMetadata = crudMethodMetadata != null ? crudMethodMetadata.getCollection() : null;
 		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_COLLECTION, fromMetadata, fromAnnotation);
 	}
 
@@ -104,7 +108,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * \@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)<br>
 	 * List<T> findAll();<br>
 	 */
-	QueryScanConsistency buildQueryScanConsistency() {
+	QueryScanConsistency getQueryScanConsistency() {
 		ScanConsistency sc = crudMethodMetadata.getScanConsistency();
 		QueryScanConsistency fromMeta = sc != null ? sc.query() : null;
 		QueryScanConsistency fromAnnotation = OptionsBuilder.annotationAttribute(ScanConsistency.class, "query",

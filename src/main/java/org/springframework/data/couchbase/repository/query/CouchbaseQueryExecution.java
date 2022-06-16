@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors.
+ * Copyright 2020-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package org.springframework.data.couchbase.repository.query;
 import java.util.List;
 
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableRemoveByQueryOperation;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.util.Assert;
 
 /**
@@ -39,20 +38,18 @@ import org.springframework.util.Assert;
 @FunctionalInterface
 interface CouchbaseQueryExecution {
 
-	Object execute(Query query, Class<?> type, Class<?> returnType, String collection);
+	Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection);
 
 	/**
 	 * {@link CouchbaseQueryExecution} removing documents matching the query.
 	 */
 
-	final class DeleteExecution implements CouchbaseQueryExecution {
+	final class DeleteExecution<T> implements CouchbaseQueryExecution {
 
-		private final CouchbaseOperations operations;
-		private final QueryMethod method;
+		private final ExecutableRemoveByQueryOperation.ExecutableRemoveByQuery<T> removeOperation;
 
-		public DeleteExecution(CouchbaseOperations operations, QueryMethod method) {
-			this.operations = operations;
-			this.method = method;
+		public DeleteExecution(ExecutableRemoveByQueryOperation.ExecutableRemoveByQuery<T> removeOperation) {
+			this.removeOperation = removeOperation;
 		}
 
 		/*
@@ -60,8 +57,8 @@ interface CouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.AbstractCouchbaseQuery.Execution#execute(org.springframework.data.couchbase.core.query.Query, java.lang.Class, java.lang.String)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return operations.removeByQuery(type).matching(query).all();
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
+			return removeOperation.inScope(scope).inCollection(collection).matching(query).all();
 		}
 
 	}
@@ -83,8 +80,8 @@ interface CouchbaseQueryExecution {
 		}
 
 		@Override
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
-			return converter.convert(delegate.execute(query, type, returnType, collection));
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
+			return converter.convert(delegate.execute(query, type, returnType, scope, collection));
 		}
 	}
 
@@ -109,9 +106,10 @@ interface CouchbaseQueryExecution {
 		 */
 		@Override
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
 			int overallLimit = 0; // query.getLimit();
-			TerminatingFindByQuery<?> matching = operation.as(returnType).matching(query);
+			TerminatingFindByQuery<?> matching = operation.as(returnType).inScope(scope).inCollection(collection)
+					.matching(query);
 			// Adjust limit if page would exceed the overall limit
 			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
 				query.limit((int) (overallLimit - pageable.getOffset()));
@@ -141,9 +139,10 @@ interface CouchbaseQueryExecution {
 		 * @see org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution#execute(org.springframework.data.couchbase.core.query.Query)
 		 */
 		@Override
-		public Object execute(Query query, Class<?> type, Class<?> returnType, String collection) {
+		public Object execute(Query query, Class<?> type, Class<?> returnType, String scope, String collection) {
 			int overallLimit = 0; // query.getLimit();
-			TerminatingFindByQuery<?> matching = operation.as(returnType).matching(query);
+			TerminatingFindByQuery<?> matching = operation.as(returnType).inScope(scope).inCollection(collection)
+					.matching(query);
 			// Adjust limit if page would exceed the overall limit
 			if (overallLimit != 0 && pageable.getOffset() + pageable.getPageSize() > overallLimit) {
 				query.limit((int) (overallLimit - pageable.getOffset()));
@@ -151,7 +150,8 @@ interface CouchbaseQueryExecution {
 
 			List<?> result = matching.all(); // this needs to be done before count, as count clears the skip and limit
 
-			long count = operation.matching(query.skip(-1).limit(-1).withoutSort()).count();
+			long count = operation.inScope(scope).inCollection(collection).matching(query.skip(-1).limit(-1).withoutSort())
+					.count();
 			count = overallLimit != 0 ? Math.min(count, overallLimit) : count;
 
 			return new PageImpl(result, pageable, count);
