@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveFindFromReplicasByIdOperationSupport.ReactiveFindFromReplicasByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.GetAnyReplicaOptions;
@@ -32,7 +33,8 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 	@Override
 	public <T> ExecutableFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, domainType, null, null, null);
+		return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, domainType,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ExecutableFindFromReplicasByIdSupport<T> implements ExecutableFindFromReplicasById<T> {
@@ -75,12 +77,14 @@ public class ExecutableFindFromReplicasByIdOperationSupport implements Executabl
 
 		@Override
 		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
 		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options);
+			return new ExecutableFindFromReplicasByIdSupport<>(template, domainType, returnType,
+					scope != null ? scope : this.scope, collection, options);
 		}
 
 	}

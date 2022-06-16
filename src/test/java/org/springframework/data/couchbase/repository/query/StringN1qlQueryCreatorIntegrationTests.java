@@ -16,7 +16,6 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -25,15 +24,12 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
@@ -70,18 +66,13 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTests {
 
-	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
-	CouchbaseConverter converter;
-	CouchbaseTemplate couchbaseTemplate;
+	@Autowired MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
+	@Autowired CouchbaseConverter converter;
+	@Autowired CouchbaseTemplate couchbaseTemplate;
 	static NamedQueries namedQueries = new PropertiesBasedNamedQueries(new Properties());
 
 	@BeforeEach
-	public void beforeEach() {
-		context = new CouchbaseMappingContext();
-		converter = new MappingCouchbaseConverter(context);
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-	}
+	public void beforeEach() {}
 
 	@Test
 	@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)

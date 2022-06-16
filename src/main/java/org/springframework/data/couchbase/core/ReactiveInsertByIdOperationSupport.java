@@ -45,8 +45,9 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 	@Override
 	public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ReactiveInsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, template.support());
+		return new ReactiveInsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null, template.support());
 	}
 
 	static class ReactiveInsertByIdSupport<T> implements ReactiveInsertById<T> {
@@ -114,14 +115,15 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 
 		@Override
 		public InsertByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveInsertByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry, support);
 		}
 
 		@Override
 		public InsertByIdWithOptions<T> inCollection(final String collection) {
-			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveInsertByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry,
+					support);
 		}
 
 		@Override

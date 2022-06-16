@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveInsertByIdOperationSupport.ReactiveInsertByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -37,8 +38,9 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 	@Override
 	public <T> ExecutableInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ExecutableInsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+		return new ExecutableInsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ExecutableInsertByIdSupport<T> implements ExecutableInsertById<T> {
@@ -89,14 +91,14 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 
 		@Override
 		public InsertByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry);
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
 		public InsertByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry);
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override

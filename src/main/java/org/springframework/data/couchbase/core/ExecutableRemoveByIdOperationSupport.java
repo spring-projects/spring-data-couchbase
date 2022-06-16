@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByIdOperationSupport.ReactiveRemoveByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -42,7 +43,9 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 	@Override
 	public ExecutableRemoveById removeById(Class<?> domainType) {
-		return new ExecutableRemoveByIdSupport(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
+
+		return new ExecutableRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE,
 				DurabilityLevel.NONE, null);
 	}
 
@@ -87,7 +90,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public RemoveByIdWithOptions inCollection(final String collection) {
-			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection != null ? collection : this.collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
@@ -115,7 +118,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
-			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
+			return new ExecutableRemoveByIdSupport(template, domainType, scope != null ? scope : this.scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
 
