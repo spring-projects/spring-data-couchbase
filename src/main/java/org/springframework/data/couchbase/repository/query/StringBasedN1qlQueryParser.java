@@ -205,7 +205,7 @@ public class StringBasedN1qlQueryParser {
 	 */
 	public N1qlSpelValues createN1qlSpelValues(String bucketName, String scope, String collection, Class domainClass,
 			String typeField, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
-		String b = bucketName;
+		String b = collection != null ? collection : bucketName;
 		String keyspace = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
 				"only one of project(fields) and distinct(distinctFields) can be specified");
