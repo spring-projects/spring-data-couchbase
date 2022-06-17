@@ -59,61 +59,16 @@ import com.couchbase.client.java.env.ClusterEnvironment;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
+class StringN1qlQueryCreatorMockedTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
 	CouchbaseConverter converter;
-	CouchbaseTemplate couchbaseTemplate;
 	static NamedQueries namedQueries = new PropertiesBasedNamedQueries(new Properties());
 
 	@BeforeEach
 	public void beforeEach() {
 		context = new CouchbaseMappingContext();
 		converter = new MappingCouchbaseConverter(context);
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-	}
-
-	@Test
-	void createsQueryCorrectly() throws Exception {
-		String input = "getByFirstnameAndLastname";
-		Method method = UserRepository.class.getMethod(input, String.class, String.class);
-
-		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
-				converter.getMappingContext());
-
-		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
-
-		Query query = creator.createQuery();
-		assertEquals(
-				"SELECT `_class`, META(`" + bucketName()
-						+ "`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`"
-						+ bucketName() + "`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `" + bucketName()
-						+ "` where `_class` = \"abstractuser\" and firstname = $1 and lastname = $2",
-				query.toN1qlSelectString(couchbaseTemplate.reactive(), null, null, User.class, User.class, false, null, null));
-	}
-
-	@Test
-	void createsQueryCorrectly2() throws Exception {
-		String input = "getByFirstnameOrLastname";
-		Method method = UserRepository.class.getMethod(input, String.class, String.class);
-
-		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
-				converter.getMappingContext());
-
-		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
-				queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
-
-		Query query = creator.createQuery();
-		assertEquals(
-				"SELECT `_class`, META(`" + bucketName()
-						+ "`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`"
-						+ bucketName() + "`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `" + bucketName()
-						+ "` where `_class` = \"abstractuser\" and (firstname = $first or lastname = $last)",
-				query.toN1qlSelectString(couchbaseTemplate.reactive(), null, null, User.class, User.class, false, null, null));
 	}
 
 	@Test
@@ -153,25 +108,6 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 		fail("should have failed with IllegalArgumentException: query has no inline Query or named Query not found");
 	}
 
-	@Test
-	void spelTests() throws Exception {
-		String input = "spelTests";
-		Method method = UserRepository.class.getMethod(input);
-		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
-				converter.getMappingContext());
-
-		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method)), queryMethod,
-				converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
-
-		Query query = creator.createQuery();
-
-		String s = query.toN1qlSelectString(couchbaseTemplate.reactive(), "myScope", "myCollection", User.class, null,
-				false, null, null);
-		System.out.println("query: " + s);
-
-	}
-
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
 		return new ParametersParameterAccessor(params, values);
 	}
@@ -180,37 +116,4 @@ class StringN1qlQueryCreatorMockedTests extends ClusterAwareIntegrationTests {
 		return new DefaultParameters(method);
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-	}
 }
