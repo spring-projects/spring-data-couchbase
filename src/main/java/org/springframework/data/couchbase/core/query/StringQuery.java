@@ -134,7 +134,9 @@ public class StringQuery extends Query {
 	/**
 	 * toN1qlRemoveString - use toN1qlSelectString
 	 * 
-	 * @param template
+	 * @param converter
+	 * @param bucketName
+	 * @param scopeName
 	 * @param collectionName
 	 * @param domainClass
 	 */
