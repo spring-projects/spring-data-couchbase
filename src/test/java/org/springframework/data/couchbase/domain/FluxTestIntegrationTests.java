@@ -1,3 +1,19 @@
+/*
+ * Copyright 2012-2022 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.springframework.data.couchbase.domain;
 
 import com.couchbase.client.java.query.QueryOptions;
@@ -40,12 +56,17 @@ import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.GetResult;
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryProfile;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@SpringJUnitConfig(FluxTest.Config.class)
+/**
+ * @author Michael Reiche
+ */
+@SpringJUnitConfig(FluxTestIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-public class FluxTest extends JavaIntegrationTests {
+public class FluxTestIntegrationTests extends JavaIntegrationTests {
 
 	@BeforeAll
 	public static void beforeEverything() {
@@ -53,7 +74,7 @@ public class FluxTest extends JavaIntegrationTests {
 		 * The couchbaseTemplate inherited from JavaIntegrationTests uses org.springframework.data.couchbase.domain.Config
 		 * It has typeName = 't' (instead of _class). Don't use it.
 		 */
-		ApplicationContext ac = new AnnotationConfigApplicationContext(FluxTest.Config.class);
+		ApplicationContext ac = new AnnotationConfigApplicationContext(FluxTestIntegrationTests.Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(BeanNames.COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(BeanNames.REACTIVE_COUCHBASE_TEMPLATE);
 		collection = couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection();
@@ -127,7 +148,9 @@ public class FluxTest extends JavaIntegrationTests {
 			throw e;
 		}
 		List<Airport> airports = airportRepository.findAll().collectList().block();
-		assertEquals(0, airports.size(), "should have been all deleted");
+		if (airports.size() != 0){
+			throw new RuntimeException("should have been all deleted");
+		}
 	}
 
 	@Test
