@@ -100,7 +100,7 @@ public final class OtherConverters {
 
 		@Override
 		public String convert(BigDecimal source) {
-			return source == null ? null : source.toPlainString();
+			return source == null ? null : source.toString();
 		}
 	}
 
