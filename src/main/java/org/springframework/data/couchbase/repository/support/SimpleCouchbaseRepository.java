@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2021 the original author or authors.
+ * Copyright 2013-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,13 +151,13 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 
 	@Override
 	public long count() {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		return operations.findByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).count();
 	}
 
 	@Override
 	public void deleteAll() {
-		operations.removeByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		operations.removeByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).all();
 	}
 
@@ -189,7 +189,7 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	 * @return the list of found entities, already executed.
 	 */
 	private List<T> findAll(Query query) {
-		return operations.findByQuery(getJavaType()).withConsistency(buildQueryScanConsistency()).inScope(getScope())
+		return operations.findByQuery(getJavaType()).withConsistency(getQueryScanConsistency()).inScope(getScope())
 				.inCollection(getCollection()).matching(query).all();
 	}
 

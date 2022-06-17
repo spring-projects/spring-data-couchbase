@@ -62,6 +62,10 @@ public class N1qlRepositoryQueryExecutor {
 		final ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
 
 		// counterpart to ReactiveN1qlRespositoryQueryExecutor,
+
+		String scope = queryMethod.getScope();
+		String collection = queryMethod.getCollection();
+
 		Query query;
 		ExecutableFindByQuery q;
 		if (queryMethod.hasN1qlAnnotation()) {
@@ -74,16 +78,16 @@ public class N1qlRepositoryQueryExecutor {
 		}
 
 		ExecutableFindByQuery<?> operation = (ExecutableFindByQuery<?>) operations.findByQuery(domainClass)
-				.withConsistency(buildQueryScanConsistency());
+				.withConsistency(buildQueryScanConsistency()).inScope(scope).inCollection(collection);
 		if (queryMethod.isCountQuery()) {
-			return operation.matching(query).count();
+			return operation.inScope(scope).inCollection(collection).matching(query).count();
 		} else if (queryMethod.isCollectionQuery()) {
-			return operation.matching(query).all();
+			return operation.inScope(scope).inCollection(collection).matching(query).all();
 		} else if (queryMethod.isPageQuery()) {
 			Pageable p = accessor.getPageable();
-			return new CouchbaseQueryExecution.PagedExecution(operation, p).execute(query, null, null, null);
+			return new CouchbaseQueryExecution.PagedExecution(operation, p).execute(query, null, null, scope, collection);
 		} else {
-			return operation.matching(query).oneValue();
+			return operation.inScope(scope).inCollection(collection).matching(query).oneValue();
 		}
 
 	}

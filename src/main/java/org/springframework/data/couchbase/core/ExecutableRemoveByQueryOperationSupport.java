@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveRemoveByQueryOperationSupport.ReactiveRemoveByQuerySupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.util.Assert;
 
@@ -36,7 +37,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 	@Override
 	public <T> ExecutableRemoveByQuery<T> removeByQuery(Class<T> domainType) {
-		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null, null, null, null);
+		return new ExecutableRemoveByQuerySupport<>(template, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ExecutableRemoveByQuerySupport<T> implements ExecutableRemoveByQuery<T> {
@@ -89,8 +91,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 		@Override
 		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
@@ -102,8 +104,8 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 
 		@Override
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options);
 		}
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Collection;
 
 import org.springframework.data.couchbase.core.ReactiveReplaceByIdOperationSupport.ReactiveReplaceByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
@@ -37,8 +38,9 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 	@Override
 	public <T> ExecutableReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ExecutableReplaceByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+		return new ExecutableReplaceByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ExecutableReplaceByIdSupport<T> implements ExecutableReplaceById<T> {
@@ -82,8 +84,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 
 		@Override
 		public ReplaceByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry);
+			return new ExecutableReplaceByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 		@Override
@@ -117,8 +119,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 
 		@Override
 		public ReplaceByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry);
+			return new ExecutableReplaceByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
 
 	}

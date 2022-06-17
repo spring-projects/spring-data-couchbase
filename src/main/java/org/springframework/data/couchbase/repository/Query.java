@@ -37,8 +37,8 @@ import org.springframework.data.couchbase.repository.query.StringN1qlQueryCreato
  * Also, SpEL in the form <code>#{spelExpression}</code> is supported, including the following N1QL variables that will
  * be replaced by the underlying {@link CouchbaseTemplate} associated information:
  * <ul>
- * <li>{@value StringBasedN1qlQueryParser#SPEL_SELECT_FROM_CLAUSE} (see {@link StringBasedN1qlQueryParser#SPEL_SELECT_FROM_CLAUSE})
- * </li>
+ * <li>{@value StringBasedN1qlQueryParser#SPEL_SELECT_FROM_CLAUSE} (see
+ * {@link StringBasedN1qlQueryParser#SPEL_SELECT_FROM_CLAUSE})</li>
  * <li>{@value StringBasedN1qlQueryParser#SPEL_BUCKET} (see {@link StringBasedN1qlQueryParser#SPEL_BUCKET})</li>
  * <li>{@value StringBasedN1qlQueryParser#SPEL_ENTITY} (see {@link StringBasedN1qlQueryParser#SPEL_ENTITY})</li>
  * <li>{@value StringBasedN1qlQueryParser#SPEL_FILTER} (see {@link StringBasedN1qlQueryParser#SPEL_FILTER})</li>

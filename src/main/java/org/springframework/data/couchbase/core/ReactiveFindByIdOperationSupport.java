@@ -28,6 +28,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -49,7 +50,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 	@Override
 	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
-		return new ReactiveFindByIdSupport<>(template, domainType, null, null, null, null, null, template.support());
+		return new ReactiveFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, null, null, template.support());
 	}
 
 	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
@@ -80,7 +82,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 			CommonOptions<?> gOptions = initGetOptions();
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
-			LOG.trace("findById {}", pArgs);
+			LOG.trace("findById key={} {}", id, pArgs);
 
 			return Mono.just(id).flatMap(docId -> {
 				ReactiveCollection reactive = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
@@ -120,12 +122,14 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, fields, expiry, support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, fields, expiry, support);
 		}
 
 		@Override

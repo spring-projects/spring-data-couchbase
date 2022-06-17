@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 	@Override
 	public ReactiveExistsById existsById(Class<?> domainType) {
-		return new ReactiveExistsByIdSupport(template, domainType, null, null, null);
+		return new ReactiveExistsByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null);
 	}
 
 	static class ReactiveExistsByIdSupport implements ReactiveExistsById {
@@ -72,7 +73,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		@Override
 		public Mono<Boolean> one(final String id) {
 			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("existsById {}", pArgs);
+			LOG.trace("existsById key={} {}", id, pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
@@ -98,7 +99,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public ExistsByIdWithOptions inCollection(final String collection) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, domainType, scope,
+					collection != null ? collection : this.collection, options);
 		}
 
 		@Override
@@ -109,7 +111,8 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public ExistsByIdInCollection inScope(final String scope) {
-			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
+			return new ReactiveExistsByIdSupport(template, domainType, scope != null ? scope : this.scope, collection,
+					options);
 		}
 
 	}

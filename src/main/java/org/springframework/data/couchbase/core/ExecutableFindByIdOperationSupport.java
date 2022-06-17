@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.couchbase.core.ReactiveFindByIdOperationSupport.ReactiveFindByIdSupport;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.GetOptions;
@@ -35,7 +36,8 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 	@Override
 	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
-		return new ExecutableFindByIdSupport<>(template, domainType, null, null, null, null, null);
+		return new ExecutableFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType),null, null, null);
 	}
 
 	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
@@ -80,12 +82,12 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection, options, fields, expiry);
 		}
 
 		@Override
