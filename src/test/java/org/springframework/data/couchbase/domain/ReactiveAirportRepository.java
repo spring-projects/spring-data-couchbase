@@ -101,11 +101,11 @@ public interface ReactiveAirportRepository
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> findByIata(String iata);
 
-	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and  iata = $1 #{#n1ql.returning}")
+	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and iata = $1 #{#n1ql.returning}")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<RemoveResult> deleteByIata(String iata);
 
-	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and  iata = $1 #{#n1ql.returning}")
+	@Query("#{#n1ql.delete} WHERE #{#n1ql.filter} and iata = $1 #{#n1ql.returning}")
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	@Collection("bogus_collection")
 	Flux<RemoveResult> deleteByIataAnnotated(String iata);
