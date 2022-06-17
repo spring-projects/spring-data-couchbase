@@ -66,9 +66,9 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Reiche
  */
-@SpringJUnitConfig(FluxTest.Config.class)
+@SpringJUnitConfig(FluxIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-public class FluxTest extends JavaIntegrationTests {
+public class FluxIntegrationTests extends JavaIntegrationTests {
 
 	@BeforeAll
 	public static void beforeEverything() {
@@ -76,7 +76,7 @@ public class FluxTest extends JavaIntegrationTests {
 		 * The couchbaseTemplate inherited from JavaIntegrationTests uses org.springframework.data.couchbase.domain.Config
 		 * It has typeName = 't' (instead of _class). Don't use it.
 		 */
-		ApplicationContext ac = new AnnotationConfigApplicationContext(FluxTest.Config.class);
+		ApplicationContext ac = new AnnotationConfigApplicationContext(FluxIntegrationTests.Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(BeanNames.COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(BeanNames.REACTIVE_COUCHBASE_TEMPLATE);
 		collection = couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection();
