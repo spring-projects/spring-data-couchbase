@@ -27,8 +27,6 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.util.Util.waitUntilCondition;
 
-import com.couchbase.client.core.retry.BestEffortRetryStrategy;
-import com.couchbase.client.core.retry.RetryStrategy;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
