@@ -19,6 +19,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.TerminatingFindByQuery;
+import org.springframework.data.couchbase.core.ExecutableRemoveByQueryOperation.ExecutableRemoveByQuery;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.DeleteExecution;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryExecution.PagedExecution;
@@ -42,7 +43,8 @@ import org.springframework.util.Assert;
 public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<CouchbaseOperations>
 		implements RepositoryQuery {
 
-	private final ExecutableFindByQuery<?> findOperationWithProjection;
+	private final ExecutableFindByQuery<?> findOp;
+	private final ExecutableRemoveByQuery<?> removeOp;
 
 	/**
 	 * Creates a new {@link AbstractCouchbaseQuery} from the given {@link ReactiveCouchbaseQueryMethod} and
@@ -62,9 +64,10 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		Assert.notNull(evaluationContextProvider, "QueryMethodEvaluationContextProvider must not be null!");
 		EntityMetadata<?> metadata = method.getEntityInformation();
 		Class<?> type = metadata.getJavaType();
-		ExecutableFindByQuery<?> findOp = operations.findByQuery(type);
-		findOp = (ExecutableFindByQuery<?>) (findOp.inScope(method.getScope()).inCollection(method.getCollection()));
-		this.findOperationWithProjection = findOp;
+		this.findOp = (ExecutableFindByQuery<?>) (operations.findByQuery(type).inScope(method.getScope())
+				.inCollection(method.getCollection()));
+		this.removeOp = (ExecutableRemoveByQuery<?>) (operations.removeByQuery(type).inScope(method.getScope())
+				.inCollection(method.getCollection()));
 	}
 
 	/**
@@ -84,11 +87,11 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 		// query = applyAnnotatedCollationIfPresent(query, accessor); // not yet implemented
 		query = applyQueryMetaAttributesIfPresent(query, typeToRead);
 
-		ExecutableFindByQuery<?> find = findOperationWithProjection;
-
 		CouchbaseQueryExecution execution = getExecution(accessor,
-				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), find);
-		return execution.execute(query, processor.getReturnedType().getDomainType(), typeToRead, null);
+				new ResultProcessingConverter<>(processor, getOperations(), getInstantiators()), findOp);
+		// the operation should already have the scope and collection. passing again anyway.
+		return execution.execute(query, processor.getReturnedType().getDomainType(), typeToRead, method.getScope(),
+				method.getCollection());
 	}
 
 	/**
@@ -108,31 +111,31 @@ public abstract class AbstractCouchbaseQuery extends AbstractCouchbaseQueryBase<
 	 * Returns the execution to wrap
 	 *
 	 * @param accessor must not be {@literal null}.
-	 * @param operation must not be {@literal null}.
+	 * @param findOp must not be {@literal null}.
 	 * @return
 	 */
-	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor, ExecutableFindByQuery<?> operation) {
-
+	private CouchbaseQueryExecution getExecutionToWrap(ParameterAccessor accessor, ExecutableFindByQuery<?> findOp) {
+		// the operation (removeOp and findOp) will already have the scope and collection, but set them again anyway
 		if (isDeleteQuery()) {
-			return new DeleteExecution(getOperations(), getQueryMethod());
+			return new DeleteExecution(removeOp);
 		} else if (isTailable(getQueryMethod())) {
-			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all(); // s/b tail() instead of
-			// all()
+			return (q, t, r, s, c) -> findOp.as(r).inScope(s).inCollection(c).matching(q.with(accessor.getPageable())).all();
 		} else if (getQueryMethod().isCollectionQuery()) {
-			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).all();
+			return (q, t, r, s, c) -> findOp.as(r).inScope(s).inCollection(c).matching(q.with(accessor.getPageable())).all();
 		} else if (getQueryMethod().isStreamQuery()) {
-			return (q, t, r, c) -> operation.as(r).matching(q.with(accessor.getPageable())).stream();
+			return (q, t, r, s, c) -> findOp.as(r).inScope(s).inCollection(c).matching(q.with(accessor.getPageable()))
+					.stream();
 		} else if (isCountQuery()) {
-			return (q, t, r, c) -> operation.as(r).matching(q).count();
+			return (q, t, r, s, c) -> findOp.as(r).inScope(s).inCollection(c).matching(q).count();
 		} else if (isExistsQuery()) {
-			return (q, t, r, c) -> operation.as(r).matching(q).exists();
+			return (q, t, r, s, c) -> findOp.as(r).inScope(s).inCollection(c).matching(q).exists();
 		} else if (getQueryMethod().isPageQuery()) {
-			return new PagedExecution(operation, accessor.getPageable());
+			return new PagedExecution(findOp, accessor.getPageable());
 		} else if (getQueryMethod().isSliceQuery()) {
-			return new SlicedExecution(operation, accessor.getPageable());
+			return new SlicedExecution(findOp, accessor.getPageable());
 		} else {
-			return (q, t, r, c) -> {
-				TerminatingFindByQuery<?> find = operation.as(r).matching(q);
+			return (q, t, r, s, c) -> {
+				TerminatingFindByQuery<?> find = findOp.as(r).matching(q);
 				if (isCountQuery()) {
 					return find.count();
 				}

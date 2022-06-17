@@ -48,8 +48,9 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 	@Override
 	public ReactiveRemoveById removeById(Class<?> domainType) {
-		return new ReactiveRemoveByIdSupport(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+		return new ReactiveRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ReactiveRemoveByIdSupport implements ReactiveRemoveById {
@@ -81,7 +82,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		@Override
 		public Mono<RemoveResult> one(final String id) {
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
-			LOG.trace("removeById {}", pArgs);
+			LOG.trace("removeById key={} {}", id, pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().remove(id, buildRemoveOptions(pArgs.getOptions()))
@@ -121,14 +122,14 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 		@Override
 		public RemoveByIdWithDurability inCollection(final String collection) {
-			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+			return new ReactiveRemoveByIdSupport(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
-			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+			return new ReactiveRemoveByIdSupport(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 		@Override

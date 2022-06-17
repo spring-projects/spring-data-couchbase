@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterAll;
@@ -213,6 +214,16 @@ public abstract class ClusterAwareIntegrationTests {
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * @return unique identifier for line - to use as key for documents to identify where they were created
+	 */
+	public static String loc() {
+		String uuid = UUID.randomUUID().toString();
+		String uid = uuid.substring(uuid.length() - 4);
+		StackTraceElement ste = Thread.currentThread().getStackTrace()[2];
+		return ste.getClassName() + ":" + ste.getMethodName() + ":" + ste.getLineNumber() + ":" + uid;
 	}
 
 }

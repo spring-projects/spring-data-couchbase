@@ -24,6 +24,7 @@ import java.util.Collection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
@@ -41,7 +42,8 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 	@Override
 	public <T> ReactiveFindFromReplicasById<T> findFromReplicasById(Class<T> domainType) {
-		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType, null, null, null,
+		return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, domainType,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null,
 				template.support());
 	}
 
@@ -73,7 +75,7 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 			}
 			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
-			LOG.trace("getAnyReplica {}", pArgs);
+			LOG.trace("getAnyReplica key={} {}", id, pArgs);
 			return Mono.just(id)
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
@@ -102,14 +104,14 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 
 		@Override
 		public FindFromReplicasByIdWithOptions<T> inCollection(final String collection) {
-			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options,
-					support);
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope,
+					collection != null ? collection : this.collection, options, support);
 		}
 
 		@Override
 		public FindFromReplicasByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType, scope, collection, options,
-					support);
+			return new ReactiveFindFromReplicasByIdSupport<>(template, domainType, returnType,
+					scope != null ? scope : this.scope, collection, options, support);
 		}
 
 	}

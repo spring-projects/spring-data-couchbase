@@ -45,8 +45,9 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 	@Override
 	public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
-		return new ReactiveUpsertByIdSupport<>(template, domainType, null, null, null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null, template.support());
+		return new ReactiveUpsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null, template.support());
 	}
 
 	static class ReactiveUpsertByIdSupport<T> implements ReactiveUpsertById<T> {
@@ -80,7 +81,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			LOG.trace("upsertById {}", pArgs);
+			LOG.trace("upsertById object={} {}", object, pArgs);
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
@@ -114,14 +115,15 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public UpsertByIdWithDurability<T> inCollection(final String collection) {
-			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry,
+					support);
 		}
 
 		@Override
 		public UpsertByIdInCollection<T> inScope(final String scope) {
-			return new ReactiveUpsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry, support);
+			return new ReactiveUpsertByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, expiry, support);
 		}
 
 		@Override

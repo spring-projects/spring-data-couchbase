@@ -20,6 +20,7 @@ import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -48,8 +49,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
-		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null, null, null, null, null,
-				null, template.support());
+		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null, null, null,
+				template.support());
 	}
 
 	static class ReactiveFindByQuerySupport<T> implements ReactiveFindByQuery<T> {
@@ -107,14 +109,14 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public FindByQueryInCollection<T> inScope(final String scope) {
-			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency,
+					scope != null ? scope : this.scope, collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> inCollection(final String collection) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection != null ? collection : this.collection, options, distinctFields, fields, support);
 		}
 
 		@Override
