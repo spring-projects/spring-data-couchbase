@@ -120,7 +120,8 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		private String assembleDeleteQuery(String scope, String collection) {
-			return query.toN1qlRemoveString(template, scope, collection, this.domainType);
+			return query.toN1qlRemoveString(template.getConverter(), template.getBucketName(), scope, collection,
+					this.domainType);
 		}
 
 		@Override

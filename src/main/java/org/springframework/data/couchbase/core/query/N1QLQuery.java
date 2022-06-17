@@ -15,7 +15,7 @@
  */
 package org.springframework.data.couchbase.core.query;
 
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
@@ -48,8 +48,9 @@ public class N1QLQuery extends Query {
 	}
 
 	@Override
-	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String scopeName, String collectionName,
-			Class domainClass, Class returnClass, boolean isCount, String[] distinctFields, String[] fields) {
+	public String toN1qlSelectString(CouchbaseConverter template, String bucketName, String scopeName,
+			String collectionName, Class domainClass, Class returnClass, boolean isCount, String[] distinctFields,
+			String[] fields) {
 		return expression.toString();
 	}
 }

@@ -237,7 +237,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		private String assembleEntityQuery(final boolean count, String[] distinctFields, String scope, String collection) {
-			return query.toN1qlSelectString(template, scope, collection, this.domainType, this.returnType, count,
+			return query.toN1qlSelectString(template.getConverter(), template.getBucketName(), scope, collection,
+					this.domainType, this.returnType, count,
 					query.getDistinctFields() != null ? query.getDistinctFields() : distinctFields, fields);
 		}
 	}
