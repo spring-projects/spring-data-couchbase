@@ -16,8 +16,6 @@
  */
 package com.couchbase.client.java.transactions;
 
-import java.lang.reflect.Field;
-
 import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.java.codec.JsonSerializer;
