@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.transaction.TransactionManager;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
 import java.util.Optional;
@@ -102,7 +103,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 		assertThrowsWithCause(() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.id()) //
 				.flatMap(pp -> rxCbTmpl.replaceById(Person.class).one(pp.withIdFirstname()) //
 						.map(ppp -> throwSimulateFailureException(ppp))))
-				.blockLast(), TransactionFailedException.class, SimulateFailureException.class);
+				.blockLast(), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());
@@ -116,7 +117,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 				() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.getId().toString()) //
 						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withIdFirstname())) //
 						.map(ppp -> throwSimulateFailureException(ppp))).blockLast(), //
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.getId().toString());
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());
 
@@ -136,7 +137,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 				() -> txOperator.execute((ctx) -> rxCbTmpl.insertById(Person.class).one(WalterWhite)
 						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 						.map(it -> throwSimulateFailureException(it))).blockLast(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
 		assertNull(pFound, "Should NOT have found " + pFound);
@@ -149,7 +150,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 			return repoRx.withCollection(cName).findById(person.id())
 					.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt")))
 					.map(pp -> throwSimulateFailureException(pp));
-		}).blockLast(), TransactionFailedException.class, SimulateFailureException.class);
+		}).blockLast(), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertEquals(person, pFound, "Should have found " + person);
@@ -159,7 +160,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 	public void insertPersonRbRepo() {
 		assertThrowsWithCause(() -> txOperator.execute((ctx) -> repoRx.withCollection(cName).save(WalterWhite) // insert
 				.flatMap(p -> repoRx.withCollection(cName).save(p.withFirstName("Walt"))) // replace
-				.map(it -> throwSimulateFailureException(it))).blockLast(), TransactionFailedException.class,
+				.map(it -> throwSimulateFailureException(it))).blockLast(), TransactionSystemUnambiguousException.class,
 				SimulateFailureException.class);
 
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(WalterWhite.id());
@@ -182,7 +183,7 @@ public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
 				() -> txOperator.execute((ctx) -> rxCbTmpl.findById(Person.class).one(person.getId().toString())
 						.flatMap(p -> rxCbTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 						.map(it -> throwSimulateFailureException(it))).blockLast(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).inCollection(cName).one(person.id());
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be Walter");
 	}

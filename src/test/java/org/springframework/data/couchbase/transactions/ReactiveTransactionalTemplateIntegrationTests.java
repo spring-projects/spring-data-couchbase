@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -113,7 +114,7 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 					return ops.insertById(Person.class).one(WalterWhite).then(Mono.error(new SimulateFailureException()));
 				});
 			}).block();
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(WalterWhite.id());
 		assertNull(fetched);

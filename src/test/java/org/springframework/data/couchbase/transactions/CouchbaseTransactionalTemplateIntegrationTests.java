@@ -41,6 +41,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -184,7 +185,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				id.set(WalterWhite.id());
 				throw new SimulateFailureException();
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(id.get());
 		assertNull(fetched);
@@ -203,7 +204,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				ops.replaceById(Person.class).one(p.withFirstName("changed"));
 				throw new SimulateFailureException();
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertEquals(person.getFirstname(), fetched.getFirstname());
@@ -222,7 +223,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				ops.removeById(Person.class).oneEntity(p);
 				throw new SimulateFailureException();
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
@@ -240,7 +241,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 				throw new SimulateFailureException();
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = operations.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
@@ -258,7 +259,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 				throw new SimulateFailureException();
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		assertEquals(1, tryCount.get());
 	}
@@ -267,7 +268,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	public void shouldRollbackAfterException() {
 		assertThrowsWithCause(() -> {
 			personService.insertThenThrow();
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Long count = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
@@ -315,7 +316,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 		AtomicInteger tryCount = new AtomicInteger(0);
 		assertThrowsWithCause(() -> personService.replace(person, tryCount),
-				TransactionFailedException.class, AttemptExpiredException.class);
+				TransactionSystemUnambiguousException.class, AttemptExpiredException.class);
 	}
 
 	@DisplayName("Entity must have CAS field during replace")
@@ -325,7 +326,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		operations.insertById(PersonWithoutVersion.class).one(person);
 
 		assertThrowsWithCause(() -> personService.replaceEntityWithoutVersion(person.id()),
-				TransactionFailedException.class, IllegalArgumentException.class);
+				TransactionSystemUnambiguousException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("Entity must have non-zero CAS during replace")
@@ -336,7 +337,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		Person switchedPerson = new Person( "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger(0);
 
-		assertThrowsWithCause(() -> personService.replacePerson(switchedPerson, tryCount), TransactionFailedException.class,
+		assertThrowsWithCause(() -> personService.replacePerson(switchedPerson, tryCount), TransactionSystemUnambiguousException.class,
 				IllegalArgumentException.class);
 	}
 
@@ -347,7 +348,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		operations.insertById(PersonWithoutVersion.class).one(person);
 
 		assertThrowsWithCause(() -> personService.removeEntityWithoutVersion(person.id()),
-				TransactionFailedException.class, IllegalArgumentException.class);
+				TransactionSystemUnambiguousException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("removeById().one(id) isn't allowed in transactions, since we don't have the CAS")
@@ -361,7 +362,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 				ops.removeById(Person.class).one(p.id());
 				return p;
 			});
-		}, TransactionFailedException.class, IllegalArgumentException.class);
+		}, TransactionSystemUnambiguousException.class, IllegalArgumentException.class);
 	}
 
 	@Service

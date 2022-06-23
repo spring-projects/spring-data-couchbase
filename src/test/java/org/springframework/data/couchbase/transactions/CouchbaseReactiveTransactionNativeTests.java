@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -111,7 +112,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.findById(Person.class).one(person.id())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -132,7 +133,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.insertById(Person.class).one(person)
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
@@ -143,7 +144,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).findById(person.id())
 				.flatMap(p -> rxRepo.withCollection(cName).save(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -153,7 +154,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Person person = WalterWhite;
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).save(person) // insert
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
@@ -185,7 +186,7 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Mono<?> result = rxCBTmpl.findById(Person.class).one(person.id())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())).as(txOperator::transactional);
-		assertThrowsWithCause(result::block, TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::block, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 		assertEquals(person.getFirstname(), pFound.getFirstname(), "firstname should be " + person.getFirstname());

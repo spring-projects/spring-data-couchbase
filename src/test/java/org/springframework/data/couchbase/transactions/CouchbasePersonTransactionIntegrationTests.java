@@ -29,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Disabled;
 import org.springframework.data.couchbase.core.TransactionalSupport;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Mono;
 
@@ -122,7 +123,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception using transactionalOperator")
 	@Test
 	public void shouldRollbackAfterException() {
-		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -130,7 +131,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	@DisplayName("rollback after exception using @Transactional")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -139,7 +140,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@DisplayName("rollback after exception after using @Transactional(reactive)")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethodReactive() {
 		assertThrowsWithCause(() -> personService.declarativeSavePersonErrorsReactive(WalterWhite).block(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -192,7 +193,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void rollbackShouldAbortAcrossCollections() {
 		assertThrowsWithCause(() -> personService.saveWithErrorLogs(WalterWhite),
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		List<Person> persons = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		assertEquals(0, persons.size(), "should have done roll back and left 0 entries");
 		List<EventLog> events = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all(); //
@@ -214,7 +215,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	public void errorAfterTxShouldNotAffectPreviousStep() {
 		Person p = personService.savePerson(WalterWhite);
-		assertThrowsOneOf(() -> personService.savePerson(p), TransactionFailedException.class,
+		assertThrowsOneOf(() -> personService.savePerson(p), TransactionSystemUnambiguousException.class,
 				DocumentExistsException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(1, count, "should have saved and found 1");
@@ -238,7 +239,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 				.doOnNext(ppp -> TransactionalSupport.checkForTransactionInThreadLocalStorage()
 						.doOnNext(v -> assertTrue(v.isPresent())))
 				.map(p -> throwSimulateFailureException(p)).as(transactionalOperator::transactional); // tx
-		assertThrowsWithCause(result::block,  TransactionFailedException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::block,  TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -248,7 +249,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Mono<Person> result = rxCBTmpl.insertById(Person.class).one(WalterWhite) //
 				.flatMap(ppp -> rxCBTmpl.insertById(Person.class).one(ppp)) //
 				.as(transactionalOperator::transactional);
-		assertThrowsWithCause(result::block, TransactionFailedException.class, DuplicateKeyException.class);
+		assertThrowsWithCause(result::block, TransactionSystemUnambiguousException.class, DuplicateKeyException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}

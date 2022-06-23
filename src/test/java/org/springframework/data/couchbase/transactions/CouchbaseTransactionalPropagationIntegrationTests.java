@@ -51,6 +51,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.NoTransactionException;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -207,7 +208,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 		assertThrowsWithCause(() -> personService.propagationDefault(ops -> {
 			ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
 			personService.propagationRequiresNew(ops2 -> {});
-		}), TransactionFailedException.class, UnsupportedOperationException.class);
+		}), TransactionSystemUnambiguousException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -223,7 +224,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
 				personService.propagationNotSupported(ops2 -> {});
 			});
-		}, TransactionFailedException.class, UnsupportedOperationException.class);
+		}, TransactionSystemUnambiguousException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -239,7 +240,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 				ops.insertById(Person.class).one(new Person(id1, "Ada", "Lovelace"));
 				personService.propagationNever(ops2 -> {});
 			});
-		}, TransactionFailedException.class, IllegalTransactionStateException.class);
+		}, TransactionSystemUnambiguousException.class, IllegalTransactionStateException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
@@ -256,7 +257,7 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 
 				personService.propagationNested(ops2 -> {});
 			});
-		}, TransactionFailedException.class, UnsupportedOperationException.class);
+		}, TransactionSystemUnambiguousException.class, UnsupportedOperationException.class);
 
 		// Validate everything rolled back
 		assertNull(operations.findById(Person.class).one(id1.toString()));
