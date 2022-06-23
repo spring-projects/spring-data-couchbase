@@ -29,28 +29,6 @@ import com.couchbase.client.java.codec.JsonSerializer;
  */
 @Stability.Internal
 public class AttemptContextReactiveAccessor {
-	public static CoreTransactionAttemptContext getCore(ReactiveTransactionAttemptContext atr) {
-		CoreTransactionAttemptContext coreTransactionsReactive;
-		try {
-			Field field = ReactiveTransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			coreTransactionsReactive = (CoreTransactionAttemptContext) field.get(atr);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-		return coreTransactionsReactive;
-	}
-
-	public static CoreTransactionAttemptContext getCore(TransactionAttemptContext atr) {
-		try {
-			Field field = TransactionAttemptContext.class.getDeclaredField("internal");
-			field.setAccessible(true);
-			return (CoreTransactionAttemptContext) field.get(atr);
-		} catch (Throwable err) {
-			throw new RuntimeException(err);
-		}
-	}
-
 	public static ReactiveTransactionAttemptContext createReactiveTransactionAttemptContext(
 			CoreTransactionAttemptContext core, JsonSerializer jsonSerializer) {
 		return new ReactiveTransactionAttemptContext(core, jsonSerializer);
