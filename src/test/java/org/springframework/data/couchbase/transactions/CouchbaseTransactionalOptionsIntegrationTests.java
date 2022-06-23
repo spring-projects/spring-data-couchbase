@@ -31,6 +31,7 @@ import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -82,7 +83,7 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 		Person person = operations.insertById(Person.class).one(WalterWhite);
 		assertThrowsWithCause(() -> {
 			personService.timeout(person.id());
-		}, TransactionExpiredException.class, AttemptExpiredException.class);
+		}, TransactionSystemUnambiguousException.class, AttemptExpiredException.class);
 		Duration timeTaken = Duration.ofNanos(System.nanoTime() - start);
 		assertTrue(timeTaken.toMillis() >= 2000);
 		assertTrue(timeTaken.toMillis() < 10_000); // Default transaction timeout is 15s

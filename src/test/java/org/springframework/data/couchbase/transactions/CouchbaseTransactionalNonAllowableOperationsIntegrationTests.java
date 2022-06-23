@@ -36,6 +36,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,7 +80,7 @@ assertThrowsWithCause( () -> {
 				r.accept(ops);
 				return null;
 			});
-		}, TransactionFailedException.class, IllegalArgumentException.class);
+		}, TransactionSystemUnambiguousException.class, IllegalArgumentException.class);
 
 		assertEquals(1, tryCount.get());
 	}

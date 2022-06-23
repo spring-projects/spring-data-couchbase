@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import lombok.Data;
 import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -107,7 +108,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	public void shouldRollbackAfterException() {
 		personService.savePersonErrors(WalterWhite) //
 				.as(StepVerifier::create) //
-				.verifyError(TransactionFailedException.class);
+				.verifyError(TransactionSystemUnambiguousException.class);
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //
 				.expectNext(0L) //
@@ -117,7 +118,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
 		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite).blockLast(),
-				TransactionFailedException.class, SimulateFailureException.class);
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 	}
 
 	@Test

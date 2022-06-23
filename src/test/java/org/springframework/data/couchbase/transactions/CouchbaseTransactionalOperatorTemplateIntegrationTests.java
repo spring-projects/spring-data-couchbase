@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -223,7 +224,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		assertThrowsWithCause(() -> doMonoInTransaction(() -> {
 			attempts.incrementAndGet();
 			return ops.insertById(Person.class).one(WalterWhite).map((p) -> throwSimulateFailureException(p));
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(WalterWhite.toString());
 		assertNull(fetched);
@@ -241,7 +242,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 			return ops.findById(Person.class).one(person.id()) //
 					.flatMap(p -> ops.replaceById(Person.class).one(p.withFirstName("changed"))) //
 					.map(p -> throwSimulateFailureException(p));
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertEquals(person.getFirstname(), fetched.getFirstname());
@@ -259,7 +260,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 			return ops.findById(Person.class).one(person.id())
 					.flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
 					.doOnSuccess(p -> throwSimulateFailureException(p)); // remove has no result
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
@@ -276,7 +277,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 			attempts.incrementAndGet();
 			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all()
 					.elementAt(0).map(p -> throwSimulateFailureException(p));
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
 		assertNotNull(fetched);
@@ -293,7 +294,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 			attempts.incrementAndGet();
 			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all()
 					.elementAt(0).map(p -> throwSimulateFailureException(p));
-		}), TransactionFailedException.class, SimulateFailureException.class);
+		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		assertEquals(1, attempts.get());
 	}

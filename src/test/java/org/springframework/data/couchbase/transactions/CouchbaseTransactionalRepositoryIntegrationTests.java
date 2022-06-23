@@ -44,6 +44,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,7 +120,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 				User user = repo.save(new User(id, "Ada", "Lovelace"));
 				SimulateFailureException.throwEx("fail");
 			});
-		}, TransactionFailedException.class, SimulateFailureException.class);
+		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
 		User user = operations.findById(User.class).one(id);
 		assertNull(user);

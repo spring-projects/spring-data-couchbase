@@ -16,15 +16,17 @@
 package org.springframework.data.couchbase.transaction;
 
 import com.couchbase.client.core.annotation.Stability;
-import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
+import com.couchbase.client.java.transactions.error.TransactionCommitAmbiguousException;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.transaction.error.TransactionRollbackRequestedException;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemAmbiguousException;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.ReactiveTransaction;
@@ -99,21 +101,37 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler. This
 		// scheduler is effectively unlimited, but this can still potentially lead to high thread usage by the application.
 		// If this is an issue then users need to instead use the standard Couchbase reactive transactions SDK.
-		TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
-			CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
+		try {
+			TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
+				CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
-			T res = callback.doInTransaction(status);
-			if (res instanceof Mono || res instanceof Flux) {
-				throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseTransactionInterceptor is not in use.");
-			}
-			execResult.set(res);
+				T res = callback.doInTransaction(status);
+				if (res instanceof Mono || res instanceof Flux) {
+					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseTransactionInterceptor is not in use.");
+				}
+				execResult.set(res);
 
-			if (status.isRollbackOnly()) {
-				throw new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set");
-			}
-		}, this.options);
+				if (status.isRollbackOnly()) {
+					throw new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set");
+				}
+			}, this.options);
 
-		return execResult.get();
+			return execResult.get();
+		}
+		catch (RuntimeException ex) {
+			throw convert(ex);
+		}
+	}
+
+	private static RuntimeException convert(RuntimeException ex) {
+		if (ex instanceof TransactionCommitAmbiguousException) {
+			return new TransactionSystemAmbiguousException((TransactionCommitAmbiguousException) ex);
+		}
+		if (ex instanceof TransactionFailedException) {
+			return new TransactionSystemUnambiguousException((TransactionFailedException) ex);
+		}
+		// Should not get here
+		return ex;
 	}
 
 	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
@@ -158,7 +176,13 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 			});
 
 		}, this.options)
-				.thenMany(Flux.defer(() -> Flux.fromIterable(out)));
+				.thenMany(Flux.defer(() -> Flux.fromIterable(out)))
+				.onErrorMap(ex -> {
+					if (ex instanceof RuntimeException) {
+						return convert((RuntimeException) ex);
+					}
+					return ex;
+				});
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
