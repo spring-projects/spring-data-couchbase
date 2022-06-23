@@ -20,10 +20,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
+import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
+import org.springframework.data.couchbase.transaction.error.UncategorizedTransactionDataAccessException;
 import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
 import org.springframework.data.couchbase.transactions.SimulateFailureException;
 import org.springframework.data.couchbase.transactions.TransactionsConfig;
@@ -359,11 +364,40 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 			Person fetched = ops.findById(Person.class).one(person.getId().toString());
 			ReplaceLoopThread.updateOutOfTransaction(ops, person.withFirstName("Changed externally"),
 					attempts.incrementAndGet());
-			ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+			try {
+				ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
+			}
+			catch (RuntimeException err) {
+				assertTrue(err instanceof UncategorizedTransactionDataAccessException);
+			}
 		});
 
 		Person fetched = ops.findById(Person.class).one(person.getId().toString());
 		assertEquals("Changed by transaction", fetched.getFirstname());
 		assertEquals(2, attempts.get());
 	}
+
+	@DisplayName("Using the standard ctx.get(), ctx.replace() API works as expected")
+	@Test
+	public void casMismatchUsingRegularTransactionOperations() {
+		Person person = ops.insertById(Person.class).one(WalterWhite);
+		AtomicInteger attempts = new AtomicInteger();
+
+		doInTransaction(ctx -> {
+			TransactionGetResult gr = ctx.get(couchbaseClientFactory.getDefaultCollection(), WalterWhite.id());
+			ReplaceLoopThread.updateOutOfTransaction(ops, person.withFirstName("Changed externally"),
+					attempts.incrementAndGet());
+			try {
+				ctx.replace(gr, JsonObject.create());
+			}
+			catch (RuntimeException err) {
+				assertTrue(err instanceof TransactionOperationFailedException);
+			}
+		});
+
+		Person fetched = ops.findById(Person.class).one(person.getId().toString());
+		assertEquals("Changed by transaction", fetched.getFirstname());
+		assertEquals(2, attempts.get());
+	}
+
 }
