@@ -22,12 +22,13 @@ import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
@@ -158,7 +159,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		QueryCriteria qc = wrap(criteria);
 		newThis.criteriaChain.add(qc);
 		qc.setChainOperator(ChainOperator.AND);
-		newThis.chainOperator = ChainOperator.AND;//  otherwise we get "A chain operator must be present when chaining"
+		newThis.chainOperator = ChainOperator.AND;// otherwise we get "A chain operator must be present when chaining"
 		return newThis;
 	}
 
@@ -200,54 +201,92 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		qc.criteriaChain = newThis.criteriaChain;
 		newThis.criteriaChain.add(qc);
 		qc.setChainOperator(ChainOperator.OR);
-		newThis.chainOperator = ChainOperator.OR;//  otherwise we get "A chain operator must be present when chaining"
+		newThis.chainOperator = ChainOperator.OR;// otherwise we get "A chain operator must be present when chaining"
 		return newThis;
 	}
 
 	public QueryCriteria eq(@Nullable Object o) {
-		return is(o);
+		return eq(false, o);
+	}
+
+	public QueryCriteria eq(boolean ignoreCase, @Nullable Object o) {
+		return is(ignoreCase, o);
 	}
 
 	public QueryCriteria is(@Nullable Object o) {
+		return is(false, o);
+	};
+
+	public QueryCriteria is(boolean ignoreCase, @Nullable Object o) {
 		operator = "=";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria ne(@Nullable Object o) {
+		return ne(false, o);
+	}
+
+	public QueryCriteria ne(boolean ignoreCase, @Nullable Object o) {
 		operator = "!=";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria lt(@Nullable Object o) {
+		return lt(false, o);
+	}
+
+	public QueryCriteria lt(boolean ignoreCase, @Nullable Object o) {
 		operator = "<";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria lte(@Nullable Object o) {
+		return lte(false, o);
+	}
+
+	public QueryCriteria lte(boolean ignoreCase, @Nullable Object o) {
 		operator = "<=";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria gt(@Nullable Object o) {
+		return gt(false, o);
+	}
+
+	public QueryCriteria gt(boolean ignoreCase, @Nullable Object o) {
 		operator = ">";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria gte(@Nullable Object o) {
+		return gte(false, o);
+	}
+
+	public QueryCriteria gte(boolean ignoreCase, @Nullable Object o) {
 		operator = ">=";
-		value = new Object[] { o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
 		return this;
 	}
 
 	public QueryCriteria startingWith(@Nullable Object o) {
-		operator = "STARTING_WITH";
-		value = new Object[] { o };
-		format = "%1$s like (%3$s||\"%%\")";
+		return startingWith(false, o);
+	}
+
+	public QueryCriteria startingWith(boolean ignoreCase, @Nullable Object o) {
+		operator = "like";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
+		format = ignoreCase ? "lower(%1$s) %2$s (%3$s||\"%%\")" : "%1$s %2$s (%3$s||\"%%\")";
 		return this;
 	}
 
@@ -259,9 +298,13 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria endingWith(@Nullable Object o) {
-		operator = "ENDING_WITH";
-		value = new Object[] { o };
-		format = "%1$s like (\"%%\"||%3$s)";
+		return endingWith(false, o);
+	}
+
+	public QueryCriteria endingWith(boolean ignoreCase, @Nullable Object o) {
+		operator = "like";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
+		format = ignoreCase ? "lower(%1$s) %2$s (\"%%\"||%3$s)" : "%1$s %2$s (\"%%\"||%3$s)";
 		return this;
 	}
 
@@ -273,23 +316,38 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria containing(@Nullable Object o) {
-		operator = "CONTAINS";
-		value = new Object[] { o };
-		format = "contains(%1$s, %3$s)";
+		return containing(false, o);
+	}
+
+	public QueryCriteria containing(boolean ignoreCase, @Nullable Object o) {
+		operator = "contains";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
+		format = ignoreCase ? "%2$s(lower(%1$s), %3$s)" : "%2$s(%1$s, %3$s)";
 		return this;
 	}
 
 	public QueryCriteria arrayContaining(@Nullable Object o) {
-		operator = "ARRAY_CONTAINING";
+		return arrayContaining(false, o);
+	}
+
+	public QueryCriteria arrayContaining(boolean ignoreCase, @Nullable Object o) {
+		operator = "array_containing";
+		if (ignoreCase) {
+			throw new CouchbaseException("ignoreCase not supported in IN and NOT_IN");
+		}
 		value = new Object[] { o };
 		format = "array_containing(%1$s, %3$s)";
 		return this;
 	}
 
 	public QueryCriteria notContaining(@Nullable Object o) {
-		replaceThisAsWrapperOf(containing(o));
-		operator = "NOT";
-		format = "not( %3$s )";
+		return notContaining(false, o);
+	}
+
+	public QueryCriteria notContaining(boolean ignoreCase, @Nullable Object o) {
+		replaceThisAsWrapperOf(containing(ignoreCase, o));
+		operator = "not";
+		format = "%2$s %3$s";
 		return this;
 	}
 
@@ -297,8 +355,6 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		replaceThisAsWrapperOf(this);
 		operator = "NOT";
 		format = "not( %3$s )";
-		// criteriaChain = new LinkedList<>();
-		// criteriaChain.add(this);
 		return this;
 	}
 
@@ -310,16 +366,23 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria like(@Nullable Object o) {
-		operator = "LIKE";
-		value = new Object[] { o };
-		format = "%1$s like %3$s";
+		return like(false, o);
+	}
+
+	public QueryCriteria like(boolean ignoreCase, @Nullable Object o) {
+		operator = "like";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
 		return this;
 	}
 
 	public QueryCriteria notLike(@Nullable Object o) {
-		operator = "NOTLIKE";
-		value = new Object[] { o };
-		format = "not(%1$s like %3$s)";
+		return notLike(false, o);
+	}
+
+	public QueryCriteria notLike(boolean ignoreCase, @Nullable Object o) {
+		replaceThisAsWrapperOf(like(ignoreCase, o));
+		this.negate();
 		return this;
 	}
 
@@ -365,23 +428,35 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		return this;
 	}
 
-	public QueryCriteria within(@Nullable Object o) {
-		operator = "WITHIN";
-		value = new Object[] { o };
-		format = "%1$s within %3$s";
+	public QueryCriteria within(boolean ignoreCase, @Nullable Object o) {
+		operator = "within";
+		value = new Object[] { ignoreCase ? o.toString().toLowerCase(Locale.ROOT) : o };
+		format = ignoreCase ? "lower(%1$s) %2$s %3$s" : "%1$s %2$s %3$s";
 		return this;
 	}
 
 	public QueryCriteria between(@Nullable Object o1, @Nullable Object o2) {
+		return between(false, o1, o2);
+	}
+
+	public QueryCriteria between(boolean ignoreCase, @Nullable Object o1, @Nullable Object o2) {
 		operator = "BETWEEN";
-		value = new Object[] { o1, o2 };
-		format = "%1$s between %3$s and %4$s";
+		value = new Object[] { ignoreCase ? o1.toString().toLowerCase(Locale.ROOT) : o1,
+				ignoreCase ? o2.toString().toLowerCase(Locale.ROOT) : o2 };
+		format = ignoreCase ? "lower(%1$s) between %3$s and %4$s" : "%1$s between %3$s and %4$s";
 		return this;
 	}
 
 	public QueryCriteria in(@Nullable Object... o) {
-		operator = "IN";
-		format = "%1$s in %3$s";
+		return in(false, o);
+	}
+
+	public QueryCriteria in(boolean ignoreCase, @Nullable Object... o) {
+		operator = "in";
+		if (ignoreCase) {
+			throw new CouchbaseException("ignoreCase not supported in IN and NOT_IN");
+		}
+		format = "%1$s %2$s %3$s";
 		value = new Object[1];
 		if (o.length > 0) {
 			if (o[0] instanceof JsonArray || o[0] instanceof List || o[0] instanceof Object[]) {
@@ -405,7 +480,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 				} else {
 					// see QueryCriteriaTests.testNestedNotIn() - if arg to notIn is not cast to Object
 					// notIn((Object) new String[] { "Alabama", "Florida" }));
-					throw new CouchbaseException("unhandled parameters "+o);
+					throw new CouchbaseException("unhandled parameters " + o);
 				}
 			}
 
@@ -414,7 +489,11 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria notIn(@Nullable Object... o) {
-		return in(o).negate();
+		return in(false, o).negate();
+	}
+
+	public QueryCriteria notIn(boolean ignoreCase, @Nullable Object... o) {
+		return in(ignoreCase, o).negate();
 	}
 
 	public QueryCriteria TRUE() { // true/false are reserved, use TRUE/FALSE

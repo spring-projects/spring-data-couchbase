@@ -255,7 +255,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 							.filter(a -> a.getName().toUpperCase().startsWith(united.getName().toUpperCase().substring(0, 5)))
 							.toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE UPPER(name) like ($1||\"%\")", bq(predicate));
+			assertEquals(" WHERE lower(name) like ($1||\"%\")", bq(predicate));
 		}
 	}
 
@@ -281,7 +281,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 							.filter(a -> a.getName().toUpperCase().endsWith(united.getName().toUpperCase().substring(1)))
 							.toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE UPPER(name) like (\"%\"||$1)", bq(predicate));
+			assertEquals(" WHERE lower(name) like (\"%\"||$1)", bq(predicate));
 		}
 	}
 
@@ -293,7 +293,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 			assertNull(comprises(result,
 					Arrays.stream(saved).filter(a -> a.getName().equalsIgnoreCase(flyByNight.getName())).toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE UPPER(name) = $1", bq(predicate));
+			assertEquals(" WHERE lower(name) = $1", bq(predicate));
 		}
 		{
 			BooleanExpression predicate = airline.name.equalsIgnoreCase(united.getName());
@@ -302,7 +302,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 					comprises(result,
 							Arrays.stream(saved).filter(a -> a.getName().equalsIgnoreCase(united.getName())).toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE UPPER(name) = $1", bq(predicate));
+			assertEquals(" WHERE lower(name) = $1", bq(predicate));
 		}
 
 	}
@@ -329,7 +329,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 							.filter(a -> a.getName().toUpperCase(Locale.ROOT).contains("united".toUpperCase(Locale.ROOT)))
 							.toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE contains(UPPER(name), $1)", bq(predicate));
+			assertEquals(" WHERE contains(lower(name), $1)", bq(predicate));
 
 		}
 	}
@@ -356,7 +356,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 							.filter(a -> a.getName().toUpperCase(Locale.ROOT).endsWith("Airlines".toUpperCase(Locale.ROOT)))
 							.toArray(Airline[]::new)),
 					"[unexpected] -> [missing]");
-			assertEquals(" WHERE UPPER(name) like $1", bq(predicate));
+			assertEquals(" WHERE lower(name) like $1", bq(predicate));
 		}
 	}
 
