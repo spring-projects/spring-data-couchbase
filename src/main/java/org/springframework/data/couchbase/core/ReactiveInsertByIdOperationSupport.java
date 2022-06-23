@@ -105,7 +105,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 											.insert(makeCollectionIdentifier(collection.async()), converted.getId(),
 													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
 															.encode(converted.export()).encoded())
-											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), getCas(result),
+											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
 													new TransactionResultHolder(result), null));
 								}
 							})).onErrorMap(throwable -> {
@@ -127,18 +127,6 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			if (this.options != null) {
 				throw new IllegalArgumentException("withOptions is not supported in a transaction");
 			}
-		}
-
-		private Long getCas(CoreTransactionGetResult getResult) {
-			CoreTransactionGetResult internal;
-			try {
-				// Method method = CoreTransactionGetResult.class.getDeclaredMethod("internal");
-				// method.setAccessible(true);
-				// internal = (CoreTransactionGetResult) method.invoke(getResult);
-			} catch (Throwable err) {
-				throw new RuntimeException(err);
-			}
-			return getResult.cas();
 		}
 
 		@Override

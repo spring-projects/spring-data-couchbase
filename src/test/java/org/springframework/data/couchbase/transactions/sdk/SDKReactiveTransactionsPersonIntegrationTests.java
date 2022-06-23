@@ -106,7 +106,6 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 		TransactionTestUtil.assertNotInTransaction();
 	}
 
-	// @Disabled("todo gp: temporarily disabling as sometimes hanging")
 	@Test
 	// need to fix this to make it deliberately have the CasMismatch by synchronization.
 	// And to *not* do any out-of-tx updates after the tx update has succeeded.
