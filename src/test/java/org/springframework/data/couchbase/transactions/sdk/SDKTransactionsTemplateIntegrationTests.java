@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import com.couchbase.client.core.error.transaction.PreviousOperationFailedException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.transactions.TransactionAttemptContext;
@@ -370,6 +371,16 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 			catch (RuntimeException err) {
 				assertTrue(err instanceof UncategorizedTransactionDataAccessException);
 			}
+
+			if (attempts.get() == 1) {
+				// Subsequent operations in this attempt should fast-fail
+				try {
+					ops.findById(Person.class).one(person.getId().toString());
+				} catch (RuntimeException err) {
+					assertTrue(err instanceof UncategorizedTransactionDataAccessException);
+					assertTrue(err.getCause() instanceof PreviousOperationFailedException);
+				}
+			}
 		});
 
 		Person fetched = ops.findById(Person.class).one(person.getId().toString());
@@ -393,10 +404,18 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 			catch (RuntimeException err) {
 				assertTrue(err instanceof TransactionOperationFailedException);
 			}
+
+			if (attempts.get() == 1) {
+				// Subsequent operations in this attempt should fast-fail
+				try {
+					ctx.get(couchbaseClientFactory.getDefaultCollection(), WalterWhite.id());
+				} catch (RuntimeException err) {
+					assertTrue(err instanceof TransactionOperationFailedException);
+					assertTrue(err.getCause() instanceof PreviousOperationFailedException);
+				}
+			}
 		});
 
-		Person fetched = ops.findById(Person.class).one(person.getId().toString());
-		assertEquals("Changed by transaction", fetched.getFirstname());
 		assertEquals(2, attempts.get());
 	}
 
