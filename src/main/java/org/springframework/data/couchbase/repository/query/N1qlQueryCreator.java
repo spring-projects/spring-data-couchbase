@@ -30,6 +30,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PersistentEntity;
@@ -126,7 +127,25 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 
 	private QueryCriteria from(final Part part, final CouchbasePersistentProperty property, final QueryCriteria criteria,
 			final Iterator<Object> parameters) {
+		// deal with ignore case
+		PersistentPropertyPath<CouchbasePersistentProperty> path = N1qlUtils.getPathWithAlternativeFieldNames(converter,
+				part.getProperty());
 
+		// get the whole doted path with fieldNames instead of potentially wrong propNames
+		String fieldNamePath = N1qlUtils.getDottedPathWithAlternativeFieldNames(path);
+
+		boolean ignoreCase = false;
+		Class<?> leafType = converter.getWriteClassFor(path.getLeafProperty().getType());
+		boolean isString = leafType == String.class;
+		if (part.shouldIgnoreCase() == Part.IgnoreCaseType.WHEN_POSSIBLE) {
+			ignoreCase = isString;
+		} else if (part.shouldIgnoreCase() == Part.IgnoreCaseType.ALWAYS) {
+			if (!isString) {
+				throw new IllegalArgumentException(
+						String.format("Part %s must be of type String but was %s", fieldNamePath, leafType));
+			}
+			ignoreCase = true;
+		}
 		final Part.Type type = part.getType();
 		/*
 		    NEAR(new String[]{"IsNear", "Near"}),
@@ -134,32 +153,32 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 		switch (type) {
 			case GREATER_THAN:
 			case AFTER:
-				return criteria.gt(parameters.next());
+				return criteria.gt(ignoreCase, parameters.next());
 			case GREATER_THAN_EQUAL:
-				return criteria.gte(parameters.next());
+				return criteria.gte(ignoreCase, parameters.next());
 			case LESS_THAN:
 			case BEFORE:
-				return criteria.lt(parameters.next());
+				return criteria.lt(ignoreCase, parameters.next());
 			case LESS_THAN_EQUAL:
-				return criteria.lte(parameters.next());
+				return criteria.lte(ignoreCase, parameters.next());
 			case SIMPLE_PROPERTY:
-				return criteria.eq(parameters.next());
+				return criteria.eq(ignoreCase, parameters.next());
 			case NEGATING_SIMPLE_PROPERTY:
-				return criteria.ne(parameters.next());
+				return criteria.ne(ignoreCase, parameters.next());
 			case CONTAINING:
-				return criteria.containing(parameters.next());
+				return criteria.containing(ignoreCase, parameters.next());
 			case NOT_CONTAINING:
-				return criteria.notContaining(parameters.next());
+				return criteria.notContaining(ignoreCase, parameters.next());
 			case STARTING_WITH:
-				return criteria.startingWith(parameters.next());
+				return criteria.startingWith(ignoreCase, parameters.next());
 			case ENDING_WITH:
-				return criteria.endingWith(parameters.next());
+				return criteria.endingWith(ignoreCase, parameters.next());
 			case LIKE:
-				return criteria.like(parameters.next());
+				return criteria.like(ignoreCase, parameters.next());
 			case NOT_LIKE:
-				return criteria.notLike(parameters.next());
+				return criteria.notLike(ignoreCase, parameters.next());
 			case WITHIN:
-				return criteria.within(parameters.next());
+				return criteria.within(ignoreCase, parameters.next());
 			case IS_NULL:
 				return criteria.isNull(/*parameters.next()*/);
 			case IS_NOT_NULL:
@@ -173,11 +192,11 @@ public class N1qlQueryCreator extends AbstractQueryCreator<Query, QueryCriteria>
 			case REGEX:
 				return criteria.regex(parameters.next());
 			case BETWEEN:
-				return criteria.between(parameters.next(), parameters.next());
+				return criteria.between(ignoreCase, parameters.next(), parameters.next());
 			case IN:
-				return criteria.in(parameters.next());
+				return criteria.in(ignoreCase, new Object[] { parameters.next() });
 			case NOT_IN:
-				return criteria.notIn(parameters.next());
+				return criteria.notIn(ignoreCase, new Object[] { parameters.next() });
 			case TRUE:
 				return criteria.TRUE();
 			case FALSE:

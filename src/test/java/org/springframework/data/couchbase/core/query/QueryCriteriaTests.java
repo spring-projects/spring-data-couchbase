@@ -174,7 +174,7 @@ class QueryCriteriaTests {
 	@Test
 	void testNotContaining() {
 		QueryCriteria c = where(i("name")).notContaining("Elvis");
-		assertEquals("not( (contains(`name`, \"Elvis\")) )", c.export());
+		assertEquals("not (contains(`name`, \"Elvis\"))", c.export());
 	}
 
 	@Test
@@ -192,7 +192,7 @@ class QueryCriteriaTests {
 	@Test
 	void testNotLike() {
 		QueryCriteria c = where(i("name")).notLike("%Elvis%");
-		assertEquals("not(`name` like \"%Elvis%\")", c.export());
+		assertEquals("not( (  (`name` like \"%Elvis%\")) )", c.export());
 	}
 
 	@Test

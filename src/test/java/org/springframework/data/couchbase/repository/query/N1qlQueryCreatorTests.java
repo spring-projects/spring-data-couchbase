@@ -23,6 +23,7 @@ import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,6 +80,21 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		assertEquals(query.export(), " WHERE " + where(i("firstname")).is("Oliver").export());
+	}
+
+	@Test
+	void createsQueryCorrectlyIgnoreCase() throws Exception {
+		String input = "findByFirstnameIgnoreCase";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String.class);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree, getAccessor(getParameters(method), "Oliver"), queryMethod,
+				converter, bucketName);
+		Query query = creator.createQuery();
+
+		assertEquals(query.export(),
+				" WHERE " + where("lower(" + i("firstname") + ")").is("Oliver".toLowerCase(Locale.ROOT)).export());
 	}
 
 	@Test
