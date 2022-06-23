@@ -39,6 +39,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProper
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.AirlineRepository;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
@@ -61,9 +63,9 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@SpringJUnitConfig(StringN1qlQueryCreatorTests.Config.class)
+@SpringJUnitConfig(StringN1qlQueryCreatorIntegrationTests.Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
+class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTests {
 
 	MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
 	CouchbaseConverter converter;
@@ -112,6 +114,44 @@ class StringN1qlQueryCreatorTests extends ClusterAwareIntegrationTests {
 		} finally {
 			couchbaseTemplate.removeById().one(airline.getId());
 		}
+	}
+
+	@Test
+	void createsQueryCorrectly() throws Exception {
+		String input = "getByFirstnameAndLastname";
+		Method method = UserRepository.class.getMethod(input, String.class, String.class);
+
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
+				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
+				converter.getMappingContext());
+
+		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+
+		Query query = creator.createQuery();
+		assertEquals(
+				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and firstname = $1 and lastname = $2",
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
+	}
+
+	@Test
+	void createsQueryCorrectly2() throws Exception {
+		String input = "getByFirstnameOrLastname";
+		Method method = UserRepository.class.getMethod(input, String.class, String.class);
+
+		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
+				new DefaultRepositoryMetadata(UserRepository.class), new SpelAwareProxyProjectionFactory(),
+				converter.getMappingContext());
+
+		StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver", "Twist"),
+				queryMethod, converter, "travel-sample", new SpelExpressionParser(),
+				QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+
+		Query query = creator.createQuery();
+		assertEquals(
+				"SELECT META(`travel-sample`).id AS __id, META(`travel-sample`).cas AS __cas, `travel-sample`.* FROM `travel-sample` where `_class` = \"org.springframework.data.couchbase.domain.User\" and (firstname = $first or lastname = $last)",
+				query.toN1qlSelectString(couchbaseTemplate.reactive(), User.class, false));
 	}
 
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
