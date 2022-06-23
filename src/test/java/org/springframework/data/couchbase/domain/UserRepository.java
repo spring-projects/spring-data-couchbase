@@ -43,6 +43,8 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByFirstname(String firstname);
 
+	List<User> findByFirstnameIgnoreCase(String firstname);
+
 	Stream<User> findByLastname(String lastname);
 
 	List<User> findByFirstnameIn(String... firstnames);

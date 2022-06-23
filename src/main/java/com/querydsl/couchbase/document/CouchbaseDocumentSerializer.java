@@ -17,7 +17,6 @@ package com.querydsl.couchbase.document;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.springframework.data.couchbase.core.query.QueryCriteria;
@@ -47,8 +46,6 @@ import com.querydsl.core.types.Visitor;
  * @author Michael Reiche
  */
 public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Void> {
-
-	boolean workInProgress = true;
 
 	public Object handle(Expression<?> expression) {
 		return expression.accept(this, null);
@@ -167,25 +164,22 @@ public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Voi
 			return QueryCriteria.where(asDBKey(expr, 0)).startingWith(asDBValue(expr, 1));
 		} else if (op == Ops.STARTS_WITH_IC) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression("^" + regexValue(expr, 1), "i"));
-			return QueryCriteria.where(asDBKey(expr, 0)).upper()
-					.startingWith(asDBValue(expr, 1).toString().toUpperCase(Locale.ROOT));
+			return QueryCriteria.where(asDBKey(expr, 0)).startingWith(true, asDBValue(expr, 1).toString());
 		} else if (op == Ops.ENDS_WITH) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression(regexValue(expr, 1) + "$"));
 			return QueryCriteria.where(asDBKey(expr, 0)).endingWith(asDBValue(expr, 1));
 		} else if (op == Ops.ENDS_WITH_IC) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression(regexValue(expr, 1) + "$", "i"));
-			return QueryCriteria.where(asDBKey(expr, 0)).upper()
-					.endingWith(asDBValue(expr, 1).toString().toUpperCase(Locale.ROOT));
+			return QueryCriteria.where(asDBKey(expr, 0)).endingWith(true, asDBValue(expr, 1).toString());
 		} else if (op == Ops.EQ_IGNORE_CASE) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression("^" + regexValue(expr, 1) + "$", "i"));
-			return QueryCriteria.where(asDBKey(expr, 0)).upper().eq(asDBValue(expr, 1).toString().toUpperCase(Locale.ROOT));
+			return QueryCriteria.where(asDBKey(expr, 0)).eq(true, asDBValue(expr, 1).toString());
 		} else if (op == Ops.STRING_CONTAINS) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression(".*" + regexValue(expr, 1) + ".*"));
 			return QueryCriteria.where(asDBKey(expr, 0)).containing(asDBValue(expr, 1));
 		} else if (op == Ops.STRING_CONTAINS_IC) {
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression(".*" + regexValue(expr, 1) + ".*", "i"));
-			return QueryCriteria.where(asDBKey(expr, 0)).upper()
-					.containing(asDBValue(expr, 1).toString().toUpperCase(Locale.ROOT));
+			return QueryCriteria.where(asDBKey(expr, 0)).containing(true, asDBValue(expr, 1).toString());
 			/*
 					} else if (op == Ops.MATCHES) {
 						//return asDocument(asDBKey(expr, 0), new CBRegularExpression(asDBValue(expr, 1).toString()));
@@ -201,7 +195,7 @@ public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Voi
 		} else if (op == Ops.LIKE_IC) {
 			// String regex = ExpressionUtils.likeToRegex((Expression) expr.getArg(1)).toString();
 			// return asDocument(asDBKey(expr, 0), new CBRegularExpression(regex, "i"));
-			return QueryCriteria.where(asDBKey(expr, 0)).upper().like(asDBValue(expr, 1).toString().toUpperCase(Locale.ROOT));
+			return QueryCriteria.where(asDBKey(expr, 0)).like(true, asDBValue(expr, 1).toString());
 		} else if (op == Ops.BETWEEN) {
 			// Document value = new Document("$gte", this.asDBValue(expr, 1));
 			// value.append("$lte", this.asDBValue(expr, 2));

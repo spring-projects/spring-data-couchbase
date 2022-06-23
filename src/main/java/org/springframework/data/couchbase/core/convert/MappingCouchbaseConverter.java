@@ -507,6 +507,39 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 		target.setExpiration((int) (entity.getExpiryDuration().getSeconds()));
 
+		writeToTargetDocument(target, entity, accessor, idProperty, versionProperty, prefixes, suffixes, idAttributes);
+
+		if (idProperty != null && target.getId() == null) {
+			String id = accessor.getProperty(idProperty, String.class);
+			if (idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
+				generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
+				String generatedId = generateId(generatedValueInfo, prefixes, suffixes, idAttributes);
+				target.setId(generatedId);
+				// this is not effective if id is Immutable, and accessor.setProperty() returns a new object in getBean()
+				accessor.setProperty(idProperty, generatedId);
+			} else {
+				target.setId(id);
+			}
+		}
+
+		entity.doWithAssociations(new AssociationHandler<CouchbasePersistentProperty>() {
+			@Override
+			public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
+				CouchbasePersistentProperty inverseProp = association.getInverse();
+				Class<?> type = inverseProp.getType();
+				Object propertyObj = accessor.getProperty(inverseProp, type);
+				if (null != propertyObj) {
+					writePropertyInternal(propertyObj, target, inverseProp, false);
+				}
+			}
+		});
+
+	}
+
+	private void writeToTargetDocument(final CouchbaseDocument target, final CouchbasePersistentEntity<?> entity,
+			final ConvertingPropertyAccessor<Object> accessor, final CouchbasePersistentProperty idProperty,
+			final CouchbasePersistentProperty versionProperty, final TreeMap<Integer, String> prefixes,
+			final TreeMap<Integer, String> suffixes, final TreeMap<Integer, String> idAttributes) {
 		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
@@ -550,32 +583,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				}
 			}
 		});
-
-		if (idProperty != null && target.getId() == null) {
-			String id = accessor.getProperty(idProperty, String.class);
-			if (idProperty.isAnnotationPresent(GeneratedValue.class) && (id == null || id.equals(""))) {
-				generatedValueInfo = idProperty.findAnnotation(GeneratedValue.class);
-				String generatedId = generateId(generatedValueInfo, prefixes, suffixes, idAttributes);
-				target.setId(generatedId);
-				// this is not effective if id is Immutable, and accessor.setProperty() returns a new object in getBean()
-				accessor.setProperty(idProperty, generatedId);
-			} else {
-				target.setId(id);
-			}
-		}
-
-		entity.doWithAssociations(new AssociationHandler<CouchbasePersistentProperty>() {
-			@Override
-			public void doWithAssociation(final Association<CouchbasePersistentProperty> association) {
-				CouchbasePersistentProperty inverseProp = association.getInverse();
-				Class<?> type = inverseProp.getType();
-				Object propertyObj = accessor.getProperty(inverseProp, type);
-				if (null != propertyObj) {
-					writePropertyInternal(propertyObj, target, inverseProp, false);
-				}
-			}
-		});
-
 	}
 
 	/**
