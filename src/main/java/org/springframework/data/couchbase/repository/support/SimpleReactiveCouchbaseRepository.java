@@ -63,7 +63,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+											 ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
 		super(entityInformation, repositoryInterface);
 		this.operations = operations;
 	}
@@ -214,7 +214,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
 		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-				.all(Streamable.of(entities).map(this::getId).toList()).then();
+				.allEntities((java.util.Collection<Object>)(Streamable.of(entities).toList())).then();
 	}
 
 	@Override

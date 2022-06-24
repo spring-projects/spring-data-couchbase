@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core.support;
 
 import static org.springframework.data.couchbase.core.query.OptionsBuilder.fromFirst;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
 import com.couchbase.client.core.io.CollectionIdentifier;
@@ -44,15 +45,14 @@ public class PseudoArgs<OPTS> {
 	 * 1) values from fluent api<br>
 	 * 2) values from dynamic proxy (via template threadLocal)<br>
 	 * 3) the values from the couchbaseClientFactory<br>
-	 * 
-	 * @param template which holds ThreadLocal pseudo args
+	 *  @param template which holds ThreadLocal pseudo args
 	 * @param scope - from calling operation
 	 * @param collection - from calling operation
 	 * @param options - from calling operation
 	 * @param domainType - entity that may have annotations
 	 */
 	public PseudoArgs(ReactiveCouchbaseTemplate template, String scope, String collection, OPTS options,
-			Class<?> domainType) {
+										Class<?> domainType) {
 
 		String scopeForQuery = null;
 		String collectionForQuery = null;
@@ -96,7 +96,7 @@ public class PseudoArgs<OPTS> {
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
 		if (collectionForQuery != null && scopeForQuery == null) {
-			scopeForQuery = template.getCouchbaseClientFactory().getScope().name();
+			scopeForQuery = template.getScopeName();
 		}
 
 		// specifying scope and collection = _default is not necessary and will fail if server doesn't have collections
@@ -110,6 +110,9 @@ public class PseudoArgs<OPTS> {
 
 		this.scopeName = scopeForQuery;
 		this.collectionName = collectionForQuery;
+		if( scopeForQuery != null && collectionForQuery == null){
+			throw new CouchbaseException(new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
+		}
 		this.options = optionsForQuery;
 
 	}
@@ -139,4 +142,5 @@ public class PseudoArgs<OPTS> {
 	public String toString() {
 		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
 	}
+
 }

@@ -57,8 +57,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry) {
+																final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+																final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -69,7 +69,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
 			this.reactiveSupport = new ReactiveInsertByIdSupport<>(template.reactive(), domainType, scope, collection,
-					options, persistTo, replicateTo, durabilityLevel, expiry, new NonReactiveSupportWrapper(template.support()));
+					options, persistTo, replicateTo, durabilityLevel, expiry,
+					new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -96,7 +97,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		}
 
 		@Override
-		public InsertByIdWithOptions<T> inCollection(final String collection) {
+		public InsertByIdTxOrNot<T> inCollection(final String collection) {
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope,
 					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
@@ -119,6 +120,12 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
+			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
+					durabilityLevel, expiry);
+		}
+
+		@Override
+		public InsertByIdWithExpiry<T> transaction() {
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}

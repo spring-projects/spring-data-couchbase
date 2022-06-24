@@ -57,8 +57,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		private final ReactiveReplaceByIdSupport<T> reactiveSupport;
 
 		ExecutableReplaceByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry) {
+																 final String collection, ReplaceOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+																 final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -69,7 +69,8 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
 			this.reactiveSupport = new ReactiveReplaceByIdSupport<>(template.reactive(), domainType, scope, collection,
-					options, persistTo, replicateTo, durabilityLevel, expiry, new NonReactiveSupportWrapper(template.support()));
+					options, persistTo, replicateTo, durabilityLevel, expiry,
+					new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -83,7 +84,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		}
 
 		@Override
-		public ReplaceByIdWithOptions<T> inCollection(final String collection) {
+		public ReplaceByIdTxOrNot<T> inCollection(final String collection) {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope,
 					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
@@ -106,6 +107,12 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		@Override
 		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
+			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
+					replicateTo, durabilityLevel, expiry);
+		}
+
+		@Override
+		public ReplaceByIdWithExpiry<T> transaction() {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
 					replicateTo, durabilityLevel, expiry);
 		}

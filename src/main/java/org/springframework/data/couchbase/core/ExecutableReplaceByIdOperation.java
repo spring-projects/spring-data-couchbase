@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithReplaceOptions;
+import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.PersistTo;
@@ -83,19 +84,41 @@ public interface ExecutableReplaceByIdOperation {
 		TerminatingReplaceById<T> withOptions(ReplaceOptions options);
 	}
 
+	interface ReplaceByIdWithDurability<T> extends ReplaceByIdWithOptions<T>, WithDurability<T> {
+		@Override
+		ReplaceByIdWithOptions<T> withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		ReplaceByIdWithOptions<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+	}
+
+	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T>, WithExpiry<T> {
+		@Override
+		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
+	}
+
+	interface ReplaceByIdWithTransaction<T> extends TerminatingReplaceById<T>, WithTransaction<T> {
+		// todo gp is this staying?  It's confusing when doing ops.replaceById() inside @Transactional to get this transaction() method - unclear as a user whether I need to call it or not
+		@Override
+		TerminatingReplaceById<T> transaction();
+	}
+
+	interface ReplaceByIdTxOrNot<T> extends ReplaceByIdWithExpiry<T>, ReplaceByIdWithTransaction<T> {}
+
 	/**
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface ReplaceByIdInCollection<T> extends ReplaceByIdWithOptions<T>, InCollection<T> {
+	interface ReplaceByIdInCollection<T> extends ReplaceByIdTxOrNot<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		ReplaceByIdWithOptions<T> inCollection(String collection);
+		ReplaceByIdTxOrNot<T> inCollection(String collection);
 	}
 
 	/**
@@ -113,24 +136,11 @@ public interface ExecutableReplaceByIdOperation {
 		ReplaceByIdInCollection<T> inScope(String scope);
 	}
 
-	interface ReplaceByIdWithDurability<T> extends ReplaceByIdInScope<T>, WithDurability<T> {
-		@Override
-		ReplaceByIdInScope<T> withDurability(DurabilityLevel durabilityLevel);
-		@Override
-		ReplaceByIdInScope<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
-
-	}
-
-	interface ReplaceByIdWithExpiry<T> extends ReplaceByIdWithDurability<T>, WithExpiry<T> {
-		@Override
-		ReplaceByIdWithDurability<T> withExpiry(final Duration expiry);
-	}
-
 	/**
 	 * Provides methods for constructing KV replace operations in a fluent way.
 	 *
 	 * @param <T> the entity type to replace
 	 */
-	interface ExecutableReplaceById<T> extends ReplaceByIdWithExpiry<T> {}
+	interface ExecutableReplaceById<T> extends ReplaceByIdInScope<T> {}
 
 }

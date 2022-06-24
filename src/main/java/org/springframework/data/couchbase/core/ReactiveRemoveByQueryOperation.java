@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
+import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -54,31 +55,61 @@ public interface ReactiveRemoveByQueryOperation {
 	}
 
 	/**
-	 * Fluent methods to specify the query
-	 *
-	 * @param <T> the entity type.
-	 */
-	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T>, WithQuery<RemoveResult> {
-
-		TerminatingRemoveByQuery<T> matching(Query query);
-
-		default TerminatingRemoveByQuery<T> matching(QueryCriteriaDefinition criteria) {
-			return matching(Query.query(criteria));
-		}
-	}
-
-	/**
 	 * Fluent method to specify options.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface RemoveByQueryWithOptions<T> extends RemoveByQueryWithQuery<T>, WithQueryOptions<RemoveResult> {
+	interface RemoveByQueryWithOptions<T> extends TerminatingRemoveByQuery<T>, WithQueryOptions<RemoveResult> {
 		/**
 		 * Fluent method to specify options to use for execution
 		 *
 		 * @param options to use for execution
 		 */
-		RemoveByQueryWithQuery<T> withOptions(QueryOptions options);
+		TerminatingRemoveByQuery<T> withOptions(QueryOptions options);
+	}
+
+	@Deprecated
+	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithOptions<T> {
+
+		@Deprecated
+		RemoveByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>, WithConsistency<RemoveResult> {
+		@Override
+		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
+
+	}
+
+	/**
+	 * Fluent method to specify the transaction
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface RemoveByQueryWithTransaction<T> extends TerminatingRemoveByQuery<T>, WithTransaction<RemoveResult> {
+		/**
+		 * Provide the transaction
+		 *
+		 */
+		@Override
+		TerminatingRemoveByQuery<T> transaction();
+	}
+
+	interface RemoveByQueryTxOrNot<T> extends RemoveByQueryWithConsistency<T>, RemoveByQueryWithTransaction<T> {}
+
+	/**
+	 * Fluent methods to specify the query
+	 *
+	 * @param <T> the entity type.
+	 */
+	interface RemoveByQueryWithQuery<T> extends RemoveByQueryTxOrNot<T>, WithQuery<RemoveResult> {
+
+		RemoveByQueryTxOrNot<T> matching(Query query);
+
+		default RemoveByQueryTxOrNot<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
 	}
 
 	/**
@@ -86,13 +117,13 @@ public interface ReactiveRemoveByQueryOperation {
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithOptions<T>, InCollection<Object> {
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithQuery<T>, InCollection<Object> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
-		RemoveByQueryWithOptions<T> inCollection(String collection);
+		RemoveByQueryWithQuery<T> inCollection(String collection);
 	}
 
 	/**
@@ -109,25 +140,11 @@ public interface ReactiveRemoveByQueryOperation {
 		RemoveByQueryInCollection<T> inScope(String scope);
 	}
 
-	@Deprecated
-	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryInScope<T> {
-
-		@Deprecated
-		RemoveByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
-
-	}
-
-	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>, WithConsistency<RemoveResult> {
-		@Override
-		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
-
-	}
-
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type.
 	 */
-	interface ReactiveRemoveByQuery<T> extends RemoveByQueryWithConsistency<T> {}
+	interface ReactiveRemoveByQuery<T> extends RemoveByQueryInScope<T> {}
 
 }

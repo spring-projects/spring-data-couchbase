@@ -44,9 +44,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.platform.commons.util.UnrecoverableExceptions;
+import org.opentest4j.AssertionFailedError;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
@@ -84,6 +88,7 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
 
 /**
  * Extends the {@link ClusterAwareIntegrationTests} with java-client specific code.
@@ -104,6 +109,13 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
 		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
+				authenticator(), bucketName())) {
+			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
+					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
+		} catch (IOException ioe) {
+			throw new RuntimeException(ioe);
+		}
 	}
 
 	/**
@@ -203,42 +215,14 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			}
 
 			if (!ready) {
-				createAndDeleteBucket();// need to do this because of https://issues.couchbase.com/browse/MB-50132
 				try {
-					Thread.sleep(50);
+					Thread.sleep(100);
 				} catch (InterruptedException e) {}
 			}
 		}
 
 		if (guard == 0) {
 			throw new IllegalStateException("Query indexer is still not aware of bucket " + bucketName);
-		}
-	}
-
-	private static void createAndDeleteBucket() {
-		final OkHttpClient httpClient = new OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS)
-				.readTimeout(30, TimeUnit.SECONDS).writeTimeout(30, TimeUnit.SECONDS).build();
-		String hostPort = connectionString().split("=")[0].replace("11210", "8091").replace("11207", "18091");
-		String protocol = hostPort.equals("18091") ? "https" : "http";
-		String bucketname = UUID.randomUUID().toString();
-		try {
-
-			Response postResponse = httpClient.newCall(new Request.Builder()
-					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url(protocol + "://" + hostPort + "/pools/default/buckets/")
-					.post(new FormBody.Builder().add("name", bucketname).add("bucketType", "membase").add("ramQuotaMB", "100")
-							.add("replicaNumber", Integer.toString(0)).add("flushEnabled", "1").build())
-					.build()).execute();
-
-			if (postResponse.code() != 202) {
-				throw new IOException("Could not create bucket: " + postResponse + ", Reason: " + postResponse.body().string());
-			}
-			Response deleteResponse = httpClient.newCall(new Request.Builder()
-					.header("Authorization", Credentials.basic(config().adminUsername(), config().adminPassword()))
-					.url(protocol + "://" + hostPort + "/pools/default/buckets/" + bucketname).delete().build()).execute();
-			System.out.println("deleteResponse: " + deleteResponse);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
 		}
 	}
 
@@ -401,4 +385,62 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 			Thread.sleep(ms);
 		} catch (InterruptedException ie) {}
 	}
+
+	public static Throwable assertThrowsOneOf(Executable executable, Class<?>... expectedTypes) {
+
+		try {
+			executable.execute();
+		}
+		catch (Throwable actualException) {
+			for(Class<?> expectedType:expectedTypes){
+				if(actualException.getClass().isAssignableFrom( expectedType)){
+					return actualException;
+				}
+			}
+			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+			String message = "Expected one of "+toString(expectedTypes)+" but was : "+actualException.getClass();
+			throw new AssertionFailedError(message, actualException);
+		}
+
+		String message ="Expected one of "+toString(expectedTypes)+" to be thrown, but nothing was thrown.";
+		throw new AssertionFailedError(message);
+	}
+
+	private static String toString(Object[] array) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("[");
+		for (int i = 0; i < array.length; i++) {
+			if(i>0){
+				sb.append(", ");
+			}
+			sb.append(array[i]);
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+
+	public static void assertThrowsWithCause(Executable executable, Class<?>... expectedTypes) {
+		try {
+			executable.execute();
+		} catch (Throwable actualException) {
+			for (Class<?> expectedType : expectedTypes) {
+				if (actualException == null || !expectedType.isAssignableFrom(actualException.getClass())) {
+					String message = "Expected " + expectedType + " to be thrown/cause, but found " + actualException;
+					throw new AssertionFailedError(message, actualException);
+				}
+				actualException = actualException.getCause();
+			}
+			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+			return;
+		}
+
+		String message = "Expected " + expectedTypes[0] + " to be thrown, but nothing was thrown.";
+		throw new AssertionFailedError(message);
+	}
+
+	// Use this to still rely on the return type
+	public static <T> T throwSimulateFailureException(T entity) {
+		throw new SimulateFailureException();
+	}
+
 }

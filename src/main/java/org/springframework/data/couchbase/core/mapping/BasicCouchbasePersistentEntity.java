@@ -70,6 +70,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	@Override
 	protected CouchbasePersistentProperty returnPropertyIfBetterIdPropertyCandidateOrNull(
 			CouchbasePersistentProperty property) {
+
 		if (!property.isIdProperty()) {
 			return null;
 		}
@@ -164,15 +165,4 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 				.getAnnotation(org.springframework.data.couchbase.core.mapping.Document.class);
 		return annotation == null ? false : annotation.touchOnRead() && getExpiry() > 0;
 	}
-
-	@Override
-	public boolean hasTextScoreProperty() {
-		return false;
-	}
-
-	@Override
-	public CouchbasePersistentProperty getTextScoreProperty() {
-		return null;
-	}
-
 }

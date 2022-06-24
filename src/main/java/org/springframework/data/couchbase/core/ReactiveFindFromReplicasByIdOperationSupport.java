@@ -74,13 +74,14 @@ public class ReactiveFindFromReplicasByIdOperationSupport implements ReactiveFin
 			if (garOptions.build().transcoder() == null) {
 				garOptions.transcoder(RawJsonTranscoder.INSTANCE);
 			}
-			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions, domainType);
+			PseudoArgs<GetAnyReplicaOptions> pArgs = new PseudoArgs<>(template, scope, collection, garOptions,
+          domainType);
 			LOG.trace("getAnyReplica key={} {}", id, pArgs);
-			return Mono.just(id)
+			return TransactionalSupport.verifyNotInTransaction("findFromReplicasById")
+					.then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().getAnyReplica(docId, pArgs.getOptions()))
-					.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType,
-							pArgs.getScope(), pArgs.getCollection()))
+            .flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), returnType, pArgs.getScope(), pArgs.getCollection(), null))
 					.onErrorMap(throwable -> {
 						if (throwable instanceof RuntimeException) {
 							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);

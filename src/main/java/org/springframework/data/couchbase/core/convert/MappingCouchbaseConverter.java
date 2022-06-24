@@ -730,7 +730,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				target.put(writeCollectionInternal(asCollection(element), new CouchbaseList(conversions.getSimpleTypeHolder()),
 						componentType));
 			} else {
-
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
 				writeInternal(element, embeddedDoc, componentType, false);
 				target.put(embeddedDoc);

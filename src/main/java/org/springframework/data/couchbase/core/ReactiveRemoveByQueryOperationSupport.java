@@ -15,8 +15,12 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -28,6 +32,7 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
@@ -60,7 +65,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		private final QueryOptions options;
 
 		ReactiveRemoveByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
+																 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -75,20 +80,29 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			String statement = assembleDeleteQuery(pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("removeByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
-					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-							buildQueryOptions(pArgs.getOptions()))
-					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-							buildQueryOptions(pArgs.getOptions()));
-			return Flux.defer(() -> allResult.onErrorMap(throwable -> {
-				if (throwable instanceof RuntimeException) {
-					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-				} else {
-					return throwable;
-				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject)
-					.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID), row.getLong(TemplateUtils.SELECT_CAS),
-							Optional.empty())));
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage()
+					.flatMapMany(transactionContext -> {
+
+						if (!transactionContext.isPresent()) {
+							QueryOptions opts = buildQueryOptions(pArgs.getOptions());
+							return (pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts)).flatMapMany(ReactiveQueryResult::rowsAsObject)
+									.map(row -> new RemoveResult(row.getString(TemplateUtils.SELECT_ID),
+											row.getLong(TemplateUtils.SELECT_CAS), Optional.empty()));
+						} else {
+							TransactionQueryOptions opts = OptionsBuilder.buildTransactionQueryOptions(buildQueryOptions(pArgs.getOptions()));
+							ObjectNode convertedOptions = com.couchbase.client.java.transactions.internal.OptionsUtil.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
+							return transactionContext.get().getCore().queryBlocking(statement, template.getBucketName(), pArgs.getScope(), convertedOptions, false)
+									.flatMapIterable(result -> result.rows).map(row -> {
+										JsonObject json = JsonObject.fromJson(row.data());
+										return new RemoveResult(json.getString(TemplateUtils.SELECT_ID),
+												json.getLong(TemplateUtils.SELECT_CAS), Optional.empty());
+									});
+						}
+					});
 		}
 
 		private QueryOptions buildQueryOptions(QueryOptions options) {
@@ -97,13 +111,13 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		@Override
-		public TerminatingRemoveByQuery<T> matching(final Query query) {
+		public RemoveByQueryTxOrNot<T> matching(final Query query) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}
 
 		@Override
-		public RemoveByQueryWithConsistency<T> inCollection(final String collection) {
+		public RemoveByQueryWithQuery<T> inCollection(final String collection) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope,
 					collection != null ? collection : this.collection, options);
 		}
@@ -138,6 +152,13 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
 					scope != null ? scope : this.scope, collection, options);
 		}
+
+		@Override
+		public RemoveByQueryWithConsistency<T> transaction() {
+			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
+		}
+
 	}
 
 }

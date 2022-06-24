@@ -61,8 +61,4 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 * @return true if a direct read of the document should trigger a touch, resetting its expiration timer.
 	 */
 	boolean isTouchOnRead();
-
-	boolean hasTextScoreProperty();
-
-	CouchbasePersistentProperty getTextScoreProperty();
 }

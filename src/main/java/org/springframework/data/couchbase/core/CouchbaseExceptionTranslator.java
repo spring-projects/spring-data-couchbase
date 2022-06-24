@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.TimeoutException;
 
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,6 +32,7 @@ import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import com.couchbase.client.core.error.*;
+import org.springframework.data.couchbase.transaction.error.UncategorizedTransactionDataAccessException;
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
@@ -96,6 +98,13 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			// note: the more specific CouchbaseQueryExecutionException should be thrown by the template
 			// when dealing with TranscodingException in the query/n1ql methods.
 			return new DataRetrievalFailureException(ex.getMessage(), ex);
+		}
+
+		if (ex instanceof TransactionOperationFailedException) {
+			// Replace the TransactionOperationFailedException, since we want the Spring operation to fail with a
+			// Spring error.  Internal state has already been set in the AttemptContext so the retry, rollback etc.
+			// will get respected regardless of what gets propagated (or not) from the lambda.
+			return new UncategorizedTransactionDataAccessException((TransactionOperationFailedException) ex);
 		}
 
 		// Unable to translate exception, therefore just throw the original!

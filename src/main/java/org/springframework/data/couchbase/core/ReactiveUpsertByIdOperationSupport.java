@@ -64,8 +64,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		private final ReactiveTemplateSupport support;
 
 		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-				final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-				final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
+								  final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+								  final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -80,21 +80,25 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
 			LOG.trace("upsertById object={} {}", object, pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
+			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
+					.then(support.encodeEntity(object))
+					.flatMap(converted -> {
+						return Mono.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+								.getCollection(pArgs.getCollection())).flatMap(collection -> collection.reactive()
+										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+										.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
 					});
+
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

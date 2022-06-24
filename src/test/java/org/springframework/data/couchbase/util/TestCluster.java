@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.net.URL;
@@ -83,7 +83,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 				defaults.load(url.openStream());
 			}
 		} catch (Exception ex) {
-			throw new RuntimeException("Could not load properties", ex);
+			throw new RuntimeException("Could not load properties - maybe <packaging> is pom instead of jar?", ex);
 		}
 
 		Properties all = new Properties(System.getProperties());

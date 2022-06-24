@@ -43,6 +43,8 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -69,11 +71,31 @@ class StringN1qlQueryCreatorTests {
 				converter.getMappingContext());
 
 		try {
-			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
-					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
-					namedQueries);
-		} catch (IllegalArgumentException e) {
-			return;
+			Airline modified = couchbaseTemplate.upsertById(Airline.class).one(airline);
+
+			String input = "getByName";
+			Method method = AirlineRepository.class.getMethod(input, String.class);
+
+			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
+					new DefaultRepositoryMetadata(AirlineRepository.class), new SpelAwareProxyProjectionFactory(),
+					converter.getMappingContext());
+
+			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
+					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),
+					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
+
+			Query query = creator.createQuery();
+
+			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate.findByQuery(Airline.class).matching(query)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS);
+
+			Optional<Airline> al = q.one();
+			assertEquals(airline.toString(), al.get().toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			couchbaseTemplate.removeById().one(airline.getId());
 		}
 		fail("should have failed with IllegalArgumentException: Invalid number of parameters given!");
 	}

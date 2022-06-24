@@ -52,7 +52,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				GetOptions options, List<String> fields, Duration expiry) {
+															GetOptions options, List<String> fields, Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -61,7 +61,8 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 			this.fields = fields;
 			this.expiry = expiry;
 			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, scope, collection, options,
-					fields, expiry, new NonReactiveSupportWrapper(template.support()));
+					fields, expiry,
+					new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -81,7 +82,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		}
 
 		@Override
-		public FindByIdWithOptions<T> inCollection(final String collection) {
+		public FindByIdTxOrNot<T> inCollection(final String collection) {
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry);
 		}
 
@@ -93,13 +94,18 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		@Override
 		public FindByIdInScope<T> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null.");
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields), expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
+					expiry);
 		}
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields,
-					expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
+		}
+
+		@Override
+		public FindByIdWithExpiry<T> transaction() {
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
 		}
 
 	}

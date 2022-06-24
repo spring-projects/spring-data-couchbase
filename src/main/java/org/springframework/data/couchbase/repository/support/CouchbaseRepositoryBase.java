@@ -37,7 +37,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	private CrudMethodMetadata crudMethodMetadata;
 
 	public CouchbaseRepositoryBase(CouchbaseEntityInformation<T, String> entityInformation,
-			Class<?> repositoryInterface) {
+								   Class<?> repositoryInterface) {
 		this.entityInformation = entityInformation;
 		this.repositoryInterface = repositoryInterface;
 	}
@@ -55,12 +55,21 @@ public class CouchbaseRepositoryBase<T, ID> {
 		return entityInformation;
 	}
 
+	/**
+	 * Returns the repository interface
+	 *
+	 * @return the underlying entity information.
+	 */
+	public Class<?> getRepositoryInterface() {
+		return repositoryInterface;
+	}
+
 	Class<T> getJavaType() {
 		return getEntityInformation().getJavaType();
 	}
 
 	<S extends T> String getId(S entity) {
-		return getEntityInformation().getId(entity);
+		return String.valueOf(getEntityInformation().getId(entity));
 	}
 
 	/**

@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -28,6 +30,7 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -49,26 +52,32 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final CouchbaseTemplateSupport templateSupport;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private QueryScanConsistency scanConsistency;
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
-		this(clientFactory, converter, new JacksonTranslationService());
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+													 final CouchbaseConverter converter) {
+		this(clientFactory,
+				converter, new JacksonTranslationService());
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-			final TranslationService translationService) {
-		this(clientFactory, converter, translationService, null);
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+													 CouchbaseConverter converter,
+													 final TranslationService translationService) {
+		this(clientFactory,
+				converter, translationService, null);
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-			final TranslationService translationService, QueryScanConsistency scanConsistency) {
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+													 final CouchbaseConverter converter,
+													 final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService,
-				scanConsistency);
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter,
+				translationService, scanConsistency);
 		this.scanConsistency = scanConsistency;
+
 		this.mappingContext = this.converter.getMappingContext();
 		if (mappingContext instanceof CouchbaseMappingContext) {
 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
@@ -76,6 +85,20 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
 			}
 		}
+	}
+
+	public <T> T save(T entity) {
+		if (hasNonZeroVersionProperty(entity, templateSupport.converter)) {
+			return replaceById((Class<T>) entity.getClass()).one(entity);
+			//} else if (getTransactionalOperator() != null) {
+			//	return insertById((Class<T>) entity.getClass()).one(entity);
+		} else {
+			return upsertById((Class<T>) entity.getClass()).one(entity);
+		}
+	}
+
+	public <T> Long count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).count();
 	}
 
 	@Override
@@ -209,5 +232,4 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public TemplateSupport support() {
 		return templateSupport;
 	}
-
 }

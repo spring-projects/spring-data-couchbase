@@ -59,4 +59,10 @@ public class BeanNames {
 	 * The name for the bean that will handle reactive audit trail marking of entities.
 	 */
 	public static final String REACTIVE_COUCHBASE_AUDITING_HANDLER = "reactiveCouchbaseAuditingHandler";
+
+	public static final String COUCHBASE_CLIENT_FACTORY = "couchbaseClientFactory";
+
+	public static final String COUCHBASE_TRANSACTION_MANAGER = "couchbaseTransactionManager";
+
+	public static final String COUCHBASE_TRANSACTIONAL_OPERATOR = "couchbaseTransactionalOperator" ;
 }

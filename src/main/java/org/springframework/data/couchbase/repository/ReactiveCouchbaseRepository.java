@@ -34,4 +34,5 @@ public interface ReactiveCouchbaseRepository<T, ID>
 	ReactiveCouchbaseOperations getOperations();
 
 	CouchbaseEntityInformation<T, String> getEntityInformation();
+
 }

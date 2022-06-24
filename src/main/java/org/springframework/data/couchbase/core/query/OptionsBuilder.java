@@ -24,8 +24,10 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -70,7 +72,7 @@ public class OptionsBuilder {
 		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
 				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
 				: null;
-		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, getScanConsistency(optsJson),
+		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(), getScanConsistency(optsJson),
 				scanConsistency, metaQueryScanConsistency);
 		Duration timeout = fromFirst(Duration.ofSeconds(0), getTimeout(optsBuilt), meta.get(TIMEOUT));
 		RetryStrategy retryStrategy = fromFirst(null, getRetryStrategy(optsBuilt), meta.get(RETRY_STRATEGY));
@@ -88,6 +90,26 @@ public class OptionsBuilder {
 			LOG.trace("query options: {}", getQueryOpts(options.build()));
 		}
 		return options;
+	}
+
+	public static TransactionQueryOptions buildTransactionQueryOptions(QueryOptions options) {
+		QueryOptions.Built built = options.build();
+		TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
+
+		JsonObject optsJson = getQueryOpts(built);
+
+		if (optsJson.containsKey("use_fts")) {
+			throw new IllegalArgumentException("QueryOptions.flexIndex is not supported in a transaction");
+		}
+
+		for (Map.Entry<String, Object> entry : optsJson.toMap().entrySet()) {
+			txOptions.raw(entry.getKey(), entry.getValue());
+		}
+
+		if (LOG.isTraceEnabled()) {
+			LOG.trace("query options: {}", optsJson);
+		}
+		return txOptions;
 	}
 
 	public static ExistsOptions buildExistsOptions(ExistsOptions options) {
@@ -423,4 +445,5 @@ public class OptionsBuilder {
 			AnnotatedElement[] elements) {
 		return annotationString(annotation, "value", defaultValue, elements);
 	}
+
 }

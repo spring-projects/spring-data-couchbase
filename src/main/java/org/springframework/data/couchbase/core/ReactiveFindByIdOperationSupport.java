@@ -16,10 +16,13 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
+import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
+import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
@@ -66,7 +69,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final Duration expiry;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, ReactiveTemplateSupport support) {
+														CommonOptions<?> options, List<String> fields, Duration expiry,
+														ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -77,6 +81,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			this.support = support;
 		}
 
+
+
 		@Override
 		public Mono<T> one(final String id) {
 
@@ -84,29 +90,43 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
 			LOG.trace("findById key={} {}", id, pArgs);
 
-			return Mono.just(id).flatMap(docId -> {
-				ReactiveCollection reactive = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-						.getCollection(pArgs.getCollection()).reactive();
-				if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-					return reactive.getAndTouch(docId, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions());
+			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+					.getCollection(pArgs.getCollection()).reactive();
+
+			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+				if (!ctxOpt.isPresent()) {
+					System.err.println("find no-tx");
+					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
+						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+										pArgs.getScope(), pArgs.getCollection(), null));
+					} else {
+						return rc.get(id, (GetOptions) pArgs.getOptions())
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+										pArgs.getScope(), pArgs.getCollection(), null));
+					}
 				} else {
-					return reactive.get(docId, (GetOptions) pArgs.getOptions());
+					System.err.println("find tx");
+					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id)
+							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
+									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
+									new TransactionResultHolder(result), null));
 				}
-			}).flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
-					pArgs.getScope(), pArgs.getCollection())).onErrorResume(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							if (throwable instanceof DocumentNotFoundException) {
-								return Mono.empty();
-							}
-						}
-						return Mono.error(throwable);
-					}).onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+			});
+
+			return reactiveEntity.onErrorResume(throwable -> {
+				if (throwable instanceof DocumentNotFoundException) {
+					return Mono.empty();
+				}
+				return Mono.error(throwable);
+			}).onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
+
 		}
 
 		@Override
@@ -115,9 +135,10 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public TerminatingFindById<T> withOptions(final GetOptions options) {
+		public FindByIdInScope<T> withOptions(final GetOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
+					support);
 		}
 
 		@Override
@@ -133,15 +154,23 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public FindByIdInScope<T> project(String... fields) {
+		public FindByIdWithOptions<T> project(String... fields) {
 			Assert.notNull(fields, "Fields must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
-					expiry, support);
+					expiry,
+					support);
 		}
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
+					support);
+		}
+
+		@Override
+		public FindByIdWithProjection<T> transaction() {
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
+					support);
 		}
 
 		private CommonOptions<?> initGetOptions() {
@@ -176,6 +205,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			}
 			return expiryToUse;
 		}
+
 	}
 
 }

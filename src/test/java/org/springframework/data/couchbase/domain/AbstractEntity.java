@@ -39,6 +39,10 @@ public class AbstractEntity {
 		return id;
 	}
 
+	public String id(){
+		return id.toString();
+	}
+
 	/**
 	 * set the id
 	 */

@@ -83,6 +83,7 @@ public class TestClusterConfig {
 	 * Finds the first node with a given service enabled in the config.
 	 * <p>
 	 * This method can be used to find bootstrap nodes and similar.
+	 * </p>
 	 *
 	 * @param service the service to find.
 	 * @return a node config if found, empty otherwise.

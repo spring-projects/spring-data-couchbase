@@ -46,6 +46,7 @@ public class Airport extends ComparableEntity {
 	@Expiration private long expiration;
 	@Max(2)
 	long size;
+	private long someNumber;
 
 	@PersistenceConstructor
 	public Airport(String key, String iata, String icao) {

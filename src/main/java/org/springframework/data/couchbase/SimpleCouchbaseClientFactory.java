@@ -15,8 +15,12 @@
  */
 package org.springframework.data.couchbase;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Supplier;
 
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 import org.springframework.data.couchbase.core.CouchbaseExceptionTranslator;
 
@@ -28,7 +32,11 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.Scope;
+import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.env.ClusterEnvironment;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 
 /**
  * The default implementation of a {@link CouchbaseClientFactory}.
@@ -44,18 +52,18 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	private final PersistenceExceptionTranslator exceptionTranslator;
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName) {
+										final String bucketName) {
 		this(connectionString, authenticator, bucketName, null);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName, final String scopeName) {
+										final String bucketName, final String scopeName) {
 		this(new OwnedSupplier<>(Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator))),
 				bucketName, scopeName);
 	}
 
 	public SimpleCouchbaseClientFactory(final String connectionString, final Authenticator authenticator,
-			final String bucketName, final String scopeName, final ClusterEnvironment environment) {
+										final String bucketName, final String scopeName, final ClusterEnvironment environment) {
 		this(
 				new OwnedSupplier<>(
 						Cluster.connect(connectionString, ClusterOptions.clusterOptions(authenticator).environment(environment))),
@@ -67,7 +75,7 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	}
 
 	private SimpleCouchbaseClientFactory(final Supplier<Cluster> cluster, final String bucketName,
-			final String scopeName) {
+										 final String scopeName) {
 		this.cluster = cluster;
 		this.bucket = cluster.get().bucket(bucketName);
 		this.scope = scopeName == null ? bucket.defaultScope() : bucket.scope(scopeName);
@@ -97,9 +105,9 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	@Override
 	public Collection getCollection(final String collectionName) {
 		final Scope scope = getScope();
-		if (collectionName == null) {
+		if (collectionName == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionName)) {
 			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used");
 			}
 			return getBucket().defaultCollection();
 		}
@@ -121,6 +129,10 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 		if (cluster instanceof OwnedSupplier) {
 			cluster.get().disconnect();
 		}
+	}
+
+	private static Duration now() {
+		return Duration.of(System.nanoTime(), ChronoUnit.NANOS);
 	}
 
 }

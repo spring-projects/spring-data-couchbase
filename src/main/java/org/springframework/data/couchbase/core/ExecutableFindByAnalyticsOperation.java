@@ -37,7 +37,8 @@ import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
  *
  * @author Christoph Strobl
  * @since 2.0
- */public interface ExecutableFindByAnalyticsOperation {
+ */
+public interface ExecutableFindByAnalyticsOperation {
 
 	/**
 	 * Queries the analytics service.
@@ -114,7 +115,45 @@ import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 
 	}
 
-	interface FindByAnalyticsWithQuery<T> extends TerminatingFindByAnalytics<T>, WithAnalyticsQuery<T> {
+	/**
+	 * Fluent method to specify options.
+	 *
+	 * @param <T> the entity type to use.
+	 */
+	interface FindByAnalyticsWithOptions<T> extends TerminatingFindByAnalytics<T>, WithAnalyticsOptions<T> {
+		/**
+		 * Fluent method to specify options to use for execution
+		 *
+		 * @param options to use for execution
+		 */
+		@Override
+		TerminatingFindByAnalytics<T> withOptions(AnalyticsOptions options);
+	}
+
+	@Deprecated
+	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsWithOptions<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		@Deprecated
+		FindByAnalyticsWithOptions<T> consistentWith(AnalyticsScanConsistency scanConsistency);
+
+	}
+
+	interface FindByAnalyticsWithConsistency<T> extends FindByAnalyticsConsistentWith<T>, WithAnalyticsConsistency<T> {
+
+		/**
+		 * Allows to override the default scan consistency.
+		 *
+		 * @param scanConsistency the custom scan consistency to use for this analytics query.
+		 */
+		FindByAnalyticsConsistentWith<T> withConsistency(AnalyticsScanConsistency scanConsistency);
+	}
+
+	interface FindByAnalyticsWithQuery<T> extends FindByAnalyticsWithConsistency<T>, WithAnalyticsQuery<T> {
 
 		/**
 		 * Set the filter for the analytics query to be used.
@@ -122,23 +161,24 @@ import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 		 * @param query must not be {@literal null}.
 		 * @throws IllegalArgumentException if query is {@literal null}.
 		 */
-		TerminatingFindByAnalytics<T> matching(AnalyticsQuery query);
+		FindByAnalyticsWithConsistency<T> matching(AnalyticsQuery query);
 
 	}
 
 	/**
-	 * Fluent method to specify options.
-	 *
-	 * @param <T> the entity type to use.
+	 * Result type override (Optional).
 	 */
-	interface FindByAnalyticsWithOptions<T> extends FindByAnalyticsWithQuery<T>, WithAnalyticsOptions<T> {
+	interface FindByAnalyticsWithProjection<T> extends FindByAnalyticsWithQuery<T> {
+
 		/**
-		 * Fluent method to specify options to use for execution
+		 * Define the target type fields should be mapped to. <br />
+		 * Skip this step if you are anyway only interested in the original domain type.
 		 *
-		 * @param options to use for execution
+		 * @param returnType must not be {@literal null}.
+		 * @return new instance of {@link FindByAnalyticsWithConsistency}.
+		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
-		@Override
-		FindByAnalyticsWithQuery<T> withOptions(AnalyticsOptions options);
+		<R> FindByAnalyticsWithQuery<R> as(Class<R> returnType);
 	}
 
 	/**
@@ -146,14 +186,14 @@ import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByAnalyticsInCollection<T> extends FindByAnalyticsWithOptions<T>, InCollection<T> {
+	interface FindByAnalyticsInCollection<T> extends FindByAnalyticsWithProjection<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		FindByAnalyticsWithOptions<T> inCollection(String collection);
+		FindByAnalyticsWithProjection<T> inCollection(String collection);
 	}
 
 	/**
@@ -171,45 +211,6 @@ import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 		FindByAnalyticsInCollection<T> inScope(String scope);
 	}
 
-	@Deprecated
-	interface FindByAnalyticsConsistentWith<T> extends FindByAnalyticsInScope<T> {
-
-		/**
-		 * Allows to override the default scan consistency.
-		 *
-		 * @param scanConsistency the custom scan consistency to use for this analytics query.
-		 */
-		@Deprecated
-		FindByAnalyticsWithQuery<T> consistentWith(AnalyticsScanConsistency scanConsistency);
-
-	}
-
-	interface FindByAnalyticsWithConsistency<T> extends FindByAnalyticsConsistentWith<T>, WithAnalyticsConsistency<T> {
-
-		/**
-		 * Allows to override the default scan consistency.
-		 *
-		 * @param scanConsistency the custom scan consistency to use for this analytics query.
-		 */
-		FindByAnalyticsConsistentWith<T> withConsistency(AnalyticsScanConsistency scanConsistency);
-	}
-
-	/**
-	 * Result type override (Optional).
-	 */
-	interface FindByAnalyticsWithProjection<T> extends FindByAnalyticsWithConsistency<T> {
-
-		/**
-		 * Define the target type fields should be mapped to. <br />
-		 * Skip this step if you are anyway only interested in the original domain type.
-		 *
-		 * @param returnType must not be {@literal null}.
-		 * @return new instance of {@link FindByAnalyticsWithConsistency}.
-		 * @throws IllegalArgumentException if returnType is {@literal null}.
-		 */
-		<R> FindByAnalyticsWithConsistency<R> as(Class<R> returnType);
-	}
-
-	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsWithProjection<T> {}
+	interface ExecutableFindByAnalytics<T> extends FindByAnalyticsInScope<T> {}
 
 }

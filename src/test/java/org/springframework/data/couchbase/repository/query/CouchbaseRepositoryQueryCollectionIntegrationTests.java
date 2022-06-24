@@ -31,11 +31,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AddressAnnotated;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryAnnotated;
+import org.springframework.data.couchbase.domain.CollectionsConfig;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
@@ -62,13 +66,17 @@ import com.couchbase.client.java.query.QueryOptions;
  */
 @SpringJUnitConfig(Config.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(CollectionsConfig.class)
 public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
-	@Autowired AirportRepository airportRepository; // initialized in beforeEach()
-	@Autowired UserColRepository userColRepository; // initialized in beforeEach()
-	@Autowired UserSubmissionAnnotatedRepository userSubmissionAnnotatedRepository; // initialized in beforeEach()
-	@Autowired UserSubmissionUnannotatedRepository userSubmissionUnannotatedRepository; // initialized in beforeEach()
 	@Autowired AirportRepositoryAnnotated airportRepositoryAnnotated;
+	@Autowired AirportRepository airportRepository;
+	@Autowired UserColRepository userColRepository;
+	@Autowired UserSubmissionAnnotatedRepository userSubmissionAnnotatedRepository;
+	@Autowired UserSubmissionUnannotatedRepository userSubmissionUnannotatedRepository;
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -222,9 +230,14 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		// collection from CrudMethodMetadata of UserCol.save()
 		UserCol userCol = new UserCol("1", "Dave", "Wilson");
 		Airport airport = new Airport("3", "myIata", "myIcao");
-		UserCol savedCol = userColRepository.save(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
-		userColRepository.delete(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
-		assertThrows(IllegalStateException.class, () -> airportRepository.save(airport));
+		try {
+			UserCol savedCol = userColRepository.save(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
+			userColRepository.delete(userCol); // uses UserCol annotation scope, populates CrudMethodMetadata
+			assertThrows(IllegalStateException.class, () -> airportRepository.save(airport));
+		} finally {
+			List<RemoveResult> removed = couchbaseTemplate.removeByQuery(Airport.class).all();
+			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
 	}
 
 	// template default scope is my_scope
@@ -278,7 +291,8 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).inScope(scopeName).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionAnnotated> users = userSubmissionAnnotatedRepository.findByUsername(user.getUsername());
@@ -332,7 +346,8 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).inScope(scopeName).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionUnannotated> users = userSubmissionUnannotatedRepository.findByUsername(user.getUsername());

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2021 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.springframework.data.couchbase.domain;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import com.couchbase.client.java.query.QueryOptions;
+import com.couchbase.client.java.query.QueryProfile;
+import com.couchbase.client.java.query.QueryResult;
+import com.couchbase.client.java.query.QueryScanConsistency;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.couchbase.config.BeanNames;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.util.Capabilities;
+import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.data.util.Pair;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.ParallelFlux;
@@ -63,6 +76,8 @@ import com.couchbase.client.java.query.QueryProfile;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author Michael Reiche
  */
@@ -70,8 +85,13 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class FluxIntegrationTests extends JavaIntegrationTests {
 
-	@BeforeAll
-	public static void beforeEverything() {
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+
+	@BeforeEach
+	@Override
+	public void beforeEach() {
+
 		/**
 		 * The couchbaseTemplate inherited from JavaIntegrationTests uses org.springframework.data.couchbase.domain.Config
 		 * It has typeName = 't' (instead of _class). Don't use it.
@@ -85,21 +105,17 @@ public class FluxIntegrationTests extends JavaIntegrationTests {
 			couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection().upsert(k,
 					JsonObject.create().put("x", k));
 		}
+		super.beforeEach();
 	}
 
-	@AfterAll
-	public static void afterEverthing() {
+	@AfterEach
+	public void afterEach() {
 		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		super.afterEach();
 		for (String k : keyList) {
 			couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection().remove(k);
 		}
-	}
-
-	@BeforeEach
-	@Override
-	public void beforeEach() {
-		super.beforeEach();
 	}
 
 	static List<String> keyList = Arrays.asList("a", "b", "c", "d", "e");

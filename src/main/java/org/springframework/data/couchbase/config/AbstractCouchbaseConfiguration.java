@@ -17,15 +17,18 @@
 package org.springframework.data.couchbase.config;
 
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
+import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_MAPPING_CONTEXT;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -40,9 +43,16 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionInterceptor;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -57,7 +67,6 @@ import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -123,15 +132,21 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param couchbaseCluster the cluster reference from the SDK.
 	 * @return the initialized factory.
 	 */
-	@Bean
+	@Bean(name = BeanNames.COUCHBASE_CLIENT_FACTORY)
 	public CouchbaseClientFactory couchbaseClientFactory(final Cluster couchbaseCluster) {
 		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
-
+/*
+	@Bean
+	public ReactiveCouchbaseClientFactory reactiveCouchbaseClientFactory(final Cluster couchbaseCluster) {
+		return new SimpleReactiveCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
+	}
+*/
 	@Bean(destroyMethod = "disconnect")
 	public Cluster couchbaseCluster(ClusterEnvironment couchbaseClusterEnvironment) {
-		return Cluster.connect(getConnectionString(),
+		Cluster c = Cluster.connect(getConnectionString(),
 				clusterOptions(authenticator()).environment(couchbaseClusterEnvironment));
+		return c;
 	}
 
 	@Bean(destroyMethod = "shutdown")
@@ -156,24 +171,29 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService,
-				getDefaultConsistency());
+																						 MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
+		return new CouchbaseTemplate(couchbaseClientFactory,
+				mappingCouchbaseConverter,
+				couchbaseTranslationService, getDefaultConsistency());
 	}
 
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
-			MappingCouchbaseConverter mappingCouchbaseConverter) {
-		return couchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService());
+																						 MappingCouchbaseConverter mappingCouchbaseConverter) {
+		return couchbaseTemplate(couchbaseClientFactory,
+				mappingCouchbaseConverter,
+				new JacksonTranslationService());
 	}
 
 	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
-	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
+			CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
-		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService,
-				getDefaultConsistency());
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
+				couchbaseTranslationService, getDefaultConsistency());
 	}
 
-	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(
+			CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return reactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
 				new JacksonTranslationService());
@@ -280,9 +300,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
-	 *
 	 */
-	@Bean
+	@Bean(COUCHBASE_MAPPING_CONTEXT)
 	public CouchbaseMappingContext couchbaseMappingContext(CustomConversions customConversions) throws Exception {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
@@ -308,6 +327,43 @@ public abstract class AbstractCouchbaseConfiguration {
 			mapper.registerModule(new EncryptionModule(cryptoManager));
 		}
 		return mapper;
+	}
+
+	/**
+	 * The default blocking transaction manager. It is an implementation of CallbackPreferringTransactionManager
+	 * CallbackPreferrringTransactionmanagers do not play well with test-cases that rely
+	 * on @TestTransaction/@BeforeTransaction/@AfterTransaction
+	 *
+	 * @param clientFactory
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	CouchbaseCallbackTransactionManager callbackTransactionManager(CouchbaseClientFactory clientFactory) {
+		return new CouchbaseCallbackTransactionManager(clientFactory);
+	}
+
+	/**
+	 * The default TransactionalOperator.
+	 *
+	 * @param couchbaseCallbackTransactionManager
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
+	public CouchbaseTransactionalOperator transactionalOperator(
+			CouchbaseCallbackTransactionManager couchbaseCallbackTransactionManager) {
+		return CouchbaseTransactionalOperator.create(couchbaseCallbackTransactionManager);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
+		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
+		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor(couchbaseTransactionManager, transactionAttributeSource);
+		interceptor.setTransactionAttributeSource(transactionAttributeSource);
+		if (couchbaseTransactionManager != null) {
+			interceptor.setTransactionManager(couchbaseTransactionManager);
+		}
+		return interceptor;
 	}
 
 	/**
@@ -375,5 +431,4 @@ public abstract class AbstractCouchbaseConfiguration {
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
 	}
-
 }

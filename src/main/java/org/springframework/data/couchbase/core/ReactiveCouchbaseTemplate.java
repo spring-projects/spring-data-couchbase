@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.core;
 
+import reactor.core.publisher.Mono;
+
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,7 +27,12 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
+import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -45,24 +52,51 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
-	private QueryScanConsistency scanConsistency;
+	private final QueryScanConsistency scanConsistency;
 
-	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
-		this(clientFactory, converter, new JacksonTranslationService());
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+			final CouchbaseConverter converter) {
+		this(clientFactory, converter, new JacksonTranslationService(), null);
 	}
 
-	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-			final TranslationService translationService) {
-		this(clientFactory, converter, translationService, null);
-	}
-
-	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-			final TranslationService translationService, QueryScanConsistency scanConsistency) {
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
+			final CouchbaseConverter converter, final TranslationService translationService,
+			final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
 		this.templateSupport = new ReactiveCouchbaseTemplateSupport(this, converter, translationService);
 		this.scanConsistency = scanConsistency;
+	}
+
+	public <T> Mono<T> save(T entity) {
+		Assert.notNull(entity, "Entity must not be null!");
+		Mono<T> result;
+		final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
+				.getPersistentEntity(entity.getClass());
+		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
+		final boolean versionPresent = versionProperty != null;
+		final Long version = versionProperty == null || versionProperty.getField() == null ? null
+				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
+		final boolean existingDocument = version != null && version > 0;
+
+		Class clazz = entity.getClass();
+
+		if (!versionPresent) { // the entity doesn't have a version property
+			// No version field - no cas
+			result = (Mono<T>) upsertById(clazz).one(entity);
+		} else if (existingDocument) { // there is a version property, and it is non-zero
+			// Updating existing document with cas
+			result = (Mono<T>) replaceById(clazz).one(entity);
+		} else { // there is a version property, but it's zero or not set.
+			// Creating new document
+			result = (Mono<T>) insertById(clazz).one(entity);
+		}
+		return result;
+	}
+
+	public <T> Mono<Long> count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).all().count();
 	}
 
 	@Override
@@ -165,8 +199,9 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 *
 	 * @param ex the exception to translate
 	 */
-	protected RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
-		RuntimeException resolved = exceptionTranslator.translateExceptionIfPossible(ex);
+	RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
+		RuntimeException resolved = exceptionTranslator != null ? exceptionTranslator.translateExceptionIfPossible(ex)
+				: null;
 		return resolved == null ? ex : resolved;
 	}
 
@@ -198,4 +233,57 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return scanConsistency;
 	}
 
+	/**
+	 * Value object chaining together a given source document with its mapped representation and the collection to persist
+	 * it to.
+	 *
+	 * @param <T>
+	 * @author Christoph Strobl
+	 * @since 2.2
+	 */
+	/*
+	private static class PersistableEntityModel<T> {
+	
+		private final T source;
+		private final @Nullable
+		Document target;
+		private final String collection;
+	
+		private PersistableEntityModel(T source, @Nullable Document target, String collection) {
+	
+			this.source = source;
+			this.target = target;
+			this.collection = collection;
+		}
+	
+		static <T> PersistableEntityModel<T> of(T source, String collection) {
+			return new PersistableEntityModel<>(source, null, collection);
+		}
+	
+		static <T> PersistableEntityModel<T> of(T source, Document target, String collection) {
+			return new PersistableEntityModel<>(source, target, collection);
+		}
+	
+		PersistableEntityModel<T> mutate(T source) {
+			return new PersistableEntityModel(source, target, collection);
+		}
+	
+		PersistableEntityModel<T> addTargetDocument(Document target) {
+			return new PersistableEntityModel(source, target, collection);
+		}
+	
+		T getSource() {
+			return source;
+		}
+	
+		@Nullable
+		Document getTarget() {
+			return target;
+		}
+	
+		String getCollection() {
+			return collection;
+		}
+	
+	 */
 }

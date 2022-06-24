@@ -53,7 +53,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final QueryOptions options;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
+																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;
@@ -71,7 +71,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		}
 
 		@Override
-		public TerminatingRemoveByQuery<T> matching(final Query query) {
+		public RemoveByQueryWithTxOrNot<T> matching(final Query query) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}
@@ -107,6 +107,13 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
 					scope != null ? scope : this.scope, collection, options);
 		}
+
+		@Override
+		public TerminatingRemoveByQuery<T> transaction() {
+			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
+					options);
+		}
+
 	}
 
 }

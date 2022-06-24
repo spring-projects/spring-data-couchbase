@@ -17,6 +17,8 @@ package org.springframework.data.couchbase.core;
 
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.query.Query;
+import reactor.core.publisher.Mono;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -49,8 +51,12 @@ public interface ReactiveCouchbaseOperations extends ReactiveFluentCouchbaseOper
 	 */
 	CouchbaseClientFactory getCouchbaseClientFactory();
 
-	/**
-	 * @return the default consistency to use for queries
-	 */
-	QueryScanConsistency getConsistency();
+	<T> Mono<T> save(T entity);
+
+	<T> Mono<Long> count(Query query, Class<T> personClass);
+    
+    /**
+     * @return the default consistency to use for queries
+     */
+    QueryScanConsistency getConsistency();
 }

@@ -16,6 +16,8 @@
 
 package org.springframework.data.couchbase.domain;
 
+import lombok.val;
+import org.springframework.data.couchbase.core.query.WithConsistency;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -45,6 +47,11 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @Repository
 public interface ReactiveAirportRepository
 		extends ReactiveCouchbaseRepository<Airport, String>, DynamicProxyable<ReactiveAirportRepository> {
+
+
+	@Query("SELECT META(#{#n1ql.bucket}).id AS __id, META(#{#n1ql.bucket}).cas AS __cas, meta().id as id FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} #{[1]}")
+	@ScanConsistency(query=QueryScanConsistency.REQUEST_PLUS)
+	Flux<String> findIdByDynamicN1ql(String docType, String queryStatement);
 
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)

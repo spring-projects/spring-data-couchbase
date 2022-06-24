@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,9 +27,14 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
+import com.couchbase.client.java.transactions.TransactionQueryResult;
 
 /**
  * {@link ReactiveFindByQueryOperation} implementations for Couchbase.
@@ -51,7 +57,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null,
 				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null, null, null,
-				template.support());
+				null, template.support());
 	}
 
 	static class ReactiveFindByQuerySupport<T> implements ReactiveFindByQuery<T> {
@@ -69,9 +75,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
-				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-				final String collection, final QueryOptions options, final String[] distinctFields, final String[] fields,
-				final ReactiveTemplateSupport support) {
+															 final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
+															 final String collection, final QueryOptions options, final String[] distinctFields, String[] fields,
+															 final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 			this.template = template;
@@ -97,14 +103,16 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 				scanCons = scanConsistency;
 			}
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanCons, scope, collection,
-					options, distinctFields, fields, support);
+					options, distinctFields, fields,
+					support);
 		}
 
 		@Override
-		public TerminatingFindByQuery<T> withOptions(final QueryOptions options) {
+		public FindByQueryWithQuery<T> withOptions(final QueryOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -114,28 +122,31 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		@Override
-		public FindByQueryWithConsistency<T> inCollection(final String collection) {
+		public FindByQueryWithDistinct<T> inCollection(final String collection) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection != null ? collection : this.collection, options, distinctFields, fields, support);
 		}
 
 		@Override
 		@Deprecated
-		public FindByQueryConsistentWith<T> consistentWith(QueryScanConsistency scanConsistency) {
+		public FindByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
 		public FindByQueryWithConsistency<T> withConsistency(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
-		public <R> FindByQueryWithConsistency<R> as(Class<R> returnType) {
+		public <R> FindByQueryWithProjecting<R> as(Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -143,7 +154,8 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			Assert.notNull(fields, "Fields must not be null");
 			Assert.isNull(distinctFields, "only one of project(fields) and distinct(distinctFields) can be specified");
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields, support);
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -155,7 +167,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			// So to indicate do not use distinct, we use {"-"} from the annotation, and here we change it to null.
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, dFields, fields, support);
+					collection, options, dFields, fields,
+					support);
+		}
+
+		@Override
+		public FindByQueryWithTransaction<T> transaction() {
+			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, distinctFields, fields,
+					support);
 		}
 
 		@Override
@@ -170,27 +190,37 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		public Flux<T> all() {
-			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			String statement = assembleEntityQuery(false, distinctFields, pArgs.getScope(), pArgs.getCollection());
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
+			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
-					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-							buildOptions(pArgs.getOptions()))
-					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-							buildOptions(pArgs.getOptions()));
-			return Flux.defer(() -> allResult.onErrorMap(throwable -> {
+
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
+						if (!s.isPresent()) {
+							QueryOptions opts = buildOptions(pArgs.getOptions());
+							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts);
+						} else {
+							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
+									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+						}
+					});
+
+			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
-				String id = null;
-				Long cas = null;
-				if (query.isDistinct() || distinctFields != null) {
-					id = "";
-					cas = Long.valueOf(0);
-				} else {
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject())).flatMap(row -> {
+						String id = "";
+						long cas = 0;
+						if (!query.isDistinct() && distinctFields == null) {
 					id = row.getString(TemplateUtils.SELECT_ID);
 					if (id == null) {
 						id = row.getString(TemplateUtils.SELECT_ID_3x);
@@ -202,10 +232,12 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 						row.removeKey(TemplateUtils.SELECT_CAS_3x);
 					}
 					row.removeKey(TemplateUtils.SELECT_ID);
-					row.removeKey(TemplateUtils.SELECT_CAS);
-				}
-				return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection());
-			}));
+					row.removeKey(TemplateUtils.SELECT_CAS)
+						}
+						System.err.println("row: "+row);
+						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
+								null);
+					});
 		}
 
 		public QueryOptions buildOptions(QueryOptions options) {
@@ -213,24 +245,44 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return query.buildQueryOptions(options, qsc);
 		}
 
+		private TransactionQueryOptions buildTransactionOptions(QueryOptions options) {
+			TransactionQueryOptions opts = OptionsBuilder.buildTransactionQueryOptions(buildOptions(options));
+			return opts;
+		}
+
 		@Override
 		public Mono<Long> count() {
-			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			String statement = assembleEntityQuery(true, distinctFields, pArgs.getScope(), pArgs.getCollection());
+			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
+					domainType);
+			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
-					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-							buildOptions(pArgs.getOptions()))
-					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-							buildOptions(pArgs.getOptions()));
-			return Mono.defer(() -> countResult.onErrorMap(throwable -> {
+
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
+						if (!s.isPresent()) {
+							System.err.println("count: no-tx");
+							QueryOptions opts = buildOptions(pArgs.getOptions());
+							return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+									: rs.query(statement, opts);
+						} else {
+							System.err.println("count: tx");
+							TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+							return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
+									clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+						}
+					});
+
+			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(row.getNames().iterator().next()))
-					.next());
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
+					.map(row -> row.getLong(row.getNames().iterator().next())).next();
 		}
 
 		@Override

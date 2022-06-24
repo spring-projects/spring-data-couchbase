@@ -17,8 +17,6 @@
 package org.springframework.data.couchbase.domain;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -62,7 +60,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableCaching
 public class Config extends AbstractCouchbaseConfiguration {
-	String bucketname = "travel-sample";
+	String bucketname = "test";
 	String username = "Administrator";
 	String password = "password";
 	String connectionString = "127.0.0.1";
@@ -241,15 +239,14 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return "t"; // this will override '_class', is passed in to new CustomMappingCouchbaseConverter
 	}
 
-	static String scopeName = null;
-
 	@Override
 	protected String getScopeName() {
 		return scopeName;
 	}
 
-	public static void setScopeName(String scopeName) {
+	static public void setScopeName(String scopeName) {
 		Config.scopeName = scopeName;
 	}
 
+	static private String scopeName = null;
 }

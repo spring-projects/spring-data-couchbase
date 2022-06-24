@@ -63,8 +63,8 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		private final String[] fields;
 
 		ExecutableFindByQuerySupport(final CouchbaseTemplate template, final Class<?> domainType, final Class<T> returnType,
-				final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
-				final QueryOptions options, final String[] distinctFields, final String[] fields) {
+																 final Query query, final QueryScanConsistency scanConsistency, final String scope, final String collection,
+																 final QueryOptions options, final String[] distinctFields, final String[] fields) {
 			this.template = template;
 			this.domainType = domainType;
 			this.returnType = returnType;
@@ -96,7 +96,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public TerminatingFindByQuery<T> matching(final Query query) {
+		public FindByQueryTxOrNot<T> matching(final Query query) {
 			QueryScanConsistency scanCons;
 			if (query.getScanConsistency() != null) {
 				scanCons = query.getScanConsistency();
@@ -121,7 +121,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public <R> FindByQueryWithConsistency<R> as(final Class<R> returnType) {
+		public <R> FindByQueryWithQuery<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, fields);
@@ -136,7 +136,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public FindByQueryWithProjection<T> distinct(final String[] distinctFields) {
+		public FindByQueryWithProjecting<T> distinct(final String[] distinctFields) {
 			Assert.notNull(distinctFields, "distinctFields must not be null");
 			Assert.isNull(fields, "only one of project(fields) and distinct(distinctFields) can be specified");
 			// Coming from an annotation, this cannot be null.
@@ -145,6 +145,12 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, dFields, fields);
+		}
+
+		@Override
+		public FindByQueryWithDistinct<T> transaction() {
+			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
+					collection, options, distinctFields, fields);
 		}
 
 		@Override
@@ -180,7 +186,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public FindByQueryWithConsistency<T> inCollection(final String collection) {
+		public FindByQueryWithDistinct<T> inCollection(final String collection) {
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection != null ? collection : this.collection, options, distinctFields, fields);
 		}

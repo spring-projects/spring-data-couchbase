@@ -33,11 +33,13 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AssessmentDO;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -53,6 +55,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * Query tests Theses tests rely on a cb server running
@@ -63,7 +66,12 @@ import org.springframework.data.domain.Sort;
  * @author Mauro Monti
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(Config.class)
 class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired
+	public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
 	@Override
@@ -129,8 +137,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
-		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
-				.matching(specialUsers).all();
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).matching(specialUsers)
+				.withConsistency(REQUEST_PLUS).all();
 
 		assertEquals(1, foundUsers.size());
 	}
@@ -144,7 +152,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
 		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
-				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
+				.matching(specialUsers).withConsistency(REQUEST_PLUS).all();
 		assertEquals("123", foundUsers.get(0).getId(), "id");
 		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
 		assertEquals(ado, foundUsers.get(0));
@@ -172,7 +180,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		Query daveUsers = new Query(QueryCriteria.where("username").like("dave"));
 
 		final List<UserSubmissionProjected> foundUserSubmissions = couchbaseTemplate.findByQuery(UserSubmission.class)
-				.as(UserSubmissionProjected.class).withConsistency(REQUEST_PLUS).matching(daveUsers).all();
+				.as(UserSubmissionProjected.class).matching(daveUsers).withConsistency(REQUEST_PLUS).all();
 		assertEquals(1, foundUserSubmissions.size());
 		assertEquals(user.getUsername(), foundUserSubmissions.get(0).getUsername());
 		assertEquals(user.getId(), foundUserSubmissions.get(0).getId());
@@ -189,11 +197,11 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where("firstname").like("special"));
 		final List<UserJustLastName> foundUsers = couchbaseTemplate.findByQuery(User.class).as(UserJustLastName.class)
-				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
+				.matching(specialUsers).withConsistency(REQUEST_PLUS).all();
 		assertEquals(1, foundUsers.size());
 
 		final List<UserJustLastName> foundUsersReactive = reactiveCouchbaseTemplate.findByQuery(User.class)
-				.as(UserJustLastName.class).withConsistency(REQUEST_PLUS).matching(specialUsers).all().collectList().block();
+				.as(UserJustLastName.class).matching(specialUsers).withConsistency(REQUEST_PLUS).all().collectList().block();
 		assertEquals(1, foundUsersReactive.size());
 
 		couchbaseTemplate.removeById(User.class).all(Arrays.asList(user1.getId(), user2.getId(), specialUser.getId()));
@@ -230,7 +238,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query nonSpecialUsers = new Query(QueryCriteria.where(i("firstname")).notLike("special"));
 
-		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).matching(nonSpecialUsers).all();
+		couchbaseTemplate.removeByQuery(User.class).matching(nonSpecialUsers).withConsistency(REQUEST_PLUS).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
@@ -267,6 +275,15 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.as(Airport.class).withConsistency(REQUEST_PLUS).count();
 			assertEquals(7, count1);
 
+			// count( distinct (all fields in icaoClass)
+			Class icaoClass = (new Object() {
+				String iata;
+				String icao;
+			}).getClass();
+			long count2 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(icaoClass)
+					.withConsistency(REQUEST_PLUS).count();
+			assertEquals(7, count2);
+
 		} finally {
 			couchbaseTemplate.removeById()
 					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
@@ -298,7 +315,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			assertEquals(7, airports2.size());
 
 			// count( distinct icao )
-			Long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
+			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
+			long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
 					.as(Airport.class).withConsistency(REQUEST_PLUS).count().block();
 			assertEquals(2, count1);
 
@@ -328,8 +346,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.query(QueryCriteria.where("iata").isNotNull());
 			Pageable pageableWithSort = PageRequest.of(0, 7, Sort.by("iata"));
 			query.with(pageableWithSort);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS)
-					.matching(query).all();
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).matching(query).withConsistency(REQUEST_PLUS)
+					.all();
 
 			String[] sortedIatas = iatas.clone();
 			System.out.println("" + iatas.length + " " + sortedIatas.length);
