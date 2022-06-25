@@ -105,18 +105,18 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).inScope(sName).inCollection(cName)
-				.withConsistency(REQUEST_PLUS).all();
+		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+				.all();
 		List<RemoveResult> rp2 = cbTmpl.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp3 = cbTmpl.removeByQuery(EventLog.class).inScope(sName).inCollection(cName)
-				.withConsistency(REQUEST_PLUS).all();
+		List<RemoveResult> rp3 = cbTmpl.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+				.all();
 
 		List<Person> p0 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<Person> p1 = cbTmpl.findByQuery(Person.class).inScope(sName).inCollection(cName).withConsistency(REQUEST_PLUS)
+		List<Person> p1 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
 				.all();
 		List<EventLog> e0 = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all();
-		List<EventLog> e1 = cbTmpl.findByQuery(EventLog.class).inScope(sName).inCollection(cName)
-				.withConsistency(REQUEST_PLUS).all();
+		List<EventLog> e1 = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+				.all();
 
 	}
 

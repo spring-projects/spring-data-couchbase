@@ -82,7 +82,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		}
 
 		@Override
-		public FindByIdTxOrNot<T> inCollection(final String collection) {
+		public FindByIdWithOptions<T> inCollection(final String collection) {
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry);
 		}
 
@@ -100,11 +100,6 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
-		}
-
-		@Override
-		public FindByIdWithExpiry<T> transaction() {
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
 		}
 

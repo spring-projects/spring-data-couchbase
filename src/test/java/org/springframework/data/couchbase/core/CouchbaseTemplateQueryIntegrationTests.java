@@ -137,8 +137,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
-		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).matching(specialUsers)
-				.withConsistency(REQUEST_PLUS).all();
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).matching(specialUsers)
+				.all();
 
 		assertEquals(1, foundUsers.size());
 	}
@@ -151,8 +151,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		ado = couchbaseTemplate.upsertById(AssessmentDO.class).one(ado);
 
 		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
-		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
-				.matching(specialUsers).withConsistency(REQUEST_PLUS).all();
+		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class).withConsistency(REQUEST_PLUS)
+				.matching(specialUsers).all();
 		assertEquals("123", foundUsers.get(0).getId(), "id");
 		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
 		assertEquals(ado, foundUsers.get(0));
@@ -180,7 +180,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		Query daveUsers = new Query(QueryCriteria.where("username").like("dave"));
 
 		final List<UserSubmissionProjected> foundUserSubmissions = couchbaseTemplate.findByQuery(UserSubmission.class)
-				.as(UserSubmissionProjected.class).matching(daveUsers).withConsistency(REQUEST_PLUS).all();
+				.as(UserSubmissionProjected.class).withConsistency(REQUEST_PLUS).matching(daveUsers).all();
 		assertEquals(1, foundUserSubmissions.size());
 		assertEquals(user.getUsername(), foundUserSubmissions.get(0).getUsername());
 		assertEquals(user.getId(), foundUserSubmissions.get(0).getId());
@@ -197,11 +197,11 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query specialUsers = new Query(QueryCriteria.where("firstname").like("special"));
 		final List<UserJustLastName> foundUsers = couchbaseTemplate.findByQuery(User.class).as(UserJustLastName.class)
-				.matching(specialUsers).withConsistency(REQUEST_PLUS).all();
+				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
 		assertEquals(1, foundUsers.size());
 
 		final List<UserJustLastName> foundUsersReactive = reactiveCouchbaseTemplate.findByQuery(User.class)
-				.as(UserJustLastName.class).matching(specialUsers).withConsistency(REQUEST_PLUS).all().collectList().block();
+				.as(UserJustLastName.class).withConsistency(REQUEST_PLUS).matching(specialUsers).all().collectList().block();
 		assertEquals(1, foundUsersReactive.size());
 
 		couchbaseTemplate.removeById(User.class).all(Arrays.asList(user1.getId(), user2.getId(), specialUser.getId()));
@@ -238,7 +238,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 		Query nonSpecialUsers = new Query(QueryCriteria.where(i("firstname")).notLike("special"));
 
-		couchbaseTemplate.removeByQuery(User.class).matching(nonSpecialUsers).withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).matching(nonSpecialUsers).all();
 
 		assertNull(couchbaseTemplate.findById(User.class).one(user1.getId()));
 		assertNull(couchbaseTemplate.findById(User.class).one(user2.getId()));
@@ -346,7 +346,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.query(QueryCriteria.where("iata").isNotNull());
 			Pageable pageableWithSort = PageRequest.of(0, 7, Sort.by("iata"));
 			query.with(pageableWithSort);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).matching(query).withConsistency(REQUEST_PLUS)
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).matching(query)
 					.all();
 
 			String[] sortedIatas = iatas.clone();

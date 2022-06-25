@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.transactions;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -194,8 +195,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.id()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().next();
+			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(person.id()))
+					.all().next();
 		});
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
@@ -209,8 +210,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.id()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().next();
+			return ops.findByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(person.id()))
+					.all().next();
 		});
 
 		assertEquals(1, rr.attempts);

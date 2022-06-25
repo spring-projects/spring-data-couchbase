@@ -245,7 +245,6 @@
             <scope>compile</scope>
         </dependency>
 
-
     </dependencies>
 
     <repositories>
@@ -263,6 +262,12 @@
                 <enabled>false</enabled>
             </releases>
         </repository>
+<!--
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+-->
     </repositories>
 
     <pluginRepositories>

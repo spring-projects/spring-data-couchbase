@@ -64,7 +64,6 @@ import com.couchbase.client.java.query.QueryOptions;
  *
  * @author Michael Reiche
  */
-@SpringJUnitConfig(Config.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(CollectionsConfig.class)
 public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
@@ -236,7 +235,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			assertThrows(IllegalStateException.class, () -> airportRepository.save(airport));
 		} finally {
 			List<RemoveResult> removed = couchbaseTemplate.removeByQuery(Airport.class).all();
-			couchbaseTemplate.findByQuery(Airport.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 		}
 	}
 
@@ -291,7 +290,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).inScope(scopeName).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
 					.all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
@@ -346,7 +345,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).inScope(scopeName).withConsistency(QueryScanConsistency.REQUEST_PLUS)
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
 					.all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.

@@ -29,7 +29,6 @@ import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithDistinct;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
-import org.springframework.data.couchbase.core.support.WithTransaction;
 import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.query.QueryOptions;
@@ -130,11 +129,41 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
+	 * Fluent methods to specify the query
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryWithQuery<T> extends TerminatingFindByQuery<T>, WithQuery<T> {
+
+		/**
+		 * Set the filter for the query to be used.
+		 *
+		 * @param query must not be {@literal null}.
+		 * @throws IllegalArgumentException if query is {@literal null}.
+		 */
+		@Override
+		TerminatingFindByQuery<T> matching(Query query);
+
+		/**
+		 * Set the filter {@link QueryCriteriaDefinition criteria} to be used.
+		 *
+		 * @param criteria must not be {@literal null}.
+		 * @return new instance of {@link ExecutableFindByQuery}.
+		 * @throws IllegalArgumentException if criteria is {@literal null}.
+		 */
+		@Override
+		default TerminatingFindByQuery<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
+
+	}
+
+	/**
 	 * Fluent method to specify options.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByQueryWithOptions<T> extends TerminatingFindByQuery<T>, WithQueryOptions<T> {
+	interface FindByQueryWithOptions<T> extends FindByQueryWithQuery<T>, WithQueryOptions<T> {
 		/**
 		 * Fluent method to specify options to use for execution
 		 *
@@ -145,12 +174,42 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
-	 * To be removed at the next major release. use WithConsistency instead
+	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
+	interface FindByQueryInCollection<T> extends FindByQueryWithOptions<T>, InCollection<T> {
+		/**
+		 * With a different collection
+		 *
+		 * @param collection the collection to use.
+		 */
+		@Override
+		FindByQueryWithOptions<T> inCollection(String collection);
+	}
+
+	/**
+	 * Fluent method to specify the scope.
+	 *
+	 * @param <T> the entity type to use for the results.
+	 */
+	interface FindByQueryInScope<T> extends FindByQueryInCollection<T>, InScope<T> {
+		/**
+		 * With a different scope
+		 *
+		 * @param scope the scope to use.
+		 */
+		@Override
+		FindByQueryInCollection<T> inScope(String scope);
+	}
+
+	/**
+	 * To be removed at the next major release. use WithConsistency instead
+	 * 
+	 * @param <T> the entity type to use for the results.
+	 */
 	@Deprecated
-	interface FindByQueryConsistentWith<T> extends FindByQueryWithOptions<T> {
+	interface FindByQueryConsistentWith<T> extends FindByQueryInScope<T> {
 
 		/**
 		 * Allows to override the default scan consistency.
@@ -158,7 +217,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @param scanConsistency the custom scan consistency to use for this query.
 		 */
 		@Deprecated
-		FindByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency);
+		FindByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
 	}
 
 	/**
@@ -178,60 +237,11 @@ public interface ExecutableFindByQueryOperation {
 	}
 
 	/**
-	 * Fluent method to specify transaction
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface FindByQueryWithTransaction<T> extends TerminatingFindByQuery<T>, WithTransaction<T> {
-
-		/**
-		 * Finds the distinct values for a specified {@literal field} across a single collection
-		 *
-		 * @return new instance of {@link ExecutableFindByQuery}.
-		 * @throws IllegalArgumentException if field is {@literal null}.
-		 */
-		@Override
-		TerminatingFindByQuery<T> transaction();
-	}
-
-	interface FindByQueryTxOrNot<T> extends FindByQueryWithConsistency<T>, FindByQueryWithTransaction<T> {}
-
-	/**
-	 * Fluent methods to specify the query
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface FindByQueryWithQuery<T> extends FindByQueryTxOrNot<T>, WithQuery<T> {
-
-		/**
-		 * Set the filter for the query to be used.
-		 *
-		 * @param query must not be {@literal null}.
-		 * @throws IllegalArgumentException if query is {@literal null}.
-		 */
-		@Override
-		FindByQueryTxOrNot<T> matching(Query query);
-
-		/**
-		 * Set the filter {@link QueryCriteriaDefinition criteria} to be used.
-		 *
-		 * @param criteria must not be {@literal null}.
-		 * @return new instance of {@link ExecutableFindByQuery}.
-		 * @throws IllegalArgumentException if criteria is {@literal null}.
-		 */
-		@Override
-		default FindByQueryTxOrNot<T> matching(QueryCriteriaDefinition criteria) {
-			return matching(Query.query(criteria));
-		}
-
-	}
-
-	/**
 	 * Fluent method to specify a return type different than the the entity type to use for the results.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByQueryWithProjection<T> extends FindByQueryWithQuery<T> {
+	interface FindByQueryWithProjection<T> extends FindByQueryWithConsistency<T> {
 
 		/**
 		 * Define the target type fields should be mapped to. <br />
@@ -241,7 +251,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @return new instance of {@link FindByQueryWithProjection}.
 		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
-		<R> FindByQueryWithQuery<R> as(Class<R> returnType);
+		<R> FindByQueryWithConsistency<R> as(Class<R> returnType);
 	}
 
 	/**
@@ -277,37 +287,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		FindByQueryWithProjecting<T> distinct(String[] distinctFields);
-	}
-
-	/**
-	 * Fluent method to specify the collection.
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface FindByQueryInCollection<T> extends FindByQueryWithDistinct<T>, InCollection<T> {
-		/**
-		 * With a different collection
-		 *
-		 * @param collection the collection to use.
-		 */
-		@Override
-		FindByQueryWithDistinct<T> inCollection(String collection);
-	}
-
-	/**
-	 * Fluent method to specify the scope.
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface FindByQueryInScope<T> extends FindByQueryInCollection<T>, InScope<T> {
-		/**
-		 * With a different scope
-		 *
-		 * @param scope the scope to use.
-		 */
-		@Override
-		FindByQueryInCollection<T> inScope(String scope);
+		FindByQueryWithProjection<T> distinct(String[] distinctFields);
 	}
 
 	/**
@@ -315,6 +295,6 @@ public interface ExecutableFindByQueryOperation {
 	 *
 	 * @param <T> the entity type to use for the results
 	 */
-	interface ExecutableFindByQuery<T> extends FindByQueryInScope<T> {}
+	interface ExecutableFindByQuery<T> extends FindByQueryWithDistinct<T> {}
 
 }

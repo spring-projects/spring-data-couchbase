@@ -202,7 +202,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 	private Mono<Void> delete(T entity, String scope, String collection) {
 		Assert.notNull(entity, "Entity must not be null!");
-		return operations.removeById(getJavaType()).inScope(scope).inCollection(collection).one(getId(entity)).then();
+		return operations.removeById(getJavaType()).inScope(scope).inCollection(collection).oneEntity(entity).then();
 	}
 
 	@Override

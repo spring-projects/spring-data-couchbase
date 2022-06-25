@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -153,7 +152,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		}
 
 		@Override
-		public InsertByIdTxOrNot<T> inCollection(final String collection) {
+		public InsertByIdWithOptions<T> inCollection(final String collection) {
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope,
 					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry,
 					support);
@@ -179,13 +178,6 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry,
-					support);
-		}
-
-		@Override
-		public InsertByIdWithExpiry<T> transaction() {
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry,
 					support);

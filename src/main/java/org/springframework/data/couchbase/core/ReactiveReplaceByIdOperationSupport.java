@@ -199,13 +199,6 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 					support);
 		}
 
-		@Override
-		public ReplaceByIdWithExpiry<T> transaction() {
-			return new ReactiveReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry,
-					support);
-		}
-
 	}
 
 }

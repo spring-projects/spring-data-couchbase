@@ -90,7 +90,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		}
 
 		@Override
-		public <R> FindByAnalyticsWithQuery<R> as(final Class<R> returnType) {
+		public <R> FindByAnalyticsWithConsistency<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ReactiveFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, support);

@@ -18,15 +18,14 @@ package org.springframework.data.couchbase.core;
 import java.time.Duration;
 import java.util.Collection;
 
-import org.springframework.data.couchbase.core.support.InCollection;
-import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
-import org.springframework.data.couchbase.core.support.WithExpiry;
+import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.WithGetOptions;
 import org.springframework.data.couchbase.core.support.WithProjectionId;
-import org.springframework.data.couchbase.core.support.WithTransaction;
+import org.springframework.data.couchbase.core.support.InScope;
 
 import com.couchbase.client.java.kv.GetOptions;
+import org.springframework.data.couchbase.core.support.WithExpiry;
 
 /**
  * Get Operations
@@ -83,57 +82,19 @@ public interface ExecutableFindByIdOperation {
 		TerminatingFindById<T> withOptions(GetOptions options);
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithOptions<T>, WithProjectionId<T> {
-		/**
-		 * Load only certain fields for the document.
-		 *
-		 * @param fields the projected fields to load.
-		 */
-		@Override
-		FindByIdWithOptions<T> project(String... fields);
-	}
-
-	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
-		/**
-		 * Load only certain fields for the document.
-		 *
-		 * @param expiry the projected fields to load.
-		 */
-		@Override
-		FindByIdWithProjection<T> withExpiry(Duration expiry);
-	}
-
-	/**
-	 * Provide attempt context
-	 *
-	 * @param <T> the entity type to use for the results
-	 */
-	interface FindByIdWithTransaction<T> extends TerminatingFindById<T>, WithTransaction<T> {
-		/**
-		 * Finds the distinct values for a specified {@literal field} across a single collection
-		 *
-		 * @return new instance of {@link ExecutableFindById}.
-		 * @throws IllegalArgumentException if field is {@literal null}.
-		 */
-		@Override
-		FindByIdWithProjection<T> transaction();
-	}
-
-	interface FindByIdTxOrNot<T> extends FindByIdWithExpiry<T>, FindByIdWithTransaction<T> {}
-
 	/**
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByIdInCollection<T> extends FindByIdTxOrNot<T>, InCollection<T> {
+	interface FindByIdInCollection<T> extends FindByIdWithOptions<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		FindByIdTxOrNot<T> inCollection(String collection);
+		FindByIdWithOptions<T> inCollection(String collection);
 	}
 
 	/**
@@ -151,11 +112,31 @@ public interface ExecutableFindByIdOperation {
 		FindByIdInCollection<T> inScope(String scope);
 	}
 
+	interface FindByIdWithProjection<T> extends FindByIdInScope<T>, WithProjectionId<T> {
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param fields the projected fields to load.
+		 */
+		@Override
+		FindByIdInScope<T> project(String... fields);
+	}
+
+	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param expiry the projected fields to load.
+		 */
+		@Override
+		FindByIdWithProjection<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type to use for the results
 	 */
-	interface ExecutableFindById<T> extends FindByIdInScope<T> {}
+	interface ExecutableFindById<T> extends FindByIdWithExpiry<T> {}
 
 }

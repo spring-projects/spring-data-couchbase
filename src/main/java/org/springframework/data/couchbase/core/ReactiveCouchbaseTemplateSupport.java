@@ -79,13 +79,13 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 									TransactionResultHolder txResultHolder) {
 		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 									TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}

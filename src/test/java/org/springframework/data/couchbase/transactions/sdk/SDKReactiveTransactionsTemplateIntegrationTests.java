@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.transactions.sdk;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -164,8 +165,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(WalterWhite.id()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all().then();
+			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(WalterWhite.id()))
+					.all().then();
 		});
 
 		Person fetched = blocking.findById(Person.class).one(person.id());

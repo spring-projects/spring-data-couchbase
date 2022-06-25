@@ -93,12 +93,12 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 		WalterWhite = new Person( "Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp1 = operations.removeByQuery(Person.class).inScope(sName).inCollection(cName)
-				.withConsistency(REQUEST_PLUS).all();
+		List<RemoveResult> rp1 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+				.all();
 
 		List<Person> p0 = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<Person> p1 = operations.findByQuery(Person.class).inScope(sName).inCollection(cName)
-				.withConsistency(REQUEST_PLUS).all();
+		List<Person> p1 = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+				.all();
 	}
 
 	@AfterEach
@@ -210,8 +210,8 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
 		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
-			return rxCBTmpl.findByQuery(Person.class).inScope(sName).inCollection(cName).matching(q)
-					.withConsistency(REQUEST_PLUS).one().doOnSuccess(doc -> {
+			return rxCBTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName).matching(q)
+					.one().doOnSuccess(doc -> {
 						System.err.println("doc: " + doc);
 						docs.add(doc);
 					});

@@ -24,7 +24,6 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithInsertOptions;
-import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.kv.InsertOptions;
@@ -74,7 +73,8 @@ public interface ExecutableInsertByIdOperation {
 	 *
 	 * @param <T> the entity type to use.
 	 */
-	interface InsertByIdWithOptions<T> extends TerminatingInsertById<T>, WithInsertOptions<T> {
+	interface InsertByIdWithOptions<T>
+			extends TerminatingInsertById<T>, WithInsertOptions<T> {
 		/**
 		 * Fluent method to specify options to use for execution.
 		 *
@@ -84,42 +84,19 @@ public interface ExecutableInsertByIdOperation {
 		TerminatingInsertById<T> withOptions(InsertOptions options);
 	}
 
-	interface InsertByIdWithDurability<T> extends InsertByIdWithOptions<T>, WithDurability<T> {
-
-		@Override
-		InsertByIdWithOptions<T> withDurability(DurabilityLevel durabilityLevel);
-
-		@Override
-		InsertByIdWithOptions<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
-
-	}
-
-	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
-
-		@Override
-		InsertByIdWithDurability<T> withExpiry(Duration expiry);
-	}
-
-	interface InsertByIdWithTransaction<T> extends TerminatingInsertById<T>, WithTransaction<T> {
-		@Override
-		InsertByIdWithExpiry<T> transaction();
-	}
-
-	interface InsertByIdTxOrNot<T> extends InsertByIdWithExpiry<T>, InsertByIdWithTransaction<T> {}
-
 	/**
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface InsertByIdInCollection<T> extends InsertByIdTxOrNot<T>, InCollection<T> {
+	interface InsertByIdInCollection<T> extends InsertByIdWithOptions<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		InsertByIdTxOrNot<T> inCollection(String collection);
+		InsertByIdWithOptions<T> inCollection(String collection);
 	}
 
 	/**
@@ -137,11 +114,27 @@ public interface ExecutableInsertByIdOperation {
 		InsertByIdInCollection<T> inScope(String scope);
 	}
 
+	interface InsertByIdWithDurability<T> extends InsertByIdInScope<T>, WithDurability<T> {
+
+		@Override
+		InsertByIdInScope<T> withDurability(DurabilityLevel durabilityLevel);
+
+		@Override
+		InsertByIdInScope<T> withDurability(PersistTo persistTo, ReplicateTo replicateTo);
+
+	}
+
+	interface InsertByIdWithExpiry<T> extends InsertByIdWithDurability<T>, WithExpiry<T> {
+
+		@Override
+		InsertByIdWithDurability<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Provides methods for constructing KV insert operations in a fluent way.
 	 *
 	 * @param <T> the entity type to insert
 	 */
-	interface ExecutableInsertById<T> extends InsertByIdInScope<T> {}
+	interface ExecutableInsertById<T> extends InsertByIdWithExpiry<T> {}
 
 }

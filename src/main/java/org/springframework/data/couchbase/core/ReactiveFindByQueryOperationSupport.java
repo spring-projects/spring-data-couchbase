@@ -27,7 +27,6 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -56,7 +55,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 	@Override
 	public <T> ReactiveFindByQuery<T> findByQuery(final Class<T> domainType) {
 		return new ReactiveFindByQuerySupport<>(template, domainType, domainType, ALL_QUERY, null,
-				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null, null, null,
+				OptionsBuilder.getScopeFrom(domainType), OptionsBuilder.getCollectionFrom(domainType), null, null,
 				null, template.support());
 	}
 
@@ -129,7 +128,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		@Override
 		@Deprecated
-		public FindByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency) {
+		public FindByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency) {
 			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, fields,
 					support);
@@ -172,13 +171,6 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		}
 
 		@Override
-		public FindByQueryWithTransaction<T> transaction() {
-			return new ReactiveFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields,
-					support);
-		}
-
-		@Override
 		public Mono<T> one() {
 			return all().singleOrEmpty();
 		}
@@ -192,7 +184,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public Flux<T> all() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
 					domainType);
-			String statement = assembleEntityQuery(false, distinctFields, pArgs.getCollection());
+			String statement = assembleEntityQuery(false, distinctFields, pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
@@ -219,7 +211,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
 					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject())).flatMap(row -> {
 						String id = "";
-						long cas = 0;
+						Long cas = Long.valueOf(0);
 						if (!query.isDistinct() && distinctFields == null) {
 					id = row.getString(TemplateUtils.SELECT_ID);
 					if (id == null) {
@@ -232,7 +224,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 						row.removeKey(TemplateUtils.SELECT_CAS_3x);
 					}
 					row.removeKey(TemplateUtils.SELECT_ID);
-					row.removeKey(TemplateUtils.SELECT_CAS)
+					row.removeKey(TemplateUtils.SELECT_CAS);
 						}
 						System.err.println("row: "+row);
 						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
@@ -254,7 +246,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public Mono<Long> count() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options,
 					domainType);
-			String statement = assembleEntityQuery(true, distinctFields, pArgs.getCollection());
+			String statement = assembleEntityQuery(true, distinctFields, pArgs.getScope(), pArgs.getCollection());
 			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
 
 			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();

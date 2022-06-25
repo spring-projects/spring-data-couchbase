@@ -84,7 +84,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		}
 
 		@Override
-		public ReplaceByIdTxOrNot<T> inCollection(final String collection) {
+		public ReplaceByIdWithOptions<T> inCollection(final String collection) {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope,
 					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
@@ -107,12 +107,6 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		@Override
 		public ReplaceByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
-					replicateTo, durabilityLevel, expiry);
-		}
-
-		@Override
-		public ReplaceByIdWithExpiry<T> transaction() {
 			return new ExecutableReplaceByIdSupport<>(template, domainType, scope, collection, options, persistTo,
 					replicateTo, durabilityLevel, expiry);
 		}

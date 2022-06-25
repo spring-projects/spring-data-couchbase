@@ -27,12 +27,11 @@ import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.core.support.WithGetOptions;
 import org.springframework.data.couchbase.core.support.WithProjectionId;
-import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.kv.GetOptions;
 
 /**
- * Get Operations - method/interface chaining is from the bottom up.
+ * Get Operations
  *
  * @author Christoph Strobl
  * @since 2.0
@@ -68,20 +67,7 @@ public interface ReactiveFindByIdOperation {
 		 * @return the list of found entities.
 		 */
 		Flux<? extends T> all(Collection<String> ids);
-	}
 
-	/**
-	 * Provide transaction
-	 *
-	 * @param <T> the entity type to use for the results
-	 */
-	interface FindByIdWithTransaction<T> extends TerminatingFindById<T>, WithTransaction<T> {
-		/**
-		 * Provide transaction
-		 *
-		 * @return
-		 */
-		TerminatingFindById<T> transaction();
 	}
 
 	/**
@@ -99,45 +85,19 @@ public interface ReactiveFindByIdOperation {
 		TerminatingFindById<T> withOptions(GetOptions options);
 	}
 
-	interface FindByIdWithProjection<T> extends FindByIdWithOptions<T>, WithProjectionId<T> {
-		/**
-		 * Load only certain fields for the document.
-		 *
-		 * @param fields the projected fields to load.
-		 */
-		FindByIdWithOptions<T> project(String... fields);
-	}
-
-	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
-		/**
-		 * Load only certain fields for the document.
-		 *
-		 * @param expiry the projected fields to load.
-		 */
-		@Override
-		FindByIdWithProjection<T> withExpiry(Duration expiry);
-	}
-
-	/**
-	 * Interface to that can produce either transactional or non-transactional operations.
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface FindByIdTxOrNot<T> extends FindByIdWithTransaction<T>, FindByIdWithExpiry<T> {}
-
 	/**
 	 * Fluent method to specify the collection.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface FindByIdInCollection<T> extends FindByIdTxOrNot<T>, InCollection<T> {
+	interface FindByIdInCollection<T> extends FindByIdWithOptions<T>, InCollection<T> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
 		@Override
-		FindByIdTxOrNot<T> inCollection(String collection);
+		FindByIdWithOptions<T> inCollection(String collection);
 	}
 
 	/**
@@ -155,11 +115,32 @@ public interface ReactiveFindByIdOperation {
 		FindByIdInCollection<T> inScope(String scope);
 	}
 
+	interface FindByIdWithProjection<T> extends FindByIdInScope<T>, WithProjectionId<T> {
+
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param fields the projected fields to load.
+		 */
+		FindByIdInCollection<T> project(String... fields);
+
+	}
+
+	interface FindByIdWithExpiry<T> extends FindByIdWithProjection<T>, WithExpiry<T> {
+		/**
+		 * Load only certain fields for the document.
+		 *
+		 * @param expiry the projected fields to load.
+		 */
+		@Override
+		FindByIdWithProjection<T> withExpiry(Duration expiry);
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
-	 * @param <T> the entity type.
+	 * @param <T> the entity type to use for the results
 	 */
-	interface ReactiveFindById<T> extends FindByIdInScope<T> {};
+	interface ReactiveFindById<T> extends FindByIdWithExpiry<T> {}
 
 }

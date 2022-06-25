@@ -29,10 +29,10 @@ public interface ReactiveTemplateSupport {
 
 	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
-	<T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+	<T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 							 TransactionResultHolder txResultHolder);
 
-	<T> Mono<T> decodeEntity(String id, String source, long cas, Class<T> entityClass, String scope, String collection,
+	<T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,

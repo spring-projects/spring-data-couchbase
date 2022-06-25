@@ -97,7 +97,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		}
 
 		@Override
-		public InsertByIdTxOrNot<T> inCollection(final String collection) {
+		public InsertByIdWithOptions<T> inCollection(final String collection) {
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope,
 					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, expiry);
 		}
@@ -120,12 +120,6 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		@Override
 		public InsertByIdWithDurability<T> withExpiry(final Duration expiry) {
 			Assert.notNull(expiry, "expiry must not be null.");
-			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, expiry);
-		}
-
-		@Override
-		public InsertByIdWithExpiry<T> transaction() {
 			return new ExecutableInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry);
 		}

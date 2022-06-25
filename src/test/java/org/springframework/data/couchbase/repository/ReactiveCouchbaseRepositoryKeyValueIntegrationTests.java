@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -59,10 +60,8 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
 	@Autowired ReactiveUserRepository userRepository;
-
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;
-
-	@Autowired ReactiveAirlineRepository airlineRepository;
+	@Autowired ReactiveAirlineRepository reactiveAirlineRepository;
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
@@ -82,35 +81,11 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		// Airline does not have a version
 		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline", null);
 		// save the document - we don't care how on this call
-		airlineRepository.save(airline).block();
-		airlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
-		airlineRepository.delete(airline).block();
+		reactiveAirlineRepository.save(airline).block();
+		reactiveAirlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
+		reactiveAirlineRepository.delete(airline).block();
 	}
 
-	@Autowired ReactiveAirlineRepository airlineRepository;
-
-	@Test
-	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-	void saveReplaceUpsertInsert() {
-		// the User class has a version.
-		User user = new User(UUID.randomUUID().toString(), "f", "l");
-		// save the document - we don't care how on this call
-		userRepository.save(user).block();
-		// Now set the version to 0, it should attempt an insert and fail.
-		long saveVersion = user.getVersion();
-		user.setVersion(0);
-		assertThrows(DuplicateKeyException.class, () -> userRepository.save(user).block());
-		user.setVersion(saveVersion + 1);
-		assertThrows(DataIntegrityViolationException.class, () -> userRepository.save(user).block());
-		userRepository.delete(user);
-
-		// Airline does not have a version
-		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline");
-		// save the document - we don't care how on this call
-		airlineRepository.save(airline).block();
-		airlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
-		airlineRepository.delete(airline).block();
-	}
 
 	@Test
 	void saveAndFindById() {

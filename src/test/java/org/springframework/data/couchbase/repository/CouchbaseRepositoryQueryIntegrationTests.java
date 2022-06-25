@@ -16,9 +16,8 @@
 
 package org.springframework.data.couchbase.repository;
 
-import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static com.couchbase.client.java.query.QueryOptions.queryOptions;
+import static com.couchbase.client.java.query.QueryScanConsistency.NOT_BOUNDED;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,9 +109,8 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.InsertOptions;
-import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.kv.MutationState;
-import com.couchbase.client.java.kv.UpsertOptions;
+import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
@@ -360,6 +358,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedWithDefaultRepository() {
+		if (!config().isUsingCloud()) {
+			return;
+		}
 		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// the Config class has been modified, these need to be loaded again
@@ -370,13 +371,19 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
-		Airport vie = new Airport("airports::vie", "vie", "low9");
-		Airport saved = airportRepositoryRP.save(vie);
-		List<Airport> allSaved = airportRepositoryRP.findAll();
-		couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-		if (!config().isUsingCloud()) {
-			assertTrue(allSaved.isEmpty(), "should not have been empty");
+		boolean notFound = false;
+		for (int i = 0; i < 100; i++) {
+			Airport vie = new Airport("airports::vie", "vie", "low9");
+			Airport saved = airportRepositoryRP.save(vie);
+			List<Airport> allSaved = airportRepositoryRP.findAll();
+			couchbaseTemplate.removeById(Airport.class).one(saved.getId());
+			System.err.println(i);
+			if (allSaved.isEmpty()) {
+				notFound = true;
+				break;
+			}
 		}
+		assertTrue(notFound, "the doc should not have been found. maybe");
 	}
 
 	@Test
@@ -403,11 +410,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "loww");
 			vie = airportRepository.save(vie);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class)
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS)
 					.matching(org.springframework.data.couchbase.core.query.Query
 							.query(QueryCriteria.where(N1QLExpression.x("_class")).is("airport")))
-					.withConsistency(REQUEST_PLUS)
-
 					.all();
 			assertFalse(airports.isEmpty(), "should have found aiport");
 		} finally {
@@ -891,7 +896,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
-		// DATACOUCH-650
+	// DATACOUCH-650
 	void deleteAllById() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
@@ -910,8 +915,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	void couchbaseRepositoryQuery() throws Exception {
 		User user = new User("1", "Dave", "Wilson");
 		userRepository.save(user);
-		couchbaseTemplate.findByQuery(User.class).matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`"))
-				.withConsistency(REQUEST_PLUS).all();
+		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
+				.matching(QueryCriteria.where("firstname").is("Dave").and("`1`").is("`1`")).all();
 		String input = "findByFirstname";
 		Method method = UserRepository.class.getMethod(input, String.class);
 		CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,

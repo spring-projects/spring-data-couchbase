@@ -100,7 +100,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 
 		@Override
-		public RemoveByIdTxOrNot inCollection(final String collection) {
+		public RemoveByIdWithOptions inCollection(final String collection) {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection != null ? collection : this.collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
@@ -135,12 +135,6 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public RemoveByIdWithDurability withCas(Long cas) {
-			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
-		}
-
-		@Override
-		public RemoveByIdWithCas transaction() {
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}

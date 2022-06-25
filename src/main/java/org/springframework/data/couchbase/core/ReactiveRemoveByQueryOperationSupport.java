@@ -26,7 +26,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -111,13 +110,13 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		}
 
 		@Override
-		public RemoveByQueryTxOrNot<T> matching(final Query query) {
+		public TerminatingRemoveByQuery<T> matching(final Query query) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}
 
 		@Override
-		public RemoveByQueryWithQuery<T> inCollection(final String collection) {
+		public RemoveByQueryWithOptions<T> inCollection(final String collection) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope,
 					collection != null ? collection : this.collection, options);
 		}
@@ -151,12 +150,6 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
 			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
 					scope != null ? scope : this.scope, collection, options);
-		}
-
-		@Override
-		public RemoveByQueryWithConsistency<T> transaction() {
-			return new ReactiveRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
 		}
 
 	}

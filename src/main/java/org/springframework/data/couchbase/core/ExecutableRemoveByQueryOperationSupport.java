@@ -71,7 +71,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		}
 
 		@Override
-		public RemoveByQueryWithTxOrNot<T> matching(final Query query) {
+		public TerminatingRemoveByQuery<T> matching(final Query query) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
 					options);
 		}
@@ -106,12 +106,6 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		public RemoveByQueryInCollection<T> inScope(final String scope) {
 			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency,
 					scope != null ? scope : this.scope, collection, options);
-		}
-
-		@Override
-		public TerminatingRemoveByQuery<T> transaction() {
-			return new ExecutableRemoveByQuerySupport<>(template, domainType, query, scanConsistency, scope, collection,
-					options);
 		}
 
 	}

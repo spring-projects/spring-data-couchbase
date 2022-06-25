@@ -21,9 +21,9 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteriaDefinition;
 import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
+import org.springframework.data.couchbase.core.support.WithConsistency;
 import org.springframework.data.couchbase.core.support.WithQuery;
 import org.springframework.data.couchbase.core.support.WithQueryOptions;
-import org.springframework.data.couchbase.core.support.WithTransaction;
 
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -56,58 +56,32 @@ public interface ExecutableRemoveByQueryOperation {
 	}
 
 	/**
+	 * Fluent methods to specify the query
+	 *
+	 * @param <T> the entity type.
+	 */
+	interface RemoveByQueryWithQuery<T> extends TerminatingRemoveByQuery<T>, WithQuery<T> {
+
+		TerminatingRemoveByQuery<T> matching(Query query);
+
+		default TerminatingRemoveByQuery<T> matching(QueryCriteriaDefinition criteria) {
+			return matching(Query.query(criteria));
+		}
+
+	}
+
+	/**
 	 * Fluent method to specify options.
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface RemoveByQueryWithOptions<T> extends TerminatingRemoveByQuery<T>, WithQueryOptions<RemoveResult> {
+	interface RemoveByQueryWithOptions<T> extends RemoveByQueryWithQuery<T>, WithQueryOptions<RemoveResult> {
 		/**
 		 * Fluent method to specify options to use for execution
 		 *
 		 * @param options to use for execution
 		 */
-		TerminatingRemoveByQuery<T> withOptions(QueryOptions options);
-	}
-
-	@Deprecated
-	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryWithOptions<T> {
-
-		@Deprecated
-		RemoveByQueryWithOptions<T> consistentWith(QueryScanConsistency scanConsistency);
-
-	}
-
-	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>/*, WithConsistency<T> */{
-		//@Override
-		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
-
-	}
-
-	/**
-	 * Fluent method to specify the transaction
-	 *
-	 * @param <T> the entity type to use for the results.
-	 */
-	interface RemoveByQueryWithTransaction<T> extends TerminatingRemoveByQuery<T>, WithTransaction<RemoveResult> {
-		@Override
-		TerminatingRemoveByQuery<T> transaction();
-	}
-
-	interface RemoveByQueryWithTxOrNot<T> extends RemoveByQueryWithConsistency<T>, RemoveByQueryWithTransaction<T> {}
-
-	/**
-	 * Fluent methods to specify the query
-	 *
-	 * @param <T> the entity type.
-	 */
-	interface RemoveByQueryWithQuery<T> extends RemoveByQueryWithTxOrNot<T>, WithQuery<T> {
-
-		RemoveByQueryWithTxOrNot<T> matching(Query query);
-
-		default RemoveByQueryWithTxOrNot<T> matching(QueryCriteriaDefinition criteria) {
-			return matching(Query.query(criteria));
-		}
-
+		RemoveByQueryWithQuery<T> withOptions(QueryOptions options);
 	}
 
 	/**
@@ -115,13 +89,13 @@ public interface ExecutableRemoveByQueryOperation {
 	 *
 	 * @param <T> the entity type to use for the results.
 	 */
-	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithQuery<T>, InCollection<Object> {
+	interface RemoveByQueryInCollection<T> extends RemoveByQueryWithOptions<T>, InCollection<Object> {
 		/**
 		 * With a different collection
 		 *
 		 * @param collection the collection to use.
 		 */
-		RemoveByQueryWithQuery<T> inCollection(String collection);
+		RemoveByQueryWithOptions<T> inCollection(String collection);
 	}
 
 	/**
@@ -138,11 +112,25 @@ public interface ExecutableRemoveByQueryOperation {
 		RemoveByQueryInCollection<T> inScope(String scope);
 	}
 
+	@Deprecated
+	interface RemoveByQueryConsistentWith<T> extends RemoveByQueryInScope<T> {
+
+		@Deprecated
+		RemoveByQueryInScope<T> consistentWith(QueryScanConsistency scanConsistency);
+
+	}
+
+	interface RemoveByQueryWithConsistency<T> extends RemoveByQueryConsistentWith<T>, WithConsistency<T> {
+		@Override
+		RemoveByQueryConsistentWith<T> withConsistency(QueryScanConsistency scanConsistency);
+
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type.
 	 */
-	interface ExecutableRemoveByQuery<T> extends RemoveByQueryInScope<T> {}
+	interface ExecutableRemoveByQuery<T> extends RemoveByQueryWithConsistency<T> {}
 
 }

@@ -29,7 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,6 +43,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -53,21 +53,17 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
-
 /**
- * Tests for Spring's TransactionTemplate, used CouchbaseCallbackTransactionManager, using template methods
- * (findById etc.)
+ * Tests for Spring's TransactionTemplate, used CouchbaseCallbackTransactionManager, using template methods (findById
+ * etc.)
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
 public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	TransactionTemplate template;
-	@Autowired
-	CouchbaseCallbackTransactionManager transactionManager;
+	@Autowired CouchbaseCallbackTransactionManager transactionManager;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired CouchbaseTemplate ops;
 	Person WalterWhite;
@@ -172,9 +168,8 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(status -> {
-			List<RemoveResult> removed = ops.removeByQuery(Person.class)
-					.matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			List<RemoveResult> removed = ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 			assertEquals(1, removed.size());
 		});
 
@@ -189,9 +184,8 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		Person person = ops.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(status -> {
-			List<Person> found = ops.findByQuery(Person.class)
-					.matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			List<Person> found = ops.findByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 			assertEquals(1, found.size());
 		});
 
@@ -259,8 +253,8 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 			throw new SimulateFailureException();
 		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
@@ -277,8 +271,8 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {
 			attempts.incrementAndGet();
-			ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname()))
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			ops.findByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all();
 			throw new SimulateFailureException();
 		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 

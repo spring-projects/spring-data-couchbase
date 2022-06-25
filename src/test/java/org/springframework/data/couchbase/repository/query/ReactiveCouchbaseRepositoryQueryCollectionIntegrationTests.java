@@ -55,9 +55,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  *
  * @author Michael Reiche
  */
-@SpringJUnitConfig(Config.class)
-@IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(CollectionsConfig.class)
+@IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;

@@ -195,12 +195,6 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 					durabilityLevel, cas);
 		}
 
-		@Override
-		public RemoveByIdWithCas transaction() {
-			return new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
-		}
-
 	}
 
 }

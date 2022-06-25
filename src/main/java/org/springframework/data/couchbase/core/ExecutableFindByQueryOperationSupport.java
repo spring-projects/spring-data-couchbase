@@ -96,7 +96,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public FindByQueryTxOrNot<T> matching(final Query query) {
+		public TerminatingFindByQuery<T> matching(final Query query) {
 			QueryScanConsistency scanCons;
 			if (query.getScanConsistency() != null) {
 				scanCons = query.getScanConsistency();
@@ -121,7 +121,7 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 		}
 
 		@Override
-		public <R> FindByQueryWithQuery<R> as(final Class<R> returnType) {
+		public <R> FindByQueryWithConsistency<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, distinctFields, fields);
@@ -145,12 +145,6 @@ public class ExecutableFindByQueryOperationSupport implements ExecutableFindByQu
 			String[] dFields = distinctFields.length == 1 && "-".equals(distinctFields[0]) ? null : distinctFields;
 			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options, dFields, fields);
-		}
-
-		@Override
-		public FindByQueryWithDistinct<T> transaction() {
-			return new ExecutableFindByQuerySupport<>(template, domainType, returnType, query, scanConsistency, scope,
-					collection, options, distinctFields, fields);
 		}
 
 		@Override

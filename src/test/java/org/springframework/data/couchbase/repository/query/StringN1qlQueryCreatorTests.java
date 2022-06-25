@@ -29,6 +29,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
@@ -71,31 +72,11 @@ class StringN1qlQueryCreatorTests {
 				converter.getMappingContext());
 
 		try {
-			Airline modified = couchbaseTemplate.upsertById(Airline.class).one(airline);
-
-			String input = "getByName";
-			Method method = AirlineRepository.class.getMethod(input, String.class);
-
-			CouchbaseQueryMethod queryMethod = new CouchbaseQueryMethod(method,
-					new DefaultRepositoryMetadata(AirlineRepository.class), new SpelAwareProxyProjectionFactory(),
-					converter.getMappingContext());
-
-			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Continental"),
-					queryMethod, converter, config().bucketname(), new SpelExpressionParser(),
-					QueryMethodEvaluationContextProvider.DEFAULT, namedQueries);
-
-			Query query = creator.createQuery();
-
-			ExecutableFindByQuery q = (ExecutableFindByQuery) couchbaseTemplate.findByQuery(Airline.class).matching(query)
-					.withConsistency(QueryScanConsistency.REQUEST_PLUS);
-
-			Optional<Airline> al = q.one();
-			assertEquals(airline.toString(), al.get().toString());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
-		} finally {
-			couchbaseTemplate.removeById().one(airline.getId());
+			StringN1qlQueryCreator creator = new StringN1qlQueryCreator(getAccessor(getParameters(method), "Oliver"),
+					queryMethod, converter, new SpelExpressionParser(), QueryMethodEvaluationContextProvider.DEFAULT,
+					namedQueries);
+		} catch (IllegalArgumentException e) {
+			return;
 		}
 		fail("should have failed with IllegalArgumentException: Invalid number of parameters given!");
 	}

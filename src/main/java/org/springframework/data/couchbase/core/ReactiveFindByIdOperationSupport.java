@@ -154,7 +154,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public FindByIdWithOptions<T> project(String... fields) {
+		public FindByIdInCollection<T> project(String... fields) {
 			Assert.notNull(fields, "Fields must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
 					expiry,
@@ -163,12 +163,6 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
-					support);
-		}
-
-		@Override
-		public FindByIdWithProjection<T> transaction() {
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry,
 					support);
 		}

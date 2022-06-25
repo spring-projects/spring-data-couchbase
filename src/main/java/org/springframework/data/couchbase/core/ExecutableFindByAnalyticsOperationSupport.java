@@ -123,7 +123,7 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 		}
 
 		@Override
-		public <R> FindByAnalyticsWithQuery<R> as(final Class<R> returnType) {
+		public <R> FindByAnalyticsWithConsistency<R> as(final Class<R> returnType) {
 			Assert.notNull(returnType, "returnType must not be null!");
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options);

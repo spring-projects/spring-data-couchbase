@@ -18,7 +18,7 @@ package org.springframework.data.couchbase.transaction.error;
 import org.springframework.dao.UncategorizedDataAccessException;
 
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
-import com.couchbase.client.core.error.transaction.internal.WrappedTransactionOperationFailedException;
+//import com.couchbase.client.core.error.transaction.internal.WrappedTransactionOperationFailedException;
 
 /**
  * An opaque signal that something went wrong during the execution of an operation inside a transaction.
@@ -28,7 +28,7 @@ import com.couchbase.client.core.error.transaction.internal.WrappedTransactionOp
  * Internal state has been set that ensures that the transaction will act appropriately (including rolling
  * back and retrying if necessary) regardless of what the application does with this exception.
  */
-public class UncategorizedTransactionDataAccessException extends UncategorizedDataAccessException implements WrappedTransactionOperationFailedException {
+public class UncategorizedTransactionDataAccessException extends UncategorizedDataAccessException implements WrappedTransactionOperationFailedException  {
     private final TransactionOperationFailedException internal;
 
     public UncategorizedTransactionDataAccessException(TransactionOperationFailedException err) {
