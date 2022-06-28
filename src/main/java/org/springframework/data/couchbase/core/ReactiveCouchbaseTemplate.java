@@ -54,14 +54,17 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 	private final QueryScanConsistency scanConsistency;
 
-	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-			final CouchbaseConverter converter) {
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService(), null);
 	}
 
-	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-			final CouchbaseConverter converter, final TranslationService translationService,
-			final QueryScanConsistency scanConsistency) {
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+																	 final TranslationService translationService) {
+		this(clientFactory, converter, translationService, null);
+	}
+
+	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+			final TranslationService translationService, final QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.exceptionTranslator = clientFactory.getExceptionTranslator();
@@ -70,7 +73,13 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	public <T> Mono<T> save(T entity) {
+		return save(entity, null, null);
+	}
+
+	public <T> Mono<T> save(T entity, String... scopeAndCollection) {
 		Assert.notNull(entity, "Entity must not be null!");
+		String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
+		String collection = scopeAndCollection.length > 1 ? scopeAndCollection[1] : null;
 		Mono<T> result;
 		final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
 				.getPersistentEntity(entity.getClass());
@@ -84,13 +93,18 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 
 		if (!versionPresent) { // the entity doesn't have a version property
 			// No version field - no cas
-			result = (Mono<T>) upsertById(clazz).one(entity);
+			// If in a transaction, insert is the only thing that will work
+			if (TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent()) {
+				result = (Mono<T>) insertById(clazz).inScope(scope).inCollection(collection).one(entity);
+			} else { // if not in a tx, then upsert will work
+				result = (Mono<T>) upsertById(clazz).inScope(scope).inCollection(collection).one(entity);
+			}
 		} else if (existingDocument) { // there is a version property, and it is non-zero
 			// Updating existing document with cas
-			result = (Mono<T>) replaceById(clazz).one(entity);
+			result = (Mono<T>) replaceById(clazz).inScope(scope).inCollection(collection).one(entity);
 		} else { // there is a version property, but it's zero or not set.
 			// Creating new document
-			result = (Mono<T>) insertById(clazz).one(entity);
+			result = (Mono<T>) insertById(clazz).inScope(scope).inCollection(collection).one(entity);
 		}
 		return result;
 	}
@@ -233,57 +247,4 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		return scanConsistency;
 	}
 
-	/**
-	 * Value object chaining together a given source document with its mapped representation and the collection to persist
-	 * it to.
-	 *
-	 * @param <T>
-	 * @author Christoph Strobl
-	 * @since 2.2
-	 */
-	/*
-	private static class PersistableEntityModel<T> {
-	
-		private final T source;
-		private final @Nullable
-		Document target;
-		private final String collection;
-	
-		private PersistableEntityModel(T source, @Nullable Document target, String collection) {
-	
-			this.source = source;
-			this.target = target;
-			this.collection = collection;
-		}
-	
-		static <T> PersistableEntityModel<T> of(T source, String collection) {
-			return new PersistableEntityModel<>(source, null, collection);
-		}
-	
-		static <T> PersistableEntityModel<T> of(T source, Document target, String collection) {
-			return new PersistableEntityModel<>(source, target, collection);
-		}
-	
-		PersistableEntityModel<T> mutate(T source) {
-			return new PersistableEntityModel(source, target, collection);
-		}
-	
-		PersistableEntityModel<T> addTargetDocument(Document target) {
-			return new PersistableEntityModel(source, target, collection);
-		}
-	
-		T getSource() {
-			return source;
-		}
-	
-		@Nullable
-		Document getTarget() {
-			return target;
-		}
-	
-		String getCollection() {
-			return collection;
-		}
-	
-	 */
 }

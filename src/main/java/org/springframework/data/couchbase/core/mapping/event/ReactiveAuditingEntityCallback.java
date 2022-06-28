@@ -31,6 +31,7 @@ import org.springframework.util.Assert;
 
 /**
  * Reactive {@link EntityCallback} to populate auditing related fields on an entity about to be saved. Based on <a href=
+ * "https://github.com/spring-projects/spring-data-mongodb/blob/3.1.6/spring-data-mongodb/src/main/java/org/springframework/data/mongodb/core/mapping/event/ReactiveAfterConvertCallback.java">ReactiveAfterConvertCallback</a>
  *
  * @author Jorge Rodríguez Martín
  * @authoer Michael Reiche

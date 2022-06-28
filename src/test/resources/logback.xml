@@ -22,7 +22,7 @@
      - log additional debug info during automatic index creation
     -->
 
-    <logger name="org.springframework.data.couchbase.core" level="trace"/>"
+    <logger name="org.springframework.data.couchbase.core" level="debug"/>"
     <logger name="org.springframework.data.couchbase.repository.query" level="debug"/>
     <logger name="org.springframework.data.couchbase.repository.query.SpatialViewQueryCreator" level="trace"/>
     <logger name="org.springframework.data.couchbase.repository.query.StringN1qlBasedQuery" level="trace"/>

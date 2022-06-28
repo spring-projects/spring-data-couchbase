@@ -19,10 +19,11 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
+ * ReactiveTemplateSupport
+ *
  * @author Michael Reiche
  */
 public interface ReactiveTemplateSupport {
@@ -30,16 +31,10 @@ public interface ReactiveTemplateSupport {
 	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
 	<T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-							 TransactionResultHolder txResultHolder);
-
-	<T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-			TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder);
+			Object txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-							TransactionResultHolder txResultHolder);
-
-	<T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-			TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder);
+			Object txResultHolder, CouchbaseResourceHolder holder);
 
 	Long getCas(Object entity);
 

@@ -1,6 +1,6 @@
 /*
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2021-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 package com.couchbase.client.java.transactions;
-
-import java.lang.reflect.Field;
 
 import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;

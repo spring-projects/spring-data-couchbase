@@ -40,7 +40,6 @@ import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.CollectionsConfig;
-import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
 import org.springframework.data.couchbase.domain.UserColRepository;
@@ -290,8 +289,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
-					.all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionAnnotated> users = userSubmissionAnnotatedRepository.findByUsername(user.getUsername());
@@ -345,8 +343,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			address1 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address1);
 			address2 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address2);
 			address3 = couchbaseTemplate.insertById(AddressAnnotated.class).inScope(scopeName).one(address3);
-			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
-					.all();
+			couchbaseTemplate.findByQuery(AddressAnnotated.class).withConsistency(REQUEST_PLUS).inScope(scopeName).all();
 
 			// scope for AddressesAnnotated in N1qlJoin comes from userSubmissionAnnotatedRepository.
 			List<UserSubmissionUnannotated> users = userSubmissionUnannotatedRepository.findByUsername(user.getUsername());

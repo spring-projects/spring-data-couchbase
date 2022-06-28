@@ -69,8 +69,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @SpringJUnitConfig(Config.class)
 class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
-	@Autowired
-	public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
 	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
@@ -137,8 +136,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.upsertById(User.class).all(Arrays.asList(user1, user2, specialUser));
 
 		Query specialUsers = new Query(QueryCriteria.where(i("firstname")).like("special"));
-		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).matching(specialUsers)
-				.all();
+		final List<User> foundUsers = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
+				.matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());
 	}
@@ -151,8 +150,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		ado = couchbaseTemplate.upsertById(AssessmentDO.class).one(ado);
 
 		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
-		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class).withConsistency(REQUEST_PLUS)
-				.matching(specialUsers).all();
+		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
+				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
 		assertEquals("123", foundUsers.get(0).getId(), "id");
 		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
 		assertEquals(ado, foundUsers.get(0));
@@ -346,8 +345,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.query(QueryCriteria.where("iata").isNotNull());
 			Pageable pageableWithSort = PageRequest.of(0, 7, Sort.by("iata"));
 			query.with(pageableWithSort);
-			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).matching(query)
-					.all();
+			List<Airport> airports = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS)
+					.matching(query).all();
 
 			String[] sortedIatas = iatas.clone();
 			System.out.println("" + iatas.length + " " + sortedIatas.length);

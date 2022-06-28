@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,12 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 /**
  * Tests for regular SDK transactions, where Spring operations that aren't supported in a transaction are being used.
  * They should be prevented at runtime.
+ *
+ * @Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = {TransactionsConfig.class, SDKTransactionsNonAllowableOperationsIntegrationTests.PersonService.class})
+@SpringJUnitConfig(
+		classes = { TransactionsConfig.class, SDKTransactionsNonAllowableOperationsIntegrationTests.PersonService.class })
 public class SDKTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -116,8 +119,7 @@ public class SDKTransactionsNonAllowableOperationsIntegrationTests extends JavaI
 	// This is intentionally not a @Transactional service
 	@Service
 	@Component
-	static
-	class PersonService {
+	static class PersonService {
 		final CouchbaseOperations personOperations;
 
 		public PersonService(CouchbaseOperations ops) {

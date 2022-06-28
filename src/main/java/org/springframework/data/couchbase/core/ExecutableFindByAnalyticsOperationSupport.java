@@ -85,7 +85,7 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 		}
 
 		@Override
-		public FindByAnalyticsWithConsistency<T> matching(final AnalyticsQuery query) {
+		public TerminatingFindByAnalytics<T> matching(final AnalyticsQuery query) {
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection, options);
 		}
@@ -104,7 +104,7 @@ public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFind
 		}
 
 		@Override
-		public FindByAnalyticsWithProjection<T> inCollection(final String collection) {
+		public FindByAnalyticsWithConsistency<T> inCollection(final String collection) {
 			return new ExecutableFindByAnalyticsSupport<>(template, domainType, returnType, query, scanConsistency, scope,
 					collection != null ? collection : this.collection, options);
 		}

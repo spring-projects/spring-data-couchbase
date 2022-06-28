@@ -27,7 +27,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -51,7 +50,13 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
 
+/**
+ * Methods for building Options objects for Couchbae APIs.
+ *
+ * @author Michael Reiche
+ */
 public class OptionsBuilder {
 
 	private static final Logger LOG = LoggerFactory.getLogger(OptionsBuilder.class);
@@ -72,8 +77,8 @@ public class OptionsBuilder {
 		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
 				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
 				: null;
-		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(), getScanConsistency(optsJson),
-				scanConsistency, metaQueryScanConsistency);
+		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(),
+				getScanConsistency(optsJson), scanConsistency, metaQueryScanConsistency);
 		Duration timeout = fromFirst(Duration.ofSeconds(0), getTimeout(optsBuilt), meta.get(TIMEOUT));
 		RetryStrategy retryStrategy = fromFirst(null, getRetryStrategy(optsBuilt), meta.get(RETRY_STRATEGY));
 
@@ -86,8 +91,8 @@ public class OptionsBuilder {
 		if (retryStrategy != null) {
 			options.retryStrategy(retryStrategy);
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("query options: {}", getQueryOpts(options.build()));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("query options: {}", getQueryOpts(options.build()));
 		}
 		return options;
 	}
@@ -106,8 +111,8 @@ public class OptionsBuilder {
 			txOptions.raw(entry.getKey(), entry.getValue());
 		}
 
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("query options: {}", optsJson);
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("query options: {}", optsJson);
 		}
 		return txOptions;
 	}
@@ -130,8 +135,8 @@ public class OptionsBuilder {
 		} else if (doc.getExpiration() != 0) {
 			options.expiry(Duration.ofSeconds(doc.getExpiration()));
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("insert options: {}" + toString(options));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("insert options: {}" + toString(options));
 		}
 		return options;
 	}
@@ -149,8 +154,8 @@ public class OptionsBuilder {
 		} else if (doc.getExpiration() != 0) {
 			options.expiry(Duration.ofSeconds(doc.getExpiration()));
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("upsert options: {}" + toString(options));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("upsert options: {}" + toString(options));
 		}
 		return options;
 	}
@@ -171,8 +176,8 @@ public class OptionsBuilder {
 		if (cas != null) {
 			options.cas(cas);
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("replace options: {}" + toString(options));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("replace options: {}" + toString(options));
 		}
 		return options;
 	}
@@ -198,14 +203,14 @@ public class OptionsBuilder {
 		if (cas != null) {
 			options.cas(cas);
 		}
-		if (LOG.isTraceEnabled()) {
-			LOG.trace("remove options: {}", toString(options));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("remove options: {}", toString(options));
 		}
 		return options;
 	}
 
 	/**
-	 * scope annotation could be a
+	 * scope annotation
 	 * 
 	 * @param domainType
 	 * @return
@@ -221,6 +226,12 @@ public class OptionsBuilder {
 		return null;
 	}
 
+	/**
+	 * collection annotation
+	 *
+	 * @param domainType
+	 * @return
+	 */
 	public static String getCollectionFrom(Class<?> domainType) {
 		if (domainType == null) {
 			return null;

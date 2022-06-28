@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.lang.reflect.InaccessibleObjectException;
 import java.util.Map;
 import java.util.Set;
 
+import com.couchbase.client.core.annotation.Stability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -32,7 +33,6 @@ import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.context.MappingContext;
@@ -41,6 +41,13 @@ import org.springframework.util.ClassUtils;
 
 import com.couchbase.client.core.error.CouchbaseException;
 
+
+/**
+ * Base shared by Reactive and non-Reactive TemplateSupport
+ *
+ * @author Michael Reiche
+ */
+@Stability.Internal
 public abstract class AbstractTemplateSupport {
 
 	final ReactiveCouchbaseTemplate template;
@@ -61,7 +68,7 @@ public abstract class AbstractTemplateSupport {
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	public <T> T decodeEntityBase(String id, String source, Long cas, Class<T> entityClass, String scope,
-			String collection, TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
 
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
 		// we will reset it after reading the document
@@ -142,7 +149,7 @@ public abstract class AbstractTemplateSupport {
 	}
 
 	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
-			TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
+			Object txResultHolder, CouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
 		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()

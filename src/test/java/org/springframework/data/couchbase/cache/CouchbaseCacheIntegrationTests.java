@@ -36,8 +36,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.java.query.QueryOptions;
-
 /**
  * CouchbaseCache tests Theses tests rely on a cb server running.
  *
@@ -69,8 +67,6 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		cache.clear();
 		super.afterEach();
 	}
-
-
 
 	@Test
 	void cachePutGet() {
@@ -126,7 +122,6 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		assertEquals(user1, cache.putIfAbsent(user1.getId(), user2).get()); // should not put user2, should return user1
 		assertEquals(user1, cache.get(user1.getId()).get()); // user1.getId() is still user1
 	}
-
 
 	@Test // this WORKS
 	public void clearWithDelayOk() throws InterruptedException {

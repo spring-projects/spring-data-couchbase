@@ -358,7 +358,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Test
 	public void saveNotBoundedWithDefaultRepository() {
-		if (!config().isUsingCloud()) {
+		if (config().isUsingCloud()) { // I don't think the query following the insert will be quick enough for the test
 			return;
 		}
 		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
@@ -368,16 +368,15 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
 				.getBean("airportRepositoryScanConsistencyTest");
 
-		List<Airport> sizeBeforeTest = airportRepositoryRP.findAll();
+		List<Airport> sizeBeforeTest = (List<Airport>)airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
 		boolean notFound = false;
 		for (int i = 0; i < 100; i++) {
 			Airport vie = new Airport("airports::vie", "vie", "low9");
 			Airport saved = airportRepositoryRP.save(vie);
-			List<Airport> allSaved = airportRepositoryRP.findAll();
+			List<Airport> allSaved = (List<Airport>)airportRepositoryRP.findAll();
 			couchbaseTemplate.removeById(Airport.class).one(saved.getId());
-			System.err.println(i);
 			if (allSaved.isEmpty()) {
 				notFound = true;
 				break;
@@ -543,7 +542,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			// set version == 0 so save() will be an upsert, not a replace
 			Airport saved = airportRepository.save(vie.clearVersion());
 			try {
-				airport2 = airportRepository.withOptions(queryOptions().scanConsistency(QueryScanConsistency.NOT_BOUNDED))
+				airport2 = airportRepository.withOptions(queryOptions().scanConsistency(NOT_BOUNDED))
 						.iata(saved.getIata());
 				if (airport2 == null) {
 					break;

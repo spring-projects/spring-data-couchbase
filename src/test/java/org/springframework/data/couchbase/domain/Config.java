@@ -60,7 +60,7 @@ import com.couchbase.client.java.json.JacksonTransformers;
 @EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableCaching
 public class Config extends AbstractCouchbaseConfiguration {
-	String bucketname = "test";
+	String bucketname = "travel-sample";
 	String username = "Administrator";
 	String password = "password";
 	String connectionString = "127.0.0.1";
@@ -239,14 +239,15 @@ public class Config extends AbstractCouchbaseConfiguration {
 		return "t"; // this will override '_class', is passed in to new CustomMappingCouchbaseConverter
 	}
 
+	static String scopeName = null;
+
 	@Override
 	protected String getScopeName() {
 		return scopeName;
 	}
 
-	static public void setScopeName(String scopeName) {
+	public static void setScopeName(String scopeName) {
 		Config.scopeName = scopeName;
 	}
 
-	static private String scopeName = null;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,24 @@
  */
 package org.springframework.data.couchbase.transactions.util;
 
-import org.springframework.data.couchbase.core.TransactionalSupport;
-import org.springframework.transaction.NoTransactionException;
-import reactor.core.publisher.Mono;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.springframework.data.couchbase.core.TransactionalSupport;
+
 /**
  * Utility methods for transaction tests.
+ *
+ * @author Graham Pople
  */
 public class TransactionTestUtil {
-    private TransactionTestUtil() {}
+	private TransactionTestUtil() {}
 
-    public static void assertInTransaction() {
-        assertTrue(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
-    }
+	public static void assertInTransaction() {
+		assertTrue(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
+	}
 
-    public static void assertNotInTransaction() {
-        assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
-    }
+	public static void assertNotInTransaction() {
+		assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
+	}
 }

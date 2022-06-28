@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -82,10 +81,10 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline", null);
 		// save the document - we don't care how on this call
 		reactiveAirlineRepository.save(airline).block();
-		reactiveAirlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
+		reactiveAirlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or
+																											// replace.
 		reactiveAirlineRepository.delete(airline).block();
 	}
-
 
 	@Test
 	void saveAndFindById() {

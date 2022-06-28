@@ -19,7 +19,7 @@
 
     <properties>
         <couchbase>3.3.2-SNAPSHOT</couchbase>
-        <couchbase.osgi>3.3.1</couchbase.osgi>
+        <couchbase.osgi>3.3.2-SNAPSHOT</couchbase.osgi>
         <springdata.commons>3.0.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <jodatime>2.10.13</jodatime>
@@ -233,17 +233,6 @@
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.5</version>
-            <scope>compile</scope>
-        </dependency>
 
     </dependencies>
 
@@ -262,12 +251,10 @@
                 <enabled>false</enabled>
             </releases>
         </repository>
-<!--
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
--->
     </repositories>
 
     <pluginRepositories>

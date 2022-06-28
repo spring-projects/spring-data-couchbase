@@ -27,13 +27,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import com.couchbase.client.core.env.SecurityConfig;
-import com.couchbase.client.core.service.Service;
-import com.couchbase.client.java.ClusterOptions;
-import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
-import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,9 +46,13 @@ import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 
 /**
  * Parent class which drives all dynamic integration tests based on the configured cluster setup.
+ *
+ * @author Michael Reiche
  *
  * @since 2.0.0
  */

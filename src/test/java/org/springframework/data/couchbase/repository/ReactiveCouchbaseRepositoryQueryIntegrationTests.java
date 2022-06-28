@@ -106,7 +106,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 			jfk = new Airport("airports::jfk", "JFK", "xxxx");
 			reactiveAirportRepository.save(jfk).block();
 
-			List<String> all = reactiveAirportRepository.findIdByDynamicN1ql("","").toStream().collect(Collectors.toList());
+			List<String> all = reactiveAirportRepository.findIdByDynamicN1ql("", "").toStream().collect(Collectors.toList());
 			System.out.println(all);
 			assertFalse(all.isEmpty());
 			assertTrue(all.stream().anyMatch(a -> a.equals("airports::vie")));

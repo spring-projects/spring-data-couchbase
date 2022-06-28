@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,10 +55,9 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 			reactiveTemplate = (ReactiveCouchbaseTemplate) ((ReactiveCouchbaseRepository) this.target).getOperations();
 			this.entityInformation = ((ReactiveCouchbaseRepository<?, String>) this.target).getEntityInformation();
 		} else {
-			if( CouchbaseRepository.class.isAssignableFrom(target.getClass()))
-				System.err.println("isAssignable");
-			printInterfaces(target.getClass(), "  ");
-			throw new RuntimeException("Unknown target type: " + target.getClass());
+			throw new RuntimeException("Unknown target type: " + target.getClass()
+					+ " CouchbaseRepository.class.isAssignable:" + CouchbaseRepository.class.isAssignableFrom(target.getClass())
+					+ " " + dumpInterfaces(target.getClass(), "  "));
 		}
 		this.options = options;
 		this.collection = collection;
@@ -66,15 +65,18 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 		this.repositoryClass = target.getClass();
 	}
 
-	void printInterfaces(Class clazz, String tab){
-		System.out.println(tab+"{");
-		for(Class c:clazz.getInterfaces()){
-			System.out.println(tab+"  " +c.getSimpleName());
-			if(c.getInterfaces().length > 0)
-				printInterfaces(c, tab+"  ");
+	String dumpInterfaces(Class clazz, String tab) {
+		StringBuffer sb = new StringBuffer();
+		sb.append(tab + "{");
+		for (Class c : clazz.getInterfaces()) {
+			sb.append(tab + "  " + c.getSimpleName());
+			if (c.getInterfaces().length > 0)
+				sb.append(dumpInterfaces(c, tab + "  "));
 		}
-		System.out.println(tab+"}");
+		sb.append(tab + "}");
+		return sb.toString();
 	}
+
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 

@@ -32,6 +32,11 @@ import org.springframework.util.Assert;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.ExistsResult;
 
+/**
+ * ReactiveExistsById Support
+ *
+ * @author Michael Reiche
+ */
 public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
@@ -72,12 +77,11 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 
 		@Override
 		public Mono<Boolean> one(final String id) {
-			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options,
-          domainType);
-			LOG.trace("existsById key={} {}", id, pArgs);
-
-			return TransactionalSupport.verifyNotInTransaction("existsById")
-					.then(Mono.just(id))
+			PseudoArgs<ExistsOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("existsById key={} {}", id, pArgs);
+			}
+			return TransactionalSupport.verifyNotInTransaction("existsById").then(Mono.just(id))
 					.flatMap(docId -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive().exists(id, buildOptions(pArgs.getOptions()))
 							.map(ExistsResult::exists))
@@ -107,7 +111,7 @@ public class ReactiveExistsByIdOperationSupport implements ReactiveExistsByIdOpe
 		}
 
 		@Override
-		public ExistsByIdInScope withOptions(final ExistsOptions options) {
+		public TerminatingExistsById withOptions(final ExistsOptions options) {
 			Assert.notNull(options, "Options must not be null.");
 			return new ReactiveExistsByIdSupport(template, domainType, scope, collection, options);
 		}

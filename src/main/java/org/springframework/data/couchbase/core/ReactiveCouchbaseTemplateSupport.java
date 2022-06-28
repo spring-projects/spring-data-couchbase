@@ -16,18 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import com.couchbase.client.core.error.CouchbaseException;
-import org.springframework.data.couchbase.core.support.TemplateUtils;
-import reactor.core.publisher.Mono;
-
-import java.lang.reflect.InaccessibleObjectException;
-import java.util.Map;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
-import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
 import org.springframework.beans.BeansException;
@@ -40,6 +28,7 @@ import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterConvertCallback;
 import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeConvertCallback;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.util.Assert;
@@ -48,6 +37,7 @@ import org.springframework.util.Assert;
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
  *
  * @author Carlos Espinaco
+ * @author Michael Reiche
  * @since 4.2
  */
 class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
@@ -57,7 +47,7 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	private ReactiveEntityCallbacks reactiveEntityCallbacks;
 
 	public ReactiveCouchbaseTemplateSupport(final ReactiveCouchbaseTemplate template, final CouchbaseConverter converter,
-											final TranslationService translationService) {
+			final TranslationService translationService) {
 		super(template, converter, translationService);
 		this.template = template;
 	}
@@ -79,30 +69,17 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-									TransactionResultHolder txResultHolder) {
-		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
-	}
-
-	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-									TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
-		return Mono.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
-	}
-
-
-	@Override
-	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-								   TransactionResultHolder txResultHolder) {
-		return applyResult(entity, converted, id, cas, txResultHolder, null);
+	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope,
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono
+				.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-								   TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
+			Object txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
 	}
-
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

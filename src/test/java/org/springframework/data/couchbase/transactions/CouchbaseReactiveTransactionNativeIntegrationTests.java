@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +38,8 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -56,7 +55,7 @@ import org.springframework.transaction.reactive.TransactionalOperator;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
-public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTests {
+public class CouchbaseReactiveTransactionNativeIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactivePersonRepository rxRepo;
@@ -89,8 +88,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		TransactionTestUtil.assertNotInTransaction();
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 		List<Person> p0 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<Person> p1 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
 				.all();
@@ -112,7 +111,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.findById(Person.class).one(person.id())
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class,
+				SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -133,7 +133,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxCBTmpl.insertById(Person.class).one(person)
 				.flatMap(p -> rxCBTmpl.replaceById(Person.class).one(p.withFirstName("Walt")))
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class,
+				SimulateFailureException.class);
 		Person pFound = rxCBTmpl.findById(Person.class).inCollection(cName).one(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}
@@ -144,7 +145,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).findById(person.id())
 				.flatMap(p -> rxRepo.withCollection(cName).save(p.withFirstName("Walt")))
 				.flatMap(it -> Mono.error(new SimulateFailureException())));
-		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class,
+				SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertEquals(person, pFound, "Should have found " + person);
 	}
@@ -154,7 +156,8 @@ public class CouchbaseReactiveTransactionNativeTests extends JavaIntegrationTest
 		Person person = WalterWhite;
 		Flux<Person> result = txOperator.execute((ctx) -> rxRepo.withCollection(cName).save(person) // insert
 				.map(it -> throwSimulateFailureException(it)));
-		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::blockLast, TransactionSystemUnambiguousException.class,
+				SimulateFailureException.class);
 		Person pFound = rxRepo.withCollection(cName).findById(person.id()).block();
 		assertNull(pFound, "Should NOT have found " + pFound);
 	}

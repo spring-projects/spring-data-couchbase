@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,35 +17,27 @@
 package org.springframework.data.couchbase.transactions;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import lombok.Data;
-import org.springframework.data.couchbase.core.RemoveResult;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.core.query.Query;
-import org.springframework.data.couchbase.core.query.QueryCriteria;
+import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -54,13 +46,12 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.Cluster;
-import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for com.couchbase.transactions without using the spring data transactions framework
- * <p>
- * todo gp: these tests are using the `.as(transactionalOperator::transactional)` method which is for the chopping block, so presumably these tests are too
+ * todo gp: these tests are using the `.as(transactionalOperator::transactional)` method which is for the chopping
+ * block, so presumably these tests are too
+ * todo mr: I'm not sure how as(transactionalOperator::transactional) is different than
+ * todo mr: transactionOperator.transaction(...)in CouchbaseTransactionalOperatorTemplateIntegrationTests ?
  *
  * @author Michael Reiche
  */
@@ -136,10 +127,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	}
 
 	@Test
-	/* todo - does this need to be in
-	Caused by: java.lang.UnsupportedOperationException: Return type is Mono or Flux, indicating a reactive transaction
-	is being performed in a blocking way.  A potential cause is the CouchbaseSimpleTransactionInterceptor is not in use.
-	 */
 	public void commitShouldPersistTxEntriesOfTxAnnotatedMethod() {
 
 		personService.declarativeSavePerson(WalterWhite).as(StepVerifier::create) //
@@ -218,7 +205,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.expectNext(1L) //
 				.verifyComplete();
 	}
-
 
 	@Data
 	// @AllArgsConstructor

@@ -57,8 +57,8 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 		private final ReactiveInsertByIdSupport<T> reactiveSupport;
 
 		ExecutableInsertByIdSupport(final CouchbaseTemplate template, final Class<T> domainType, final String scope,
-																final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-																final DurabilityLevel durabilityLevel, final Duration expiry) {
+				final String collection, final InsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+				final DurabilityLevel durabilityLevel, final Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -69,8 +69,7 @@ public class ExecutableInsertByIdOperationSupport implements ExecutableInsertByI
 			this.durabilityLevel = durabilityLevel;
 			this.expiry = expiry;
 			this.reactiveSupport = new ReactiveInsertByIdSupport<>(template.reactive(), domainType, scope, collection,
-					options, persistTo, replicateTo, durabilityLevel, expiry,
-					new NonReactiveSupportWrapper(template.support()));
+					options, persistTo, replicateTo, durabilityLevel, expiry, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override

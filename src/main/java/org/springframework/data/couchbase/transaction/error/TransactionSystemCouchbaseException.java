@@ -17,27 +17,29 @@ package org.springframework.data.couchbase.transaction.error;
 
 import java.util.List;
 
-import com.couchbase.client.core.cnc.events.transaction.TransactionLogEvent;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
 import org.springframework.transaction.TransactionSystemException;
 
+import com.couchbase.client.core.cnc.events.transaction.TransactionLogEvent;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
+
 /**
- * A base class of transaction-level exceptions raised by Couchbase, allowing them to be handled in
- * one place.
+ * A base class of transaction-level exceptions raised by Couchbase, allowing them to be handled in one place.
+ *
+ * @author Graham Pople
  */
 abstract public class TransactionSystemCouchbaseException extends TransactionSystemException {
-    private final TransactionFailedException internal;
+	private final TransactionFailedException internal;
 
-    public TransactionSystemCouchbaseException(TransactionFailedException ex) {
-        super(ex.getMessage(), ex.getCause());
-        this.internal = ex;
-    }
+	public TransactionSystemCouchbaseException(TransactionFailedException ex) {
+		super(ex.getMessage(), ex.getCause());
+		this.internal = ex;
+	}
 
-    /**
-     * An in-memory log is built up during each transaction.  The application may want to write this to their own logs,
-     * for example upon transaction failure.
-     */
-    public List<TransactionLogEvent> logs() {
-        return internal.logs();
-    }
+	/**
+	 * An in-memory log is built up during each transaction. The application may want to write this to their own logs, for
+	 * example upon transaction failure.
+	 */
+	public List<TransactionLogEvent> logs() {
+		return internal.logs();
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
-import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
-import org.springframework.transaction.TransactionManager;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
-import org.springframework.transaction.reactive.TransactionalOperator;
-
 import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -40,13 +34,16 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
 
 /**
  * Tests for com.couchbase.transactions without using the spring data transactions framework
@@ -61,7 +58,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 // form of TransactionalOperator. Also there does not seem to be a need for a CouchbaseTransactionalOperator as
 // TransactionalOperator.create(reactiveCouchbaseTransactionManager) seems to work just fine. (I don't recall what
 // merits the "Native" in the name).
-public class CouchbaseTransactionNativeTests extends JavaIntegrationTests {
+public class CouchbaseTransactionNativeIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired TransactionManager couchbaseTransactionManager;
 	@Autowired PersonRepository repo;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.domain;
 
 import jakarta.validation.constraints.Max;
+
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
@@ -44,8 +45,7 @@ public class Airport extends ComparableEntity {
 
 	@CreatedBy private String createdBy;
 	@Expiration private long expiration;
-	@Max(2)
-	long size;
+	@Max(2) long size;
 	private long someNumber;
 
 	@PersistenceConstructor
@@ -92,11 +92,11 @@ public class Airport extends ComparableEntity {
 		return createdBy;
 	}
 
-	public long getSize(){
+	public long getSize() {
 		return size;
 	}
 
-	public void setSize(long size){
+	public void setSize(long size) {
 		this.size = size;
 	}
 }

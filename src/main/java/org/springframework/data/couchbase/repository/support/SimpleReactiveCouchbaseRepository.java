@@ -63,7 +63,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-											 ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
 		super(entityInformation, repositoryInterface);
 		this.operations = operations;
 	}
@@ -97,27 +97,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 
 	@SuppressWarnings("unchecked")
 	private <S extends T> Mono<S> save(S entity, String scope, String collection) {
-		Assert.notNull(entity, "Entity must not be null!");
-		Mono<S> result;
-		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
-				.getPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
-		final boolean versionPresent = versionProperty != null;
-		final Long version = versionProperty == null || versionProperty.getField() == null ? null
-				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
-		final boolean existingDocument = version != null && version > 0;
-
-		if (!versionPresent) { // the entity doesn't have a version property
-			// No version field - no cas
-			result = (Mono<S>) operations.upsertById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
-		} else if (existingDocument) { // there is a version property, and it is non-zero
-			// Updating existing document with cas
-			result = (Mono<S>) operations.replaceById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
-		} else { // there is a version property, but it's zero or not set.
-			// Creating new document
-			result = (Mono<S>) operations.insertById(getJavaType()).inScope(scope).inCollection(collection).one(entity);
-		}
-		return result;
+		return operations.save(entity, scope, collection);
 	}
 
 	@Override
@@ -214,7 +194,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public Mono<Void> deleteAll(Iterable<? extends T> entities) {
 		return operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-				.allEntities((java.util.Collection<Object>)(Streamable.of(entities).toList())).then();
+				.allEntities((java.util.Collection<Object>) (Streamable.of(entities).toList())).then();
 	}
 
 	@Override

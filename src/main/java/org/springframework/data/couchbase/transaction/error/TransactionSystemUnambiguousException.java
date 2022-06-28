@@ -18,13 +18,14 @@ package org.springframework.data.couchbase.transaction.error;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * The transaction failed and unambiguously did not commit.  No actors can see any part of this failed
- * transaction.
+ * The transaction failed and unambiguously did not commit. No actors can see any part of this failed transaction.
  * <p>
  * The application does not need to do anything to rollback the transaction.
+ *
+ * @author Graham Pople
  */
 public class TransactionSystemUnambiguousException extends TransactionSystemCouchbaseException {
-    public TransactionSystemUnambiguousException(TransactionFailedException ex) {
-        super(ex);
-    }
+	public TransactionSystemUnambiguousException(TransactionFailedException ex) {
+		super(ex);
+	}
 }

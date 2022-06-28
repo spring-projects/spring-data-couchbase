@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * Tests for Spring's TransactionTemplate, used CouchbaseCallbackTransactionManager, using template methods (findById
  * etc.)
+ *
+ * @author Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)

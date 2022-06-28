@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,20 @@
  */
 package org.springframework.data.couchbase.transaction;
 
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.reactive.TransactionCallback;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
  * The TransactionalOperator interface is another method to perform reactive transactions with Spring.
  * <p>
  * We recommend instead using a regular reactive SDK transaction, and performing Spring operations inside it.
+ *
+ * @author Graham Pople
  */
 public class CouchbaseTransactionalOperator implements TransactionalOperator {
 	private final CouchbaseCallbackTransactionManager manager;
@@ -40,8 +43,7 @@ public class CouchbaseTransactionalOperator implements TransactionalOperator {
 
 	@Override
 	public <T> Mono<T> transactional(Mono<T> mono) {
-		return transactional(Flux.from(mono))
-				.singleOrEmpty();
+		return transactional(Flux.from(mono)).singleOrEmpty();
 	}
 
 	@Override
