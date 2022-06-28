@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.data.Offset.offset;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -69,6 +70,7 @@ import org.springframework.data.mapping.MappingException;
  * @author Geoffrey Mina
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Carolin Brandt
  */
 public class MappingCouchbaseConverterTests {
 
@@ -1182,5 +1184,11 @@ public class MappingCouchbaseConverterTests {
 		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
 			converter.write(entity, converted);
 		});
+	}
+
+	@Test
+	void testExport() throws Exception {
+		CouchbaseDocument doc = new CouchbaseDocument("key");
+		assertEquals( "русский" , doc.put("language", "русский").export().get("language"));
 	}
 }
