@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.lang.Nullable;
 
+/**
+ * Person entity without a an @Version property
+ *
+ * @author Michael Reiche
+ */
 @Document
-public class PersonWithoutVersion extends AbstractEntity
-{
+public class PersonWithoutVersion extends AbstractEntity {
 	Optional<String> firstname;
 	Optional<String> lastname;
 

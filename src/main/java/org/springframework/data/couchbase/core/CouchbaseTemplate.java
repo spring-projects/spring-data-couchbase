@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package org.springframework.data.couchbase.core;
-
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -55,27 +53,22 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-													 final CouchbaseConverter converter) {
-		this(clientFactory,
-				converter, new JacksonTranslationService());
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
+		this(clientFactory, converter, new JacksonTranslationService());
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-													 CouchbaseConverter converter,
-													 final TranslationService translationService) {
-		this(clientFactory,
-				converter, translationService, null);
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+			final TranslationService translationService) {
+		this(clientFactory, converter, translationService, null);
 	}
 
-	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory,
-													 final CouchbaseConverter converter,
-													 final TranslationService translationService, QueryScanConsistency scanConsistency) {
+	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
+			final TranslationService translationService, QueryScanConsistency scanConsistency) {
 		this.clientFactory = clientFactory;
 		this.converter = converter;
 		this.templateSupport = new CouchbaseTemplateSupport(this, converter, translationService);
-		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter,
-				translationService, scanConsistency);
+		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService,
+				scanConsistency);
 		this.scanConsistency = scanConsistency;
 
 		this.mappingContext = this.converter.getMappingContext();
@@ -87,16 +80,12 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		}
 	}
 
-	public <T> T save(T entity) {
-		if (hasNonZeroVersionProperty(entity, templateSupport.converter)) {
-			return replaceById((Class<T>) entity.getClass()).one(entity);
-			//} else if (getTransactionalOperator() != null) {
-			//	return insertById((Class<T>) entity.getClass()).one(entity);
-		} else {
-			return upsertById((Class<T>) entity.getClass()).one(entity);
-		}
+	@Override
+	public <T> T save(T entity, String... scopeAndCollection) {
+		return reactive().save(entity, scopeAndCollection).block();
 	}
 
+	@Override
 	public <T> Long count(Query query, Class<T> domainType) {
 		return findByQuery(domainType).matching(query).count();
 	}

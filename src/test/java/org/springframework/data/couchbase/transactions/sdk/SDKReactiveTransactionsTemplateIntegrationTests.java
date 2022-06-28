@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import org.junit.jupiter.api.BeforeEach;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
-import org.springframework.data.couchbase.transactions.SimulateFailureException;
-import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import reactor.core.publisher.Mono;
 import reactor.util.annotation.Nullable;
 
@@ -38,27 +31,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests using template methods (findById etc.) inside a regular reactive SDK transaction.
+ *
+ * @author Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -71,8 +72,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 	Person WalterWhite;
 
 	@BeforeEach
-	public void beforeEachTest(){
-		WalterWhite = new Person ("Walter", "White");
+	public void beforeEachTest() {
+		WalterWhite = new Person("Walter", "White");
 	}
 
 	@AfterEach
@@ -165,8 +166,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(WalterWhite.id()))
-					.all().then();
+			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(WalterWhite.id())).all().then();
 		});
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
@@ -180,7 +181,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doInTransaction(ctx -> {
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(WalterWhite.getFirstname())).all().then();
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(WalterWhite.getFirstname()))
+					.all().then();
 		});
 
 		assertEquals(1, rr.attempts);
@@ -227,8 +229,7 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.findById(Person.class).one(person.id())
-					.flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
+			return ops.findById(Person.class).one(person.id()).flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
 					.doOnSuccess(p -> throwSimulateFailureException(p)); // remove has no result
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
@@ -245,8 +246,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all().elementAt(0)
-					.map(p -> throwSimulateFailureException(p));
+			return ops.removeByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all()
+					.elementAt(0).map(p -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
@@ -262,8 +263,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			attempts.incrementAndGet();
-			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all().elementAt(0)
-					.map(p -> throwSimulateFailureException(p));
+			return ops.findByQuery(Person.class).matching(QueryCriteria.where("firstname").eq(person.getFirstname())).all()
+					.elementAt(0).map(p -> throwSimulateFailureException(p));
 		}), TransactionFailedException.class, SimulateFailureException.class);
 
 		assertEquals(1, attempts.get());
@@ -280,8 +281,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> ops.replaceById(Person.class).one(person), // old cas
-				TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class ,
-				Exception.class );
+				TransactionOptions.transactionOptions().timeout(Duration.ofSeconds(2))), TransactionFailedException.class,
+				Exception.class);
 
 	}
 
@@ -315,7 +316,8 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 	@DisplayName("Entity must have CAS field during remove")
 	@Test
 	public void removeEntityWithoutCas() {
-		PersonWithoutVersion person = blocking.insertById(PersonWithoutVersion.class).one(new PersonWithoutVersion("Walter", "White"));
+		PersonWithoutVersion person = blocking.insertById(PersonWithoutVersion.class)
+				.one(new PersonWithoutVersion("Walter", "White"));
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
 			return ops.findById(PersonWithoutVersion.class).one(person.id())
 					.flatMap(fetched -> ops.removeById(PersonWithoutVersion.class).oneEntity(fetched));
@@ -329,8 +331,7 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		Person person = blocking.insertById(Person.class).one(WalterWhite);
 
 		assertThrowsWithCause(() -> doInTransaction(ctx -> {
-			return ops.findById(Person.class).one(person.id())
-					.flatMap(p -> ops.removeById(Person.class).one(p.id()));
+			return ops.findById(Person.class).one(person.id()).flatMap(p -> ops.removeById(Person.class).one(p.id()));
 		}), TransactionFailedException.class, IllegalArgumentException.class);
 
 	}

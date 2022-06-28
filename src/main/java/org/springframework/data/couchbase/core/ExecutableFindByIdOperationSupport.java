@@ -26,6 +26,11 @@ import org.springframework.util.Assert;
 
 import com.couchbase.client.java.kv.GetOptions;
 
+/**
+ * ExecutableFindById Support
+ *
+ * @author Michael Reiche
+ */
 public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOperation {
 
 	private final CouchbaseTemplate template;
@@ -37,7 +42,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 	@Override
 	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
 		return new ExecutableFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType),null, null, null);
+				OptionsBuilder.getCollectionFrom(domainType), null, null, null);
 	}
 
 	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
@@ -52,7 +57,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-															GetOptions options, List<String> fields, Duration expiry) {
+				GetOptions options, List<String> fields, Duration expiry) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -61,8 +66,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 			this.fields = fields;
 			this.expiry = expiry;
 			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, scope, collection, options,
-					fields, expiry,
-					new NonReactiveSupportWrapper(template.support()));
+					fields, expiry, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -83,12 +87,14 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope,
+					collection != null ? collection : this.collection, options, fields, expiry);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
+					options, fields, expiry);
 		}
 
 		@Override

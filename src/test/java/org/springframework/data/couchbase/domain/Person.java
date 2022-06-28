@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,14 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
-import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.domain.Persistable;
 import org.springframework.lang.Nullable;
 
+/**
+ * Person entity for tests.
+ *
+ * @author Michael Reiche
+ */
 @Document
 public class Person extends AbstractEntity implements Persistable<Object> {
 	Optional<String> firstname;
@@ -52,9 +56,8 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 
 	@Transient private boolean isNew;
 
-
 	public Person() {
-		setId( UUID.randomUUID());
+		setId(UUID.randomUUID());
 	}
 
 	public Person(String firstname, String lastname) {
@@ -174,7 +177,7 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 
 	// A with-er that returns the same object ??
 	public Person withVersion(Long version) {
-		//Person p = new Person(this.getId(), this.getFirstname(), this.getLastname());
+		// Person p = new Person(this.getId(), this.getFirstname(), this.getLastname());
 		this.version = version;
 		return this;
 	}
@@ -198,12 +201,12 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 		return isNew;
 	}
 
-	public void isNew(boolean isNew){
+	public void isNew(boolean isNew) {
 		this.isNew = isNew;
 	}
 
-  public Person withIdFirstname() {
+	public Person withIdFirstname() {
 		return this.withFirstName(getId().toString());
-  }
+	}
 
 }

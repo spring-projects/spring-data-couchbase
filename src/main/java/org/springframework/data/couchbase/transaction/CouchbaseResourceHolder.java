@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,22 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import com.couchbase.client.core.annotation.Stability;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.support.ResourceHolderSupport;
 
+import com.couchbase.client.core.annotation.Stability;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Container for couchbase transaction resources to hold in threadlocal or reactive context.
+ *
+ * @author Michael Reiche
+ *
+ */
 @Stability.Internal
 public class CouchbaseResourceHolder extends ResourceHolderSupport {
 
@@ -37,7 +43,6 @@ public class CouchbaseResourceHolder extends ResourceHolderSupport {
 	 * @param core the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
 	 */
 	public CouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
-
 		this.core = core;
 	}
 
@@ -50,7 +55,6 @@ public class CouchbaseResourceHolder extends ResourceHolderSupport {
 	}
 
 	public TransactionResultHolder transactionResultHolder(TransactionResultHolder holder, Object o) {
-		System.err.println("PUT: "+System.identityHashCode(o)+" "+o);
 		getResultMap.put(System.identityHashCode(o), holder);
 		return holder;
 	}

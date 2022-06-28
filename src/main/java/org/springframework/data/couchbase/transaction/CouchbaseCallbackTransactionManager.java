@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
  */
 package org.springframework.data.couchbase.transaction;
 
-import com.couchbase.client.core.annotation.Stability;
-import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
-import com.couchbase.client.java.transactions.error.TransactionCommitAmbiguousException;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -35,16 +38,17 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.CallbackPreferringPlatformTransactionManager;
 import org.springframework.transaction.support.TransactionCallback;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import com.couchbase.client.core.annotation.Stability;
+import com.couchbase.client.java.transactions.TransactionResult;
+import com.couchbase.client.java.transactions.config.TransactionOptions;
+import com.couchbase.client.java.transactions.error.TransactionCommitAmbiguousException;
+import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * The Couchbase transaction manager, providing support for @Transactional methods.
+ *
+ * @author Graham Pople
  */
 public class CouchbaseCallbackTransactionManager implements CallbackPreferringPlatformTransactionManager {
 
@@ -61,7 +65,8 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	 * This override is for users manually creating a CouchbaseCallbackTransactionManager, and allows the
 	 * TransactionOptions to be overridden.
 	 */
-	public CouchbaseCallbackTransactionManager(CouchbaseClientFactory couchbaseClientFactory, @Nullable TransactionOptions options) {
+	public CouchbaseCallbackTransactionManager(CouchbaseClientFactory couchbaseClientFactory,
+			@Nullable TransactionOptions options) {
 		this.couchbaseClientFactory = couchbaseClientFactory;
 		this.options = options != null ? options : TransactionOptions.transactionOptions();
 	}
@@ -107,7 +112,8 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 
 				T res = callback.doInTransaction(status);
 				if (res instanceof Mono || res instanceof Flux) {
-					throw new UnsupportedOperationException("Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseTransactionInterceptor is not in use.");
+					throw new UnsupportedOperationException(
+							"Return type is Mono or Flux, indicating a reactive transaction is being performed in a blocking way.  A potential cause is the CouchbaseTransactionInterceptor is not in use.");
 				}
 				execResult.set(res);
 
@@ -117,8 +123,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 			}, this.options);
 
 			return execResult.get();
-		}
-		catch (RuntimeException ex) {
+		} catch (RuntimeException ex) {
 			throw convert(ex);
 		}
 	}
@@ -134,7 +139,8 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		return ex;
 	}
 
-	private <T> Flux<T> executeNewReactiveTransaction(org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+	private <T> Flux<T> executeNewReactiveTransaction(
+			org.springframework.transaction.reactive.TransactionCallback<T> callback) {
 		// Buffer the output rather than attempting to stream results back from a now-defunct lambda.
 		final List<T> out = new ArrayList<>();
 
@@ -164,25 +170,20 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 					}
 				};
 
-				return Flux.from(callback.doInTransaction(status))
-						.doOnNext(v -> out.add(v))
-						.then(Mono.defer(() -> {
-							if (status.isRollbackOnly()) {
-								return Mono
-										.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
-							}
-							return Mono.empty();
-						}));
+				return Flux.from(callback.doInTransaction(status)).doOnNext(v -> out.add(v)).then(Mono.defer(() -> {
+					if (status.isRollbackOnly()) {
+						return Mono.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
+					}
+					return Mono.empty();
+				}));
 			});
 
-		}, this.options)
-				.thenMany(Flux.defer(() -> Flux.fromIterable(out)))
-				.onErrorMap(ex -> {
-					if (ex instanceof RuntimeException) {
-						return convert((RuntimeException) ex);
-					}
-					return ex;
-				});
+		}, this.options).thenMany(Flux.defer(() -> Flux.fromIterable(out))).onErrorMap(ex -> {
+			if (ex instanceof RuntimeException) {
+				return convert((RuntimeException) ex);
+			}
+			return ex;
+		});
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
@@ -270,16 +271,19 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		// the transaction manager is a CallbackPreferringPlatformTransactionManager.
 		// So these methods should only be hit if user is using PlatformTransactionManager directly. Spring supports this,
 		// but due to the lambda-based nature of our transactions, we cannot.
-		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void commit(TransactionStatus ignored) throws TransactionException {
-		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 
 	@Override
 	public void rollback(TransactionStatus ignored) throws TransactionException {
-		throw new UnsupportedOperationException("Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
+		throw new UnsupportedOperationException(
+				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
 }

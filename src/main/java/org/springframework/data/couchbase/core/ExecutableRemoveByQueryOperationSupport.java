@@ -25,6 +25,11 @@ import org.springframework.util.Assert;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * {@link ExecutableRemoveByQueryOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemoveByQueryOperation {
 
 	private static final Query ALL_QUERY = new Query();
@@ -53,7 +58,7 @@ public class ExecutableRemoveByQueryOperationSupport implements ExecutableRemove
 		private final QueryOptions options;
 
 		ExecutableRemoveByQuerySupport(final CouchbaseTemplate template, final Class<T> domainType, final Query query,
-																	 final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
+				final QueryScanConsistency scanConsistency, String scope, String collection, QueryOptions options) {
 			this.template = template;
 			this.domainType = domainType;
 			this.query = query;

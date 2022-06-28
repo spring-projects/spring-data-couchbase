@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,9 @@ import reactor.core.publisher.Mono;
  * <p>
  * The solution: override the standard TransactionInterceptor and, if the
  * CouchbaseCallbackTransactionManager is the provided TransactionManager, defer to that.
+ *
+ * @author Graham Pople
+ * @author Michael Reiche
  */
 @Stability.Internal
 public class CouchbaseTransactionInterceptor extends TransactionInterceptor

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-import com.couchbase.client.core.error.transaction.PreviousOperationFailedException;
-import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.transactions.TransactionAttemptContext;
-import com.couchbase.client.java.transactions.TransactionGetResult;
-import org.springframework.data.couchbase.transaction.error.UncategorizedTransactionDataAccessException;
-import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
-import org.springframework.data.couchbase.transactions.SimulateFailureException;
-import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import reactor.util.annotation.Nullable;
 
 import java.time.Duration;
@@ -52,18 +43,29 @@ import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.data.couchbase.transaction.error.UncategorizedTransactionDataAccessException;
+import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.core.error.transaction.PreviousOperationFailedException;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.transactions.TransactionAttemptContext;
+import com.couchbase.client.java.transactions.TransactionGetResult;
 import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for using template methods (findById etc.) inside a regular SDK transaction.
+ *
+ * @author Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -99,8 +101,7 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 		return doInTransaction(lambda, null);
 	}
 
-	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda,
-			@Nullable TransactionOptions options) {
+	private RunResult doInTransaction(Consumer<TransactionAttemptContext> lambda, @Nullable TransactionOptions options) {
 		AtomicInteger attempts = new AtomicInteger();
 
 		TransactionResult result = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
@@ -367,8 +368,7 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 					attempts.incrementAndGet());
 			try {
 				ops.replaceById(Person.class).one(fetched.withFirstName("Changed by transaction"));
-			}
-			catch (RuntimeException err) {
+			} catch (RuntimeException err) {
 				assertTrue(err instanceof UncategorizedTransactionDataAccessException);
 			}
 
@@ -400,8 +400,7 @@ public class SDKTransactionsTemplateIntegrationTests extends JavaIntegrationTest
 					attempts.incrementAndGet());
 			try {
 				ctx.replace(gr, JsonObject.create());
-			}
-			catch (RuntimeException err) {
+			} catch (RuntimeException err) {
 				assertTrue(err instanceof TransactionOperationFailedException);
 			}
 

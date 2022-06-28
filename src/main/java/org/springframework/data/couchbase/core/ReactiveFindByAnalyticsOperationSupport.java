@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -27,11 +29,18 @@ import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 import com.couchbase.client.java.analytics.ReactiveAnalyticsResult;
 
+/**
+ * {@link ReactiveFindByAnalyticsOperation} implementations for Couchbase.
+ * 
+ * @author Michael Reiche
+ */
 public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAnalyticsOperation {
 
 	private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();
 
 	private final ReactiveCouchbaseTemplate template;
+
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindByAnalyticsOperationSupport.class);
 
 	public ReactiveFindByAnalyticsOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -110,9 +119,11 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return TransactionalSupport.verifyNotInTransaction("findByAnalytics")
-						.then(template.getCouchbaseClientFactory().getCluster().reactive()
-						.analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("findByAnalytics statement: {}", statement);
+				}
+				return TransactionalSupport.verifyNotInTransaction("findByAnalytics").then(template.getCouchbaseClientFactory()
+						.getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {
@@ -133,7 +144,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							}
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
-							return support.decodeEntity(id, row.toString(), cas, returnType, null, null, null);
+							return support.decodeEntity(id, row.toString(), cas, returnType, null, null, null, null);
 						});
 			});
 		}
@@ -183,9 +194,11 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 
 			final StringBuilder statement = new StringBuilder("SELECT ");
 			if (count) {
-				statement.append("count(*) as __count");
+				statement.append("count(*) as " + TemplateUtils.SELECT_COUNT);
 			} else {
-				statement.append("meta().id as __id, meta().cas as __cas, ").append(bucket).append(".*");
+				statement
+						.append("meta().id as " + TemplateUtils.SELECT_ID + ", meta().cas as " + TemplateUtils.SELECT_CAS + ", ")
+						.append(bucket).append(".*");
 			}
 
 			final String dataset = support.getJavaNameForEntity(domainType);

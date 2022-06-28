@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.ReplaceLoopThread.updateOutOfTransaction;
 
-import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
-import org.springframework.data.couchbase.transactions.SimulateFailureException;
-import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import reactor.core.publisher.Mono;
 
 import java.util.LinkedList;
@@ -48,6 +45,9 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
+import org.springframework.data.couchbase.transactions.ReplaceLoopThread;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -59,8 +59,10 @@ import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
- * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests.
- * Now ReactiveTransactionsWrapper is removed, these are testing the same operations inside a regular SDK transaction.
+ * Tests for ReactiveTransactionsWrapper, moved from CouchbasePersonTransactionIntegrationTests. Now
+ * ReactiveTransactionsWrapper is removed, these are testing the same operations inside a regular SDK transaction.
+ *
+ * @author Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -90,15 +92,15 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 
 	@BeforeEach
 	public void beforeEachTest() {
-		WalterWhite = new Person( "Walter", "White");
+		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp1 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<RemoveResult> rp1 = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 
 		List<Person> p0 = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<Person> p1 = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<Person> p1 = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 	}
 
 	@AfterEach
@@ -160,7 +162,9 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 	@Test
 	public void deletePersonCBTransactionsRxTmpl() {
 		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get
+																																																								// the
+																																																								// ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person).then();
 		});
 		result.block();
@@ -171,7 +175,9 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 	@Test // ok
 	public void deletePersonCBTransactionsRxTmplFail() {
 		Person person = cbTmpl.insertById(Person.class).inCollection(cName).one(WalterWhite);
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get
+																																																								// the
+																																																								// ctx
 			return rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person)
 					.then(rxCBTmpl.removeById(Person.class).inCollection(cName).oneEntity(person));
 		});
@@ -183,7 +189,9 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 	@Test
 	public void deletePersonCBTransactionsRxRepo() {
 		Person person = repo.withCollection(cName).save(WalterWhite);
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get
+																																																								// the
+																																																								// ctx
 			return rxRepo.withCollection(cName).delete(person).then();
 		});
 		result.block();
@@ -194,7 +202,9 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 	@Test
 	public void deletePersonCBTransactionsRxRepoFail() {
 		Person person = repo.withCollection(cName).save(WalterWhite);
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get the ctx
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> { // get
+																																																								// the
+																																																								// ctx
 			return rxRepo.withCollection(cName).findById(person.id())
 					.flatMap(pp -> rxRepo.withCollection(cName).delete(pp).then(rxRepo.withCollection(cName).delete(pp))).then();
 		});
@@ -205,13 +215,12 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 
 	@Test
 	public void findPersonCBTransactions() {
-		Person person = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName)
-				.one(WalterWhite);
+		Person person = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
 		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
-			return rxCBTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName).matching(q)
-					.one().doOnSuccess(doc -> {
+			return rxCBTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
+					.matching(q).one().doOnSuccess(doc -> {
 						System.err.println("doc: " + doc);
 						docs.add(doc);
 					});
@@ -252,8 +261,8 @@ public class SDKReactiveTransactionsPersonIntegrationTests extends JavaIntegrati
 		Person person = cbTmpl.insertById(Person.class).inScope(sName).inCollection(cName).one(WalterWhite);
 		List<Object> docs = new LinkedList<>();
 		Query q = Query.query(QueryCriteria.where("meta().id").eq(person.getId()));
-		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> rxCBTmpl.findByQuery(Person.class)
-				.inScope(sName).inCollection(cName).matching(q).one().doOnSuccess(r -> docs.add(r)));
+		Mono<TransactionResult> result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> rxCBTmpl
+				.findByQuery(Person.class).inScope(sName).inCollection(cName).matching(q).one().doOnSuccess(r -> docs.add(r)));
 		result.block();
 		assertFalse(docs.isEmpty(), "Should have found " + person);
 		for (Object o : docs) {

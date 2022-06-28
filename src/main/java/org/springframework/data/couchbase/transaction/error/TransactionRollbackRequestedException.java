@@ -19,9 +19,11 @@ import com.couchbase.client.core.error.CouchbaseException;
 
 /**
  * A transaction rollback has been requested.
+ *
+ * @author Graham Pople
  */
-public class TransactionRollbackRequestedException extends CouchbaseException  {
-    public TransactionRollbackRequestedException(String message) {
-        super(message);
-    }
+public class TransactionRollbackRequestedException extends CouchbaseException {
+	public TransactionRollbackRequestedException(String message) {
+		super(message);
+	}
 }

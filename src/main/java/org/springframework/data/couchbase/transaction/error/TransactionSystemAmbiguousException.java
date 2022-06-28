@@ -32,6 +32,8 @@ import com.couchbase.client.java.transactions.error.TransactionCommitAmbiguousEx
  *
  * An asynchronous cleanup process will try to complete the transaction: roll it back if it didn't commit, roll it
  * forwards if it did.
+ *
+ * @author Graham Pople
  */
 public class TransactionSystemAmbiguousException extends TransactionSystemCouchbaseException {
     public TransactionSystemAmbiguousException(TransactionCommitAmbiguousException ex) {

@@ -26,6 +26,11 @@ import org.springframework.util.Assert;
 import com.couchbase.client.java.analytics.AnalyticsOptions;
 import com.couchbase.client.java.analytics.AnalyticsScanConsistency;
 
+/**
+ * {@link ExecutableFindByAnalyticsOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ExecutableFindByAnalyticsOperationSupport implements ExecutableFindByAnalyticsOperation {
 
 	private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package org.springframework.data.couchbase.repository.support;
 
+import reactor.util.annotation.Nullable;
+
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
 import com.couchbase.client.java.query.QueryResult;
-import com.couchbase.client.java.transactions.TransactionGetResult;
-import reactor.util.annotation.Nullable;
 
 /**
  * Holds previously obtained Transaction*Result
@@ -36,8 +36,8 @@ public class TransactionResultHolder {
 		// we don't need the content and we don't have access to the transcoder an txnMeta (and we don't need them either).
 		// todo gp will need to expose a copy ctor if a copy is needed
 		this.getResult = getResult;
-//		this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
-//				getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);
+		// this.getResult = new TransactionGetResult(getResult.id(), null, getResult.cas(), getResult.collection(),
+		// getResult.links(), getResult.status(), getResult.documentMetadata(), null, null);
 		this.singleQueryResult = null;
 	}
 

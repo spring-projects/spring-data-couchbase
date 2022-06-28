@@ -16,12 +16,6 @@
 
 package org.springframework.data.couchbase.core;
 
-import java.lang.reflect.InaccessibleObjectException;
-import java.util.Map;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -32,16 +26,10 @@ import org.springframework.data.couchbase.core.mapping.event.AfterConvertCallbac
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallback;
 import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
 import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
-import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
-import org.springframework.data.couchbase.core.support.TemplateUtils;
-import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
-import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.util.Assert;
-
-import com.couchbase.client.core.error.CouchbaseException;
 
 /**
  * Internal encode/decode support for CouchbaseTemplate.
@@ -58,7 +46,7 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	private EntityCallbacks entityCallbacks;
 
 	public CouchbaseTemplateSupport(final CouchbaseTemplate template, final CouchbaseConverter converter,
-									final TranslationService translationService) {
+			final TranslationService translationService) {
 		super(template.reactive(), converter, translationService);
 		this.template = template;
 	}
@@ -76,25 +64,13 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 
 	@Override
 	public <T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-							  TransactionResultHolder txHolder) {
-		return decodeEntity(id, source, cas, entityClass, scope, collection, txHolder);
-	}
-
-	@Override
-	public <T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-							  TransactionResultHolder txHolder, CouchbaseResourceHolder holder) {
+			TransactionResultHolder txHolder, CouchbaseResourceHolder holder) {
 		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
 	}
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-							 TransactionResultHolder txResultHolder) {
-		return applyResult(entity, converted, id, cas,txResultHolder, null);
-	}
-
-	@Override
-	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
-							 TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
+			TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		return applyResultBase(entity, converted, id, cas, txResultHolder, holder);
 	}
 
@@ -102,7 +78,6 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	public <T> Integer getTxResultHolder(T source) {
 		return null;
 	}
-
 
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

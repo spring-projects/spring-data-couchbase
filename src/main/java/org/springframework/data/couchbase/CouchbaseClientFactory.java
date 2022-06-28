@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package org.springframework.data.couchbase;
 
 import java.io.Closeable;
 
-import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
-import com.couchbase.client.java.transactions.ReactiveTransactionAttemptContext;
-import com.couchbase.client.java.transactions.config.TransactionOptions;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
 
 import com.couchbase.client.java.Bucket;
@@ -31,8 +28,10 @@ import com.couchbase.client.java.Scope;
 /**
  * The {@link CouchbaseClientFactory} is the main way to get access to the managed SDK instance and resources.
  * <p>
- * Please note that a single factory is always bound to a {@link Bucket}, so if you need to access more than one
- * you need to initialize one factory for each.
+ * Please note that a single factory is always bound to a {@link Bucket}, so if you need to access more than one you
+ * need to initialize one factory for each.
+ *
+ * @author Michael Reiche
  */
 public interface CouchbaseClientFactory extends Closeable {
 

@@ -25,6 +25,8 @@ import java.util.Set;
  * tests for bootstrapping their own code.
  *
  * @since 2.0.0
+ *
+ * @author Michael Reiche
  */
 public class TestClusterConfig {
 

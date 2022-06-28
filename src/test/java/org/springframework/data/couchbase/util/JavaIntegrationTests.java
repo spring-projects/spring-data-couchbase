@@ -27,12 +27,6 @@ import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMP
 import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.util.Util.waitUntilCondition;
 
-import okhttp3.Credentials;
-import okhttp3.FormBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
@@ -44,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Timeout;
@@ -58,6 +51,7 @@ import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.transactions.SimulateFailureException;
 
 import com.couchbase.client.core.diagnostics.PingResult;
 import com.couchbase.client.core.diagnostics.PingState;
@@ -90,12 +84,11 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
-import org.springframework.data.couchbase.transactions.SimulateFailureException;
 
 /**
  * Extends the {@link ClusterAwareIntegrationTests} with java-client specific code.
  *
- * @Author Michael Reiche
+ * @author Michael Reiche
  */
 // Temporarily increased timeout to (possibly) workaround MB-37011 when Developer Preview enabled
 @Timeout(value = 10, unit = TimeUnit.MINUTES) // Safety timer so tests can't block CI executors
@@ -393,19 +386,18 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
 		try {
 			executable.execute();
-		}
-		catch (Throwable actualException) {
-			for(Class<?> expectedType:expectedTypes){
-				if(actualException.getClass().isAssignableFrom( expectedType)){
+		} catch (Throwable actualException) {
+			for (Class<?> expectedType : expectedTypes) {
+				if (actualException.getClass().isAssignableFrom(expectedType)) {
 					return actualException;
 				}
 			}
 			UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
-			String message = "Expected one of "+toString(expectedTypes)+" but was : "+actualException.getClass();
+			String message = "Expected one of " + toString(expectedTypes) + " but was : " + actualException.getClass();
 			throw new AssertionFailedError(message, actualException);
 		}
 
-		String message ="Expected one of "+toString(expectedTypes)+" to be thrown, but nothing was thrown.";
+		String message = "Expected one of " + toString(expectedTypes) + " to be thrown, but nothing was thrown.";
 		throw new AssertionFailedError(message);
 	}
 
@@ -413,7 +405,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		StringBuffer sb = new StringBuffer();
 		sb.append("[");
 		for (int i = 0; i < array.length; i++) {
-			if(i>0){
+			if (i > 0) {
 				sb.append(", ");
 			}
 			sb.append(array[i]);

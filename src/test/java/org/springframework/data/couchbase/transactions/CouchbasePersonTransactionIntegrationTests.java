@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,21 @@ package org.springframework.data.couchbase.transactions;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.couchbase.client.core.error.DocumentExistsException;
 import lombok.Data;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Disabled;
-import org.springframework.data.couchbase.core.TransactionalSupport;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
-import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -46,10 +40,13 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
+import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -57,8 +54,8 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
+import com.couchbase.client.core.error.DocumentExistsException;
 import com.couchbase.client.java.transactions.TransactionResult;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
 
 /**
  * Tests for com.couchbase.transactions using
@@ -82,7 +79,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 
 	String sName = "_default";
 	String cName = "_default";
-	
+
 	Person WalterWhite;
 
 	@BeforeAll
@@ -105,25 +102,26 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		WalterWhite = new Person("Walter", "White");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> rp0 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<RemoveResult> rp1 = cbTmpl.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 		List<RemoveResult> rp2 = cbTmpl.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all();
-		List<RemoveResult> rp3 = cbTmpl.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<RemoveResult> rp3 = cbTmpl.removeByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 
 		List<Person> p0 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<Person> p1 = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
 				.all();
 		List<EventLog> e0 = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).all();
-		List<EventLog> e1 = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName).inCollection(cName)
-				.all();
+		List<EventLog> e1 = cbTmpl.findByQuery(EventLog.class).withConsistency(REQUEST_PLUS).inScope(sName)
+				.inCollection(cName).all();
 
 	}
 
 	@DisplayName("rollback after exception using transactionalOperator")
 	@Test
 	public void shouldRollbackAfterException() {
-		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.savePersonErrors(WalterWhite),
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -131,7 +129,8 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 	@Test
 	@DisplayName("rollback after exception using @Transactional")
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite),
+				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Long count = cbTmpl.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 		assertEquals(0, count, "should have done roll back and left 0 entries");
 	}
@@ -239,7 +238,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 				.doOnNext(ppp -> TransactionalSupport.checkForTransactionInThreadLocalStorage()
 						.doOnNext(v -> assertTrue(v.isPresent())))
 				.map(p -> throwSimulateFailureException(p)).as(transactionalOperator::transactional); // tx
-		assertThrowsWithCause(result::block,  TransactionSystemUnambiguousException.class, SimulateFailureException.class);
+		assertThrowsWithCause(result::block, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 		Person pFound = cbTmpl.findById(Person.class).one(WalterWhite.id());
 		assertNull(pFound, "insert should have been rolled back");
 	}
@@ -305,8 +304,7 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		Person switchedPerson = new Person(person.getId(), "Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger();
 
-		Person res = personService.declarativeFindReplacePersonReactive(switchedPerson, tryCount)
-				.block();
+		Person res = personService.declarativeFindReplacePersonReactive(switchedPerson, tryCount).block();
 
 		Person pFound = cbTmpl.findById(Person.class).one(person.id());
 		assertEquals(switchedPerson.getFirstname(), pFound.getFirstname(), "should have been switched");

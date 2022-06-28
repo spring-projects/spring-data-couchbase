@@ -35,9 +35,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.util.StreamUtils;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Repository base implementation for Couchbase.
@@ -71,28 +71,7 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S extends T> S save(S entity) {
-		Assert.notNull(entity, "Entity must not be null!");
-		S result;
-
-		final CouchbasePersistentEntity<?> mapperEntity = operations.getConverter().getMappingContext()
-				.getPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
-		final boolean versionPresent = versionProperty != null;
-		final Long version = versionProperty == null || versionProperty.getField() == null ? null
-				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
-		final boolean existingDocument = version != null && version > 0;
-
-		if (!versionPresent) { // the entity doesn't have a version property
-			// No version field - no cas
-			result = (S) operations.upsertById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
-		} else if (existingDocument) { // there is a version property, and it is non-zero
-			// Updating existing document with cas
-			result = (S) operations.replaceById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
-		} else { // there is a version property, but it's zero or not set.
-			// Creating new document
-			result = (S) operations.insertById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(entity);
-		}
-		return result;
+		return operations.save(entity, getScope(), getCollection());
 	}
 
 	@Override

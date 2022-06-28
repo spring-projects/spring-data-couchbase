@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -43,6 +42,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
 import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -50,11 +50,10 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
-
 /**
  * Tests for CouchbaseTransactionalOperator, using template methods (findById etc.)
+ *
+ * @author Graham Pople
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
@@ -95,8 +94,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	}
 
 	private RunResult doMonoInTransaction(Supplier<Mono<?>> lambda) {
-		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				couchbaseClientFactory);
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 		AtomicInteger attempts = new AtomicInteger();
 
@@ -110,8 +108,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@DisplayName("A basic golden path insert using CouchbaseSimpleTransactionalOperator.execute should succeed")
 	@Test
 	public void committedInsertWithExecute() {
-		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				couchbaseClientFactory);
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		operator.execute(v -> {
@@ -127,8 +124,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 	@DisplayName("A basic golden path insert using CouchbaseSimpleTransactionalOperator.transactional(Flux) should succeed")
 	@Test
 	public void committedInsertWithFlux() {
-		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(
-				couchbaseClientFactory);
+		CouchbaseCallbackTransactionManager manager = new CouchbaseCallbackTransactionManager(couchbaseClientFactory);
 		TransactionalOperator operator = CouchbaseTransactionalOperator.create(manager);
 
 		Flux<Person> flux = Flux.defer(() -> {
@@ -195,8 +191,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(person.id()))
-					.all().next();
+			return ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.id())).all().next();
 		});
 
 		Person fetched = blocking.findById(Person.class).one(person.id());
@@ -210,8 +206,8 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		Person person = blocking.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		RunResult rr = doMonoInTransaction(() -> {
-			return ops.findByQuery(Person.class).withConsistency(REQUEST_PLUS).matching(QueryCriteria.where("firstname").eq(person.id()))
-					.all().next();
+			return ops.findByQuery(Person.class).withConsistency(REQUEST_PLUS)
+					.matching(QueryCriteria.where("firstname").eq(person.id())).all().next();
 		});
 
 		assertEquals(1, rr.attempts);
@@ -258,8 +254,7 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 
 		assertThrowsWithCause(() -> doMonoInTransaction(() -> {
 			attempts.incrementAndGet();
-			return ops.findById(Person.class).one(person.id())
-					.flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
+			return ops.findById(Person.class).one(person.id()).flatMap(p -> ops.removeById(Person.class).oneEntity(p)) //
 					.doOnSuccess(p -> throwSimulateFailureException(p)); // remove has no result
 		}), TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 

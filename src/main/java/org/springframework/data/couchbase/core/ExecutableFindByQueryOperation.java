@@ -287,7 +287,7 @@ public interface ExecutableFindByQueryOperation {
 		 * @throws IllegalArgumentException if field is {@literal null}.
 		 */
 		@Override
-		FindByQueryWithProjection<T> distinct(String[] distinctFields);
+		FindByQueryWithProjecting<T> distinct(String[] distinctFields);
 	}
 
 	/**

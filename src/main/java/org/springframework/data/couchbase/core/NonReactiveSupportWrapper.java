@@ -15,17 +15,18 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.convert.translation.TranslationService;
-import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import reactor.core.publisher.Mono;
 
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.repository.support.TransactionResultHolder;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
  * @author Carlos Espinaco
+ * @author Michael Reiche
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
@@ -43,20 +44,8 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 
 	@Override
 	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
-									TransactionResultHolder txResultHolder) {
-		return decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, null);
-	}
-
-	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 									TransactionResultHolder txResultHolder, CouchbaseResourceHolder holder) {
 		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
-	}
-
-	@Override
-	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
-								   TransactionResultHolder txResultHolder) {
-		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder));
 	}
 
 	@Override

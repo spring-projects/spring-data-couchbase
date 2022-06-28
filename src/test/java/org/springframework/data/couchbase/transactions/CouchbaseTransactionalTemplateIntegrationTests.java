@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,21 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import com.couchbase.client.core.error.transaction.AttemptExpiredException;
-import com.couchbase.client.java.transactions.error.TransactionFailedException;
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,6 +47,7 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -41,33 +55,19 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-
-import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+import com.couchbase.client.core.error.transaction.AttemptExpiredException;
 
 /**
  * Tests for @Transactional, using template methods (findById etc.)
+ *
+ * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfig.class,
-		CouchbaseTransactionalTemplateIntegrationTests.PersonService.class })
+@SpringJUnitConfig(
+		classes = { TransactionsConfig.class, CouchbaseTransactionalTemplateIntegrationTests.PersonService.class })
 public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -94,7 +94,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		List<Person> p = operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 
 		List<RemoveResult> pwovr = operations.removeByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
-		List<PersonWithoutVersion> pwov = operations.findByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
+		List<PersonWithoutVersion> pwov = operations.findByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS)
+				.all();
 	}
 
 	@AfterEach
@@ -234,7 +235,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void rollbackRemoveByQuery() {
 		AtomicInteger tryCount = new AtomicInteger();
-		Person person =	operations.insertById(Person.class).one(WalterWhite.withIdFirstname());
+		Person person = operations.insertById(Person.class).one(WalterWhite.withIdFirstname());
 
 		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, ops -> {
@@ -315,8 +316,8 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		operations.replaceById(Person.class).one(refetched);
 		assertNotEquals(person.getVersion(), refetched.getVersion());
 		AtomicInteger tryCount = new AtomicInteger(0);
-		assertThrowsWithCause(() -> personService.replace(person, tryCount),
-				TransactionSystemUnambiguousException.class, AttemptExpiredException.class);
+		assertThrowsWithCause(() -> personService.replace(person, tryCount), TransactionSystemUnambiguousException.class,
+				AttemptExpiredException.class);
 	}
 
 	@DisplayName("Entity must have CAS field during replace")
@@ -334,11 +335,11 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	public void replaceEntityWithCasZero() {
 		Person person = operations.insertById(Person.class).one(WalterWhite);
 		// switchedPerson here will have CAS=0, which will fail
-		Person switchedPerson = new Person( "Dave", "Reynolds");
+		Person switchedPerson = new Person("Dave", "Reynolds");
 		AtomicInteger tryCount = new AtomicInteger(0);
 
-		assertThrowsWithCause(() -> personService.replacePerson(switchedPerson, tryCount), TransactionSystemUnambiguousException.class,
-				IllegalArgumentException.class);
+		assertThrowsWithCause(() -> personService.replacePerson(switchedPerson, tryCount),
+				TransactionSystemUnambiguousException.class, IllegalArgumentException.class);
 	}
 
 	@DisplayName("Entity must have CAS field during remove")
@@ -355,7 +356,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 	@Test
 	public void removeEntityById() {
 		AtomicInteger tryCount = new AtomicInteger();
-		Person person =	operations.insertById(Person.class).one(WalterWhite);
+		Person person = operations.insertById(Person.class).one(WalterWhite);
 		assertThrowsWithCause(() -> {
 			personService.doInTransaction(tryCount, (ops) -> {
 				Person p = ops.findById(Person.class).one(person.id());
@@ -410,12 +411,11 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		@Transactional
 		public void insertThenThrow() {
 			assertInAnnotationTransaction(true);
-			Person person = personOperations.insertById(Person.class).one(new Person( "Walter", "White"));
+			Person person = personOperations.insertById(Person.class).one(new Person("Walter", "White"));
 			SimulateFailureException.throwEx();
 		}
 
-		@Autowired
-        CouchbaseCallbackTransactionManager callbackTm;
+		@Autowired CouchbaseCallbackTransactionManager callbackTm;
 
 		/**
 		 * to execute while ThreadReplaceloop() is running should force a retry

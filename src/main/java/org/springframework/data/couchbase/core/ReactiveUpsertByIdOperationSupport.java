@@ -33,6 +33,11 @@ import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 
+/**
+ * {@link ReactiveUpsertByIdOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
@@ -64,8 +69,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		private final ReactiveTemplateSupport support;
 
 		ReactiveUpsertByIdSupport(final ReactiveCouchbaseTemplate template, final Class<T> domainType, final String scope,
-								  final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
-								  final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
+				final String collection, final UpsertOptions options, final PersistTo persistTo, final ReplicateTo replicateTo,
+				final DurabilityLevel durabilityLevel, final Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -80,16 +85,19 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 
 		@Override
 		public Mono<T> one(T object) {
-			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options,
-					domainType);
-			LOG.trace("upsertById object={} {}", object, pArgs);
+			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("upsertById object={} {}", object, pArgs);
+			}
 			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
-					.then(support.encodeEntity(object))
-					.flatMap(converted -> {
-						return Mono.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-								.getCollection(pArgs.getCollection())).flatMap(collection -> collection.reactive()
+					.then(support.encodeEntity(object)).flatMap(converted -> {
+						return Mono
+								.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+										.getCollection(pArgs.getCollection()))
+								.flatMap(collection -> collection.reactive()
 										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-										.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null)));
+										.flatMap(
+												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
 					});
 
 			return reactiveEntity.onErrorMap(throwable -> {

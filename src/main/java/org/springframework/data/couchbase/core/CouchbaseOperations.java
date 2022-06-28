@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.Query;
 
-import static org.springframework.data.couchbase.repository.support.Util.hasNonZeroVersionProperty;
-
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * Defines common operations on the Couchbase data source, most commonly implemented by {@link CouchbaseTemplate}.
+ *
+ * @author Michael Reiche
  */
 public interface CouchbaseOperations extends FluentCouchbaseOperations {
 
@@ -41,6 +41,7 @@ public interface CouchbaseOperations extends FluentCouchbaseOperations {
 
 	/**
 	 * The name of the scope used, null if the default scope is used.
+	 * todo mr - not used?
 	 */
 	String getScopeName();
 
@@ -53,7 +54,8 @@ public interface CouchbaseOperations extends FluentCouchbaseOperations {
 	 * Returns the default consistency to use for queries
 	 */
 	QueryScanConsistency getConsistency();
-	<T> T save(T entity);
+
+	<T> T save(T entity, String... scopeAndCollection);
 
 	<T> Long count(Query query, Class<T> domainType);
 
