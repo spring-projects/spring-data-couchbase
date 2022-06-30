@@ -37,7 +37,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ExecutableFindByIdOperation.ExecutableFindById;
@@ -48,6 +48,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllId;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.Submission;
@@ -59,14 +60,13 @@ import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-
-;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -75,12 +75,15 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(Config.class)
 class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
 	@Override
 	public void beforeEach() {
-		super.beforeEach();
 		couchbaseTemplate.removeByQuery(User.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
@@ -100,7 +103,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			User foundUser = couchbaseTemplate.findById(User.class).withExpiry(Duration.ofSeconds(1)).one(user1.getId());
 			user1.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user1, foundUser);
-			sleepMs(2000);
+			sleepMs(3000);
 
 			Collection<User> foundUsers = (Collection<User>) couchbaseTemplate.findById(User.class)
 					.all(Arrays.asList(user1.getId(), user2.getId()));

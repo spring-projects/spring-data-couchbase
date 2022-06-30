@@ -33,11 +33,13 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AssessmentDO;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
@@ -53,6 +55,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * Query tests Theses tests rely on a cb server running
@@ -63,7 +66,11 @@ import org.springframework.data.domain.Sort;
  * @author Mauro Monti
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(Config.class)
 class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
 	@Override
@@ -267,6 +274,15 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 					.as(Airport.class).withConsistency(REQUEST_PLUS).count();
 			assertEquals(7, count1);
 
+			// count( distinct (all fields in icaoClass)
+			Class icaoClass = (new Object() {
+				String iata;
+				String icao;
+			}).getClass();
+			long count2 = couchbaseTemplate.findByQuery(Airport.class).distinct(new String[] {}).as(icaoClass)
+					.withConsistency(REQUEST_PLUS).count();
+			assertEquals(7, count2);
+
 		} finally {
 			couchbaseTemplate.removeById()
 					.all(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
@@ -298,7 +314,8 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 			assertEquals(7, airports2.size());
 
 			// count( distinct icao )
-			Long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
+			// not currently possible to have multiple fields in COUNT(DISTINCT field1, field2, ... ) due to MB43475
+			long count1 = reactiveCouchbaseTemplate.findByQuery(Airport.class).distinct(new String[] { "icao" })
 					.as(Airport.class).withConsistency(REQUEST_PLUS).count().block();
 			assertEquals(2, count1);
 

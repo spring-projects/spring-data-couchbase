@@ -146,4 +146,27 @@ public class Util {
 			return Pair.of(unexpected, missing);
 		}
 	}
+
+	/**
+	 * check if we are/are not in an @Transactional transaction
+	 * 
+	 * @param inTransaction
+	 */
+	public static void assertInAnnotationTransaction(boolean inTransaction) {
+		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+		for (StackTraceElement ste : stack) {
+			if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")
+					|| ste.getClassName().startsWith("org.springframework.data.couchbase.transaction.interceptor")) {
+				if (inTransaction) {
+					return;
+				}
+			}
+		}
+		if (!inTransaction) {
+			return;
+		}
+		throw new RuntimeException("in-annotation-transaction = " + (!inTransaction)
+				+ " but expected in-annotation-transaction = " + inTransaction);
+	}
+
 }

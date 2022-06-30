@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -28,7 +29,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Reiche
  */
-public interface PersonRepository extends CrudRepository<Person, String> {
+public interface PersonRepository extends CouchbaseRepository<Person, String>, DynamicProxyable<PersonRepository> {
 
 	/*
 	 * These methods are exercised in HomeController of the test spring-boot DemoApplication
@@ -95,7 +96,7 @@ public interface PersonRepository extends CrudRepository<Person, String> {
 
 	boolean existsById(UUID var1);
 
-	Iterable<Person> findAll();
+	List<Person> findAll();
 
 	long count();
 

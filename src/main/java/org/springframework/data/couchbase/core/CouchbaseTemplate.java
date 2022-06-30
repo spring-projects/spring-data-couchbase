@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.springframework.data.couchbase.core.index.CouchbasePersistentEntityIn
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.lang.Nullable;
 
@@ -49,8 +50,8 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	private final CouchbaseTemplateSupport templateSupport;
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 	private final ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
+	private final QueryScanConsistency scanConsistency;
 	private @Nullable CouchbasePersistentEntityIndexCreator indexCreator;
-	private QueryScanConsistency scanConsistency;
 
 	public CouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
 		this(clientFactory, converter, new JacksonTranslationService());
@@ -69,6 +70,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 		this.reactiveCouchbaseTemplate = new ReactiveCouchbaseTemplate(clientFactory, converter, translationService,
 				scanConsistency);
 		this.scanConsistency = scanConsistency;
+
 		this.mappingContext = this.converter.getMappingContext();
 		if (mappingContext instanceof CouchbaseMappingContext) {
 			CouchbaseMappingContext cmc = (CouchbaseMappingContext) mappingContext;
@@ -76,6 +78,16 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 				indexCreator = new CouchbasePersistentEntityIndexCreator(cmc, this);
 			}
 		}
+	}
+
+	@Override
+	public <T> T save(T entity, String... scopeAndCollection) {
+		return reactive().save(entity, scopeAndCollection).block();
+	}
+
+	@Override
+	public <T> Long count(Query query, Class<T> domainType) {
+		return findByQuery(domainType).matching(query).count();
 	}
 
 	@Override
@@ -209,5 +221,4 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public TemplateSupport support() {
 		return templateSupport;
 	}
-
 }

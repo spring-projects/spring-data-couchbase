@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 the original author or authors.
+ * Copyright 2021-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 	final ReactiveCouchbaseTemplate reactiveTemplate;
 	CommonOptions<?> options;
 	String collection;
-	String scope;;
+	String scope;
 
 	public DynamicInvocationHandler(T target, CommonOptions<?> options, String collection, String scope) {
 		this.target = target;
@@ -52,15 +52,29 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 			reactiveTemplate = ((CouchbaseTemplate) ((CouchbaseRepository) target).getOperations()).reactive();
 			this.entityInformation = ((CouchbaseRepository<?, String>) target).getEntityInformation();
 		} else if (target instanceof ReactiveCouchbaseRepository) {
-			reactiveTemplate = (ReactiveCouchbaseTemplate) ((ReactiveCouchbaseRepository) target).getOperations();
-			this.entityInformation = ((ReactiveCouchbaseRepository<?, String>) target).getEntityInformation();
+			reactiveTemplate = (ReactiveCouchbaseTemplate) ((ReactiveCouchbaseRepository) this.target).getOperations();
+			this.entityInformation = ((ReactiveCouchbaseRepository<?, String>) this.target).getEntityInformation();
 		} else {
-			throw new RuntimeException("Unknown target type: " + target.getClass());
+			throw new RuntimeException("Unknown target type: " + target.getClass()
+					+ " CouchbaseRepository.class.isAssignable:" + CouchbaseRepository.class.isAssignableFrom(target.getClass())
+					+ " " + dumpInterfaces(target.getClass(), "  "));
 		}
 		this.options = options;
 		this.collection = collection;
 		this.scope = scope;
 		this.repositoryClass = target.getClass();
+	}
+
+	String dumpInterfaces(Class clazz, String tab) {
+		StringBuffer sb = new StringBuffer();
+		sb.append(tab + "{");
+		for (Class c : clazz.getInterfaces()) {
+			sb.append(tab + "  " + c.getSimpleName());
+			if (c.getInterfaces().length > 0)
+				sb.append(dumpInterfaces(c, tab + "  "));
+		}
+		sb.append(tab + "}");
+		return sb.toString();
 	}
 
 	@Override

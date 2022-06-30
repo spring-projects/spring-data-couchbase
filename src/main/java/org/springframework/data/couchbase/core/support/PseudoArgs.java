@@ -19,13 +19,13 @@ import static org.springframework.data.couchbase.core.query.OptionsBuilder.fromF
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 
+import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.io.CollectionIdentifier;
 
 /**
- * determine the arguments to be used in the operation from various sources
+ * Determine the arguments to be used in the operation from various sources
  *
  * @author Michael Reiche
- *
  * @param <OPTS>
  */
 public class PseudoArgs<OPTS> {
@@ -96,7 +96,7 @@ public class PseudoArgs<OPTS> {
 		// if a collection was specified but no scope, use the scope from the clientFactory
 
 		if (collectionForQuery != null && scopeForQuery == null) {
-			scopeForQuery = template.getCouchbaseClientFactory().getScope().name();
+			scopeForQuery = template.getScopeName();
 		}
 
 		// specifying scope and collection = _default is not necessary and will fail if server doesn't have collections
@@ -110,6 +110,10 @@ public class PseudoArgs<OPTS> {
 
 		this.scopeName = scopeForQuery;
 		this.collectionName = collectionForQuery;
+		if (scopeForQuery != null && collectionForQuery == null) {
+			throw new CouchbaseException(
+					new IllegalArgumentException("if scope is not default or null, then collection must be specified"));
+		}
 		this.options = optionsForQuery;
 
 	}
@@ -139,4 +143,5 @@ public class PseudoArgs<OPTS> {
 	public String toString() {
 		return "scope: " + getScope() + " collection: " + getCollection() + " options: " + getOptions();
 	}
+
 }

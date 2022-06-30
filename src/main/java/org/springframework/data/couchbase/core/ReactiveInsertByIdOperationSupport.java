@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -33,6 +35,11 @@ import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 
+/**
+ * {@link ReactiveInsertByIdOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
@@ -81,20 +88,48 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<InsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			LOG.trace("insertById object={} {}", object, pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
-					});
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("insertById object={} {}", object, pArgs);
+			}
+			return Mono
+					.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection()))
+					.flatMap(collection -> support.encodeEntity(object)
+							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+								if (!ctxOpt.isPresent()) {
+									return collection.reactive()
+											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
+													null, null));
+								} else {
+									rejectInvalidTransactionalOptions();
+									return ctxOpt.get().getCore()
+											.insert(makeCollectionIdentifier(collection.async()), converted.getId(),
+													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
+															.encode(converted.export()).encoded())
+											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
+													null, null));
+								}
+							})).onErrorMap(throwable -> {
+								if (throwable instanceof RuntimeException) {
+									return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+								} else {
+									return throwable;
+								}
+							}));
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if ((this.persistTo != null && this.persistTo != PersistTo.NONE)
+					|| (this.replicateTo != null && this.replicateTo != ReplicateTo.NONE)) {
+				throw new IllegalArgumentException(
+						"withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
+			}
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
 		}
 
 		@Override
@@ -147,6 +182,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			return new ReactiveInsertByIdSupport<>(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, expiry, support);
 		}
+
 	}
 
 }

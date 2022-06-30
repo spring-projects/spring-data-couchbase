@@ -46,9 +46,13 @@ import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
+import com.couchbase.client.java.transactions.config.TransactionsCleanupConfig;
+import com.couchbase.client.java.transactions.config.TransactionsConfig;
 
 /**
  * Parent class which drives all dynamic integration tests based on the configured cluster setup.
+ *
+ * @author Michael Reiche
  *
  * @since 2.0.0
  */
@@ -61,8 +65,13 @@ public abstract class ClusterAwareIntegrationTests {
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
 		testClusterConfig = config;
-		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
-				authenticator(), bucketName(), null, environment().build())) {
+		// Disabling cleanupLostAttempts to simplify output during development
+		ClusterEnvironment env = ClusterEnvironment.builder()
+				.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))
+				.build();
+		String connectString = connectionString();
+		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectString,
+				authenticator(), bucketName(), null, env)) {
 			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(), CreatePrimaryQueryIndexOptions
 					.createPrimaryQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// this is for the N1qlJoin test

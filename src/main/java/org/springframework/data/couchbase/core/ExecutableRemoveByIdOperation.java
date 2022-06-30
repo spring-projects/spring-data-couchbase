@@ -33,6 +33,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * Remove Operations on KV service.
  *
  * @author Christoph Strobl
+ * @author Michael Reiche
  * @since 2.0
  */
 public interface ExecutableRemoveByIdOperation {
@@ -62,6 +63,14 @@ public interface ExecutableRemoveByIdOperation {
 		RemoveResult one(String id);
 
 		/**
+		 * Remove one document based on the entity. Transactions need the entity for the cas.
+		 *
+		 * @param entity the document ID.
+		 * @return result of the remove
+		 */
+		RemoveResult oneEntity(Object entity);
+
+		/**
 		 * Remove the documents in the collection.
 		 *
 		 * @param ids the document IDs.
@@ -69,6 +78,14 @@ public interface ExecutableRemoveByIdOperation {
 		 */
 		@Override
 		List<RemoveResult> all(Collection<String> ids);
+
+		/**
+		 * Remove documents based on the entities. Transactions need the entity for the cas.
+		 *
+		 * @param entities to remove.
+		 * @return result of the remove
+		 */
+		List<RemoveResult> allEntities(Collection<Object> entities);
 
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.util;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.net.URL;
@@ -83,7 +83,7 @@ abstract class TestCluster implements ExtensionContext.Store.CloseableResource {
 				defaults.load(url.openStream());
 			}
 		} catch (Exception ex) {
-			throw new RuntimeException("Could not load properties", ex);
+			throw new RuntimeException("Could not load properties - maybe <packaging> is pom instead of jar?", ex);
 		}
 
 		Properties all = new Properties(System.getProperties());

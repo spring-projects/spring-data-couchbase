@@ -15,26 +15,30 @@
  */
 package org.springframework.data.couchbase.core;
 
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
- *
  * @author Michael Reiche
  */
 public interface TemplateSupport {
 
 	CouchbaseDocument encodeEntity(Object entityToEncode);
 
-	<T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection);
+	<T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
+			Object txResultHolder, CouchbaseResourceHolder holder);
 
-	<T> T applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
+	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, Object txResultHolder,
+			CouchbaseResourceHolder holder);
 
-	<T> T applyUpdatedId(T entity, Object id);
+	Long getCas(Object entity);
 
-	long getCas(Object entity);
+	Object getId(Object entity);
 
 	String getJavaNameForEntity(Class<?> clazz);
 
-	void maybeEmitEvent(CouchbaseMappingEvent<?> event);
+	<T> Integer getTxResultHolder(T source);
+
+	TranslationService getTranslationService();
 }

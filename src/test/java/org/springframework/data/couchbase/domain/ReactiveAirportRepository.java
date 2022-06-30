@@ -46,6 +46,10 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 public interface ReactiveAirportRepository
 		extends ReactiveCouchbaseRepository<Airport, String>, DynamicProxyable<ReactiveAirportRepository> {
 
+	@Query("SELECT META(#{#n1ql.bucket}).id AS __id, META(#{#n1ql.bucket}).cas AS __cas, meta().id as id FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} #{[1]}")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	Flux<String> findIdByDynamicN1ql(String docType, String queryStatement);
+
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAll();

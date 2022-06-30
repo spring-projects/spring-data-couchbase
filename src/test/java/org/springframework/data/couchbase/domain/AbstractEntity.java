@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
 
 /**
  * @author Oliver Gierke
+ * @author Michael Reiche
  */
 @Document
 public class AbstractEntity {
@@ -37,6 +38,10 @@ public class AbstractEntity {
 	 */
 	public UUID getId() {
 		return id;
+	}
+
+	public String id() {
+		return id.toString();
 	}
 
 	/**

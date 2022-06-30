@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.core;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.query.AnalyticsQuery;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
@@ -32,6 +34,8 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 	private static final AnalyticsQuery ALL_QUERY = new AnalyticsQuery();
 
 	private final ReactiveCouchbaseTemplate template;
+
+	private static final Logger LOG = LoggerFactory.getLogger(ReactiveFindByAnalyticsOperationSupport.class);
 
 	public ReactiveFindByAnalyticsOperationSupport(final ReactiveCouchbaseTemplate template) {
 		this.template = template;
@@ -110,8 +114,11 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Flux<T> all() {
 			return Flux.defer(() -> {
 				String statement = assembleEntityQuery(false);
-				return template.getCouchbaseClientFactory().getCluster().reactive()
-						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("findByAnalytics statement: {}", statement);
+				}
+				return TransactionalSupport.verifyNotInTransaction("findByAnalytics").then(template.getCouchbaseClientFactory()
+						.getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {
@@ -132,7 +139,7 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 							}
 							row.removeKey(TemplateUtils.SELECT_ID);
 							row.removeKey(TemplateUtils.SELECT_CAS);
-							return support.decodeEntity(id, row.toString(), cas, returnType, null, null);
+							return support.decodeEntity(id, row.toString(), cas, returnType, null, null, null, null);
 						});
 			});
 		}
@@ -141,8 +148,11 @@ public class ReactiveFindByAnalyticsOperationSupport implements ReactiveFindByAn
 		public Mono<Long> count() {
 			return Mono.defer(() -> {
 				String statement = assembleEntityQuery(true);
-				return template.getCouchbaseClientFactory().getCluster().reactive()
-						.analyticsQuery(statement, buildAnalyticsOptions()).onErrorMap(throwable -> {
+				if (LOG.isDebugEnabled()) {
+					LOG.debug("findByAnalytics statement: {}", statement);
+				}
+				return TransactionalSupport.verifyNotInTransaction("findByAnalytics").then(template.getCouchbaseClientFactory()
+						.getCluster().reactive().analyticsQuery(statement, buildAnalyticsOptions())).onErrorMap(throwable -> {
 							if (throwable instanceof RuntimeException) {
 								return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 							} else {

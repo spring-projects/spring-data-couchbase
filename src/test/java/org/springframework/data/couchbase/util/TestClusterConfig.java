@@ -25,6 +25,8 @@ import java.util.Set;
  * tests for bootstrapping their own code.
  *
  * @since 2.0.0
+ *
+ * @author Michael Reiche
  */
 public class TestClusterConfig {
 
@@ -83,6 +85,7 @@ public class TestClusterConfig {
 	 * Finds the first node with a given service enabled in the config.
 	 * <p>
 	 * This method can be used to find bootstrap nodes and similar.
+	 * </p>
 	 *
 	 * @param service the service to find.
 	 * @return a node config if found, empty otherwise.

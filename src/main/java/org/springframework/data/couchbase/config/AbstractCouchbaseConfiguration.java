@@ -26,6 +26,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
@@ -40,9 +41,16 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping;
+import org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionInterceptor;
+import org.springframework.data.couchbase.transaction.CouchbaseTransactionalOperator;
 import org.springframework.data.mapping.model.CamelCaseAbbreviatingFieldNamingStrategy;
 import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
+import org.springframework.transaction.TransactionManager;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -123,7 +131,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param couchbaseCluster the cluster reference from the SDK.
 	 * @return the initialized factory.
 	 */
-	@Bean
+	@Bean(name = BeanNames.COUCHBASE_CLIENT_FACTORY)
 	public CouchbaseClientFactory couchbaseClientFactory(final Cluster couchbaseCluster) {
 		return new SimpleCouchbaseClientFactory(couchbaseCluster, getBucketName(), getScopeName());
 	}
@@ -280,9 +288,8 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * Creates a {@link CouchbaseMappingContext} equipped with entity classes scanned from the mapping base package.
-	 *
 	 */
-	@Bean
+	@Bean(BeanNames.COUCHBASE_MAPPING_CONTEXT)
 	public CouchbaseMappingContext couchbaseMappingContext(CustomConversions customConversions) throws Exception {
 		CouchbaseMappingContext mappingContext = new CouchbaseMappingContext();
 		mappingContext.setInitialEntitySet(getInitialEntitySet());
@@ -308,6 +315,44 @@ public abstract class AbstractCouchbaseConfiguration {
 			mapper.registerModule(new EncryptionModule(cryptoManager));
 		}
 		return mapper;
+	}
+
+	/**
+	 * The default blocking transaction manager. It is an implementation of CallbackPreferringTransactionManager
+	 * CallbackPreferrringTransactionmanagers do not play well with test-cases that rely
+	 * on @TestTransaction/@BeforeTransaction/@AfterTransaction
+	 *
+	 * @param clientFactory
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_MANAGER)
+	CouchbaseCallbackTransactionManager couchbaseTransactionManager(CouchbaseClientFactory clientFactory) {
+		return new CouchbaseCallbackTransactionManager(clientFactory);
+	}
+
+	/**
+	 * The default TransactionalOperator.
+	 *
+	 * @param couchbaseCallbackTransactionManager
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTIONAL_OPERATOR)
+	public CouchbaseTransactionalOperator couchbaseTransactionalOperator(
+			CouchbaseCallbackTransactionManager couchbaseCallbackTransactionManager) {
+		return CouchbaseTransactionalOperator.create(couchbaseCallbackTransactionManager);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
+		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
+		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor(couchbaseTransactionManager,
+				transactionAttributeSource);
+		interceptor.setTransactionAttributeSource(transactionAttributeSource);
+		if (couchbaseTransactionManager != null) {
+			interceptor.setTransactionManager(couchbaseTransactionManager);
+		}
+		return interceptor;
 	}
 
 	/**
@@ -375,5 +420,4 @@ public abstract class AbstractCouchbaseConfiguration {
 	public QueryScanConsistency getDefaultConsistency() {
 		return null;
 	}
-
 }

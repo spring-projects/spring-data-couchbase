@@ -20,15 +20,20 @@ import reactor.core.publisher.Mono;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
+import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
+import com.couchbase.client.java.transactions.TransactionQueryOptions;
+import com.couchbase.client.java.transactions.TransactionQueryResult;
 
 /**
  * {@link ReactiveFindByQueryOperation} implementations for Couchbase.
@@ -172,40 +177,51 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		public Flux<T> all() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
 			String statement = assembleEntityQuery(false, distinctFields, pArgs.getScope(), pArgs.getCollection());
-			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> allResult = pArgs.getScope() == null
-					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-							buildOptions(pArgs.getOptions()))
-					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-							buildOptions(pArgs.getOptions()));
-			return Flux.defer(() -> allResult.onErrorMap(throwable -> {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("findByQuery {} statement: {}", pArgs, statement);
+			}
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
+				if (!s.isPresent()) {
+					QueryOptions opts = buildOptions(pArgs.getOptions());
+					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+							: rs.query(statement, opts);
+				} else {
+					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
+							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+				}
+			});
+
+			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject).flatMap(row -> {
-				String id = null;
-				Long cas = null;
-				if (query.isDistinct() || distinctFields != null) {
-					id = "";
-					cas = Long.valueOf(0);
-				} else {
-					id = row.getString(TemplateUtils.SELECT_ID);
-					if (id == null) {
-						id = row.getString(TemplateUtils.SELECT_ID_3x);
-						row.removeKey(TemplateUtils.SELECT_ID_3x);
-					}
-					cas = row.getLong(TemplateUtils.SELECT_CAS);
-					if (cas == null) {
-						cas = row.getLong(TemplateUtils.SELECT_CAS_3x);
-						row.removeKey(TemplateUtils.SELECT_CAS_3x);
-					}
-					row.removeKey(TemplateUtils.SELECT_ID);
-					row.removeKey(TemplateUtils.SELECT_CAS);
-				}
-				return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection());
-			}));
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject())).flatMap(row -> {
+						String id = "";
+						Long cas = Long.valueOf(0);
+						if (!query.isDistinct() && distinctFields == null) {
+							id = row.getString(TemplateUtils.SELECT_ID);
+							if (id == null) {
+								id = row.getString(TemplateUtils.SELECT_ID_3x);
+								row.removeKey(TemplateUtils.SELECT_ID_3x);
+							}
+							cas = row.getLong(TemplateUtils.SELECT_CAS);
+							if (cas == null) {
+								cas = row.getLong(TemplateUtils.SELECT_CAS_3x);
+								row.removeKey(TemplateUtils.SELECT_CAS_3x);
+							}
+							row.removeKey(TemplateUtils.SELECT_ID);
+							row.removeKey(TemplateUtils.SELECT_CAS);
+						}
+						return support.decodeEntity(id, row.toString(), cas, returnType, pArgs.getScope(), pArgs.getCollection(),
+								null, null);
+					});
 		}
 
 		public QueryOptions buildOptions(QueryOptions options) {
@@ -213,24 +229,43 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 			return query.buildQueryOptions(options, qsc);
 		}
 
+		private TransactionQueryOptions buildTransactionOptions(QueryOptions options) {
+			TransactionQueryOptions opts = OptionsBuilder.buildTransactionQueryOptions(buildOptions(options));
+			return opts;
+		}
+
 		@Override
 		public Mono<Long> count() {
 			PseudoArgs<QueryOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
 			String statement = assembleEntityQuery(true, distinctFields, pArgs.getScope(), pArgs.getCollection());
-			LOG.trace("findByQuery {} statement: {}", pArgs, statement);
-			Mono<ReactiveQueryResult> countResult = pArgs.getScope() == null
-					? template.getCouchbaseClientFactory().getCluster().reactive().query(statement,
-							buildOptions(pArgs.getOptions()))
-					: template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getScope().reactive().query(statement,
-							buildOptions(pArgs.getOptions()));
-			return Mono.defer(() -> countResult.onErrorMap(throwable -> {
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("findByQuery {} statement: {}", pArgs, statement);
+			}
+
+			CouchbaseClientFactory clientFactory = template.getCouchbaseClientFactory();
+			ReactiveScope rs = clientFactory.withScope(pArgs.getScope()).getScope().reactive();
+
+			Mono<Object> allResult = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
+				if (!s.isPresent()) {
+					QueryOptions opts = buildOptions(pArgs.getOptions());
+					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
+							: rs.query(statement, opts);
+				} else {
+					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
+							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+				}
+			});
+
+			return allResult.onErrorMap(throwable -> {
 				if (throwable instanceof RuntimeException) {
 					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
 				} else {
 					return throwable;
 				}
-			}).flatMapMany(ReactiveQueryResult::rowsAsObject).map(row -> row.getLong(row.getNames().iterator().next()))
-					.next());
+			}).flatMapMany(o -> o instanceof ReactiveQueryResult ? ((ReactiveQueryResult) o).rowsAsObject()
+					: Flux.fromIterable(((TransactionQueryResult) o).rowsAsObject()))
+					.map(row -> row.getLong(row.getNames().iterator().next())).next();
 		}
 
 		@Override

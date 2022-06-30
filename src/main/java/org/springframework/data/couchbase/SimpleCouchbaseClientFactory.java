@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,9 +97,11 @@ public class SimpleCouchbaseClientFactory implements CouchbaseClientFactory {
 	@Override
 	public Collection getCollection(final String collectionName) {
 		final Scope scope = getScope();
-		if (collectionName == null) {
-			if (!scope.name().equals(CollectionIdentifier.DEFAULT_SCOPE)) {
-				throw new IllegalStateException("A collectionName must be provided if a non-default scope is used!");
+		if (collectionName == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collectionName)) {
+			if(scope != null ) {
+				if (scope.name() != null && !CollectionIdentifier.DEFAULT_SCOPE.equals(scope.name())) {
+					throw new IllegalStateException("A collectionName must be provided if a non-default scope is used");
+				}
 			}
 			return getBucket().defaultCollection();
 		}

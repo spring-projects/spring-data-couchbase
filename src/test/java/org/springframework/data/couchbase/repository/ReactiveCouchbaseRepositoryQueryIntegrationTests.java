@@ -97,6 +97,28 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	}
 
 	@Test
+	void testQuery() {
+		Airport vie = null;
+		Airport jfk = null;
+		try {
+			vie = new Airport("airports::vie", "vie", "low1");
+			reactiveAirportRepository.save(vie).block();
+			jfk = new Airport("airports::jfk", "JFK", "xxxx");
+			reactiveAirportRepository.save(jfk).block();
+
+			List<String> all = reactiveAirportRepository.findIdByDynamicN1ql("", "").toStream().collect(Collectors.toList());
+			System.out.println(all);
+			assertFalse(all.isEmpty());
+			assertTrue(all.stream().anyMatch(a -> a.equals("airports::vie")));
+			assertTrue(all.stream().anyMatch(a -> a.equals("airports::jfk")));
+
+		} finally {
+			reactiveAirportRepository.delete(vie).block();
+			reactiveAirportRepository.delete(jfk).block();
+		}
+	}
+
+	@Test
 	void findBySimpleProperty() {
 		Airport vie = null;
 		try {
@@ -219,7 +241,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	void deleteAllById() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDX");
 		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
 
 		try {
@@ -242,7 +264,7 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 	void deleteAll() {
 
 		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
-		Airport frankfurt = new Airport("airports::fra", "fra", "EDDF");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDY");
 		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
 
 		try {

@@ -33,6 +33,11 @@ import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
 import com.couchbase.client.java.kv.UpsertOptions;
 
+/**
+ * {@link ReactiveUpsertByIdOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
 	private final ReactiveCouchbaseTemplate template;
@@ -81,20 +86,27 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 		@Override
 		public Mono<T> one(T object) {
 			PseudoArgs<UpsertOptions> pArgs = new PseudoArgs(template, scope, collection, options, domainType);
-			LOG.trace("upsertById object={} {}", object, pArgs);
-			return Mono.just(object).flatMap(support::encodeEntity)
-					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
-							.getCollection(pArgs.getCollection()).reactive()
-							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
-							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
-									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
-					.onErrorMap(throwable -> {
-						if (throwable instanceof RuntimeException) {
-							return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
-						} else {
-							return throwable;
-						}
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("upsertById object={} {}", object, pArgs);
+			}
+			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
+					.then(support.encodeEntity(object)).flatMap(converted -> {
+						return Mono
+								.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
+										.getCollection(pArgs.getCollection()))
+								.flatMap(collection -> collection.reactive()
+										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+										.flatMap(
+												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
 					});
+
+			return reactiveEntity.onErrorMap(throwable -> {
+				if (throwable instanceof RuntimeException) {
+					return template.potentiallyConvertRuntimeException((RuntimeException) throwable);
+				} else {
+					return throwable;
+				}
+			});
 		}
 
 		@Override

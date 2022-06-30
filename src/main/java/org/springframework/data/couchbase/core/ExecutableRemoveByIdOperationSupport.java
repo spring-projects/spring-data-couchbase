@@ -27,6 +27,11 @@ import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
 
+/**
+ * {@link ExecutableRemoveByIdOperation} implementations for Couchbase.
+ *
+ * @author Michael Reiche
+ */
 public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
 
 	private final CouchbaseTemplate template;
@@ -45,8 +50,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 	public ExecutableRemoveById removeById(Class<?> domainType) {
 
 		return new ExecutableRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE,
-				DurabilityLevel.NONE, null);
+				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				null);
 	}
 
 	static class ExecutableRemoveByIdSupport implements ExecutableRemoveById {
@@ -84,14 +89,24 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 		}
 
 		@Override
+		public RemoveResult oneEntity(final Object entity) {
+			return reactiveRemoveByIdSupport.oneEntity(entity).block();
+		}
+
+		@Override
 		public List<RemoveResult> all(final Collection<String> ids) {
 			return reactiveRemoveByIdSupport.all(ids).collectList().block();
 		}
 
 		@Override
+		public List<RemoveResult> allEntities(final Collection<Object> entities) {
+			return reactiveRemoveByIdSupport.allEntities(entities).collectList().block();
+		}
+
+		@Override
 		public RemoveByIdWithOptions inCollection(final String collection) {
-			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection != null ? collection : this.collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+			return new ExecutableRemoveByIdSupport(template, domainType, scope,
+					collection != null ? collection : this.collection, options, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 		@Override
@@ -118,8 +133,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		@Override
 		public RemoveByIdInCollection inScope(final String scope) {
-			return new ExecutableRemoveByIdSupport(template, domainType, scope != null ? scope : this.scope, collection, options, persistTo, replicateTo,
-					durabilityLevel, cas);
+			return new ExecutableRemoveByIdSupport(template, domainType, scope != null ? scope : this.scope, collection,
+					options, persistTo, replicateTo, durabilityLevel, cas);
 		}
 
 		@Override
@@ -127,6 +142,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 			return new ExecutableRemoveByIdSupport(template, domainType, scope, collection, options, persistTo, replicateTo,
 					durabilityLevel, cas);
 		}
+
 	}
 
 }

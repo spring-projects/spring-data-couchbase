@@ -27,8 +27,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataRetrievalFailureException;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.CollectionsConfig;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
@@ -38,26 +40,28 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * Reactive Repository Query Tests with Collections
  *
  * @author Michael Reiche
  */
-@SpringJUnitConfig(Config.class)
+@SpringJUnitConfig(CollectionsConfig.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;
 	@Autowired ReactiveAirportRepositoryAnnotated reactiveAirportRepositoryAnnotated;
 	@Autowired ReactiveUserColRepository userColRepository;
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -221,9 +225,10 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 		Airport otherAirport = new Airport(loc(), "xxx", "xyz");
 		try {
 			airport = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).save(airport).block();
-			otherAirport = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).save(otherAirport).block();
-			assertEquals(1,
-					reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).deleteByIata(airport.getIata()).collectList().block().size());
+			otherAirport = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName).save(otherAirport)
+					.block();
+			assertEquals(1, reactiveAirportRepository.withScope(scopeName).withCollection(collectionName)
+					.deleteByIata(airport.getIata()).collectList().block().size());
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
@@ -240,7 +245,8 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 			airport = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(airport).block();
 			otherAirport = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(otherAirport).block();
 			// don't specify a collection - should get collection from AirportRepositoryAnnotated
-			assertEquals(1, reactiveAirportRepositoryAnnotated.withScope(scopeName).deleteByIata(airport.getIata()).collectList().block().size());
+			assertEquals(1, reactiveAirportRepositoryAnnotated.withScope(scopeName).deleteByIata(airport.getIata())
+					.collectList().block().size());
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;
@@ -258,8 +264,8 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 			Airport airportSaved = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(airport).block();
 			Airport otherAirportSaved = reactiveAirportRepositoryAnnotated.withScope(scopeName).save(otherAirport).block();
 			// don't specify a collection - should get collection from deleteByIataAnnotated method
-			assertThrows(IndexFailureException.class, () -> assertEquals(1,
-					reactiveAirportRepositoryAnnotated.withScope(scopeName).deleteByIataAnnotated(airport.getIata()).collectList().block().size()));
+			assertThrows(IndexFailureException.class, () -> assertEquals(1, reactiveAirportRepositoryAnnotated
+					.withScope(scopeName).deleteByIataAnnotated(airport.getIata()).collectList().block().size()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw e;

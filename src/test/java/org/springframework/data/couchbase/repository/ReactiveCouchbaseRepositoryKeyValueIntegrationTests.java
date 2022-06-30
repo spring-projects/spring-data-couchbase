@@ -59,10 +59,8 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
 	@Autowired ReactiveUserRepository userRepository;
-
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;
-
-	@Autowired ReactiveAirlineRepository airlineRepository;
+	@Autowired ReactiveAirlineRepository reactiveAirlineRepository;
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
@@ -82,9 +80,10 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		// Airline does not have a version
 		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline", null);
 		// save the document - we don't care how on this call
-		airlineRepository.save(airline).block();
-		airlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or replace.
-		airlineRepository.delete(airline).block();
+		reactiveAirlineRepository.save(airline).block();
+		reactiveAirlineRepository.save(airline).block(); // If it was an insert it would fail. Can't tell if an upsert or
+																											// replace.
+		reactiveAirlineRepository.delete(airline).block();
 	}
 
 	@Test

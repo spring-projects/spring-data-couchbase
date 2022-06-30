@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -37,6 +38,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ReactiveFindByIdOperation.ReactiveFindById;
@@ -46,6 +48,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
 import org.springframework.data.couchbase.domain.User;
@@ -55,10 +58,10 @@ import org.springframework.data.couchbase.domain.UserAnnotated3;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -67,15 +70,24 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@SpringJUnitConfig(Config.class)
 class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
+
+	@Autowired public CouchbaseTemplate couchbaseTemplate;
+	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
 	@BeforeEach
 	@Override
 	public void beforeEach() {
 		super.beforeEach();
-		List<RemoveResult> r1 = reactiveCouchbaseTemplate.removeByQuery(User.class).all().collectList().block();
-		List<RemoveResult> r2 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated.class).all().collectList().block();
-		List<RemoveResult> r3 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated2.class).all().collectList().block();
+		List<RemoveResult> r1 = reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all()
+				.collectList().block();
+		List<RemoveResult> r2 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated.class).withConsistency(REQUEST_PLUS)
+				.all().collectList().block();
+		List<RemoveResult> r3 = reactiveCouchbaseTemplate.removeByQuery(UserAnnotated2.class).withConsistency(REQUEST_PLUS)
+				.all().collectList().block();
+		List<UserAnnotated2> f3 = reactiveCouchbaseTemplate.findByQuery(UserAnnotated2.class).withConsistency(REQUEST_PLUS)
+				.all().collectList().block();
 	}
 
 	@Test
@@ -91,15 +103,14 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 					.one(user1.getId()).block();
 			user1.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user1, foundUser);
-			sleepMs(2000);
+			sleepMs(3000);
 
 			Collection<User> foundUsers = (Collection<User>) reactiveCouchbaseTemplate.findById(User.class)
 					.all(Arrays.asList(user1.getId(), user2.getId())).collectList().block();
 			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
 			assertEquals(user2, foundUsers.iterator().next());
 		} finally {
-			reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all()
-					.collectList().block();
+			reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		}
 
 	}

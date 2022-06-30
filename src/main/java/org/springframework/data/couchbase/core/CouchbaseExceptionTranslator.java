@@ -25,12 +25,32 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
-import org.springframework.dao.OptimisticLockingFailureException;;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.dao.support.PersistenceExceptionTranslator;
+import org.springframework.data.couchbase.transaction.error.UncategorizedTransactionDataAccessException;
 
-import com.couchbase.client.core.error.*;
+import com.couchbase.client.core.error.BucketNotFoundException;
+import com.couchbase.client.core.error.CasMismatchException;
+import com.couchbase.client.core.error.CollectionNotFoundException;
+import com.couchbase.client.core.error.ConfigException;
+import com.couchbase.client.core.error.DecodingFailureException;
+import com.couchbase.client.core.error.DesignDocumentNotFoundException;
+import com.couchbase.client.core.error.DocumentExistsException;
+import com.couchbase.client.core.error.DocumentLockedException;
+import com.couchbase.client.core.error.DocumentNotFoundException;
+import com.couchbase.client.core.error.DurabilityAmbiguousException;
+import com.couchbase.client.core.error.DurabilityImpossibleException;
+import com.couchbase.client.core.error.DurabilityLevelNotAvailableException;
+import com.couchbase.client.core.error.EncodingFailureException;
+import com.couchbase.client.core.error.ReplicaNotConfiguredException;
+import com.couchbase.client.core.error.RequestCanceledException;
+import com.couchbase.client.core.error.ScopeNotFoundException;
+import com.couchbase.client.core.error.ServiceNotAvailableException;
+import com.couchbase.client.core.error.TemporaryFailureException;
+import com.couchbase.client.core.error.ValueTooLargeException;
+import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 
 /**
  * Simple {@link PersistenceExceptionTranslator} for Couchbase.
@@ -41,6 +61,8 @@ import com.couchbase.client.core.error.*;
  *
  * @author Michael Nitschinger
  * @author Simon Baslé
+ * @author Michael Reiche
+ * @author Graham Pople
  */
 public class CouchbaseExceptionTranslator implements PersistenceExceptionTranslator {
 
@@ -71,7 +93,7 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			return new OptimisticLockingFailureException(ex.getMessage(), ex);
 		}
 
-		if ( ex instanceof ReplicaNotConfiguredException || ex instanceof DurabilityLevelNotAvailableException
+		if (ex instanceof ReplicaNotConfiguredException || ex instanceof DurabilityLevelNotAvailableException
 				|| ex instanceof DurabilityImpossibleException || ex instanceof DurabilityAmbiguousException) {
 			return new DataIntegrityViolationException(ex.getMessage(), ex);
 		}
@@ -96,6 +118,13 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			// note: the more specific CouchbaseQueryExecutionException should be thrown by the template
 			// when dealing with TranscodingException in the query/n1ql methods.
 			return new DataRetrievalFailureException(ex.getMessage(), ex);
+		}
+
+		if (ex instanceof TransactionOperationFailedException) {
+			// Replace the TransactionOperationFailedException, since we want the Spring operation to fail with a
+			// Spring error. Internal state has already been set in the AttemptContext so the retry, rollback etc.
+			// will get respected regardless of what gets propagated (or not) from the lambda.
+			return new UncategorizedTransactionDataAccessException((TransactionOperationFailedException) ex);
 		}
 
 		// Unable to translate exception, therefore just throw the original!

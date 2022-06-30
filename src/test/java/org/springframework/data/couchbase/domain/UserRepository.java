@@ -76,4 +76,7 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 		} catch (InterruptedException ie) {}
 		return findByFirstname(firstname);
 	}
+
+	@Override
+	User save(User user);
 }

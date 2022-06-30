@@ -27,6 +27,14 @@ import org.springframework.data.couchbase.repository.query.CouchbaseEntityInform
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
+/**
+ * Common base for SimpleCouchbaseRepository and SimpleReactiveCouchbaseRepository
+ *
+ * @param <T>
+ * @param <ID>
+ *
+ * @author Michael Reiche
+ */
 public class CouchbaseRepositoryBase<T, ID> {
 
 	/**
@@ -60,7 +68,7 @@ public class CouchbaseRepositoryBase<T, ID> {
 	}
 
 	<S extends T> String getId(S entity) {
-		return getEntityInformation().getId(entity);
+		return String.valueOf(getEntityInformation().getId(entity));
 	}
 
 	/**

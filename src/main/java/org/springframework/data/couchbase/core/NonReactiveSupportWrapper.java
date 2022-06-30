@@ -17,13 +17,15 @@ package org.springframework.data.couchbase.core;
 
 import reactor.core.publisher.Mono;
 
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
  * Wrapper of {@link TemplateSupport} methods to adapt them to {@link ReactiveTemplateSupport}.
  *
  * @author Carlos Espinaco
+ * @author Michael Reiche
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
@@ -40,24 +42,26 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope,
-			String collection) {
-		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection));
+	public <T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
+									Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> support.decodeEntity(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
 	}
 
 	@Override
-	public Mono<Object> applyUpdatedCas(Object entity, CouchbaseDocument converted, long cas) {
-		return Mono.fromSupplier(() -> support.applyUpdatedCas(entity, converted, cas));
+	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
+								   Object txResultHolder, CouchbaseResourceHolder holder) {
+		return Mono.fromSupplier(() -> support.applyResult(entity, converted, id, cas, txResultHolder, holder));
 	}
 
-	@Override
-	public Mono<Object> applyUpdatedId(Object entity, Object id) {
-		return Mono.fromSupplier(() -> support.applyUpdatedId(entity, id));
-	}
 
 	@Override
 	public Long getCas(Object entity) {
 		return support.getCas(entity);
+	}
+
+	@Override
+	public Object getId(Object entity) {
+		return support.getId(entity);
 	}
 
 	@Override
@@ -66,7 +70,7 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public void maybeEmitEvent(CouchbaseMappingEvent<?> event) {
-		support.maybeEmitEvent(event);
+	public TranslationService getTranslationService() {
+		return support.getTranslationService();
 	}
 }
