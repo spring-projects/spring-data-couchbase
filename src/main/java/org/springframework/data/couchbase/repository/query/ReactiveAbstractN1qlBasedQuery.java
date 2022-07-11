@@ -58,6 +58,8 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 	@Override
 	public Object execute(Object[] parameters) {
 		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(queryMethod, parameters);
+
+		return accessor.resolveParameters().flatMapMany(it -> {
 		ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
 		ReturnedType returnedType = processor.getReturnedType();
 
@@ -71,6 +73,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 		N1QLQuery query = N1qlUtils.buildQuery(expression, queryPlaceholderValues, getScanConsistency());
 		return ReactiveWrapperConverters
 				.toWrapper(processor.processResult(executeDependingOnType(query, queryMethod, typeToRead)), Flux.class);
+		});
 	}
 
 	protected Object executeDependingOnType(N1QLQuery query, QueryMethod queryMethod, Class<?> typeToRead) {
@@ -130,7 +133,7 @@ public abstract class ReactiveAbstractN1qlBasedQuery implements RepositoryQuery 
 		    if (queryMethod.hasConsistencyAnnotation()) {
 		    return queryMethod.getConsistencyAnnotation().value();
 		  }
-		
+
 		  return getCouchbaseOperations().getDefaultConsistency().n1qlConsistency();*/
 	}
 }

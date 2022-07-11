@@ -38,7 +38,7 @@ import org.springframework.util.Assert;
 /**
  * {@link RepositoryQuery} implementation for Couchbase. CouchbaseOperationsType is either CouchbaseOperations or
  * ReactiveCouchbaseOperations
- * 
+ *
  * @author Michael Reiche
  * @since 4.1
  */
@@ -105,16 +105,17 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 
 	/**
 	 * Execute the query with the provided parameters
-	 * 
+	 *
 	 * @see org.springframework.data.repository.query.RepositoryQuery#execute(java.lang.Object[])
 	 */
 	public Object execute(Object[] parameters) {
-		return method.hasReactiveWrapperParameter() ? executeDeferred(parameters)
-				: execute(new ReactiveCouchbaseParameterAccessor(getQueryMethod(), parameters));
+
+		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(getQueryMethod(), parameters);
+
+		return accessor.resolveParameters().flatMapMany(this::executeDeferred);
 	}
 
-	private Object executeDeferred(Object[] parameters) {
-		ReactiveCouchbaseParameterAccessor parameterAccessor = new ReactiveCouchbaseParameterAccessor(method, parameters);
+	private Publisher<Object> executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor) {
 		if (getQueryMethod().isCollectionQuery()) {
 			return Flux.defer(() -> (Publisher<Object>) execute(parameterAccessor));
 		}

@@ -124,12 +124,12 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "low2");
 			reactiveAirportRepository.save(vie).block();
-			List<Airport> airports1 = reactiveAirportRepository.findAllByIata("vie").collectList().block();
+			List<Airport> airports1 = reactiveAirportRepository.findAllByIata(Mono.just("vie")).collectList().block();
 			assertEquals(1, airports1.size());
-			List<Airport> airports2 = reactiveAirportRepository.findAllByIata("vie").collectList().block();
+			List<Airport> airports2 = reactiveAirportRepository.findAllByIata(Mono.just("vie")).collectList().block();
 			assertEquals(1, airports2.size());
 			vie = reactiveAirportRepository.save(vie).block();
-			List<Airport> airports = reactiveAirportRepository.findAllByIata("vie").collectList().block();
+			List<Airport> airports = reactiveAirportRepository.findAllByIata(Mono.just("vie")).collectList().block();
 			assertEquals(1, airports.size());
 			Airport airport1 = reactiveAirportRepository.findById(airports.get(0).getId()).block();
 			assertEquals(airport1.getIata(), vie.getIata());

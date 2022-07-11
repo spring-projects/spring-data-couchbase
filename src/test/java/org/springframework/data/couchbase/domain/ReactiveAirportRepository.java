@@ -62,7 +62,7 @@ public interface ReactiveAirportRepository
 	Mono<Airport> save(Airport a);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-	Flux<Airport> findAllByIata(String iata);
+	Flux<Airport> findAllByIata(Mono<String> iata);
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Airport> iata(String iata);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2020 the original author or authors.
+ * Copyright 2017-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,14 @@ package org.springframework.data.couchbase.repository.query;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoProcessor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.reactivestreams.Publisher;
 
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
@@ -36,47 +40,87 @@ import org.springframework.data.repository.util.ReactiveWrappers;
  */
 public class ReactiveCouchbaseParameterAccessor extends ParametersParameterAccessor {
 
-	private final List<MonoProcessor<?>> subscriptions;
+	private final CouchbaseQueryMethod method;
+	private final Object[] values;
 
 	public ReactiveCouchbaseParameterAccessor(CouchbaseQueryMethod method, Object[] values) {
+
 		super(method.getParameters(), values);
-		this.subscriptions = new ArrayList<>(values.length);
+		this.method = method;
+		this.values = values;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.springframework.data.mongodb.repository.query.MongoParametersParameterAccessor#getValues()
+	 */
+	@Override
+	public Object[] getValues() {
+
+		Object[] result = new Object[super.getValues().length];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = getValue(i);
+		}
+		return result;
+	}
+
+	public Object getBindableValue(int index) {
+		return getValue(getParameters().getBindableParameter(index).getIndex());
+	}
+
+	/**
+	 * Resolve parameters that were provided through reactive wrapper types. Flux is collected into a list, values from
+	 * Mono's are used directly.
+	 *
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public Mono<ReactiveCouchbaseParameterAccessor> resolveParameters() {
+
+		boolean hasReactiveWrapper = false;
+
+		for (Object value : values) {
+			if (value == null || !ReactiveWrappers.supports(value.getClass())) {
+				continue;
+			}
+
+			hasReactiveWrapper = true;
+			break;
+		}
+
+		if (!hasReactiveWrapper) {
+			return Mono.just(this);
+		}
+
+		Object[] resolved = new Object[values.length];
+		Map<Integer, Optional<?>> holder = new ConcurrentHashMap<>();
+		List<Publisher<?>> publishers = new ArrayList<>();
 
 		for (int i = 0; i < values.length; i++) {
 
-			Object value = values[i];
-
+			Object value = resolved[i] = values[i];
 			if (value == null || !ReactiveWrappers.supports(value.getClass())) {
-				subscriptions.add(null);
 				continue;
 			}
 
 			if (ReactiveWrappers.isSingleValueType(value.getClass())) {
-				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Mono.class).toProcessor());
+
+				int index = i;
+				publishers.add(ReactiveWrapperConverters.toWrapper(value, Mono.class) //
+						.map(Optional::of) //
+						.defaultIfEmpty(Optional.empty()) //
+						.doOnNext(it -> holder.put(index, (Optional<?>) it)));
 			} else {
-				subscriptions.add(ReactiveWrapperConverters.toWrapper(value, Flux.class).collectList().toProcessor());
+
+				int index = i;
+				publishers.add(ReactiveWrapperConverters.toWrapper(value, Flux.class) //
+						.collectList() //
+						.doOnNext(it -> holder.put(index, Optional.of(it))));
 			}
 		}
-	}
 
-	/* (non-Javadoc)
-	 * @see org.springframework.data.repository.query.ParametersParameterAccessor#getValue(int)
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	protected <T> T getValue(int index) {
-
-		if (subscriptions.get(index) != null) {
-			return (T) subscriptions.get(index).block();
-		}
-
-		return super.getValue(index);
-	}
-
-	/* (non-Javadoc)
-	 * @see org.springframework.data.repository.query.ParametersParameterAccessor#getBindableValue(int)
-	 */
-	public Object getBindableValue(int index) {
-		return getValue(getParameters().getBindableParameter(index).getIndex());
+		return Flux.merge(publishers).then().thenReturn(resolved).map(values -> {
+			holder.forEach((index, v) -> values[index] = v.orElse(null));
+			return new ReactiveCouchbaseParameterAccessor(method, values);
+		});
 	}
 }
