@@ -103,10 +103,14 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 					.one(user1.getId()).block();
 			user1.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user1, foundUser);
-			sleepMs(3000);
 
-			Collection<User> foundUsers = (Collection<User>) reactiveCouchbaseTemplate.findById(User.class)
-					.all(Arrays.asList(user1.getId(), user2.getId())).collectList().block();
+			int tries = 0;
+			Collection<User> foundUsers;
+			do {
+				sleepSecs(1);
+				foundUsers = (Collection<User>) reactiveCouchbaseTemplate.findById(User.class)
+						.all(Arrays.asList(user1.getId(), user2.getId())).collectList().block();
+			} while (tries++ < 10 && foundUsers.size() != 1 && !user2.equals(foundUsers.iterator().next()));
 			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
 			assertEquals(user2, foundUsers.iterator().next());
 		} finally {
@@ -230,23 +234,28 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			}
 		}
 		// check that they are gone after a few seconds.
-		sleepSecs(4);
-		List<String> errorList = new LinkedList();
-		for (User user : users) {
-			User found = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
-			if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
-				if (found == null) {
-					errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId());
+		int tries = 0;
+		List<String> errorList = new LinkedList<>();
+		do {
+			sleepSecs(1);
+			for (User user : users) {
+				errorList = new LinkedList<>();
+				User found = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
+				if (user.getId().endsWith(UserAnnotated3.class.getSimpleName())) {
+					if (found == null) {
+						errorList.add("\nfound should be non null as it was set to have no expiry " + user.getId());
+					}
+				} else {
+					if (found != null) {
+						errorList.add("\nfound should have been null as document should be expired " + user.getId());
+					}
 				}
-			} else {
 				if (found != null) {
-					errorList.add("\nfound should have been null as document should be expired " + user.getId());
+					couchbaseTemplate.removeById(user.getClass()).one(user.getId());
 				}
 			}
-			if (found != null) {
-				couchbaseTemplate.removeById(user.getClass()).one(user.getId());
-			}
-		}
+
+		} while (tries++ < 10 && !errorList.isEmpty());
 
 		if (!errorList.isEmpty()) {
 			throw new RuntimeException(errorList.toString());
