@@ -18,7 +18,6 @@ package org.springframework.data.couchbase.repository.query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
@@ -112,14 +111,12 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 
 		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(getQueryMethod(), parameters);
 
-		return accessor.resolveParameters().flatMapMany(this::executeDeferred);
+		Object result = accessor.resolveParameters().map(this::executeDeferred);
+		return ((Mono<Object>) result).block() ;
 	}
 
-	private Publisher<Object> executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor) {
-		if (getQueryMethod().isCollectionQuery()) {
-			return Flux.defer(() -> (Publisher<Object>) execute(parameterAccessor));
-		}
-		return Mono.defer(() -> (Mono<Object>) execute(parameterAccessor));
+	private Object executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor) {
+		return execute(parameterAccessor);
 	}
 
 	private Object execute(ParametersParameterAccessor parameterAccessor) {
