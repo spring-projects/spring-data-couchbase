@@ -18,6 +18,9 @@ package org.springframework.data.couchbase.core;
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -107,6 +110,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					}
 				} else {
+					rejectInvalidTransactionalOptions();
 					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id)
 							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
 									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
@@ -127,6 +131,18 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 				}
 			});
 
+		}
+
+		private void rejectInvalidTransactionalOptions() {
+			if (this.expiry != null) {
+				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
+			}
+			if (this.options != null) {
+				throw new IllegalArgumentException("withOptions is not supported in a transaction");
+			}
+			if (this.fields != null) {
+				throw new IllegalArgumentException("project is not supported in a transaction");
+			}
 		}
 
 		@Override

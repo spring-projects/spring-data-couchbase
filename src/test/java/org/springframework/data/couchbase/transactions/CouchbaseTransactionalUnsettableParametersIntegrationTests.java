@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +42,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.GetOptions;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
@@ -174,6 +175,30 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	public void removeWithOptions() {
 		test((ops) -> {
 			ops.removeById(Person.class).withOptions(RemoveOptions.removeOptions()).oneEntity(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using findById().withExpiry in a transaction is rejected at runtime")
+	@Test
+	public void findWithExpiry() {
+		test((ops) -> {
+			ops.replaceById(Person.class).withExpiry(Duration.ofSeconds(3)).one(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using findById().project in a transaction is rejected at runtime")
+	@Test
+	public void findProject() {
+		test((ops) -> {
+			ops.findById(Person.class).project(new String[] { "someField" }).one(WalterWhite.id());
+		});
+	}
+
+	@DisplayName("Using findById().withOptions in a transaction is rejected at runtime")
+	@Test
+	public void findWithOptions() {
+		test((ops) -> {
+			ops.findById(Person.class).withOptions(GetOptions.getOptions()).one(WalterWhite.id());
 		});
 	}
 
