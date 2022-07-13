@@ -134,6 +134,9 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 				throw new IllegalArgumentException(
 						"withDurability PersistTo and ReplicateTo overload is not supported in a transaction");
 			}
+			if (this.durabilityLevel != null && this.durabilityLevel != DurabilityLevel.NONE) {
+				throw new IllegalArgumentException("withDurability is not supported in a transaction");
+			}
 			if (this.options != null) {
 				throw new IllegalArgumentException("withOptions is not supported in a transaction");
 			}

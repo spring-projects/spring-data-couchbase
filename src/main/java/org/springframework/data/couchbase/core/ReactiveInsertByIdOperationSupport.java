@@ -127,6 +127,9 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			if (this.expiry != null) {
 				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
 			}
+			if (this.durabilityLevel != null && this.durabilityLevel != DurabilityLevel.NONE) {
+				throw new IllegalArgumentException("withDurability is not supported in a transaction");
+			}
 			if (this.options != null) {
 				throw new IllegalArgumentException("withOptions is not supported in a transaction");
 			}

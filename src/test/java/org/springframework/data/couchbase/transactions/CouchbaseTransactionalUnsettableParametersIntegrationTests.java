@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -53,6 +54,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * will be rejected at runtime.
  *
  * @author Graham Pople
+ * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class,
@@ -103,6 +105,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 		});
 	}
 
+	@DisplayName("Using insertById().withDurability(durabilityLevel) in a transaction is rejected at runtime")
+	@Test
+	public void insertWithDurability2() {
+		test((ops) -> {
+			ops.insertById(Person.class).withDurability(DurabilityLevel.MAJORITY).one(WalterWhite);
+		});
+	}
+
 	@DisplayName("Using insertById().withOptions in a transaction is rejected at runtime")
 	@Test
 	public void insertWithOptions() {
@@ -127,6 +137,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 		});
 	}
 
+	@DisplayName("Using replaceById().withDurability(durabilityLevel) in a transaction is rejected at runtime")
+	@Test
+	public void replaceWithDurability2() {
+		test((ops) -> {
+			ops.replaceById(Person.class).withDurability(DurabilityLevel.MAJORITY).one(WalterWhite);
+		});
+	}
+
 	@DisplayName("Using replaceById().withOptions in a transaction is rejected at runtime")
 	@Test
 	public void replaceWithOptions() {
@@ -140,6 +158,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	public void removeWithDurability() {
 		test((ops) -> {
 			ops.removeById(Person.class).withDurability(PersistTo.ONE, ReplicateTo.ONE).oneEntity(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using removeById().withDurability(durabilityLevel) in a transaction is rejected at runtime")
+	@Test
+	public void removeWithDurability2() {
+		test((ops) -> {
+			ops.removeById(Person.class).withDurability(DurabilityLevel.MAJORITY).oneEntity(WalterWhite);
 		});
 	}
 
