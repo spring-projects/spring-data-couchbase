@@ -37,7 +37,6 @@ import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import com.couchbase.client.core.env.IoConfig;
 import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.java.Bucket;
@@ -53,15 +52,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Sample code for connecting to Capella through both the control-plane and the data-plane. An Access Key and a Secret
- * Key are required and a bucket named "my_bucket" on the 'last' cluster.
+ * Key are required and a bucket named "my_bucket" on the 'last' cluster. <br>
+ * 1) Create a cluster that has data, index and query nodes. <br>
+ * 2) Cluster -> Connectivity : allow your client ip address (or all ip address 0/0.0.0.0)<br>
+ * 3) Create a user "user" in the cluster with password "Couch0base!" and Read/Write access to all buckets <br>
+ * 4) Create a bucket named "my_bucket" <br>
+ * 5) Get your access key from API Keys. The secret key is available only when the key is generated. If you have not
+ * saved it, then generate a new key and save the secret key. <br>
  */
 public class CapellaConnectSample {
 
-	static final String cbc_access_key = "3gcpgyTBzOetdETYxOAtmLYBe3f9ZSVN";
-	static final String cbc_secret_key = "PWiACuJIZUlv0fCZaIQbhI44NDXVZCDdRBbpdaWlACioN7jkuOINCUVrU2QL1jVO";
+	static final String cbc_access_key = "3gcpgyTBzOetdETYxOAtmLYBe3f9ZSVN"; // replace with your access key and...
+	static final String cbc_secret_key = "PWiACuJIZUlv0fCZaIQbhI44NDXVZCDdRBbpdaWlACioN7jkuOINCUVrU2QL1jVO"; // secret key
+	// Update this to your cluster
+	static String bucketName = "my_bucket";
+	static String username = "user";
+	static String password = "Couch0base!";
+	// User Input ends here.
+
 	static final String hostname = "cloudapi.cloud.couchbase.com";
 	static final HandshakeCertificates clientCertificates = new HandshakeCertificates.Builder()
-			.addPlatformTrustedCertificates().addInsecureHost(hostname).build();
+			.addPlatformTrustedCertificates()/*.addInsecureHost(hostname)*/.build();
 	static final OkHttpClient httpClient = new OkHttpClient.Builder()
 			.sslSocketFactory(clientCertificates.sslSocketFactory(), clientCertificates.trustManager()).build();
 
@@ -72,18 +83,14 @@ public class CapellaConnectSample {
 	public static void main(String... args) {
 		String endpoint = null; // "cb.zsibzkbgllfbcj8g.cloud.couchbase.com";
 		List<String> clusterIds = getClustersControlPlane();
+		// the following loop assumes that the desired cluster is the last one in the list.
+		// If this is not the case, then the endpoint for the desired cluster must be selected.
 		for (String id : clusterIds) {
 			endpoint = getClusterControlPlane(id);
 		}
 
-		// Update this to your cluster
-		String bucketName = "my_bucket";
-		String username = "user";
-		String password = "Couch0base!";
-		// User Input ends here.
-
 		ClusterEnvironment env = ClusterEnvironment.builder()
-				.securityConfig(SecurityConfig.enableTls(true).trustManagerFactory(InsecureTrustManagerFactory.INSTANCE))
+				.securityConfig(SecurityConfig.enableTls(true)/*.trustManagerFactory(InsecureTrustManagerFactory.INSTANCE)*/)
 				.ioConfig(IoConfig.enableDnsSrv(true)).build();
 
 		// Initialize the Connection
@@ -128,6 +135,8 @@ public class CapellaConnectSample {
 		}
 		return clusterIds;
 	}
+
+	// the methods below are required only to get the endpoint (host)
 
 	public static String getClusterControlPlane(String clusterId) {
 		String endpointsSrv;
