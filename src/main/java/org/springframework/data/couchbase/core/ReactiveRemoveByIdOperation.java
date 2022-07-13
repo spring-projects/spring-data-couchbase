@@ -84,10 +84,10 @@ public interface ReactiveRemoveByIdOperation {
 		/**
 		 * Remove the documents in the collection. Requires whole entity for transaction to have the cas.
 		 *
-		 * @param ids the document IDs.
+		 * @param entities the entities to remove.
 		 * @return result of the removes.
 		 */
-		Flux<RemoveResult> allEntities(Collection<Object> ids);
+		Flux<RemoveResult> allEntities(Collection<Object> entities);
 
 	}
 
