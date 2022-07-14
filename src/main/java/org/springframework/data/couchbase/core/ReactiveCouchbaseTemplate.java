@@ -72,10 +72,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		this.scanConsistency = scanConsistency;
 	}
 
-	public <T> Mono<T> save(T entity) {
-		return save(entity, null, null);
-	}
-
+	@Override
 	public <T> Mono<T> save(T entity, String... scopeAndCollection) {
 		Assert.notNull(entity, "Entity must not be null!");
 		String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
