@@ -126,6 +126,21 @@ public class SDKReactiveTransactionsTemplateIntegrationTests extends JavaIntegra
 		assertEquals(1, rr.attempts);
 	}
 
+	private RunResult doInTransaction2(Function<ReactiveTransactionAttemptContext, Mono<?>> lambda,
+			@Nullable TransactionOptions options) {
+		AtomicInteger attempts = new AtomicInteger();
+
+		TransactionResult result = couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
+			return TransactionalSupport.checkForTransactionInThreadLocalStorage().then(Mono.defer(() -> {
+				return lambda.apply(ctx);
+			}));
+		}, options).block();
+
+		assertNotInTransaction();
+
+		return new RunResult(result, attempts.get());
+	}
+
 	@DisplayName("A basic golden path replace should succeed")
 	@Test
 	public void committedReplace() {

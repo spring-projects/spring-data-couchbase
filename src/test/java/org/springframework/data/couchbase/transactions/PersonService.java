@@ -20,7 +20,6 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.springframework.data.couchbase.util.JavaIntegrationTests.throwSimulateFailureException;
 import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -32,93 +31,76 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.reactive.TransactionalOperator;
 
 /**
  * PersonService for tests
  *
  * @author Michael Reiche
  */
-@Service
-@Component
-@EnableTransactionManagement
+@Service // this will work in the unit tests even without @Service because of explicit loading by @SpringJUnitConfig
 class PersonService {
 
 	final CouchbaseOperations personOperations;
-	final ReactiveCouchbaseOperations personOperationsRx;
-	final TransactionalOperator transactionalOperator;
+	final ReactiveCouchbaseOperations reactivePersonOperations;
 
-	public PersonService(CouchbaseOperations ops, ReactiveCouchbaseOperations opsRx,
-			TransactionalOperator transactionalOperator) {
+	public PersonService(CouchbaseOperations ops, ReactiveCouchbaseOperations reactiveOps) {
 		personOperations = ops;
-		personOperationsRx = opsRx;
-		this.transactionalOperator = transactionalOperator;
+		reactivePersonOperations = reactiveOps;
 	}
 
+	@Transactional
 	public Person savePersonErrors(Person person) {
 		assertInAnnotationTransaction(false);
-
-		return personOperationsRx.insertById(Person.class).one(person)//
-				.<Person> flatMap(it -> Mono.error(new SimulateFailureException()))//
-				.as(transactionalOperator::transactional).block();
+		Person p = personOperations.insertById(Person.class).one(person);
+		SimulateFailureException.throwEx("savePersonErrors");
+		return p;
 	}
 
+	@Transactional
 	public Person savePerson(Person person) {
-		assertInAnnotationTransaction(false);
-		return personOperationsRx.insertById(Person.class).one(person)//
-				.as(transactionalOperator::transactional).block();
+		assertInAnnotationTransaction(true);
+		return personOperations.insertById(Person.class).one(person);
 	}
 
+	@Transactional
 	public Long countDuringTx(Person person) {
-		assertInAnnotationTransaction(false);
-		return personOperationsRx.insertById(Person.class).one(person)//
-				.then(personOperationsRx.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count())
-				.as(transactionalOperator::transactional).block();
+		assertInAnnotationTransaction(true);
+		Person p = personOperations.insertById(Person.class).one(person);
+		return personOperations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count();
 	}
 
+	@Transactional
 	public List<CouchbasePersonTransactionIntegrationTests.EventLog> saveWithLogs(Person person) {
-		assertInAnnotationTransaction(false);
-		return Flux
-				.merge(
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeConvert")),
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterConvert")),
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeInsert")),
-						personOperationsRx.insertById(Person.class).one(person),
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterInsert"))) //
-				.thenMany(personOperationsRx.findByQuery(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-						.withConsistency(REQUEST_PLUS).all()) //
-				.as(transactionalOperator::transactional).collectList().block();
+		assertInAnnotationTransaction(true);
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeConvert"));
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterConvert"));
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeInsert"));
+		personOperations.insertById(Person.class).one(person);
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterInsert"));
+		return personOperations.findByQuery(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.withConsistency(REQUEST_PLUS).all();
 	}
 
+	@Transactional
 	public List<CouchbasePersonTransactionIntegrationTests.EventLog> saveWithErrorLogs(Person person) {
-		assertInAnnotationTransaction(false);
-
-		return Flux
-				.merge(
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeConvert")),
-						//
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterConvert")),
-						//
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeInsert")),
-						//
-						personOperationsRx.insertById(Person.class).one(person),
-						//
-						personOperationsRx.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-								.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterInsert"))) //
-				.thenMany(personOperationsRx.findByQuery(CouchbasePersonTransactionIntegrationTests.EventLog.class)
-						.withConsistency(REQUEST_PLUS).all()) //
-				.<CouchbasePersonTransactionIntegrationTests.EventLog> flatMap(it -> Mono.error(new SimulateFailureException()))
-				.as(transactionalOperator::transactional).collectList().block();
-
+		assertInAnnotationTransaction(true);
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeConvert"));
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterConvert"));
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "beforeInsert"));
+		personOperations.insertById(Person.class).one(person);
+		personOperations.insertById(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.one(new CouchbasePersonTransactionIntegrationTests.EventLog(new ObjectId(), "afterInsert"));
+		SimulateFailureException.throwEx("saveEventError");
+		return personOperations.findByQuery(CouchbasePersonTransactionIntegrationTests.EventLog.class)
+				.withConsistency(REQUEST_PLUS).all();
 	}
 
 	// org.springframework.beans.factory.NoUniqueBeanDefinitionException:
@@ -160,14 +142,12 @@ class PersonService {
 	 * @param person
 	 * @return
 	 */
-	// @Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-	// must use transactionalOperator
+	@Transactional
 	public Mono<Person> declarativeFindReplacePersonReactive(Person person, AtomicInteger tryCount) {
-		// assertInAnnotationTransaction(true);
-		return personOperationsRx.findById(Person.class).one(person.id())
+		assertInAnnotationTransaction(true);
+		return reactivePersonOperations.findById(Person.class).one(person.id())
 				.map((p) -> ReplaceLoopThread.updateOutOfTransaction(personOperations, p, tryCount.incrementAndGet()))
-				.flatMap(p -> personOperationsRx.replaceById(Person.class).one(p.withFirstName(person.getFirstname())))
-				.as(transactionalOperator::transactional);
+				.flatMap(p -> reactivePersonOperations.replaceById(Person.class).one(p.withFirstName(person.getFirstname())));
 	}
 
 	/**
@@ -183,19 +163,17 @@ class PersonService {
 		return personOperations.replaceById(Person.class).one(p.withFirstName(person.getFirstname()));
 	}
 
-	// @Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-	// must use transactionalOperator
+	@Transactional
 	public Mono<Person> declarativeSavePersonReactive(Person person) {
-		// assertInAnnotationTransaction(true);
-		return personOperationsRx.insertById(Person.class).one(person).as(transactionalOperator::transactional);
+		assertInAnnotationTransaction(true);
+		return reactivePersonOperations.insertById(Person.class).one(person);
 	}
 
-	// @Transactional(transactionManager = BeanNames.REACTIVE_COUCHBASE_TRANSACTION_MANAGER)
-	// must use transactionalOperator
+	@Transactional
 	public Mono<Person> declarativeSavePersonErrorsReactive(Person person) {
-		// assertInAnnotationTransaction(true);
-		return personOperationsRx.insertById(Person.class).one(person).map((pp) -> throwSimulateFailureException(pp))
-				.as(transactionalOperator::transactional); //
+		assertInAnnotationTransaction(true);
+		return reactivePersonOperations.insertById(Person.class).one(person).map((pp) -> throwSimulateFailureException(pp));
+
 	}
 
 }

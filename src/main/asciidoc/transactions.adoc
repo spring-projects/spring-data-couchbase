@@ -1,114 +1,178 @@
 [[couchbase.transactions]]
-= Transaction Support
+= Couchbase Transactions
 
-Couchbase supports https://docs.couchbase.com/server/6.5/learn/data/transactions.html[Distributed Transactions]. This section documents on how to use it with Spring Data Couchbase.
+Couchbase supports https://docs.couchbase.com/server/current/learn/data/transactions.html[Distributed Transactions]. This section documents how to use it with Spring Data Couchbase.
 
 == Requirements
 
- - Couchbase Server 6.5 or above.
- - Couchbase Java client 3.0.0 or above. It is recommended to follow the transitive dependency for the transactions library from maven.
+ - Couchbase Server 6.6.1 or aabove.
+ - Spring Data Couchbase 5.0.0-M5 or above.
  - NTP should be configured so nodes of the Couchbase cluster are in sync with time. The time being out of sync will not cause incorrect behavior, but can impact metadata cleanup.
+ - Set spring.main.allow-bean-definition-overriding=true either in application.properties or as a SpringApplicationBuilder property.
+
+== Overview
+The Spring Data Couchbase template operations insert, find, replace and delete and repository methods that use those calls can participate in a Couchbase Transaction. They can be executed in a transaction by using the @Transactional annotation, the CouchbaseTransactionalOperator, or in the lambda of a Couchbase Transaction.  
 
 == Getting Started & Configuration
 
-The `couchbase-transactions` artifact needs to be included into your `pom.xml` if maven is being used (or equivalent).
+Couchbase Transactions are normally leveraged with a method annotated with @Transactional.
+The @Transactional operator is implemented with the CouchbaseTransactionManager which is supplied as a bean in the AbstractCouchbaseConfiguration.
+Couchbase Transactions can be used without defining a service class by using CouchbaseTransactionOperator which is also supplied as a bean in AbtractCouchbaseConfiguration.
+Couchbase Transactions can also be used directly using Spring Data Couchbase operations within a lambda https://docs.couchbase.com/server/current/learn/data/transactions.html#using-transactions[Using Transactions]
 
- - Group: `com.couchbase.client`
- - Artifact: `couchbase-transactions`
- - Version: latest one, i.e. `1.0.0`
+== Transactions with @Transactional
 
-Once it is included in your project, you need to create a single `Transactions` object. Conveniently, it can be part of
-your spring data couchbase `AbstractCouchbaseConfiguration` implementation:
-
-.Transaction Configuration
+@Transactional defines as transactional a method or all methods on a class. 
+ 
+When this annotation is declared at the class level, it applies as a default
+to all methods of the declaring class and its subclasses.
+ 
+===  Attribute Semantics
+ 
+In this release, the Couchbase Transactions ignores the rollback attributes. 
+The transaction isolation level is read-committed;
+ 
+.Transaction Configuration and Use by @Transactional
 ====
+.The Configuration
 [source,java]
 ----
 @Configuration
+@EnableCouchbaseRepositories("<parent-dir-of-repository-interfaces>")
+@EnableReactiveCouchbaseRepositories("<parent-dir-of-repository-interfaces>")
+@EnableTransactionManagement // <1>
 static class Config extends AbstractCouchbaseConfiguration {
 
-    // Usual Setup
-    @Override public String getConnectionString() { /* ... */ }
-    @Override public String getUserName() { /* ... */ }
-    @Override public String getPassword() { /* ... */ }
-    @Override public String getBucketName() { /* ... */ }
+  // Usual Setup
+  @Override public String getConnectionString() { /* ... */ }
+  @Override public String getUserName() { /* ... */ }
+  @Override public String getPassword() { /* ... */ }
+  @Override public String getBucketName() { /* ... */ }
 
-	@Bean
-	public Transactions transactions(final Cluster couchbaseCluster) {
-		return Transactions.create(couchbaseCluster, TransactionConfigBuilder.create()
-			// The configuration can be altered here, but in most cases the defaults are fine.
-			.build());
-	}
+  // Customization of transaction behavior is via the configureEnvironment() method
+  @Override protected void configureEnvironment(final Builder builder) {
+    builder.transactionsConfig(
+      TransactionsConfig.builder().timeout(Duration.ofSeconds(30)));
+  }
+}
+----
+.The Transactional Service Class
+Note that the body of @Transactional methods can be re-executed if the transaction fails.
+It is imperative that everthing in the method body be idempotent.
+[source,java]
+----
+import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+final CouchbaseOperations personOperations;
+final ReactiveCouchbaseOperations reactivePersonOperations;
+
+@Service // <2>
+public class PersonService {
+
+  final CouchbaseOperations operations;
+  final ReactiveCouchbaseOperations reactiveOperations;
+
+  public PersonService(CouchbaseOperations ops, ReactiveCouchbaseOperations reactiveOps) {
+    operations = ops;
+    reactiveOperations = reactiveOps;
+  }
+
+  // no annotation results in this method being executed not in a transaction 
+  public Person save(Person p) {
+    return operations.save(p);
+  }
+
+  @Transactional
+  public Person changeFirstName(String id, String newFirstName) {
+    Person p = operations.findById(Person.class).one(id); // <3>
+    return operations.replaceById(Person.class).one(p.withFirstName(newFirstName);
+  }
+
+  @Transactional
+  public Mono<Person> reactiveChangeFirstName(String id, String newFirstName) {
+    return personOperationsRx.findById(Person.class).one(person.id())
+        .flatMap(p -> personOperationsRx.replaceById(Person.class).one(p.withFirstName(newFirstName)));
+  }
 
 }
 ----
+[source,java]
+.Using the @Transactional Service.
+----
+@Autowired PersonService personService; // <4>
+
+Person walterWhite = new Person( "Walter", "White");
+Person p = personService.save(walterWhite); // this is not a transactional method
+...
+Person renamedPerson = personService.changeFirstName(walterWhite.getId(), "Ricky"); // <5>
+----
+Functioning of the  @Transactional method annotation requires 
+[start=1]
+. the configuration class to be annotated with @EnableTransactionManagement;
+. the service object with the annotated methods must be annotated with @Service;
+. the body of the method is executed in a transaction.
+. the service object with the annotated methods must be obtained via @Autowired.
+. the call to the method must be made from a different class than service because calling an annotated
+method from the same class will not invoke the Method Interceptor that does the transaction processing.
 ====
 
-Once the `@Bean` is configured, you can autowire it from your service (or any other class) to make use of it. Please
-see the https://docs.couchbase.com/java-sdk/3.0/howtos/distributed-acid-transactions-from-the-sdk.html[Reference Documentation]
-on how to use the `Transactions` class. Since you need access to the current `Collection` as well, we recommend you to also
-autowire the `CouchbaseClientFactory` and access it from there:
+== Transactions with CouchbaseTransactionalOperator
 
-.Transaction Access
+CouchbaseTransactionalOperator can be used to construct a transaction in-line without creating a service class that uses @Transactional.
+CouchbaseTransactionalOperator is available as a bean and can be instantiated with @Autowired.
+If creating one explicitly, it must be created with CouchbaseTransactionalOperator.create(manager) (NOT TransactionalOperator.create(manager)).
+
+.Transaction Access Using TransactionalOperator.execute()
 ====
 [source,java]
 ----
-@Autowired
-Transactions transactions;
+@Autowired TransactionalOperator txOperator;
+@Autowired ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
-@Autowired
-CouchbaseClientFactory couchbaseClientFactory;
-
-public void doSomething() {
- transactions.run(ctx -> {
-  ctx.insert(couchbaseClientFactory.getDefaultCollection(), "id", "content");
-  ctx.commit();
- });
-}
+Flux<Person> result = txOperator.execute((ctx) -> 
+  reactiveCouchbaseTemplate.findById(Person.class).one(person.id())
+    .flatMap(p -> reactiveCouchbaseTemplate.replaceById(Person.class).one(p.withFirstName("Walt")))
+ );
 ----
 ====
 
-== Object Conversions
+== Transactions Directly with the SDK
 
-Since the transactions library itself has no knowledge of your spring data entity types, you need to convert it back and
-forth when reading/writing to interact properly. Fortunately, all you need to do is autowire the `MappingCouchbaseConverter` and
-utilize it:
+Spring Data Couchbase works seamlessly with the Couchbase Java SDK for transaction processing. Spring Data Couchbase operations that
+can be executed in a transaction will work directly within the lambda of a transactions().run() without involving any of the Spring
+Transactions mechanisms. This is the most straight-forward way to leverage Couchbase Transactions in Spring Data Couchbase.
 
-.Transaction Conversion on Write
+Please see the https://docs.couchbase.com/java-sdk/current/howtos/distributed-acid-transactions-from-the-sdk.html[Reference Documentation]
+
+.Transaction Access - Blocking
 ====
 [source,java]
 ----
-@Autowired
-MappingCouchbaseConverter mappingCouchbaseConverter;
+@Autowired CouchbaseTemplate couchbaseTemplate;
 
-public void doSomething() {
-  transactions.run(ctx -> {
-
-   Airline airline = new Airline("demo-airline", "at");
-   CouchbaseDocument target = new CouchbaseDocument();
-   mappingCouchbaseConverter.write(airline, target);
-
-   ctx.insert(couchbaseClientFactory.getDefaultCollection(), target.getId(), target.getContent());
-
-   ctx.commit();
-  });
-}
+TransactionResult result = couchbaseTemplate.getCouchbaseClientFactory().getCluster().transactions().run(ctx -> {
+  Person p = couchbaseTemplate.findById(Person.class).one(personId);
+  couchbaseTemplate.replaceById(Person.class).one(p.withFirstName("Walt"));
+});
 ----
 ====
 
-The same approach can be used on read:
-
-.Transaction Conversion on Read
+.Transaction Access - Reactive
 ====
 [source,java]
 ----
-TransactionGetResult getResult = ctx.get(couchbaseClientFactory.getDefaultCollection(), "doc-id");
+@Autowired ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
 
-CouchbaseDocument source = new CouchbaseDocument(getResult.id());
-source.setContent(getResult.contentAsObject());
-Airline read = mappingCouchbaseConverter.read(Airline.class, source);
+Mono<TransactionResult> result = reactiveCouchbaseTemplate.getCouchbaseClientFactory().getCluster().reactive().transactions()
+  .run(ctx -> 
+    reactiveCouchbaseTemplate.findById(Person.class).one(personId)
+      .flatMap(p -> reactiveCouchbaseTemplate.replaceById(Person.class).one(p.withFirstName("Walt")))
+  );
 ----
 ====
 
-We are also looking into tighter integration of the transaction library into the spring data library
-ecosystem.
+

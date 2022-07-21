@@ -36,7 +36,6 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -114,9 +113,7 @@ public class CouchbaseTransactionalNonAllowableOperationsIntegrationTests extend
 		});
 	}
 
-	@Service
-	@Component
-	@EnableTransactionManagement
+	@Service // this will work in the unit tests even without @Service because of explicit loading by @SpringJUnitConfig
 	static class PersonService {
 		final CouchbaseOperations personOperations;
 

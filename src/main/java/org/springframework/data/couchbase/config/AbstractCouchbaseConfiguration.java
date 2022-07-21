@@ -51,6 +51,7 @@ import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -330,6 +331,16 @@ public abstract class AbstractCouchbaseConfiguration {
 		return new CouchbaseCallbackTransactionManager(clientFactory);
 	}
 
+	/**
+	 * The default transaction template manager.
+	 *
+	 * @param couchbaseTransactionManager
+	 * @return
+	 */
+	@Bean(BeanNames.COUCHBASE_TRANSACTION_TEMPLATE)
+	TransactionTemplate couchbaseTransactionTemplate(CouchbaseCallbackTransactionManager couchbaseTransactionManager) {
+		return new TransactionTemplate(couchbaseTransactionManager);
+	}
 	/**
 	 * The default TransactionalOperator.
 	 *
