@@ -108,7 +108,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 
 	@Test
 	public void shouldRollbackAfterExceptionOfTxAnnotatedMethod() {
-		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite).blockLast(),
+		assertThrowsWithCause(() -> personService.declarativeSavePersonErrors(WalterWhite).block(),
 				TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 	}
 

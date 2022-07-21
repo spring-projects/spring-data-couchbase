@@ -179,6 +179,29 @@ Building the documentation builds also the project without running tests.
 
 The generated documentation is available from `target/site/reference/html/index.html`.
 
+=== Building and staging reference documentation for review
+
+[source,bash]
+----
+  export MY_GIT_USER=<github-user>
+  mvn generate-resources
+  docs=`pwd`/target/site/reference/html
+  pushd /tmp 
+  mkdir $$
+  cd $$
+  # see https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+  # this examples uses a repository named "staged"
+  git clone git@github.com:${MY_GIT_USER}/staged.git -b gh-pages
+  cd staged
+  cp -R $docs/* .
+  git add .
+  git commit --message "stage for review"
+  git push origin gh-pages
+  popd
+----
+
+The generated documentation is available from `target/site/reference/html/index.html`.
+
 == Examples
 
 * https://github.com/spring-projects/spring-data-examples/[Spring Data Examples] contains example projects that explain specific features in more detail.

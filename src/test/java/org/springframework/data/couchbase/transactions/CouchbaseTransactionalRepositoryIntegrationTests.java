@@ -40,7 +40,6 @@ import org.springframework.data.couchbase.transaction.error.TransactionSystemUna
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -114,7 +113,6 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		String id = UUID.randomUUID().toString();
 
 		assertThrowsWithCause(() -> {
-			;
 			userService.run(repo -> {
 				User user = repo.save(new User(id, "Ada", "Lovelace"));
 				SimulateFailureException.throwEx("fail");
@@ -125,9 +123,7 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		assertNull(user);
 	}
 
-	@Service
-	@Component
-	@EnableTransactionManagement
+	@Service // this will work in the unit tests even without @Service because of explicit loading by @SpringJUnitConfig
 	static class UserService {
 		@Autowired UserRepository userRepo;
 

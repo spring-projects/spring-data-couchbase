@@ -64,7 +64,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
 public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
-	TransactionTemplate template;
+	@Autowired TransactionTemplate transactionTemplate;
 	@Autowired CouchbaseCallbackTransactionManager transactionManager;
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired CouchbaseTemplate ops;
@@ -86,8 +86,6 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		assertNotInTransaction();
 		List<RemoveResult> rp0 = ops.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all();
 		List<RemoveResult> rp1 = ops.removeByQuery(PersonWithoutVersion.class).withConsistency(REQUEST_PLUS).all();
-
-		template = new TransactionTemplate(transactionManager);
 	}
 
 	@AfterEach
@@ -106,7 +104,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	private RunResult doInTransaction(Consumer<TransactionStatus> lambda) {
 		AtomicInteger tryCount = new AtomicInteger();
 
-		template.executeWithoutResult(status -> {
+		transactionTemplate.executeWithoutResult(status -> {
 			TransactionTestUtil.assertInTransaction();
 			assertFalse(status.hasSavepoint());
 			assertFalse(status.isRollbackOnly());
@@ -346,7 +344,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("Setting an unsupported isolation level should fail")
 	@Test
 	public void unsupportedIsolationLevel() {
-		template.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
+		transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
 
 		assertThrowsWithCause(() -> doInTransaction(status -> {}), IllegalArgumentException.class);
 	}
@@ -354,9 +352,10 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("Setting PROPAGATION_MANDATORY should fail, as not in a transaction")
 	@Test
 	public void propagationMandatoryOutsideTransaction() {
-		template.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
-
+		int propagation = transactionTemplate.getPropagationBehavior();
+		transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
 		assertThrowsWithCause(() -> doInTransaction(status -> {}), IllegalTransactionStateException.class);
+		transactionTemplate.setPropagationBehavior(propagation);
 	}
 
 	@Test
@@ -364,7 +363,7 @@ public class TransactionTemplateIntegrationTests extends JavaIntegrationTests {
 		TransactionTemplate template2 = new TransactionTemplate(transactionManager);
 		template2.setPropagationBehavior(TransactionDefinition.PROPAGATION_MANDATORY);
 
-		template.executeWithoutResult(status -> {
+		transactionTemplate.executeWithoutResult(status -> {
 			template2.executeWithoutResult(status2 -> {
 				Person person = ops.insertById(Person.class).one(WalterWhite);
 			});
