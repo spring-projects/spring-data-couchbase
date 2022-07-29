@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.repository.query;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.query.Query;
@@ -108,15 +109,17 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	 * @see org.springframework.data.repository.query.RepositoryQuery#execute(java.lang.Object[])
 	 */
 	public Object execute(Object[] parameters) {
-
 		ReactiveCouchbaseParameterAccessor accessor = new ReactiveCouchbaseParameterAccessor(getQueryMethod(), parameters);
-
-		Object result = accessor.resolveParameters().map(this::executeDeferred);
-		return ((Mono<Object>) result).block() ;
+		return method.hasReactiveWrapperParameter() ? accessor.resolveParameters().flatMapMany(this::executeDeferred)
+				: execute(accessor);
 	}
 
-	private Object executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor) {
-		return execute(parameterAccessor);
+	private Publisher<Object> executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor/*Object[] parameters*/) {
+		//ReactiveCouchbaseParameterAccessor parameterAccessor = new ReactiveCouchbaseParameterAccessor(method, parameters);
+		if (getQueryMethod().isCollectionQuery()) {
+			return Flux.defer(() -> (Publisher<Object>) execute(parameterAccessor));
+		}
+		return Mono.defer(() -> (Mono<Object>) execute(parameterAccessor));
 	}
 
 	private Object execute(ParametersParameterAccessor parameterAccessor) {
