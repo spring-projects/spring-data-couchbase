@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import java.time.LocalDateTime;
 /**
  * Airport entity
  *
- * @author Michael Nitschinger
  * @author Michael Reiche
  */
 @Document
@@ -79,19 +78,6 @@ public class Airport {
 		return openDate;
 	}
 
-	/*
-		public Airport withId(String id) {
-			return new Airport(id, this.iata, this.icao);
-		}
-	
-		public Airport withIcao(String icao) {
-			return new Airport(this.getId(), this.iata, icao);
-		}
-	
-		public Airport withIata(String iata) {
-			return new Airport(this.getId(), iata, this.icao);
-		}
-	*/
 	public Airport clearVersion() {
 		version = Long.valueOf(0);
 		return this;
