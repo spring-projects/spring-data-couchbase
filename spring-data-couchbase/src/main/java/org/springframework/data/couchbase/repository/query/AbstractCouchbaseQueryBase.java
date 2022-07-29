@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 the original author or authors
+ * Copyright 2020-2022 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,8 +114,7 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 				: execute(accessor);
 	}
 
-	private Publisher<Object> executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor/*Object[] parameters*/) {
-		//ReactiveCouchbaseParameterAccessor parameterAccessor = new ReactiveCouchbaseParameterAccessor(method, parameters);
+	private Publisher<Object> executeDeferred(ReactiveCouchbaseParameterAccessor parameterAccessor) {
 		if (getQueryMethod().isCollectionQuery()) {
 			return Flux.defer(() -> (Publisher<Object>) execute(parameterAccessor));
 		}
