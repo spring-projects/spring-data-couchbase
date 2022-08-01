@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2021 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.example.demo;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -32,10 +31,11 @@ import java.util.Optional;
 
 /**
  * Airport repository for testing <br>
+ * 
+ * @author Michael Reiche
  */
 @Repository
 @Document
-// @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 public interface AirportRepository extends CouchbaseRepository<Airport, String> {
 
 	// override an annotate with REQUEST_PLUS
@@ -49,7 +49,7 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String> 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Airport findByIata(String iata);
 
-  @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
+        @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
 	Airport iata(String iata);
 
 	@Query("#{#n1ql.selectEntity} where iata = $1")

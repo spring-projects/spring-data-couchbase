@@ -1,21 +1,33 @@
+/*
+ * Copyright 2022 the original author or authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *        https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.example.demo;
 
-import com.couchbase.client.core.env.IoEnvironment;
-import com.couchbase.client.core.env.SecurityConfig;
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.codec.JacksonJsonSerializer;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 
-import java.time.Duration;
-
+/**
+ *
+ * 
+ * @author Michael Reiche
+ */
 @Configuration
 @EnableCouchbaseRepositories({"com.example.demo", "com.wu.onep.ordnrt.cbviewsrch.repository"})
 public class Config extends AbstractCouchbaseConfiguration {
@@ -41,18 +53,8 @@ public class Config extends AbstractCouchbaseConfiguration {
 
   @Override
   public void configureEnvironment(ClusterEnvironment.Builder builder){
-    builder.jsonSerializer(getSerializer())
-    .securityConfig(SecurityConfig.enableNativeTls(false))
-    .ioEnvironment(IoEnvironment.enableNativeIo(false));
     // builder.transactionsConfig(TransactionsConfig.durabilityLevel(DurabilityLevel.NONE));
   }
 
-  private static JacksonJsonSerializer getSerializer() {
-    ObjectMapper mapper = new ObjectMapper();
-    mapper.registerModule(new JsonValueModule());
-    mapper.registerModule(new JavaTimeModule()); // this handles LocalDateTime
-    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-    return JacksonJsonSerializer.create(mapper);
-  }
 
 }
