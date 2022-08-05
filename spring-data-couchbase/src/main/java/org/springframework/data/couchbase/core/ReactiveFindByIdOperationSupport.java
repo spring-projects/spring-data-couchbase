@@ -18,9 +18,6 @@ package org.springframework.data.couchbase.core;
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.java.kv.PersistTo;
-import com.couchbase.client.java.kv.ReplicateTo;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -88,7 +85,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		@Override
-		public Mono<T> one(final String id) {
+		public Mono<T> one(final Object id) {
 
 			CommonOptions<?> gOptions = initGetOptions();
 			PseudoArgs<?> pArgs = new PseudoArgs(template, scope, collection, gOptions, domainType);
@@ -101,17 +98,17 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 				if (!ctxOpt.isPresent()) {
 					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-						return rc.getAndTouch(id, expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+						return rc.getAndTouch(id.toString(), expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
 								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					} else {
-						return rc.get(id, (GetOptions) pArgs.getOptions())
+						return rc.get(id.toString(), (GetOptions) pArgs.getOptions())
 								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					}
 				} else {
 					rejectInvalidTransactionalOptions();
-					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id)
+					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id.toString())
 							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
 									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
 									null, null));

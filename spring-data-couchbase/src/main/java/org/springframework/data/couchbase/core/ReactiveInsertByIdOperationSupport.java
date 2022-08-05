@@ -97,13 +97,13 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									return collection.reactive()
-											.insert(converted.getId(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+											.insert(converted.getId().toString(), converted.export(), buildOptions(pArgs.getOptions(), converted))
 											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
 													null, null));
 								} else {
 									rejectInvalidTransactionalOptions();
 									return ctxOpt.get().getCore()
-											.insert(makeCollectionIdentifier(collection.async()), converted.getId(),
+											.insert(makeCollectionIdentifier(collection.async()), converted.getId().toString(),
 													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
 															.encode(converted.export()).encoded())
 											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),

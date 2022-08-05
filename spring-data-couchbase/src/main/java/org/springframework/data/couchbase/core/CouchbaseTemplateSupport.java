@@ -62,7 +62,7 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	}
 
 	@Override
-	public <T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
+	public <T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			Object txHolder, CouchbaseResourceHolder holder) {
 		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
 	}

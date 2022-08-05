@@ -28,7 +28,7 @@ import java.util.Collection;
  */
 
 public interface OneAndAllIdReactive<T> {
-	Mono<T> one(String id);
+	Mono<T> one(Object id);
 
 	Flux<? extends T> all(Collection<String> ids);
 }

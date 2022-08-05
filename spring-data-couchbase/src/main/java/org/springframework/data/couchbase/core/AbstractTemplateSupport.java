@@ -67,7 +67,7 @@ public abstract class AbstractTemplateSupport {
 
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
-	public <T> T decodeEntityBase(String id, String source, Long cas, Class<T> entityClass, String scope,
+	public <T> T decodeEntityBase(Object id, String source, Long cas, Class<T> entityClass, String scope,
 			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
 
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
@@ -127,7 +127,7 @@ public abstract class AbstractTemplateSupport {
 		if (cas != null && cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
-		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id, scope, collection);
+		N1qlJoinResolver.handleProperties(persistentEntity, accessor, getReactiveTemplate(), id.toString(), scope, collection);
 
 		if (holder != null) {
 			holder.transactionResultHolder(txResultHolder, (T) accessor.getBean());

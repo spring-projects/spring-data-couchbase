@@ -62,7 +62,7 @@ public interface ReactiveRemoveByIdOperation {
 		 * @return result of the remove
 		 */
 		@Override
-		Mono<RemoveResult> one(String id);
+		Mono<RemoveResult> one(Object id);
 
 		/**
 		 * Remove one document. Requires whole entity for transaction to have the cas.
