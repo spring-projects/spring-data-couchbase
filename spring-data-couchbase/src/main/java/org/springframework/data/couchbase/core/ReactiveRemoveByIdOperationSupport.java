@@ -91,7 +91,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		}
 
 		@Override
-		public Mono<RemoveResult> one(final String id) {
+		public Mono<RemoveResult> one(final Object id) {
 			PseudoArgs<RemoveOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("removeById key={} {}", id, pArgs);
@@ -101,7 +101,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 			return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 				if (!s.isPresent()) {
-					return rc.remove(id, buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id, r));
+					return rc.remove(id.toString(), buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id.toString(), r));
 				} else {
 					rejectInvalidTransactionalOptions();
 
@@ -109,13 +109,13 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 						throw new IllegalArgumentException("cas must be supplied for tx remove");
 					}
 					CoreTransactionAttemptContext ctx = s.get().getCore();
-					Mono<CoreTransactionGetResult> gr = ctx.get(makeCollectionIdentifier(rc.async()), id);
+					Mono<CoreTransactionGetResult> gr = ctx.get(makeCollectionIdentifier(rc.async()), id.toString());
 
 					return gr.flatMap(getResult -> {
 						if (getResult.cas() != cas) {
 							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(ctx, getResult.cas(), cas));
 						}
-						return ctx.remove(getResult).map(r -> new RemoveResult(id, 0, null));
+						return ctx.remove(getResult).map(r -> new RemoveResult(id.toString(), 0, null));
 					});
 
 				}

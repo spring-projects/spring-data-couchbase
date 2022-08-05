@@ -101,7 +101,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									return collection.reactive()
-											.replace(converted.getId(), converted.export(),
+											.replace(converted.getId().toString(), converted.export(),
 													buildReplaceOptions(pArgs.getOptions(), object, converted))
 											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null,
 													null));
@@ -117,8 +117,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 									CollectionIdentifier collId = makeCollectionIdentifier(collection.async());
 									CoreTransactionAttemptContext ctx = ctxOpt.get().getCore();
 									ctx.logger().info(ctx.attemptId(), "refetching %s for Spring replace",
-											DebugUtil.docId(collId, converted.getId()));
-									Mono<CoreTransactionGetResult> gr = ctx.get(collId, converted.getId());
+											DebugUtil.docId(collId, converted.getId().toString()));
+									Mono<CoreTransactionGetResult> gr = ctx.get(collId, converted.getId().toString());
 
 									return gr.flatMap(getResult -> {
 										if (getResult.cas() != cas) {

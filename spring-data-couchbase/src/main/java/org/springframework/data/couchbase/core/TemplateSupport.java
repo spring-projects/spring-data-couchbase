@@ -26,7 +26,7 @@ public interface TemplateSupport {
 
 	CouchbaseDocument encodeEntity(Object entityToEncode);
 
-	<T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection,
+	<T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			Object txResultHolder, CouchbaseResourceHolder holder);
 
 	<T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas, Object txResultHolder,

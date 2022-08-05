@@ -58,7 +58,7 @@ public interface ReactiveFindByIdOperation {
 		 * @param id the document ID.
 		 * @return the entity if found.
 		 */
-		Mono<T> one(String id);
+		Mono<T> one(Object id);
 
 		/**
 		 * Finds a list of documents based on the given IDs.

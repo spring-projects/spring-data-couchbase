@@ -95,7 +95,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 								.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 										.getCollection(pArgs.getCollection()))
 								.flatMap(collection -> collection.reactive()
-										.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+										.upsert(converted.getId().toString(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(
 												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
 					});
