@@ -84,7 +84,7 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
-							.upsert(converted.getId(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
+							.upsert(converted.getId().toString(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 							.flatMap(result -> support.applyUpdatedId(object, converted.getId())
 									.flatMap(updatedObject -> support.applyUpdatedCas(updatedObject, converted, result.cas()))))
 					.onErrorMap(throwable -> {

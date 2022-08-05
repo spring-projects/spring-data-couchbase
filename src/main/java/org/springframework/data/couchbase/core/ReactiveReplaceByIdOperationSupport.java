@@ -84,7 +84,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Mono.just(object).flatMap(support::encodeEntity)
 					.flatMap(converted -> template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 							.getCollection(pArgs.getCollection()).reactive()
-							.replace(converted.getId(), converted.export(),
+							.replace(converted.getId().toString(), converted.export(),
 									buildReplaceOptions(pArgs.getOptions(), object, converted))
 							.flatMap(result -> support.applyUpdatedCas(object, converted, result.cas())))
 					.onErrorMap(throwable -> {
