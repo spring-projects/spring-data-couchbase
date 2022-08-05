@@ -49,7 +49,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	/**
 	 * Represents the document ID used to identify the document in the bucket.
 	 */
-	private String id;
+	private Object id;
 
 	/**
 	 * Contains the expiration time of the document.
@@ -68,7 +68,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 *
 	 * @param id the document ID.
 	 */
-	public CouchbaseDocument(final String id) {
+	public CouchbaseDocument(final Object id) {
 		this(id, DEFAULT_EXPIRATION_TIME);
 	}
 
@@ -78,7 +78,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @param id the document ID.
 	 * @param expiration the expiration time of the document.
 	 */
-	public CouchbaseDocument(final String id, final int expiration) {
+	public CouchbaseDocument(final Object id, final int expiration) {
 		this.id = id;
 		this.expiration = expiration;
 		content = new TreeMap<>();
@@ -245,7 +245,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 *
 	 * @return the ID of the document.
 	 */
-	public String getId() {
+	public Object getId() {
 		return id;
 	}
 
@@ -255,7 +255,7 @@ public class CouchbaseDocument implements CouchbaseStorable {
 	 * @param id the ID of the document.
 	 * @return the {@link CouchbaseDocument} for chaining.
 	 */
-	public CouchbaseDocument setId(String id) {
+	public CouchbaseDocument setId(Object id) {
 		this.id = id;
 		return this;
 	}

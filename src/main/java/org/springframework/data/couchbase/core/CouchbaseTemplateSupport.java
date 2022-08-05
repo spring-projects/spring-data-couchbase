@@ -87,7 +87,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 	}
 
 	@Override
-	public <T> T decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection) {
+	public <T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection) {
 
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
 		// we will reset it after reading the document
@@ -146,7 +146,7 @@ class CouchbaseTemplateSupport implements ApplicationContextAware, TemplateSuppo
 		if (cas != null && cas != 0 && persistentEntity.getVersionProperty() != null) {
 			accessor.setProperty(persistentEntity.getVersionProperty(), cas);
 		}
-		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id, scope, collection);
+		N1qlJoinResolver.handleProperties(persistentEntity, accessor, template.reactive(), id.toString(), scope, collection);
 		return accessor.getBean();
 	}
 

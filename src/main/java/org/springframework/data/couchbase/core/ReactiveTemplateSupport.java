@@ -27,7 +27,7 @@ public interface ReactiveTemplateSupport {
 
 	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
 
-	<T> Mono<T> decodeEntity(String id, String source, Long cas, Class<T> entityClass, String scope, String collection);
+	<T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection);
 
 	<T> Mono<T> applyUpdatedCas(T entity, CouchbaseDocument converted, long cas);
 
