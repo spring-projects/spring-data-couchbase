@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.transaction.threadlocal.TransactionMarker;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -26,6 +27,7 @@ import com.couchbase.client.core.error.CasMismatchException;
 import com.couchbase.client.core.error.transaction.TransactionOperationFailedException;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.threadlocal.TransactionMarkerOwner;
+import reactor.util.context.ContextView;
 
 /**
  * Utility methods to support transactions.
@@ -49,6 +51,14 @@ public class TransactionalSupport {
 			return Mono.just(out);
 		});
 	}
+
+	public static Optional<CouchbaseResourceHolder> checkForTransactionInThreadLocalStorage(ContextView ctx) {
+		return Optional.ofNullable(ctx.hasKey(TransactionMarker.class) ? new CouchbaseResourceHolder(ctx.get(TransactionMarker.class).context()) : null);
+	}
+
+	//public static Optional<CouchbaseResourceHolder> blockingCheckForTransactionInThreadLocalStorage() {
+	//		return TransactionMarkerOwner.marker;
+	//	}
 
 	public static Mono<Void> verifyNotInTransaction(String methodName) {
 		return checkForTransactionInThreadLocalStorage().flatMap(s -> {
