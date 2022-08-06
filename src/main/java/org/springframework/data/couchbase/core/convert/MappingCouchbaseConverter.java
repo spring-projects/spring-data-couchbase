@@ -955,7 +955,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
 
 			if (property == entity.getIdProperty() && parent == null) {
-				return (R) source.getId();
+				return readValue(source.getId(), property.getTypeInformation(), source);
 			}
 			if (value == null) {
 				return null;

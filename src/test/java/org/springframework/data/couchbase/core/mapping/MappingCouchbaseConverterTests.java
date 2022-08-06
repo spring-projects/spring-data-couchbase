@@ -687,6 +687,25 @@ public class MappingCouchbaseConverterTests {
 	}
 
 	@Test
+	void writesAndReadsIdAsUUID() {
+		String idAsString = "fc1cc4c4-b7ea-4cb4-b43a-3fb9f574d123";
+		UUID id = UUID.fromString(idAsString);
+		String otherAsString = "fc1cc4c4-b7ea-4cb4-b43a-3fb9f574d456";
+		UUID other = UUID.fromString(otherAsString);
+
+		UuidIdEntity entity = new UuidIdEntity(id, other);
+
+		CouchbaseDocument converted = new CouchbaseDocument();
+		converter.write(entity, converted);
+		assertThat(converted.getContent().get("other")).isEqualTo(otherAsString);
+		assertThat(converted.getId()).isEqualTo(idAsString);
+
+		UuidIdEntity read = converter.read(UuidIdEntity.class, converted);
+		assertThat(read.id).isEqualTo(id);
+		assertThat(read.other).isEqualTo(other);
+	}
+
+	@Test
 	void writesAndReadsNestedClass() {
 		CouchbaseDocument converted = new CouchbaseDocument();
 
@@ -943,6 +962,16 @@ public class MappingCouchbaseConverterTests {
 			this.created = created;
 			this.modified = modified;
 			this.deleted = deleted;
+		}
+	}
+
+	static class UuidIdEntity {
+		@Id private UUID id;
+		private UUID other;
+
+		public UuidIdEntity(UUID id, UUID other) {
+			this.id = id;
+			this.other = other;
 		}
 	}
 
