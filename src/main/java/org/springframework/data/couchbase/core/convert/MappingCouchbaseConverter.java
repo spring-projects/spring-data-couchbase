@@ -81,6 +81,7 @@ import org.springframework.util.CollectionUtils;
  * @author Geoffrey Mina
  * @author Mark Paluch
  * @author Michael Reiche
+ * @author Remi Bleuse
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
 
