@@ -81,6 +81,7 @@ import org.springframework.util.CollectionUtils;
  * @author Geoffrey Mina
  * @author Mark Paluch
  * @author Michael Reiche
+ * @author Remi Bleuse
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
 
@@ -955,7 +956,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
 
 			if (property == entity.getIdProperty() && parent == null) {
-				return (R) source.getId();
+				return readValue(source.getId(), property.getTypeInformation(), source);
 			}
 			if (value == null) {
 				return null;
