@@ -59,7 +59,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter,
-																	 final TranslationService translationService) {
+			final TranslationService translationService) {
 		this(clientFactory, converter, translationService, null);
 	}
 
@@ -75,35 +75,48 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public <T> Mono<T> save(T entity, String... scopeAndCollection) {
 		Assert.notNull(entity, "Entity must not be null!");
+		
 		String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
 		String collection = scopeAndCollection.length > 1 ? scopeAndCollection[1] : null;
-		Mono<T> result;
-		final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
-				.getPersistentEntity(entity.getClass());
-		final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
-		final boolean versionPresent = versionProperty != null;
-		final Long version = versionProperty == null || versionProperty.getField() == null ? null
-				: (Long) ReflectionUtils.getField(versionProperty.getField(), entity);
-		final boolean existingDocument = version != null && version > 0;
+		return Mono.deferContextual(xxx -> {
+			Mono<T> result;
+			final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
+					.getPersistentEntity(entity.getClass());
+			final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
+			final boolean versionPresent = versionProperty != null;
+			final Long version = versionProperty == null || versionProperty.getField() == null ? null
+					: (Long) ReflectionUtils.getField(versionProperty.getField(),
+					entity);
+			final boolean existingDocument = version != null && version > 0;
 
-		Class clazz = entity.getClass();
+			Class clazz = entity.getClass();
 
-		if (!versionPresent) { // the entity doesn't have a version property
-			// No version field - no cas
-			// If in a transaction, insert is the only thing that will work
-			if (TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent()) {
-				result = (Mono<T>) insertById(clazz).inScope(scope).inCollection(collection).one(entity);
-			} else { // if not in a tx, then upsert will work
-				result = (Mono<T>) upsertById(clazz).inScope(scope).inCollection(collection).one(entity);
+			if (!versionPresent) { // the entity doesn't have a version property
+				// No version field - no cas
+				// If in a transaction, insert is the only thing that will work
+				if (TransactionalSupport.checkForTransactionInThreadLocalStorage(xxx)
+						.isPresent()) {
+					result = (Mono<T>) insertById(clazz).inScope(scope)
+							.inCollection(collection)
+							.one(entity);
+				} else { // if not in a tx, then upsert will work
+					result = (Mono<T>) upsertById(clazz).inScope(scope)
+							.inCollection(collection)
+							.one(entity);
+				}
+			} else if (existingDocument) { // there is a version property, and it is non-zero
+				// Updating existing document with cas
+				result = (Mono<T>) replaceById(clazz).inScope(scope)
+						.inCollection(collection)
+						.one(entity);
+			} else { // there is a version property, but it's zero or not set.
+				// Creating new document
+				result = (Mono<T>) insertById(clazz).inScope(scope)
+						.inCollection(collection)
+						.one(entity);
 			}
-		} else if (existingDocument) { // there is a version property, and it is non-zero
-			// Updating existing document with cas
-			result = (Mono<T>) replaceById(clazz).inScope(scope).inCollection(collection).one(entity);
-		} else { // there is a version property, but it's zero or not set.
-			// Creating new document
-			result = (Mono<T>) insertById(clazz).inScope(scope).inCollection(collection).one(entity);
-		}
-		return result;
+			return result;
+		});
 	}
 
 	public <T> Mono<Long> count(Query query, Class<T> domainType) {
