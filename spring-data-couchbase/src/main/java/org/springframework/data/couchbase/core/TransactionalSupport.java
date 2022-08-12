@@ -52,14 +52,6 @@ public class TransactionalSupport {
 		});
 	}
 
-	public static Optional<CouchbaseResourceHolder> checkForTransactionInThreadLocalStorage(ContextView ctx) {
-		return Optional.ofNullable(ctx.hasKey(TransactionMarker.class) ? new CouchbaseResourceHolder(ctx.get(TransactionMarker.class).context()) : null);
-	}
-
-	//public static Optional<CouchbaseResourceHolder> blockingCheckForTransactionInThreadLocalStorage() {
-	//		return TransactionMarkerOwner.marker;
-	//	}
-
 	public static Mono<Void> verifyNotInTransaction(String methodName) {
 		return checkForTransactionInThreadLocalStorage().flatMap(s -> {
 			if (s.isPresent()) {

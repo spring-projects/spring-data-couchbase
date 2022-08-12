@@ -78,8 +78,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		
 		String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
 		String collection = scopeAndCollection.length > 1 ? scopeAndCollection[1] : null;
-		return Mono.deferContextual(xxx -> {
-			Mono<T> result;
+		return Mono.defer(() -> {
 			final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
 					.getPersistentEntity(entity.getClass());
 			final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
@@ -94,28 +93,29 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 			if (!versionPresent) { // the entity doesn't have a version property
 				// No version field - no cas
 				// If in a transaction, insert is the only thing that will work
-				if (TransactionalSupport.checkForTransactionInThreadLocalStorage(xxx)
-						.isPresent()) {
-					result = (Mono<T>) insertById(clazz).inScope(scope)
-							.inCollection(collection)
-							.one(entity);
-				} else { // if not in a tx, then upsert will work
-					result = (Mono<T>) upsertById(clazz).inScope(scope)
-							.inCollection(collection)
-							.one(entity);
-				}
+				return TransactionalSupport.checkForTransactionInThreadLocalStorage()
+						.flatMap(ctx -> {
+							if (ctx.isPresent()) {
+								return (Mono<T>) insertById(clazz).inScope(scope)
+										.inCollection(collection)
+										.one(entity);
+							} else { // if not in a tx, then upsert will work
+								return (Mono<T>) upsertById(clazz).inScope(scope)
+										.inCollection(collection)
+										.one(entity);
+							}
+						});
 			} else if (existingDocument) { // there is a version property, and it is non-zero
 				// Updating existing document with cas
-				result = (Mono<T>) replaceById(clazz).inScope(scope)
+				return (Mono<T>) replaceById(clazz).inScope(scope)
 						.inCollection(collection)
 						.one(entity);
 			} else { // there is a version property, but it's zero or not set.
 				// Creating new document
-				result = (Mono<T>) insertById(clazz).inScope(scope)
+				return (Mono<T>) insertById(clazz).inScope(scope)
 						.inCollection(collection)
 						.one(entity);
 			}
-			return result;
 		});
 	}
 
