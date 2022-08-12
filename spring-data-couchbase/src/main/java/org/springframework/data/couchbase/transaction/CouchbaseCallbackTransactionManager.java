@@ -44,7 +44,6 @@ import com.couchbase.client.java.transactions.TransactionResult;
 import com.couchbase.client.java.transactions.config.TransactionOptions;
 import com.couchbase.client.java.transactions.error.TransactionCommitAmbiguousException;
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
-import reactor.util.context.ContextView;
 
 /**
  * The Couchbase transaction manager, providing support for @Transactional methods.
@@ -74,7 +73,9 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 
 	@Override
 	public <T> T execute(TransactionDefinition definition, TransactionCallback<T> callback) throws TransactionException {
-		boolean createNewTransaction = handlePropagation(definition, null);
+		boolean isInExistingTransaction = TransactionalSupport.checkForTransactionInThreadLocalStorage().block()
+				.isPresent();
+		boolean createNewTransaction = handlePropagation(definition, isInExistingTransaction);
 
 		setOptionsFromDefinition(definition);
 
@@ -88,8 +89,9 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	@Stability.Internal
 	<T> Flux<T> executeReactive(TransactionDefinition definition,
 			org.springframework.transaction.reactive.TransactionCallback<T> callback) {
-		return Flux.deferContextual((ctx) -> {
-			boolean createNewTransaction = handlePropagation(definition, ctx);
+		return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMapMany(isInTransaction -> {
+			boolean isInExistingTransaction = isInTransaction.isPresent();
+			boolean createNewTransaction = handlePropagation(definition, isInExistingTransaction);
 
 			setOptionsFromDefinition(definition);
 
@@ -188,9 +190,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	}
 
 	// Propagation defines what happens when a @Transactional method is called from another @Transactional method.
-	private boolean handlePropagation(TransactionDefinition definition, ContextView ctx) {
-		boolean isExistingTransaction = ctx != null ? TransactionalSupport.checkForTransactionInThreadLocalStorage(ctx).isPresent() :
-				TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent();
+	private Boolean handlePropagation(TransactionDefinition definition, boolean isExistingTransaction) {
 
 		LOGGER.trace("Deciding propagation behaviour from {} and {}", definition.getPropagationBehavior(),
 				isExistingTransaction);

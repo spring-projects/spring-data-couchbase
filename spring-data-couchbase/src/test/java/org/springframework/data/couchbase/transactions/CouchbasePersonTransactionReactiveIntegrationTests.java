@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.transactions;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
 import lombok.Data;
+import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -49,9 +50,9 @@ import com.couchbase.client.java.Cluster;
 
 /**
  * todo gp: these tests are using the `.as(transactionalOperator::transactional)` method which is for the chopping
- * block, so presumably these tests are too
- * todo mr: I'm not sure how as(transactionalOperator::transactional) is different than
- * todo mr: transactionOperator.transaction(...)in CouchbaseTransactionalOperatorTemplateIntegrationTests ?
+ * block, so presumably these tests are too todo mr: I'm not sure how as(transactionalOperator::transactional) is
+ * different than todo mr: transactionOperator.transaction(...)in CouchbaseTransactionalOperatorTemplateIntegrationTests
+ * ?
  *
  * @author Michael Reiche
  */
@@ -72,6 +73,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	String sName = "_default";
 	String cName = "_default";
 	Person WalterWhite;
+	PersonWithoutVersion BobbyBlackWithoutVersion;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -86,6 +88,7 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@BeforeEach
 	public void beforeEachTest() {
 		WalterWhite = new Person("Walter", "White");
+		BobbyBlackWithoutVersion = new PersonWithoutVersion("Bobby", "Black");
 		TransactionTestUtil.assertNotInTransaction();
 		List<RemoveResult> pr = operations.removeByQuery(Person.class).withConsistency(REQUEST_PLUS).all().collectList()
 				.block();
@@ -138,6 +141,12 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.expectNext(1L) //
 				.verifyComplete();
 
+	}
+
+	@Test
+	public void commitShouldPersistTxEntriesOfTxAnnotatedMethodNoVersion() {
+		personService.declarativeSavePersonWithoutVersion(BobbyBlackWithoutVersion).as(StepVerifier::create) //
+				.expectError(UnsupportedOperationException.class); //
 	}
 
 	@Test

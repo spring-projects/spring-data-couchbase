@@ -20,6 +20,7 @@ import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.springframework.data.couchbase.core.TransactionalSupport;
+import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -106,6 +107,11 @@ class PersonServiceReactive {
 
 	@Transactional
 	public Mono<Person> declarativeSavePerson(Person person) {
+		return personOperationsRx.save(person);
+	}
+
+	@Transactional
+	public Mono<PersonWithoutVersion> declarativeSavePersonWithoutVersion(PersonWithoutVersion person) {
 		return personOperationsRx.save(person);
 	}
 
