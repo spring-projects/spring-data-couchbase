@@ -88,7 +88,7 @@ public void doSomething() {
    CouchbaseDocument target = new CouchbaseDocument();
    mappingCouchbaseConverter.write(airline, target);
 
-   ctx.insert(couchbaseClientFactory.getDefaultCollection(), target.getId(), target.getContent());
+   ctx.insert(couchbaseClientFactory.getDefaultCollection(), target.getId(), target.export());
 
    ctx.commit();
   });
