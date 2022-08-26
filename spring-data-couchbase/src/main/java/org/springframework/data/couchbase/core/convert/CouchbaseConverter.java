@@ -22,6 +22,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.Alias;
+import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.util.TypeInformation;
 
 /**
@@ -37,12 +38,23 @@ public interface CouchbaseConverter
 
 	/**
 	 * Convert the value if necessary to the class that would actually be stored, or leave it as is if no conversion
-	 * needed.
+	 * needed. This method cannot access the annotations of the field.
 	 *
 	 * @param value the value to be converted to the class that would actually be stored.
 	 * @return the converted value (or the same value if no conversion necessary).
 	 */
 	Object convertForWriteIfNeeded(Object value);
+
+	/**
+	 * Convert the value if necessary to the class that would actually be stored, or leave it as is if no conversion
+	 * needed. This method can access the annotations of the field.
+	 *
+	 * @param source the property to be converted to the class that would actually be stored.
+	 * @param accessor the property accessor
+	 * @return the converted value (or the same value if no conversion necessary).
+	 */
+	Object convertForWriteIfNeeded(final CouchbasePersistentProperty source,
+			final ConvertingPropertyAccessor<Object> accessor);
 
 	/**
 	 * Return the Class that would actually be stored for a given Class.

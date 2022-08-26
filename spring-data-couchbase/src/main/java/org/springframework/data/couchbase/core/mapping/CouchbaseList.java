@@ -202,7 +202,7 @@ public class CouchbaseList implements CouchbaseStorable {
 		}
 
 		throw new IllegalArgumentException(
-				"Attribute of type " + clazz.getCanonicalName() + "can not be stored and must be converted.");
+				"Attribute of type " + clazz.getCanonicalName() + " can not be stored and must be converted.");
 	}
 
 	/**

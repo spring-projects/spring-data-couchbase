@@ -15,10 +15,16 @@
  */
 package org.springframework.data.couchbase.domain;
 
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+import java.io.Serializable;
+
 @Document
-public class Address extends ComparableEntity {
+public class Address extends ComparableEntity implements Serializable  {
+
+	@Encrypted
+	private String encStreet;
 
 	private String street;
 	private String city;
@@ -34,6 +40,14 @@ public class Address extends ComparableEntity {
 
 	public void setStreet(String street) {
 		this.street = street;
+	}
+
+	public String getEncStreet() {
+		return encStreet;
+	}
+
+	public void setEncStreet(String encStreet) {
+		this.encStreet = encStreet;
 	}
 
 	public String getCity() {
