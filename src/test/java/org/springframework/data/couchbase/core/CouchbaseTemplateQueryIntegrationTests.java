@@ -133,6 +133,11 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 				.matching(specialUsers).all();
 
 		assertEquals(1, foundUsers.size());
+
+		Query arrayContaining = new Query(QueryCriteria.where(i("firstname")).arrayContaining("not_match_anything"));
+		final List<User> foundArrayContaining = couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS)
+				.matching(arrayContaining).all();
+		assertEquals(0, foundArrayContaining.size());
 	}
 
 	@Test

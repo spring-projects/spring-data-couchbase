@@ -331,12 +331,12 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria arrayContaining(boolean ignoreCase, @Nullable Object o) {
-		operator = "array_containing";
+		operator = "array_contains";
 		if (ignoreCase) {
 			throw new CouchbaseException("ignoreCase not supported in IN and NOT_IN");
 		}
 		value = new Object[] { o };
-		format = "array_containing(%1$s, %3$s)";
+		format = "array_contains(%1$s, %3$s)";
 		return this;
 	}
 
