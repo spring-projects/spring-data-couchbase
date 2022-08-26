@@ -180,7 +180,7 @@ class QueryCriteriaTests {
 	@Test
 	void testArrayContaining() {
 		QueryCriteria c = where(i("name")).arrayContaining("Elvis");
-		assertEquals("array_containing(`name`, \"Elvis\")", c.export());
+		assertEquals("array_contains(`name`, \"Elvis\")", c.export());
 	}
 
 	@Test
