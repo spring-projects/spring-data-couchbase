@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.core.convert;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class EncryptingWritingConverter implements ConditionalGenericConverter {
 
 		Set<ConvertiblePair> convertiblePairs = new HashSet<>();
 		Class<?>[] clazzes = new Class[] { String.class, Integer.class, Long.class, Float.class, Double.class,
-				BigInteger.class, BigDecimal.class, Boolean.class };
+				BigInteger.class, BigDecimal.class, Boolean.class, Enum.class };
 		for (Class clazz : clazzes) {
 			convertiblePairs.add(new ConvertiblePair(clazz, String.class));
 		}
@@ -63,7 +64,7 @@ public class EncryptingWritingConverter implements ConditionalGenericConverter {
 		com.couchbase.client.java.encryption.annotation.Encrypted ann = sourceType
 				.getAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class);
 		Map<Object, Object> result = new HashMap<>();
-		result.putAll(cryptoManager.encrypt(source.toString().getBytes(), ann.encrypter()));
+		result.putAll(cryptoManager.encrypt(source.toString().getBytes(StandardCharsets.UTF_8), ann.encrypter()));
 		return new Encrypted(result);
 	}
 

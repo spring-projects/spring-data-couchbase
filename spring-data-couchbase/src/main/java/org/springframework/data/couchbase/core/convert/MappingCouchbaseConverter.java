@@ -945,7 +945,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		} else if (value instanceof CouchbaseList) {
 			return (R) readCollection(type, (CouchbaseList) value, parent);
 		} else {
-			return (R) getPotentiallyConvertedSimpleRead(value, type.getClass()); // type does not have annotations
+			return (R) getPotentiallyConvertedSimpleRead(value, type.getType()); // type does not have annotations
 		}
 	}
 
