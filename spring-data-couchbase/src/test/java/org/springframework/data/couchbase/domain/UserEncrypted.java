@@ -27,11 +27,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.convert.ValueConverter;
-import org.springframework.data.couchbase.core.convert.CryptoConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 import com.couchbase.client.java.encryption.annotation.Encrypted;
@@ -75,19 +74,22 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 	}
 
 	@Version protected long version;
-	@Encrypted @ValueConverter(CryptoConverter.class) public String encryptedField;
-	@Encrypted @ValueConverter(CryptoConverter.class) public Integer encInteger = 1;
-	@Encrypted @ValueConverter(CryptoConverter.class) public Long encLong = Long.valueOf(1);
-	@Encrypted @ValueConverter(CryptoConverter.class) public Boolean encBoolean = Boolean.TRUE;
-	@Encrypted @ValueConverter(CryptoConverter.class) public BigInteger encBigInteger= new BigInteger("123");
-	@Encrypted @ValueConverter(CryptoConverter.class) public BigDecimal encBigDecimal = new BigDecimal("456");
-	@Encrypted @ValueConverter(CryptoConverter.class) public UUID encUUID = UUID.randomUUID();
-	@Encrypted @ValueConverter(CryptoConverter.class) public Date encDate = Date.from(Instant.now());
-	//@Encrypted @ValueConverter(CryptoConverter.class) public DateTime encDateTime = DateTime.now();
+	@Encrypted public String encryptedField;
+	@Encrypted public Integer encInteger = 1;
+	@Encrypted public Long encLong = Long.valueOf(1);
+	@Encrypted public Boolean encBoolean = Boolean.TRUE;
+	@Encrypted public BigInteger encBigInteger = new BigInteger("123");
+	@Encrypted public BigDecimal encBigDecimal = new BigDecimal("456");
+	@Encrypted public UUID encUUID = UUID.randomUUID();
+	@Encrypted public DateTime encDateTime = DateTime.now(DateTimeZone.UTC);
+	@Encrypted public Date encDate = Date.from(Instant.now());
+	@Encrypted public Address encAddress = new Address();
+
+	public Date plainDate = Date.from(Instant.now());
+	public DateTime plainDateTime = DateTime.now(DateTimeZone.UTC);
 
 	public List nicknames = List.of("Happy", "Sleepy");
 
-	@Encrypted @ValueConverter(CryptoConverter.class) public Address encAddress = new Address();
 
 	public Address homeAddress = null;
 	public List<Address> addresses = new ArrayList<>();

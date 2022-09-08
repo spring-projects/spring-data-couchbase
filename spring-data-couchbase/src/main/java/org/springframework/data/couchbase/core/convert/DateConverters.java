@@ -16,7 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert;
 
-import static java.time.ZoneId.*;
+import static java.time.ZoneId.systemDefault;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.springframework.core.convert.converter.Converter;
@@ -204,7 +205,7 @@ public final class DateConverters {
 
 		@Override
 		public DateTime convert(Number source) {
-			return source == null ? null : new DateTime(source.longValue());
+			return source == null ? null : new DateTime(source.longValue(), DateTimeZone.UTC);
 		}
 	}
 

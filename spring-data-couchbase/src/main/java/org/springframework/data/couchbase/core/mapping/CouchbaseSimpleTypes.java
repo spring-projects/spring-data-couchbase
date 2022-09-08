@@ -55,7 +55,6 @@ public abstract class CouchbaseSimpleTypes {
 		simpleTypes.add(UUID.class);
 		simpleTypes.add(Instant.class);
 
-
 		COUCHBASE_SIMPLE_TYPES = Collections.unmodifiableSet(simpleTypes);
 	}
 

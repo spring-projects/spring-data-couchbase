@@ -200,13 +200,6 @@ The generated documentation is available from `target/site/reference/html/index.
   popd
 ----
 
-=== Intellij Issue with Importing pom.xml
-
-There is an issue in Intellij that prevents it from importing modules when one of the module
-directories has the same name as the project directory. The work-around is to create a new module (any name, any type will suffice).
-When Intellij creates the new module, it will also recognize the existing modules. Once the new module is
-created, it can be deleted and Intellij will now recognize the existing modules.
-
 The generated documentation is available from `target/site/reference/html/index.html`.
 
 == Examples

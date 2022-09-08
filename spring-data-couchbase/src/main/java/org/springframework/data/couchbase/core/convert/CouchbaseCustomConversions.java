@@ -40,10 +40,11 @@ import org.springframework.data.convert.PropertyValueConverterFactory;
 import org.springframework.data.convert.PropertyValueConverterRegistrar;
 import org.springframework.data.convert.SimplePropertyValueConversions;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.encryption.CryptoManager;
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 
 /**
  * Value object to capture custom conversion.
@@ -65,8 +66,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 	private static final StoreConversions STORE_CONVERSIONS;
 
 	private static final List<Object> STORE_CONVERTERS;
-
-	private CryptoManager cryptoManager;
 
 	static {
 
@@ -93,7 +92,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 	 * Create a new {@link CouchbaseCustomConversions} given {@link CouchbaseConverterConfigurationAdapter}.
 	 *
 	 * @param conversionConfiguration must not be {@literal null}.
-	 * @since 2.3
 	 */
 	protected CouchbaseCustomConversions(CouchbaseConverterConfigurationAdapter conversionConfiguration) {
 		super(conversionConfiguration.createConverterConfiguration());
@@ -105,22 +103,24 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 	 * {@link org.springframework.data.convert.CustomConversions#CustomConversions(ConverterConfiguration) instance}.
 	 *
 	 * @param configurer must not be {@literal null}.
-	 * @since 2.3
 	 */
 	public static CouchbaseCustomConversions create(Consumer<CouchbaseConverterConfigurationAdapter> configurer) {
-
 		CouchbaseConverterConfigurationAdapter adapter = new CouchbaseConverterConfigurationAdapter();
 		configurer.accept(adapter);
-
 		return new CouchbaseCustomConversions(adapter);
+	}
+
+	@Override
+	public boolean hasValueConverter(PersistentProperty<?> property) {
+		if (property.findAnnotation(Encrypted.class) != null) {
+			return true;
+		}
+		return super.hasValueConverter(property);
 	}
 
 	/**
 	 * {@link CouchbaseConverterConfigurationAdapter} encapsulates creation of
 	 * {@link org.springframework.data.convert.CustomConversions.ConverterConfiguration} with CouchbaseDB specifics.
-	 *
-	 * @author Christoph Strobl
-	 * @since 2.3
 	 */
 	public static class CouchbaseConverterConfigurationAdapter {
 
@@ -169,7 +169,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 		 *
 		 * @param configurationAdapter must not be {@literal null}.
 		 * @return this.
-		 * @since 3.4
 		 */
 		public CouchbaseConverterConfigurationAdapter configurePropertyConversions(
 				Consumer<PropertyValueConverterRegistrar<CouchbasePersistentProperty>> configurationAdapter) {
@@ -220,7 +219,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 		 *
 		 * @param converterFactory must not be {@literal null}.
 		 * @return this.
-		 * @since 3.4
 		 */
 		public CouchbaseConverterConfigurationAdapter registerPropertyValueConverterFactory(
 				PropertyValueConverterFactory converterFactory) {
@@ -240,7 +238,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 		 *
 		 * @param valueConversions must not be {@literal null}.
 		 * @return this.
-		 * @since 3.4
 		 */
 		public CouchbaseConverterConfigurationAdapter setPropertyValueConversions(
 				PropertyValueConversions valueConversions) {
@@ -281,7 +278,7 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 			converters.addAll(STORE_CONVERTERS);
 
 			StoreConversions storeConversions = StoreConversions.of(new SimpleTypeHolder(JAVA_DRIVER_TIME_SIMPLE_TYPES,
-					SimpleTypeHolder.DEFAULT /* CouchbaseSimpoleTypes.HOLDER */), converters);
+					SimpleTypeHolder.DEFAULT /* CouchbaseSimpleTypes.HOLDER */), converters);
 
 			return new ConverterConfiguration(storeConversions, this.customConverters, convertiblePair -> {
 

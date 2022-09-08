@@ -23,9 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import com.couchbase.client.core.encryption.CryptoManager;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 
@@ -45,6 +43,7 @@ public final class OtherConverters {
 	 */
 	public static Collection<Converter<?, ?>> getConvertersToRegister() {
 		List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
+
 		converters.add(UuidToString.INSTANCE);
 		converters.add(StringToUuid.INSTANCE);
 		converters.add(BigIntegerToString.INSTANCE);

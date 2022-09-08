@@ -55,7 +55,7 @@ public interface CouchbaseConverter
 	 * @return the converted value (or the same value if no conversion necessary).
 	 */
 	Object convertForWriteIfNeeded(final CouchbasePersistentProperty source,
-			final ConvertingPropertyAccessor<Object> accessor);
+			final ConvertingPropertyAccessor<Object> accessor, boolean processValueConverter);
 
 	/**
 	 * Return the Class that would actually be stored for a given Class.
@@ -76,14 +76,9 @@ public interface CouchbaseConverter
 	 */
 	Alias getTypeAlias(TypeInformation<?> info);
 
-	// TODO needed later
-	// CouchbaseTypeMapper getMapper();
-	// Object convertToCouchbaseType(Object source, TypeInformation<?> typeInformation);
-	//
-	// Object convertToCouchbaseType(String source);
-
 	/**
 	 * return the conversions
+	 * 
 	 * @return conversions
 	 */
 	CustomConversions getConversions();

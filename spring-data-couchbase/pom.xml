@@ -33,6 +33,8 @@
         <com.couchbase.mock>1.5.25</com.couchbase.mock>
         <com.squareup.okhttp3>4.8.1</com.squareup.okhttp3>
         <org.awaitility>4.0.3</org.awaitility>
+        <jackson-joda>2.13.4</jackson-joda>
+        <couchbase.encryption>3.1.0</couchbase.encryption>
     </properties>
 
     <dependencyManagement>
@@ -114,6 +116,13 @@
             <artifactId>joda-time</artifactId>
             <version>${jodatime}</version>
             <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-joda</artifactId>
+            <version>${jackson-joda}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -221,7 +230,7 @@
         <dependency>
             <groupId>com.couchbase.client</groupId>
             <artifactId>couchbase-encryption</artifactId>
-            <version>3.1.0</version>
+            <version>${couchbase.encryption}</version>
             <scope>test</scope>
         </dependency>
 

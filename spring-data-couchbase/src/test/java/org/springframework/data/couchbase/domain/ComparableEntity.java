@@ -48,7 +48,6 @@ public class ComparableEntity {
 
 	public String toString() throws RuntimeException {
 		Gson gson = new GsonBuilder().create();
-		String s = gson.toJson(this);
-		return s;
+		return gson.toJson(this);
 	}
 }
