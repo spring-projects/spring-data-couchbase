@@ -23,9 +23,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import com.couchbase.client.core.encryption.CryptoManager;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 
@@ -45,6 +43,7 @@ public final class OtherConverters {
 	 */
 	public static Collection<Converter<?, ?>> getConvertersToRegister() {
 		List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
+
 		converters.add(UuidToString.INSTANCE);
 		converters.add(StringToUuid.INSTANCE);
 		converters.add(BigIntegerToString.INSTANCE);
@@ -52,19 +51,6 @@ public final class OtherConverters {
 		converters.add(BigDecimalToString.INSTANCE);
 		converters.add(StringToBigDecimal.INSTANCE);
 
-		return converters;
-	}
-
-	/**
-	 * Returns the crypto converters to be registered.
-	 *
-	 * @param cryptoManager to use for encrypting and decrypting
-	 * @return the list of converters to register.
-	 */
-	public static Collection<GenericConverter> getCryptoConverters(CryptoManager cryptoManager) {
-		List<GenericConverter> converters = new ArrayList<>();
-		converters.add(new EncryptingWritingConverter(cryptoManager));
-		converters.add(new DecryptingReadingConverter(cryptoManager));
 		return converters;
 	}
 

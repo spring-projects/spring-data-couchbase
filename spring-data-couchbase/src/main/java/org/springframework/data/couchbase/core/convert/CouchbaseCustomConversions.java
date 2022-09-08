@@ -22,8 +22,6 @@ import java.util.List;
 
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 
-import com.couchbase.client.core.encryption.CryptoManager;
-
 /**
  * Value object to capture custom conversion.
  * <p>
@@ -34,7 +32,6 @@ import com.couchbase.client.core.encryption.CryptoManager;
  * @author Oliver Gierke
  * @author Mark Paluch
  * @author Subhashni Balakrishnan
- * @Michael Reiche
  * @see org.springframework.data.convert.CustomConversions
  * @see SimpleTypeHolder
  * @since 2.0
@@ -44,18 +41,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 	private static final StoreConversions STORE_CONVERSIONS;
 
 	private static final List<Object> STORE_CONVERTERS;
-
-	private CryptoManager cryptoManager;
-
-	/**
-	 * Expose the CryptoManager used by a DecryptingReadingConverter or EncryptingWritingConverter, if any. There can only
-	 * be one. MappingCouchbaseConverter needs it.
-	 * 
-	 * @return cryptoManager
-	 */
-	public CryptoManager getCryptoManager() {
-		return cryptoManager;
-	}
 
 	static {
 
@@ -76,31 +61,5 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 	 */
 	public CouchbaseCustomConversions(final List<?> converters) {
 		super(STORE_CONVERSIONS, converters);
-		for (Object c : converters) {
-			if (c instanceof DecryptingReadingConverter) {
-				CryptoManager foundCryptoManager = ((DecryptingReadingConverter) c).cryptoManager;
-				if (foundCryptoManager == null) {
-					throw new RuntimeException(("DecryptingReadingConverter must have a cryptoManager"));
-				} else {
-					if (cryptoManager != null && this.cryptoManager != cryptoManager) {
-						throw new RuntimeException(
-								"all DecryptingReadingConverters and EncryptingWringConverters must use " + " a single CryptoManager");
-					}
-				}
-				cryptoManager = foundCryptoManager;
-			}
-			if (c instanceof EncryptingWritingConverter) {
-				CryptoManager foundCryptoManager = ((EncryptingWritingConverter) c).cryptoManager;
-				if (foundCryptoManager == null) {
-					throw new RuntimeException(("EncryptingWritingConverter must have a cryptoManager"));
-				} else {
-					if (cryptoManager != null && this.cryptoManager != cryptoManager) {
-						throw new RuntimeException(
-								"all DecryptingReadingConverters and EncryptingWringConverters must use " + " a single CryptoManager");
-					}
-				}
-				cryptoManager = foundCryptoManager;
-			}
-		}
 	}
 }
