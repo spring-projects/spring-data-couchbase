@@ -17,7 +17,6 @@ package org.springframework.data.couchbase.core.convert;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,11 +44,15 @@ public class DecryptingReadingConverter implements ConditionalGenericConverter {
 		this.cryptoManager = cryptoManager;
 	}
 
+	public void setConversionService(ConversionService conversionService) {
+		this.conversionService = conversionService;
+	}
+
 	@Override
 	public Set<ConvertiblePair> getConvertibleTypes() {
 		Set<ConvertiblePair> convertiblePairs = new HashSet<>();
 		Class<?>[] clazzes = new Class[] { String.class, Integer.class, Long.class, Float.class, Double.class,
-				BigInteger.class, BigDecimal.class, Boolean.class, Enum.class };
+				BigInteger.class, BigDecimal.class, Boolean.class };
 		for (Class clazz : clazzes) {
 			convertiblePairs.add(new ConvertiblePair(CouchbaseDocument.class, clazz));
 		}
@@ -58,8 +61,7 @@ public class DecryptingReadingConverter implements ConditionalGenericConverter {
 
 	@Override
 	public Object convert(Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
-		return source == null ? null
-				: new String(cryptoManager.decrypt(((CouchbaseDocument) source).getContent()), StandardCharsets.UTF_8);
+		return source == null? null : new String(cryptoManager.decrypt(((CouchbaseDocument) source).getContent()));
 	}
 
 	@Override
