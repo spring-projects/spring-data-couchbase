@@ -21,6 +21,7 @@ import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -31,15 +32,21 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.convert.PropertyValueConverterFactory;
+import org.springframework.data.convert.PropertyValueConverterRegistrar;
+import org.springframework.data.convert.SimplePropertyValueConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.convert.CouchbasePropertyValueConverterFactory;
+import org.springframework.data.couchbase.core.convert.CryptoConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.OtherConverters;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.config.ReactiveRepositoryOperationsMapping;
@@ -274,6 +281,7 @@ public abstract class AbstractCouchbaseConfiguration {
 			CouchbaseCustomConversions couchbaseCustomConversions) {
 		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
 		converter.setCustomConversions(couchbaseCustomConversions);
+		couchbaseMappingContext.setSimpleTypeHolder(couchbaseCustomConversions.getSimpleTypeHolder());
 		return converter;
 	}
 
@@ -397,26 +405,39 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
 	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)} )}
-	 * and {@link #couchbaseMappingContext(CustomConversions)}. Returns an empty {@link CustomConversions} instance by
-	 * default.
+	 * and {@link #couchbaseMappingContext(CustomConversions)}.
 	 *
-	 * @param cryptoManagerOptional optional cryptoManager. Make varargs for backwards compatibility.
 	 * @return must not be {@literal null}.
 	 */
 	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
-	public CustomConversions customConversions(CryptoManager... cryptoManagerOptional) {
-		assert (cryptoManagerOptional == null || cryptoManagerOptional.length <= 1);
-		CryptoManager cryptoManager = cryptoManagerOptional != null && cryptoManagerOptional.length == 1
-				? cryptoManagerOptional[0]
-				: null;
+	public CustomConversions customConversions() {
+		return customConversions(cryptoManager());
+	}
+
+	/**
+	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
+	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)} )}
+	 * and {@link #couchbaseMappingContext(CustomConversions)}.
+	 *
+	 * @param cryptoManager
+	 * @return must not be {@literal null}.
+	 */
+	public CustomConversions customConversions(CryptoManager cryptoManager) {
 		List<GenericConverter> newConverters = new ArrayList();
 		// the cryptoConverters take an argument, so they cannot be created in the
 		// static block of CouchbaseCustomConversions. And they must be set before the super() constructor
-		// in CouchbaseCustomerConversions
-		if (cryptoManager != null) {
-			newConverters.addAll(OtherConverters.getCryptoConverters(cryptoManager));
-		}
-		return new CouchbaseCustomConversions(newConverters);
+		// in CouchbaseCustomConversions
+		CustomConversions customConversions = CouchbaseCustomConversions.create( configurationAdapter -> {
+					SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
+					valueConversions.setConverterFactory(new CouchbasePropertyValueConverterFactory(cryptoManager));
+					valueConversions.setValueConverterRegistry(new PropertyValueConverterRegistrar()
+							.registerConverter(CouchbaseDocument.class, "", new CryptoConverter(cryptoManager))// unnecessary?
+							.buildRegistry());
+			configurationAdapter.setPropertyValueConversions(valueConversions);
+			configurationAdapter.registerConverters(newConverters);
+				});
+
+		return customConversions;
 	}
 
 	@Bean

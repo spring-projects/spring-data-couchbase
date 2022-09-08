@@ -23,12 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,36 +34,17 @@ import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.couchbase.client.encryption.AeadAes256CbcHmacSha512Provider;
-import com.couchbase.client.encryption.Decrypter;
-import com.couchbase.client.encryption.DefaultCryptoManager;
-import com.couchbase.client.encryption.Encrypter;
-import com.couchbase.client.encryption.EncryptionResult;
-import com.couchbase.client.encryption.Keyring;
-import com.couchbase.client.java.encryption.annotation.Encrypted;
-import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValue;
-import com.couchbase.client.java.json.JsonValueModule;
-import com.couchbase.client.java.query.QueryOptions;
-import com.couchbase.client.java.query.QueryScanConsistency;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.query.N1QLExpression;
-import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.PersonValueRepository;
-import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserEncrypted;
 import org.springframework.data.couchbase.domain.UserEncryptedRepository;
-import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -77,8 +54,13 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.SecurityConfig;
+import com.couchbase.client.encryption.AeadAes256CbcHmacSha512Provider;
+import com.couchbase.client.encryption.Decrypter;
+import com.couchbase.client.encryption.DefaultCryptoManager;
+import com.couchbase.client.encryption.Encrypter;
+import com.couchbase.client.encryption.EncryptionResult;
+import com.couchbase.client.encryption.Keyring;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import org.testcontainers.shaded.org.bouncycastle.asn1.isismtt.x509.AdditionalInformationSyntax;
 
 /**
  * Repository KV tests
@@ -90,8 +72,8 @@ import org.testcontainers.shaded.org.bouncycastle.asn1.isismtt.x509.AdditionalIn
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends ClusterAwareIntegrationTests {
 
-	@Autowired
-	UserEncryptedRepository userEncryptedRepository;
+	@Autowired UserEncryptedRepository userEncryptedRepository;
+	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired PersonValueRepository personValueRepository;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
@@ -108,16 +90,16 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 
 	}
 
-
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindById() {
 		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "saveAndFindById", "l", "hello");
 		Address address = new Address(); // plaintext address with encrypted street
-		address.setEncStreet("Olcott Street");
+		// address.setEncStreet("Olcott Street");
+		address.setStreet("Castro Street");
 		address.setCity("Santa Clara");
 		user.addAddress(address);
-		user.setHomeAddress(address);
+		user.setHomeAddress(null);
 		// cannot set encrypted fields within encrypted objects (i.e. setEncAddress())
 		Address encAddress = new Address(); // encrypted address with plaintext street.
 		encAddress.setStreet("Castro St");
@@ -130,7 +112,15 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		System.err.println(found.get());
 		found.ifPresent(u -> assertEquals(user, u));
 		assertTrue(userEncryptedRepository.existsById(user.getId()));
-		//userEncryptedRepository.delete(user);
+
+		UserEncrypted sdkUser = clientFactory.getCluster().bucket(config().bucketname()).defaultCollection()
+				.get(user.getId()).contentAs(UserEncrypted.class);
+		System.err.println("user:   : " + user);
+		sdkUser.setId(user.getId());
+		sdkUser.setVersion(user.getVersion());
+		System.err.println("sdkUser : " + sdkUser);
+		assertEquals(user, sdkUser);
+		// userEncryptedRepository.delete(user);
 	}
 
 	@Configuration

@@ -17,21 +17,24 @@
 package org.springframework.data.couchbase.domain;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.couchbase.client.java.encryption.annotation.Encrypted;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.joda.time.DateTime;
 import org.springframework.data.annotation.PersistenceConstructor;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.convert.ValueConverter;
+import org.springframework.data.couchbase.core.convert.CryptoConverter;
 import org.springframework.data.couchbase.core.mapping.Document;
+
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 
 /**
  * UserEncrypted entity for tests
@@ -44,11 +47,11 @@ import org.springframework.data.couchbase.core.mapping.Document;
 @TypeAlias(AbstractingTypeMapper.Type.ABSTRACTUSER)
 public class UserEncrypted extends AbstractUser implements Serializable {
 
-	public UserEncrypted(){
+	public UserEncrypted() {
 		this.subtype = AbstractingTypeMapper.Type.USER;
 	}
 
-	public UserEncrypted( final String lastname, final String encryptedField) {
+	public UserEncrypted(final String lastname, final String encryptedField) {
 		this();
 		this.id = UUID.randomUUID().toString();
 		this.lastname = lastname;
@@ -72,87 +75,54 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 	}
 
 	@Version protected long version;
-	@Transient protected String transientInfo;
-	@CreatedBy protected String createdBy;
-	@CreatedDate protected long createdDate;
-	@LastModifiedBy protected String lastModifiedBy;
-	@LastModifiedDate protected long lastModifiedDate;
-	@Encrypted public String encryptedField;
-	@Encrypted public Integer encInteger=1;
-	@Encrypted public Long encLong=Long.valueOf(1);
-	@Encrypted public Boolean encBoolean = Boolean.TRUE;
+	@Encrypted @ValueConverter(CryptoConverter.class) public String encryptedField;
+	@Encrypted @ValueConverter(CryptoConverter.class) public Integer encInteger = 1;
+	@Encrypted @ValueConverter(CryptoConverter.class) public Long encLong = Long.valueOf(1);
+	@Encrypted @ValueConverter(CryptoConverter.class) public Boolean encBoolean = Boolean.TRUE;
+	@Encrypted @ValueConverter(CryptoConverter.class) public BigInteger encBigInteger= new BigInteger("123");
+	@Encrypted @ValueConverter(CryptoConverter.class) public BigDecimal encBigDecimal = new BigDecimal("456");
+	@Encrypted @ValueConverter(CryptoConverter.class) public UUID encUUID = UUID.randomUUID();
+	@Encrypted @ValueConverter(CryptoConverter.class) public Date encDate = Date.from(Instant.now());
+	//@Encrypted @ValueConverter(CryptoConverter.class) public DateTime encDateTime = DateTime.now();
 
-	List nicknames = List.of("Happy", "Sleepy");
-	Address homeAddress = new Address();
-	List<Address> addresses = new ArrayList<>();
+	public List nicknames = List.of("Happy", "Sleepy");
 
-	@Encrypted
-	Address encAddress = new Address();
+	@Encrypted @ValueConverter(CryptoConverter.class) public Address encAddress = new Address();
+
+	public Address homeAddress = null;
+	public List<Address> addresses = new ArrayList<>();
 
 	public String getLastname() {
 		return lastname;
 	}
 
-	public long getCreatedDate() {
-		return createdDate;
-	}
-
-	public void setCreatedDate(long createdDate) {
-		this.createdDate = createdDate;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
-	public void setCreatedBy(String createdBy) {
-		this.createdBy = createdBy;
-	}
-
-	public long getLastModifiedDate() {
-		return lastModifiedDate;
-	}
-
-	public String getLastModifiedBy() {
-		return lastModifiedBy;
-	}
-
-
-	public String getEncryptedField() {
-		return encryptedField;
-	}
-
-
 	public long getVersion() {
 		return version;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public void setVersion(long version) {
 		this.version = version;
 	}
 
-	public void setHomeAddress(Address address){
+	public void setHomeAddress(Address address) {
 		this.homeAddress = address;
 	}
 
-	public void setEncAddress(Address address){
+	public void setEncAddress(Address address) {
 		this.encAddress = address;
 	}
 
-	public void addAddress(Address address){
+	public void addAddress(Address address) {
 		this.addresses.add(address);
 	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(getId(), firstname, lastname);
-	}
-
-	public String getTransientInfo() {
-		return transientInfo;
-	}
-
-	public void setTransientInfo(String something) {
-		transientInfo = something;
 	}
 
 }

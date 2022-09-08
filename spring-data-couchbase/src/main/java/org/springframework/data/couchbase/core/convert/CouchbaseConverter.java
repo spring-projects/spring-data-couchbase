@@ -16,6 +16,7 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.EntityConverter;
 import org.springframework.data.convert.EntityReader;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -80,4 +81,10 @@ public interface CouchbaseConverter
 	// Object convertToCouchbaseType(Object source, TypeInformation<?> typeInformation);
 	//
 	// Object convertToCouchbaseType(String source);
+
+	/**
+	 * return the conversions
+	 * @return conversions
+	 */
+	CustomConversions getConversions();
 }

@@ -55,19 +55,6 @@ public final class OtherConverters {
 		return converters;
 	}
 
-	/**
-	 * Returns the crypto converters to be registered.
-	 *
-	 * @param cryptoManager to use for encrypting and decrypting
-	 * @return the list of converters to register.
-	 */
-	public static Collection<GenericConverter> getCryptoConverters(CryptoManager cryptoManager) {
-		List<GenericConverter> converters = new ArrayList<>();
-		converters.add(new EncryptingWritingConverter(cryptoManager));
-		converters.add(new DecryptingReadingConverter(cryptoManager));
-		return converters;
-	}
-
 	@WritingConverter
 	public enum UuidToString implements Converter<UUID, String> {
 		INSTANCE;

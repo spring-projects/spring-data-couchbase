@@ -23,7 +23,6 @@ import java.beans.Transient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +37,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
@@ -57,6 +57,7 @@ import org.springframework.data.mapping.AssociationHandler;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.Parameter;
 import org.springframework.data.mapping.PersistentEntity;
+import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.callback.EntityCallbacks;
@@ -98,7 +99,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @see #TYPEKEY_SYNCGATEWAY_COMPATIBLE
 	 */
 	public static final String TYPEKEY_DEFAULT = DefaultCouchbaseTypeMapper.DEFAULT_TYPE_KEY;
-
 	/**
 	 * A "type key" (the name of the field that will hold type information) that is compatible with Sync Gateway (which
 	 * doesn't allows underscores).
@@ -125,11 +125,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * Callbacks for Audit Mechanism
 	 */
 	private @Nullable EntityCallbacks entityCallbacks;
-
-	/**
-	 * CryptoManager for en/decryption
-	 */
-	private @Nullable CryptoManager cryptoManager;
 
 	public MappingCouchbaseConverter() {
 		this(new CouchbaseMappingContext(), null);
@@ -161,28 +156,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		// the conversions Service gets them in afterPropertiesSet()
 		CustomConversions customConversions = new CouchbaseCustomConversions(Collections.emptyList());
 		this.setCustomConversions(customConversions);
+		// Don't rely on setSimpleTypeHolder being called in afterPropertiesSet() - some integration tests do not use it
 		// if the mappingContext does not have the SimpleTypes, it will not know that they have converters, then it will
 		// try to access the fields of the type and (maybe) fail with InaccessibleObjectException
 		((CouchbaseMappingContext) mappingContext).setSimpleTypeHolder(customConversions.getSimpleTypeHolder());
 		typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey : TYPEKEY_DEFAULT);
 		spELContext = new SpELContext(CouchbaseDocumentPropertyAccessor.INSTANCE);
-	}
-
-	/**
-	 * Get the cryptoManager used in conversions. We need to be able to mangle a property name.
-	 */
-	@Override
-	public void setCustomConversions(CustomConversions customConversions) {
-		super.setCustomConversions(customConversions);
-		if (customConversions instanceof CouchbaseCustomConversions) {
-			this.cryptoManager = ((CouchbaseCustomConversions) customConversions).getCryptoManager();
-		}
-	}
-
-	@Override
-	public void afterPropertiesSet() {
-		super.afterPropertiesSet();
-
 	}
 
 	/**
@@ -273,10 +252,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		return read(entity, source, parent);
 	}
 
-	private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
-		return property.isAnnotationPresent(IdPrefix.class) || property.isAnnotationPresent(IdSuffix.class);
-	}
-
 	/**
 	 * Read an incoming {@link CouchbaseDocument} into the target entity.
 	 *
@@ -295,7 +270,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		final R instance = instantiator.createInstance(entity, provider);
 		final ConvertingPropertyAccessor accessor = getPropertyAccessor(instance);
 
-		entity.doWithProperties(new PropertyHandler<CouchbasePersistentProperty>() {
+		entity.doWithProperties(new PropertyHandler<>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
 				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
@@ -314,8 +289,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			 * @return
 			 */
 			private boolean doesPropertyExistInSource(final CouchbasePersistentProperty property) {
-				return property.isIdProperty() || source.containsKey(property.getFieldName())
-						|| (cryptoManager != null && source.containsKey(cryptoManager.mangle(property.getFieldName())));
+				return property.isIdProperty() || source.containsKey(maybeMangle(property));
 			}
 
 			private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
@@ -445,7 +419,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @return the potentially converted object.
 	 */
 	@SuppressWarnings("unchecked")
-	private Object getPotentiallyConvertedSimpleRead(Object value, final CouchbasePersistentProperty target) {
+	protected Object getPotentiallyConvertedSimpleRead(Object value, final CouchbasePersistentProperty target) {
 		if (value == null || target == null) {
 			return value;
 		}
@@ -466,8 +440,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			typeMapper.writeType(type, target);
 		}
 
-		// CouchbasePersistentEntity entity = mappingContext.getPersistentEntity(source.getClass());
-		writeInternalRoot(source, target, type, true);
+		writeInternalRoot(source, target, type, true, null);
 		if (target.getId() == null) {
 			throw new MappingException("An ID property is needed, but not found/could not be generated on this entity.");
 		}
@@ -479,10 +452,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param source the source object.
 	 * @param target the target document.
 	 * @param withId write out with the id.
+	 * @param property will be null for the root
 	 */
 	@SuppressWarnings("unchecked")
 	protected void writeInternalRoot(final Object source, CouchbaseDocument target, TypeInformation<?> typeHint,
-			boolean withId) {
+			boolean withId, CouchbasePersistentProperty property) {
 		if (source == null) {
 			return;
 		}
@@ -494,7 +468,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		if (Map.class.isAssignableFrom(source.getClass())) {
-			writeMapInternal((Map<Object, Object>) source, target, ClassTypeInformation.MAP, null);
+			writeMapInternal((Map<Object, Object>) source, target, ClassTypeInformation.MAP, property);
 			return;
 		}
 
@@ -503,7 +477,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
-		writeInternalEntity(source, target, entity, withId, null);
+		writeInternalEntity(source, target, entity, withId, property);
 		addCustomTypeKeyIfNecessary(typeHint, source, target);
 	}
 
@@ -589,6 +563,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			}
 		});
 
+		if (prop != null && conversions.hasValueConverter(prop)) {
+			Map<String, Object> encrypted = (Map<String, Object>) conversions.getPropertyValueConversions()
+					.getValueConverter(prop).write(source, new CouchbaseConversionContext(prop, this, accessor));
+			target.setContent(JsonObject.from(encrypted));
+		}
 	}
 
 	private void writeToTargetDocument(final CouchbaseDocument target, final CouchbasePersistentEntity<?> entity,
@@ -648,9 +627,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param prop the property information.
 	 */
 	@SuppressWarnings("unchecked")
-	private void writePropertyInternal(final Object source, final CouchbaseDocument target,
+	protected void writePropertyInternal(final Object source, final CouchbaseDocument target,
 			final CouchbasePersistentProperty prop, final ConvertingPropertyAccessor accessor) {
 		if (source == null) {
+			return;
+		}
+
+		if (conversions.hasValueConverter(prop)) {
+			Object encrypted = conversions.getPropertyValueConversions().getValueConverter(prop).write(source,
+					new CouchbaseConversionContext(prop, this, accessor));
+			target.put(maybeMangle(prop), encrypted);
 			return;
 		}
 
@@ -659,14 +645,12 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		TypeInformation<?> type = prop.getTypeInformation();
 		if (valueType.isCollectionLike()) {
 			CouchbaseList collectionDoc = createCollection(asCollection(source), valueType, prop, accessor);
-			// TODO needs to handle enc
 			target.put(name, collectionDoc);
 			return;
 		}
 
 		if (valueType.isMap()) {
 			CouchbaseDocument mapDoc = createMap((Map<Object, Object>) source, prop);
-			// TODO needs to handle enc
 			target.put(name, mapDoc);
 			return;
 		}
@@ -676,10 +660,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			writeSimpleInternal(o.map(s -> prop).orElse(null), accessor, target, prop.getFieldName());
 			return;
 		}
-
 		Optional<Class<?>> basicTargetType = conversions.getCustomWriteTarget(source.getClass());
 		if (basicTargetType.isPresent()) {
-
 			basicTargetType.ifPresent(it -> {
 				target.put(name, conversionService.convert(source, it));
 			});
@@ -694,17 +676,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				? mappingContext.getRequiredPersistentEntity(source.getClass())
 				: mappingContext.getRequiredPersistentEntity(prop);
 		writeInternalEntity(source, propertyDoc, entity, false, prop);
-		com.couchbase.client.java.encryption.annotation.Encrypted ann = prop
-				.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class);
-		if (ann != null) {
-			JsonObject jo = JsonObject.from(propertyDoc.getContent());
-			Map<Object, Object> encMap = new HashMap();
-			encMap.putAll(cryptoManager.encrypt(jo.toBytes(), ann.encrypter()));
-			CouchbaseDocument mapDoc = writeMapInternal(encMap, new CouchbaseDocument(), prop.getTypeInformation(), prop);
-			target.put(cryptoManager.mangle(name), mapDoc);
-		} else {
-			target.put(name, propertyDoc);
-		}
+		target.put(maybeMangle(prop), propertyDoc);
 	}
 
 	/**
@@ -728,9 +700,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param target the target document.
 	 * @return the written couchbase document.
 	 */
-	private CouchbaseDocument writeMapInternal(final Map<Object, Object> source, final CouchbaseDocument target,
+	private CouchbaseDocument writeMapInternal(final Map<? extends Object, Object> source, final CouchbaseDocument target,
 			TypeInformation<?> type, CouchbasePersistentProperty prop) {
-		for (Map.Entry<Object, Object> entry : source.entrySet()) {
+		for (Map.Entry<? extends Object, Object> entry : source.entrySet()) {
 			Object key = entry.getKey();
 			Object val = entry.getValue();
 
@@ -745,7 +717,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 									prop.getTypeInformation(), prop, getPropertyAccessor(val)));
 				} else {
 					CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-					writeInternalRoot(val, embeddedDoc, prop.getTypeInformation(), false);
+					writeInternalRoot(val, embeddedDoc, prop.getTypeInformation(), false, prop);
 					target.put(simpleKey, embeddedDoc);
 				}
 			} else {
@@ -778,8 +750,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	private CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
 			final TypeInformation<?> type, CouchbasePersistentProperty prop, ConvertingPropertyAccessor accessor) {
 
-		TypeInformation<?> componentType = type == null ? null : type.getComponentType();
-
 		for (Object element : source) {
 			Class<?> elementType = element == null ? null : element.getClass();
 
@@ -790,7 +760,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						type, prop, accessor));
 			} else {
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-				writeInternalRoot(element, embeddedDoc, prop.getTypeInformation(), false);
+				writeInternalRoot(element, embeddedDoc, prop.getTypeInformation(), false, prop);
 				target.put(embeddedDoc);
 			}
 
@@ -863,18 +833,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			Optional<Object> optional = (Optional) result;
 			result = optional.orElse(null);
 		}
-		// For FLE, write as "encrypted$"...
-		if (source.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class) != null) {
-			if (result instanceof Encrypted) {
-				CouchbaseDocument mapDoc = writeMapInternal(((Encrypted) result).getEncryptionMap(), new CouchbaseDocument(),
-						ClassTypeInformation.MAP, null);
-				target.put(cryptoManager.mangle(key), mapDoc);
-			} else {
-				throw new RuntimeException("field annotation with @Encrypted could not be encrypted " + source.getField());
-			}
-		} else {
-			target.put(key, result);
-		}
+		target.put(maybeMangle(source), result);
 	}
 
 	public Object getPotentiallyConvertedSimpleWrite(final Object value) {
@@ -884,6 +843,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	public Object getPotentiallyConvertedSimpleWrite(final CouchbasePersistentProperty value,
 			ConvertingPropertyAccessor<Object> accessor) {
 		return convertForWriteIfNeeded(value, accessor); // can access annotations
+	}
+
+	public Object getPotentiallyConvertedSimpleWrite2(final CouchbasePersistentProperty value,
+			ConvertingPropertyAccessor<Object> accessor) {
+		return convertForWriteIfNeeded2(value, accessor); // can access annotations
 	}
 
 	/**
@@ -963,17 +927,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	@SuppressWarnings("unchecked")
 	private <R> R readValue(Object value, CouchbasePersistentProperty prop, Object parent) {
 		Class<?> rawType = prop.getType();
-
-		if (prop.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class) != null
-				&& !conversions.isSimpleType(rawType)) {
-			TreeMap exported = ((CouchbaseDocument) value).export(); // should be couchbase document (?)
-			byte[] result = cryptoManager.decrypt(exported);
-			CouchbaseDocument converted = new CouchbaseDocument();
-			Object readEntity = read(prop.getTypeInformation().getType(),
-					(CouchbaseDocument) translationService.decode(new String(result), converted));
-			return (R) readEntity;
-		}
-		if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
+		if (conversions.hasValueConverter(prop)) {
+			return (R) conversions.getPropertyValueConversions().getValueConverter(prop).read(value,
+					new CouchbaseConversionContext(prop, this, null));
+		} else if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
 			TypeInformation ti = ClassTypeInformation.from(value.getClass());
 			return (R) conversionService.convert(value, ti.toTypeDescriptor(), new TypeDescriptor(prop.getField()));
 		} else if (value instanceof CouchbaseDocument) {
@@ -1086,12 +1043,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		@SuppressWarnings("unchecked")
 		public <R> R getPropertyValue(final CouchbasePersistentProperty property) {
 			String expression = property.getSpelExpression();
-			Object value = expression != null ? evaluator.evaluate(expression) : source.get(property.getFieldName());
-			if (value == null
-					&& property.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class) != null
-					&& cryptoManager != null) {
-				value = source.get(cryptoManager.mangle(property.getFieldName()));
-			}
+			Object value = expression != null ? evaluator.evaluate(expression) : source.get(maybeMangle(property));
 
 			if (property == entity.getIdProperty() && parent == null) {
 				return readValue(source.getId(), property.getTypeInformation(), source);
@@ -1101,6 +1053,20 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			}
 			return readValue(value, property, source);
 		}
+	}
+
+	private String maybeMangle(PersistentProperty<?> property) {
+		Assert.notNull(property, "property");
+		if (!conversions.hasValueConverter(property)) {
+			return ((CouchbasePersistentProperty) property).getFieldName();
+		}
+		PropertyValueConverter<?, ?, ?> propertyValueConverter = conversions.getPropertyValueConversions()
+				.getValueConverter((CouchbasePersistentProperty) property);
+		CryptoManager cryptoManager = propertyValueConverter != null && propertyValueConverter instanceof CryptoConverter
+				? ((CryptoConverter) propertyValueConverter).cryptoManager()
+				: null;
+		String fname = ((CouchbasePersistentProperty) property).getFieldName();
+		return cryptoManager != null ? cryptoManager.mangle(fname) : fname;
 	}
 
 	/**

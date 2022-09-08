@@ -17,12 +17,14 @@
 package org.springframework.data.couchbase.core.convert;
 
 import java.util.Collections;
+import java.util.Map;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.EntityInstantiators;
@@ -99,7 +101,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 
 	/**
 	 * This convertForWriteIfNeeded takes a property and accessor so that the annotations can be accessed (ie. @Encrypted)
-	 * 
+	 *
 	 * @param prop the property to be converted to the class that would actually be stored.
 	 * @param accessor the property accessor
 	 * @return
@@ -109,6 +111,63 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		Object value = accessor.getProperty(prop, prop.getType());
 		if (value == null) {
 			return null;
+		}
+		if (conversions.hasValueConverter(prop)) {
+			CouchbaseDocument encrypted = (CouchbaseDocument) conversions.getPropertyValueConversions()
+					.getValueConverter(prop).write(value, new CouchbaseConversionContext(prop, (MappingCouchbaseConverter)this, accessor));
+			return encrypted;
+		}
+		Class<?> targetClass = Object.class;
+
+		if (prop.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class) != null) {
+			targetClass = Map.class;
+		}
+		boolean canConvert = this.conversionService.canConvert(new TypeDescriptor(prop.getField()),
+				TypeDescriptor.valueOf(targetClass));
+		if (canConvert) {
+			return this.conversionService.convert(value, new TypeDescriptor(prop.getField()),
+					TypeDescriptor.valueOf(targetClass));
+		}
+
+		Object result = this.conversions.getCustomWriteTarget(prop.getType()) //
+				.map(it -> this.conversionService.convert(value, new TypeDescriptor(prop.getField()),
+						TypeDescriptor.valueOf(it))) //
+				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
+
+		return result;
+
+	}
+
+	/**
+	 * This convertForWriteIfNeeded takes a property and accessor so that the annotations can be accessed (ie. @Encrypted)
+	 *
+	 * @param prop the property to be converted to the class that would actually be stored.
+	 * @param accessor the property accessor
+	 * @return
+	 */
+//@Override
+	public Object convertForWriteIfNeeded2(CouchbasePersistentProperty prop, ConvertingPropertyAccessor<Object> accessor) {
+		Object value = accessor.getProperty(prop, prop.getType());
+		if (value == null) {
+			return null;
+		}
+		/*
+		if (conversions.hasValueConverter(prop)) {
+			CouchbaseDocument encrypted = (CouchbaseDocument) conversions.getPropertyValueConversions()
+					.getValueConverter(prop).write(value, new CouchbaseConversionContext(prop, (MappingCouchbaseConverter)this, accessor));
+			return encrypted;
+		}
+		 */
+		Class<?> targetClass = Object.class;
+
+		if (prop.findAnnotation(com.couchbase.client.java.encryption.annotation.Encrypted.class) != null) {
+			targetClass = Map.class;
+		}
+		boolean canConvert = this.conversionService.canConvert(new TypeDescriptor(prop.getField()),
+				TypeDescriptor.valueOf(targetClass));
+		if (canConvert) {
+			return this.conversionService.convert(value, new TypeDescriptor(prop.getField()),
+					TypeDescriptor.valueOf(targetClass));
 		}
 
 		Object result = this.conversions.getCustomWriteTarget(prop.getType()) //
@@ -123,7 +182,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	/**
 	 * This convertForWriteIfNeed takes only the value to convert. It cannot access the annotations of the Field being
 	 * converted.
-	 * 
+	 *
 	 * @param value the value to be converted to the class that would actually be stored.
 	 * @return
 	 */
@@ -145,13 +204,13 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		if (value == null) {
 			return null;
 		}
-	
+
 		return this.conversions.getCustomWriteTarget(value.getClass()) //
 				.map(it -> (Object) this.conversionService.convert(value, it)) //
 				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
-	
+
 	}
-	
+
 	@Override
 	public Object convertToCouchbaseType(String source) {
 		return source;
@@ -161,5 +220,10 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	@Override
 	public Class<?> getWriteClassFor(Class<?> clazz) {
 		return this.conversions.getCustomWriteTarget(clazz).orElse(clazz);
+	}
+
+	@Override
+	public CustomConversions getConversions(){
+		return conversions;
 	}
 }
