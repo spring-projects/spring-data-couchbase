@@ -142,7 +142,7 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	 * @param accessor for providing invocation arguments. Never {@literal null}.
 	 * @param typeToRead the desired component target type. Can be {@literal null}.
 	 */
-	abstract protected Object doExecute(CouchbaseQueryMethod method, ResultProcessor processor,
+	protected abstract Object doExecute(CouchbaseQueryMethod method, ResultProcessor processor,
 			ParametersParameterAccessor accessor, @Nullable Class<?> typeToRead);
 
 	/**
