@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.convert;
 
 import java.util.Collections;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;

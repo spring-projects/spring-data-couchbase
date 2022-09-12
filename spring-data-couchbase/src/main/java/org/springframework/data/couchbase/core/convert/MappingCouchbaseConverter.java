@@ -76,6 +76,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 
 import com.couchbase.client.core.encryption.CryptoManager;
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.json.JsonObject;
 
 /**
@@ -247,6 +248,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 		CouchbasePersistentEntity<R> entity = (CouchbasePersistentEntity<R>) mappingContext
 				.getRequiredPersistentEntity(typeToUse);
+		if (source.containsKey("encbooleans"))
+			System.err.println(source);
 		return read(entity, source, parent);
 	}
 
@@ -275,8 +278,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						|| prop.isAnnotationPresent(N1qlJoin.class)) {
 					return;
 				}
+
 				Object obj = prop == entity.getIdProperty() && parent == null ? source.getId()
 						: getValueInternal(prop, source, instance, entity);
+
 				accessor.setProperty(prop, obj);
 			}
 
@@ -287,7 +292,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			 * @return
 			 */
 			private boolean doesPropertyExistInSource(final CouchbasePersistentProperty property) {
-				return property.isIdProperty() || source.containsKey(maybeMangle(property));
+				return property.isIdProperty() || source.containsKey(property.getFieldName())
+						|| source.containsKey(maybeMangle(property));
 			}
 
 			private boolean isIdConstructionProperty(final CouchbasePersistentProperty property) {
@@ -607,7 +613,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						return;
 					}
 
-					if (!conversions.isSimpleType(propertyObj.getClass())) {
+					if (!conversions.isSimpleType(prop.getType())) {
 						writePropertyInternal(propertyObj, target, prop, accessor);
 					} else {
 						writeSimpleInternal(prop, accessor, target, prop.getFieldName());
@@ -631,25 +637,23 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			return;
 		}
 
-		if (conversions.hasValueConverter(prop)) { // property is encrypted
-			Object encrypted = conversions.getPropertyValueConversions().getValueConverter(prop).write(source,
-					new CouchbaseConversionContext(prop, this, accessor));
-			target.put(maybeMangle(prop), encrypted);
-			return;
-		}
-
 		String name = prop.getFieldName();
 		TypeInformation<?> valueType = ClassTypeInformation.from(source.getClass());
 		TypeInformation<?> type = prop.getTypeInformation();
 		if (valueType.isCollectionLike()) {
 			CouchbaseList collectionDoc = createCollection(asCollection(source), valueType, prop, accessor);
-			target.put(name, collectionDoc);
+			putMaybeEncrypted(target, prop, collectionDoc, accessor);
 			return;
 		}
 
 		if (valueType.isMap()) {
 			CouchbaseDocument mapDoc = createMap((Map<Object, Object>) source, prop);
-			target.put(name, mapDoc);
+			putMaybeEncrypted(target, prop, mapDoc, accessor);
+			return;
+		}
+
+		if (conversions.hasValueConverter(prop)) { // property is encrypted
+			putMaybeEncrypted(target, prop, source, accessor);
 			return;
 		}
 
@@ -658,6 +662,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			writeSimpleInternal(o.map(s -> prop).orElse(null), accessor, target, prop.getFieldName());
 			return;
 		}
+
 		Optional<Class<?>> basicTargetType = conversions.getCustomWriteTarget(source.getClass());
 		if (basicTargetType.isPresent()) {
 			basicTargetType.ifPresent(it -> {
@@ -675,6 +680,15 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 				: mappingContext.getRequiredPersistentEntity(prop);
 		writeInternalEntity(source, propertyDoc, entity, false, prop);
 		target.put(maybeMangle(prop), propertyDoc);
+	}
+
+	private void putMaybeEncrypted(CouchbaseDocument target, CouchbasePersistentProperty prop, Object value,
+			ConvertingPropertyAccessor accessor) {
+		if (conversions.hasValueConverter(prop)) { // property is encrypted
+			value = conversions.getPropertyValueConversions().getValueConverter(prop).write(value,
+					new CouchbaseConversionContext(prop, this, accessor));
+		}
+		target.put(maybeMangle(prop), value);
 	}
 
 	/**
@@ -937,9 +951,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @return the converted object.
 	 */
 	@SuppressWarnings("unchecked")
-	private <R> R readValue(Object value, CouchbasePersistentProperty prop, Object parent) {
+	public <R> R readValue(Object value, CouchbasePersistentProperty prop, Object parent, boolean noDecrypt) {
 		Class<?> rawType = prop.getType();
-		if (conversions.hasValueConverter(prop)) {
+		if (conversions.hasValueConverter(prop) && !noDecrypt) {
 			return (R) conversions.getPropertyValueConversions().getValueConverter(prop).read(value,
 					new CouchbaseConversionContext(prop, this, null));
 		} else if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
@@ -1055,7 +1069,23 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		@SuppressWarnings("unchecked")
 		public <R> R getPropertyValue(final CouchbasePersistentProperty property) {
 			String expression = property.getSpelExpression();
-			Object value = expression != null ? evaluator.evaluate(expression) : source.get(maybeMangle(property));
+			String maybeFieldName = maybeMangle(property);
+			Object value = expression != null ? evaluator.evaluate(expression) : source.get(maybeFieldName);
+			boolean noDecrypt = false;
+
+			// handle @Encrypted FROM_UNENCRYPTED. Just accept them as-is.
+			if (property.findAnnotation(Encrypted.class) != null) {
+				if (value == null && !maybeFieldName.equals(property.getFieldName())
+						&& property.findAnnotation(Encrypted.class).migration().equals(Encrypted.Migration.FROM_UNENCRYPTED)) {
+					value = source.get(property.getFieldName());
+					noDecrypt = true;
+				} else if (value != null
+						&& !((value instanceof CouchbaseDocument) && (((CouchbaseDocument) value)).containsKey("kid"))) {
+					noDecrypt = true;
+					// TODO - should we throw an exception, or just ignore the problem of not being encrypted with noDecrypt=true?
+					throw new RuntimeException("should have been encrypted, but is not " + maybeFieldName);
+				}
+			}
 
 			if (property == entity.getIdProperty() && parent == null) {
 				return readValue(source.getId(), property.getTypeInformation(), source);
@@ -1063,11 +1093,11 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			if (value == null) {
 				return null;
 			}
-			return readValue(value, property, source);
+			return readValue(value, property, source, noDecrypt);
 		}
 	}
 
-	private String maybeMangle(PersistentProperty<?> property) {
+	String maybeMangle(PersistentProperty<?> property) {
 		Assert.notNull(property, "property");
 		if (!conversions.hasValueConverter(property)) {
 			return ((CouchbasePersistentProperty) property).getFieldName();

@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.convert;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.UUID;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import org.springframework.util.Base64Utils;
 
 /**
  * Out of the box conversions for java dates and calendars.
@@ -50,6 +52,12 @@ public final class OtherConverters {
 		converters.add(StringToBigInteger.INSTANCE);
 		converters.add(BigDecimalToString.INSTANCE);
 		converters.add(StringToBigDecimal.INSTANCE);
+		converters.add(ByteArrayToString.INSTANCE);
+		converters.add(StringToByteArray.INSTANCE);
+		converters.add(CharArrayToString.INSTANCE);
+		converters.add(StringToCharArray.INSTANCE);
+		converters.add(ClassToString.INSTANCE);
+		converters.add(StringToClass.INSTANCE);
 
 		return converters;
 	}
@@ -113,4 +121,70 @@ public final class OtherConverters {
 			return source == null ? null : new BigDecimal(source);
 		}
 	}
+
+	@WritingConverter
+	public enum ByteArrayToString implements Converter<byte[], String> {
+		INSTANCE;
+
+		@Override
+		public String convert(byte[] source) {
+			return source == null ? null : Base64Utils.encodeToString(source);
+		}
+	}
+
+	@ReadingConverter
+	public enum StringToByteArray implements Converter<String, byte[]> {
+		INSTANCE;
+
+		@Override
+		public byte[] convert(String source) {
+			return source == null ? null : Base64Utils.decode(source.getBytes(StandardCharsets.UTF_8));
+		}
+	}
+
+	@WritingConverter
+	public enum CharArrayToString implements Converter<char[], String> {
+		INSTANCE;
+
+		@Override
+		public String convert(char[] source) {
+			return source == null ? null : new String(source) ;
+		}
+	}
+
+	@ReadingConverter
+	public enum StringToCharArray implements Converter<String, char[]> {
+		INSTANCE;
+
+		@Override
+		public char[] convert(String source) {
+			return source == null ? null : source.toCharArray();
+		}
+	}
+
+
+	@WritingConverter
+	public enum ClassToString implements Converter<Class<?>, String> {
+		INSTANCE;
+
+		@Override
+		public String convert(Class<?> source) {
+			return source == null ? null : source.getClass().getName() ;
+		}
+	}
+
+	@ReadingConverter
+	public enum StringToClass implements Converter<String, Class<?>> {
+		INSTANCE;
+
+		@Override
+		public Class<?> convert(String source) {
+			try {
+				return source == null ? null : Class.forName(source);
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
 }

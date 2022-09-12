@@ -168,7 +168,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param builder the builder that can be customized.
 	 */
 	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
-
 	}
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)

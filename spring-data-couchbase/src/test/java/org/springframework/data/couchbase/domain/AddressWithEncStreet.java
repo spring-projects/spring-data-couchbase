@@ -15,50 +15,23 @@
  */
 package org.springframework.data.couchbase.domain;
 
-import com.couchbase.client.java.encryption.annotation.Encrypted;
 import org.springframework.data.couchbase.core.mapping.Document;
 
+import com.couchbase.client.java.encryption.annotation.Encrypted;
+
 @Document
-public class Address extends ComparableEntity {
+public class AddressWithEncStreet extends Address {
 
-	private String street;
-	private String city;
-	// for N1qlJoin
-	private String id;
-	private String parentId;
+	private @Encrypted String encStreet;
 
-	public Address() {}
+	public AddressWithEncStreet() {}
 
-	public String getStreet() {
-		return street;
+	public String getEncStreet() {
+		return encStreet;
 	}
 
-	public void setStreet(String street) {
-		this.street = street;
-	}
-
-	public String getCity() {
-		return city;
-	}
-
-	public void setCity(String city) {
-		this.city = city;
-	}
-
-	public String getParentId() {
-		return parentId;
-	}
-
-	public void setParentId(String parentId) {
-		this.parentId = parentId;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
+	public void setEncStreet(String encStreet) {
+		this.encStreet = encStreet;
 	}
 
 }

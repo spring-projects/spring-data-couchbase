@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -34,6 +35,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 import com.couchbase.client.java.encryption.annotation.Encrypted;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * UserEncrypted entity for tests
@@ -47,15 +49,11 @@ import com.couchbase.client.java.encryption.annotation.Encrypted;
 public class UserEncrypted extends AbstractUser implements Serializable {
 
 	public UserEncrypted() {
+		this._class = "abstractuser";
 		this.subtype = AbstractingTypeMapper.Type.USER;
 	}
 
-	public UserEncrypted(final String lastname, final String encryptedField) {
-		this();
-		this.id = UUID.randomUUID().toString();
-		this.lastname = lastname;
-		this.encryptedField = encryptedField;
-	}
+	public String _class; // cheat a little so that will work with Java SDK
 
 	@PersistenceConstructor
 	public UserEncrypted(final String id, final String firstname, final String lastname) {
@@ -73,26 +71,81 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 		this.encryptedField = encryptedField;
 	}
 
+	static DateTime NOW_DateTime = DateTime.now(DateTimeZone.UTC);
+	static Date NOW_Date = Date.from(Instant.now());
 	@Version protected long version;
-	@Encrypted public String encryptedField;
-	@Encrypted public Integer encInteger = 1;
-	@Encrypted public Long encLong = Long.valueOf(1);
-	@Encrypted public Boolean encBoolean = Boolean.TRUE;
-	@Encrypted public BigInteger encBigInteger = new BigInteger("123");
-	@Encrypted public BigDecimal encBigDecimal = new BigDecimal("456");
-	@Encrypted public UUID encUUID = UUID.randomUUID();
-	@Encrypted public DateTime encDateTime = DateTime.now(DateTimeZone.UTC);
-	@Encrypted public Date encDate = Date.from(Instant.now());
+
+	@Encrypted(migration = Encrypted.Migration.FROM_UNENCRYPTED) public String encryptedField;
+
+	@Encrypted public boolean encboolean;
+	@Encrypted public boolean[] encbooleans;
+	@Encrypted public Boolean encBoolean;
+	@Encrypted public Boolean[] encBooleans;
+
+	@Encrypted public long enclong;
+	@Encrypted public long[] enclongs;
+	@Encrypted public Long encLong;
+	@Encrypted public Long[] encLongs;
+
+	@Encrypted public short encshort;
+	@Encrypted public short[] encshorts;
+	@Encrypted public Short encShort;
+	@Encrypted public Short[] encShorts;
+
+	@Encrypted public int encinteger;
+	@Encrypted public int[] encintegers;
+	@Encrypted public Integer encInteger;
+	@Encrypted public Integer[] encIntegers;
+
+	@Encrypted public byte encbyte;
+	public byte[] plainbytes;
+	@Encrypted public byte[] encbytes;
+	@Encrypted public Byte encByte;
+	@Encrypted public Byte[] encBytes;
+
+	@Encrypted public float encfloat;
+	@Encrypted public float[] encfloats;
+	@Encrypted public Float encFloat;
+	@Encrypted public Float[] encFloats;
+
+	@Encrypted public double encdouble;
+	@Encrypted public double[] encdoubles;
+	@Encrypted public Double encDouble;
+	@Encrypted public Double[] encDoubles;
+
+	@Encrypted public char encchar='x'; // need to initialize as char(0) is not legal
+	@Encrypted public char[] encchars;
+	@Encrypted public Character encCharacter;
+	@Encrypted public Character[] encCharacters;
+
+	@Encrypted public String encString;
+	@Encrypted public String[] encStrings;
+
+	@Encrypted public Date encDate;
+	@Encrypted public Date[] encDates;
+
+	@Encrypted public Locale encLocal;
+	@Encrypted public Locale[] encLocales;
+
+	@Encrypted public QueryScanConsistency encEnum;
+	@Encrypted public QueryScanConsistency[] encEnums;
+
+	@Encrypted public Class<?> clazz;
+
+	@Encrypted public BigInteger encBigInteger;
+	@Encrypted public BigDecimal encBigDecimal;
+	@Encrypted public UUID encUUID;
+	@Encrypted public DateTime encDateTime;
+
 	@Encrypted public Address encAddress = new Address();
 
-	public Date plainDate = Date.from(Instant.now());
-	public DateTime plainDateTime = DateTime.now(DateTimeZone.UTC);
+	public Date plainDate;
+	public DateTime plainDateTime;
 
-	public List nicknames = List.of("Happy", "Sleepy");
-
+	public List nicknames;
 
 	public Address homeAddress = null;
-	public List<Address> addresses = new ArrayList<>();
+	public List<AddressWithEncStreet> addresses = new ArrayList<>();
 
 	public String getLastname() {
 		return lastname;
@@ -118,8 +171,13 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 		this.encAddress = address;
 	}
 
-	public void addAddress(Address address) {
+	public void addAddress(AddressWithEncStreet address) {
 		this.addresses.add(address);
+	}
+
+	public UserEncrypted withClass(String _class) {
+		this._class = _class;
+		return this;
 	}
 
 	@Override
@@ -127,4 +185,76 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 		return Objects.hash(getId(), firstname, lastname);
 	}
 
+	public void initSimpleTypes() {
+
+		encboolean = false;
+		encbooleans = new boolean[] { true, false };
+		encBoolean = true;
+		encBooleans = new Boolean[] { true, false };
+
+		enclong = 1;
+		enclongs = new long[] { 1, 2 };
+		encLong = Long.valueOf(1);
+		encLongs = new Long[] { Long.valueOf(1), Long.valueOf(2) };
+
+		encshort = 1;
+		encshorts = new short[] { 3, 4 };
+		encShort = 5;
+		encShorts = new Short[] { 6, 7 };
+
+		encinteger = 1;
+		encintegers = new int[] { 2, 3 };
+		encInteger = 4;
+		encIntegers = new Integer[] { 5, 6 };
+
+		encbyte = 32;
+		encbytes = new byte[] { 1, 2, 3, 4 };
+		plainbytes = new byte[] { 1, 2, 3, 4 };
+		encByte = 48;
+		encBytes = new Byte[] { 4, 5, 6, 7 };
+
+		encfloat = 1;
+		encfloats = new float[] { 1, 2 };
+		encFloat = Float.valueOf("1.1");
+		encFloats = new Float[] { encFloat };
+
+		encdouble = 1.2;
+		encdoubles = new double[] { 3.4, 5.6 };
+		encDouble = 7.8;
+		encDoubles = new Double[] { 9.10, 11.12 };
+
+		encchar = 'a';
+		encchars = new char[] { 'b', 'c', 'd' };
+		encCharacter = 'a';
+		encCharacters = new Character[] { 'a', 'b' };
+
+		encString = "myString";
+		encStrings = new String[] { "myString" };
+
+		encDate = NOW_Date;
+		encDates = new Date[] { NOW_Date };
+
+		encLocal = Locale.US;
+		encLocales = new Locale[] { Locale.US };
+
+		encEnum = QueryScanConsistency.NOT_BOUNDED;
+		encEnums = new QueryScanConsistency[] { QueryScanConsistency.NOT_BOUNDED };
+
+		encBigInteger = new BigInteger("123");
+		encBigDecimal = new BigDecimal("456");
+
+		encUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
+		//clazz = String.class;
+
+		encDateTime = NOW_DateTime;
+
+		encAddress = new Address();
+
+		plainDate = NOW_Date;
+		plainDateTime = NOW_DateTime;
+
+		nicknames = List.of("Happy", "Sleepy");
+
+	}
 }
