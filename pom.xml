@@ -25,8 +25,8 @@
     </modules>
 
     <properties>
-        <couchbase>3.3.2</couchbase>
-        <couchbase.osgi>3.3.2</couchbase.osgi>
+        <couchbase>3.3.4</couchbase>
+        <couchbase.osgi>3.3.4</couchbase.osgi>
         <springdata.commons>3.0.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
     </properties>
