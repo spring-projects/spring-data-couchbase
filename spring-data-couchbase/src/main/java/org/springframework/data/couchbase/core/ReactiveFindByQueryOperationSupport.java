@@ -27,7 +27,9 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.ReactiveScope;
+import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
@@ -190,8 +192,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							: rs.query(statement, opts);
 				} else {
 					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
-							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
+					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(), jSer)
+							.query(rs.name().equals(CollectionIdentifier.DEFAULT_SCOPE) ? null : rs, statement, opts);
 				}
 			});
 
