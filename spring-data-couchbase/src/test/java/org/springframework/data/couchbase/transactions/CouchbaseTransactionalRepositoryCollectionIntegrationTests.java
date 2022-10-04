@@ -32,17 +32,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserRepository;
+import org.springframework.data.couchbase.domain.UserCol;
+import org.springframework.data.couchbase.domain.UserColRepository;
 import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.util.ClusterType;
+import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -51,14 +48,13 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(
-		classes = { TransactionsConfig.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
-public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegrationTests {
+@SpringJUnitConfig(classes = { TransactionsConfig.class,
+		CouchbaseTransactionalRepositoryCollectionIntegrationTests.UserService.class })
+public class CouchbaseTransactionalRepositoryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
-	@Autowired UserRepository userRepo;
-	@Autowired CouchbaseClientFactory couchbaseClientFactory;
+	@Autowired UserColRepository userRepo;
 	@Autowired UserService userService;
-	@Autowired CouchbaseTemplate operations;
+	//@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
@@ -77,9 +73,9 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 
 	@Test
 	public void findByFirstname() {
-		operations.insertById(User.class).one(new User(UUID.randomUUID().toString(), "Ada", "Lovelace"));
+		userRepo.getOperations().insertById(UserCol.class).one(new UserCol(UUID.randomUUID().toString(), "Ada", "Lovelace"));
 
-		List<User> users = userService.findByFirstname("Ada");
+		List<UserCol> users = userService.findByFirstname("Ada");
 
 		assertNotEquals(0, users.size());
 	}
@@ -91,19 +87,19 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 		userService.run(repo -> {
 			assertInTransaction();
 
-			User user0 = repo.save(new User(id, "Ada", "Lovelace"));
+			UserCol user0 = repo.save(new UserCol(id, "Ada", "Lovelace"));
 
 			assertInTransaction();
 
 			// read your own write
-			User user1 = operations.findById(User.class).one(id);
+			UserCol user1 = userRepo.getOperations().findById(UserCol.class).one(id);
 			assertNotNull(user1);
 
 			assertInTransaction();
 
 		});
 
-		User user = operations.findById(User.class).one(id);
+		UserCol user = userRepo.getOperations().findById(UserCol.class).one(id);
 		assertNotNull(user);
 	}
 
@@ -114,26 +110,26 @@ public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegr
 
 		assertThrowsWithCause(() -> {
 			userService.run(repo -> {
-				User user = repo.save(new User(id, "Ada", "Lovelace"));
+				UserCol user = repo.save(new UserCol(id, "Ada", "Lovelace"));
 				SimulateFailureException.throwEx("fail");
 			});
 		}, TransactionSystemUnambiguousException.class, SimulateFailureException.class);
 
-		User user = operations.findById(User.class).one(id);
+		UserCol user = userRepo.getOperations().findById(UserCol.class).one(id);
 		assertNull(user);
 	}
 
 	@Service // this will work in the unit tests even without @Service because of explicit loading by @SpringJUnitConfig
 	static class UserService {
-		@Autowired UserRepository userRepo;
+		@Autowired UserColRepository userRepo;
 
 		@Transactional
-		public void run(Consumer<UserRepository> callback) {
+		public void run(Consumer<UserColRepository> callback) {
 			callback.accept(userRepo);
 		}
 
 		@Transactional
-		public List<User> findByFirstname(String name) {
+		public List<UserCol> findByFirstname(String name) {
 			return userRepo.findByFirstname(name);
 		}
 
