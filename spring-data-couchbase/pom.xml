@@ -219,30 +219,6 @@
 
     </dependencies>
 
-    <repositories>
-        <repository>
-            <id>spring-libs-snapshot</id>
-            <url>https://repo.spring.io/libs-snapshot</url>
-        </repository>
-        <repository>
-            <id>sonatype-snapshot</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>spring-plugins-release</id>
-            <url>https://repo.spring.io/plugins-release</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <build>
         <plugins>
             <plugin>

@@ -32,10 +32,6 @@
 			<plugin>
 				<groupId>org.asciidoctor</groupId>
 				<artifactId>asciidoctor-maven-plugin</artifactId>
-				<configuration>
-					<attributes>
-					</attributes>
-				</configuration>
 			</plugin>
 		</plugins>
 
