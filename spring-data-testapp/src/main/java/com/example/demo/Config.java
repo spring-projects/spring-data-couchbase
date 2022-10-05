@@ -15,6 +15,7 @@
  */
 package com.example.demo;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.transactions.config.TransactionsConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
  *
@@ -29,7 +31,8 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
  * @author Michael Reiche
  */
 @Configuration
-@EnableCouchbaseRepositories({"com.example.demo", "com.wu.onep.ordnrt.cbviewsrch.repository"})
+@EnableCouchbaseRepositories({"com.example.demo"})
+@EnableTransactionManagement
 public class Config extends AbstractCouchbaseConfiguration {
   @Override
   public String getConnectionString() {
@@ -53,7 +56,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 
   @Override
   public void configureEnvironment(ClusterEnvironment.Builder builder){
-    // builder.transactionsConfig(TransactionsConfig.durabilityLevel(DurabilityLevel.NONE));
+    builder.transactionsConfig(TransactionsConfig.durabilityLevel(DurabilityLevel.NONE));
   }
 
 
