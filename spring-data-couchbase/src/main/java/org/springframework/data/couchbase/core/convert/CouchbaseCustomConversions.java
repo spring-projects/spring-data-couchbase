@@ -198,8 +198,9 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 		}
 
 		/**
-		 * Add {@link Converter converters}, {@link ConverterFactory factories}, {@link ConverterBuilder.ConverterAware
-		 * converter-aware objects}, and {@link GenericConverter generic converters}.
+		 * Add {@link Converter converters}, {@link ConverterFactory factories},
+		 * {@link org.springframework.data.convert.ConverterBuilder.ConverterAware converter-aware objects}, and
+		 * {@link GenericConverter generic converters}.
 		 *
 		 * @param converters must not be {@literal null} nor contain {@literal null} values.
 		 * @return this.
