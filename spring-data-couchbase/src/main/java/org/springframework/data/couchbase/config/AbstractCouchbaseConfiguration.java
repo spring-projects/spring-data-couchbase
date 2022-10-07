@@ -18,8 +18,9 @@ package org.springframework.data.couchbase.config;
 
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -27,13 +28,18 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.convert.PropertyValueConverterRegistrar;
+import org.springframework.data.convert.SimplePropertyValueConversions;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.convert.CouchbasePropertyValueConverterFactory;
+import org.springframework.data.couchbase.core.convert.CryptoConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -149,7 +155,9 @@ public abstract class AbstractCouchbaseConfiguration {
 		if (!nonShadowedJacksonPresent()) {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper()));
+		CryptoManager cryptoManager = cryptoManager();
+		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper(cryptoManager)));
+		builder.cryptoManager(cryptoManager);
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -160,7 +168,6 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param builder the builder that can be customized.
 	 */
 	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
-
 	}
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
@@ -269,6 +276,7 @@ public abstract class AbstractCouchbaseConfiguration {
 			CouchbaseCustomConversions couchbaseCustomConversions) {
 		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
 		converter.setCustomConversions(couchbaseCustomConversions);
+		couchbaseMappingContext.setSimpleTypeHolder(couchbaseCustomConversions.getSimpleTypeHolder());
 		return converter;
 	}
 
@@ -280,8 +288,8 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public TranslationService couchbaseTranslationService() {
 		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
+		jacksonTranslationService.setObjectMapper(couchbaseObjectMapper(cryptoManager()));
 		jacksonTranslationService.afterPropertiesSet();
-
 		// for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
 		JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		return jacksonTranslationService;
@@ -306,12 +314,26 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @return ObjectMapper
 	 */
+	private ObjectMapper couchbaseObjectMapper() {
+		return couchbaseObjectMapper(cryptoManager());
+	}
 
-	public ObjectMapper couchbaseObjectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
+	/**
+	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
+	 *
+	 * @param cryptoManager
+	 * @return ObjectMapper
+	 */
+
+	ObjectMapper mapper;
+
+	public ObjectMapper couchbaseObjectMapper(CryptoManager cryptoManager) {
+		if (mapper != null) {
+			return mapper;
+		}
+		mapper = new ObjectMapper(); // or use the one from the Java SDK (?) JacksonTransformers.MAPPER
 		mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		mapper.registerModule(new JsonValueModule());
-		CryptoManager cryptoManager = null;
 		if (cryptoManager != null) {
 			mapper.registerModule(new EncryptionModule(cryptoManager));
 		}
@@ -320,7 +342,7 @@ public abstract class AbstractCouchbaseConfiguration {
 
 	/**
 	 * The default blocking transaction manager. It is an implementation of CallbackPreferringTransactionManager
-	 * CallbackPreferrringTransactionmanagers do not play well with test-cases that rely
+	 * CallbackPreferringTransactionManagers do not play well with test-cases that rely
 	 * on @TestTransaction/@BeforeTransaction/@AfterTransaction
 	 *
 	 * @param clientFactory
@@ -341,6 +363,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	TransactionTemplate couchbaseTransactionTemplate(CouchbaseCallbackTransactionManager couchbaseTransactionManager) {
 		return new TransactionTemplate(couchbaseTransactionManager);
 	}
+
 	/**
 	 * The default TransactionalOperator.
 	 *
@@ -376,14 +399,43 @@ public abstract class AbstractCouchbaseConfiguration {
 	/**
 	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
 	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)} )}
-	 * and {@link #couchbaseMappingContext(CustomConversions)}. Returns an empty {@link CustomConversions} instance by
-	 * default.
+	 * and {@link #couchbaseMappingContext(CustomConversions)}.
 	 *
 	 * @return must not be {@literal null}.
 	 */
 	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
 	public CustomConversions customConversions() {
-		return new CouchbaseCustomConversions(Collections.emptyList());
+		return customConversions(cryptoManager());
+	}
+
+	/**
+	 * Register custom Converters in a {@link CustomConversions} object if required. These {@link CustomConversions} will
+	 * be registered with the {@link #mappingCouchbaseConverter(CouchbaseMappingContext, CouchbaseCustomConversions)} )}
+	 * and {@link #couchbaseMappingContext(CustomConversions)}.
+	 *
+	 * @param cryptoManager
+	 * @return must not be {@literal null}.
+	 */
+	public CustomConversions customConversions(CryptoManager cryptoManager) {
+		List<GenericConverter> newConverters = new ArrayList();
+		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
+			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
+			valueConversions.setConverterFactory(new CouchbasePropertyValueConverterFactory(cryptoManager));
+			valueConversions.setValueConverterRegistry(new PropertyValueConverterRegistrar().buildRegistry());
+			configurationAdapter.setPropertyValueConversions(valueConversions);
+			configurationAdapter.registerConverters(newConverters);
+		});
+		return customConversions;
+	}
+
+	@Bean
+	protected CryptoManager cryptoManager() {
+		return null;
+	}
+
+	@Bean
+	protected CryptoConverter cryptoConverter(CryptoManager cryptoManager) {
+		return cryptoManager == null ? null : new CryptoConverter(cryptoManager);
 	}
 
 	/**
