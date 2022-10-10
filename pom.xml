@@ -309,17 +309,6 @@
                 </executions>
             </plugin>
             <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-jar-plugin</artifactId>
-              <configuration>
-                <archive>
-                  <manifestEntries>
-                    <Automatic-Module-Name>${java-module-name}</Automatic-Module-Name>
-                  </manifestEntries>
-                </archive>
-              </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
             </plugin>
@@ -347,24 +336,6 @@
                         <configuration>
                             <outputDirectory>target/generated-test-sources</outputDirectory>
                             <processor>org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor</processor>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>target/generated-test-sources</source>
-                            </sources>
                         </configuration>
                     </execution>
                 </executions>
