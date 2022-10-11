@@ -145,7 +145,7 @@ public class N1qlJoinResolver {
 			// Use the lhScope and lhCollection for the entity. The rhs is just the bucket.
 			return new KeySpacePair(lhCollection, x(i(bucketName) + "." + i(lhScope) + "." + i(lhCollection)), //
 					null, i(bucketName));
-		} else if (lhCollection != null && rhCollection == null) {
+		} else if (lhCollection == null && rhCollection != null) {
 			// the lhs does not have a collection (or scope), but rhs does have a collection
 			// Using the same (default) scope for the rhs would mean specifying a
 			// non-default collection in a default scope - which is not allowed.
