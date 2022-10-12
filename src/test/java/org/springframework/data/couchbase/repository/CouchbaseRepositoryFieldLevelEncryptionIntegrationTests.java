@@ -344,9 +344,9 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		}
 
 		@Override
-		public ObjectMapper couchbaseObjectMapper(CryptoManager cryptoManager) {
-			ObjectMapper om = super.couchbaseObjectMapper(cryptoManager);
-			om.registerModule(new JodaModule());
+		public ObjectMapper couchbaseObjectMapper() {
+			ObjectMapper om = super.couchbaseObjectMapper();
+			om.registerModule(new JodaModule()); // to test joda mapping
 			return om;
 		}
 
@@ -356,8 +356,6 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 				builder.securityConfig(
 						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
 			}
-			CryptoManager cryptoManager = cryptoManager();
-			builder.cryptoManager(cryptoManager).build();
 		}
 
 		@Override
@@ -390,27 +388,6 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 				return result;
 			}
 
-			private String toBytes(byte[] plaintext) {
-				StringBuffer sb = new StringBuffer();
-				for (byte b : plaintext) {
-					sb.append(b);
-					sb.append(" ");
-				}
-				return sb.toString();
-			}
-
-			private boolean cmp(byte[] a, byte[] b) {
-				if (a.length != b.length)
-					return false;
-				for (int i = 0; i < a.length; i++) {
-					if (a[i] != b[i])
-						return false;
-				}
-				return true;
-			}
-
-			byte[] canned_sdk_encbytes = { 34, 65, 81, 73, 68, 66, 65, 61, 61, 34 };
-			byte[] canned_spring_encbytes = { 91, 49, 44, 50, 44, 51, 44, 52, 93 };
 		}
 
 	}

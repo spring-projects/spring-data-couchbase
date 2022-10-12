@@ -39,7 +39,6 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbasePropertyValueConverterFactory;
-import org.springframework.data.couchbase.core.convert.CryptoConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
@@ -87,6 +86,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
+
+	ObjectMapper mapper;
+	CryptoManager cryptoManager = null;
 
 	/**
 	 * The connection string which allows the SDK to connect to the cluster.
@@ -155,9 +157,8 @@ public abstract class AbstractCouchbaseConfiguration {
 		if (!nonShadowedJacksonPresent()) {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
-		CryptoManager cryptoManager = cryptoManager();
-		builder.jsonSerializer(JacksonJsonSerializer.create(couchbaseObjectMapper(cryptoManager)));
-		builder.cryptoManager(cryptoManager);
+		builder.jsonSerializer(JacksonJsonSerializer.create(getCouchbaseObjectMapper()));
+		builder.cryptoManager(getCryptoManager());
 		configureEnvironment(builder);
 		return builder.build();
 	}
@@ -167,8 +168,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 *
 	 * @param builder the builder that can be customized.
 	 */
-	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {
-	}
+	protected void configureEnvironment(final ClusterEnvironment.Builder builder) {}
 
 	@Bean(name = BeanNames.COUCHBASE_TEMPLATE)
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
@@ -177,6 +177,7 @@ public abstract class AbstractCouchbaseConfiguration {
 				getDefaultConsistency());
 	}
 
+	@Deprecated
 	public CouchbaseTemplate couchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return couchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, new JacksonTranslationService());
@@ -189,6 +190,7 @@ public abstract class AbstractCouchbaseConfiguration {
 				getDefaultConsistency());
 	}
 
+	@Deprecated
 	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
 			MappingCouchbaseConverter mappingCouchbaseConverter) {
 		return reactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter,
@@ -288,7 +290,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public TranslationService couchbaseTranslationService() {
 		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
-		jacksonTranslationService.setObjectMapper(couchbaseObjectMapper(cryptoManager()));
+		jacksonTranslationService.setObjectMapper(getCouchbaseObjectMapper());
 		jacksonTranslationService.afterPropertiesSet();
 		// for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
 		JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -309,35 +311,26 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mappingContext;
 	}
 
-	/**
-	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
-	 *
-	 * @return ObjectMapper
-	 */
-	private ObjectMapper couchbaseObjectMapper() {
-		return couchbaseObjectMapper(cryptoManager());
+	private ObjectMapper getCouchbaseObjectMapper() {
+		if (mapper != null) {
+			return mapper;
+		}
+		return mapper = couchbaseObjectMapper();
 	}
 
 	/**
 	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
 	 *
-	 * @param cryptoManager
 	 * @return ObjectMapper
 	 */
-
-	ObjectMapper mapper;
-
-	public ObjectMapper couchbaseObjectMapper(CryptoManager cryptoManager) {
-		if (mapper != null) {
-			return mapper;
+	public ObjectMapper couchbaseObjectMapper() {
+		ObjectMapper om = new ObjectMapper(); // or use the one from the Java SDK (?) JacksonTransformers.MAPPER
+		om.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		om.registerModule(new JsonValueModule());
+		if (getCryptoManager() != null) {
+			om.registerModule(new EncryptionModule(getCryptoManager()));
 		}
-		mapper = new ObjectMapper(); // or use the one from the Java SDK (?) JacksonTransformers.MAPPER
-		mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.registerModule(new JsonValueModule());
-		if (cryptoManager != null) {
-			mapper.registerModule(new EncryptionModule(cryptoManager));
-		}
-		return mapper;
+		return om;
 	}
 
 	/**
@@ -405,7 +398,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
 	public CustomConversions customConversions() {
-		return customConversions(cryptoManager());
+		return customConversions(getCryptoManager());
 	}
 
 	/**
@@ -428,14 +421,18 @@ public abstract class AbstractCouchbaseConfiguration {
 		return customConversions;
 	}
 
-	@Bean
-	protected CryptoManager cryptoManager() {
-		return null;
+	/**
+	 * cryptoManager can be null, so it cannot be a bean and then used as an arg for bean methods
+	 */
+	private CryptoManager getCryptoManager() {
+		if (cryptoManager == null) {
+			cryptoManager = cryptoManager();
+		}
+		return cryptoManager;
 	}
 
-	@Bean
-	protected CryptoConverter cryptoConverter(CryptoManager cryptoManager) {
-		return cryptoManager == null ? null : new CryptoConverter(cryptoManager);
+	protected CryptoManager cryptoManager() {
+		return null;
 	}
 
 	/**
