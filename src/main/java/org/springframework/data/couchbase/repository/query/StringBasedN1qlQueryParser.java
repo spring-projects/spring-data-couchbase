@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.Expiration;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
@@ -434,6 +436,12 @@ public class StringBasedN1qlQueryParser {
 		for (Parameter parameter : this.queryMethod.getParameters().getBindableParameters()) {
 			Object rawValue = accessor.getBindableValue(parameter.getIndex());
 			Object value = couchbaseConverter.convertForWriteIfNeeded(rawValue);
+			if (value instanceof CouchbaseDocument) {
+				value = ((CouchbaseDocument) value).export();
+			}
+			if (value instanceof CouchbaseList) {
+				value = ((CouchbaseList) value).export();
+			}
 			putPositionalValue(posValues, value);
 		}
 		return posValues;
@@ -452,7 +460,9 @@ public class StringBasedN1qlQueryParser {
 			String placeholder = parameter.getPlaceholder();
 			Object rawValue = accessor.getBindableValue(parameter.getIndex());
 			Object value = couchbaseConverter.convertForWriteIfNeeded(rawValue);
-
+			if (value instanceof CouchbaseDocument) {
+				value = ((CouchbaseDocument) value).export();
+			}
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
 				putNamedValue(namedValues, placeholder, value);

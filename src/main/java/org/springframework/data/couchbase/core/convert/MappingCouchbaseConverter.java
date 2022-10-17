@@ -169,7 +169,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param source the source object.
 	 * @return the target collection.
 	 */
-	private static Collection<?> asCollection(final Object source) {
+	protected static Collection<?> asCollection(final Object source) {
 		if (source instanceof Collection) {
 			return (Collection<?>) source;
 		}
@@ -459,7 +459,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param property will be null for the root
 	 */
 	@SuppressWarnings("unchecked")
-	protected void writeInternalRoot(final Object source, CouchbaseDocument target, TypeInformation<?> typeHint,
+	public void writeInternalRoot(final Object source, CouchbaseDocument target, TypeInformation<?> typeHint,
 			boolean withId, CouchbasePersistentProperty property) {
 		if (source == null) {
 			return;
@@ -759,7 +759,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param target the target document.
 	 * @return the created couchbase list.
 	 */
-	private CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
+	public CouchbaseList writeCollectionInternal(final Collection<?> source, final CouchbaseList target,
 			final TypeInformation<?> type, CouchbasePersistentProperty prop, ConvertingPropertyAccessor accessor) {
 
 		for (Object element : source) {
