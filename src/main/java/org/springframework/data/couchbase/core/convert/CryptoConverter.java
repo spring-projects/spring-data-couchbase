@@ -16,8 +16,6 @@
 package org.springframework.data.couchbase.core.convert;
 
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -29,7 +27,6 @@ import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.convert.ValueConversionContext;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
@@ -37,6 +34,7 @@ import org.springframework.util.Assert;
 
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.error.InvalidArgumentException;
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
@@ -70,7 +68,7 @@ public class CryptoConverter implements
 		CouchbaseConversionContext ctx = (CouchbaseConversionContext) context;
 		CouchbasePersistentProperty property = ctx.getProperty();
 		byte[] plainText = coerceToBytesWrite(property, ctx.getAccessor(), ctx);
-		Map<String, Object> encrypted = cryptoManager().encrypt(plainText, CryptoManager.DEFAULT_ENCRYPTER_ALIAS);
+		Map<String, Object> encrypted = cryptoManager().encrypt(plainText, ctx.getProperty().findAnnotation(Encrypted.class).encrypter());
 		return new CouchbaseDocument().setContent(encrypted);
 	}
 
