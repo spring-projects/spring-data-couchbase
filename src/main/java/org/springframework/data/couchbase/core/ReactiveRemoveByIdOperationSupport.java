@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.core.cnc.TracingIdentifiers.TRANSACTION_OP_REMOVE;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
 import reactor.core.publisher.Flux;
@@ -29,9 +30,13 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.cnc.CbTracing;
+import com.couchbase.client.core.cnc.RequestSpan;
+import com.couchbase.client.core.cnc.TracingIdentifiers;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.core.transaction.support.SpanWrapper;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
@@ -101,7 +106,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 
 			return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(s -> {
 				if (!s.isPresent()) {
-					return rc.remove(id.toString(), buildRemoveOptions(pArgs.getOptions())).map(r -> RemoveResult.from(id.toString(), r));
+					return rc.remove(id.toString(), buildRemoveOptions(pArgs.getOptions()))
+							.map(r -> RemoveResult.from(id.toString(), r));
 				} else {
 					rejectInvalidTransactionalOptions();
 
@@ -115,7 +121,10 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 						if (getResult.cas() != cas) {
 							return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(ctx, getResult.cas(), cas));
 						}
-						return ctx.remove(getResult).map(r -> new RemoveResult(id.toString(), 0, null));
+						CoreTransactionAttemptContext internal = ctx;
+						RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_REMOVE, internal.span());
+						span.attribute(TracingIdentifiers.ATTR_OPERATION, TRANSACTION_OP_REMOVE);
+						return ctx.remove(getResult, new SpanWrapper(span)).map(r -> new RemoveResult(id.toString(), 0, null));
 					});
 
 				}

@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.core.cnc.TracingIdentifiers.TRANSACTION_OP_REPLACE;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
 import reactor.core.publisher.Flux;
@@ -30,10 +31,14 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.cnc.CbTracing;
+import com.couchbase.client.core.cnc.RequestSpan;
+import com.couchbase.client.core.cnc.TracingIdentifiers;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 import com.couchbase.client.core.transaction.CoreTransactionGetResult;
+import com.couchbase.client.core.transaction.support.SpanWrapper;
 import com.couchbase.client.core.transaction.util.DebugUtil;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplaceOptions;
@@ -124,9 +129,14 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 										if (getResult.cas() != cas) {
 											return Mono.error(TransactionalSupport.retryTransactionOnCasMismatch(ctx, getResult.cas(), cas));
 										}
+										CoreTransactionAttemptContext internal = ctxOpt.get().getCore();
+										RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_REPLACE,
+												internal.span());
+										span.attribute(TracingIdentifiers.ATTR_OPERATION, TRANSACTION_OP_REPLACE);
 										return ctx.replace(getResult, template.getCouchbaseClientFactory().getCluster().environment()
-												.transcoder().encode(converted.export()).encoded());
-									}).flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null));
+												.transcoder().encode(converted.export()).encoded(), new SpanWrapper(span));
+									}).flatMap(
+											result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null));
 								}
 							})).onErrorMap(throwable -> {
 								if (throwable instanceof RuntimeException) {

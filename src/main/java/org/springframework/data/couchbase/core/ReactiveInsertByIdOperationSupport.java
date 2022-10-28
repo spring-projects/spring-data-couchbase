@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import static com.couchbase.client.core.cnc.TracingIdentifiers.TRANSACTION_OP_INSERT;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
 import reactor.core.publisher.Flux;
@@ -30,7 +31,12 @@ import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.core.cnc.CbTracing;
+import com.couchbase.client.core.cnc.RequestSpan;
+import com.couchbase.client.core.cnc.TracingIdentifiers;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
+import com.couchbase.client.core.transaction.support.SpanWrapper;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -97,15 +103,21 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 								if (!ctxOpt.isPresent()) {
 									return collection.reactive()
-											.insert(converted.getId().toString(), converted.export(), buildOptions(pArgs.getOptions(), converted))
+											.insert(converted.getId().toString(), converted.export(),
+													buildOptions(pArgs.getOptions(), converted))
 											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
 													null, null));
 								} else {
 									rejectInvalidTransactionalOptions();
-									return ctxOpt.get().getCore()
+									CoreTransactionAttemptContext internal = ctxOpt.get().getCore();
+									RequestSpan span = CbTracing.newSpan(internal.core().context(), TRANSACTION_OP_INSERT,
+											internal.span());
+									span.attribute(TracingIdentifiers.ATTR_OPERATION, TRANSACTION_OP_INSERT);
+									return internal
 											.insert(makeCollectionIdentifier(collection.async()), converted.getId().toString(),
 													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
-															.encode(converted.export()).encoded())
+															.encode(converted.export()).encoded(),
+													new SpanWrapper(span))
 											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
 													null, null));
 								}
