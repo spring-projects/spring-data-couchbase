@@ -16,18 +16,21 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.util.Collection;
 import java.util.Collections;
 
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.EntityInstantiators;
+import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 
 /**
  * An abstract {@link CouchbaseConverter} that provides the basics for the {@link MappingCouchbaseConverter}.
@@ -141,19 +144,34 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	 * This convertForWriteIfNeed takes only the value to convert. It cannot access the annotations of the Field being
 	 * converted.
 	 *
-	 * @param value the value to be converted to the class that would actually be stored.
+	 * @param inValue the value to be converted to the class that would actually be stored.
 	 * @return
 	 */
 	@Override
-	public Object convertForWriteIfNeeded(Object value) {
-		if (value == null) {
+	public Object convertForWriteIfNeeded(Object inValue) {
+		if (inValue == null) {
 			return null;
 		}
 
-		return this.conversions.getCustomWriteTarget(value.getClass()) //
-				.map(it -> (Object) this.conversionService.convert(value, it)) //
-				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
+		Object value = this.conversions.getCustomWriteTarget(inValue.getClass()) //
+				.map(it -> (Object) this.conversionService.convert(inValue, it)) //
+				.orElse(inValue);
 
+		Class<?> elementType = value.getClass();
+
+		if (elementType == null || conversions.isSimpleType(elementType)) {
+			value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value;
+		} else if (value instanceof Collection || elementType.isArray()) {
+			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
+			value = ((MappingCouchbaseConverter) this).writeCollectionInternal(MappingCouchbaseConverter.asCollection(value),
+					new CouchbaseList(conversions.getSimpleTypeHolder()), type, null, null);
+		} else {
+			CouchbaseDocument embeddedDoc = new CouchbaseDocument();
+			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
+			((MappingCouchbaseConverter) this).writeInternalRoot(value, embeddedDoc, type, false, null);
+			value = embeddedDoc;
+		}
+		return value;
 	}
 
 	@Override

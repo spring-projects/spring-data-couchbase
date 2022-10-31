@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.domain;
 import java.util.List;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
+import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.stereotype.Repository;
 
@@ -34,5 +35,9 @@ public interface UserSubmissionRepository extends CouchbaseRepository<UserSubmis
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<UserSubmission> findByUsername(String username);
+
+	@Query("UPDATE #{#n1ql.bucket} set address=$2 where meta().id=$1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	List<Airport> setByIdAddress(String id, Address abc);
 
 }

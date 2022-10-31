@@ -368,14 +368,14 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		AirportRepositoryScanConsistencyTest airportRepositoryRP = (AirportRepositoryScanConsistencyTest) ac
 				.getBean("airportRepositoryScanConsistencyTest");
 
-		List<Airport> sizeBeforeTest = (List<Airport>)airportRepositoryRP.findAll();
+		List<Airport> sizeBeforeTest = (List<Airport>) airportRepositoryRP.findAll();
 		assertEquals(0, sizeBeforeTest.size());
 
 		boolean notFound = false;
 		for (int i = 0; i < 100; i++) {
 			Airport vie = new Airport("airports::vie", "vie", "low9");
 			Airport saved = airportRepositoryRP.save(vie);
-			List<Airport> allSaved = (List<Airport>)airportRepositoryRP.findAll();
+			List<Airport> allSaved = (List<Airport>) airportRepositoryRP.findAll();
 			couchbaseTemplate.removeById(Airport.class).one(saved.getId());
 			if (allSaved.isEmpty()) {
 				notFound = true;
@@ -542,8 +542,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			// set version == 0 so save() will be an upsert, not a replace
 			Airport saved = airportRepository.save(vie.clearVersion());
 			try {
-				airport2 = airportRepository.withOptions(queryOptions().scanConsistency(NOT_BOUNDED))
-						.iata(saved.getIata());
+				airport2 = airportRepository.withOptions(queryOptions().scanConsistency(NOT_BOUNDED)).iata(saved.getIata());
 				if (airport2 == null) {
 					break;
 				}
@@ -679,7 +678,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			airportRepository.saveAll(
 					Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
 							.collect(Collectors.toSet()));
-			couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
+			List<Airport> aList = couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).all();
 			Long count = airportRepository.countFancyExpression(asList("JFK"), asList("jfk"), false);
 			assertEquals(1, count);
 
@@ -839,6 +838,24 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertThrows(CouchbaseException.class, () -> airportRepository.getAllByIataNoCAS("vie"));
 		} finally {
 			airportRepository.deleteById(airport.getId());
+		}
+	}
+
+	@Test
+	void updateObject() throws Exception {
+		UserSubmission userSubmission = new UserSubmission();
+		userSubmission.setId("123");
+		try {
+			userSubmission.setUsername("updateObject");
+			userSubmissionRepository.save(userSubmission);
+			Address address = new Address(); // plaintext address with encrypted street
+			address.setStreet("Olcott Street");
+			address.setCity("Santa Clara");
+			userSubmissionRepository.setByIdAddress(userSubmission.getId(), address);
+			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
+			assertEquals(address, fetched.get().getAddress());
+		} finally {
+			airportRepository.deleteById(userSubmission.getId());
 		}
 	}
 
