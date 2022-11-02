@@ -72,6 +72,7 @@ import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryScanConsistencyTest;
+import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Iata;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
@@ -855,7 +856,45 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
 			assertEquals(address, fetched.get().getAddress());
 		} finally {
-			airportRepository.deleteById(userSubmission.getId());
+			userSubmissionRepository.deleteById(userSubmission.getId());
+		}
+	}
+
+	@Test
+	void namedParameterList() throws Exception {
+		UserSubmission userSubmission = new UserSubmission();
+		userSubmission.setId("123");
+		try {
+			userSubmission.setUsername("updateObject");
+			userSubmissionRepository.save(userSubmission);
+			Course[] courses = new Course[]{ new Course("1", "2", "3"), new Course("4","5","6")};
+			userSubmissionRepository.setNamedCourses(userSubmission.getId(), courses);
+			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
+			assertEquals(courses.length, fetched.get().getCourses().size());
+			for(int i=0; i< courses.length; i++){
+				assertEquals(courses[i], fetched.get().getCourses().get(i));
+			}
+		} finally {
+			userSubmissionRepository.deleteById(userSubmission.getId());
+		}
+	}
+
+	@Test
+	void orderedParameterList() throws Exception {
+		UserSubmission userSubmission = new UserSubmission();
+		userSubmission.setId("123");
+		try {
+			userSubmission.setUsername("updateObject");
+			userSubmissionRepository.save(userSubmission);
+			Course[] courses = new Course[]{ new Course("1", "2", "3"), new Course("4","5","6")};
+			userSubmissionRepository.setOrderedCourses(userSubmission.getId(), courses);
+			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
+			assertEquals(courses.length, fetched.get().getCourses().size());
+			for(int i=0; i< courses.length; i++){
+				assertEquals(courses[i], fetched.get().getCourses().get(i));
+      }
+		} finally {
+			userSubmissionRepository.deleteById(userSubmission.getId());
 		}
 	}
 
