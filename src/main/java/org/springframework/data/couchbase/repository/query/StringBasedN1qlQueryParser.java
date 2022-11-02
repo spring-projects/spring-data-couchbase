@@ -463,6 +463,9 @@ public class StringBasedN1qlQueryParser {
 			if (value instanceof CouchbaseDocument) {
 				value = ((CouchbaseDocument) value).export();
 			}
+			if (value instanceof CouchbaseList) {
+				value = ((CouchbaseList) value).export();
+			}
 			if (placeholder != null && placeholder.charAt(0) == ':') {
 				placeholder = placeholder.replaceFirst(":", "");
 				putNamedValue(namedValues, placeholder, value);

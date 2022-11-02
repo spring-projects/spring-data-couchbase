@@ -772,7 +772,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						type, prop, accessor));
 			} else {
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-				writeInternalRoot(element, embeddedDoc, prop.getTypeInformation(), false, prop);
+				writeInternalRoot(element, embeddedDoc, prop != null ? prop.getTypeInformation() : TypeInformation.of(elementType), false, prop);
 				target.put(embeddedDoc);
 			}
 

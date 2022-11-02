@@ -40,4 +40,11 @@ public interface UserSubmissionRepository extends CouchbaseRepository<UserSubmis
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	List<Airport> setByIdAddress(String id, Address abc);
 
+	@Query("UPDATE #{#n1ql.bucket} set courses=$2 where meta().id=$1")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+  void setOrderedCourses(String id, Course[] courses);
+
+	@Query("UPDATE #{#n1ql.bucket} set courses=$courses where meta().id=$id")
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	void setNamedCourses(String id, Course[] courses);
 }
