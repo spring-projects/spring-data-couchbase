@@ -25,6 +25,7 @@ include::reactiverepository.adoc[]
 include::template.adoc[]
 include::transactions.adoc[]
 include::collections.adoc[]
+include::fieldlevelencryption.adoc[]
 include::ansijoins.adoc[]
 include::caching.adoc[]
 :leveloffset: -1
