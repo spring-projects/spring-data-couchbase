@@ -8,7 +8,7 @@ Couchbase supports https://docs.couchbase.com/java-sdk/current/howtos/encrypting
  - Spring Data Couchbase 5.0.0-RC1 or above.
 
 == Overview
-Fields annotated with com.couchbase.client.java.encryption.annotation.Encrypted (@Encrypted) will be automatically encrypted on read and decrypted on write. Unencrypted fields can be migrated to encrypted by specifying @Encrypted(migration = Encrypted.Migration.FROM_UNENCRYPTED).
+Fields annotated with com.couchbase.client.java.encryption.annotation.Encrypted (@Encrypted) will be automatically encrypted on write and decrypted on read. Unencrypted fields can be migrated to encrypted by specifying @Encrypted(migration = Encrypted.Migration.FROM_UNENCRYPTED).
 
 
 == Getting Started & Configuration
