@@ -20,12 +20,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.convert.ValueConversionContext;
+import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
+import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.PersistentProperty;
@@ -40,7 +43,8 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.json.JsonValue;
 
 /**
- * Encrypt/Decrypted properties annotated with
+ * Encrypt/Decrypted properties annotated. This is registered in
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager)}.
  * 
  * @author Michael Reiche
  */
@@ -68,7 +72,8 @@ public class CryptoConverter implements
 		CouchbaseConversionContext ctx = (CouchbaseConversionContext) context;
 		CouchbasePersistentProperty property = ctx.getProperty();
 		byte[] plainText = coerceToBytesWrite(property, ctx.getAccessor(), ctx);
-		Map<String, Object> encrypted = cryptoManager().encrypt(plainText, ctx.getProperty().findAnnotation(Encrypted.class).encrypter());
+		Map<String, Object> encrypted = cryptoManager().encrypt(plainText,
+				ctx.getProperty().findAnnotation(Encrypted.class).encrypter());
 		return new CouchbaseDocument().setContent(encrypted);
 	}
 
@@ -83,6 +88,9 @@ public class CryptoConverter implements
 		if ("null".equals(decryptedString)) {
 			return null;
 		}
+		// TODO - as-is, this never gets ran through ObjectMapper() -
+		// TODO - i.e. @JsonValue etc will not be processed by ObjectMapper
+
 		/* this what we would do if we could use a JsonParser with a beanPropertyTypeRef
 		    final JsonParser plaintextParser = p.getCodec().getFactory().createParser(plaintext);
 		plaintextParser.setCodec(p.getCodec());
@@ -125,7 +133,7 @@ public class CryptoConverter implements
 			}
 			plainText = ja.toBytes();
 		} else if (cnvs.isSimpleType(sourceType)) { // simpleType
-			String plainString = value != null ? value.toString() : null;
+			String plainString = value != null ? value.toString() : null; // TODO - this will ignore @JsonValue
 			if ((sourceType == String.class || targetType == String.class) || sourceType == Character.class
 					|| sourceType == char.class || Enum.class.isAssignableFrom(sourceType)
 					|| Locale.class.isAssignableFrom(sourceType)) {
@@ -265,7 +273,7 @@ public class CryptoConverter implements
 		} else if (Character.class.isAssignableFrom(o.getClass())) {
 			o = ((Character) o).toString();
 		} else if (Enum.class.isAssignableFrom(o.getClass())) {
-			o = ((Enum) o).name();
+			o = ((Enum) o).name(); // TODO - this is will ignore @JsonValue
 		} else { // punt
 			o = o.toString();
 		}
