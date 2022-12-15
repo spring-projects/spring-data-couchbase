@@ -248,8 +248,6 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 		CouchbasePersistentEntity<R> entity = (CouchbasePersistentEntity<R>) mappingContext
 				.getRequiredPersistentEntity(typeToUse);
-		if (source.containsKey("encbooleans"))
-			System.err.println(source);
 		return read(entity, source, parent);
 	}
 
@@ -402,6 +400,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		if (Enum.class.isAssignableFrom(target)) {
+			// no longer needed with Enum converters
 			return Enum.valueOf((Class<Enum>) target, value.toString());
 		}
 
@@ -772,7 +771,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						type, prop, accessor));
 			} else {
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-				writeInternalRoot(element, embeddedDoc, prop != null ? prop.getTypeInformation() : TypeInformation.of(elementType), false, prop);
+				writeInternalRoot(element, embeddedDoc,
+						prop != null ? prop.getTypeInformation() : TypeInformation.of(elementType), false, prop);
 				target.put(embeddedDoc);
 			}
 
@@ -854,7 +854,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 	/**
 	 * This does process PropertyValueConversions
-	 * 
+	 *
 	 * @param value
 	 * @param accessor
 	 * @return
@@ -954,18 +954,25 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	public <R> R readValue(Object value, CouchbasePersistentProperty prop, Object parent, boolean noDecrypt) {
 		Class<?> rawType = prop.getType();
 		if (conversions.hasValueConverter(prop) && !noDecrypt) {
-			return (R) conversions.getPropertyValueConversions().getValueConverter(prop).read(value,
-					new CouchbaseConversionContext(prop, this, null));
-		} else if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
+			try {
+				return (R) conversions.getPropertyValueConversions().getValueConverter(prop).read(value,
+						new CouchbaseConversionContext(prop, this, null));
+			} catch (ConverterHasNoConversion noConversion) {
+				; // ignore
+			}
+		}
+		if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
 			TypeInformation ti = ClassTypeInformation.from(value.getClass());
 			return (R) conversionService.convert(value, ti.toTypeDescriptor(), new TypeDescriptor(prop.getField()));
-		} else if (value instanceof CouchbaseDocument) {
-			return (R) read(prop.getTypeInformation(), (CouchbaseDocument) value, parent);
-		} else if (value instanceof CouchbaseList) {
-			return (R) readCollection(prop.getTypeInformation(), (CouchbaseList) value, parent);
-		} else {
-			return (R) getPotentiallyConvertedSimpleRead(value, prop);// passes PersistentProperty with annotations
 		}
+		if (value instanceof CouchbaseDocument) {
+			return (R) read(prop.getTypeInformation(), (CouchbaseDocument) value, parent);
+		}
+		if (value instanceof CouchbaseList) {
+			return (R) readCollection(prop.getTypeInformation(), (CouchbaseList) value, parent);
+		}
+		return (R) getPotentiallyConvertedSimpleRead(value, prop);// passes PersistentProperty with annotations
+
 	}
 
 	private ConvertingPropertyAccessor<Object> getPropertyAccessor(Object source) {

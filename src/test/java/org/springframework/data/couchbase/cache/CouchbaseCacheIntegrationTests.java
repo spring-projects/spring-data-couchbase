@@ -90,6 +90,7 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		t0 = System.currentTimeMillis();
 		users = userRepository.getByFirstname(user.getFirstname());
 		assert (System.currentTimeMillis() - t0 < 100);
+		userRepository.delete(user);
 	}
 
 	@Test

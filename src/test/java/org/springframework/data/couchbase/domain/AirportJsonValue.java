@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,38 +29,40 @@ import org.springframework.data.couchbase.core.mapping.Expiration;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
- * Airport entity
+ * AirportJsonValue entity. From Airport.
  *
- * @author Michael Nitschinger
  * @author Michael Reiche
  */
 @Document
 @TypeAlias("airport")
-public class Airport extends ComparableEntity {
+public class AirportJsonValue extends ComparableEntity {
 	@Id String key;
 
 	String iata;
 
 	@JsonFormat(pattern = "abc") String icao;
 
-	@Version Number version;
+	ETurbulenceCategory turbulence1;
+	ETurbulenceCategory turbulence2;
+	EITurbulenceCategory turbulence3;
+	EJsonCreatorTurbulenceCategory turbulence4;
+	EBTurbulenceCategory turbulence5 ;
 
+	@Version Number version;
 	@CreatedBy private String createdBy;
 	@Expiration private long expiration;
 	@Max(2) long size;
-	private long someNumber;
 
 	public AirportJsonValuedObject jvObject;
 
 	{
 		this.jvObject = new AirportJsonValuedObject();
-		this.jvObject.theValue = "first";
 	}
 
-	public Airport() {}
+	public AirportJsonValue() {}
 
 	@PersistenceConstructor
-	public Airport(String key, String iata, String icao) {
+	public AirportJsonValue(String key, String iata, String icao) {
 		this.key = key;
 		this.iata = iata;
 		this.icao = icao;
@@ -82,27 +84,6 @@ public class Airport extends ComparableEntity {
 		return expiration;
 	}
 
-	public Airport withId(String id) {
-		return new Airport(id, this.iata, this.icao);
-	}
-
-	public Airport withIcao(String icao) {
-		return new Airport(this.getId(), this.iata, icao);
-	}
-
-	public Airport withIata(String iata) {
-		return new Airport(this.getId(), iata, this.icao);
-	}
-
-	public Airport clearVersion() {
-		version = Long.valueOf(0);
-		return this;
-	}
-
-	public String getCreatedBy() {
-		return createdBy;
-	}
-
 	public long getSize() {
 		return size;
 	}
@@ -111,4 +92,51 @@ public class Airport extends ComparableEntity {
 		this.size = size;
 	}
 
+	public void setTurbulence1(ETurbulenceCategory turbulence1) {
+		this.turbulence1 = turbulence1;
+	}
+
+	public ETurbulenceCategory getTurbulence1() {
+		return turbulence1;
+	}
+
+	public void setTurbulence2(ETurbulenceCategory turbulence) {
+		this.turbulence2 = turbulence;
+	}
+
+	public ETurbulenceCategory getTurbulence2() {
+		return turbulence2;
+	}
+
+	public void setTurbulence3(EITurbulenceCategory turbulence3) {
+		this.turbulence3 = turbulence3;
+	}
+
+	public EITurbulenceCategory getTurbulence3() {
+		return turbulence3;
+	}
+
+	public void setTurbulence4(EJsonCreatorTurbulenceCategory turbulence4) {
+		this.turbulence4 = turbulence4;
+	}
+
+	public EJsonCreatorTurbulenceCategory getTurbulence4() {
+		return turbulence4;
+	}
+
+	public void setTurbulence5(EBTurbulenceCategory turbulence5) {
+		this.turbulence5 = turbulence5;
+	}
+
+	public EBTurbulenceCategory getTurbulence5() {
+		return turbulence5;
+	}
+
+	public void setJvObject(AirportJsonValuedObject jvObject) {
+		this.jvObject = jvObject;
+	}
+
+	public AirportJsonValuedObject getJvObject() {
+		return jvObject;
+	}
 }

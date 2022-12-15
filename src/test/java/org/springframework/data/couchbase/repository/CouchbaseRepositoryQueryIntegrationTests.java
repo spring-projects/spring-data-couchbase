@@ -69,10 +69,16 @@ import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.AirportJsonValue;
+import org.springframework.data.couchbase.domain.AirportJsonValueRepository;
+import org.springframework.data.couchbase.domain.AirportJsonValuedObject;
 import org.springframework.data.couchbase.domain.AirportMini;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryScanConsistencyTest;
 import org.springframework.data.couchbase.domain.Course;
+import org.springframework.data.couchbase.domain.EITurbulenceCategory;
+import org.springframework.data.couchbase.domain.EJsonCreatorTurbulenceCategory;
+import org.springframework.data.couchbase.domain.ETurbulenceCategory;
 import org.springframework.data.couchbase.domain.Iata;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
@@ -108,6 +114,7 @@ import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.core.error.IndexFailureException;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.GetResult;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.MutationState;
@@ -128,6 +135,8 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	@Autowired CouchbaseClientFactory clientFactory;
 
 	@Autowired AirportRepository airportRepository;
+
+	@Autowired AirportJsonValueRepository airportJsonValueRepository;
 
 	@Autowired AirlineRepository airlineRepository;
 
@@ -313,6 +322,120 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			System.out.println(airports.get(0));
 		} finally {
 			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void sdcJsonValue() {
+		AirportJsonValue vie = null;
+		try {
+			vie = new AirportJsonValue("airports::vie", "vie", "low6");
+			vie.setTurbulence1(ETurbulenceCategory.T10);
+			vie.setTurbulence2(ETurbulenceCategory.T20);
+			vie.setTurbulence3(EITurbulenceCategory.T30);
+			vie.setTurbulence4(EJsonCreatorTurbulenceCategory.T40);
+			// sdk/jackson cannot handle vie.setTurbulence5(EBTurbulenceCategory.T);
+			vie.setJvObject(new AirportJsonValuedObject("1st"));
+
+			airportJsonValueRepository.save(vie);
+
+			// check that they were saved as expected
+			GetResult result = couchbaseTemplate.getCouchbaseClientFactory().getCluster().bucket(bucketName())
+					.defaultCollection().get(vie.getId());
+			JsonObject jo = JsonObject.fromJson(result.contentAsBytes());
+			assertEquals(ETurbulenceCategory.T10.getCode(), jo.get("turbulence1"));
+			assertEquals(ETurbulenceCategory.T20.getCode(), jo.get("turbulence2"));
+			assertEquals(EITurbulenceCategory.T30.getCode(), jo.get("turbulence3"));
+			assertEquals(EJsonCreatorTurbulenceCategory.T40.getCode(), jo.get("turbulence4"));
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T.getCode(), jo.get("turbulence5"));
+			assertEquals(new AirportJsonValuedObject("1st").getMapped(), jo.get("jvObject"));
+
+			// check that spring-data-couchbase deserializes as expected
+			AirportJsonValue airport = airportJsonValueRepository.findById(vie.getId()).get();
+			System.out.println(airport);
+			assertEquals(ETurbulenceCategory.T10, airport.getTurbulence1());
+			assertEquals(ETurbulenceCategory.T20, airport.getTurbulence2());
+			assertEquals(EITurbulenceCategory.T30, airport.getTurbulence3());
+			assertEquals(EJsonCreatorTurbulenceCategory.T40, airport.getTurbulence4());
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T, airport.getTurbulence5());
+			assertEquals(new AirportJsonValuedObject("1st").theValue, airport.getJvObject().theValue);
+
+			// check that java sdk deserializes as expected
+			airport = result.contentAs(AirportJsonValue.class);
+			assertEquals(ETurbulenceCategory.T10, airport.getTurbulence1());
+			assertEquals(ETurbulenceCategory.T20, airport.getTurbulence2());
+			assertEquals(EITurbulenceCategory.T30, airport.getTurbulence3());
+			assertEquals(EJsonCreatorTurbulenceCategory.T40, airport.getTurbulence4());
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T, airport.getTurbulence5());
+			assertEquals(new AirportJsonValuedObject("1st").theValue, airport.getJvObject().theValue);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			try {
+				airportJsonValueRepository.delete(vie);
+			} catch (Exception e) {
+				System.err.println(e);
+			}
+		}
+	}
+
+	@Test
+	void sdkJsonValue() {
+		AirportJsonValue vie = null;
+		try {
+			vie = new AirportJsonValue("airports::vie", "vie", "low6");
+			vie.setTurbulence1(ETurbulenceCategory.T10);
+			vie.setTurbulence2(ETurbulenceCategory.T20);
+			vie.setTurbulence3(EITurbulenceCategory.T30);
+			vie.setTurbulence4(EJsonCreatorTurbulenceCategory.T40);
+			// sdk/jackson cannot handle vie.setTurbulence5(EBTurbulenceCategory.T);
+			vie.setJvObject(new AirportJsonValuedObject("1st"));
+
+			//airportJsonValueRepository.save(vie);
+			couchbaseTemplate.getCouchbaseClientFactory().getCluster().bucket(bucketName())
+				.defaultCollection().upsert(vie.getId(), vie);
+
+			// check that they were saved as expected
+			GetResult result = couchbaseTemplate.getCouchbaseClientFactory().getCluster().bucket(bucketName())
+				.defaultCollection().get(vie.getId());
+			JsonObject jo = JsonObject.fromJson(result.contentAsBytes());
+			assertEquals(ETurbulenceCategory.T10.getCode(), jo.get("turbulence1"));
+			assertEquals(ETurbulenceCategory.T20.getCode(), jo.get("turbulence2"));
+			assertEquals(EITurbulenceCategory.T30.getCode(), jo.get("turbulence3"));
+			assertEquals(EJsonCreatorTurbulenceCategory.T40.getCode(), jo.get("turbulence4"));
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T.getCode(), jo.get("turbulence5"));
+			assertEquals(new AirportJsonValuedObject("1st").getMapped(), jo.get("jvObject"));
+
+			// check that spring-data-couchbase deserializes as expected
+			AirportJsonValue airport = airportJsonValueRepository.findById(vie.getId()).get();
+			System.out.println(airport);
+			assertEquals(ETurbulenceCategory.T10, airport.getTurbulence1());
+			assertEquals(ETurbulenceCategory.T20, airport.getTurbulence2());
+			assertEquals(EITurbulenceCategory.T30, airport.getTurbulence3());
+			assertEquals(EJsonCreatorTurbulenceCategory.T40, airport.getTurbulence4());
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T, airport.getTurbulence5());
+			assertEquals(new AirportJsonValuedObject("1st").theValue, airport.getJvObject().theValue);
+
+			// check that java sdk deserializes as expected
+			airport = result.contentAs(AirportJsonValue.class);
+			assertEquals(ETurbulenceCategory.T10, airport.getTurbulence1());
+			assertEquals(ETurbulenceCategory.T20, airport.getTurbulence2());
+			assertEquals(EITurbulenceCategory.T30, airport.getTurbulence3());
+			assertEquals(EJsonCreatorTurbulenceCategory.T40, airport.getTurbulence4());
+			// sdk/jackson cannot handle assertEquals(EBTurbulenceCategory.T, airport.getTurbulence5());
+			assertEquals(new AirportJsonValuedObject("1st").theValue, airport.getJvObject().theValue);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			try {
+				airportJsonValueRepository.delete(vie);
+			} catch (Exception e) {
+				System.err.println(e);
+			}
 		}
 	}
 
@@ -867,11 +990,11 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			userSubmission.setUsername("updateObject");
 			userSubmissionRepository.save(userSubmission);
-			Course[] courses = new Course[]{ new Course("1", "2", "3"), new Course("4","5","6")};
+			Course[] courses = new Course[] { new Course("1", "2", "3"), new Course("4", "5", "6") };
 			userSubmissionRepository.setNamedCourses(userSubmission.getId(), courses);
 			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
 			assertEquals(courses.length, fetched.get().getCourses().size());
-			for(int i=0; i< courses.length; i++){
+			for (int i = 0; i < courses.length; i++) {
 				assertEquals(courses[i], fetched.get().getCourses().get(i));
 			}
 		} finally {
@@ -886,13 +1009,13 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			userSubmission.setUsername("updateObject");
 			userSubmissionRepository.save(userSubmission);
-			Course[] courses = new Course[]{ new Course("1", "2", "3"), new Course("4","5","6")};
+			Course[] courses = new Course[] { new Course("1", "2", "3"), new Course("4", "5", "6") };
 			userSubmissionRepository.setOrderedCourses(userSubmission.getId(), courses);
 			Optional<UserSubmission> fetched = userSubmissionRepository.findById(userSubmission.getId());
 			assertEquals(courses.length, fetched.get().getCourses().size());
-			for(int i=0; i< courses.length; i++){
+			for (int i = 0; i < courses.length; i++) {
 				assertEquals(courses[i], fetched.get().getCourses().get(i));
-      }
+			}
 		} finally {
 			userSubmissionRepository.deleteById(userSubmission.getId());
 		}

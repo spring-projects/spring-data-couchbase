@@ -211,7 +211,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			assertEquals(saved, found.get(0), "should have found what was saved");
 			List<UserCol> notfound = userColRepository.withScope(DEFAULT_SCOPE)
 					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
-			assertEquals(0, notfound.size(), "should not have found what was saved");
+			assertEquals(0, notfound.size(), "should not have found what was saved "+notfound);
 		} finally {
 			try {
 				userColRepository.withScope(otherScope).withCollection(otherCollection).delete(user);
@@ -250,7 +250,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 			assertEquals(saved, found.get(0), "should have found what was saved");
 			List<UserCol> notfound = userColRepository.withScope(DEFAULT_SCOPE)
 					.withCollection(CollectionIdentifier.DEFAULT_COLLECTION).findByFirstname(user.getFirstname());
-			assertEquals(0, notfound.size(), "should not have found what was saved");
+			assertEquals(0, notfound.size(), "should not have found what was saved "+notfound);
 			userColRepository.withScope(scopeName).withCollection(collectionName).delete(user);
 		} finally {
 			try {

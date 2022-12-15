@@ -18,11 +18,16 @@ package org.springframework.data.couchbase.config;
 
 import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import com.couchbase.client.java.encryption.annotation.Encrypted;
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -37,9 +42,15 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.BooleanToEnumConverterFactory;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.CouchbasePropertyValueConverterFactory;
+import org.springframework.data.couchbase.core.convert.CryptoConverter;
+import org.springframework.data.couchbase.core.convert.IntegerToEnumConverterFactory;
+import org.springframework.data.couchbase.core.convert.JsonValueConverter;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.convert.OtherConverters;
+import org.springframework.data.couchbase.core.convert.StringToEnumConverterFactory;
 import org.springframework.data.couchbase.core.convert.translation.JacksonTranslationService;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
@@ -60,7 +71,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.couchbase.client.core.env.Authenticator;
 import com.couchbase.client.core.env.PasswordAuthenticator;
@@ -72,6 +82,7 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -87,8 +98,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
 
-	ObjectMapper mapper;
-	CryptoManager cryptoManager = null;
+	volatile ObjectMapper objectMapper;
+	volatile CryptoManager cryptoManager = null;
 
 	/**
 	 * The connection string which allows the SDK to connect to the cluster.
@@ -157,7 +168,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		if (!nonShadowedJacksonPresent()) {
 			throw new CouchbaseException("non-shadowed Jackson not present");
 		}
-		builder.jsonSerializer(JacksonJsonSerializer.create(getCouchbaseObjectMapper()));
+		builder.jsonSerializer(JacksonJsonSerializer.create(getObjectMapper()));
 		builder.cryptoManager(getCryptoManager());
 		configureEnvironment(builder);
 		return builder.build();
@@ -277,10 +288,12 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public TranslationService couchbaseTranslationService() {
 		final JacksonTranslationService jacksonTranslationService = new JacksonTranslationService();
-		jacksonTranslationService.setObjectMapper(getCouchbaseObjectMapper());
+		jacksonTranslationService.setObjectMapper(getObjectMapper());
 		jacksonTranslationService.afterPropertiesSet();
 		// for sdk3, we need to ask the mapper _it_ uses to ignore extra fields...
-		JacksonTransformers.MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		JacksonTransformers.MAPPER.configure(
+				com.couchbase.client.core.deps.com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+				false);
 		return jacksonTranslationService;
 	}
 
@@ -298,21 +311,26 @@ public abstract class AbstractCouchbaseConfiguration {
 		return mappingContext;
 	}
 
-	private ObjectMapper getCouchbaseObjectMapper() {
-		if (mapper != null) {
-			return mapper;
+	final public ObjectMapper getObjectMapper() {
+		if(objectMapper == null) {
+			synchronized (this) {
+				if (objectMapper == null) {
+					objectMapper = couchbaseObjectMapper();
+				}
+			}
 		}
-		return mapper = couchbaseObjectMapper();
+		return objectMapper;
 	}
 
 	/**
-	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment
+	 * Creates a {@link ObjectMapper} for the jsonSerializer of the ClusterEnvironment and spring-data-couchbase
+	 * jacksonTranslationService and also some converters (EnumToObject, StringToEnum, IntegerToEnum)
 	 *
 	 * @return ObjectMapper
 	 */
-	public ObjectMapper couchbaseObjectMapper() {
-		ObjectMapper om = new ObjectMapper(); // or use the one from the Java SDK (?) JacksonTransformers.MAPPER
-		om.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	protected ObjectMapper couchbaseObjectMapper() {
+		ObjectMapper om = new ObjectMapper();
+		om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		om.registerModule(new JsonValueModule());
 		if (getCryptoManager() != null) {
 			om.registerModule(new EncryptionModule(getCryptoManager()));
@@ -400,20 +418,35 @@ public abstract class AbstractCouchbaseConfiguration {
 		List<GenericConverter> newConverters = new ArrayList();
 		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
 			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
-			valueConversions.setConverterFactory(new CouchbasePropertyValueConverterFactory(cryptoManager));
+			valueConversions.setConverterFactory(new CouchbasePropertyValueConverterFactory(cryptoManager, annotationToConverterMap()));
 			valueConversions.setValueConverterRegistry(new PropertyValueConverterRegistrar().buildRegistry());
+			valueConversions.afterPropertiesSet(); // wraps the CouchbasePropertyValueConverterFactory with CachingPVCFactory
 			configurationAdapter.setPropertyValueConversions(valueConversions);
 			configurationAdapter.registerConverters(newConverters);
+			configurationAdapter.registerConverter(new OtherConverters.EnumToObject(getObjectMapper()));
+			configurationAdapter.registerConverterFactory(new IntegerToEnumConverterFactory(getObjectMapper()));
+			configurationAdapter.registerConverterFactory(new StringToEnumConverterFactory(getObjectMapper()));
+			configurationAdapter.registerConverterFactory(new BooleanToEnumConverterFactory(getObjectMapper()));
 		});
 		return customConversions;
 	}
 
+	Map<Class<? extends Annotation>,Class<?>> annotationToConverterMap(){
+		Map<Class<? extends Annotation>,Class<?>> map= new HashMap();
+		map.put(Encrypted.class, CryptoConverter.class);
+		map.put(JsonValue.class, JsonValueConverter.class);
+		return map;
+	}
 	/**
 	 * cryptoManager can be null, so it cannot be a bean and then used as an arg for bean methods
 	 */
 	private CryptoManager getCryptoManager() {
-		if (cryptoManager == null) {
-			cryptoManager = cryptoManager();
+		if(cryptoManager == null) {
+			synchronized (this) {
+				if (cryptoManager == null) {
+					cryptoManager = cryptoManager();
+				}
+			}
 		}
 		return cryptoManager;
 	}

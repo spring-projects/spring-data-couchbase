@@ -16,6 +16,9 @@
 
 package org.springframework.data.couchbase.core.convert;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -24,13 +27,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.util.Base64Utils;
 
+import com.couchbase.client.core.encryption.CryptoManager;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
- * Out of the box conversions for java dates and calendars.
+ * Out of the box conversions for Other types.
  *
  * @author Michael Reiche
  */
@@ -58,7 +67,10 @@ public final class OtherConverters {
 		converters.add(StringToCharArray.INSTANCE);
 		converters.add(ClassToString.INSTANCE);
 		converters.add(StringToClass.INSTANCE);
-
+		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory are
+		// registered in
+		// {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(
+		// CryptoManager)} as they require an ObjectMapper
 		return converters;
 	}
 
@@ -148,7 +160,7 @@ public final class OtherConverters {
 
 		@Override
 		public String convert(char[] source) {
-			return source == null ? null : new String(source) ;
+			return source == null ? null : new String(source);
 		}
 	}
 
@@ -162,14 +174,13 @@ public final class OtherConverters {
 		}
 	}
 
-
 	@WritingConverter
 	public enum ClassToString implements Converter<Class<?>, String> {
 		INSTANCE;
 
 		@Override
 		public String convert(Class<?> source) {
-			return source == null ? null : source.getClass().getName() ;
+			return source == null ? null : source.getClass().getName();
 		}
 	}
 
@@ -182,6 +193,40 @@ public final class OtherConverters {
 			try {
 				return source == null ? null : Class.forName(source);
 			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	/**
+	 * Writing converter for Enums. This is registered in
+	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager)}.
+	 * The corresponding reading converters are in {@link IntegerToEnumConverterFactory} and
+	 * {@link StringToEnumConverterFactory}
+	 */
+
+	@WritingConverter
+	public static class EnumToObject implements Converter<Enum<?>, Object> {
+		private final ObjectMapper objectMapper;
+		private static final JsonFactory factory = new JsonFactory();
+
+		public EnumToObject(ObjectMapper objectMapper) {
+			this.objectMapper = objectMapper;
+		}
+
+		@Override
+		public Object convert(Enum<?> source) {
+			try (Writer writer = new StringWriter(); JsonGenerator generator = factory.createGenerator(writer)) {
+				objectMapper.writeValue(generator, source);
+				String s = writer.toString();
+				if (s != null && s.startsWith("\"")) {
+					return objectMapper.readValue(s,String.class);
+				}
+				if ("true".equals(s) || "false".equals(s)) {
+					return objectMapper.readValue(s,Boolean.class);
+				}
+				return objectMapper.readValue(s,Number.class);
+			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 		}
