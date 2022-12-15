@@ -44,8 +44,6 @@ import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.java.encryption.annotation.Encrypted;
-
 /**
  * Value object to capture custom conversion.
  * <p>
@@ -112,9 +110,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 
 	@Override
 	public boolean hasValueConverter(PersistentProperty<?> property) {
-		if (property.findAnnotation(Encrypted.class) != null) {
-			return true;
-		}
 		return super.hasValueConverter(property);
 	}
 

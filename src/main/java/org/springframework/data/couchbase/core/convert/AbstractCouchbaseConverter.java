@@ -117,10 +117,8 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 			return null;
 		}
 		if (processValueConverter && conversions.hasValueConverter(prop)) {
-			CouchbaseDocument encrypted = (CouchbaseDocument) conversions.getPropertyValueConversions()
-					.getValueConverter(prop)
-					.write(value, new CouchbaseConversionContext(prop, (MappingCouchbaseConverter) this, accessor));
-			return encrypted;
+			return conversions.getPropertyValueConversions().getValueConverter(prop).write(value,
+					new CouchbaseConversionContext(prop, (MappingCouchbaseConverter) this, accessor));
 		}
 		Class<?> targetClass = this.conversions.getCustomWriteTarget(value.getClass()).orElse(null);
 
@@ -134,7 +132,9 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		Object result = this.conversions.getCustomWriteTarget(prop.getType()) //
 				.map(it -> this.conversionService.convert(value, new TypeDescriptor(prop.getField()),
 						TypeDescriptor.valueOf(it))) //
-				.orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
+				.orElse(value);
+		// superseded by Enum converters
+		// .orElseGet(() -> Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value);
 
 		return result;
 
@@ -160,7 +160,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		Class<?> elementType = value.getClass();
 
 		if (elementType == null || conversions.isSimpleType(elementType)) {
-			value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value;
+			// superseded by EnumCvtrs value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value;
 		} else if (value instanceof Collection || elementType.isArray()) {
 			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
 			value = ((MappingCouchbaseConverter) this).writeCollectionInternal(MappingCouchbaseConverter.asCollection(value),

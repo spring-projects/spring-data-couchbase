@@ -58,13 +58,13 @@ public class Person extends AbstractEntity implements Persistable<Object> {
 
 	public Person() {
 		setId(UUID.randomUUID());
+		setMiddlename("Nick");
 	}
 
 	public Person(String firstname, String lastname) {
 		this();
 		setFirstname(firstname);
 		setLastname(lastname);
-		setMiddlename("Nick");
 		isNew(true);
 	}
 
