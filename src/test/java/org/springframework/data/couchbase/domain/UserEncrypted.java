@@ -137,6 +137,7 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 	@Encrypted public UUID encUUID;
 	@Encrypted public DateTime encDateTime;
 
+	@Encrypted public ETurbulenceCategory turbulence;
 	@Encrypted public Address encAddress = new Address();
 
 	public Date plainDate;
@@ -228,8 +229,8 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 		encCharacter = 'a';
 		encCharacters = new Character[] { 'a', 'b' };
 
-		encString = "myString";
-		encStrings = new String[] { "myString" };
+		encString = "myS\"tring";
+		encStrings = new String[] { "mySt\"ring" };
 
 		encDate = NOW_Date;
 		encDates = new Date[] { NOW_Date };
@@ -248,13 +249,12 @@ public class UserEncrypted extends AbstractUser implements Serializable {
 		//clazz = String.class;
 
 		encDateTime = NOW_DateTime;
-
-		encAddress = new Address();
-
 		plainDate = NOW_Date;
 		plainDateTime = NOW_DateTime;
 
 		nicknames = List.of("Happy", "Sleepy");
+
+		turbulence = ETurbulenceCategory.T10;
 
 	}
 }

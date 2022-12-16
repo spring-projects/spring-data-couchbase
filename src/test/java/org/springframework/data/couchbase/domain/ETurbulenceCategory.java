@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @author Michael Reiche
  */
 public enum ETurbulenceCategory {
-	T10("10%"), T20("20%"), T30("30%");
+	T10("\"10%"), T20("\"20%"), T30("\"30%");
 
 	private final String code;
 

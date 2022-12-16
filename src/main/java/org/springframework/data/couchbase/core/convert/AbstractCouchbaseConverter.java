@@ -160,7 +160,8 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		Class<?> elementType = value.getClass();
 
 		if (elementType == null || conversions.isSimpleType(elementType)) {
-			// superseded by EnumCvtrs value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() : value;
+			// superseded by EnumCvtrs value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() :
+			// value;
 		} else if (value instanceof Collection || elementType.isArray()) {
 			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
 			value = ((MappingCouchbaseConverter) this).writeCollectionInternal(MappingCouchbaseConverter.asCollection(value),
@@ -168,7 +169,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 		} else {
 			CouchbaseDocument embeddedDoc = new CouchbaseDocument();
 			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
-			((MappingCouchbaseConverter) this).writeInternalRoot(value, embeddedDoc, type, false, null);
+			((MappingCouchbaseConverter) this).writeInternalRoot(value, embeddedDoc, type, false, null, true);
 			value = embeddedDoc;
 		}
 		return value;

@@ -38,6 +38,7 @@ import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AddressWithEncStreet;
+import org.springframework.data.couchbase.domain.ETurbulenceCategory;
 import org.springframework.data.couchbase.domain.TestEncrypted;
 import org.springframework.data.couchbase.domain.UserEncrypted;
 import org.springframework.data.couchbase.domain.UserEncryptedRepository;
@@ -97,6 +98,7 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void saveAndFindByTestId() {
+		boolean cleanAfter = true;
 		TestEncrypted user = new TestEncrypted(UUID.randomUUID().toString());
 		user.initSimpleTypes();
 		couchbaseTemplate.save(user);
@@ -121,13 +123,20 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		writeSDKReadSpring.setId(user.getId());
 
 		assertEquals(user.toString(), writeSDKReadSpring.toString());
+		if (cleanAfter) {
+			try {
+				couchbaseTemplate.removeById(UserEncrypted.class).one(user.getId());
+			} catch (DataRetrievalFailureException iae) {
+				// ignore
+			}
+		}
 	}
 
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void writeSpring_readSpring() {
-		boolean cleanAfter = false;
-		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSpring_readSpring", "l", "hello");
+		boolean cleanAfter = true;
+		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSpring_readSpring", "l", "hel\"lo");
 		AddressWithEncStreet address = new AddressWithEncStreet(); // plaintext address with encrypted street
 		address.setEncStreet("Olcott Street");
 		address.setCity("Santa Clara");
@@ -136,6 +145,7 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		Address encAddress = new Address(); // encrypted address with plaintext street.
 		encAddress.setStreet("Castro St");
 		encAddress.setCity("Mountain View");
+		encAddress.setTurbulence(ETurbulenceCategory.T10);
 		user.setEncAddress(encAddress);
 
 		user.initSimpleTypes();
@@ -159,8 +169,8 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void writeSpring_readSDK() {
-		boolean cleanAfter = false;
-		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSpring_readSDK", "l", "hello");
+		boolean cleanAfter = true;
+		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSpring_readSDK", "l", "hel\"lo");
 		AddressWithEncStreet address = new AddressWithEncStreet(); // plaintext address with encrypted street
 		address.setEncStreet("Olcott Street");
 		address.setCity("Santa Clara");
@@ -195,8 +205,8 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void writeSDK_readSpring() {
-		boolean cleanAfter = false;
-		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSDK_readSpring", "l", "hello");
+		boolean cleanAfter = true;
+		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSDK_readSpring", "l", "hel\"lo");
 		AddressWithEncStreet address = new AddressWithEncStreet(); // plaintext address with encrypted street
 		address.setEncStreet("Olcott Street");
 		address.setCity("Santa Clara");
@@ -232,8 +242,8 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 	@Test
 	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 	void writeSDK_readSDK() {
-		boolean cleanAfter = false;
-		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSDK_readSDK", "l", "hello");
+		boolean cleanAfter = true;
+		UserEncrypted user = new UserEncrypted(UUID.randomUUID().toString(), "writeSDK_readSDK", "l", "hel\"lo");
 		AddressWithEncStreet address = new AddressWithEncStreet(); // plaintext address with encrypted street
 		address.setEncStreet("Olcott Street");
 		address.setCity("Santa Clara");
