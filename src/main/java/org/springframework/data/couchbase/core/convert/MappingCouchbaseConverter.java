@@ -443,7 +443,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			typeMapper.writeType(type, target);
 		}
 
-		writeInternalRoot(source, target, type, true, null);
+		writeInternalRoot(source, target, type, true, null, true);
 		if (target.getId() == null) {
 			throw new MappingException("An ID property is needed, but not found/could not be generated on this entity.");
 		}
@@ -459,7 +459,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 */
 	@SuppressWarnings("unchecked")
 	public void writeInternalRoot(final Object source, CouchbaseDocument target, TypeInformation<?> typeHint,
-			boolean withId, CouchbasePersistentProperty property) {
+			boolean withId, CouchbasePersistentProperty property, boolean processValueConverter) {
 		if (source == null) {
 			return;
 		}
@@ -480,7 +480,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		CouchbasePersistentEntity<?> entity = mappingContext.getPersistentEntity(source.getClass());
-		writeInternalEntity(source, target, entity, withId, property);
+		writeInternalEntity(source, target, entity, withId, property, processValueConverter);
 		addCustomTypeKeyIfNecessary(typeHint, source, target);
 	}
 
@@ -517,7 +517,8 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param withId one of the top-level properties is the id for the document
 	 */
 	protected void writeInternalEntity(final Object source, final CouchbaseDocument target,
-			final CouchbasePersistentEntity<?> entity, boolean withId, CouchbasePersistentProperty prop) {
+			final CouchbasePersistentEntity<?> entity, boolean withId, CouchbasePersistentProperty prop,
+			boolean processValueConverter) {
 		if (source == null) {
 			return;
 		}
@@ -566,7 +567,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			}
 		});
 
-		if (prop != null && conversions.hasValueConverter(prop)) { // whole entity is encrypted
+		if (prop != null && processValueConverter && conversions.hasValueConverter(prop)) { // whole entity is encrypted
 			Map<String, Object> propertyConverted = (Map<String, Object>) conversions.getPropertyValueConversions()
 					.getValueConverter(prop).write(source, new CouchbaseConversionContext(prop, this, accessor));
 			target.setContent(JsonObject.from(propertyConverted));
@@ -677,7 +678,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		CouchbasePersistentEntity<?> entity = isSubtype(prop.getType(), source.getClass())
 				? mappingContext.getRequiredPersistentEntity(source.getClass())
 				: mappingContext.getRequiredPersistentEntity(prop);
-		writeInternalEntity(source, propertyDoc, entity, false, prop);
+		writeInternalEntity(source, propertyDoc, entity, false, prop, true);
 		target.put(maybeMangle(prop), propertyDoc);
 	}
 
@@ -728,7 +729,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 									prop.getTypeInformation(), prop, getPropertyAccessor(val)));
 				} else {
 					CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-					writeInternalRoot(val, embeddedDoc, prop.getTypeInformation(), false, prop);
+					writeInternalRoot(val, embeddedDoc, prop.getTypeInformation(), false, prop, true);
 					target.put(simpleKey, embeddedDoc);
 				}
 			} else {
@@ -772,7 +773,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			} else {
 				CouchbaseDocument embeddedDoc = new CouchbaseDocument();
 				writeInternalRoot(element, embeddedDoc,
-						prop != null ? prop.getTypeInformation() : TypeInformation.of(elementType), false, prop);
+						prop != null ? prop.getTypeInformation() : TypeInformation.of(elementType), false, prop, true);
 				target.put(embeddedDoc);
 			}
 
@@ -873,9 +874,9 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	 * @param processValueConverter
 	 * @return
 	 */
-	public Object getPotentiallyConvertedSimpleWrite(final CouchbasePersistentProperty value,
+	public Object getPotentiallyConvertedSimpleWrite(final CouchbasePersistentProperty property,
 			ConvertingPropertyAccessor<Object> accessor, boolean processValueConverter) {
-		return convertForWriteIfNeeded(value, accessor, processValueConverter); // can access annotations
+		return convertForWriteIfNeeded(property, accessor, processValueConverter); // can access annotations
 	}
 
 	/**

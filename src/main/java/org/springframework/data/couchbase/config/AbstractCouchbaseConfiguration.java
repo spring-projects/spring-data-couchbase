@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.couchbase.client.java.encryption.annotation.Encrypted;
-import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -77,11 +75,13 @@ import com.couchbase.client.core.env.PasswordAuthenticator;
 import com.couchbase.client.core.error.CouchbaseException;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.codec.JacksonJsonSerializer;
+import com.couchbase.client.java.encryption.annotation.Encrypted;
 import com.couchbase.client.java.encryption.databind.jackson.EncryptionModule;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.json.JacksonTransformers;
 import com.couchbase.client.java.json.JsonValueModule;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -312,7 +312,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	final public ObjectMapper getObjectMapper() {
-		if(objectMapper == null) {
+		if (objectMapper == null) {
 			synchronized (this) {
 				if (objectMapper == null) {
 					objectMapper = couchbaseObjectMapper();
@@ -403,7 +403,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 */
 	@Bean(name = BeanNames.COUCHBASE_CUSTOM_CONVERSIONS)
 	public CustomConversions customConversions() {
-		return customConversions(getCryptoManager());
+		return customConversions(getCryptoManager(), getObjectMapper());
 	}
 
 	/**
@@ -414,11 +414,12 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @param cryptoManager
 	 * @return must not be {@literal null}.
 	 */
-	public CustomConversions customConversions(CryptoManager cryptoManager) {
+	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
 		List<GenericConverter> newConverters = new ArrayList();
 		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
 			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
-			valueConversions.setConverterFactory(new CouchbasePropertyValueConverterFactory(cryptoManager, annotationToConverterMap()));
+			valueConversions.setConverterFactory(
+					new CouchbasePropertyValueConverterFactory(cryptoManager, annotationToConverterMap(), objectMapper));
 			valueConversions.setValueConverterRegistry(new PropertyValueConverterRegistrar().buildRegistry());
 			valueConversions.afterPropertiesSet(); // wraps the CouchbasePropertyValueConverterFactory with CachingPVCFactory
 			configurationAdapter.setPropertyValueConversions(valueConversions);
@@ -431,17 +432,18 @@ public abstract class AbstractCouchbaseConfiguration {
 		return customConversions;
 	}
 
-	Map<Class<? extends Annotation>,Class<?>> annotationToConverterMap(){
-		Map<Class<? extends Annotation>,Class<?>> map= new HashMap();
+	Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap() {
+		Map<Class<? extends Annotation>, Class<?>> map = new HashMap();
 		map.put(Encrypted.class, CryptoConverter.class);
 		map.put(JsonValue.class, JsonValueConverter.class);
 		return map;
 	}
+
 	/**
 	 * cryptoManager can be null, so it cannot be a bean and then used as an arg for bean methods
 	 */
 	private CryptoManager getCryptoManager() {
-		if(cryptoManager == null) {
+		if (cryptoManager == null) {
 			synchronized (this) {
 				if (cryptoManager == null) {
 					cryptoManager = cryptoManager();
