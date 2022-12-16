@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.domain;
 
-import com.couchbase.client.java.encryption.annotation.Encrypted;
 import org.springframework.data.couchbase.core.mapping.Document;
 
 @Document
@@ -26,6 +25,7 @@ public class Address extends ComparableEntity {
 	// for N1qlJoin
 	private String id;
 	private String parentId;
+	private ETurbulenceCategory turbulence;
 
 	public Address() {}
 
@@ -45,6 +45,13 @@ public class Address extends ComparableEntity {
 		this.city = city;
 	}
 
+	public ETurbulenceCategory getTurbulence() {
+		return turbulence;
+	}
+
+	public void setTurbulence(ETurbulenceCategory turbulence) {
+		this.turbulence = turbulence;
+	}
 	public String getParentId() {
 		return parentId;
 	}

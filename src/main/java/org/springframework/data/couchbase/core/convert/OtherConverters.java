@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
@@ -200,7 +199,7 @@ public final class OtherConverters {
 
 	/**
 	 * Writing converter for Enums. This is registered in
-	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager)}.
+	 * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions( CryptoManager, ObjectMapper)}.
 	 * The corresponding reading converters are in {@link IntegerToEnumConverterFactory} and
 	 * {@link StringToEnumConverterFactory}
 	 */
@@ -220,12 +219,12 @@ public final class OtherConverters {
 				objectMapper.writeValue(generator, source);
 				String s = writer.toString();
 				if (s != null && s.startsWith("\"")) {
-					return objectMapper.readValue(s,String.class);
+					return objectMapper.readValue(s, String.class);
 				}
 				if ("true".equals(s) || "false".equals(s)) {
-					return objectMapper.readValue(s,Boolean.class);
+					return objectMapper.readValue(s, Boolean.class);
 				}
-				return objectMapper.readValue(s,Number.class);
+				return objectMapper.readValue(s, Number.class);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

@@ -31,7 +31,7 @@ import org.springframework.data.mapping.PersistentProperty;
 import com.couchbase.client.core.encryption.CryptoManager;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.springframework.util.Assert;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Accept the Couchbase @Encrypted and @JsonValue annotations in addition to @ValueConverter annotation.<br>
@@ -48,14 +48,16 @@ import org.springframework.util.Assert;
  */
 public class CouchbasePropertyValueConverterFactory implements PropertyValueConverterFactory {
 
-	final CryptoManager cryptoManager;
-	final Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap;
+	private final CryptoManager cryptoManager;
+	private final ObjectMapper objectMapper;
+	private final Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap;
 	static protected final Map<Class<?>, Optional<PropertyValueConverter<?, ?, ?>>> converterCacheForType = new ConcurrentHashMap<>();
 
 	public CouchbasePropertyValueConverterFactory(CryptoManager cryptoManager,
-			Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap) {
+			Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap, ObjectMapper objectMapper) {
 		this.cryptoManager = cryptoManager;
 		this.annotationToConverterMap = annotationToConverterMap;
+		this.objectMapper = objectMapper;
 	}
 
 	/**
@@ -155,7 +157,7 @@ public class CouchbasePropertyValueConverterFactory implements PropertyValueConv
 
 		// CryptoConverter takes a cryptoManager argument
 		if (CryptoConverter.class.isAssignableFrom(converterType)) {
-			return (PropertyValueConverter<DV, SV, P>) new CryptoConverter(cryptoManager);
+			return (PropertyValueConverter<DV, SV, P>) new CryptoConverter(cryptoManager, objectMapper);
 		} else if (property != null) { // try constructor that takes PersistentProperty
 			try {
 				Constructor<?> constructor = converterType.getConstructor(PersistentProperty.class);
