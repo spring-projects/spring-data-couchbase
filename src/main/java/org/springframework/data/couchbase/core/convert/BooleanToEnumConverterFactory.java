@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Reading Converter factory for Enums. This differs from the one provided in org.springframework.core.convert.support
  * by getting the result from the jackson objectmapper (which will process @JsonValue annotations) This is registered in
- * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager)}.
+ * {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(CryptoManager, ObjectMapper)}.
  *
  * @author Michael Reiche
  */
