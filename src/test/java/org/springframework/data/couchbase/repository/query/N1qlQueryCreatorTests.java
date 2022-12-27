@@ -225,6 +225,40 @@ class N1qlQueryCreatorTests {
 				query.export());
 	}
 
+	@Test
+	void findByAssetId() throws Exception {
+		String input = "findByAsset_IdAndAsset_Desc";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String.class, String.class);
+		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
+				new SpelAwareProxyProjectionFactory());
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
+				getAccessor(getParameters(method), "test", "Home in Brooklyn"), queryMethod, converter, bucketName);
+		Query query = creator.createQuery();
+		//We expect query to be
+		//WHERE `asset`.`id` = "test" and `asset`.`desc` = "Home in Brooklyn"
+		//But it was generated on version 4.2.11
+		//WHERE META(bucketName).`id` = "test" and `asset`.`desc` = "Home in Brooklyn"
+		assertEquals(query.export(), " WHERE " + where(x("`asset`.`id`")).is("test")
+				.and("`asset`.`desc`").is("Home in Brooklyn").export());
+
+		//version 4.2.11
+		/*
+		String input = "findByAsset_IdAndAsset_Desc";
+		PartTree tree = new PartTree(input, User.class);
+		Method method = UserRepository.class.getMethod(input, String.class, String.class);
+		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
+				getAccessor(getParameters(method), "test", "Home in Brooklyn"), null, converter, bucketName);
+		Query query = creator.createQuery();
+		//We expect query to be
+		//WHERE `asset`.`id` = "test" and `asset`.`desc` = "Home in Brooklyn"
+		//But it was generated on version 4.2.11
+		//WHERE META(bucketName).`id` = "test" and `asset`.`desc` = "Home in Brooklyn"
+		assertEquals(query.export(), " WHERE " + where(x("META(`" + bucketName + "`).`id`")).is("test")
+			.and("`asset`.`desc`").is("Home in Brooklyn").export());
+		 */
+	}
+
 	private ParameterAccessor getAccessor(Parameters<?, ?> params, Object... values) {
 		return new ParametersParameterAccessor(params, values);
 	}

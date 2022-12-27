@@ -28,6 +28,7 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Field;
 
 /**
  * User entity for tests
@@ -54,6 +55,9 @@ public class User extends AbstractUser implements Serializable {
 	@CreatedDate protected long createdDate;
 	@LastModifiedBy protected String lastModifiedBy;
 	@LastModifiedDate protected long lastModifiedDate;
+
+	@Field
+	protected Asset asset;
 
 	public String getLastname() {
 		return lastname;

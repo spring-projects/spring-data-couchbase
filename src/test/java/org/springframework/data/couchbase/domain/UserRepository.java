@@ -63,6 +63,8 @@ public interface UserRepository extends CouchbaseRepository<User, String> {
 
 	List<User> findByVersionEqualsAndFirstnameEquals(Long version, String firstname);
 
+	List<User> findByAsset_IdAndAsset_Desc(String id, String desc);
+
 	@Query("#{#n1ql.selectEntity}|#{#n1ql.filter}|#{#n1ql.bucket}|#{#n1ql.scope}|#{#n1ql.collection}")
 	@Scope("thisScope")
 	@Collection("thisCollection")
