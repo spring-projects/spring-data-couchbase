@@ -499,14 +499,14 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	public QueryCriteria TRUE() { // true/false are reserved, use TRUE/FALSE
 		value = null;
 		operator = null;
-		format = "%1$s"; // field = 1$, operator = 2$, value=$3, $4, ...
+		format = "%1$s = true"; // field = 1$, operator = 2$, value=$3, $4, ...
 		return this;
 	}
 
 	public QueryCriteria FALSE() {
 		value = null;
-		operator = "NOT";
-		format = "not(%1$s)"; // field = 1$, operator = 2$, value=$3, $4, ...
+		operator = null;
+		format = "%1$s = false"; // field = 1$, operator = 2$, value=$3, $4, ...
 		return this;
 	}
 

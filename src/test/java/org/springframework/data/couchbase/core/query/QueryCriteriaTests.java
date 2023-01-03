@@ -261,13 +261,13 @@ class QueryCriteriaTests {
 	@Test
 	void testTrue() {
 		QueryCriteria c = where(i("name")).TRUE();
-		assertEquals("`name`", c.export());
+		assertEquals("`name` = true", c.export());
 	}
 
 	@Test
 	void testFalse() {
 		QueryCriteria c = where(i("name")).FALSE();
-		assertEquals("not(`name`)", c.export());
+		assertEquals("`name` = false", c.export());
 	}
 
 	@Test
