@@ -223,7 +223,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 *
 	 * @param ex the exception to translate
 	 */
-	RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
+	protected RuntimeException potentiallyConvertRuntimeException(final RuntimeException ex) {
 		RuntimeException resolved = exceptionTranslator != null ? exceptionTranslator.translateExceptionIfPossible(ex)
 				: null;
 		return resolved == null ? ex : resolved;
