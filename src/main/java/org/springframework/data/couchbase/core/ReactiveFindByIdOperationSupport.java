@@ -72,6 +72,8 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final ReactiveTemplateSupport support;
 		private final Duration expiry;
 
+		private Duration expiryToUse;
+
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
 				CommonOptions<?> options, List<String> fields, Duration expiry, ReactiveTemplateSupport support) {
 			this.template = template;
@@ -98,7 +100,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 				if (!ctxOpt.isPresent()) {
 					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-						return rc.getAndTouch(id.toString(), expiryToUse(), (GetAndTouchOptions) pArgs.getOptions())
+						return rc.getAndTouch(id.toString(), expiryToUse, (GetAndTouchOptions) pArgs.getOptions())
 								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					} else {
@@ -110,8 +112,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 					rejectInvalidTransactionalOptions();
 					return ctxOpt.get().getCore().get(makeCollectionIdentifier(rc.async()), id.toString())
 							.flatMap(result -> support.decodeEntity(id, new String(result.contentAsBytes(), StandardCharsets.UTF_8),
-									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(),
-									null, null));
+									result.cas(), domainType, pArgs.getScope(), pArgs.getCollection(), null, null));
 				}
 			});
 
@@ -179,7 +180,18 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 		private CommonOptions<?> initGetOptions() {
 			CommonOptions<?> getOptions;
-			if (expiry != null || options instanceof GetAndTouchOptions) {
+			final CouchbasePersistentEntity<?> entity = template.getConverter().getMappingContext()
+					.getRequiredPersistentEntity(domainType);
+			Duration entityExpiryAnnotation = entity.getExpiryDuration();
+			if (expiry != null || entityExpiryAnnotation == null || !entityExpiryAnnotation.isZero()
+					|| options instanceof GetAndTouchOptions) {
+				if (expiry != null) {
+					expiryToUse = expiry;
+				} else if (entityExpiryAnnotation == null || !entityExpiryAnnotation.isZero()) {
+					expiryToUse = entityExpiryAnnotation;
+				} else {
+					expiryToUse = Duration.ZERO;
+				}
 				GetAndTouchOptions gOptions = options != null ? (GetAndTouchOptions) options : getAndTouchOptions();
 				if (gOptions.build().transcoder() == null) {
 					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
@@ -197,19 +209,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			}
 			return getOptions;
 		}
-
-		private Duration expiryToUse() {
-			Duration expiryToUse = expiry;
-			if (expiryToUse != null || options instanceof GetAndTouchOptions) {
-				if (expiryToUse == null) { // GetAndTouchOptions without specifying expiry -> get expiry from annoation
-					final CouchbasePersistentEntity<?> entity = template.getConverter().getMappingContext()
-							.getRequiredPersistentEntity(domainType);
-					expiryToUse = entity.getExpiryDuration();
-				}
-			}
-			return expiryToUse;
-		}
-
+		
 	}
 
 }
