@@ -56,6 +56,7 @@ import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.UserAnnotatedTouchOnRead;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -136,24 +137,60 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			assertEquals(user2, foundUser2);
 
 			// now set user1 expiration back to 1 second with getAndTouch using the @Document(expiry=1) annotation
+			// This will have no effect as UserAnnotated does not have touchOnGet
 			foundUser1 = couchbaseTemplate.findById(UserAnnotated.class).one(user1.getId());
 			user1.setVersion(foundUser1.getVersion());// version will have changed
 			assertEquals(user1, foundUser1);
 
 			// user1 should be gone, user2 should still be there
 			int tries = 0;
-			Collection<User> foundUsers;
+			Collection<UserAnnotated> foundUsers;
 			do {
-				sleepSecs(1);
-				foundUsers = (Collection<User>) couchbaseTemplate.findById(User.class)
+				sleepSecs(3);
+				foundUsers = (Collection<UserAnnotated>) couchbaseTemplate.findById(UserAnnotated.class)
+					.all(Arrays.asList(user1.getId(), user2.getId()));
+			} while (tries++ < 7 && foundUsers.size() != 2 && !user2.equals(foundUsers.iterator().next()));
+			assertEquals(2, foundUsers.size(), "should have found exactly 2 users");
+		} finally {
+			couchbaseTemplate.removeByQuery(UserAnnotated.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void findByIdWithExpiryAnnotationTouchOnRead() {
+		try {
+			UserAnnotatedTouchOnRead user1 = new UserAnnotatedTouchOnRead(UUID.randomUUID().toString(), "user1", "user1");
+			UserAnnotatedTouchOnRead user2 = new UserAnnotatedTouchOnRead(UUID.randomUUID().toString(), "user2", "user2");
+
+			Collection<UserAnnotatedTouchOnRead> upserts = (Collection<UserAnnotatedTouchOnRead>) couchbaseTemplate.upsertById(UserAnnotatedTouchOnRead.class)
+				.all(Arrays.asList(user1, user2));
+
+			// explicitly set expiry to 10 seconds
+			UserAnnotatedTouchOnRead foundUser1 = couchbaseTemplate.findById(UserAnnotatedTouchOnRead.class).withExpiry(Duration.ofSeconds(10)).one(user1.getId());
+			user1.setVersion(foundUser1.getVersion());// version will have changed
+			assertEquals(user1, foundUser1);
+			UserAnnotatedTouchOnRead foundUser2 = couchbaseTemplate.findById(UserAnnotatedTouchOnRead.class).withExpiry(Duration.ofSeconds(10)).one(user2.getId());
+			user2.setVersion(foundUser2.getVersion());// version will have changed
+			assertEquals(user2, foundUser2);
+
+			// now set user1 expiration back to 1 second with getAndTouch using the @Document(expiry=1) annotation
+			foundUser1 = couchbaseTemplate.findById(UserAnnotatedTouchOnRead.class).one(user1.getId());
+			user1.setVersion(foundUser1.getVersion());// version will have changed
+			assertEquals(user1, foundUser1);
+
+			// user1 should be gone, user2 should still be there
+			int tries = 0;
+			Collection<UserAnnotatedTouchOnRead> foundUsers;
+			do {
+				sleepSecs(3);
+				foundUsers = (Collection<UserAnnotatedTouchOnRead>) couchbaseTemplate.findById(UserAnnotatedTouchOnRead.class)
 					.all(Arrays.asList(user1.getId(), user2.getId()));
 			} while (tries++ < 7 && foundUsers.size() != 1 && !user2.equals(foundUsers.iterator().next()));
-			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
-			assertEquals(user2, foundUsers.iterator().next());
+			assertEquals(1, foundUsers.size(), "should have found exactly 1 user1");
+			assertEquals(user2.getId(), foundUsers.iterator().next().getId());
 		} finally {
-			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			couchbaseTemplate.removeByQuery(UserAnnotatedTouchOnRead.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 		}
-
 	}
 	@Test
 	void upsertAndFindById() {
