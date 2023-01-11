@@ -182,13 +182,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			CommonOptions<?> getOptions;
 			final CouchbasePersistentEntity<?> entity = template.getConverter().getMappingContext()
 					.getRequiredPersistentEntity(domainType);
-			Duration entityExpiryAnnotation = entity.getExpiryDuration();
-			if (expiry != null || entityExpiryAnnotation == null || !entityExpiryAnnotation.isZero()
-					|| options instanceof GetAndTouchOptions) {
+			Boolean isTouchOnRead = entity.isTouchOnRead();
+			if (expiry != null || isTouchOnRead	|| options instanceof GetAndTouchOptions) {
 				if (expiry != null) {
 					expiryToUse = expiry;
-				} else if (entityExpiryAnnotation == null || !entityExpiryAnnotation.isZero()) {
-					expiryToUse = entityExpiryAnnotation;
+				} else if (isTouchOnRead) {
+					expiryToUse = entity.getExpiryDuration();
 				} else {
 					expiryToUse = Duration.ZERO;
 				}
@@ -209,7 +208,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			}
 			return getOptions;
 		}
-		
+
 	}
 
 }
