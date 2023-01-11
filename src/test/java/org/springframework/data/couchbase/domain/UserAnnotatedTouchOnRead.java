@@ -41,23 +41,6 @@ import java.io.Serializable;
 @Document(expiry = 1, touchOnRead = true)
 public class UserAnnotatedTouchOnRead extends User implements Serializable {
 
-	JsonNode custom = new ObjectNode(JsonNodeFactory.instance);
-	private void writeObject(ObjectOutputStream out) throws IOException {
-		out.defaultWriteObject();
-		if(custom== null){
-			out.writeBoolean(false);
-		} else {
-			out.writeBoolean(true);
-			new ObjectMapper().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false).writeValue((OutputStream)out, custom);
-		}
-	}
-
-	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-		in.defaultReadObject();
-		if(in.readBoolean()){
-			this.custom = new ObjectMapper().configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false).readValue((InputStream)in, JsonNode.class);
-		}
-	}
 	public UserAnnotatedTouchOnRead(String id, String firstname, String lastname) {
 		super(id, firstname, lastname);
 	}
