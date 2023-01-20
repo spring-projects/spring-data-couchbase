@@ -43,21 +43,8 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ExecutableFindByIdOperation.ExecutableFindById;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
-import org.springframework.data.couchbase.core.support.OneAndAllEntity;
-import org.springframework.data.couchbase.core.support.OneAndAllId;
-import org.springframework.data.couchbase.core.support.WithDurability;
-import org.springframework.data.couchbase.core.support.WithExpiry;
-import org.springframework.data.couchbase.domain.Address;
-import org.springframework.data.couchbase.domain.Config;
-import org.springframework.data.couchbase.domain.NaiveAuditorAware;
-import org.springframework.data.couchbase.domain.PersonValue;
-import org.springframework.data.couchbase.domain.Submission;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserAnnotated;
-import org.springframework.data.couchbase.domain.UserAnnotated2;
-import org.springframework.data.couchbase.domain.UserAnnotated3;
-import org.springframework.data.couchbase.domain.UserAnnotatedTouchOnRead;
-import org.springframework.data.couchbase.domain.UserSubmission;
+import org.springframework.data.couchbase.core.support.*;
+import org.springframework.data.couchbase.domain.*;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -74,6 +61,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
@@ -275,49 +263,58 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void withDurability()
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-		Class<?> clazz = User.class; // for now, just User.class. There is no Durability annotation.
-		// insert, replace, upsert
-		for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
-				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
-			// create an entity of type clazz
-			Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
-			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
-					"firstname", "lastname");
+		for (Class<?> clazz : new Class[] { User.class, UserAnnotatedDurability.class, UserAnnotatedPersistTo.class, UserAnnotatedReplicateTo.class }) {
+			// insert, replace, upsert
+			for (OneAndAllEntity<User> operator : new OneAndAllEntity[]{couchbaseTemplate.insertById(clazz),
+					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz)}) {
+				// create an entity of type clazz
+				Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
+				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+						"firstname", "lastname");
 
-			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
-				operator = (OneAndAllEntity) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
-						ReplicateTo.NONE);
-			}
-
-			// if replace, we need to insert a document to replace
-			if (operator instanceof ExecutableReplaceById) {
-				couchbaseTemplate.insertById(User.class).one(user);
-			}
-			// call to insert/replace/update
-			User returned = null;
-
-			// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
-			for (int i = 1; i != 5; i++) {
-				try {
-					returned = (User) operator.one(user);
-					break;
-				} catch (Exception ofe) {
-					System.out.println("" + i + " caught: " + ofe);
-					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
-					if (i == 4) {
-						throw ofe;
-					}
-					sleepSecs(1);
+				if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
+					operator = (OneAndAllEntity<User>) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
+							ReplicateTo.NONE);
+				} else if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+					operator = (OneAndAllEntity<User>) ((WithDurability<User>) operator).withDurability(PersistTo.NONE,
+							ReplicateTo.NONE);
 				}
-			}
-			assertEquals(user, returned);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertEquals(user, found);
 
-			if (operator instanceof ExecutableReplaceById) {
-				couchbaseTemplate.removeById().withDurability(PersistTo.ACTIVE, ReplicateTo.NONE).one(user.getId());
-				User removed = (User) couchbaseTemplate.findById(user.getClass()).one(user.getId());
-				assertNull(removed, "found should have been null as document should be removed");
+				// if replace, we need to insert a document to replace
+				if (operator instanceof ExecutableReplaceById) {
+					couchbaseTemplate.insertById(User.class).one(user);
+				}
+				// call to insert/replace/update
+				User returned = null;
+
+				// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+				for (int i = 1; i != 5; i++) {
+					try {
+						returned = (User) operator.one(user);
+						break;
+					} catch (Exception ofe) {
+						System.out.println("" + i + " caught: " + ofe);
+						couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+						if (i == 4) {
+							throw ofe;
+						}
+						sleepSecs(1);
+					}
+				}
+				assertEquals(user, returned);
+				User found = couchbaseTemplate.findById(User.class).one(user.getId());
+				assertEquals(user, found);
+
+				if (operator instanceof ExecutableReplaceById) {
+					if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+						couchbaseTemplate.removeById(clazz).withDurability(PersistTo.ACTIVE,
+								ReplicateTo.NONE).one(user.getId());
+					} else {
+						couchbaseTemplate.removeById(clazz).one(user.getId());
+					}
+					User removed = (User) couchbaseTemplate.findById(user.getClass()).one(user.getId());
+					assertNull(removed, "found should have been null as document should be removed");
+				}
 			}
 		}
 
@@ -472,6 +469,56 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
 		couchbaseTemplate.removeById(User.class).one(user.getId());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability() {
+		UserAnnotatedPersistTo user = new UserAnnotatedPersistTo(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedPersistTo inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(UserAnnotatedPersistTo.class)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println("" + i + " caught: " + ofe);
+				couchbaseTemplate.removeByQuery(UserAnnotatedPersistTo.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedPersistTo.class).one(user));
+		couchbaseTemplate.removeById(UserAnnotatedPersistTo.class).one(user.getId());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability2() {
+		UserAnnotatedDurability user = new UserAnnotatedDurability(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedDurability inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(UserAnnotatedDurability.class)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println("" + i + " caught: " + ofe);
+				couchbaseTemplate.removeByQuery(UserAnnotatedDurability.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedDurability.class).one(user));
+		couchbaseTemplate.removeById(UserAnnotatedDurability.class).one(user.getId());
 	}
 
 	@Test

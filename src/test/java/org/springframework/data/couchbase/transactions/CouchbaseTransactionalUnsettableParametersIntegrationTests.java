@@ -31,6 +31,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
+import org.springframework.data.couchbase.domain.PersonWithDurability;
+import org.springframework.data.couchbase.domain.PersonWithDurability2;
 import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -54,6 +56,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  *
  * @author Graham Pople
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class,
@@ -96,6 +99,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 		});
 	}
 
+	@DisplayName("Using insertById() with Durability set via annotations in a transaction is rejected at runtime")
+	@Test
+	public void insertWithDurabilityAnnotated() {
+		test((ops) -> {
+			ops.insertById(PersonWithDurability.class).one(new PersonWithDurability("Walter", "White"));
+		});
+	}
+
 	@DisplayName("Using insertById().withExpiry in a transaction is rejected at runtime")
 	@Test
 	public void insertWithExpiry() {
@@ -109,6 +120,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	public void insertWithDurability2() {
 		test((ops) -> {
 			ops.insertById(Person.class).withDurability(DurabilityLevel.MAJORITY).one(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using insertById with Durability set via annotations in a transaction is rejected at runtime")
+	@Test
+	public void insertWithDurabilityAnnotated2() {
+		test((ops) -> {
+			ops.insertById(PersonWithDurability2.class).one(new PersonWithDurability2("Walter", "White"));
 		});
 	}
 
@@ -128,6 +147,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 		});
 	}
 
+	@DisplayName("Using replaceById() with Durability set via annotations in a transaction is rejected at runtime")
+	@Test
+	public void replaceWithAnnotatedDurability() {
+		test((ops) -> {
+			ops.replaceById(PersonWithDurability.class).one(new PersonWithDurability("Walter", "White"));
+		});
+	}
+
 	@DisplayName("Using replaceById().withExpiry in a transaction is rejected at runtime")
 	@Test
 	public void replaceWithExpiry() {
@@ -141,6 +168,14 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 	public void replaceWithDurability2() {
 		test((ops) -> {
 			ops.replaceById(Person.class).withDurability(DurabilityLevel.MAJORITY).one(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using replaceById() with Durability set via annotations in a transaction is rejected at runtime")
+	@Test
+	public void replaceWithAnnotatedDurability2() {
+		test((ops) -> {
+			ops.replaceById(PersonWithDurability2.class).one(new PersonWithDurability2("Walter", "White"));
 		});
 	}
 
@@ -160,11 +195,27 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 		});
 	}
 
+	@DisplayName("Using removeById() with Durability set via annotations in a transaction is rejected at runtime")
+	@Test
+	public void removeWithAnnotatedDurability() {
+		test((ops) -> {
+			ops.removeById(PersonWithDurability.class).oneEntity(new PersonWithDurability("Walter", "White"));
+		});
+	}
+
 	@DisplayName("Using removeById().withDurability(durabilityLevel) in a transaction is rejected at runtime")
 	@Test
 	public void removeWithDurability2() {
 		test((ops) -> {
 			ops.removeById(Person.class).withDurability(DurabilityLevel.MAJORITY).oneEntity(WalterWhite);
+		});
+	}
+
+	@DisplayName("Using removeById().withDurability(durabilityLevel) in a transaction is rejected at runtime")
+	@Test
+	public void removeWithAnnotatedDurability2() {
+		test((ops) -> {
+			ops.removeById(PersonWithDurability2.class).oneEntity(new PersonWithDurability2("Walter", "White"));
 		});
 	}
 

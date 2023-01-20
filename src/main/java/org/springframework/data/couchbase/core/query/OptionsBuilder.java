@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.Document;
+import org.springframework.data.couchbase.core.mapping.Expiry;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
@@ -56,6 +58,7 @@ import com.couchbase.client.java.transactions.TransactionQueryOptions;
  * Methods for building Options objects for Couchbae APIs.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class OptionsBuilder {
 
@@ -224,6 +227,30 @@ public class OptionsBuilder {
 			return ann.value();
 		}
 		return null;
+	}
+	
+	public static DurabilityLevel getDurabilityLevel(Class<?> domainType) {
+		if (domainType == null) {
+			return DurabilityLevel.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.durabilityLevel() : DurabilityLevel.NONE;
+	}
+
+	public static PersistTo getPersistTo(Class<?> domainType) {
+		if (domainType == null) {
+			return  PersistTo.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.persistTo() : PersistTo.NONE;
+	}
+
+	public static ReplicateTo getReplicateTo(Class<?> domainType) {
+		if (domainType == null) {
+			return ReplicateTo.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.replicateTo() : ReplicateTo.NONE;
 	}
 
 	/**
