@@ -23,6 +23,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.ReplicateTo;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.couchbase.repository.Collection;
@@ -36,6 +39,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  *
  * @author Michael Nitschinger
  * @author Andrey Rubtsov
+ * @author Tigran Babloyan
  */
 @Persistent
 @Inherited
@@ -84,4 +88,22 @@ public @interface Document {
 	 */
 	@AliasFor(annotation = ScanConsistency.class, attribute = "query")
 	QueryScanConsistency queryScanConsistency() default QueryScanConsistency.NOT_BOUNDED;
+
+	/**
+	 * How many persisted copies of the modified record must exist on the given document. Default is {@link PersistTo#NONE}. 
+	 * For Couchbase version >= 6.5 see {@link #durabilityLevel()}.
+	 */
+	PersistTo persistTo() default PersistTo.NONE;
+
+	/**
+	 * How many replicas must this documents operations be propagated to. Default is {@link ReplicateTo#NONE}.
+	 * For Couchbase version >= 6.5 see {@link #durabilityLevel()}.
+	 */
+	ReplicateTo replicateTo() default ReplicateTo.NONE;
+
+	/**
+	 * The optional durabilityLevel for all mutating operations, allows the application to wait until this replication
+	 * (or persistence) is successful before proceeding
+	 */
+	DurabilityLevel durabilityLevel() default DurabilityLevel.NONE;
 }

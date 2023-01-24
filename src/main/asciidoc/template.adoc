@@ -30,7 +30,7 @@ User found = couchbaseTemplate.findById(User.class).one(user.getId());
 ----
 ====
 
-If you wanted to use a custom durability requirement for the `upsert` operation you can chain it in:
+If you wanted to use a custom (by default durability options from the `@Document` annotation will be used) durability requirement for the `upsert` operation you can chain it in:
 
 .Upsert with durability
 ====
