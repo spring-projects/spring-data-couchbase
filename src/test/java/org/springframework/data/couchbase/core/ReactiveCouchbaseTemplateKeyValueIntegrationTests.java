@@ -48,13 +48,7 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
-import org.springframework.data.couchbase.domain.Config;
-import org.springframework.data.couchbase.domain.PersonValue;
-import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserAnnotated;
-import org.springframework.data.couchbase.domain.UserAnnotated2;
-import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.*;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -68,6 +62,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
@@ -158,36 +153,44 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 	@Test
 	void withDurability()
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-		Class<?> clazz = User.class; // for now, just User.class. There is no Durability annotation.
-		// insert, replace, upsert
-		for (OneAndAllEntityReactive<User> operator : new OneAndAllEntityReactive[] {
-				reactiveCouchbaseTemplate.insertById(clazz), reactiveCouchbaseTemplate.replaceById(clazz),
-				reactiveCouchbaseTemplate.upsertById(clazz) }) {
-			// create an entity of type clazz
-			Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
-			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
-					"firstname", "lastname");
+		for (Class<?> clazz : new Class[] { User.class, UserAnnotatedDurability.class, UserAnnotatedPersistTo.class, UserAnnotatedReplicateTo.class }) {
+			// insert, replace, upsert
+			for (OneAndAllEntityReactive<User> operator : new OneAndAllEntityReactive[]{
+					reactiveCouchbaseTemplate.insertById(clazz), reactiveCouchbaseTemplate.replaceById(clazz),
+					reactiveCouchbaseTemplate.upsertById(clazz)}) {
+				// create an entity of type clazz
+				Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
+				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+						"firstname", "lastname");
 
-			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
-				operator = (OneAndAllEntityReactive<User>) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
-						ReplicateTo.NONE);
-			}
+				if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
+					operator = (OneAndAllEntityReactive<User>) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
+							ReplicateTo.NONE);
+				} else if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+					operator = (OneAndAllEntityReactive<User>) ((WithDurability<User>) operator).withDurability(PersistTo.NONE,
+							ReplicateTo.NONE);
+				}
 
-			// if replace, we need to insert a document to replace
-			if (operator instanceof ReactiveReplaceById) {
-				reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
-			}
-			// call to insert/replace/update
-			User returned = operator.one(user).block();
-			assertEquals(user, returned);
-			User found = reactiveCouchbaseTemplate.findById(User.class).one(user.getId()).block();
-			assertEquals(user, found);
+				// if replace, we need to insert a document to replace
+				if (operator instanceof ReactiveReplaceById) {
+					reactiveCouchbaseTemplate.insertById(User.class).one(user).block();
+				}
+				// call to insert/replace/update
+				User returned = operator.one(user).block();
+				assertEquals(user, returned);
+				User found = reactiveCouchbaseTemplate.findById(User.class).one(user.getId()).block();
+				assertEquals(user, found);
 
-			if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById) {
-				reactiveCouchbaseTemplate.removeById().withDurability(PersistTo.ACTIVE, ReplicateTo.NONE).one(user.getId())
-						.block();
-				User removed = (User) reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
-				assertNull(removed, "found should have been null as document should be removed");
+				if (operator instanceof ReactiveReplaceByIdOperation.ReactiveReplaceById) {
+					if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+						reactiveCouchbaseTemplate.removeById(clazz).withDurability(PersistTo.NONE,
+								ReplicateTo.NONE).one(user.getId()).block();
+					} else {
+						reactiveCouchbaseTemplate.removeById(clazz).one(user.getId()).block();	
+					}
+					User removed = reactiveCouchbaseTemplate.findById(user.getClass()).one(user.getId()).block();
+					assertNull(removed, "found should have been null as document should be removed");
+				}
 			}
 		}
 
@@ -325,6 +328,24 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 	void insertByIdwithDurability() {
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User inserted = reactiveCouchbaseTemplate.insertById(User.class).withDurability(PersistTo.ACTIVE, ReplicateTo.NONE)
+				.one(user).block();
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> reactiveCouchbaseTemplate.insertById(User.class).one(user).block());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability() {
+		UserAnnotatedPersistTo user = new UserAnnotatedPersistTo(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedPersistTo inserted = reactiveCouchbaseTemplate.insertById(UserAnnotatedPersistTo.class)
+				.one(user).block();
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> reactiveCouchbaseTemplate.insertById(User.class).one(user).block());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability2() {
+		UserAnnotatedDurability user = new UserAnnotatedDurability(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedDurability inserted = reactiveCouchbaseTemplate.insertById(UserAnnotatedDurability.class)
 				.one(user).block();
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> reactiveCouchbaseTemplate.insertById(User.class).one(user).block());

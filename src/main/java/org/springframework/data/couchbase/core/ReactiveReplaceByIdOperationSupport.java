@@ -48,6 +48,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * {@link ReactiveReplaceByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
@@ -62,7 +63,8 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 	public <T> ReactiveReplaceById<T> replaceById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveReplaceByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
 				null, template.support());
 	}
 
