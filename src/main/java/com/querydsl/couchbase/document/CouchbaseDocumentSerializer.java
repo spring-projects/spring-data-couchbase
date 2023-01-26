@@ -39,11 +39,13 @@ import com.querydsl.core.types.PathType;
 import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.TemplateExpression;
 import com.querydsl.core.types.Visitor;
+import com.querydsl.core.types.Order;
 
 /**
  * Serializes the given Querydsl query to a Document query for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Void> {
 
@@ -55,8 +57,15 @@ public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Voi
 		Sort sort = Sort.unsorted();
 		for (OrderSpecifier<?> orderBy : orderBys) {
 			Object key = orderBy.getTarget().accept(this, null);
-			// sort.and(Sort.by(orderBy));
-			// sort.append(key.toString(), orderBy.getOrder() == Order.ASC ? 1 : -1);
+			String keyAsString = key.toString();
+			Sort.NullHandling sortNullHandling = switch (orderBy.getNullHandling()) {
+				case NullsFirst -> Sort.NullHandling.NULLS_FIRST;
+				case NullsLast -> Sort.NullHandling.NULLS_LAST;
+				default -> Sort.NullHandling.NATIVE;
+			};
+			Sort.Direction sortDirection = orderBy.getOrder() == Order.ASC ? Sort.Direction.ASC : Sort.Direction.DESC;
+			Sort.Order sortOrder = new Sort.Order(sortDirection, keyAsString, sortNullHandling);
+			sort = sort.and(Sort.by(sortOrder));
 		}
 		return sort;
 	}

@@ -19,12 +19,15 @@ package org.springframework.data.couchbase.repository.query;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.springframework.data.couchbase.util.Util.comprises;
 import static org.springframework.data.couchbase.util.Util.exactly;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -53,6 +56,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
@@ -67,6 +71,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
  * Repository tests
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 @SpringJUnitConfig(CouchbaseRepositoryQuerydslIntegrationTests.Config.class)
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -410,6 +415,72 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 			assertEquals(" WHERE name in $1", bq(predicate));
 		}
 	}
+	
+	@Test
+	void testSort(){
+		{
+			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			Iterable<Airline> result = airlineRepository.findAll(predicate, Sort.by("name").ascending());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+							Arrays.stream(saved)
+									.sorted(Comparator.comparing(Airline::getName))
+									.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+
+		{
+			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			Iterable<Airline> result = airlineRepository.findAll(predicate, Sort.by("name").descending());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+							Arrays.stream(saved)
+									.sorted(Comparator.comparing(Airline::getName).reversed())
+									.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+
+		{
+			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			Iterable<Airline> result = airlineRepository.findAll(predicate, airline.name.asc());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+							Arrays.stream(saved)
+									.sorted(Comparator.comparing(Airline::getName))
+									.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+
+		{
+			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			Iterable<Airline> result = airlineRepository.findAll(predicate, airline.name.desc());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+							Arrays.stream(saved)
+									.sorted(Comparator.comparing(Airline::getName).reversed())
+									.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+
+		{
+			Comparator<String> nullSafeStringComparator = Comparator
+					.nullsFirst(String::compareTo);
+			Iterable<Airline> result = airlineRepository.findAll(airline.hqCountry.asc().nullsFirst());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+					Arrays.stream(saved)
+							.sorted(Comparator.comparing(Airline::getHqCountry, nullSafeStringComparator))
+							.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+
+		{
+			Comparator<String> nullSafeStringComparator = Comparator
+					.nullsFirst(String::compareTo);
+			Iterable<Airline> result = airlineRepository.findAll(airline.hqCountry.desc().nullsLast());
+			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
+					Arrays.stream(saved)
+							.sorted(Comparator.comparing(Airline::getHqCountry, nullSafeStringComparator).reversed())
+							.toArray(Airline[]::new),
+					"Order of airlines does not match");
+		}
+	}
+	
 
 	@Test
 	void testNotIn() {
