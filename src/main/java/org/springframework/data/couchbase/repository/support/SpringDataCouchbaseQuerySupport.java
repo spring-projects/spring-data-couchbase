@@ -29,6 +29,7 @@ import com.querydsl.couchbase.document.CouchbaseDocumentSerializer;
 
 /**
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 abstract class SpringDataCouchbaseQuerySupport<Q extends SpringDataCouchbaseQuerySupport<Q>>
 		extends AbstractCouchbaseQueryDSL<Q> {
@@ -84,10 +85,9 @@ abstract class SpringDataCouchbaseQuerySupport<Q extends SpringDataCouchbaseQuer
 		// sb.append(", ").append(projection.toJson(JSON_WRITER_SETTINGS, codec));
 		// }
 		sb.append(")");
-		// TODO
-		// if (!sort.isEmpty()) {
-		// sb.append(".sort(").append(sort.toJson(JSON_WRITER_SETTINGS, codec)).append(")");
-		// }
+		if (!sort.isEmpty()) {
+			sb.append(".sort(").append(sort).append(")");
+		}
 		if (getQueryMixin().getMetadata().getModifiers().getOffset() != null) {
 			sb.append(".skip(").append(getQueryMixin().getMetadata().getModifiers().getOffset()).append(")");
 		}
@@ -128,6 +128,6 @@ abstract class SpringDataCouchbaseQuerySupport<Q extends SpringDataCouchbaseQuer
 	 *         CouchbaseDocumentSerializer#toSort(List)
 	 */
 	protected Sort createSort(List<OrderSpecifier<?>> orderSpecifiers) {
-		return null; // TODO serializer.toSort(orderSpecifiers);
+		return serializer.toSort(orderSpecifiers);
 	}
 }
