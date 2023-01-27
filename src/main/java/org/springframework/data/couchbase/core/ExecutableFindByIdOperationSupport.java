@@ -37,7 +37,7 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 	@Override
 	public <T> ExecutableFindById<T> findById(Class<T> domainType) {
 		return new ExecutableFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType),null, null, null);
+				OptionsBuilder.getCollectionFrom(domainType),null, null, null, null);
 	}
 
 	static class ExecutableFindByIdSupport<T> implements ExecutableFindById<T> {
@@ -49,10 +49,11 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		private final GetOptions options;
 		private final List<String> fields;
 		private final Duration expiry;
+		private final Duration lockDuration;
 		private final ReactiveFindByIdSupport<T> reactiveSupport;
 
 		ExecutableFindByIdSupport(CouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				GetOptions options, List<String> fields, Duration expiry) {
+				GetOptions options, List<String> fields, Duration expiry, Duration lockDuration) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -60,8 +61,9 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 			this.options = options;
 			this.fields = fields;
 			this.expiry = expiry;
+			this.lockDuration = lockDuration;
 			this.reactiveSupport = new ReactiveFindByIdSupport<>(template.reactive(), domainType, scope, collection, options,
-					fields, expiry, new NonReactiveSupportWrapper(template.support()));
+					fields, expiry, lockDuration, new NonReactiveSupportWrapper(template.support()));
 		}
 
 		@Override
@@ -77,31 +79,36 @@ public class ExecutableFindByIdOperationSupport implements ExecutableFindByIdOpe
 		@Override
 		public TerminatingFindById<T> withOptions(final GetOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, lockDuration);
 		}
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection != null ? collection : this.collection, options, fields, expiry, lockDuration);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
-			return new ExecutableFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection, options, fields, expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection, options, fields, expiry, lockDuration);
 		}
 
 		@Override
 		public FindByIdInScope<T> project(String... fields) {
 			Assert.notEmpty(fields, "Fields must not be null.");
-			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields), expiry);
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields), expiry, lockDuration);
 		}
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
 			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields,
-					expiry);
+					expiry, lockDuration);
 		}
 
+		@Override
+		public FindByIdWithExpiry<T> withLock(final Duration lockDuration) {
+			return new ExecutableFindByIdSupport<>(template, domainType, scope, collection, options, fields,
+					expiry, lockDuration);
+		}
 	}
 
 }
