@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import com.couchbase.client.core.error.TimeoutException;
+import com.couchbase.client.core.retry.RetryReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,6 +80,28 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+	}
+
+	@Test
+	void findByIdWithLock() {
+		try {
+			User user = new User(UUID.randomUUID().toString(), "user1", "user1");
+
+			couchbaseTemplate.upsertById(User.class).one(user);
+
+			User foundUser = couchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(2)).one(user.getId());
+			user.setVersion(foundUser.getVersion());// version will have changed
+			assertEquals(user, foundUser);
+			
+			TimeoutException exception = assertThrows(TimeoutException.class, () -> 
+				couchbaseTemplate.upsertById(User.class).one(user)
+			);
+			assertTrue(exception.retryReasons().contains(RetryReason.KV_LOCKED), "should have been locked");
+		} finally {
+			sleepSecs(2);
+			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+
 	}
 
 	@Test
