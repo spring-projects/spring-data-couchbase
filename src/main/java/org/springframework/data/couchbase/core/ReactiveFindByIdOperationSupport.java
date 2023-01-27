@@ -16,8 +16,10 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.kv.GetAndTouchOptions.getAndTouchOptions;
+import static com.couchbase.client.java.kv.GetAndLockOptions.getAndLockOptions;
 import static com.couchbase.client.java.transactions.internal.ConverterUtil.makeCollectionIdentifier;
 
+import com.couchbase.client.java.kv.GetAndLockOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -26,6 +28,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +48,7 @@ import com.couchbase.client.java.kv.GetOptions;
  * {@link ReactiveFindByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperation {
 
@@ -58,7 +62,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 	@Override
 	public <T> ReactiveFindById<T> findById(Class<T> domainType) {
 		return new ReactiveFindByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, null, null, template.support());
+				OptionsBuilder.getCollectionFrom(domainType), null, null, null, null, template.support());
 	}
 
 	static class ReactiveFindByIdSupport<T> implements ReactiveFindById<T> {
@@ -71,11 +75,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		private final List<String> fields;
 		private final ReactiveTemplateSupport support;
 		private final Duration expiry;
+		private final Duration lockDuration;
 
 		private Duration expiryToUse;
 
 		ReactiveFindByIdSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				CommonOptions<?> options, List<String> fields, Duration expiry, ReactiveTemplateSupport support) {
+				CommonOptions<?> options, List<String> fields, Duration expiry, Duration lockDuration, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
@@ -84,6 +89,7 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			this.fields = fields;
 			this.expiry = expiry;
 			this.support = support;
+			this.lockDuration = lockDuration;
 		}
 
 		@Override
@@ -99,8 +105,12 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 
 			Mono<T> reactiveEntity = TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
 				if (!ctxOpt.isPresent()) {
-					if (pArgs.getOptions() instanceof GetAndTouchOptions) {
-						return rc.getAndTouch(id.toString(), expiryToUse, (GetAndTouchOptions) pArgs.getOptions())
+					if (pArgs.getOptions() instanceof GetAndTouchOptions options) {
+						return rc.getAndTouch(id.toString(), expiryToUse, options)
+								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
+										pArgs.getScope(), pArgs.getCollection(), null, null));
+					} else if (pArgs.getOptions() instanceof GetAndLockOptions options) {
+						return rc.getAndLock(id.toString(), Optional.of(lockDuration).orElse(Duration.ZERO), options)
 								.flatMap(result -> support.decodeEntity(id, result.contentAs(String.class), result.cas(), domainType,
 										pArgs.getScope(), pArgs.getCollection(), null, null));
 					} else {
@@ -132,6 +142,9 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		}
 
 		private void rejectInvalidTransactionalOptions() {
+			if (this.lockDuration != null) {
+				throw new IllegalArgumentException("withLock is not supported in a transaction");
+			}
 			if (this.expiry != null) {
 				throw new IllegalArgumentException("withExpiry is not supported in a transaction");
 			}
@@ -151,31 +164,39 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 		@Override
 		public FindByIdInScope<T> withOptions(final GetOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, 
+					lockDuration, support);
 		}
 
 		@Override
 		public FindByIdWithOptions<T> inCollection(final String collection) {
 			return new ReactiveFindByIdSupport<>(template, domainType, scope,
-					collection != null ? collection : this.collection, options, fields, expiry, support);
+					collection != null ? collection : this.collection, options, fields, expiry, lockDuration, support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> inScope(final String scope) {
 			return new ReactiveFindByIdSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
-					options, fields, expiry, support);
+					options, fields, expiry, lockDuration, support);
 		}
 
 		@Override
 		public FindByIdInCollection<T> project(String... fields) {
 			Assert.notNull(fields, "Fields must not be null");
 			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, Arrays.asList(fields),
-					expiry, support);
+					expiry, lockDuration, support);
 		}
 
 		@Override
 		public FindByIdWithProjection<T> withExpiry(final Duration expiry) {
-			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, support);
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, 
+					lockDuration, support);
+		}
+
+		@Override
+		public FindByIdWithExpiry<T> withLock(final Duration lockDuration) {
+			return new ReactiveFindByIdSupport<>(template, domainType, scope, collection, options, fields, expiry, 
+					lockDuration, support);
 		}
 
 		private CommonOptions<?> initGetOptions() {
@@ -183,7 +204,13 @@ public class ReactiveFindByIdOperationSupport implements ReactiveFindByIdOperati
 			final CouchbasePersistentEntity<?> entity = template.getConverter().getMappingContext()
 					.getRequiredPersistentEntity(domainType);
 			Boolean isTouchOnRead = entity.isTouchOnRead();
-			if (expiry != null || isTouchOnRead	|| options instanceof GetAndTouchOptions) {
+			if(lockDuration != null || options instanceof GetAndLockOptions) {
+				GetAndLockOptions gOptions = options != null ? (GetAndLockOptions) options : getAndLockOptions();
+				if (gOptions.build().transcoder() == null) {
+					gOptions.transcoder(RawJsonTranscoder.INSTANCE);
+				}
+				getOptions = gOptions;
+			} else if (expiry != null || isTouchOnRead	|| options instanceof GetAndTouchOptions) {
 				if (expiry != null) {
 					expiryToUse = expiry;
 				} else if (isTouchOnRead) {
