@@ -44,6 +44,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
+ * @author Tigran Babloyan
  */
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
@@ -181,6 +182,11 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	@Override
 	public <T> ReactiveUpsertById<T> upsertById(Class<T> domainType) {
 		return new ReactiveUpsertByIdOperationSupport(this).upsertById(domainType);
+	}
+
+	@Override
+	public <T> ReactiveMutateInById<T> mutateInById(Class<T> domainType) {
+		return new ReactiveMutateInByIdOperationSupport(this).mutateInById(domainType);
 	}
 
 	@Override

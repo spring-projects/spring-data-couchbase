@@ -41,6 +41,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
+ * @author Tigran Babloyan
  * @since 3.0
  */
 public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContextAware {
@@ -93,6 +94,11 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	@Override
 	public <T> ExecutableUpsertById<T> upsertById(final Class<T> domainType) {
 		return new ExecutableUpsertByIdOperationSupport(this).upsertById(domainType);
+	}
+
+	@Override
+	public <T> ExecutableMutateInById<T> mutateInById(Class<T> domainType) {
+		return new ExecutableMutateInByIdOperationSupport(this).mutateInById(domainType);
 	}
 
 	@Override
