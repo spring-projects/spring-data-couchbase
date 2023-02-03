@@ -22,4 +22,4 @@ package org.springframework.data.couchbase.core;
 public interface ReactiveFluentCouchbaseOperations extends ReactiveUpsertByIdOperation, ReactiveInsertByIdOperation,
 		ReactiveReplaceByIdOperation, ReactiveFindByIdOperation, ReactiveExistsByIdOperation,
 		ReactiveFindByAnalyticsOperation, ReactiveFindFromReplicasByIdOperation, ReactiveFindByQueryOperation,
-		ReactiveRemoveByIdOperation, ReactiveRemoveByQueryOperation {}
+		ReactiveRemoveByIdOperation, ReactiveRemoveByQueryOperation, ReactiveMutateInByIdOperation {}
