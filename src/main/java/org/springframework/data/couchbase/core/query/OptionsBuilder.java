@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.data.couchbase.core.mapping.Expiry;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
@@ -46,6 +45,7 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -159,6 +159,28 @@ public class OptionsBuilder {
 		}
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("upsert options: {}" + toString(options));
+		}
+		return options;
+	}
+
+	public static MutateInOptions buildMutateInOptions(MutateInOptions options, PersistTo persistTo, ReplicateTo replicateTo,
+													 DurabilityLevel durabilityLevel, Duration expiry, CouchbaseDocument doc, Long cas) {
+		options = options != null ? options : MutateInOptions.mutateInOptions();
+		if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+			options.durability(persistTo, replicateTo);
+		} else if (durabilityLevel != DurabilityLevel.NONE) {
+			options.durability(durabilityLevel);
+		}
+		if (expiry != null) {
+			options.expiry(expiry);
+		} else if (doc.getExpiration() != 0) {
+			options.expiry(Duration.ofSeconds(doc.getExpiration()));
+		}
+		if (cas != null) {
+			options.cas(cas);
+		}
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("mutate in options: {}" + toString(options));
 		}
 		return options;
 	}
@@ -319,6 +341,22 @@ public class OptionsBuilder {
 	static String toString(RemoveOptions o) {
 		StringBuilder s = new StringBuilder();
 		RemoveOptions.Built b = o.build();
+		s.append("{");
+		s.append("cas: " + b.cas());
+		s.append(", durabilityLevel: " + b.durabilityLevel());
+		s.append(", persistTo: " + b.persistTo());
+		s.append(", replicateTo: " + b.replicateTo());
+		s.append(", timeout: " + b.timeout());
+		s.append(", retryStrategy: " + b.retryStrategy());
+		s.append(", clientContext: " + b.clientContext());
+		s.append(", parentSpan: " + b.parentSpan());
+		s.append("}");
+		return s.toString();
+	}
+
+	static String toString(MutateInOptions o) {
+		StringBuilder s = new StringBuilder();
+		MutateInOptions.Built b = o.build();
 		s.append("{");
 		s.append("cas: " + b.cas());
 		s.append(", durabilityLevel: " + b.durabilityLevel());

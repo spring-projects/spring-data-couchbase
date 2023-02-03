@@ -19,6 +19,7 @@ package org.springframework.data.couchbase.core;
 import java.util.ConcurrentModificationException;
 import java.util.concurrent.TimeoutException;
 
+import com.couchbase.client.core.error.subdoc.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -63,6 +64,7 @@ import com.couchbase.client.core.error.transaction.TransactionOperationFailedExc
  * @author Simon Baslé
  * @author Michael Reiche
  * @author Graham Pople
+ * @author Tigran Babloyan
  */
 public class CouchbaseExceptionTranslator implements PersistenceExceptionTranslator {
 
@@ -102,7 +104,11 @@ public class CouchbaseExceptionTranslator implements PersistenceExceptionTransla
 			return new OperationCancellationException(ex.getMessage(), ex);
 		}
 
-		if (ex instanceof DesignDocumentNotFoundException || ex instanceof ValueTooLargeException) {
+		if (ex instanceof DesignDocumentNotFoundException || ex instanceof ValueTooLargeException
+				|| ex instanceof PathExistsException || ex instanceof PathInvalidException
+				|| ex instanceof PathNotFoundException || ex instanceof PathMismatchException
+				|| ex instanceof PathTooDeepException || ex instanceof ValueInvalidException
+				|| ex instanceof ValueTooDeepException || ex instanceof DocumentTooDeepException) {
 			return new InvalidDataAccessResourceUsageException(ex.getMessage(), ex);
 		}
 
