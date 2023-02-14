@@ -17,6 +17,7 @@
 package org.springframework.data.couchbase.core;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -120,7 +121,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 
 			reactiveCouchbaseTemplate.upsertById(User.class).one(user).block();
 
-			User foundUser = reactiveCouchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(2))
+			User foundUser = reactiveCouchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(4))
 					.one(user.getId()).block();
 			user.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user, foundUser);
@@ -130,8 +131,15 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			);
 			assertTrue(exception.retryReasons().contains(RetryReason.KV_LOCKED), "should have been locked");
 		} finally {
-			sleepSecs(2);
-			reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all().collectList().block();
+			// cleanup
+			with()
+					.pollInterval(Duration.ofSeconds(1))
+					.pollDelay(Duration.ofSeconds(3))
+					.await()
+					.atMost(Duration.ofSeconds(8))
+					.ignoreExceptions()
+					.until(() -> reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS)
+							.all().collectList().block().size() == 1);
 		}
 
 	}
