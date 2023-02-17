@@ -285,7 +285,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 		options.timeout(Duration.ofSeconds(300));
 		options.ignoreIfExists(true);
 		final CreatePrimaryQueryIndexOptions.Built builtOpts = options.build();
-		final String indexName = builtOpts.indexName().orElse(null);
+		final String indexName = builtOpts.indexName();
 
 		String keyspace = "default:`" + bucketName + "`.`" + scopeName + "`.`" + collectionName + "`";
 		String statement = "CREATE PRIMARY INDEX ";

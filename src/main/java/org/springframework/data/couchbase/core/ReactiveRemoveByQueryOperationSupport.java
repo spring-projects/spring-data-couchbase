@@ -15,6 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
+import com.couchbase.client.core.io.CollectionIdentifier;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;
@@ -28,7 +30,6 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ObjectNode;
 import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
@@ -100,11 +101,10 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 				} else {
 					TransactionQueryOptions opts = OptionsBuilder
 							.buildTransactionQueryOptions(buildQueryOptions(pArgs.getOptions()));
-					ObjectNode convertedOptions = com.couchbase.client.java.transactions.internal.OptionsUtil
-							.createTransactionOptions(pArgs.getScope() == null ? null : rs, statement, opts);
+					CoreQueryContext queryContext = CollectionIdentifier.DEFAULT_SCOPE.equals(rs.name()) ? null : CoreQueryContext.of(rs.bucketName(), rs.name());
 					return transactionContext.get().getCore()
-							.queryBlocking(statement, template.getBucketName(), pArgs.getScope(), convertedOptions, false)
-							.flatMapIterable(result -> result.rows).map(row -> {
+							.queryBlocking(statement, queryContext, opts.builder().build(), false)
+							.flatMapIterable(result -> result.collectRows()).map(row -> {
 								JsonObject json = JsonObject.fromJson(row.data());
 								return new RemoveResult(json.getString(TemplateUtils.SELECT_ID), json.getLong(TemplateUtils.SELECT_CAS),
 										Optional.empty());

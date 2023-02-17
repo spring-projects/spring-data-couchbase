@@ -41,9 +41,10 @@ public class N1QLQuery extends Query {
 		return options;
 	}
 
+	// for logging only
 	public JsonObject n1ql() {
 		JsonObject query = JsonObject.create().put("statement", expression.toString());
-		options.build().injectParams(query);
+		query.put("options", OptionsBuilder.getQueryOpts(options.build()));
 		return query;
 	}
 
