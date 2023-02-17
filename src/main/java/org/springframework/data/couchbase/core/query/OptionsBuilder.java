@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import static com.couchbase.client.core.util.Validators.notNull;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.RETRY_STRATEGY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.SCAN_CONSISTENCY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.TIMEOUT;
@@ -24,9 +25,13 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.couchbase.client.core.api.query.CoreQueryScanConsistency;
+import com.couchbase.client.core.classic.query.ClassicCoreQueryOps;
+import com.couchbase.client.core.error.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -67,21 +72,21 @@ public class OptionsBuilder {
 	static QueryOptions buildQueryOptions(Query query, QueryOptions options, QueryScanConsistency scanConsistency) {
 		options = options != null ? options : QueryOptions.queryOptions();
 		if (query.getParameters() != null) {
-			if (query.getParameters() instanceof JsonArray) {
+			if (query.getParameters() instanceof JsonArray && !((JsonArray) query.getParameters()).isEmpty()) {
 				options.parameters((JsonArray) query.getParameters());
-			} else {
+			} else if( query.getParameters() instanceof JsonObject && !((JsonObject)query.getParameters()).isEmpty()){
 				options.parameters((JsonObject) query.getParameters());
 			}
 		}
 
 		Meta meta = query.getMeta() != null ? query.getMeta() : new Meta();
 		QueryOptions.Built optsBuilt = options.build();
-		JsonObject optsJson = getQueryOpts(optsBuilt);
+
 		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
 				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
 				: null;
 		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(),
-				getScanConsistency(optsJson), scanConsistency, metaQueryScanConsistency);
+				scanConsistency(optsBuilt), scanConsistency, metaQueryScanConsistency);
 		Duration timeout = fromFirst(Duration.ofSeconds(0), getTimeout(optsBuilt), meta.get(TIMEOUT));
 		RetryStrategy retryStrategy = fromFirst(null, getRetryStrategy(optsBuilt), meta.get(RETRY_STRATEGY));
 
@@ -100,6 +105,21 @@ public class OptionsBuilder {
 		return options;
 	}
 
+	private static QueryScanConsistency scanConsistency(QueryOptions.Built optsBuilt){
+		CoreQueryScanConsistency scanConsistency = optsBuilt.scanConsistency();
+		if (scanConsistency == null){
+			return null;
+		}
+		switch (scanConsistency) {
+			case NOT_BOUNDED:
+				return QueryScanConsistency.NOT_BOUNDED;
+			case REQUEST_PLUS:
+				return QueryScanConsistency.REQUEST_PLUS;
+			default:
+				throw new InvalidArgumentException("Unknown scan consistency type " + scanConsistency, null, null);
+		}
+	}
+
 	public static TransactionQueryOptions buildTransactionQueryOptions(QueryOptions options) {
 		QueryOptions.Built built = options.build();
 		TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
@@ -110,8 +130,21 @@ public class OptionsBuilder {
 			throw new IllegalArgumentException("QueryOptions.flexIndex is not supported in a transaction");
 		}
 
+		Object value = optsJson.get("args");
+		if(value instanceof JsonObject){
+			txOptions.parameters((JsonObject)value);
+		}else if(value instanceof JsonArray) {
+			txOptions.parameters((JsonArray) value);
+		} else  if(value != null) {
+      throw InvalidArgumentException.fromMessage(
+          "non-null args property was neither JsonObject(namedParameters) nor JsonArray(positionalParameters) "
+              + value);
+		}
+
 		for (Map.Entry<String, Object> entry : optsJson.toMap().entrySet()) {
-			txOptions.raw(entry.getKey(), entry.getValue());
+			if(!entry.getKey().equals("args")) {
+				txOptions.raw(entry.getKey(), entry.getValue());
+			}
 		}
 
 		if (LOG.isDebugEnabled()) {
@@ -370,10 +403,8 @@ public class OptionsBuilder {
 		return s.toString();
 	}
 
-	private static JsonObject getQueryOpts(QueryOptions.Built optsBuilt) {
-		JsonObject jo = JsonObject.create();
-		optsBuilt.injectParams(jo);
-		return jo;
+  public static JsonObject getQueryOpts(QueryOptions.Built optsBuilt) {
+    return JsonObject.fromJson(ClassicCoreQueryOps.convertOptions(optsBuilt).toString().getBytes());
 	}
 
 	/**
@@ -394,18 +425,6 @@ public class OptionsBuilder {
 			}
 		}
 		return chosen;
-	}
-
-	private static QueryScanConsistency getScanConsistency(JsonObject opts) {
-		String str = opts.getString("scan_consistency");
-		if ("at_plus".equals(str)) {
-			return null;
-		}
-		return str == null ? null : QueryScanConsistency.valueOf(str.toUpperCase());
-	}
-
-	private static JsonObject getScanVectors(JsonObject opts) {
-		return opts.getObject("scan_vectors");
 	}
 
 	private static Duration getTimeout(QueryOptions.Built optsBuilt) {

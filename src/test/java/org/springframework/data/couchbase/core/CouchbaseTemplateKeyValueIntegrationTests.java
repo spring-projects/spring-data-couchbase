@@ -55,7 +55,7 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * KV tests Theses tests rely on a cb server running.
+ * KV test - these tests rely on a cb server running.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
@@ -81,11 +81,11 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void findByIdWithLock() {
 		try {
-			User user = new User(UUID.randomUUID().toString(), "user1", "user1");
+			User user = new User("1", "user1", "user1");
 
 			couchbaseTemplate.upsertById(User.class).one(user);
 
-			User foundUser = couchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(2)).one(user.getId());
+			User foundUser = couchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(5)).one(user.getId());
 			user.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user, foundUser);
 			
@@ -94,8 +94,15 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			);
 			assertTrue(exception.retryReasons().contains(RetryReason.KV_LOCKED), "should have been locked");
 		} finally {
-			sleepSecs(2);
-			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			for(int i=0; i< 10; i++) {
+				sleepSecs(2);
+				try {
+					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					break;
+				} catch (Exception e) {
+					e.printStackTrace(); // gives IndexFailureException if the lock is still active
+				}
+			}
 		}
 
 	}
