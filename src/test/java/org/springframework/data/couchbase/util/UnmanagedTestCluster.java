@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.util;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.couchbase.client.core.util.ConnectionString;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -61,7 +62,7 @@ public class UnmanagedTestCluster extends TestCluster {
 			seedPort = 18091;
 			EventBus eventBus = new SimpleEventBus(false);
 			eventBus.subscribe(event -> System.err.println("Event: " + event));
-			Collection<SeedNode> seedNodes = ConnectionStringUtil.seedNodesFromConnectionString("couchbases://" + seed, true,
+			Collection<SeedNode> seedNodes = ConnectionStringUtil.seedNodesFromConnectionString(ConnectionString.create("couchbases://" + seed), true,
 					true, eventBus);
 			hostname = seedNodes.stream().filter((node) -> node.kvPort() != null).findFirst().get().address().toString();
 			seedHost = "couchbases://" + seed;
