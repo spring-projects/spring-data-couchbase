@@ -1,5 +1,5 @@
 = Spring Data Couchbase - Reference Documentation
-Michael Nitschinger, Oliver Gierke, Simon Baslé, Michael Reiche
+Michael Nitschinger, Oliver Gierke, Simon Basle, Michael Reiche
 :revnumber: {version}
 :revdate: {localdate}
 :spring-data-commons-docs: ../../../../spring-data-commons/src/main/asciidoc
