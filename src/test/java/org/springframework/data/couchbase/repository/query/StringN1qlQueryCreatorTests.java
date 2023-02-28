@@ -110,7 +110,7 @@ class StringN1qlQueryCreatorTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT `_class`, META(`" + bucketName()
+				"SELECT `_class`, `jsonNode`, `jsonObject`, `jsonArray`, META(`" + bucketName()
 						+ "`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`"
 						+ bucketName() + "`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `" + bucketName()
 						+ "` where `_class` = \"abstractuser\" and firstname = $1 and lastname = $2",
@@ -131,7 +131,7 @@ class StringN1qlQueryCreatorTests {
 
 		Query query = creator.createQuery();
 		assertEquals(
-				"SELECT `_class`, META(`" + bucketName()
+				"SELECT `_class`, `jsonNode`, `jsonObject`, `jsonArray`, META(`" + bucketName()
 						+ "`).`cas` AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`"
 						+ bucketName() + "`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `" + bucketName()
 						+ "` where `_class` = \"abstractuser\" and (firstname = $first or lastname = $last)",
@@ -151,11 +151,9 @@ class StringN1qlQueryCreatorTests {
 
 		Query query = creator.createQuery();
 
-		assertEquals(
-				"SELECT `_class`, META(`myCollection`).`cas` AS __cas, `createdBy`, `createdDate`, "
-						+ "`lastModifiedBy`, `lastModifiedDate`, META(`myCollection`).`id` AS __id, `firstname`, "
-						+ "`lastname`, `subtype` FROM `myCollection`|`_class` = \"abstractuser\""
-						+ "|`myCollection`|`myScope`|`myCollection`",
+		assertEquals("SELECT `_class`, `jsonNode`, `jsonObject`, `jsonArray`, META(`myCollection`).`cas`"
+				+ " AS __cas, `createdBy`, `createdDate`, `lastModifiedBy`, `lastModifiedDate`, META(`myCollection`).`id`"
+				+ " AS __id, `firstname`, `lastname`, `subtype` FROM `myCollection`|`_class` = \"abstractuser\"|`myCollection`|`myScope`|`myCollection`",
 				query.toN1qlSelectString(converter, bucketName(), "myScope", "myCollection", User.class, null, false, null,
 						null));
 	}

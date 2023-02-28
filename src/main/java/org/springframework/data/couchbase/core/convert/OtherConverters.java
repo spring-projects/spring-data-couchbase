@@ -24,12 +24,23 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValueModule;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.util.Base64Utils;
 
 import com.couchbase.client.core.encryption.CryptoManager;
@@ -66,6 +77,12 @@ public final class OtherConverters {
 		converters.add(StringToCharArray.INSTANCE);
 		converters.add(ClassToString.INSTANCE);
 		converters.add(StringToClass.INSTANCE);
+		converters.add(MapToJsonNode.INSTANCE);
+		converters.add(JsonNodeToMap.INSTANCE);
+		converters.add(JsonObjectToMap.INSTANCE);
+		converters.add(MapToJsonObject.INSTANCE);
+		converters.add(JsonArrayToCouchbaseList.INSTANCE);
+		converters.add(CouchbaseListToJsonArray.INSTANCE);
 		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory are
 		// registered in
 		// {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(
@@ -228,6 +245,87 @@ public final class OtherConverters {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+
+	@WritingConverter
+	public enum JsonNodeToMap implements Converter<JsonNode, CouchbaseDocument> {
+		INSTANCE;
+		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+		@Override
+		public CouchbaseDocument convert(JsonNode source) {
+			if( source == null ){
+				return null;
+			}
+			return new CouchbaseDocument().setContent((Map)mapper.convertValue(source, new TypeReference<Map<String, Object>>(){}));
+		}
+	}
+
+	@ReadingConverter
+	public enum MapToJsonNode implements Converter<CouchbaseDocument, JsonNode> {
+		INSTANCE;
+		static ObjectMapper mapper= new ObjectMapper().registerModule(new JsonValueModule());
+
+		@Override
+		public JsonNode convert(CouchbaseDocument source) {
+			if( source == null ){
+				return null;
+			}
+			return mapper.valueToTree(source.export());
+		}
+	}
+
+	@WritingConverter
+	public enum JsonObjectToMap implements Converter<JsonObject, CouchbaseDocument> {
+		INSTANCE;
+
+		@Override
+		public CouchbaseDocument convert(JsonObject source) {
+			if( source == null ){
+				return null;
+			}
+			return new CouchbaseDocument().setContent(source);
+		}
+	}
+
+	@ReadingConverter
+	public enum MapToJsonObject implements Converter<CouchbaseDocument, JsonObject> {
+		INSTANCE;
+		static ObjectMapper mapper= new ObjectMapper();
+
+		@Override
+		public JsonObject convert(CouchbaseDocument source) {
+			if( source == null ){
+				return null;
+			}
+			return JsonObject.from(source.export());
+		}
+	}
+
+	@WritingConverter
+	public enum JsonArrayToCouchbaseList implements Converter<JsonArray, CouchbaseList> {
+		INSTANCE;
+
+		@Override
+		public CouchbaseList convert(JsonArray source) {
+			if( source == null ){
+				return null;
+			}
+			return new CouchbaseList(source.toList());
+		}
+	}
+
+	@ReadingConverter
+	public enum CouchbaseListToJsonArray implements Converter<CouchbaseList, JsonArray> {
+		INSTANCE;
+		static ObjectMapper mapper= new ObjectMapper();
+
+		@Override
+		public JsonArray convert(CouchbaseList source) {
+			if( source == null ){
+				return null;
+			}
+			return JsonArray.from(source.export());
 		}
 	}
 

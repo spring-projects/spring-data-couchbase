@@ -434,7 +434,12 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return must not be {@literal null}.
 	 */
 	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
-		List<GenericConverter> newConverters = new ArrayList();
+		List<Object> newConverters = new ArrayList();
+		// The following
+		newConverters.add(new OtherConverters.EnumToObject(getObjectMapper()));
+		newConverters.add(new IntegerToEnumConverterFactory(getObjectMapper()));
+		newConverters.add(new StringToEnumConverterFactory(getObjectMapper()));
+		newConverters.add(new BooleanToEnumConverterFactory(getObjectMapper()));
 		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
 			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
 			valueConversions.setConverterFactory(
@@ -443,10 +448,6 @@ public abstract class AbstractCouchbaseConfiguration {
 			valueConversions.afterPropertiesSet(); // wraps the CouchbasePropertyValueConverterFactory with CachingPVCFactory
 			configurationAdapter.setPropertyValueConversions(valueConversions);
 			configurationAdapter.registerConverters(newConverters);
-			configurationAdapter.registerConverter(new OtherConverters.EnumToObject(getObjectMapper()));
-			configurationAdapter.registerConverterFactory(new IntegerToEnumConverterFactory(getObjectMapper()));
-			configurationAdapter.registerConverterFactory(new StringToEnumConverterFactory(getObjectMapper()));
-			configurationAdapter.registerConverterFactory(new BooleanToEnumConverterFactory(getObjectMapper()));
 		});
 		return customConversions;
 	}
