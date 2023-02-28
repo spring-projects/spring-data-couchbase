@@ -88,7 +88,7 @@ couchbaseTemplate.mutateInById(User.class)
 ----
 ====
 
-[[template.sub-document-ops]]
+[[template.sub-document-ops-multi]]
 === Executing Multiple Sub-Document Operations
 
 Multiple Sub-Document operations can be executed at once on the same document, allowing you to modify several Sub-Documents at once. When multiple operations are submitted within the context of a single mutateIn command, the server will execute all the operations with the same version of the document.
