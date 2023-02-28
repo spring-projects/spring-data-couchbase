@@ -5,10 +5,9 @@ Couchbase supports https://docs.couchbase.com/server/current/learn/data/transact
 
 == Requirements
 
- - Couchbase Server 6.6.1 or aabove.
+ - Couchbase Server 6.6.1 or above.
  - Spring Data Couchbase 5.0.0-M5 or above.
  - NTP should be configured so nodes of the Couchbase cluster are in sync with time. The time being out of sync will not cause incorrect behavior, but can impact metadata cleanup.
- - Set spring.main.allow-bean-definition-overriding=true either in application.properties or as a SpringApplicationBuilder property.
  - The entity class must have an `@Version Long` property to hold the CAS value of the document.
 
 == Overview
