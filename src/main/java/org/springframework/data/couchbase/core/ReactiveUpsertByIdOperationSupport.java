@@ -37,6 +37,7 @@ import com.couchbase.client.java.kv.UpsertOptions;
  * {@link ReactiveUpsertByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
@@ -51,7 +52,8 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 	public <T> ReactiveUpsertById<T> upsertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveUpsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
 				null, template.support());
 	}
 

@@ -27,37 +27,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+import com.couchbase.client.core.error.TimeoutException;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.core.retry.RetryReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ExecutableFindByIdOperation.ExecutableFindById;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
-import org.springframework.data.couchbase.core.support.OneAndAllEntity;
-import org.springframework.data.couchbase.core.support.OneAndAllId;
-import org.springframework.data.couchbase.core.support.WithDurability;
-import org.springframework.data.couchbase.core.support.WithExpiry;
-import org.springframework.data.couchbase.domain.Address;
-import org.springframework.data.couchbase.domain.Config;
-import org.springframework.data.couchbase.domain.NaiveAuditorAware;
-import org.springframework.data.couchbase.domain.PersonValue;
-import org.springframework.data.couchbase.domain.Submission;
-import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.domain.UserAnnotated;
-import org.springframework.data.couchbase.domain.UserAnnotated2;
-import org.springframework.data.couchbase.domain.UserAnnotated3;
-import org.springframework.data.couchbase.domain.UserAnnotatedTouchOnRead;
-import org.springframework.data.couchbase.domain.UserSubmission;
+import org.springframework.data.couchbase.core.support.*;
+import org.springframework.data.couchbase.domain.*;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
@@ -70,10 +55,11 @@ import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
- * KV tests Theses tests rely on a cb server running.
+ * KV test - these tests rely on a cb server running.
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
@@ -90,6 +76,35 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated3.class).all();
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+	}
+
+	@Test
+	void findByIdWithLock() {
+		try {
+			User user = new User("1", "user1", "user1");
+
+			couchbaseTemplate.upsertById(User.class).one(user);
+
+			User foundUser = couchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(5)).one(user.getId());
+			user.setVersion(foundUser.getVersion());// version will have changed
+			assertEquals(user, foundUser);
+			
+			TimeoutException exception = assertThrows(TimeoutException.class, () -> 
+				couchbaseTemplate.upsertById(User.class).one(user)
+			);
+			assertTrue(exception.retryReasons().contains(RetryReason.KV_LOCKED), "should have been locked");
+		} finally {
+			for(int i=0; i< 10; i++) {
+				sleepSecs(2);
+				try {
+					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+					break;
+				} catch (Exception e) {
+					e.printStackTrace(); // gives IndexFailureException if the lock is still active
+				}
+			}
+		}
+
 	}
 
 	@Test
@@ -275,49 +290,58 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void withDurability()
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-		Class<?> clazz = User.class; // for now, just User.class. There is no Durability annotation.
-		// insert, replace, upsert
-		for (OneAndAllEntity<User> operator : new OneAndAllEntity[] { couchbaseTemplate.insertById(clazz),
-				couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz) }) {
-			// create an entity of type clazz
-			Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
-			User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
-					"firstname", "lastname");
+		for (Class<?> clazz : new Class[] { User.class, UserAnnotatedDurability.class, UserAnnotatedPersistTo.class, UserAnnotatedReplicateTo.class }) {
+			// insert, replace, upsert
+			for (OneAndAllEntity<User> operator : new OneAndAllEntity[]{couchbaseTemplate.insertById(clazz),
+					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz)}) {
+				// create an entity of type clazz
+				Constructor<?> cons = clazz.getConstructor(String.class, String.class, String.class);
+				User user = (User) cons.newInstance("" + operator.getClass().getSimpleName() + "_" + clazz.getSimpleName(),
+						"firstname", "lastname");
 
-			if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
-				operator = (OneAndAllEntity) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
-						ReplicateTo.NONE);
-			}
-
-			// if replace, we need to insert a document to replace
-			if (operator instanceof ExecutableReplaceById) {
-				couchbaseTemplate.insertById(User.class).one(user);
-			}
-			// call to insert/replace/update
-			User returned = null;
-
-			// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
-			for (int i = 1; i != 5; i++) {
-				try {
-					returned = (User) operator.one(user);
-					break;
-				} catch (Exception ofe) {
-					System.out.println("" + i + " caught: " + ofe);
-					couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
-					if (i == 4) {
-						throw ofe;
-					}
-					sleepSecs(1);
+				if (clazz.equals(User.class)) { // User.java doesn't have an durability annotation
+					operator = (OneAndAllEntity<User>) ((WithDurability<User>) operator).withDurability(PersistTo.ACTIVE,
+							ReplicateTo.NONE);
+				} else if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+					operator = (OneAndAllEntity<User>) ((WithDurability<User>) operator).withDurability(PersistTo.NONE,
+							ReplicateTo.NONE);
 				}
-			}
-			assertEquals(user, returned);
-			User found = couchbaseTemplate.findById(User.class).one(user.getId());
-			assertEquals(user, found);
 
-			if (operator instanceof ExecutableReplaceById) {
-				couchbaseTemplate.removeById().withDurability(PersistTo.ACTIVE, ReplicateTo.NONE).one(user.getId());
-				User removed = (User) couchbaseTemplate.findById(user.getClass()).one(user.getId());
-				assertNull(removed, "found should have been null as document should be removed");
+				// if replace, we need to insert a document to replace
+				if (operator instanceof ExecutableReplaceById) {
+					couchbaseTemplate.insertById(User.class).one(user);
+				}
+				// call to insert/replace/update
+				User returned = null;
+
+				// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+				for (int i = 1; i != 5; i++) {
+					try {
+						returned = (User) operator.one(user);
+						break;
+					} catch (Exception ofe) {
+						System.out.println("" + i + " caught: " + ofe);
+						couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+						if (i == 4) {
+							throw ofe;
+						}
+						sleepSecs(1);
+					}
+				}
+				assertEquals(user, returned);
+				User found = couchbaseTemplate.findById(User.class).one(user.getId());
+				assertEquals(user, found);
+
+				if (operator instanceof ExecutableReplaceById) {
+					if (clazz.equals(UserAnnotatedReplicateTo.class)){ // override the replica count from the annotation with no replica
+						couchbaseTemplate.removeById(clazz).withDurability(PersistTo.ACTIVE,
+								ReplicateTo.NONE).one(user.getId());
+					} else {
+						couchbaseTemplate.removeById(clazz).one(user.getId());
+					}
+					User removed = (User) couchbaseTemplate.findById(user.getClass()).one(user.getId());
+					assertNull(removed, "found should have been null as document should be removed");
+				}
 			}
 		}
 
@@ -439,6 +463,583 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 					.one(modified.getId());
 		}
 	}
+	
+	@Test
+	void mutateInByIdUpsert(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			couchbaseTemplate.mutateInById(MutableUser.class).withUpsertPaths("roles").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getRoles(), mutableUser.getRoles());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdUpsertWithCAS(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			mutableUser.setVersion(999);
+			// if case is incorrect then exception is thrown
+			assertThrows(OptimisticLockingFailureException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class)
+					.withCasProvided().withUpsertPaths("roles").one(mutableUser));
+
+			// success on correct cas
+			mutableUser.setVersion(user.getVersion());
+			couchbaseTemplate.mutateInById(MutableUser.class)
+					.withCasProvided().withUpsertPaths("roles").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getRoles(), user.getRoles());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdUpsertMultiple() {
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			mutableUser.setAddress(address);
+			couchbaseTemplate.mutateInById(MutableUser.class).withUpsertPaths("roles", "address.street").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getRoles(), mutableUser.getRoles());
+			assertEquals(user.getAddress().getStreet(), mutableUser.getAddress().getStreet());
+			assertNull(user.getAddress().getCity());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdUpsertMultipleWithDurability(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			mutableUser.setAddress(address);
+			couchbaseTemplate.mutateInById(MutableUser.class).withDurability(DurabilityLevel.MAJORITY).withUpsertPaths("roles", "address.street").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getRoles(), mutableUser.getRoles());
+			assertEquals(user.getAddress().getStreet(), mutableUser.getAddress().getStreet());
+			assertNull(user.getAddress().getCity());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdUpsertMultipleWithExpiry(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			mutableUser.setAddress(address);
+			couchbaseTemplate.mutateInById(MutableUser.class).withExpiry(Duration.ofSeconds(1)).withUpsertPaths("roles", "address.street").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getRoles(), mutableUser.getRoles());
+			assertEquals(user.getAddress().getStreet(), mutableUser.getAddress().getStreet());
+			assertNull(user.getAddress().getCity());
+
+			// user should be gone
+			int tries = 0;
+			MutableUser foundUser;
+			do {
+				sleepSecs(2);
+				foundUser = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			} while (tries++ < 5 && foundUser != null);
+			assertNull(foundUser);
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplace(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			couchbaseTemplate.mutateInById(MutableUser.class).withReplacePaths("firstname").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getFirstname(), user.getFirstname());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplaceWithCAS(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setVersion(999);
+			
+			// if case is incorrect then exception is thrown
+			assertThrows(OptimisticLockingFailureException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided()
+					.withReplacePaths("firstname").one(mutableUser));
+			
+			// success on correct cas
+			mutableUser.setVersion(user.getVersion());
+			couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided().withReplacePaths("firstname").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getFirstname(), user.getFirstname());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplaceMultiple() {
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			user.setAddress(address);
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableUser.setAddress(mutableAddress);
+			couchbaseTemplate.mutateInById(MutableUser.class).withReplacePaths("firstname", "address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getFirstname(), user.getFirstname());
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplaceMultipleWithDurability(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			user.setAddress(address);
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableUser.setAddress(mutableAddress);
+			couchbaseTemplate.mutateInById(MutableUser.class).withDurability(DurabilityLevel.MAJORITY).withReplacePaths("firstname", "address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getFirstname(), user.getFirstname());
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplaceMultipleWithExpiry(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			Address address = new Address();
+			address.setCity("city");
+			user.setAddress(address);
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			mutableUser.setAddress(mutableAddress);
+			couchbaseTemplate.mutateInById(MutableUser.class).withExpiry(Duration.ofSeconds(1)).withReplacePaths("firstname", "address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getFirstname(), user.getFirstname());
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+			assertNull(user.getAddress().getStreet());
+
+			// user should be gone
+			int tries = 0;
+			MutableUser foundUser;
+			do {
+				sleepSecs(2);
+				foundUser = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			} while (tries++ < 5 && foundUser != null);
+			assertNull(foundUser);
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdReplaceMissingPath(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			mutableUser.setAddress(mutableAddress);
+			
+			assertThrows(InvalidDataAccessResourceUsageException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class).withReplacePaths("roles", "address.city").one(mutableUser));
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsert(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			couchbaseTemplate.mutateInById(MutableUser.class).withInsertPaths("roles").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getRoles(), user.getRoles());
+			assertNotEquals(mutableUser.getFirstname(), user.getFirstname());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsertWithCAS(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			mutableUser.setVersion(999);
+
+			// if case is incorrect then exception is thrown
+			assertThrows(OptimisticLockingFailureException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided()
+					.withInsertPaths("roles").one(mutableUser));
+
+			// success on correct cas
+			mutableUser.setVersion(user.getVersion());
+			couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided().withInsertPaths("roles").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getRoles(), user.getRoles());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsertMultiple() {
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			mutableUser.setAddress(mutableAddress);
+			couchbaseTemplate.mutateInById(MutableUser.class).withInsertPaths("roles", "address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(mutableUser.getRoles(), user.getRoles());
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+			assertNull(user.getAddress().getStreet());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsertMultipleWithDurability(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			mutableUser.setAddress(mutableAddress);
+			couchbaseTemplate.mutateInById(MutableUser.class).withDurability(DurabilityLevel.MAJORITY)
+					.withInsertPaths("address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+			assertNull(user.getAddress().getStreet());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsertMultipleWithExpiry(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			mutableUser.setAddress(mutableAddress);
+			
+			couchbaseTemplate.mutateInById(MutableUser.class).withExpiry(Duration.ofSeconds(1))
+					.withInsertPaths("address.city").one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertEquals(user.getAddress().getCity(), mutableUser.getAddress().getCity());
+			assertNull(user.getAddress().getStreet());
+
+			// user should be gone
+			int tries = 0;
+			MutableUser foundUser;
+			do {
+				sleepSecs(2);
+				foundUser = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			} while (tries++ < 5 && foundUser != null);
+			assertNull(foundUser);
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdInsertMissingPath(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+
+			assertThrows(InvalidDataAccessResourceUsageException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class).withInsertPaths("firstname").one(mutableUser));
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemove(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user.setRoles(Collections.singletonList("ADMIN"));
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			assertNotNull(user.getRoles());
+
+			couchbaseTemplate.mutateInById(MutableUser.class).withRemovePaths("roles").one(user);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertNull(user.getRoles());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemoveWithCAS(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user.setRoles(Collections.singletonList("ADMIN"));
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+			String userId = user.getId();
+			
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "otherlast");
+			mutableUser.setVersion(999);
+			// if case is incorrect then exception is thrown
+			assertThrows(OptimisticLockingFailureException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided()
+					.withRemovePaths("roles").one(mutableUser));
+
+			// success on correct cas
+			user.setVersion(user.getVersion());
+			couchbaseTemplate.mutateInById(MutableUser.class).withCasProvided().withRemovePaths("roles").one(user);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(userId);
+
+			assertNull(user.getRoles());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemoveMultiple() {
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user.setRoles(Collections.singletonList("ADMIN"));
+			Address mutableAddress = new Address();
+			mutableAddress.setCity("othercity");
+			mutableAddress.setStreet("street");
+			user.setAddress(mutableAddress);
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			couchbaseTemplate.mutateInById(MutableUser.class).withRemovePaths("roles", "address.city").one(user);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertNull(user.getRoles());
+			assertNull(user.getAddress().getCity());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemoveMultipleWithDurability(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			couchbaseTemplate.mutateInById(MutableUser.class).withDurability(DurabilityLevel.MAJORITY)
+					.withRemovePaths("lastname").one(user);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+
+			assertNull(user.getLastname());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemoveMultipleWithExpiry(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			couchbaseTemplate.mutateInById(MutableUser.class).withExpiry(Duration.ofSeconds(1))
+					.withRemovePaths("lastname").one(user);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			assertNull(user.getLastname());
+
+			// user should be gone
+			int tries = 0;
+			MutableUser foundUser;
+			do {
+				sleepSecs(2);
+				foundUser = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			} while (tries++ < 5 && foundUser != null);
+			assertNull(foundUser);
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdRemoveMissingPath(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+
+			assertThrows(InvalidDataAccessResourceUsageException.class, ()-> couchbaseTemplate.mutateInById(MutableUser.class)
+					.withRemovePaths("roles").one(mutableUser));
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
+
+	@Test
+	void mutateInByIdChained(){
+		try {
+			MutableUser user = new MutableUser(UUID.randomUUID().toString(), "firstname", "lastname");
+			Address address = new Address();
+			address.setCity("city");
+			address.setStreet("street");
+			user.setAddress(address);
+			user = couchbaseTemplate.insertById(MutableUser.class).one(user);
+
+			MutableUser mutableUser = new MutableUser(user.getId(), "othername", "");
+			mutableUser.setRoles(Collections.singletonList("ADMIN"));
+			Address mAddress = new Address();
+			mAddress.setCity("othercity");
+			mAddress.setStreet("otherstreet");
+			mutableUser.setAddress(mAddress);
+			mutableUser.setSubuser(new MutableUser("subuser", "subfirstname", "sublastname"));
+
+			couchbaseTemplate.mutateInById(MutableUser.class)
+					.withInsertPaths("roles", "subuser.firstname")
+					.withRemovePaths("address.city")
+					.withUpsertPaths("firstname")
+					.withReplacePaths("address.street")
+					.one(mutableUser);
+
+			user = couchbaseTemplate.findById(MutableUser.class).one(user.getId());
+			
+			assertNull(user.getAddress().getCity());
+			assertEquals(mAddress.getStreet(),  user.getAddress().getStreet());
+			assertEquals(mutableUser.getRoles(),  user.getRoles());
+			assertEquals(mutableUser.getFirstname(),  user.getFirstname());
+			assertEquals(mutableUser.getSubuser().getFirstname(),  user.getSubuser().getFirstname());
+			assertNull(user.getSubuser().getLastname());
+		} finally {
+			couchbaseTemplate.removeByQuery(MutableUser.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+		}
+	}
 
 	@Test
 	void insertById() {
@@ -479,6 +1080,56 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
 		couchbaseTemplate.removeById(User.class).one(user.getId());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability() {
+		UserAnnotatedPersistTo user = new UserAnnotatedPersistTo(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedPersistTo inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(UserAnnotatedPersistTo.class)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println("" + i + " caught: " + ofe);
+				couchbaseTemplate.removeByQuery(UserAnnotatedPersistTo.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedPersistTo.class).one(user));
+		couchbaseTemplate.removeById(UserAnnotatedPersistTo.class).one(user.getId());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurability2() {
+		UserAnnotatedDurability user = new UserAnnotatedDurability(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedDurability inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(UserAnnotatedDurability.class)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println("" + i + " caught: " + ofe);
+				couchbaseTemplate.removeByQuery(UserAnnotatedDurability.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedDurability.class).one(user));
+		couchbaseTemplate.removeById(UserAnnotatedDurability.class).one(user.getId());
 	}
 
 	@Test

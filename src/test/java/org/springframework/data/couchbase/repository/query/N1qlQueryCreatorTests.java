@@ -25,6 +25,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import com.couchbase.client.core.deps.com.fasterxml.jackson.databind.node.ArrayNode;
+import com.couchbase.client.java.query.QueryOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -32,6 +34,7 @@ import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
@@ -119,18 +122,17 @@ class N1qlQueryCreatorTests {
 		QueryMethod queryMethod = new QueryMethod(method, new DefaultRepositoryMetadata(UserRepository.class),
 				new SpelAwareProxyProjectionFactory());
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
+		JsonArray parameters = JsonArray.create().add(JsonArray.create().add("Oliver").add("Charles"));
+		QueryOptions expectedQOptions = QueryOptions.queryOptions().parameters(parameters);
 		N1qlQueryCreator creator = new N1qlQueryCreator(tree,
 				getAccessor(getParameters(method), new Object[] { new Object[] { "Oliver", "Charles" } }), queryMethod,
 				converter, bucketName);
 		Query query = creator.createQuery();
 
-		// Query expected = (new Query()).addCriteria(where("firstname").in("Oliver", "Charles"));
 		assertEquals(" WHERE `firstname` in $1", query.export(new int[1]));
-		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
-		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
-		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+		ArrayNode expectedOptions = expected.buildQueryOptions(expectedQOptions, null).build().positionalParameters();
+		ArrayNode actualOptions = query.buildQueryOptions(null, null).build().positionalParameters();
+		assertEquals(expectedOptions.toString(), actualOptions.toString());
 	}
 
 	@Test
@@ -148,12 +150,12 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
+		JsonArray parameters = JsonArray.create().add(JsonArray.create().add("Oliver").add("Charles"));
+		QueryOptions expectedQOptions = QueryOptions.queryOptions().parameters(parameters);
 		assertEquals(" WHERE `firstname` in $1", query.export(new int[1]));
-		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
-		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
-		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+		ArrayNode expectedOptions = expected.buildQueryOptions(expectedQOptions, null).build().positionalParameters();
+		ArrayNode actualOptions = query.buildQueryOptions(null, null).build().positionalParameters();
+		assertEquals(expectedOptions.toString(), actualOptions.toString());
 	}
 
 	@Test
@@ -171,13 +173,13 @@ class N1qlQueryCreatorTests {
 		Query query = creator.createQuery();
 
 		Query expected = (new Query()).addCriteria(where(i("firstname")).in("Oliver", "Charles"));
+		JsonArray parameters = JsonArray.create().add(JsonArray.create().add("Oliver").add("Charles"));
+		QueryOptions expectedQOptions = QueryOptions.queryOptions().parameters(parameters);
 
 		assertEquals(" WHERE `firstname` in $1", query.export(new int[1]));
-		JsonObject expectedOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(expectedOptions);
-		JsonObject actualOptions = JsonObject.create();
-		expected.buildQueryOptions(null, null).build().injectParams(actualOptions);
-		assertEquals(expectedOptions.removeKey("client_context_id"), actualOptions.removeKey("client_context_id"));
+		ArrayNode expectedOptions = expected.buildQueryOptions(expectedQOptions, null).build().positionalParameters();
+		ArrayNode actualOptions = query.buildQueryOptions(null, null).build().positionalParameters();
+		assertEquals(expectedOptions.toString(), actualOptions.toString());
 	}
 
 	@Test

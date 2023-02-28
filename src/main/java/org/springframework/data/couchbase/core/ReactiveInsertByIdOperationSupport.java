@@ -45,6 +45,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * {@link ReactiveInsertByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
@@ -59,7 +60,8 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 	public <T> ReactiveInsertById<T> insertById(final Class<T> domainType) {
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveInsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
 				null, template.support());
 	}
 

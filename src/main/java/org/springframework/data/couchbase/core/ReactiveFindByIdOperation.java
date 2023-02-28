@@ -25,6 +25,7 @@ import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithExpiry;
+import org.springframework.data.couchbase.core.support.WithLock;
 import org.springframework.data.couchbase.core.support.WithGetOptions;
 import org.springframework.data.couchbase.core.support.WithProjectionId;
 
@@ -34,6 +35,7 @@ import com.couchbase.client.java.kv.GetOptions;
  * Get Operations
  *
  * @author Christoph Strobl
+ * @author Tigran Babloyan
  * @since 2.0
  */
 public interface ReactiveFindByIdOperation {
@@ -136,11 +138,25 @@ public interface ReactiveFindByIdOperation {
 		FindByIdWithProjection<T> withExpiry(Duration expiry);
 	}
 
+	interface FindByIdWithLock<T> extends FindByIdWithExpiry<T>, WithLock<T> {
+		/**
+		 * Fetches document and write-locks it for the given duration.
+		 * <p>
+		 * Note that the client does not enforce an upper limit on the {@link Duration} lockTime. The maximum lock time
+		 * by default on the server is 30 seconds. Any value larger than 30 seconds will be capped down by the server to
+		 * the default lock time, which is 15 seconds unless modified on the server side.
+		 *
+		 * @param lockDuration how long to write-lock the document for (any duration > 30s will be capped to server default of 15s).
+		 */
+		@Override
+		FindByIdWithExpiry<T> withLock(Duration lockDuration);
+	}
+
 	/**
 	 * Provides methods for constructing query operations in a fluent way.
 	 *
 	 * @param <T> the entity type to use for the results
 	 */
-	interface ReactiveFindById<T> extends FindByIdWithExpiry<T> {}
+	interface ReactiveFindById<T> extends FindByIdWithLock<T> {}
 
 }

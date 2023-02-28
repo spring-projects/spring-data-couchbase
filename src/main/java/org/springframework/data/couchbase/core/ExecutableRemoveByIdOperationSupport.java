@@ -31,6 +31,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * {@link ExecutableRemoveByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByIdOperation {
 
@@ -50,7 +51,8 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 	public ExecutableRemoveById removeById(Class<?> domainType) {
 
 		return new ExecutableRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
 				null);
 	}
 

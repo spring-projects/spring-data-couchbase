@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core.query;
 
+import static com.couchbase.client.core.util.Validators.notNull;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.RETRY_STRATEGY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.SCAN_CONSISTENCY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.TIMEOUT;
@@ -24,13 +25,18 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.couchbase.client.core.api.query.CoreQueryScanConsistency;
+import com.couchbase.client.core.classic.query.ClassicCoreQueryOps;
+import com.couchbase.client.core.error.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
@@ -44,6 +50,7 @@ import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.InsertOptions;
 import com.couchbase.client.java.kv.PersistTo;
+import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
@@ -56,6 +63,7 @@ import com.couchbase.client.java.transactions.TransactionQueryOptions;
  * Methods for building Options objects for Couchbae APIs.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class OptionsBuilder {
 
@@ -64,21 +72,21 @@ public class OptionsBuilder {
 	static QueryOptions buildQueryOptions(Query query, QueryOptions options, QueryScanConsistency scanConsistency) {
 		options = options != null ? options : QueryOptions.queryOptions();
 		if (query.getParameters() != null) {
-			if (query.getParameters() instanceof JsonArray) {
+			if (query.getParameters() instanceof JsonArray && !((JsonArray) query.getParameters()).isEmpty()) {
 				options.parameters((JsonArray) query.getParameters());
-			} else {
+			} else if( query.getParameters() instanceof JsonObject && !((JsonObject)query.getParameters()).isEmpty()){
 				options.parameters((JsonObject) query.getParameters());
 			}
 		}
 
 		Meta meta = query.getMeta() != null ? query.getMeta() : new Meta();
 		QueryOptions.Built optsBuilt = options.build();
-		JsonObject optsJson = getQueryOpts(optsBuilt);
+
 		QueryScanConsistency metaQueryScanConsistency = meta.get(SCAN_CONSISTENCY) != null
 				? ((ScanConsistency) meta.get(SCAN_CONSISTENCY)).query()
 				: null;
 		QueryScanConsistency qsc = fromFirst(QueryScanConsistency.NOT_BOUNDED, query.getScanConsistency(),
-				getScanConsistency(optsJson), scanConsistency, metaQueryScanConsistency);
+				scanConsistency(optsBuilt), scanConsistency, metaQueryScanConsistency);
 		Duration timeout = fromFirst(Duration.ofSeconds(0), getTimeout(optsBuilt), meta.get(TIMEOUT));
 		RetryStrategy retryStrategy = fromFirst(null, getRetryStrategy(optsBuilt), meta.get(RETRY_STRATEGY));
 
@@ -97,6 +105,21 @@ public class OptionsBuilder {
 		return options;
 	}
 
+	private static QueryScanConsistency scanConsistency(QueryOptions.Built optsBuilt){
+		CoreQueryScanConsistency scanConsistency = optsBuilt.scanConsistency();
+		if (scanConsistency == null){
+			return null;
+		}
+		switch (scanConsistency) {
+			case NOT_BOUNDED:
+				return QueryScanConsistency.NOT_BOUNDED;
+			case REQUEST_PLUS:
+				return QueryScanConsistency.REQUEST_PLUS;
+			default:
+				throw new InvalidArgumentException("Unknown scan consistency type " + scanConsistency, null, null);
+		}
+	}
+
 	public static TransactionQueryOptions buildTransactionQueryOptions(QueryOptions options) {
 		QueryOptions.Built built = options.build();
 		TransactionQueryOptions txOptions = TransactionQueryOptions.queryOptions();
@@ -107,8 +130,21 @@ public class OptionsBuilder {
 			throw new IllegalArgumentException("QueryOptions.flexIndex is not supported in a transaction");
 		}
 
+		Object value = optsJson.get("args");
+		if(value instanceof JsonObject){
+			txOptions.parameters((JsonObject)value);
+		}else if(value instanceof JsonArray) {
+			txOptions.parameters((JsonArray) value);
+		} else  if(value != null) {
+      throw InvalidArgumentException.fromMessage(
+          "non-null args property was neither JsonObject(namedParameters) nor JsonArray(positionalParameters) "
+              + value);
+		}
+
 		for (Map.Entry<String, Object> entry : optsJson.toMap().entrySet()) {
-			txOptions.raw(entry.getKey(), entry.getValue());
+			if(!entry.getKey().equals("args")) {
+				txOptions.raw(entry.getKey(), entry.getValue());
+			}
 		}
 
 		if (LOG.isDebugEnabled()) {
@@ -156,6 +192,28 @@ public class OptionsBuilder {
 		}
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("upsert options: {}" + toString(options));
+		}
+		return options;
+	}
+
+	public static MutateInOptions buildMutateInOptions(MutateInOptions options, PersistTo persistTo, ReplicateTo replicateTo,
+													 DurabilityLevel durabilityLevel, Duration expiry, CouchbaseDocument doc, Long cas) {
+		options = options != null ? options : MutateInOptions.mutateInOptions();
+		if (persistTo != PersistTo.NONE || replicateTo != ReplicateTo.NONE) {
+			options.durability(persistTo, replicateTo);
+		} else if (durabilityLevel != DurabilityLevel.NONE) {
+			options.durability(durabilityLevel);
+		}
+		if (expiry != null) {
+			options.expiry(expiry);
+		} else if (doc.getExpiration() != 0) {
+			options.expiry(Duration.ofSeconds(doc.getExpiration()));
+		}
+		if (cas != null) {
+			options.cas(cas);
+		}
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("mutate in options: {}" + toString(options));
 		}
 		return options;
 	}
@@ -224,6 +282,30 @@ public class OptionsBuilder {
 			return ann.value();
 		}
 		return null;
+	}
+	
+	public static DurabilityLevel getDurabilityLevel(Class<?> domainType) {
+		if (domainType == null) {
+			return DurabilityLevel.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.durabilityLevel() : DurabilityLevel.NONE;
+	}
+
+	public static PersistTo getPersistTo(Class<?> domainType) {
+		if (domainType == null) {
+			return  PersistTo.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.persistTo() : PersistTo.NONE;
+	}
+
+	public static ReplicateTo getReplicateTo(Class<?> domainType) {
+		if (domainType == null) {
+			return ReplicateTo.NONE;
+		}
+		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
+		return document != null ? document.replicateTo() : ReplicateTo.NONE;
 	}
 
 	/**
@@ -305,10 +387,24 @@ public class OptionsBuilder {
 		return s.toString();
 	}
 
-	private static JsonObject getQueryOpts(QueryOptions.Built optsBuilt) {
-		JsonObject jo = JsonObject.create();
-		optsBuilt.injectParams(jo);
-		return jo;
+	static String toString(MutateInOptions o) {
+		StringBuilder s = new StringBuilder();
+		MutateInOptions.Built b = o.build();
+		s.append("{");
+		s.append("cas: " + b.cas());
+		s.append(", durabilityLevel: " + b.durabilityLevel());
+		s.append(", persistTo: " + b.persistTo());
+		s.append(", replicateTo: " + b.replicateTo());
+		s.append(", timeout: " + b.timeout());
+		s.append(", retryStrategy: " + b.retryStrategy());
+		s.append(", clientContext: " + b.clientContext());
+		s.append(", parentSpan: " + b.parentSpan());
+		s.append("}");
+		return s.toString();
+	}
+
+  public static JsonObject getQueryOpts(QueryOptions.Built optsBuilt) {
+    return JsonObject.fromJson(ClassicCoreQueryOps.convertOptions(optsBuilt).toString().getBytes());
 	}
 
 	/**
@@ -329,18 +425,6 @@ public class OptionsBuilder {
 			}
 		}
 		return chosen;
-	}
-
-	private static QueryScanConsistency getScanConsistency(JsonObject opts) {
-		String str = opts.getString("scan_consistency");
-		if ("at_plus".equals(str)) {
-			return null;
-		}
-		return str == null ? null : QueryScanConsistency.valueOf(str.toUpperCase());
-	}
-
-	private static JsonObject getScanVectors(JsonObject opts) {
-		return opts.getObject("scan_vectors");
 	}
 
 	private static Duration getTimeout(QueryOptions.Built optsBuilt) {

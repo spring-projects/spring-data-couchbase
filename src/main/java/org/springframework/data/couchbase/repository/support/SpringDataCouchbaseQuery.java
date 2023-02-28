@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -250,7 +251,7 @@ public class SpringDataCouchbaseQuery<T> extends SpringDataCouchbaseQuerySupport
 			@Nullable Expression<?> projection, QueryModifiers modifiers, List<OrderSpecifier<?>> orderBy) {
 
 		Map<String, String> fields = createProjection(projection);
-		BasicQuery basicQuery = new BasicQuery(createCriteria(filter), fields);
+		BasicQuery basicQuery = filter == null ? new BasicQuery(new Query(), fields) : new BasicQuery(createCriteria(filter), fields);
 
 		Integer limit = modifiers.getLimitAsInteger();
 		Integer offset = modifiers.getOffsetAsInteger();

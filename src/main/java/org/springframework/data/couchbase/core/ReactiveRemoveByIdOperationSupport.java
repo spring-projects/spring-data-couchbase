@@ -46,6 +46,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * {@link ReactiveRemoveByIdOperation} implementations for Couchbase.
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOperation {
 
@@ -65,7 +66,8 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 	@Override
 	public ReactiveRemoveById removeById(Class<?> domainType) {
 		return new ReactiveRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, PersistTo.NONE, ReplicateTo.NONE, DurabilityLevel.NONE,
+				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
 				null);
 	}
 

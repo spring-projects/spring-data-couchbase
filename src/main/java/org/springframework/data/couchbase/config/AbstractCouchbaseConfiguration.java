@@ -26,7 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -63,6 +67,8 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration;
+import org.springframework.transaction.config.TransactionManagementConfigUtils;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -374,19 +380,32 @@ public abstract class AbstractCouchbaseConfiguration {
 		return CouchbaseTransactionalOperator.create(couchbaseCallbackTransactionManager);
 	}
 
-	@Bean
-	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	public TransactionInterceptor transactionInterceptor(TransactionManager couchbaseTransactionManager) {
-		TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
-		TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor(couchbaseTransactionManager,
-				transactionAttributeSource);
-		interceptor.setTransactionAttributeSource(transactionAttributeSource);
-		if (couchbaseTransactionManager != null) {
-			interceptor.setTransactionManager(couchbaseTransactionManager);
-		}
-		return interceptor;
-	}
+  @Bean
+  @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  static BeanPostProcessor transactionInterceptorCustomizer(
+      ObjectProvider<TransactionManager> transactionManagerProvider, ConfigurableListableBeanFactory beanFactory) {
 
+    BeanPostProcessor processor = new BeanPostProcessor() {
+      @Override
+      public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        if (bean instanceof TransactionInterceptor) {
+          TransactionAttributeSource transactionAttributeSource = new AnnotationTransactionAttributeSource();
+          TransactionManager transactionManager = transactionManagerProvider.getObject();
+          TransactionInterceptor interceptor = new CouchbaseTransactionInterceptor(transactionManager,
+              transactionAttributeSource);
+          interceptor.setTransactionAttributeSource(transactionAttributeSource);
+          if (transactionManager != null) {
+            interceptor.setTransactionManager(transactionManager);
+          }
+          return interceptor;
+        }
+        return bean;
+      }
+
+    };
+    beanFactory.addBeanPostProcessor(processor);
+    return processor;
+  }
 	/**
 	 * Configure whether to automatically create indices for domain types by deriving the from the entity or not.
 	 */

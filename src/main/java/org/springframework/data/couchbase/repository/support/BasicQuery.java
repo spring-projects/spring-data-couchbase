@@ -30,6 +30,7 @@ import org.springframework.util.Assert;
  * BasicQuery for Querydsl
  *
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class BasicQuery extends Query {
 
@@ -40,12 +41,11 @@ public class BasicQuery extends Query {
 	 * {@link CouchbaseDocument}.
 	 *
 	 * @param query must not be {@literal null}.
-	 * @param projectionFields must not be {@literal null}.
+	 * @param projectionFields can be {@literal null}.
 	 * @throws IllegalArgumentException when {@code sortObject} or {@code fieldsObject} is {@literal null}.
 	 */
 	public BasicQuery(Query query, Map<String, String> projectionFields) {
 		super(query);
-		Assert.notNull(projectionFields, "Field document must not be null");
 		this.projectionFields = projectionFields;
 	}
 
