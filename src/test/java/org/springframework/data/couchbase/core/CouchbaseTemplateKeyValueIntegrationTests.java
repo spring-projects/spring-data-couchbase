@@ -129,7 +129,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 			assertEquals(1, foundUsers.size(), "should have found exactly 1 user");
 			assertEquals(user2, foundUsers.iterator().next());
 		} finally {
-			couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+			//couchbaseTemplate.removeByQuery(User.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
 		}
 
 	}
@@ -1046,6 +1046,13 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		User user = new User(UUID.randomUUID().toString(), "firstname", "lastname");
 		User inserted = couchbaseTemplate.insertById(User.class).one(user);
 		assertEquals(user, inserted);
+		User found = couchbaseTemplate.findById(User.class).one(user.getId());
+		assertEquals(inserted, found);
+		System.err.println("inserted: "+inserted);
+		System.err.println("found:    "+found);
+		System.err.println("found:jsonNode      "+found.jsonNode.toPrettyString());
+		System.err.println("found:jsonObject    "+found.jsonObject.toString());
+		System.err.println("found:jsonArray    "+found.jsonArray.toString());
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(User.class).one(user));
 		couchbaseTemplate.removeById(User.class).one(user.getId());
 	}
