@@ -45,6 +45,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
  * @author Tigran Babloyan
+ * @author Andy Toone
  */
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
