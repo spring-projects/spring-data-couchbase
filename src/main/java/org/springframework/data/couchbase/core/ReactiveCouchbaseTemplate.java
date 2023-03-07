@@ -37,6 +37,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
+ * @author Andy Toone
  */
 public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, ApplicationContextAware {
 
@@ -186,7 +187,14 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * set the ThreadLocal field
 	 */
 	public void setPseudoArgs(PseudoArgs<?> threadLocalArgs) {
-		this.threadLocalArgs = new ThreadLocal<>();
+		if (this.threadLocalArgs == null) {
+			synchronized (this) {
+				if (this.threadLocalArgs == null) {
+					this.threadLocalArgs = new ThreadLocal<>();
+				}
+			}
+		}
+
 		this.threadLocalArgs.set(threadLocalArgs);
 	}
 
