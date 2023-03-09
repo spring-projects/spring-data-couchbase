@@ -157,7 +157,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 		public Mono<RemoveResult> oneEntity(Object entity) {
 			ReactiveRemoveByIdSupport op = new ReactiveRemoveByIdSupport(template, domainType, scope, collection, options,
 					persistTo, replicateTo, durabilityLevel, template.support().getCas(entity));
-			return op.one(template.support().getId(entity).toString());
+			return op.withCas(template.support().getCas(entity)).one(template.support().getId(entity).toString());
 		}
 
 		@Override
