@@ -21,6 +21,7 @@ import java.util.Optional;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.ScrollPosition;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -48,6 +49,11 @@ public class N1qlCountQueryCreator extends OldN1qlQueryCreator {
 
 		public CountParameterAccessor(ParameterAccessor delegate) {
 			this.delegate = delegate;
+		}
+
+		@Override
+		public ScrollPosition getScrollPosition() {
+			return delegate.getScrollPosition();
 		}
 
 		public Pageable getPageable() {
