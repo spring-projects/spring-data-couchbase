@@ -28,7 +28,7 @@ import org.reactivestreams.Publisher;
 
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.util.ReactiveWrapperConverters;
-import org.springframework.data.repository.util.ReactiveWrappers;
+import org.springframework.data.util.ReactiveWrappers;
 
 /**
  * Reactive {@link org.springframework.data.repository.query.ParametersParameterAccessor} implementation that subscribes

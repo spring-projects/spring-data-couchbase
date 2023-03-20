@@ -29,8 +29,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.util.ReactiveWrappers;
-import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.ReactiveWrappers;
 import org.springframework.data.util.Lazy;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ClassUtils;
@@ -43,10 +42,9 @@ import org.springframework.util.ClassUtils;
  */
 public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 
-	private static final ClassTypeInformation<Page> PAGE_TYPE = ClassTypeInformation.from(Page.class);
-	private static final ClassTypeInformation<Slice> SLICE_TYPE = ClassTypeInformation.from(Slice.class);
+	private static final TypeInformation<Page> PAGE_TYPE = TypeInformation.of(Page.class);
+	private static final TypeInformation<Slice> SLICE_TYPE = TypeInformation.of(Slice.class);
 
-	private final Method method;
 	private final Lazy<Boolean> isCollectionQueryCouchbase; // not to be confused with QueryMethod.isCollectionQuery
 
 	/**
@@ -64,7 +62,7 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 
 		if (hasParameterOfType(method, Pageable.class)) {
 
-			TypeInformation<?> returnType = ClassTypeInformation.fromReturnTypeOf(method);
+			TypeInformation<?> returnType = TypeInformation.fromReturnTypeOf(method);
 
 			boolean multiWrapper = ReactiveWrappers.isMultiValueType(returnType.getType());
 			boolean singleWrapperWithWrappedPageableResult = ReactiveWrappers.isSingleValueType(returnType.getType())
@@ -89,7 +87,6 @@ public class ReactiveCouchbaseQueryMethod extends CouchbaseQueryMethod {
 			}
 		}
 
-		this.method = method;
 		this.isCollectionQueryCouchbase = Lazy.of(() -> {
 			boolean result = !(isPageQuery() || isSliceQuery())
 					&& ReactiveWrappers.isMultiValueType(metadata.getReturnType(method).getType());
