@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author Michael Reiche
+ * @author Shubham Mishra
  */
 public class QuerydslPredicateExecutorSupport<T> {
 
@@ -42,10 +43,6 @@ public class QuerydslPredicateExecutorSupport<T> {
 		this.serializer = new SpringDataCouchbaseSerializer(converter);
 		this.builder = builder;
 		this.entityInformation = entityInformation;
-	}
-
-	protected static <E> PathBuilder<E> pathBuilderFor(EntityPath<E> path) {
-		return new PathBuilder<>(path.getType(), path.getMetadata());
 	}
 
 	protected EntityInformation<T, ?> typeInformation() {
