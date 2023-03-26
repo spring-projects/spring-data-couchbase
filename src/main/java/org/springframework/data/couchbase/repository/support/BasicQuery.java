@@ -31,6 +31,7 @@ import org.springframework.util.Assert;
  *
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Shubham Mishra
  */
 public class BasicQuery extends Query {
 
@@ -52,24 +53,6 @@ public class BasicQuery extends Query {
 	public BasicQuery(QueryCriteriaDefinition criteria, Map<String, String> projectionFields) {
 		addCriteria(criteria);
 		this.projectionFields = projectionFields;
-	}
-
-	/**
-	 * Set the sort {@link CouchbaseDocument}.
-	 *
-	 * @param sort must not be {@literal null}.
-	 * @throws IllegalArgumentException when {@code sortObject} is {@literal null}.
-	 */
-	public void setSort(Sort sort) {
-		Assert.notNull(sort, "Sort must not be null");
-		with(sort);
-	}
-
-	/*
-	 * indicates if the query is sorted
-	 */
-	public boolean isSorted() {
-		return sort != null && sort != Sort.unsorted();
 	}
 
 	/**
