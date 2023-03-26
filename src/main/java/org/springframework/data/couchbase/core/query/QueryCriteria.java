@@ -38,6 +38,7 @@ import com.couchbase.client.java.json.JsonValue;
  * @author Michael Nitschinger
  * @author Michael Reiche
  * @author Mauro Monti
+ * @author Shubham Mishra
  */
 public class QueryCriteria implements QueryCriteriaDefinition {
 
@@ -148,13 +149,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria and(QueryCriteria criteria) {
-		if (this.criteriaChain != null && !this.criteriaChain.contains(this)) {
-			throw new RuntimeException("criteria chain does not include this");
-		}
-		if (this.criteriaChain == null) {
-			this.criteriaChain = new LinkedList<>();
-			this.criteriaChain.add(this);
-		}
+		checkAndAddToCriteriaChain();
 		QueryCriteria newThis = wrap(this);
 		QueryCriteria qc = wrap(criteria);
 		newThis.criteriaChain.add(qc);
@@ -189,13 +184,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	}
 
 	public QueryCriteria or(QueryCriteria criteria) {
-		if (this.criteriaChain != null && !this.criteriaChain.contains(this)) {
-			throw new RuntimeException("criteria chain does not include this");
-		}
-		if (this.criteriaChain == null) {
-			this.criteriaChain = new LinkedList<>();
-			this.criteriaChain.add(this);
-		}
+		checkAndAddToCriteriaChain();
 		QueryCriteria newThis = wrap(this);
 		QueryCriteria qc = wrap(criteria);
 		qc.criteriaChain = newThis.criteriaChain;
@@ -718,5 +707,15 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 		}
 		sb.append("}");
 		return sb.toString();
+	}
+
+	private void checkAndAddToCriteriaChain() {
+		if (this.criteriaChain != null && !this.criteriaChain.contains(this)) {
+			throw new RuntimeException("criteria chain does not include this");
+		}
+		if (this.criteriaChain == null) {
+			this.criteriaChain = new LinkedList<>();
+			this.criteriaChain.add(this);
+		}
 	}
 }
