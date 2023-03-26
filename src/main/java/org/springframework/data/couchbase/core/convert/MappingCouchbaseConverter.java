@@ -89,6 +89,7 @@ import com.couchbase.client.java.json.JsonObject;
  * @author Mark Paluch
  * @author Michael Reiche
  * @author Remi Bleuse
+ * @author Shubham Mishra
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
 
@@ -272,8 +273,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		entity.doWithProperties(new PropertyHandler<>() {
 			@Override
 			public void doWithPersistentProperty(final CouchbasePersistentProperty prop) {
-				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
-						|| prop.isAnnotationPresent(N1qlJoin.class)) {
+				if (!shouldSetProperty(prop)) {
 					return;
 				}
 
@@ -281,6 +281,19 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						: getValueInternal(prop, source, instance, entity);
 
 				accessor.setProperty(prop, obj);
+			}
+
+			/**
+			 * Helper function of doWithPersistentProperty to perform check on prop to decide whether to set it as accessor property
+			 * @param prop
+			 * @return
+			 */
+			private Boolean shouldSetProperty(final CouchbasePersistentProperty prop) {
+				if (!doesPropertyExistInSource(prop) || entity.isConstructorArgument(prop) || isIdConstructionProperty(prop)
+						|| prop.isAnnotationPresent(N1qlJoin.class)) {
+					return false;
+				}
+				return true;
 			}
 
 			/**
@@ -987,36 +1000,36 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	private String generateId(GeneratedValue generatedValue, TreeMap<Integer, String> prefixes,
 			TreeMap<Integer, String> suffixes, TreeMap<Integer, String> idAttributes) {
 		String delimiter = generatedValue.delimiter();
-		StringBuilder sb = new StringBuilder();
+		StringBuilder idStringBuilder = new StringBuilder();
 		boolean isAppending = false;
 		if (prefixes.size() > 0) {
-			appendKeyParts(sb, prefixes.values(), delimiter);
+			appendKeyParts(idStringBuilder, prefixes.values(), delimiter);
 			isAppending = true;
 		}
 
 		if (generatedValue.strategy() == USE_ATTRIBUTES && idAttributes.size() > 0) {
 			if (isAppending) {
-				sb.append(delimiter);
+				idStringBuilder.append(delimiter);
 			}
-			appendKeyParts(sb, idAttributes.values(), delimiter);
+			appendKeyParts(idStringBuilder, idAttributes.values(), delimiter);
 			isAppending = true;
 		}
 
 		if (generatedValue.strategy() == UNIQUE) {
 			if (isAppending) {
-				sb.append(delimiter);
+				idStringBuilder.append(delimiter);
 			}
-			sb.append(UUID.randomUUID());
+			idStringBuilder.append(UUID.randomUUID());
 			isAppending = true;
 		}
 
 		if (suffixes.size() > 0) {
 			if (isAppending) {
-				sb.append(delimiter);
+				idStringBuilder.append(delimiter);
 			}
-			appendKeyParts(sb, suffixes.values(), delimiter);
+			appendKeyParts(idStringBuilder, suffixes.values(), delimiter);
 		}
-		return sb.toString();
+		return idStringBuilder.toString();
 	}
 
 	private StringBuilder appendKeyParts(StringBuilder sb, Collection<String> values, String delimiter) {
