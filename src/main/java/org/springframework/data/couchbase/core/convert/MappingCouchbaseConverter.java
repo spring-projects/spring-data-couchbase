@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.CollectionFactory;
@@ -818,6 +819,10 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		this.applicationContext = applicationContext;
 		if (entityCallbacks == null) {
 			setEntityCallbacks(EntityCallbacks.create(applicationContext));
+		}
+		ClassLoader classLoader = applicationContext.getClassLoader();
+		if (this.typeMapper instanceof BeanClassLoaderAware && classLoader != null) {
+			((BeanClassLoaderAware) this.typeMapper).setBeanClassLoader(classLoader);
 		}
 	}
 
