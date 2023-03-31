@@ -56,24 +56,6 @@ public class BasicQuery extends Query {
 	}
 
 	/**
-	 * Set the sort {@link CouchbaseDocument}.
-	 *
-	 * @param sort must not be {@literal null}.
-	 * @throws IllegalArgumentException when {@code sortObject} is {@literal null}.
-	 */
-	public void setSort(Sort sort) {
-		Assert.notNull(sort, "Sort must not be null");
-		with(sort);
-	}
-
-	/*
-	 * indicates if the query is sorted
-	 */
-	public boolean isSorted() {
-		return sort != null && sort != Sort.unsorted();
-	}
-
-	/**
 	 * Set the fields (projection) {@link CouchbaseDocument}.
 	 *
 	 * @param projectionFields must not be {@literal null}.

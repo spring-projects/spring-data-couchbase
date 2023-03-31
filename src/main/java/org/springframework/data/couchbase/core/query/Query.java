@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 import org.springframework.data.couchbase.repository.query.StringBasedN1qlQueryParser;
@@ -47,6 +48,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Shubham Mishra
  */
 public class Query {
 
@@ -463,6 +465,24 @@ public class Query {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Set the sort {@link CouchbaseDocument}.
+	 *
+	 * @param sort must not be {@literal null}.
+	 * @throws IllegalArgumentException when {@code sortObject} is {@literal null}.
+	 */
+	public void setSort(Sort sort) {
+		Assert.notNull(sort, "Sort must not be null");
+		with(sort);
+	}
+
+	/*
+	 * indicates if the query is sorted
+	 */
+	public boolean isSorted() {
+		return sort != null && sort != Sort.unsorted();
 	}
 
 }
