@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import com.querydsl.core.types.dsl.PathBuilder;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -47,6 +48,7 @@ import com.querydsl.core.types.Predicate;
  *
  * @author Michael Reiche
  * @since 5.0
+ * @author Shubham Mishra
  */
 public class QuerydslCouchbasePredicateExecutor<T> extends QuerydslPredicateExecutorSupport<T>
 		implements QuerydslPredicateExecutor<T> {
@@ -79,6 +81,10 @@ public class QuerydslCouchbasePredicateExecutor<T> extends QuerydslPredicateExec
 		super(couchbaseOperations.getConverter(), pathBuilderFor(resolver.createPath(entityInformation.getJavaType())),
 				entityInformation);
 		this.couchbaseOperations = couchbaseOperations;
+	}
+
+	private static <E> PathBuilder<E> pathBuilderFor(EntityPath<E> path) {
+		return new PathBuilder<>(path.getType(), path.getMetadata());
 	}
 
 	/*
