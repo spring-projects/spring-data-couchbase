@@ -40,6 +40,7 @@ import org.springframework.data.convert.PropertyValueConverterFactory;
 import org.springframework.data.convert.PropertyValueConverterRegistrar;
 import org.springframework.data.convert.SimplePropertyValueConversions;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.mapping.CouchbaseSimpleTypes;
 import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
 import org.springframework.util.Assert;
@@ -54,7 +55,8 @@ import org.springframework.util.Assert;
  * @author Oliver Gierke
  * @author Mark Paluch
  * @author Subhashni Balakrishnan
- * @Michael Reiche
+ * @author Michael Reiche
+ * @author Tigran Babloyan
  * @see org.springframework.data.convert.CustomConversions
  * @see SimpleTypeHolder
  * @since 2.0
@@ -74,7 +76,7 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 		converters.addAll(OtherConverters.getConvertersToRegister());
 
 		STORE_CONVERTERS = Collections.unmodifiableList(converters);
-		STORE_CONVERSIONS = StoreConversions.of(SimpleTypeHolder.DEFAULT, STORE_CONVERTERS);
+		STORE_CONVERSIONS = StoreConversions.of(CouchbaseSimpleTypes.DOCUMENT_TYPES, STORE_CONVERTERS);
 	}
 
 	/**
