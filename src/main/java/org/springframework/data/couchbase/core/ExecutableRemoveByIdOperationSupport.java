@@ -52,7 +52,7 @@ public class ExecutableRemoveByIdOperationSupport implements ExecutableRemoveByI
 
 		return new ExecutableRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
-				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null);
 	}
 

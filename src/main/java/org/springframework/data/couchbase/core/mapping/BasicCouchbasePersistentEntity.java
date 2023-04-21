@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
@@ -36,6 +37,7 @@ import org.springframework.util.StringUtils;
  * @author Michael Nitschinger
  * @author Mark Paluch
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, CouchbasePersistentProperty>
 		implements CouchbasePersistentEntity<T>, EnvironmentAware {
@@ -50,6 +52,7 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 	public BasicCouchbasePersistentEntity(final TypeInformation<T> typeInformation) {
 		super(typeInformation);
 		validateExpirationConfiguration();
+		validateDurabilityConfiguration();
 	}
 
 	private void validateExpirationConfiguration() {
@@ -57,6 +60,15 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 		if (annotation != null && annotation.expiry() > 0 && StringUtils.hasLength(annotation.expiryExpression())) {
 			String msg = String.format("Incorrect expiry configuration on class %s using %s. "
 					+ "You cannot use 'expiry' and 'expiryExpression' at the same time", getType().getName(), annotation);
+			throw new IllegalArgumentException(msg);
+		}
+	}
+
+	private void validateDurabilityConfiguration() {
+		Document annotation = getType().getAnnotation(Document.class);
+		if (annotation != null && annotation.durabilityLevel() != DurabilityLevel.NONE && StringUtils.hasLength(annotation.durabilityExpression())) {
+			String msg = String.format("Incorrect durability configuration on class %s using %s. "
+					+ "You cannot use 'durabilityLevel' and 'durabilityExpression' at the same time", getType().getName(), annotation);
 			throw new IllegalArgumentException(msg);
 		}
 	}
@@ -156,6 +168,30 @@ public class BasicCouchbasePersistentEntity<T> extends BasicPersistentEntity<T, 
 			}
 		}
 		return expiryValue;
+	}
+
+	@Override
+	public DurabilityLevel getDurabilityLevel() {
+		return getDurabilityLevel(AnnotatedElementUtils.findMergedAnnotation(getType(), Durability.class), environment);
+	}
+
+	private static DurabilityLevel getDurabilityLevel(Durability annotation, Environment environment) {
+		if (annotation == null) {
+			return DurabilityLevel.NONE;
+		}
+		DurabilityLevel durabilityLevel = annotation.durabilityLevel();
+		String durabilityExpressionString = annotation.durabilityExpression();
+		if (StringUtils.hasLength(durabilityExpressionString)) {
+			Assert.notNull(environment, "Environment must be set to use 'durabilityExpressionString'");
+			String durabilityWithReplacedPlaceholders = environment.resolveRequiredPlaceholders(durabilityExpressionString);
+			try {
+				durabilityLevel = DurabilityLevel.valueOf(durabilityWithReplacedPlaceholders);
+			} catch (IllegalArgumentException e) {
+				throw new IllegalArgumentException(
+						"Invalid value for durability expression: " + durabilityWithReplacedPlaceholders);
+			}
+		}
+		return durabilityLevel;
 	}
 
 	@Override
