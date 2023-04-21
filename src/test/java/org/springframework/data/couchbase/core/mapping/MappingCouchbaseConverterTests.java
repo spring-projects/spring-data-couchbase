@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.ChoiceFormat;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -286,6 +287,28 @@ public class MappingCouchbaseConverterTests {
 		CouchbaseDocument document = new CouchbaseDocument("001");
 		User user = converter.read(User.class, document);
 		assertThat(user.getId()).isEqualTo("001");
+	}
+
+	@Test
+	void writesYearMonth() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		YearMonthEntity entity = new YearMonthEntity(YearMonth.parse("2023-04"));
+
+		converter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0.toString());
+		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
+	}
+
+	@Test
+	void readsYearMonth() {
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("_class", YearMonthEntity.class.getName());
+		source.put("attr0", "2023-04");
+
+		YearMonthEntity converted = converter.read(YearMonthEntity.class, source);
+		assertThat(converted.attr0).isEqualTo(YearMonth.parse((String) source.get("attr0")));
 	}
 
 	@Test
@@ -785,6 +808,15 @@ public class MappingCouchbaseConverterTests {
 			this.attr0 = attr0;
 		}
 	}
+
+	static class YearMonthEntity extends BaseEntity {
+		private YearMonth attr0;
+
+		public YearMonthEntity(YearMonth attr0) {
+			this.attr0 = attr0;
+		}
+	}
+
 
 	static class BigDecimalEntity extends BaseEntity {
 		private BigDecimal attr0;
