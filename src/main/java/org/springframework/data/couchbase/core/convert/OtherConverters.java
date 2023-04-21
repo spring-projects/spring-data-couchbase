@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.couchbase.client.java.json.JsonArray;
@@ -339,7 +340,7 @@ public final class OtherConverters {
 
 		@Override
 		public String convert(YearMonth source) {
-			return source.toString();
+			return Optional.ofNullable(source).map(YearMonth::toString).orElse(null);
 		}
 	}
 
@@ -350,7 +351,7 @@ public final class OtherConverters {
 
 		@Override
 		public YearMonth convert(String source) {
-			return YearMonth.parse(source);
+			return Optional.ofNullable(source).map(YearMonth::parse).orElse(null);
 		}
 	}
 
