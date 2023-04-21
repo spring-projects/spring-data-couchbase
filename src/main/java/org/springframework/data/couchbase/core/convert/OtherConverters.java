@@ -22,6 +22,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -83,6 +84,8 @@ public final class OtherConverters {
 		converters.add(MapToJsonObject.INSTANCE);
 		converters.add(JsonArrayToCouchbaseList.INSTANCE);
 		converters.add(CouchbaseListToJsonArray.INSTANCE);
+		converters.add(YearMonthToStringConverter.INSTANCE);
+		converters.add(StringToYearMonthConverter.INSTANCE);
 		// EnumToObject, IntegerToEnumConverterFactory and StringToEnumConverterFactory are
 		// registered in
 		// {@link org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration#customConversions(
@@ -326,6 +329,28 @@ public final class OtherConverters {
 				return null;
 			}
 			return JsonArray.from(source.export());
+		}
+	}
+
+	@WritingConverter
+	public enum YearMonthToStringConverter implements Converter<YearMonth, String> {
+
+		INSTANCE;
+
+		@Override
+		public String convert(YearMonth source) {
+			return source.toString();
+		}
+	}
+
+	@ReadingConverter
+	public enum StringToYearMonthConverter implements Converter<String, YearMonth> {
+
+		INSTANCE;
+
+		@Override
+		public YearMonth convert(String source) {
+			return YearMonth.parse(source);
 		}
 	}
 
