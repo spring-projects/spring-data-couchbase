@@ -67,7 +67,7 @@ public class ReactiveRemoveByIdOperationSupport implements ReactiveRemoveByIdOpe
 	public ReactiveRemoveById removeById(Class<?> domainType) {
 		return new ReactiveRemoveByIdSupport(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
-				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null);
 	}
 

@@ -40,7 +40,7 @@ public class ExecutableReplaceByIdOperationSupport implements ExecutableReplaceB
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ExecutableReplaceByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
-				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null);
 	}
 

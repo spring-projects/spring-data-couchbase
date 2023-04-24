@@ -46,6 +46,7 @@ import org.springframework.data.couchbase.domain.*;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.CouchbaseException;
@@ -63,6 +64,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@TestPropertySource(properties = { "valid.document.durability = MAJORITY" })
 class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired public CouchbaseTemplate couchbaseTemplate;
@@ -290,7 +292,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@Test
 	void withDurability()
 			throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
-		for (Class<?> clazz : new Class[] { User.class, UserAnnotatedDurability.class, UserAnnotatedPersistTo.class, UserAnnotatedReplicateTo.class }) {
+		for (Class<?> clazz : new Class[] { User.class, UserAnnotatedDurability.class, UserAnnotatedDurabilityExpression.class, 
+				UserAnnotatedPersistTo.class, UserAnnotatedReplicateTo.class }) {
 			// insert, replace, upsert
 			for (OneAndAllEntity<User> operator : new OneAndAllEntity[]{couchbaseTemplate.insertById(clazz),
 					couchbaseTemplate.replaceById(clazz), couchbaseTemplate.upsertById(clazz)}) {
@@ -1130,6 +1133,31 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(user, inserted);
 		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedDurability.class).one(user));
 		couchbaseTemplate.removeById(UserAnnotatedDurability.class).one(user.getId());
+	}
+
+	@Test
+	void insertByIdWithAnnotatedDurabilityExpression() {
+		UserAnnotatedDurabilityExpression user = new UserAnnotatedDurabilityExpression(UUID.randomUUID().toString(), "firstname", "lastname");
+		UserAnnotatedDurabilityExpression inserted = null;
+
+		// occasionally gives "reactor.core.Exceptions$OverflowException: Could not emit value due to lack of requests"
+		for (int i = 1; i != 5; i++) {
+			try {
+				inserted = couchbaseTemplate.insertById(UserAnnotatedDurabilityExpression.class)
+						.one(user);
+				break;
+			} catch (Exception ofe) {
+				System.out.println("" + i + " caught: " + ofe);
+				couchbaseTemplate.removeByQuery(UserAnnotatedDurabilityExpression.class).withConsistency(QueryScanConsistency.REQUEST_PLUS).all();
+				if (i == 4) {
+					throw ofe;
+				}
+				sleepSecs(1);
+			}
+		}
+		assertEquals(user, inserted);
+		assertThrows(DuplicateKeyException.class, () -> couchbaseTemplate.insertById(UserAnnotatedDurabilityExpression.class).one(user));
+		couchbaseTemplate.removeById(UserAnnotatedDurabilityExpression.class).one(user.getId());
 	}
 
 	@Test

@@ -52,7 +52,7 @@ public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByI
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveMutateInByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
-				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null, template.support(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
 				Collections.emptyList(), false);
 	}
