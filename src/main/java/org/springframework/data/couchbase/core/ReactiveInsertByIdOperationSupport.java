@@ -61,7 +61,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 		Assert.notNull(domainType, "DomainType must not be null!");
 		return new ReactiveInsertByIdSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
 				OptionsBuilder.getCollectionFrom(domainType), null, OptionsBuilder.getPersistTo(domainType),
-				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType),
+				OptionsBuilder.getReplicateTo(domainType), OptionsBuilder.getDurabilityLevel(domainType, template.getConverter()),
 				null, template.support());
 	}
 

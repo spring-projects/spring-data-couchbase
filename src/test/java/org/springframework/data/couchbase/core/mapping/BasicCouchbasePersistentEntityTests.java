@@ -23,6 +23,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +34,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 @SpringJUnitConfig
-@TestPropertySource(properties = { "valid.document.expiry = 10", "invalid.document.expiry = abc" })
+@TestPropertySource(properties = { "valid.document.expiry = 10", "invalid.document.expiry = abc",
+		"invalid.document.durability = some", "valid.document.durability = MAJORITY" })
 public class BasicCouchbasePersistentEntityTests {
 
 	@Autowired ConfigurableEnvironment environment;
@@ -180,6 +182,34 @@ public class BasicCouchbasePersistentEntityTests {
 				() -> getBasicCouchbasePersistentEntity(ExpiryAndExpression.class).getExpiry());
 	}
 
+	@Test
+	void doesNotAllowUseDurabilityAndExpressionSimultaneously() {
+		assertThrows(IllegalArgumentException.class,
+				() -> getBasicCouchbasePersistentEntity(DurabilityAndExpression.class).getDurabilityLevel());
+	}
+
+	@Test
+	void failsIfDurabilityExpressionMissesRequiredProperty() {
+		assertThrows(IllegalArgumentException.class,
+				() -> getBasicCouchbasePersistentEntity(DurabilityWithMissingProperty.class).getDurabilityLevel());
+	}
+
+	@Test
+	void doesNotAllowUseDurabilityFromInvalidExpression() {
+		assertThrows(IllegalArgumentException.class,
+				() -> getBasicCouchbasePersistentEntity(DurabilityWithInvalidExpression.class).getDurabilityLevel());
+	}
+
+	@Test
+	void usesGetDurabilityExpression() {
+		assertThat(getBasicCouchbasePersistentEntity(ConstantDurabilityExpression.class).getDurabilityLevel()).isEqualTo(DurabilityLevel.MAJORITY);
+	}
+
+	@Test
+	void usesGetDurabilityFromValidExpression() {
+		assertThat(getBasicCouchbasePersistentEntity(DurabilityWithValidExpression.class).getDurabilityLevel()).isEqualTo(DurabilityLevel.MAJORITY);
+	}
+
 	private BasicCouchbasePersistentEntity getBasicCouchbasePersistentEntity(Class<?> clazz) {
 		BasicCouchbasePersistentEntity basicCouchbasePersistentEntity = new BasicCouchbasePersistentEntity(
 			TypeInformation.of(clazz));
@@ -263,5 +293,35 @@ public class BasicCouchbasePersistentEntityTests {
 	 */
 	@Document(expiry = 10, expiryExpression = "10")
 	class ExpiryAndExpression {}
+
+	/**
+	 * Simple POJO to test that durability and durability expression cannot be used simultaneously
+	 */
+	@Document(durabilityLevel = DurabilityLevel.MAJORITY, durabilityExpression = "MAJORITY")
+	class DurabilityAndExpression {}
+
+	/**
+	 * Simple POJO to test durability expression logic failure to resolve property placeholder
+	 */
+	@Document(durabilityExpression = "${missing.durability}")
+	class DurabilityWithMissingProperty {}
+
+	/**
+	 * Simple POJO to test invalid durability expression
+	 */
+	@Document(durabilityExpression = "${invalid.document.durability}")
+	class DurabilityWithInvalidExpression {}
+
+	/**
+	 * Simple POJO to test constant expiry expression
+	 */
+	@Document(durabilityExpression = "MAJORITY")
+	class ConstantDurabilityExpression {}
+
+	/**
+	 * Simple POJO to test valid expiry expression by resolving simple property from environment
+	 */
+	@Document(durabilityExpression = "${valid.document.durability}")
+	class DurabilityWithValidExpression {}
 
 }

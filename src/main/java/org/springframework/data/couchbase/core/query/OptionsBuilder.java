@@ -31,7 +31,9 @@ import com.couchbase.client.core.api.query.CoreQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
@@ -285,12 +287,14 @@ public class OptionsBuilder {
 		return null;
 	}
 	
-	public static DurabilityLevel getDurabilityLevel(Class<?> domainType) {
+	public static DurabilityLevel getDurabilityLevel(Class<?> domainType, CouchbaseConverter converter) {
 		if (domainType == null) {
 			return DurabilityLevel.NONE;
 		}
-		Document document = AnnotatedElementUtils.findMergedAnnotation(domainType, Document.class);
-		return document != null ? document.durabilityLevel() : DurabilityLevel.NONE;
+		final CouchbasePersistentEntity<?> entity = converter.getMappingContext()
+				.getRequiredPersistentEntity(domainType);
+
+		return entity.getDurabilityLevel();
 	}
 
 	public static PersistTo getPersistTo(Class<?> domainType) {

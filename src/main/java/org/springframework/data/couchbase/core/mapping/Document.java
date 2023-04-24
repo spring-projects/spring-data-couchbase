@@ -47,6 +47,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 @Target({ ElementType.TYPE })
 @Expiry
 @ScanConsistency
+@Durability
 public @interface Document {
 
 	/**
@@ -105,5 +106,16 @@ public @interface Document {
 	 * The optional durabilityLevel for all mutating operations, allows the application to wait until this replication
 	 * (or persistence) is successful before proceeding
 	 */
+	@AliasFor(annotation = Durability.class, attribute = "durabilityLevel")
 	DurabilityLevel durabilityLevel() default DurabilityLevel.NONE;
+
+	/**
+	 * Same as {@link #durabilityLevel()} but allows the actual value to be set using standard Spring property sources mechanism.
+	 * Only one might be set at the same time: either {@link #durabilityLevel()} or {@link #durabilityExpression()}. <br />
+	 * Syntax is the same as for {@link org.springframework.core.env.Environment#resolveRequiredPlaceholders(String)}.
+	 * <br />
+	 * SpEL is NOT supported.
+	 */
+	@AliasFor(annotation = Durability.class, attribute = "durabilityExpression")
+	String durabilityExpression() default "";
 }

@@ -78,8 +78,8 @@ This key needs to be any string with a length of maximum 250 characters.
 Feel free to use whatever fits your use case, be it a UUID, an email address or anything else.
 
 Writes to Couchbase-Server buckets can optionally be assigned durability requirements; which instruct Couchbase Server to update the specified document on multiple nodes in memory and/or disk locations across the cluster; before considering the write to be committed.
-Default durability requirements can also be configured through the `@Document` annotation.
-For example: `@Document(durabilityLevel = DurabilityLevel.MAJORITY)` will force mutations to be replicated to a majority of the Data Service nodes.
+Default durability requirements can also be configured through the `@Document` or `@Durability` annotations.
+For example: `@Document(durabilityLevel = DurabilityLevel.MAJORITY)` will force mutations to be replicated to a majority of the Data Service nodes. Both of the annotations support expression based durability level assignment via `durabilityExpression` attribute (Note SPEL is not supported).
 [[datatypes]]
 == Datatypes and Converters
 

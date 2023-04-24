@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.mapping;
 
 import java.time.Duration;
 
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import org.springframework.data.mapping.PersistentEntity;
 
 /**
@@ -25,6 +26,7 @@ import org.springframework.data.mapping.PersistentEntity;
  *
  * @author Michael Nitschinger
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, CouchbasePersistentProperty> {
 
@@ -53,6 +55,15 @@ public interface CouchbasePersistentEntity<T> extends PersistentEntity<T, Couchb
 	 * @return the expiration time Duration
 	 */
 	Duration getExpiryDuration();
+
+	/**
+	 * Returns the durability level of the entity.
+	 * <p>
+	 * Allows the application to wait until this replication (or persistence) is successful before proceeding
+	 *
+	 * @return the durability level.
+	 */
+	DurabilityLevel getDurabilityLevel();
 
 	/**
 	 * Flag for using getAndTouch operations for reads, resetting the expiration (if one was set) when the entity is
