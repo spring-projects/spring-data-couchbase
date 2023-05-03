@@ -111,7 +111,7 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	@Override
 	public void delete(T entity) {
 		Assert.notNull(entity, "Entity must not be null!");
-		operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).one(getId(entity));
+		operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection()).oneEntity(entity);
 	}
 
 	@Override
@@ -125,7 +125,7 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	public void deleteAll(Iterable<? extends T> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
 		operations.removeById(getJavaType()).inScope(getScope()).inCollection(getCollection())
-				.all(Streamable.of(entities).map(this::getId).toList());
+				.allEntities((Collection<Object>)Streamable.of(entities).toList());
 	}
 
 	@Override

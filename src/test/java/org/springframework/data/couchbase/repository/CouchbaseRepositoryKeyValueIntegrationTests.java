@@ -113,7 +113,7 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertThrows(DuplicateKeyException.class, () -> userRepository.save(user));
 		user.setVersion(saveVersion + 1);
 		assertThrows(OptimisticLockingFailureException.class, () -> userRepository.save(user));
-		userRepository.delete(user);
+		userRepository.deleteById(user.getId());
 
 		// Airline does not have a version
 		Airline airline = new Airline(UUID.randomUUID().toString(), "MyAirline", null);
