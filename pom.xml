@@ -18,8 +18,8 @@
     </parent>
 
     <properties>
-        <couchbase>3.4.5</couchbase>
-        <couchbase.osgi>3.4.5</couchbase.osgi>
+        <couchbase>3.4.6</couchbase>
+        <couchbase.osgi>3.4.6</couchbase.osgi>
         <springdata.commons>3.0.6-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
