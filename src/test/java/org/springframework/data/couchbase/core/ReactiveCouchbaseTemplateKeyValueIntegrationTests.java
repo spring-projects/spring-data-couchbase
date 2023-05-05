@@ -120,7 +120,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 
 			reactiveCouchbaseTemplate.upsertById(User.class).one(user).block();
 
-			User foundUser = reactiveCouchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(2))
+			User foundUser = reactiveCouchbaseTemplate.findById(User.class).withLock(Duration.ofSeconds(4))
 					.one(user.getId()).block();
 			user.setVersion(foundUser.getVersion());// version will have changed
 			assertEquals(user, foundUser);
@@ -130,7 +130,7 @@ class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationT
 			);
 			assertTrue(exception.retryReasons().contains(RetryReason.KV_LOCKED), "should have been locked");
 		} finally {
-			sleepSecs(2);
+			sleepSecs(5);
 			reactiveCouchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).all().collectList().block();
 		}
 
