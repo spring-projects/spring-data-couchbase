@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
 
+import com.couchbase.client.core.error.UnambiguousTimeoutException;
 import jakarta.validation.ConstraintViolationException;
 import junit.framework.AssertionFailedError;
 
@@ -644,7 +645,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			Airport saved = airportRepository.save(vie);
 			// Duration of 1 nano-second will cause timeout
-			assertThrows(AmbiguousTimeoutException.class,
+			assertThrows(UnambiguousTimeoutException.class,
 					() -> airportRepository.withOptions(queryOptions().timeout(Duration.ofNanos(1))).iata(vie.getIata()));
 
 			Airport airport3 = airportRepository
