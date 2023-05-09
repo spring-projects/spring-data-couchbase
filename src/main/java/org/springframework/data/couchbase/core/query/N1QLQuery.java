@@ -49,6 +49,11 @@ public class N1QLQuery extends Query {
 	}
 
 	@Override
+	public boolean isReadonly() {
+		return options.build().readonly();
+	}
+
+	@Override
 	public String toN1qlSelectString(CouchbaseConverter template, String bucketName, String scopeName,
 			String collectionName, Class domainClass, Class returnClass, boolean isCount, String[] distinctFields,
 			String[] fields) {

@@ -700,7 +700,7 @@ class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIn
 	@Test
 	public void findByQueryOptions() { // 4
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofNanos(10));
-		assertThrows(AmbiguousTimeoutException.class, () -> couchbaseTemplate.findByQuery(Airport.class)
+		assertThrows(UnambiguousTimeoutException.class, () -> couchbaseTemplate.findByQuery(Airport.class)
 				.withConsistency(REQUEST_PLUS).inScope(otherScope).inCollection(otherCollection).withOptions(options).all());
 	}
 

@@ -58,4 +58,11 @@ public @interface Query {
 	 */
 	String value() default "";
 
+	/**
+	 * Mark query as readonly
+	 *
+	 * @see com.couchbase.client.java.query.QueryOptions#readonly(boolean)
+	 */
+	boolean readonly() default false;
+
 }

@@ -230,7 +230,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 
 		public QueryOptions buildOptions(QueryOptions options) {
 			QueryScanConsistency qsc = scanConsistency != null ? scanConsistency : template.getConsistency();
-			return query.buildQueryOptions(options, qsc);
+			return query.buildQueryOptions(options, qsc).readonly(query.isReadonly());
 		}
 
 		private TransactionQueryOptions buildTransactionOptions(QueryOptions options) {

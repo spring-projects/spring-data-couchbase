@@ -693,7 +693,7 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 	@Test
 	public void findByQueryOptions() { // 4
 		QueryOptions options = QueryOptions.queryOptions().timeout(Duration.ofNanos(10));
-		assertThrows(AmbiguousTimeoutException.class,
+		assertThrows(UnambiguousTimeoutException.class,
 				() -> template.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inScope(otherScope)
 						.inCollection(otherCollection).withOptions(options).all().collectList().block());
 	}
