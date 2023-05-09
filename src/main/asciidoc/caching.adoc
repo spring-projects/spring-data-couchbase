@@ -54,4 +54,4 @@ public String simulateLongRun(long time) {
 
 If you run the method multiple times, you'll see a set operation happening first, followed by multiple get operations and no sleep time (which fakes the expensive execution). You can store whatever you want, if it is JSON of course you can access it through views and look at it in the Web UI.
 
-Note that to use cache.clear() or catch.invalidate(), the bucket must have a primary key.
+Note that to use cache.clear() or cache.invalidate(), the bucket must have a primary key.
