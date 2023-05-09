@@ -104,6 +104,11 @@ public class BasicQuery extends Query {
 		return super.equals(that);
 	}
 
+	@Override
+	public boolean isReadonly() {
+		return true;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 */

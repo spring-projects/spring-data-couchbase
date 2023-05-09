@@ -418,6 +418,10 @@ public class Query {
 		return meta;
 	}
 
+	public boolean isReadonly() {
+		return true;
+	}
+
 	public boolean equals(Object o) {
 		if (!o.getClass().isAssignableFrom(getClass())) {
 			return false;

@@ -131,6 +131,14 @@ public class StringQuery extends Query {
 		return sbnqp;
 	}
 
+	@Override
+	public boolean isReadonly() {
+		if (this.queryMethod.hasN1qlAnnotation()) {
+			return this.queryMethod.getN1qlAnnotation().readonly();
+		}
+		return false;
+	}
+
 	/**
 	 * toN1qlRemoveString - use toN1qlSelectString
 	 * 
