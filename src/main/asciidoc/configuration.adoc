@@ -23,7 +23,7 @@ As a result, the library can be included like any other maven dependency:
 
 This will pull in several dependencies, including the underlying Couchbase Java SDK, common Spring dependencies and also Jackson as the JSON mapping infrastructure.
 
-You can also grab snapshots from the https://repo.spring.io/ui/repos/tree/General/libs-snapshot/org/springframework/data/spring-data-couchbase[spring snapshot repository] ( \https://repo.spring.io/libs-snapshot ) and milestone releases from the https://repo.spring.io/ui/repos/tree/General/libs-milestone/org/springframework/data/spring-data-couchbase[spring milestone repository] ( \https://repo.spring.io/libs-milestone ).
+You can also grab snapshots from the https://repo.spring.io/ui/repos/tree/General/snapshot/org/springframework/data/spring-data-couchbase[spring snapshot repository] ( \https://repo.spring.io/snapshot ) and milestone releases from the https://repo.spring.io/ui/repos/tree/General/milestone/org/springframework/data/spring-data-couchbase[spring milestone repository] ( \https://repo.spring.io/milestone ).
 Here is an example on how to use the current SNAPSHOT dependency:
 
 .Using a snapshot version
@@ -39,7 +39,7 @@ Here is an example on how to use the current SNAPSHOT dependency:
 <repository>
   <id>spring-libs-snapshot</id>
   <name>Spring Snapshot Repository</name>
-  <url>https://repo.spring.io/libs-snapshot</url>
+  <url>https://repo.spring.io/snapshot</url>
 </repository>
 ----
 ====
