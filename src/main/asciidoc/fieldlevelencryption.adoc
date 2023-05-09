@@ -43,6 +43,7 @@ protected CryptoManager cryptoManager() {
 
   CryptoManager cryptoManager = DefaultCryptoManager.builder().decrypter(provider.decrypter())
     .defaultEncrypter(provider.encrypterForKey("myKey")).build();
+  return cryptoManager;
 }
 ```
 
@@ -82,6 +83,7 @@ static class Config extends AbstractCouchbaseConfiguration {
 
     CryptoManager cryptoManager = DefaultCryptoManager.builder().decrypter(provider.decrypter())
       .defaultEncrypter(provider.encrypterForKey("myKey")).build();
+    return cryptoManager;
   }
 
 }
