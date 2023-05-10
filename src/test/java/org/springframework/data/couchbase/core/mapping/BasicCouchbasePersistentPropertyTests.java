@@ -27,7 +27,7 @@ import org.springframework.data.mapping.MappingException;
 import org.springframework.data.mapping.model.Property;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.data.mapping.model.SimpleTypeHolder;
-import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -48,7 +48,7 @@ public class BasicCouchbasePersistentPropertyTests {
 	 */
 	@BeforeEach
 	void beforeEach() {
-		entity = new BasicCouchbasePersistentEntity<>(ClassTypeInformation.from(Beer.class));
+		entity = new BasicCouchbasePersistentEntity<>(TypeInformation.of(Beer.class));
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class BasicCouchbasePersistentPropertyTests {
 	@Test
 	void testSdkIdAnnotationEvaluatedAfterSpringIdAnnotationIsIgnored() {
 		BasicCouchbasePersistentEntity<Beer> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(Beer.class));
+			TypeInformation.of(Beer.class));
 		Field springIdField = ReflectionUtils.findField(Beer.class, "springId");
 		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
 
@@ -91,7 +91,7 @@ public class BasicCouchbasePersistentPropertyTests {
 			@Id private String springId;
 		}
 		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(TestIdField.class));
+			TypeInformation.of(TestIdField.class));
 		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
 		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
 		test.addPersistentProperty(springIdProperty);
@@ -108,7 +108,7 @@ public class BasicCouchbasePersistentPropertyTests {
 		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
 		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
 		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(TestIdField.class));
+			TypeInformation.of(TestIdField.class));
 		test.addPersistentProperty(idProperty);
 		assertThat(test.getIdProperty()).isEqualTo(idProperty);
 	}
@@ -122,7 +122,7 @@ public class BasicCouchbasePersistentPropertyTests {
 			private String id;
 		}
 		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(TestIdField.class));
+			TypeInformation.of(TestIdField.class));
 		Field springIdField = ReflectionUtils.findField(TestIdField.class, "springId");
 		Field idField = ReflectionUtils.findField(TestIdField.class, "id");
 		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
@@ -148,7 +148,7 @@ public class BasicCouchbasePersistentPropertyTests {
 		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
 		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
 		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(TestIdField.class));
+			TypeInformation.of(TestIdField.class));
 		test.addPersistentProperty(springIdProperty);
 		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
 			test.addPersistentProperty(idProperty);
@@ -168,7 +168,7 @@ public class BasicCouchbasePersistentPropertyTests {
 		CouchbasePersistentProperty idProperty = getPropertyFor(idField);
 		CouchbasePersistentProperty springIdProperty = getPropertyFor(springIdField);
 		BasicCouchbasePersistentEntity<TestIdField> test = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(TestIdField.class));
+			TypeInformation.of(TestIdField.class));
 		test.addPersistentProperty(springIdProperty);
 		assertThatExceptionOfType(MappingException.class).isThrownBy(() -> {
 			test.addPersistentProperty(idProperty);
@@ -183,7 +183,7 @@ public class BasicCouchbasePersistentPropertyTests {
 	 */
 	private CouchbasePersistentProperty getPropertyFor(Field field) {
 
-		ClassTypeInformation<?> type = ClassTypeInformation.from(field.getDeclaringClass());
+		TypeInformation<?> type = TypeInformation.of(field.getDeclaringClass());
 
 		return new BasicCouchbasePersistentProperty(Property.of(type, field), entity, SimpleTypeHolder.DEFAULT,
 				PropertyNameFieldNamingStrategy.INSTANCE);

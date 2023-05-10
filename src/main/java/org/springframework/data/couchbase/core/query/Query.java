@@ -34,7 +34,6 @@ import org.springframework.data.couchbase.repository.support.MappingCouchbaseEnt
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.Alias;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
@@ -383,7 +382,7 @@ public class Query {
 				.getRequiredPersistentEntity(domainClass);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		String typeValue = info.getJavaType().getName();
-		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
+		TypeInformation<?> typeInfo = TypeInformation.of(info.getJavaType());
 		Alias alias = converter.getTypeAlias(typeInfo);
 		if (alias != null && alias.isPresent()) {
 			typeValue = alias.toString();

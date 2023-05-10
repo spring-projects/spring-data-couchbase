@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.mock.env.MockPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -41,7 +41,7 @@ public class BasicCouchbasePersistentEntityTests {
 	@Test
 	void testNoExpiryByDefault() {
 		CouchbasePersistentEntity<DefaultExpiry> entity = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(DefaultExpiry.class));
+				TypeInformation.of(DefaultExpiry.class));
 
 		assertThat(entity.getExpiryDuration().getSeconds()).isEqualTo(0);
 	}
@@ -49,7 +49,7 @@ public class BasicCouchbasePersistentEntityTests {
 	@Test
 	void testDefaultExpiryUnitIsSeconds() {
 		CouchbasePersistentEntity<DefaultExpiryUnit> entity = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(DefaultExpiryUnit.class));
+				TypeInformation.of(DefaultExpiryUnit.class));
 
 		assertThat(entity.getExpiryDuration().getSeconds()).isEqualTo(78);
 	}
@@ -57,14 +57,14 @@ public class BasicCouchbasePersistentEntityTests {
 	@Test
 	void testLargeExpiry30DaysStillInSeconds() {
 		CouchbasePersistentEntity<LimitDaysExpiry> entityUnder = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(LimitDaysExpiry.class));
+			TypeInformation.of(LimitDaysExpiry.class));
 		assertThat(entityUnder.getExpiryDuration().getSeconds()).isEqualTo(30 * 24 * 60 * 60);
 	}
 
 	@Test
 	void testLargeExpiry31DaysIsConvertedToUnixUtcTime() {
 		CouchbasePersistentEntity<OverLimitDaysExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(OverLimitDaysExpiry.class));
+			TypeInformation.of(OverLimitDaysExpiry.class));
 
 		int expiryOver = (int) entityOver.getExpiry();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -84,7 +84,7 @@ public class BasicCouchbasePersistentEntityTests {
 	@Test
 	void testLargeExpiryExpression31DaysIsConvertedToUnixUtcTime() {
 		BasicCouchbasePersistentEntity<OverLimitDaysExpiryExpression> entityOver = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(OverLimitDaysExpiryExpression.class));
+			TypeInformation.of(OverLimitDaysExpiryExpression.class));
 		entityOver.setEnvironment(environment);
 
 		int expiryOver = (int) entityOver.getExpiry();
@@ -105,7 +105,7 @@ public class BasicCouchbasePersistentEntityTests {
 	@Test
 	void testLargeExpiry31DaysInSecondsIsConvertedToUnixUtcTime() {
 		CouchbasePersistentEntity<OverLimitSecondsExpiry> entityOver = new BasicCouchbasePersistentEntity<>(
-				ClassTypeInformation.from(OverLimitSecondsExpiry.class));
+			TypeInformation.of(OverLimitSecondsExpiry.class));
 
 		int expiryOver = (int) entityOver.getExpiry();
 		Calendar expected = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -182,7 +182,7 @@ public class BasicCouchbasePersistentEntityTests {
 
 	private BasicCouchbasePersistentEntity getBasicCouchbasePersistentEntity(Class<?> clazz) {
 		BasicCouchbasePersistentEntity basicCouchbasePersistentEntity = new BasicCouchbasePersistentEntity(
-				ClassTypeInformation.from(clazz));
+			TypeInformation.of(clazz));
 		basicCouchbasePersistentEntity.setEnvironment(environment);
 		return basicCouchbasePersistentEntity;
 	}
