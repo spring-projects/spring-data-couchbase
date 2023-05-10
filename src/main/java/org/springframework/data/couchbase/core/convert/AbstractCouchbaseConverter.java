@@ -29,7 +29,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.data.mapping.model.EntityInstantiators;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 
 /**
@@ -163,12 +162,12 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 			// superseded by EnumCvtrs value = Enum.class.isAssignableFrom(value.getClass()) ? ((Enum<?>) value).name() :
 			// value;
 		} else if (value instanceof Collection || elementType.isArray()) {
-			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
+			TypeInformation<?> type = TypeInformation.of(value.getClass());
 			value = ((MappingCouchbaseConverter) this).writeCollectionInternal(MappingCouchbaseConverter.asCollection(value),
 					new CouchbaseList(conversions.getSimpleTypeHolder()), type, null, null);
 		} else {
 			CouchbaseDocument embeddedDoc = new CouchbaseDocument();
-			TypeInformation<?> type = ClassTypeInformation.from(value.getClass());
+			TypeInformation<?> type = TypeInformation.of(value.getClass());
 			((MappingCouchbaseConverter) this).writeInternalRoot(value, embeddedDoc, type, false, null, true);
 			value = embeddedDoc;
 		}

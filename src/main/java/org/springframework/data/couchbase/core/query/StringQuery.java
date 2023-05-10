@@ -26,7 +26,6 @@ import org.springframework.data.couchbase.repository.support.MappingCouchbaseEnt
 import org.springframework.data.mapping.Alias;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
@@ -118,7 +117,7 @@ public class StringQuery extends Query {
 				.getRequiredPersistentEntity(domainClass);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		String typeValue = info.getJavaType().getName();
-		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
+		TypeInformation<?> typeInfo = TypeInformation.of(info.getJavaType());
 		Alias alias = converter.getTypeAlias(typeInfo);
 		if (alias != null && alias.isPresent()) {
 			typeValue = alias.toString();
