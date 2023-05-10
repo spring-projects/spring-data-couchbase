@@ -20,7 +20,6 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.mapping.context.MappingContext;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.Assert;
 
@@ -66,7 +65,7 @@ public interface QueryIndexResolver {
 	 * @see 2.2
 	 */
 	default Iterable<? extends IndexDefinition> resolveIndexFor(Class<?> entityType) {
-		return resolveIndexFor(ClassTypeInformation.from(entityType));
+		return resolveIndexFor(TypeInformation.of(entityType));
 	}
 
 }

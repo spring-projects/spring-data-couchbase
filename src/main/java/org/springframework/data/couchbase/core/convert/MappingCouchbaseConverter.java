@@ -70,7 +70,6 @@ import org.springframework.data.mapping.model.PropertyValueProvider;
 import org.springframework.data.mapping.model.SpELContext;
 import org.springframework.data.mapping.model.SpELExpressionEvaluator;
 import org.springframework.data.mapping.model.SpELExpressionParameterValueProvider;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -206,7 +205,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 	@Override
 	public <R> R read(final Class<R> clazz, final CouchbaseDocument source) {
-		return read(ClassTypeInformation.from(clazz), source, null);
+		return read(TypeInformation.of(clazz), source, null);
 	}
 
 	/**
@@ -438,7 +437,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		boolean isCustom = conversions.getCustomWriteTarget(source.getClass(), CouchbaseDocument.class).isPresent();
-		TypeInformation<?> type = ClassTypeInformation.from(source.getClass());
+		TypeInformation<?> type = TypeInformation.of(source.getClass());
 
 		if (!isCustom) {
 			typeMapper.writeType(type, target);
@@ -472,7 +471,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		if (Map.class.isAssignableFrom(source.getClass())) {
-			writeMapInternal((Map<Object, Object>) source, target, ClassTypeInformation.MAP, property);
+			writeMapInternal((Map<Object, Object>) source, target, TypeInformation.MAP, property);
 			return;
 		}
 
@@ -639,7 +638,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 		}
 
 		String name = prop.getFieldName();
-		TypeInformation<?> valueType = ClassTypeInformation.from(source.getClass());
+		TypeInformation<?> valueType = TypeInformation.of(source.getClass());
 		TypeInformation<?> type = prop.getTypeInformation();
 		if (valueType.isCollectionLike()) {
 			CouchbaseList collectionDoc = createCollection(asCollection(source), valueType, prop, accessor);
@@ -968,7 +967,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			}
 		}
 		if (conversions.hasCustomReadTarget(value.getClass(), rawType)) {
-			TypeInformation ti = ClassTypeInformation.from(value.getClass());
+			TypeInformation ti = TypeInformation.of(value.getClass());
 			return (R) conversionService.convert(value, ti.toTypeDescriptor(), new TypeDescriptor(prop.getField()));
 		}
 		if (value instanceof CouchbaseDocument) {

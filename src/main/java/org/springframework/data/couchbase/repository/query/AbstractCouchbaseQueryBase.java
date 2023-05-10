@@ -29,7 +29,6 @@ import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.ResultProcessor;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.lang.Nullable;
@@ -122,8 +121,8 @@ public abstract class AbstractCouchbaseQueryBase<CouchbaseOperationsType> implem
 	}
 
 	private Object execute(ParametersParameterAccessor parameterAccessor) {
-		TypeInformation<?> returnType = ClassTypeInformation
-				.from(method.getResultProcessor().getReturnedType().getReturnedType());
+		TypeInformation<?> returnType = TypeInformation
+				.of(method.getResultProcessor().getReturnedType().getReturnedType());
 		ResultProcessor processor = method.getResultProcessor().withDynamicProjection(parameterAccessor);
 		Class<?> typeToRead = processor.getReturnedType().getTypeToRead();
 
