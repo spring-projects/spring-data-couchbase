@@ -51,11 +51,14 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.InsertOptions;
+import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.MutateInOptions;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.ScanOptions;
+import com.couchbase.client.java.kv.ScanSort;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -545,4 +548,24 @@ public class OptionsBuilder {
 		return annotationString(annotation, "value", defaultValue, elements);
 	}
 
+	public static ScanOptions buildScanOptions(ScanOptions options, ScanSort sort, Boolean idsOnly,
+			MutationState mutationState, Integer batchByteLimit, Integer batchItemLimit) {
+		options = options != null ? options : ScanOptions.scanOptions();
+		if (sort != null) {
+			options.sort(sort);
+		}
+		if (idsOnly != null) {
+			options.idsOnly(idsOnly);
+		}
+		if (mutationState != null) {
+			options.consistentWith(mutationState);
+		}
+		if (batchByteLimit != null) {
+			options.batchByteLimit(batchByteLimit);
+		}
+		if (batchItemLimit != null) {
+			options.batchItemLimit(batchItemLimit);
+		}
+		return options;
+	}
 }
