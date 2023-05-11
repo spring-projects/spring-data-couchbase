@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.core.convert.converter.GenericConverter;
@@ -112,9 +113,6 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 
 	@Override
 	public boolean hasValueConverter(PersistentProperty<?> property) {
-		if (property.findAnnotation(Encrypted.class) != null) {
-			return true;
-		}
 		return super.hasValueConverter(property);
 	}
 

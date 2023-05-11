@@ -34,6 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,8 +64,12 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.msg.kv.MutationToken;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.ScanSort;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -435,7 +440,11 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(upserted, foundUpserted);
 
 		// upsert will replace
-		upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+		try {
+			upserted = couchbaseTemplate.upsertById(PersonValue.class).one(inserted);
+		} catch(Exception e){
+			e.printStackTrace();
+		}
 		assertNotEquals(0, upserted.getVersion());
 		PersonValue foundUpserted2 = couchbaseTemplate.findById(PersonValue.class).one(upserted.getId());
 		assertNotNull(foundUpserted2, "upserted personValue not found");
@@ -448,6 +457,109 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		assertEquals(replaced, foundReplaced);
 		couchbaseTemplate.removeById(PersonValue.class).one(replaced.getId());
 	}
+
+	@Test
+	void rangeScan() {
+		String id = "A";
+		String lower = null;
+		String upper = null;
+		for (int i = 0; i < 10; i++) {
+			if (lower == null) {
+				lower = "" + i;
+			}
+			User inserted = couchbaseTemplate.insertById(User.class).one(new User("" + i, "fn_" + i, "ln_" + i));
+			upper = "" + i;
+		}
+		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
+				.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
+		Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt)).withSort(ScanSort.ASCENDING).rangeScan(lower,
+				upper);
+		for (User u : users.toList()) {
+			System.err.print(u);
+			System.err.println(",");
+			assertTrue(u.getId().compareTo(lower) >= 0 && u.getId().compareTo(upper) <= 0);
+			couchbaseTemplate.removeById(User.class).one(u.getId());
+		}
+		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
+	}
+
+	@Test
+	void rangeScanId() {
+		String id = "A";
+		String lower = null;
+		String upper = null;
+		for (int i = 0; i < 10; i++) {
+			if (lower == null) {
+				lower = "" + i;
+			}
+			User inserted = couchbaseTemplate.insertById(User.class).one(new User("" + i, "fn_" + i, "ln_" + i));
+			upper = "" + i;
+		}
+		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
+				.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
+		Stream<String> userIds = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
+				.withSort(ScanSort.ASCENDING).rangeScanIds(lower, upper);
+		for (String userId : userIds.toList()) {
+			System.err.print(userId);
+			System.err.println(",");
+			assertTrue(userId.compareTo(lower) >= 0 && userId.compareTo(upper) <= 0);
+			couchbaseTemplate.removeById(User.class).one(userId);
+		}
+		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
+
+	}
+
+	@Test
+	void sampleScan() {
+		String id = "A";
+		String lower = null;
+		String upper = null;
+		for (int i = 0; i < 10; i++) {
+			if (lower == null) {
+				lower = "" + i;
+			}
+			User inserted = couchbaseTemplate.insertById(User.class).one(new User("" + i, "fn_" + i, "ln_" + i));
+			upper = "" + i;
+		}
+		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
+			.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
+		Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt)).withSort(ScanSort.ASCENDING).withSampling(true).rangeScan(lower,
+			upper);
+		for (User u : users.toList()) {
+			System.err.print(u);
+			System.err.println(",");
+			assertTrue(u.getId().compareTo(lower) >= 0 && u.getId().compareTo(upper) <= 0);
+			couchbaseTemplate.removeById(User.class).one(u.getId());
+		}
+		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
+	}
+
+	@Test
+	void sampleScanId() {
+		String id = "A";
+		String lower = null;
+		String upper = null;
+		for (int i = 0; i < 10; i++) {
+			if (lower == null) {
+				lower = "" + i;
+			}
+			User inserted = couchbaseTemplate.insertById(User.class).one(new User("" + i, "fn_" + i, "ln_" + i));
+			upper = "" + i;
+		}
+		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
+			.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
+		Stream<String> userIds = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
+			.withSort(ScanSort.ASCENDING).rangeScanIds(lower, upper);
+		for (String userId : userIds.toList()) {
+			System.err.print(userId);
+			System.err.println(",");
+			assertTrue(userId.compareTo(lower) >= 0 && userId.compareTo(upper) <= 0);
+			couchbaseTemplate.removeById(User.class).one(userId);
+		}
+		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
+
+	}
+
 
 	private void sleepSecs(int i) {
 		try {

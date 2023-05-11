@@ -117,10 +117,9 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 			return null;
 		}
 		if (processValueConverter && conversions.hasValueConverter(prop)) {
-			CouchbaseDocument encrypted = (CouchbaseDocument) conversions.getPropertyValueConversions()
+			return conversions.getPropertyValueConversions()
 					.getValueConverter(prop)
 					.write(value, new CouchbaseConversionContext(prop, (MappingCouchbaseConverter) this, accessor));
-			return encrypted;
 		}
 		Class<?> targetClass = this.conversions.getCustomWriteTarget(value.getClass()).orElse(null);
 
