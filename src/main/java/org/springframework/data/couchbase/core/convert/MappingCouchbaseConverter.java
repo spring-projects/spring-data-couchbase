@@ -20,6 +20,7 @@ import static org.springframework.data.couchbase.core.mapping.id.GenerationStrat
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES;
 
 import java.beans.Transient;
+import java.lang.reflect.InaccessibleObjectException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -982,7 +983,16 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 
 	private ConvertingPropertyAccessor<Object> getPropertyAccessor(Object source) {
 
-		CouchbasePersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(source.getClass());
+		CouchbasePersistentEntity<?> entity = null;
+		try {
+			entity = mappingContext.getRequiredPersistentEntity(source.getClass());
+		} catch(InaccessibleObjectException e){
+			try { // punt
+				entity = mappingContext.getRequiredPersistentEntity(Object.class);
+			} catch(Exception ee){
+				throw e;
+			}
+		}
 		PersistentPropertyAccessor<Object> accessor = entity.getPropertyAccessor(source);
 
 		return new ConvertingPropertyAccessor<>(accessor, conversionService);

@@ -26,8 +26,12 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,6 +46,7 @@ import org.springframework.data.couchbase.domain.AssessmentDO;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
+import org.springframework.data.couchbase.domain.PersonWithMaps;
 import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserJustLastName;
@@ -125,6 +130,27 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		User userz = reactiveCouchbaseTemplate.findById(User.class).one("user2").block();
 		assertNull(userz, "user2 should have been deleted");
 
+	}
+
+
+	@Test
+	void findById() {
+		PersonWithMaps person1 = new PersonWithMaps();
+		person1.setId(UUID.randomUUID().toString());
+		Map<String, Set<String>> versions=new HashMap<>();
+		Set<String> versionSet = new HashSet<>();
+		versionSet.add("1.0");
+		versions.put("v",versionSet);
+		person1.setVersions(versions);
+		Map<String, Map<String, String>> releaseVersions = new HashMap<>();
+		Map<String,String> releaseMap = new HashMap<>();
+		releaseMap.put("1","1");
+		releaseVersions.put("1",releaseMap);
+		person1.setReleaseVersions(releaseVersions);
+		couchbaseTemplate.upsertById(PersonWithMaps.class).one(person1);
+		PersonWithMaps person2 = couchbaseTemplate.findById(PersonWithMaps.class).one(person1.getId());
+	  assertEquals(person1, person2);
+		couchbaseTemplate.removeById(PersonWithMaps.class).oneEntity(person1);
 	}
 
 	@Test
