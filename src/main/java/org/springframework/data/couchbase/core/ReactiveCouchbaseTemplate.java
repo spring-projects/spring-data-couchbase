@@ -191,6 +191,11 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	}
 
 	@Override
+	public <T> ReactiveRangeScan<T> rangeScan(Class<T> domainType) {
+		return new ReactiveRangeScanOperationSupport(this).rangeScan(domainType);
+	}
+
+	@Override
 	public String getBucketName() {
 		return clientFactory.getBucket().name();
 	}
