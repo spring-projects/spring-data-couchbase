@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors
+ * Copyright 2012-2023 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 package org.springframework.data.couchbase.core;
 
-import org.springframework.data.couchbase.core.support.WithLimit;
-import org.springframework.data.couchbase.core.support.WithSampling;
-import org.springframework.data.couchbase.core.support.WithSeed;
 import reactor.core.publisher.Flux;
 
 import org.springframework.data.couchbase.core.support.ConsistentWith;
@@ -25,13 +22,11 @@ import org.springframework.data.couchbase.core.support.InCollection;
 import org.springframework.data.couchbase.core.support.InScope;
 import org.springframework.data.couchbase.core.support.WithBatchByteLimit;
 import org.springframework.data.couchbase.core.support.WithBatchItemLimit;
-import org.springframework.data.couchbase.core.support.IdsOnly;
 import org.springframework.data.couchbase.core.support.WithScanOptions;
 import org.springframework.data.couchbase.core.support.WithScanSort;
 
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.ScanOptions;
-import com.couchbase.client.java.kv.ScanSort;
 
 /**
  * Get Operations
@@ -69,9 +64,27 @@ public interface ReactiveRangeScanOperation {
 		 *
 		 * @param lower the lower bound
 		 * @param upper the upper bound
-		 * @return the list of found entities.
+		 * @return the list of ids.
 		 */
 		Flux<String> rangeScanIds(String lower, String upper);
+
+		/**
+		 * Finds a list of documents based on the given IDs.
+		 *
+		 * @param limit
+		 * @param seed
+		 * @return the list of found entities.
+		 */
+		Flux<T> sampleScan(Long limit, Long... seed);
+
+		/**
+		 * Finds a list of documents based on the given IDs.
+		 *
+		 * @param limit
+		 * @param seed
+		 * @return the list of ids.
+		 */
+		Flux<String> sampleScanIds(Long limit, Long... seed);
 	}
 
 	/**
@@ -119,24 +132,14 @@ public interface ReactiveRangeScanOperation {
 		RangeScanInCollection<T> inScope(String scope);
 	}
 
-	interface RangeScanWithSampling<T> extends RangeScanInScope<T>, WithSampling<T> {
-		/**
-		 * sampling
-		 *
-		 * @param isSampling
-		 */
-		@Override
-		RangeScanInScope<T> withSampling(Boolean isSampling);
-	}
-
-	interface RangeScanWithSort<T> extends RangeScanWithSampling<T>, WithScanSort<T> {
+	interface RangeScanWithSort<T> extends RangeScanInScope<T>, WithScanSort<T> {
 		/**
 		 * sort
 		 *
 		 * @param sort
 		 */
 		@Override
-		RangeScanWithSampling<T> withSort(ScanSort sort);
+		RangeScanInScope<T> withSort(Object sort);
 	}
 
 	/**
@@ -173,46 +176,7 @@ public interface ReactiveRangeScanOperation {
 		<R> RangeScanConsistentWith<R> as(Class<R> returnType);
 	}
 
-	interface RangeScanIdsOnly<T> extends RangeScanWithProjection<T>, IdsOnly<T> {
-
-		/**
-		 * determines if result are just ids or ids plus contents
-		 *
-		 * @param idsOnly must not be {@literal null}.
-		 * @return new instance of {@link RangeScanWithProjection}.
-		 * @throws IllegalArgumentException if returnType is {@literal null}.
-		 */
-		@Override
-		RangeScanWithProjection<T> idsOnly(Boolean idsOnly);
-	}
-
-	interface RangeScanWithLimit<T> extends RangeScanIdsOnly<T>, WithLimit<T> {
-
-		/**
-		 * determines if result are just ids or ids plus contents
-		 *
-		 * @param limit must not be {@literal null}.
-		 * @return new instance of {@link RangeScanWithProjection}.
-		 * @throws IllegalArgumentException if returnType is {@literal null}.
-		 */
-		@Override
-		RangeScanIdsOnly<T> withLimit(Long limit);
-	}
-
-	interface RangeScanWithSeed<T> extends RangeScanWithLimit<T>, WithSeed<T> {
-
-		/**
-		 * determines if result are just ids or ids plus contents
-		 *
-		 * @param seed must not be {@literal null}.
-		 * @return new instance of {@link RangeScanWithProjection}.
-		 * @throws IllegalArgumentException if returnType is {@literal null}.
-		 */
-		@Override
-		RangeScanWithLimit<T> withSeed(Long seed);
-	}
-
-	interface RangeScanWithBatchItemLimit<T> extends RangeScanWithSeed<T>, WithBatchItemLimit<T> {
+	interface RangeScanWithBatchItemLimit<T> extends RangeScanWithProjection<T>, WithBatchItemLimit<T> {
 
 		/**
 		 * determines if result are just ids or ids plus contents
@@ -222,7 +186,7 @@ public interface ReactiveRangeScanOperation {
 		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
 		@Override
-		RangeScanWithSeed<T> withBatchItemLimit(Integer batchByteLimit);
+		RangeScanWithProjection<T> withBatchItemLimit(Integer batchByteLimit);
 	}
 
 	interface RangeScanWithBatchByteLimit<T> extends RangeScanWithBatchItemLimit<T>, WithBatchByteLimit<T> {
@@ -235,7 +199,7 @@ public interface ReactiveRangeScanOperation {
 		 * @throws IllegalArgumentException if returnType is {@literal null}.
 		 */
 		@Override
-		RangeScanWithBatchByteLimit<T> withBatchByteLimit(Integer batchByteLimit);
+		RangeScanWithBatchItemLimit<T> withBatchByteLimit(Integer batchByteLimit);
 	}
 
 	/**

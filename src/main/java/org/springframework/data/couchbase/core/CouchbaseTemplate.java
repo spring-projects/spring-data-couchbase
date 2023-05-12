@@ -162,6 +162,7 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 	public <T> ExecutableRangeScan<T> rangeScan(Class<T> domainType) {
 		return new ExecutableRangeScanOperationSupport(this).rangeScan(domainType);
 	}
+
 	@Override
 	public String getBucketName() {
 		return clientFactory.getBucket().name();

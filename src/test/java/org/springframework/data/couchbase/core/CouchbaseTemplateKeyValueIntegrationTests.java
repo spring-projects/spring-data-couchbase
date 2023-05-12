@@ -29,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,9 +37,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import com.couchbase.client.core.error.TimeoutException;
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.core.retry.RetryReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +52,7 @@ import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.MutableUser;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonValue;
 import org.springframework.data.couchbase.domain.Submission;
@@ -61,6 +60,11 @@ import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserAnnotated;
 import org.springframework.data.couchbase.domain.UserAnnotated2;
 import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.UserAnnotatedDurability;
+import org.springframework.data.couchbase.domain.UserAnnotatedDurabilityExpression;
+import org.springframework.data.couchbase.domain.UserAnnotatedPersistTo;
+import org.springframework.data.couchbase.domain.UserAnnotatedReplicateTo;
+import org.springframework.data.couchbase.domain.UserAnnotatedTouchOnRead;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -69,12 +73,14 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.CouchbaseException;
+import com.couchbase.client.core.error.TimeoutException;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.msg.kv.MutationToken;
+import com.couchbase.client.core.retry.RetryReason;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
-import com.couchbase.client.java.kv.ScanSort;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
@@ -1241,8 +1247,8 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		}
 		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
 				.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
-		Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt)).withSort(ScanSort.ASCENDING).rangeScan(lower,
-				upper);
+    Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
+        /*.withSort(ScanSort.ASCENDING)*/.rangeScan(lower, upper);
 		for (User u : users.toList()) {
 			System.err.print(u);
 			System.err.println(",");
@@ -1267,7 +1273,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
 				.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
 		Stream<String> userIds = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
-				.withSort(ScanSort.ASCENDING).rangeScanIds(lower, upper);
+        /*.withSort(ScanSort.ASCENDING)*/.rangeScanIds(lower, upper);
 		for (String userId : userIds.toList()) {
 			System.err.print(userId);
 			System.err.println(",");
@@ -1292,13 +1298,15 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		}
 		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
 			.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
-		Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt)).withSort(ScanSort.ASCENDING).withSampling(true).rangeScan(lower,
-			upper);
-		for (User u : users.toList()) {
+    Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
+        /*.withSort(ScanSort.ASCENDING)*/.samplingScan(5l, null);
+    List<User> usersList = users.toList();
+		assertEquals(5, usersList.size(), "number in sample");
+    for (User u : usersList) {
 			System.err.print(u);
 			System.err.println(",");
-			assertTrue(u.getId().compareTo(lower) >= 0 && u.getId().compareTo(upper) <= 0);
-			couchbaseTemplate.removeById(User.class).one(u.getId());
+			// assertTrue(u.getId().compareTo(lower) >= 0 && u.getId().compareTo(upper) <= 0);
+			//couchbaseTemplate.removeById(User.class).one(u.getId());
 		}
 		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
 	}
@@ -1318,12 +1326,12 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
 			.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
 		Stream<String> userIds = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
-			.withSort(ScanSort.ASCENDING).rangeScanIds(lower, upper);
+        /*.withSort(ScanSort.ASCENDING)*/.samplingScanIds(5l);
 		for (String userId : userIds.toList()) {
 			System.err.print(userId);
 			System.err.println(",");
-			assertTrue(userId.compareTo(lower) >= 0 && userId.compareTo(upper) <= 0);
-			couchbaseTemplate.removeById(User.class).one(userId);
+			//assertTrue(userId.compareTo(lower) >= 0 && userId.compareTo(upper) <= 0);
+			//couchbaseTemplate.removeById(User.class).one(userId);
 		}
 		couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection().remove(id);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors
+ * Copyright 2012-2023 the original author or authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.springframework.util.Assert;
 import com.couchbase.client.java.ReactiveCollection;
 import com.couchbase.client.java.kv.MutationState;
 import com.couchbase.client.java.kv.ScanOptions;
-import com.couchbase.client.java.kv.ScanSort;
 import com.couchbase.client.java.kv.ScanTerm;
 import com.couchbase.client.java.kv.ScanType;
 
@@ -44,7 +43,7 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 	@Override
 	public <T> ReactiveRangeScan<T> rangeScan(Class<T> domainType) {
 		return new ReactiveRangeScanSupport<>(template, domainType, OptionsBuilder.getScopeFrom(domainType),
-				OptionsBuilder.getCollectionFrom(domainType), null, null, null, null, null, null, null, null, null,
+				OptionsBuilder.getCollectionFrom(domainType), null, null, null, null, null,
 				template.support());
 	}
 
@@ -55,30 +54,22 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 		private final String scope;
 		private final String collection;
 		private final ScanOptions options;
-		private final Boolean isSamplingScan;
-		private final ScanSort sort;
+		private final Object sort;
 		private final MutationState mutationState;
-		private final Boolean idsOnly;
-		private final Long limit;
-		private final Long seed;
 		private final Integer batchItemLimit;
 		private final Integer batchByteLimit;
 		private final ReactiveTemplateSupport support;
 
 		ReactiveRangeScanSupport(ReactiveCouchbaseTemplate template, Class<T> domainType, String scope, String collection,
-				ScanOptions options, Boolean isSamplingScan, ScanSort sort, MutationState mutationState, Boolean idsOnly,
-				Long limit, Long seed, Integer batchItemLimit, Integer batchByteLimit, ReactiveTemplateSupport support) {
+														 ScanOptions options, Object sort, MutationState mutationState,
+														 Integer batchItemLimit, Integer batchByteLimit, ReactiveTemplateSupport support) {
 			this.template = template;
 			this.domainType = domainType;
 			this.scope = scope;
 			this.collection = collection;
-			this.isSamplingScan = isSamplingScan;
 			this.options = options;
 			this.sort = sort;
 			this.mutationState = mutationState;
-			this.idsOnly = idsOnly;
-			this.limit = limit;
-			this.seed = seed;
 			this.batchItemLimit = batchItemLimit;
 			this.batchByteLimit = batchByteLimit;
 			this.support = support;
@@ -87,79 +78,65 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 		@Override
 		public TerminatingRangeScan<T> withOptions(final ScanOptions options) {
 			Assert.notNull(options, "Options must not be null.");
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
 		public RangeScanWithOptions<T> inCollection(final String collection) {
 			return new ReactiveRangeScanSupport<>(template, domainType, scope,
-					collection != null ? collection : this.collection, options, isSamplingScan, sort, mutationState, idsOnly,
-					limit, seed, batchItemLimit, batchByteLimit, support);
+					collection != null ? collection : this.collection, options, sort, mutationState,
+				batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
 		public RangeScanInCollection<T> inScope(final String scope) {
 			return new ReactiveRangeScanSupport<>(template, domainType, scope != null ? scope : this.scope, collection,
-					options, isSamplingScan, sort, mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+					options, sort, mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
-		public RangeScanInScope<T> withSampling(Boolean isSamplingScan) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
-		}
-
-		@Override
-		public RangeScanWithSampling<T> withSort(ScanSort sort) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+		public RangeScanInScope<T> withSort(Object sort) {
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
 		public RangeScanWithSort<T> consistentWith(MutationState mutationState) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
 		public <R> RangeScanConsistentWith<R> as(Class<R> returnType) {
-			return new ReactiveRangeScanSupport<>(template, returnType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+			return new ReactiveRangeScanSupport<>(template, returnType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
-		public RangeScanWithProjection<T> idsOnly(Boolean idsOnly) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+		public RangeScanWithProjection<T> withBatchItemLimit(Integer batchItemLimit) {
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
-		public RangeScanIdsOnly<T> withLimit(Long limit) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
-		}
-
-		@Override
-		public RangeScanWithLimit<T> withSeed(Long seed) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
-		}
-
-		@Override
-		public RangeScanWithSeed<T> withBatchItemLimit(Integer batchItemLimit) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
-		}
-
-		@Override
-		public RangeScanWithBatchByteLimit<T> withBatchByteLimit(Integer batchByteLimit) {
-			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, isSamplingScan, sort,
-					mutationState, idsOnly, limit, seed, batchItemLimit, batchByteLimit, support);
+		public RangeScanWithBatchItemLimit<T> withBatchByteLimit(Integer batchByteLimit) {
+			return new ReactiveRangeScanSupport<>(template, domainType, scope, collection, options, sort,
+					mutationState, batchItemLimit, batchByteLimit, support);
 		}
 
 		@Override
 		public Flux<T> rangeScan(String lower, String upper) {
+			return rangeScan(lower, upper, false, null, null);
+		}
+
+		@Override
+		public Flux<T> sampleScan(Long limit, Long... seed) {
+			return rangeScan(null, null, true, limit,  seed!= null && seed.length > 0 ? seed[0] : null);
+		}
+
+
+		Flux<T> rangeScan(String lower, String upper, boolean isSamplingScan, Long limit, Long seed) {
 
 			PseudoArgs<ScanOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			if (LOG.isDebugEnabled()) {
@@ -168,19 +145,23 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollection(pArgs.getCollection()).reactive();
 
-			ScanTerm lowerTerm = ScanTerm.minimum();
-			ScanTerm upperTerm = ScanTerm.maximum();
-			if (lower != null) {
-				lowerTerm = ScanTerm.inclusive(lower);
-			}
-			if (upper != null) {
-				upperTerm = ScanTerm.inclusive(upper);
+			ScanType scanType = null;
+			if(isSamplingScan){
+				scanType = ScanType.samplingScan(limit, seed != null ? seed : 0);
+			} else {
+				ScanTerm lowerTerm = ScanTerm.minimum();
+				ScanTerm upperTerm = ScanTerm.maximum();
+				if (lower != null) {
+					lowerTerm = ScanTerm.inclusive(lower);
+				}
+				if (upper != null) {
+					upperTerm = ScanTerm.inclusive(upper);
+				}
+				scanType = ScanType.rangeScan(lowerTerm, upperTerm);
 			}
 
-			ScanType scanType = isSamplingScan ? ScanType.samplingScan(limit != null ? limit : 2, seed != null ? seed : 0)
-					: ScanType.rangeScan(lowerTerm, upperTerm);
 			Flux<T> reactiveEntities = TransactionalSupport.verifyNotInTransaction("rangeScan")
-					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), idsOnly))
+					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), false))
 							.flatMap(result -> support.decodeEntity(result.id(),
 									new String(result.contentAsBytes(), StandardCharsets.UTF_8), result.cas(), domainType,
 									pArgs.getScope(), pArgs.getCollection(), null, null)));
@@ -196,7 +177,16 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 		}
 
 		@Override
-		public Flux<String> rangeScanIds(String lower, String upper) {
+		public Flux<String> rangeScanIds(String upper, String lower) {
+			return rangeScanIds(upper, lower, false, null, null);
+		}
+
+		@Override
+		public Flux<String> sampleScanIds(Long limit, Long... seed) {
+			return rangeScanIds(null, null, true, limit,  seed!= null && seed.length > 0 ? seed[0] : null);
+		}
+
+		Flux<String> rangeScanIds(String lower, String upper, boolean isSamplingScan, Long limit, Long seed) {
 			PseudoArgs<ScanOptions> pArgs = new PseudoArgs<>(template, scope, collection, options, domainType);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("rangeScan lower={} upper={} {}", lower, upper, pArgs);
@@ -204,17 +194,21 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			ReactiveCollection rc = template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 					.getCollection(pArgs.getCollection()).reactive();
 
-			ScanTerm lowerTerm = ScanTerm.minimum();
-			ScanTerm upperTerm = ScanTerm.maximum();
-			if (lower != null) {
-				lowerTerm = ScanTerm.inclusive(lower);
-			}
-			if (upper != null) {
-				upperTerm = ScanTerm.inclusive(upper);
+			ScanType scanType = null;
+			if(isSamplingScan){
+				scanType = ScanType.samplingScan(limit, seed != null ? seed : 0);
+			} else {
+				ScanTerm lowerTerm = ScanTerm.minimum();
+				ScanTerm upperTerm = ScanTerm.maximum();
+				if (lower != null) {
+					lowerTerm = ScanTerm.inclusive(lower);
+				}
+				if (upper != null) {
+					upperTerm = ScanTerm.inclusive(upper);
+				}
+				scanType = ScanType.rangeScan(lowerTerm, upperTerm);
 			}
 
-			ScanType scanType = isSamplingScan ? ScanType.samplingScan(limit, seed)
-					: ScanType.rangeScan(lowerTerm, upperTerm);
 			Flux<String> reactiveEntities = TransactionalSupport.verifyNotInTransaction("rangeScanIds")
 					.thenMany(rc.scan(scanType, buildScanOptions(pArgs.getOptions(), true)).map(result -> result.id()));
 
