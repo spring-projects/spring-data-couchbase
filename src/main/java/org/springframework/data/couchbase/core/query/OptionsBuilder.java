@@ -15,7 +15,6 @@
  */
 package org.springframework.data.couchbase.core.query;
 
-import static com.couchbase.client.core.util.Validators.notNull;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.RETRY_STRATEGY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.SCAN_CONSISTENCY;
 import static org.springframework.data.couchbase.core.query.Meta.MetaKey.TIMEOUT;
@@ -25,13 +24,9 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import com.couchbase.client.core.api.query.CoreQueryScanConsistency;
-import com.couchbase.client.core.classic.query.ClassicCoreQueryOps;
-import com.couchbase.client.core.error.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -44,6 +39,9 @@ import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
 
+import com.couchbase.client.core.api.query.CoreQueryScanConsistency;
+import com.couchbase.client.core.classic.query.ClassicCoreQueryOps;
+import com.couchbase.client.core.error.InvalidArgumentException;
 import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.core.msg.kv.DurabilityLevel;
 import com.couchbase.client.core.retry.RetryStrategy;
@@ -51,11 +49,13 @@ import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.kv.ExistsOptions;
 import com.couchbase.client.java.kv.InsertOptions;
-import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.MutateInOptions;
+import com.couchbase.client.java.kv.MutationState;
+import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.RemoveOptions;
 import com.couchbase.client.java.kv.ReplaceOptions;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.kv.ScanOptions;
 import com.couchbase.client.java.kv.UpsertOptions;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
@@ -545,4 +545,24 @@ public class OptionsBuilder {
 		return annotationString(annotation, "value", defaultValue, elements);
 	}
 
+	public static ScanOptions buildScanOptions(ScanOptions options, Object sort, Boolean idsOnly,
+			MutationState mutationState, Integer batchByteLimit, Integer batchItemLimit) {
+		options = options != null ? options : ScanOptions.scanOptions();
+		if (sort != null) {
+			//options.sort(sort);
+		}
+		if (idsOnly != null) {
+			options.idsOnly(idsOnly);
+		}
+		if (mutationState != null) {
+			options.consistentWith(mutationState);
+		}
+		if (batchByteLimit != null) {
+			options.batchByteLimit(batchByteLimit);
+		}
+		if (batchItemLimit != null) {
+			options.batchItemLimit(batchItemLimit);
+		}
+		return options;
+	}
 }
