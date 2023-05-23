@@ -24,11 +24,16 @@ import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.query.QueryCriteria.where;
 import static org.springframework.data.couchbase.repository.query.support.N1qlUtils.escapedBucket;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
 import com.couchbase.client.java.json.JsonArray;
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
+import org.springframework.data.couchbase.domain.Config;
 
 /**
  * @author Mauro Monti
@@ -235,6 +240,10 @@ class QueryCriteriaTests {
 	void testBetween() {
 		QueryCriteria c = where(i("name")).between("Davis", "Gump");
 		assertEquals("`name` between \"Davis\" and \"Gump\"", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` between $1 and $2", c.export(new int[1], parameters, converter));
+		assertEquals("Davis", parameters.get(0).toString());
+		assertEquals("Gump", parameters.get(1).toString());
 	}
 
 	@Test
@@ -243,7 +252,37 @@ class QueryCriteriaTests {
 		QueryCriteria c = where(i("name")).in((Object) args); // the first arg is an array
 		assertEquals("`name` in [\"gump\",\"davis\"]", c.export());
 		JsonArray parameters = JsonArray.create();
-		assertEquals("`name` in $1", c.export(new int[1], parameters, null));
+		assertEquals("`name` in $1", c.export(new int[1], parameters, converter));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
+	}
+
+	@Test
+	void testInInteger() {
+		Integer[] args = new Integer[]{1, 2};
+		QueryCriteria c = where(i("name")).in((Object) args); // the first arg is an array
+		assertEquals("`name` in [1,2]", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` in $1", c.export(new int[1], parameters, converter));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
+	}
+
+	@Test
+	void testInBigBoolean() {
+		Boolean[] args = new Boolean[]{true, false};
+		QueryCriteria c = where(i("name")).in((Object) args); // the first arg is an array
+		assertEquals("`name` in ["+true+","+false+"]", c.export());
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` in $1", c.export(new int[1], parameters, converter));
+		assertEquals(arrayToString(args), parameters.get(0).toString());
+	}
+
+	@Test
+	void testInBigInteger() {
+		BigInteger[] args = new BigInteger[]{BigInteger.TEN, BigInteger.ONE};
+		QueryCriteria c = where(i("name")).in((Object) args); // the first arg is an array
+		assertEquals("`name` in ["+BigInteger.TEN+","+BigInteger.ONE+"]", c.export(null, null, converter));
+		JsonArray parameters = JsonArray.create();
+		assertEquals("`name` in $1", c.export(new int[1], parameters, converter));
 		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
@@ -254,7 +293,7 @@ class QueryCriteriaTests {
 		assertEquals("not( (`name` in [\"gump\",\"davis\"]) )", c.export());
 		// this tests creating parameters from the args.
 		JsonArray parameters = JsonArray.create();
-		assertEquals("not( (`name` in $1) )", c.export(new int[1], parameters, null));
+		assertEquals("not( (`name` in $1) )", c.export(new int[1], parameters, converter));
 		assertEquals(arrayToString(args), parameters.get(0).toString());
 	}
 
@@ -262,12 +301,22 @@ class QueryCriteriaTests {
 	void testTrue() {
 		QueryCriteria c = where(i("name")).TRUE();
 		assertEquals("`name` = true", c.export());
+
+		JsonArray parameters1 = JsonArray.create();
+		QueryCriteria c1 = where(i("name")).is(true);
+		assertEquals("`name` = $1", c1.export(new int[1], parameters1, converter));
+		assertEquals("true", parameters1.get(0).toString());
 	}
 
 	@Test
 	void testFalse() {
 		QueryCriteria c = where(i("name")).FALSE();
 		assertEquals("`name` = false", c.export());
+
+		JsonArray parameters1 = JsonArray.create();
+		QueryCriteria c1 = where(i("name")).is(false);
+		assertEquals("`name` = $1", c1.export(new int[1], parameters1, converter));
+		assertEquals("false", parameters1.get(0).toString());
 	}
 
 	@Test
@@ -304,17 +353,29 @@ class QueryCriteriaTests {
 					sb.append(",");
 				}
 				first = false;
-				if (e instanceof Number)
-					sb.append(e);
-				else {
-					sb.append("\"");
-					sb.append(e);
-					sb.append("\"");
-				}
+				sb.append(convert(e));
 			}
 			sb.append("]");
 		}
 		return sb.toString();
 	}
 
+	private static Config config = new Config();
+	private static CouchbaseMappingContext mappingContext;
+	static {
+		try {
+			mappingContext = config.couchbaseMappingContext(config.customConversions());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private static MappingCouchbaseConverter converter = (new Config()).mappingCouchbaseConverter(mappingContext,(CouchbaseCustomConversions)config.customConversions());
+	Object convert(Object e){
+		Object o = converter.convertForWriteIfNeeded(e);
+		if(o instanceof String){
+			return "\""+o+"\"";
+		}
+		return o;
+	}
 }
