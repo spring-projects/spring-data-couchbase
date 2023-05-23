@@ -658,7 +658,7 @@ public class QueryCriteria implements QueryCriteriaDefinition {
 	private void addAsCollection(JsonArray posValues, Collection collection, CouchbaseConverter converter) {
 		JsonArray ja = JsonValue.ja();
 		for (Object e : collection) {
-			ja.add(String.valueOf(convert(converter, e)));
+			ja.add(convert(converter, e));
 		}
 		posValues.add(ja);
 	}
