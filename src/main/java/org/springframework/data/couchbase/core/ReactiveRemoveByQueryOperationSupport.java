@@ -101,7 +101,7 @@ public class ReactiveRemoveByQueryOperationSupport implements ReactiveRemoveByQu
 				} else {
 					TransactionQueryOptions opts = OptionsBuilder
 							.buildTransactionQueryOptions(buildQueryOptions(pArgs.getOptions()));
-					CoreQueryContext queryContext = CollectionIdentifier.DEFAULT_SCOPE.equals(rs.name()) ? null : CoreQueryContext.of(rs.bucketName(), rs.name());
+					CoreQueryContext queryContext = OptionsBuilder.queryContext(pArgs.getScope(), pArgs.getCollection(), rs.bucketName());
 					return transactionContext.get().getCore()
 							.queryBlocking(statement, queryContext, opts.builder().build(), false)
 							.flatMapIterable(result -> result.collectRows()).map(row -> {
