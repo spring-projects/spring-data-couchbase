@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.core;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -194,7 +195,7 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
 					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
 					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(), jSer)
-							.query(rs.name().equals(CollectionIdentifier.DEFAULT_SCOPE) ? null : rs, statement, opts);
+							.query(OptionsBuilder.queryContext(pArgs.getScope(), pArgs.getCollection(), rs.bucketName()) == null ? null : rs, statement, opts);
 				}
 			});
 
