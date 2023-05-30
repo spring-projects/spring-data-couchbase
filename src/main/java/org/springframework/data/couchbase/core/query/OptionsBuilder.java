@@ -565,4 +565,11 @@ public class OptionsBuilder {
 		}
 		return options;
 	}
+
+        public static CoreQueryContext queryContext(String scope, String collection, String bucketName) {
+          return (scope == null || CollectionIdentifier.DEFAULT_SCOPE.equals(scope))
+              && (collection == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collection)) ? null
+                  : CoreQueryContext.of(bucketName, scope);
+        }
+ }
 }
