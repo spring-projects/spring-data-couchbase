@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+import com.couchbase.client.core.api.query.CoreQueryContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -571,5 +572,4 @@ public class OptionsBuilder {
               && (collection == null || CollectionIdentifier.DEFAULT_COLLECTION.equals(collection)) ? null
                   : CoreQueryContext.of(bucketName, scope);
         }
- }
 }
