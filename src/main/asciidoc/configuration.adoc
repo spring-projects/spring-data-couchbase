@@ -37,7 +37,7 @@ Here is an example on how to use the current SNAPSHOT dependency:
 </dependency>
 
 <repository>
-  <id>spring-libs-snapshot</id>
+  <id>spring-snapshot</id>
   <name>Spring Snapshot Repository</name>
   <url>https://repo.spring.io/snapshot</url>
 </repository>
