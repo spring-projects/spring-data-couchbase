@@ -124,9 +124,9 @@ If you'd rather like the latest snapshots of the upcoming major version, use our
 </dependency>
 
 <repository>
-  <id>spring-libs-snapshot</id>
+  <id>spring-snapshot</id>
   <name>Spring Snapshot Repository</name>
-  <url>https://repo.spring.io/libs-snapshot</url>
+  <url>https://repo.spring.io/snapshot</url>
 </repository>
 ----
 
@@ -185,7 +185,7 @@ The generated documentation is available from `target/site/reference/html/index.
   export MY_GIT_USER=<github-user>
   mvn generate-resources
   docs=`pwd`/target/site/reference/html
-  pushd /tmp 
+  pushd /tmp
   mkdir $$
   cd $$
   # see https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
