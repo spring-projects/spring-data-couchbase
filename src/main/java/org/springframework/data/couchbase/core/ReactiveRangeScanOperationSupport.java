@@ -149,8 +149,8 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			if(isSamplingScan){
 				scanType = ScanType.samplingScan(limit, seed != null ? seed : 0);
 			} else {
-				ScanTerm lowerTerm = ScanTerm.minimum();
-				ScanTerm upperTerm = ScanTerm.maximum();
+				ScanTerm lowerTerm = null;
+				ScanTerm upperTerm = null;
 				if (lower != null) {
 					lowerTerm = ScanTerm.inclusive(lower);
 				}
@@ -198,8 +198,8 @@ public class ReactiveRangeScanOperationSupport implements ReactiveRangeScanOpera
 			if(isSamplingScan){
 				scanType = ScanType.samplingScan(limit, seed != null ? seed : 0);
 			} else {
-				ScanTerm lowerTerm = ScanTerm.minimum();
-				ScanTerm upperTerm = ScanTerm.maximum();
+				ScanTerm lowerTerm = null;
+				ScanTerm upperTerm = null;
 				if (lower != null) {
 					lowerTerm = ScanTerm.inclusive(lower);
 				}
