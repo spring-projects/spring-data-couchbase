@@ -16,11 +16,10 @@
 
 package org.springframework.data.couchbase.transactions.sdk;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInReactiveTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 
