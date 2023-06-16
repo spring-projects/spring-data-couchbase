@@ -80,7 +80,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 		
 		String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
 		String collection = scopeAndCollection.length > 1 ? scopeAndCollection[1] : null;
-		return Mono.defer(() -> {
+		return Mono.deferContextual( ctx1 -> {
 			final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
 					.getPersistentEntity(entity.getClass());
 			final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();

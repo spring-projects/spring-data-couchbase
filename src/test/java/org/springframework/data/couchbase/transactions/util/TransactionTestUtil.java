@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.springframework.data.couchbase.core.TransactionalSupport;
+import reactor.core.publisher.Mono;
 
 /**
  * Utility methods for transaction tests.
@@ -34,5 +35,17 @@ public class TransactionTestUtil {
 
 	public static void assertNotInTransaction() {
 		assertFalse(TransactionalSupport.checkForTransactionInThreadLocalStorage().block().isPresent());
+	}
+
+	public static <T> Mono<T> assertInReactiveTransaction(T... obj) {
+		return Mono.deferContextual((ctx1) ->
+				TransactionalSupport.checkForTransactionInThreadLocalStorage()
+						.flatMap(ctx2 -> ctx2.isPresent() ? (obj.length>0 ? Mono.just(obj[0]) : Mono.empty()) : Mono.error(new RuntimeException("in transaction"))));
+	}
+
+	public static <T> Mono<T> assertNotInReactiveTransaction(T... obj) {
+		return Mono.deferContextual((ctx1) ->
+				TransactionalSupport.checkForTransactionInThreadLocalStorage()
+						.flatMap(ctx2 -> !ctx2.isPresent() ? (obj.length>0 ? Mono.just(obj[0]) : Mono.empty()) : Mono.error(new RuntimeException("in transaction"))));
 	}
 }
