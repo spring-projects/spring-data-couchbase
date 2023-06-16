@@ -18,11 +18,11 @@ package org.springframework.data.couchbase.transactions.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInReactiveTransaction;
 
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
-import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -55,19 +54,22 @@ public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 	@BeforeEach
 	public void beforeEachTest() {
 		assertNotInTransaction();
+		assertNotInReactiveTransaction();
 	}
 
 	@AfterEach
 	public void afterEachTest() {
 		assertNotInTransaction();
+		assertNotInReactiveTransaction();
 	}
+
 
 	@DisplayName("ReactiveCouchbaseTemplate.save() called inside a reactive SDK transaction should work")
 	@Test
 	public void reactiveSaveInReactiveTransaction() {
 		couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			PersonWithoutVersion p = new PersonWithoutVersion("Walter", "White");
-			return reactiveOps.save(p);
+			return reactiveOps.save(p).then(assertInReactiveTransaction());
 		}).block();
 	}
 
@@ -75,18 +77,22 @@ public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void reactiveSaveInBlockingTransaction() {
 		couchbaseClientFactory.getCluster().transactions().run(ctx -> {
+			assertInTransaction();
 			PersonWithoutVersion p = new PersonWithoutVersion("Walter", "White");
 			reactiveOps.save(p).block();
 		});
 	}
 
+	// This should not work because ops.save(p) calls block() so everything in that call
+	// does not have the reactive context (which has the transaction context)
+	// what happens is the ops.save(p) is not in a transaction. (it will call upsert instead of insert)
 	@DisplayName("ReactiveCouchbaseTemplate.save() called inside a reactive SDK transaction should work")
 	@Test
 	public void blockingSaveInReactiveTransaction() {
 		couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			PersonWithoutVersion p = new PersonWithoutVersion("Walter", "White");
 			ops.save(p);
-			return Mono.empty();
+			return assertInReactiveTransaction();
 		}).block();
 	}
 
@@ -94,6 +100,7 @@ public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 	@Test
 	public void blockingSaveInBlockingTransaction() {
 		couchbaseClientFactory.getCluster().transactions().run(ctx -> {
+			assertInTransaction();
 			PersonWithoutVersion p = new PersonWithoutVersion("Walter", "White");
 			ops.save(p);
 		});
