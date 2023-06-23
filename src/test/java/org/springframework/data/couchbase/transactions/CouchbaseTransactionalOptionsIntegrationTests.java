@@ -37,8 +37,8 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +51,8 @@ import com.couchbase.client.core.error.transaction.AttemptExpiredException;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { TransactionsConfig.class, CouchbaseTransactionalOptionsIntegrationTests.PersonService.class })
+        classes = { TransactionsConfig.class, CouchbaseTransactionalOptionsIntegrationTests.PersonService.class })
+@DirtiesContext
 public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -127,4 +128,5 @@ public class CouchbaseTransactionalOptionsIntegrationTests extends JavaIntegrati
 		@Transactional(isolation = Isolation.READ_COMMITTED)
 		public void supportedIsolation() {}
 	}
+
 }

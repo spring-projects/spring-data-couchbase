@@ -41,8 +41,8 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -52,7 +52,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { TransactionsConfig.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
+        classes = { TransactionsConfig.class, CouchbaseTransactionalRepositoryIntegrationTests.UserService.class })
+@DirtiesContext
 public class CouchbaseTransactionalRepositoryIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired UserRepository userRepo;

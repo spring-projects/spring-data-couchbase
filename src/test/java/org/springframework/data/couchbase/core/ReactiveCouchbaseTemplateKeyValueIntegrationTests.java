@@ -28,15 +28,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import com.couchbase.client.core.error.TimeoutException;
-import com.couchbase.client.core.msg.kv.DurabilityLevel;
-import com.couchbase.client.core.retry.RetryReason;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -47,14 +51,31 @@ import org.springframework.data.couchbase.core.support.OneAndAllEntityReactive;
 import org.springframework.data.couchbase.core.support.OneAndAllIdReactive;
 import org.springframework.data.couchbase.core.support.WithDurability;
 import org.springframework.data.couchbase.core.support.WithExpiry;
-import org.springframework.data.couchbase.domain.*;
+import org.springframework.data.couchbase.domain.Address;
+import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.MutableUser;
+import org.springframework.data.couchbase.domain.PersonValue;
+import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
+import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserAnnotated;
+import org.springframework.data.couchbase.domain.UserAnnotated2;
+import org.springframework.data.couchbase.domain.UserAnnotated3;
+import org.springframework.data.couchbase.domain.UserAnnotatedDurability;
+import org.springframework.data.couchbase.domain.UserAnnotatedPersistTo;
+import org.springframework.data.couchbase.domain.UserAnnotatedReplicateTo;
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+import com.couchbase.client.core.error.TimeoutException;
+import com.couchbase.client.core.msg.kv.DurabilityLevel;
+import com.couchbase.client.core.retry.RetryReason;
 import com.couchbase.client.java.kv.PersistTo;
 import com.couchbase.client.java.kv.ReplicateTo;
+import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * KV tests Theses tests rely on a cb server running.
@@ -65,6 +86,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@DirtiesContext
 class ReactiveCouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired public CouchbaseTemplate couchbaseTemplate;

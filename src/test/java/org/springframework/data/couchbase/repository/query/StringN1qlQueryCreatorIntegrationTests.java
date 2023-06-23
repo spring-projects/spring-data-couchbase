@@ -22,11 +22,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
@@ -34,8 +31,8 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.domain.Airline;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.AirlineRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -51,28 +48,24 @@ import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import com.couchbase.client.core.env.SecurityConfig;
-import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.query.QueryScanConsistency;
 
 /**
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@SpringJUnitConfig(StringN1qlQueryCreatorIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+@DirtiesContext
 class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTests {
 
 	@Autowired MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> context;
 	@Autowired CouchbaseConverter converter;
 	@Autowired CouchbaseTemplate couchbaseTemplate;
 	static NamedQueries namedQueries = new PropertiesBasedNamedQueries(new Properties());
-
-	@BeforeEach
-	public void beforeEach() {}
 
 	@Test
 	@IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
@@ -148,42 +141,10 @@ class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTest
 		return new DefaultParameters(method);
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-		@Override
-		protected boolean autoIndexCreation() {
-			return true;
-		}
-
-	}
+    // static class Config extends org.springframework.data.couchbase.domain.Config {
+    //		@Override
+    //		protected boolean autoIndexCreation() {
+    //			return true;
+    //		}
+    //	}
 }

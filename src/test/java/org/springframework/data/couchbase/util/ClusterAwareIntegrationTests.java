@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 
@@ -43,6 +45,7 @@ import com.couchbase.client.core.env.PasswordAuthenticator;
 import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.core.env.SeedNode;
 import com.couchbase.client.core.error.IndexFailureException;
+import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOptions;
 import com.couchbase.client.java.manager.query.CreateQueryIndexOptions;
@@ -61,6 +64,8 @@ public abstract class ClusterAwareIntegrationTests {
 
 	private static TestClusterConfig testClusterConfig;
 	public static final Logger LOGGER = LoggerFactory.getLogger(ClusterAwareIntegrationTests.class);
+	@Autowired Cluster cluster; // so we can save it to clusterToDisconnect in @BeforeEach
+	static public Cluster clusterToDisconnect; // so we can disconnect it in @AfterAll
 
 	@BeforeAll
 	static void setup(TestClusterConfig config) {
@@ -70,8 +75,10 @@ public abstract class ClusterAwareIntegrationTests {
 				.transactionsConfig(TransactionsConfig.cleanupConfig(TransactionsCleanupConfig.cleanupLostAttempts(false)))
 				.build();
 		String connectString = connectionString();
+        Cluster tmpCluster = null;
 		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectString,
 				authenticator(), bucketName(), null, env)) {
+            tmpCluster = couchbaseClientFactory.getCluster();
 			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(), CreatePrimaryQueryIndexOptions
 					.createPrimaryQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// this is for the N1qlJoin test
@@ -80,8 +87,10 @@ public abstract class ClusterAwareIntegrationTests {
 			couchbaseClientFactory.getCluster().queryIndexes().createIndex(bucketName(), "parent_idx", fieldList,
 					CreateQueryIndexOptions.createQueryIndexOptions().ignoreIfExists(true).timeout(Duration.ofSeconds(300)));
 			// .with("_class", "org.springframework.data.couchbase.domain.Address"));
+            logCluster(couchbaseClientFactory.getCluster(), "$");
 		} catch (IndexFailureException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife);
+            logDisconnect(tmpCluster, "IndexFailureException");
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}
@@ -160,17 +169,66 @@ public abstract class ClusterAwareIntegrationTests {
 				.collect(Collectors.toSet());
 	}
 
+    static Set<String> flagged = new HashSet<>();
+
+    @AfterEach
+    public void afterEach() {
+        if (clusterToDisconnect == null && !flagged.contains(this.getClass().getSimpleName())) {
+            flagged.add(this.getClass().getSimpleName());
+            logMessage("CoreDisconnected:\"coreId\":\"" + this.getClass().getSimpleName() + "\"");
+        }
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        //if (clusterToDisconnect != null) {
+        //    logDisconnect(clusterToDisconnect, "$");
+        //    clusterToDisconnect = null;
+        //} else {
+            // already flaged by afterEach
+        //}
+        logMessage("CoreDisconnected:\"coreId\":\"------------------\"");
+        callSuperAfterAll(new Object() {});
+    }
+
+    static Set<Long> disconnectedMap = new HashSet<>();
+
+    public static void logCluster(Cluster cluster, String s) {
+        if (cluster == null || disconnectedMap.contains(cluster.core().context().id())) {
+            org.slf4j.LoggerFactory.getLogger("com.couchbase.core").info("CoreDisconnectedAutoAlready:\"coreId\":\""
+                    + String.format("0x%16x", 0) + "auto missed<" + s + ">\"");
+        } else {
+            disconnectedMap.add(cluster.core().context().id());
+            org.slf4j.LoggerFactory.getLogger("com.couchbase.core").info("CoreDisconnectedAuto:\"coreId\":\""
+                    + String.format("0x%x", cluster.core().context().id()) + "(" + s + ")\"");
+            //cluster.environment().shutdown(Duration.ofSeconds(60)); needs to happend after auto disconnect()
+        }
+    }
+
+    public static void logDisconnect(Cluster cluster, String s) {
+        if (cluster == null || disconnectedMap.contains(cluster.core().context().id())) {
+            org.slf4j.LoggerFactory.getLogger("com.couchbase.core").info(
+                    "CoreDisconnectedAlready:\"coreId\":\"" + String.format("0x%16x", 0) + " missed{" + s + "}\"");
+        } else {
+            disconnectedMap.add(cluster.core().context().id());
+            org.slf4j.LoggerFactory.getLogger("com.couchbase.core").info("CoreDisconnected:\"coreId\":\""
+                    + String.format("0x%x", cluster.core().context().id()) + "[" + s + "]\"");
+            cluster.disconnect();
+            cluster.environment().shutdown(Duration.ofSeconds(60));
+        }
+    }
+
+    public static void logMessage(String message) {
+        org.slf4j.LoggerFactory.getLogger("com.couchbase.core").info(message);
+    }
+
 	@BeforeAll()
 	public static void beforeAll() {}
 
-	@AfterAll
-	public static void afterAll() {}
-
 	@BeforeEach
-	public void beforeEach() {}
-
-	@AfterEach
-	public void afterEach() {}
+    public void beforeEach() {
+        clusterToDisconnect = cluster;
+    }
 
 	/**
 	 * This should probably be the first call in the @BeforeAll method of a test class. This will call super @BeforeAll

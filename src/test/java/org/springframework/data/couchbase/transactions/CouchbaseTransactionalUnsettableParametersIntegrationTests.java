@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,8 +60,8 @@ import com.couchbase.client.java.kv.ReplicateTo;
  * @author Tigran Babloyan
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfig.class,
-		CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class })
+@SpringJUnitConfig(classes = { TransactionsConfig.class, CouchbaseTransactionalUnsettableParametersIntegrationTests.PersonService.class })
+@DirtiesContext
 public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -265,4 +266,5 @@ public class CouchbaseTransactionalUnsettableParametersIntegrationTests extends 
 			return callback.apply(personOperations);
 		}
 	}
+
 }

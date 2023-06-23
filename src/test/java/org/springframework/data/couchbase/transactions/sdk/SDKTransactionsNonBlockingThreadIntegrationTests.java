@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -32,7 +34,6 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -47,6 +48,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
+@DirtiesContext
 public class SDKTransactionsNonBlockingThreadIntegrationTests extends JavaIntegrationTests {
 	@Autowired private CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired private CouchbaseTemplate ops;

@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -69,6 +70,7 @@ import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -93,6 +95,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@DirtiesContext
 @TestPropertySource(properties = { "valid.document.durability = MAJORITY" })
 class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
@@ -102,6 +105,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	@BeforeEach
 	@Override
 	public void beforeEach() {
+		super.beforeEach();
 		couchbaseTemplate.removeByQuery(User.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated.class).all();
 		couchbaseTemplate.removeByQuery(UserAnnotated2.class).all();
@@ -1337,11 +1341,9 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 
 	}
 
-
 	private void sleepSecs(int i) {
 		try {
 			Thread.sleep(i * 1000);
 		} catch (InterruptedException ie) {}
 	}
-
 }

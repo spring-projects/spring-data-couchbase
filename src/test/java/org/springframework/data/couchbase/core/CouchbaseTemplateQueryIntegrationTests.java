@@ -38,13 +38,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AssessmentDO;
-import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Course;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonWithMaps;
 import org.springframework.data.couchbase.domain.Submission;
@@ -60,6 +61,7 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -72,6 +74,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@DirtiesContext
 class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired public CouchbaseTemplate couchbaseTemplate;
