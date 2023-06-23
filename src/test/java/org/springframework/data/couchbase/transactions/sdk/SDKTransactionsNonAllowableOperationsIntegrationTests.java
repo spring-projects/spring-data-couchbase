@@ -37,6 +37,7 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.transactions.error.TransactionFailedException;
@@ -49,7 +50,8 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { TransactionsConfig.class, SDKTransactionsNonAllowableOperationsIntegrationTests.PersonService.class })
+        classes = { TransactionsConfig.class, SDKTransactionsNonAllowableOperationsIntegrationTests.PersonService.class })
+@DirtiesContext
 public class SDKTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -129,4 +131,5 @@ public class SDKTransactionsNonAllowableOperationsIntegrationTests extends JavaI
 			return callback.apply(personOperations);
 		}
 	}
+
 }

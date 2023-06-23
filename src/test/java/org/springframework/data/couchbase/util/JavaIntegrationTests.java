@@ -23,8 +23,6 @@ import static com.couchbase.client.java.manager.query.CreatePrimaryQueryIndexOpt
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
 import static org.springframework.data.couchbase.util.Util.waitUntilCondition;
 
 import java.io.IOException;
@@ -44,12 +42,8 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.commons.util.UnrecoverableExceptions;
 import org.opentest4j.AssertionFailedError;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.transactions.SimulateFailureException;
 
@@ -85,6 +79,8 @@ import com.couchbase.client.java.query.QueryResult;
 import com.couchbase.client.java.search.SearchQuery;
 import com.couchbase.client.java.search.result.SearchResult;
 
+;
+
 /**
  * Extends the {@link ClusterAwareIntegrationTests} with java-client specific code.
  *
@@ -94,21 +90,15 @@ import com.couchbase.client.java.search.result.SearchResult;
 @Timeout(value = 10, unit = TimeUnit.MINUTES) // Safety timer so tests can't block CI executors
 public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 
-	// Autowired annotation is not supported on static fields
-	static public CouchbaseTemplate couchbaseTemplate;
-	static public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
-
 	@BeforeAll
 	public static void beforeAll() {
 		Config.setScopeName(null);
 		callSuperBeforeAll(new Object() {});
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 		try (CouchbaseClientFactory couchbaseClientFactory = new SimpleCouchbaseClientFactory(connectionString(),
 				authenticator(), bucketName())) {
 			couchbaseClientFactory.getCluster().queryIndexes().createPrimaryIndex(bucketName(),
 					CreatePrimaryQueryIndexOptions.createPrimaryQueryIndexOptions().ignoreIfExists(true));
+            logCluster(couchbaseClientFactory.getCluster(), "-");
 		} catch (IOException ioe) {
 			throw new RuntimeException(ioe);
 		}

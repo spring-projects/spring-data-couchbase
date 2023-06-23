@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepos
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -51,6 +52,7 @@ import com.couchbase.client.java.env.ClusterEnvironment;
  * @author Michael Reiche
  */
 @SpringJUnitConfig(CouchbaseAbstractRepositoryIntegrationTests.Config.class)
+@DirtiesContext
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseAbstractRepositoryIntegrationTests extends ClusterAwareIntegrationTests {
 
@@ -108,38 +110,7 @@ public class CouchbaseAbstractRepositoryIntegrationTests extends ClusterAwareInt
 
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
+	static class Config extends org.springframework.data.couchbase.domain.Config {
 		/**
 		 * This uses a CustomMappingCouchbaseConverter instead of MappingCouchbaseConverter, which in turn uses
 		 * AbstractTypeMapper which has special mapping for AbstractUser

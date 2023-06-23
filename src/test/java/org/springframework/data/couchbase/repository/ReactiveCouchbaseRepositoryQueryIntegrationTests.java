@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.springframework.data.couchbase.domain.Config;
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -66,7 +68,8 @@ import com.couchbase.client.java.env.ClusterEnvironment;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@SpringJUnitConfig(ReactiveCouchbaseRepositoryQueryIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
+@DirtiesContext
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegrationTests {
 
@@ -292,39 +295,6 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 			reactiveAirportRepository.findAll().as(StepVerifier::create).verifyComplete();
 		} finally {
 			reactiveAirportRepository.deleteAll().block();
-		}
-	}
-
-	@Configuration
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
 		}
 	}
 

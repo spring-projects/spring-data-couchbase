@@ -16,12 +16,10 @@
 
 package org.springframework.data.couchbase.transactions.sdk;
 
-import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInReactiveTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
-
-import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,11 +29,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -45,6 +45,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
+@DirtiesContext
 public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 	@Autowired private CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired private CouchbaseTemplate ops;
@@ -52,6 +53,7 @@ public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 
 	@BeforeEach
 	public void beforeEachTest() {
+        super.beforeEach();
 		assertNotInTransaction();
 		assertNotInReactiveTransaction();
 	}
@@ -66,6 +68,7 @@ public class SDKTransactionsSaveIntegrationTests extends JavaIntegrationTests {
 	@DisplayName("ReactiveCouchbaseTemplate.save() called inside a reactive SDK transaction should work")
 	@Test
 	public void reactiveSaveInReactiveTransaction() {
+        logMessage("xxx reactiveSaveInReactiveTransaction");
 		couchbaseClientFactory.getCluster().reactive().transactions().run(ctx -> {
 			PersonWithoutVersion p = new PersonWithoutVersion("Walter", "White");
 			return reactiveOps.save(p).then(assertInReactiveTransaction());

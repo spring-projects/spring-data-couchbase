@@ -54,6 +54,7 @@ public class UnmanagedTestCluster extends TestCluster {
 	private final String hostname;
 	private volatile String bucketname;
 	private long startTime = System.currentTimeMillis();
+	private boolean usingCloud;
 
 	UnmanagedTestCluster(final Properties properties) {
 		String seed = properties.getProperty("cluster.unmanaged.seed");
@@ -74,6 +75,7 @@ public class UnmanagedTestCluster extends TestCluster {
 		}
 		adminUsername = properties.getProperty("cluster.adminUsername");
 		adminPassword = properties.getProperty("cluster.adminPassword");
+		bucketname  = properties.getProperty("cluster.unmanaged.bucket");
 		numReplicas = Integer.parseInt(properties.getProperty("cluster.unmanaged.numReplicas"));
 
 		HandshakeCertificates clientCertificates = new HandshakeCertificates.Builder().addPlatformTrustedCertificates()
@@ -93,8 +95,11 @@ public class UnmanagedTestCluster extends TestCluster {
 	TestClusterConfig _start() throws Exception {
 		// no means to create a bucket on Capella
 		// have not created config() yet.
-		boolean usingCloud = seedHost.endsWith("cloud.couchbase.com");
-		bucketname = usingCloud ? "my_bucket" : UUID.randomUUID().toString();
+		usingCloud = seedHost.endsWith("cloud.couchbase.com");
+        if (usingCloud && bucketname == null) {
+            throw new RuntimeException("cloud must use an existing bucket. Must specify cluster.unmanaged.bucket");
+        }
+        bucketname = bucketname != null ? bucketname : UUID.randomUUID().toString();
 		if (!usingCloud) {
 			Response postResponse = httpClient
 					.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
@@ -177,7 +182,7 @@ public class UnmanagedTestCluster extends TestCluster {
 	@Override
 	public void close() {
 		try {
-			if (!bucketname.equals("my_bucket")) {
+			if (!bucketname.equals("my_bucket") && !usingCloud) {
 				httpClient
 						.newCall(new Request.Builder().header("Authorization", Credentials.basic(adminUsername, adminPassword))
 								.url(protocol + "://" + hostname + ":" + seedPort + "/pools/default/buckets/" + bucketname).delete()

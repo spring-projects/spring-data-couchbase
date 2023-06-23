@@ -42,10 +42,10 @@ import org.springframework.data.couchbase.domain.ETurbulenceCategory;
 import org.springframework.data.couchbase.domain.TestEncrypted;
 import org.springframework.data.couchbase.domain.UserEncrypted;
 import org.springframework.data.couchbase.domain.UserEncryptedRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -66,6 +66,7 @@ import com.fasterxml.jackson.datatype.joda.JodaModule;
  * @author Michael Reiche
  */
 @SpringJUnitConfig(CouchbaseRepositoryFieldLevelEncryptionIntegrationTests.Config.class)
+@DirtiesContext
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends ClusterAwareIntegrationTests {
 
@@ -329,43 +330,13 @@ public class CouchbaseRepositoryFieldLevelEncryptionIntegrationTests extends Clu
 		}
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
+	static class Config extends org.springframework.data.couchbase.domain.Config {
 
 		@Override
 		public ObjectMapper couchbaseObjectMapper() {
 			ObjectMapper om = super.couchbaseObjectMapper();
 			om.registerModule(new JodaModule()); // to test joda mapping
 			return om;
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
 		}
 
 		@Override

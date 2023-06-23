@@ -30,7 +30,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.CollectionsConfig;
+import org.springframework.data.couchbase.domain.ConfigScoped;;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
@@ -40,6 +40,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexFailureException;
@@ -53,8 +54,9 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  *
  * @author Michael Reiche
  */
-@SpringJUnitConfig(CollectionsConfig.class)
+@SpringJUnitConfig(ConfigScoped.class)
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
+@DirtiesContext
 public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;

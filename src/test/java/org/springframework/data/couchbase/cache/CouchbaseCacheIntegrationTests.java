@@ -26,14 +26,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
@@ -43,11 +43,13 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@DirtiesContext
 class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 
 	volatile CouchbaseCache cache;
 	@Autowired CouchbaseCacheManager cacheManager; // autowired not working
 	@Autowired UserRepository userRepository; // autowired not working
+    @Autowired CouchbaseTemplate couchbaseTemplate;
 
 	@BeforeEach
 	@Override
@@ -56,9 +58,6 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 		cache = CouchbaseCacheManager.create(couchbaseTemplate.getCouchbaseClientFactory()).createCouchbaseCache("myCache",
 				CouchbaseCacheConfiguration.defaultCacheConfig());
 		cache.clear();
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
-		cacheManager = ac.getBean(CouchbaseCacheManager.class);
-		userRepository = ac.getBean(UserRepository.class);
 	}
 
 	@AfterEach
@@ -134,5 +133,4 @@ class CouchbaseCacheIntegrationTests extends JavaIntegrationTests {
 
 	@Test
 	public void noOpt() {}
-
 }

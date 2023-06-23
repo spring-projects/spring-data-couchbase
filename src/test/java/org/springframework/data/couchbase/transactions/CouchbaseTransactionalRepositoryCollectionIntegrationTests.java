@@ -39,6 +39,7 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,17 +49,17 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(classes = { TransactionsConfig.class,
-		CouchbaseTransactionalRepositoryCollectionIntegrationTests.UserService.class })
+@SpringJUnitConfig(classes = { TransactionsConfig.class, CouchbaseTransactionalRepositoryCollectionIntegrationTests.UserService.class })
+@DirtiesContext
 public class CouchbaseTransactionalRepositoryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
-	@Autowired UserColRepository userRepo;
-	@Autowired UserService userService;
+    @Autowired UserColRepository userRepo;
+    @Autowired UserService userService;
 	//@Autowired CouchbaseTemplate operations;
 
 	@BeforeAll
 	public static void beforeAll() {
-		callSuperBeforeAll(new Object() {});
+        callSuperBeforeAll(new Object() {});
 	}
 
 	@BeforeEach
@@ -121,7 +122,7 @@ public class CouchbaseTransactionalRepositoryCollectionIntegrationTests extends 
 
 	@Service // this will work in the unit tests even without @Service because of explicit loading by @SpringJUnitConfig
 	static class UserService {
-		@Autowired UserColRepository userRepo;
+        @Autowired UserColRepository userRepo;
 
 		@Transactional
 		public void run(Consumer<UserColRepository> callback) {

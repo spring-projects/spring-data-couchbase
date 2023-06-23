@@ -34,6 +34,7 @@ import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.Airport;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.ReactiveAirlineRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveNaiveAuditorAware;
@@ -45,6 +46,7 @@ import org.springframework.data.couchbase.repository.config.EnableReactiveCouchb
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -54,7 +56,8 @@ import com.couchbase.client.java.env.ClusterEnvironment;
 /**
  * @author Michael Reiche
  */
-@SpringJUnitConfig(ReactiveCouchbaseRepositoryKeyValueIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
+@DirtiesContext
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
@@ -115,51 +118,6 @@ public class ReactiveCouchbaseRepositoryKeyValueIntegrationTests extends Cluster
 		} finally {
 			reactiveAirportRepository.delete(vie).block();
 		}
-	}
-
-	@Configuration
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-		@Bean(name = "auditorAwareRef")
-		public ReactiveNaiveAuditorAware testAuditorAware() {
-			return new ReactiveNaiveAuditorAware();
-		}
-
-		@Bean(name = "dateTimeProviderRef")
-		public DateTimeProvider testDateTimeProvider() {
-			return new AuditingDateTimeProvider();
-		}
-
 	}
 
 }

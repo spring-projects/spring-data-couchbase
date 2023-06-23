@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
@@ -39,7 +40,7 @@ import org.springframework.data.couchbase.domain.AddressAnnotated;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryAnnotated;
-import org.springframework.data.couchbase.domain.CollectionsConfig;
+import org.springframework.data.couchbase.domain.ConfigScoped;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
 import org.springframework.data.couchbase.domain.UserColRepository;
@@ -51,6 +52,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.IndexFailureException;
@@ -64,7 +66,8 @@ import com.couchbase.client.java.query.QueryOptions;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(CollectionsConfig.class)
+@SpringJUnitConfig(ConfigScoped.class)
+@DirtiesContext
 public class CouchbaseRepositoryQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	@Autowired AirportRepositoryAnnotated airportRepositoryAnnotated;

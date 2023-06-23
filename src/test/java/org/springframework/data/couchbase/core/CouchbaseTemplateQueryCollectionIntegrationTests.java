@@ -43,8 +43,8 @@ import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.CollectionsConfig;
 import org.springframework.data.couchbase.domain.Course;
+import org.springframework.data.couchbase.domain.ConfigScoped;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Submission;
 import org.springframework.data.couchbase.domain.User;
@@ -57,6 +57,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.error.AmbiguousTimeoutException;
@@ -80,7 +81,8 @@ import com.couchbase.client.java.query.QueryOptions;
  * @author Michael Reiche
  */
 @IgnoreWhen(missesCapabilities = { Capabilities.QUERY, Capabilities.COLLECTIONS }, clusterTypes = ClusterType.MOCKED)
-@SpringJUnitConfig(CollectionsConfig.class)
+@SpringJUnitConfig(ConfigScoped.class)
+@DirtiesContext
 class CouchbaseTemplateQueryCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	@Autowired public CouchbaseTemplate couchbaseTemplate;

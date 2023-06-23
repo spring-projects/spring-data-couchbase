@@ -1,20 +1,21 @@
 package org.springframework.data.couchbase.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.concurrent.Semaphore;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
-
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(Config.class)
+@DirtiesContext
 public class ReactiveCouchbaseTemplateConcurrencyTests {
 
     @Autowired public CouchbaseTemplate couchbaseTemplate;

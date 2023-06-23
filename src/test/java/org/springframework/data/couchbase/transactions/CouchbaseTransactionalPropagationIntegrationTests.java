@@ -44,9 +44,9 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.IllegalTransactionStateException;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,7 +59,8 @@ import com.couchbase.client.core.error.transaction.RetryTransactionException;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { TransactionsConfig.class, CouchbaseTransactionalPropagationIntegrationTests.PersonService.class })
+        classes = { TransactionsConfig.class, CouchbaseTransactionalPropagationIntegrationTests.PersonService.class })
+@DirtiesContext
 public class CouchbaseTransactionalPropagationIntegrationTests extends JavaIntegrationTests {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseTransactionalPropagationIntegrationTests.class);
 
@@ -348,4 +349,5 @@ public class CouchbaseTransactionalPropagationIntegrationTests extends JavaInteg
 				callback.accept(ops);
 		}
 	}
+
 }

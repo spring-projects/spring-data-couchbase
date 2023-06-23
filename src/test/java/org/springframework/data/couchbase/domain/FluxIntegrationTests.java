@@ -17,6 +17,7 @@ package org.springframework.data.couchbase.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.ParallelFlux;
@@ -33,14 +34,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
-import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -64,7 +63,8 @@ import com.couchbase.client.java.query.QueryScanConsistency;
 /**
  * @author Michael Reiche
  */
-@SpringJUnitConfig(FluxIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
+@DirtiesContext
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class FluxIntegrationTests extends JavaIntegrationTests {
 
@@ -74,21 +74,17 @@ public class FluxIntegrationTests extends JavaIntegrationTests {
 	@BeforeEach
 	@Override
 	public void beforeEach() {
-
+        super.beforeEach();
 		/**
 		 * The couchbaseTemplate inherited from JavaIntegrationTests uses org.springframework.data.couchbase.domain.Config
 		 * It has typeName = 't' (instead of _class). Don't use it.
 		 */
-		ApplicationContext ac = new AnnotationConfigApplicationContext(FluxIntegrationTests.Config.class);
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(BeanNames.COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(BeanNames.REACTIVE_COUCHBASE_TEMPLATE);
 		collection = couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection();
 		rCollection = couchbaseTemplate.getCouchbaseClientFactory().getBucket().reactive().defaultCollection();
 		for (String k : keyList) {
 			couchbaseTemplate.getCouchbaseClientFactory().getBucket().defaultCollection().upsert(k,
 					JsonObject.create().put("x", k));
 		}
-		super.beforeEach();
 	}
 
 	@AfterEach
@@ -242,37 +238,4 @@ public class FluxIntegrationTests extends JavaIntegrationTests {
 		return sb.toString();
 	}
 
-	@Configuration
-	@EnableReactiveCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-	}
 }
