@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -57,6 +58,7 @@ import org.springframework.transaction.reactive.TransactionalOperator;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(TransactionsConfig.class)
+@DirtiesContext
 public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired ReactiveCouchbaseTemplate ops;
@@ -326,4 +328,5 @@ public class CouchbaseTransactionalOperatorTemplateIntegrationTests extends Java
 		assertEquals("Changed by transaction", fetched.getFirstname());
 		assertEquals(2, attempts.get());
 	}
+
 }

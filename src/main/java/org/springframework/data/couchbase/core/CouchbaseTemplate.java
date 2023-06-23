@@ -34,6 +34,9 @@ import org.springframework.lang.Nullable;
 
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.query.QueryScanConsistency;
+import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
+import reactor.core.publisher.Mono;
 
 /**
  * Implements lower-level couchbase operations on top of the SDK with entity mapping capabilities.
@@ -83,8 +86,49 @@ public class CouchbaseTemplate implements CouchbaseOperations, ApplicationContex
 
 	@Override
 	public <T> T save(T entity, String... scopeAndCollection) {
-		return reactive().save(entity, scopeAndCollection).block();
-	}
+			Assert.notNull(entity, "Entity must not be null!");
+
+			String scope = scopeAndCollection.length > 0 ? scopeAndCollection[0] : null;
+			String collection = scopeAndCollection.length > 1 ? scopeAndCollection[1] : null;
+				final CouchbasePersistentEntity<?> mapperEntity = getConverter().getMappingContext()
+						.getPersistentEntity(entity.getClass());
+				final CouchbasePersistentProperty versionProperty = mapperEntity.getVersionProperty();
+				final boolean versionPresent = versionProperty != null;
+				final Long version = versionProperty == null || versionProperty.getField() == null ? null
+						: (Long) ReflectionUtils.getField(versionProperty.getField(),
+						entity);
+				final boolean existingDocument = version != null && version > 0;
+
+				Class clazz = entity.getClass();
+
+				if (!versionPresent) { // the entity doesn't have a version property
+					// No version field - no cas
+					// If in a transaction, insert is the only thing that will work
+					return (T)TransactionalSupport.checkForTransactionInThreadLocalStorage()
+							.map(ctx -> {
+								if (ctx.isPresent()) {
+									return (T) insertById(clazz).inScope(scope)
+											.inCollection(collection)
+											.one(entity);
+								} else { // if not in a tx, then upsert will work
+									return (T) upsertById(clazz).inScope(scope)
+											.inCollection(collection)
+											.one(entity);
+								}
+							}).block();
+
+				} else if (existingDocument) { // there is a version property, and it is non-zero
+					// Updating existing document with cas
+					return (T)replaceById(clazz).inScope(scope)
+							.inCollection(collection)
+							.one(entity);
+				} else { // there is a version property, but it's zero or not set.
+					// Creating new document
+					return (T)insertById(clazz).inScope(scope)
+							.inCollection(collection)
+							.one(entity);
+				}
+		}
 
 	@Override
 	public <T> Long count(Query query, Class<T> domainType) {

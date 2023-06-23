@@ -15,19 +15,12 @@
  */
 package org.springframework.data.couchbase.util;
 
-import static org.springframework.data.couchbase.config.BeanNames.COUCHBASE_TEMPLATE;
-import static org.springframework.data.couchbase.config.BeanNames.REACTIVE_COUCHBASE_TEMPLATE;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.data.couchbase.core.CouchbaseTemplate;
-import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Config;
 
 import com.couchbase.client.core.error.IndexExistsException;
@@ -80,21 +73,22 @@ public class CollectionAwareIntegrationTests extends JavaIntegrationTests {
 		} catch (IndexExistsException ife) {
 			LOGGER.warn("IndexFailureException occurred - ignoring: ", ife.toString());
 		}
-
+        logDisconnect(cluster, CollectionAwareIntegrationTests.class.getSimpleName());
 		Config.setScopeName(scopeName);
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+        // ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+        // System.out.println(ac);
 		// the Config class has been modified, these need to be loaded again
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+        // couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+        // reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 	}
 
 	@AfterAll
 	public static void afterAll() {
 		Config.setScopeName(null);
-		ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
+        // ApplicationContext ac = new AnnotationConfigApplicationContext(Config.class);
 		// the Config class has been modified, these need to be loaded again
-		couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
-		reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
+        // couchbaseTemplate = (CouchbaseTemplate) ac.getBean(COUCHBASE_TEMPLATE);
+        // reactiveCouchbaseTemplate = (ReactiveCouchbaseTemplate) ac.getBean(REACTIVE_COUCHBASE_TEMPLATE);
 		callSuperAfterAll(new Object() {});
 	}
 }

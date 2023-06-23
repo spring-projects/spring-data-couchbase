@@ -17,9 +17,9 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.springframework.data.couchbase.util.Util.comprises;
 import static org.springframework.data.couchbase.util.Util.exactly;
 
@@ -31,6 +31,7 @@ import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,7 @@ import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.QAirline;
 import org.springframework.data.couchbase.domain.time.AuditingDateTimeProvider;
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing;
+import org.springframework.data.couchbase.repository.auditing.EnableReactiveCouchbaseAuditing;
 import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.repository.support.BasicQuery;
 import org.springframework.data.couchbase.repository.support.SpringDataCouchbaseSerializer;
@@ -57,13 +59,13 @@ import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import com.couchbase.client.core.env.SecurityConfig;
 import com.couchbase.client.java.env.ClusterEnvironment;
-import com.couchbase.client.java.query.QueryScanConsistency;
 import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 
@@ -74,6 +76,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
  * @author Tigran Babloyan
  */
 @SpringJUnitConfig(CouchbaseRepositoryQuerydslIntegrationTests.Config.class)
+@DirtiesContext
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegrationTests {
 
@@ -92,7 +95,15 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 	static Airline sleepByDay = new Airline("1002", "Sleep By Day", "CA");
 	static Airline[] notSaved = new Airline[] { flyByNight, sleepByDay };
 
-	SpringDataCouchbaseSerializer serializer = new SpringDataCouchbaseSerializer(couchbaseTemplate.getConverter());
+    @Autowired CouchbaseTemplate couchbaseTemplate;
+
+    SpringDataCouchbaseSerializer serializer = null;
+
+    @BeforeEach
+    public void beforeEach() {
+        super.beforeEach();
+        serializer = new SpringDataCouchbaseSerializer(couchbaseTemplate.getConverter());
+    }
 
 	@BeforeAll
 	static public void beforeAll() {
@@ -104,6 +115,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 			template.insertById(Airline.class).one(airline);
 		}
 		template.findByQuery(Airline.class).withConsistency(REQUEST_PLUS).all();
+        logDisconnect(template.getCouchbaseClientFactory().getCluster(), "queryDsl-before");
 	}
 
 	@AfterAll
@@ -115,6 +127,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 			template.removeById(Airline.class).one(airline.getId());
 		}
 		template.findByQuery(Airline.class).withConsistency(REQUEST_PLUS).all();
+        logDisconnect(template.getCouchbaseClientFactory().getCluster(), "queryDsl-after");
 		callSuperAfterAll(new Object() {});
 	}
 
@@ -611,56 +624,12 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		}
 	}
 
-	private void sleep(int millis) {
-		try {
-			Thread.sleep(millis); // so they are executed out-of-order
-		} catch (InterruptedException ie) {
-			;
-		}
-	}
-
 	@Configuration
 	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
-	static class Config extends AbstractCouchbaseConfiguration {
+	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
+	@EnableReactiveCouchbaseAuditing(auditorAwareRef = "reactiveAuditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
 
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Bean(name = "auditorAwareRef")
-		public NaiveAuditorAware testAuditorAware() {
-			return new NaiveAuditorAware();
-		}
-
-		@Override
-		public void configureEnvironment(final ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-		@Bean(name = "dateTimeProviderRef")
-		public DateTimeProvider testDateTimeProvider() {
-			return new AuditingDateTimeProvider();
-		}
+	static class Config extends org.springframework.data.couchbase.domain.Config {
 
 		@Bean
 		public LocalValidatorFactoryBean validator() {
@@ -678,52 +647,4 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		return basicQuery.export(new int[1]);
 	}
 
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	@EnableCouchbaseAuditing(auditorAwareRef = "auditorAwareRef", dateTimeProviderRef = "dateTimeProviderRef")
-	static class ConfigRequestPlus extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
-
-		@Bean(name = "auditorAwareRef")
-		public NaiveAuditorAware testAuditorAware() {
-			return new NaiveAuditorAware();
-		}
-
-		@Bean(name = "dateTimeProviderRef")
-		public DateTimeProvider testDateTimeProvider() {
-			return new AuditingDateTimeProvider();
-		}
-
-		@Override
-		public QueryScanConsistency getDefaultConsistency() {
-			return REQUEST_PLUS;
-		}
-	}
 }

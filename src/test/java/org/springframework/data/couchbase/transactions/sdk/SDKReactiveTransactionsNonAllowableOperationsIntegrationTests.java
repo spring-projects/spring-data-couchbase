@@ -18,6 +18,8 @@ package org.springframework.data.couchbase.transactions.sdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.springframework.data.couchbase.transactions.TransactionsConfig;
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
-import org.springframework.data.couchbase.transactions.TransactionsConfig;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
@@ -51,6 +52,7 @@ import com.couchbase.client.java.transactions.error.TransactionFailedException;
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class,
 		SDKReactiveTransactionsNonAllowableOperationsIntegrationTests.PersonService.class })
+@DirtiesContext
 public class SDKReactiveTransactionsNonAllowableOperationsIntegrationTests extends JavaIntegrationTests {
 
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -129,4 +131,5 @@ public class SDKReactiveTransactionsNonAllowableOperationsIntegrationTests exten
 			return callback.apply(personOperations);
 		}
 	}
+
 }

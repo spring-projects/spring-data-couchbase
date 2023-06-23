@@ -19,7 +19,7 @@ package org.springframework.data.couchbase.transactions;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
 import lombok.Data;
-import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -37,6 +37,7 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
+import org.springframework.data.couchbase.domain.PersonWithoutVersion;
 import org.springframework.data.couchbase.domain.ReactivePersonRepository;
 import org.springframework.data.couchbase.transaction.error.TransactionSystemUnambiguousException;
 import org.springframework.data.couchbase.transactions.util.TransactionTestUtil;
@@ -58,6 +59,7 @@ import com.couchbase.client.java.Cluster;
  */
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(classes = { TransactionsConfig.class, PersonServiceReactive.class })
+@DirtiesContext
 public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaIntegrationTests {
 	// intellij flags "Could not autowire" when config classes are specified with classes={...}. But they are populated.
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
@@ -234,4 +236,5 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 		String action;
 		@Version Long version;
 	}
+
 }
