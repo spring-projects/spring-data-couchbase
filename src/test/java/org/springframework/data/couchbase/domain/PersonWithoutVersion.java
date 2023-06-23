@@ -46,4 +46,25 @@ public class PersonWithoutVersion extends AbstractEntity {
 		this.lastname = Optional.of(lastname);
 		setId(id);
 	}
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("PersonWithoutVersion : {\n");
+        sb.append("  id : " + getId());
+        sb.append(optional(", firstname", firstname));
+        sb.append(optional(", lastname", lastname));
+        sb.append("\n}");
+        return sb.toString();
+    }
+
+    static String optional(String name, Optional<String> obj) {
+        if (obj != null) {
+            if (obj.isPresent()) {
+                return ("  " + name + ": '" + obj.get() + "'");
+            } else {
+                return "  " + name + ": null";
+            }
+        }
+        return "";
+    }
 }

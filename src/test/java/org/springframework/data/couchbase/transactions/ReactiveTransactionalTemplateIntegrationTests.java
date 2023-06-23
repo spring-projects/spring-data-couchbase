@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
 
+import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -48,7 +49,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.stereotype.Service;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -58,7 +58,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 @SpringJUnitConfig(
-		classes = { TransactionsConfig.class, ReactiveTransactionalTemplateIntegrationTests.PersonService.class })
+        classes = { TransactionsConfig.class, ReactiveTransactionalTemplateIntegrationTests.PersonService.class })
+@DirtiesContext
 public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrationTests {
 	@Autowired CouchbaseClientFactory couchbaseClientFactory;
 	@Autowired PersonService personService;
@@ -200,4 +201,6 @@ public class ReactiveTransactionalTemplateIntegrationTests extends JavaIntegrati
 			});
 		}
 	}
+
+    static public class TransactionsConfig extends org.springframework.data.couchbase.transactions.TransactionsConfig {}
 }

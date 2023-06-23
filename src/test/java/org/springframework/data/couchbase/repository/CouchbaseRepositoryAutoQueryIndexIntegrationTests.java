@@ -32,12 +32,14 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.manager.query.QueryIndex;
 
 @SpringJUnitConfig(CouchbaseRepositoryAutoQueryIndexIntegrationTests.Config.class)
+@DirtiesContext
 @IgnoreWhen(missesCapabilities = Capabilities.QUERY, clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryAutoQueryIndexIntegrationTests extends ClusterAwareIntegrationTests {
 

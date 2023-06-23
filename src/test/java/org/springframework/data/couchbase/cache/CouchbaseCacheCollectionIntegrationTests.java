@@ -24,10 +24,15 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.CollectionAwareIntegrationTests;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.data.couchbase.domain.Config;
 
 /**
  * CouchbaseCache tests Theses tests rely on a cb server running.
@@ -35,9 +40,13 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
  * @author Michael Reiche
  */
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED, missesCapabilities = { Capabilities.COLLECTIONS })
+@SpringJUnitConfig(Config.class)
+@DirtiesContext
 class CouchbaseCacheCollectionIntegrationTests extends CollectionAwareIntegrationTests {
 
 	volatile CouchbaseCache cache;
+
+    @Autowired CouchbaseTemplate couchbaseTemplate;
 
 	@BeforeEach
 	@Override

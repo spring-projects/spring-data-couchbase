@@ -41,6 +41,7 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Course;
+import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
 import org.springframework.data.couchbase.domain.PersonValue;
@@ -52,10 +53,10 @@ import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.domain.UserSubmissionRepository;
-import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories;
 import org.springframework.data.couchbase.util.ClusterAwareIntegrationTests;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -69,7 +70,8 @@ import com.couchbase.client.java.kv.GetResult;
  * @author Michael Nitschinger
  * @author Michael Reiche
  */
-@SpringJUnitConfig(CouchbaseRepositoryKeyValueIntegrationTests.Config.class)
+@SpringJUnitConfig(Config.class)
+@DirtiesContext
 @IgnoreWhen(clusterTypes = ClusterType.MOCKED)
 public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareIntegrationTests {
 
@@ -196,39 +198,6 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		assertEquals(user.getCourses().get(0).getId(), found.get().getCourses().get(0).getId());
 		assertEquals(user, found.get());
 		userSubmissionRepository.delete(user);
-	}
-
-	@Configuration
-	@EnableCouchbaseRepositories("org.springframework.data.couchbase")
-	static class Config extends AbstractCouchbaseConfiguration {
-
-		@Override
-		public String getConnectionString() {
-			return connectionString();
-		}
-
-		@Override
-		public String getUserName() {
-			return config().adminUsername();
-		}
-
-		@Override
-		public String getPassword() {
-			return config().adminPassword();
-		}
-
-		@Override
-		public String getBucketName() {
-			return bucketName();
-		}
-
-		@Override
-		protected void configureEnvironment(ClusterEnvironment.Builder builder) {
-			if (config().isUsingCloud()) {
-				builder.securityConfig(
-						SecurityConfig.builder().trustManagerFactory(InsecureTrustManagerFactory.INSTANCE).enableTls(true));
-			}
-		}
 	}
 
 }
