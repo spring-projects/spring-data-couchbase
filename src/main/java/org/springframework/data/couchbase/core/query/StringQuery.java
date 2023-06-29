@@ -64,6 +64,10 @@ public class StringQuery extends Query {
 		this.spelExpressionParser = spelExpressionParser;
 	}
 
+	public StringQuery(String n1qlString) {
+		this(null,n1qlString, null, null, null);
+	}
+
 	@Override
 	public String toN1qlSelectString(CouchbaseConverter converter, String bucketName, String scope, String collection,
 			Class domainClass, Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
