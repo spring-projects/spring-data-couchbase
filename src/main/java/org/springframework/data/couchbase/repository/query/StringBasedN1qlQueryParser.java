@@ -36,6 +36,7 @@ import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.Expiration;
 import org.springframework.data.couchbase.core.query.N1QLExpression;
+import org.springframework.data.couchbase.core.query.StringQuery;
 import org.springframework.data.couchbase.repository.Query;
 import org.springframework.data.couchbase.repository.query.support.N1qlUtils;
 import org.springframework.data.mapping.PersistentEntity;
@@ -120,6 +121,12 @@ public class StringBasedN1qlQueryParser {
 	 * regexp that detect positional placeholder ($ followed by digits only)
 	 */
 	public static final Pattern POSITIONAL_PLACEHOLDER_PATTERN = Pattern.compile("\\W(\\$\\p{Digit}+)\\b");
+
+	/**
+	 * regexp that detect SPEL Expression (#{..})
+	 */
+	public static final Pattern SPEL_EXPRESSION_PATTERN = Pattern.compile("(#\\{[^\\}]*\\})");
+
 	/**
 	 * regexp that detects " and ' quote boundaries, ignoring escaped quotes
 	 */
@@ -155,7 +162,8 @@ public class StringBasedN1qlQueryParser {
 		this.statement = statement;
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
-		this.statementContext = createN1qlSpelValues(collection != null ? collection : bucketName, scope, collection,
+		this.statementContext = queryMethod == null ? null
+				: createN1qlSpelValues(collection != null ? collection : bucketName, scope, collection,
 				queryMethod.getEntityInformation().getJavaType(), typeField, typeValue, queryMethod.isCountQuery(), null, null);
 		this.parsedExpression = getExpression(statement, queryMethod, accessor, spelExpressionParser,
 				evaluationContextProvider);
@@ -369,6 +377,9 @@ public class StringBasedN1qlQueryParser {
 		Matcher quoteMatcher = QUOTE_DETECTION_PATTERN.matcher(statement);
 		Matcher positionMatcher = POSITIONAL_PLACEHOLDER_PATTERN.matcher(statement);
 		Matcher namedMatcher = NAMED_PLACEHOLDER_PATTERN.matcher(statement);
+		String queryIdentifier = (this.queryMethod != null ? queryMethod.getClass().getName()
+				: StringQuery.class.getName()) + "."
+				+ (this.queryMethod != null ? queryMethod.getName() : this.statement);
 
 		List<int[]> quotes = new ArrayList<int[]>();
 		while (quoteMatcher.find()) {
@@ -381,8 +392,14 @@ public class StringBasedN1qlQueryParser {
 		while (positionMatcher.find()) {
 			String placeholder = positionMatcher.group(1);
 			// check not in quoted
-			if (checkNotQuoted(placeholder, positionMatcher.start(), positionMatcher.end(), quotes)) {
-				LOGGER.trace("{}: Found positional placeholder {}", this.queryMethod.getName(), placeholder);
+			if (checkNotQuoted(placeholder, positionMatcher.start(), positionMatcher.end(), quotes, queryIdentifier)) {
+				if (this.queryMethod == null) {
+					throw new IllegalArgumentException(
+							"StringQuery created from StringQuery(String) cannot have parameters. "
+									+ "They cannot be processed. "
+									+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
+				}
+				LOGGER.trace("{}: Found positional placeholder {}", queryIdentifier, placeholder);
 				posCount++;
 				parameterNames.add(placeholder.substring(1)); // save without the leading $
 			}
@@ -391,8 +408,13 @@ public class StringBasedN1qlQueryParser {
 		while (namedMatcher.find()) {
 			String placeholder = namedMatcher.group(1);
 			// check not in quoted
-			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes)) {
-				LOGGER.trace("{}: Found named placeholder {}", this.queryMethod.getName(), placeholder);
+			if (checkNotQuoted(placeholder, namedMatcher.start(), namedMatcher.end(), quotes, queryIdentifier)) {
+				if (this.queryMethod == null) {
+					throw new IllegalArgumentException(
+							"StringQuery created from StringQuery(String) cannot have parameters. "
+									+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : " + statement);
+				}
+				LOGGER.trace("{}: Found named placeholder {}", queryIdentifier, placeholder);
 				namedCount++;
 				parameterNames.add(placeholder.substring(1));// save without the leading $
 			}
@@ -400,8 +422,7 @@ public class StringBasedN1qlQueryParser {
 
 		if (posCount > 0 && namedCount > 0) { // actual values from parameterNames might be more useful
 			throw new IllegalArgumentException("Using both named (" + namedCount + ") and positional (" + posCount
-					+ ") placeholders is not supported, please choose one over the other in " + queryMethod.getClass().getName()
-					+ "." + this.queryMethod.getName() + "()");
+					+ ") placeholders is not supported, please choose one over the other in " + queryIdentifier + "()");
 		}
 
 		if (posCount > 0) {
@@ -411,12 +432,30 @@ public class StringBasedN1qlQueryParser {
 		} else {
 			placeHolderType = PlaceholderType.NONE;
 		}
+
+		if (this.queryMethod == null) {
+			Matcher spelMatcher = SPEL_EXPRESSION_PATTERN.matcher(statement);
+			while (spelMatcher.find()) {
+				String placeholder = spelMatcher.group(1);
+				// check not in quoted
+				if (checkNotQuoted(placeholder, spelMatcher.start(), spelMatcher.end(), quotes, queryIdentifier)) {
+					if (this.queryMethod == null) {
+						throw new IllegalArgumentException(
+								"StringQuery created from StringQuery(String) cannot SPEL expressions. "
+										+ "Use an @Query annotated method and the SPEL Expression #{[<n>]} : "
+										+ statement);
+					}
+					LOGGER.trace("{}: Found SPEL Experssion {}", queryIdentifier, placeholder);
+				}
+			}
+		}
+
 	}
 
-	private boolean checkNotQuoted(String item, int start, int end, List<int[]> quotes) {
+	private boolean checkNotQuoted(String item, int start, int end, List<int[]> quotes, String queryIdentifier) {
 		for (int[] quote : quotes) {
 			if (quote[0] <= start && quote[1] >= end) {
-				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", this.queryMethod.getName(), item);
+				LOGGER.trace("{}: potential placeholder {} is inside quotes, ignored", queryIdentifier, item);
 				return false;
 			}
 		}
@@ -634,10 +673,15 @@ public class StringBasedN1qlQueryParser {
 
 	public N1QLExpression getExpression(String statement, CouchbaseQueryMethod queryMethod, ParameterAccessor accessor,
 			SpelExpressionParser parser, QueryMethodEvaluationContextProvider evaluationContextProvider) {
-		Object[] runtimeParameters = getParameters(accessor);
-		EvaluationContext evaluationContext = evaluationContextProvider.getEvaluationContext(queryMethod.getParameters(),
-				runtimeParameters);
-		N1QLExpression parsedStatement = x(doParse(statement, parser, evaluationContext, this.getStatementContext()));
+		N1QLExpression parsedStatement;
+		if (accessor != null && queryMethod != null && parser != null) {
+			Object[] runtimeParameters = getParameters(accessor);
+			EvaluationContext evaluationContext = evaluationContextProvider
+					.getEvaluationContext(queryMethod.getParameters(), runtimeParameters);
+			parsedStatement = x(doParse(statement, parser, evaluationContext, this.getStatementContext()));
+		} else {
+			parsedStatement = x(statement);
+		}
 		checkPlaceholders(parsedStatement.toString());
 		return parsedStatement;
 	}

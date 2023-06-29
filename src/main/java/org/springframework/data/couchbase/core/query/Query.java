@@ -361,6 +361,22 @@ public class Query {
 		return statement.toString();
 	}
 
+	public String toN1qlSelectString(CouchbaseConverter converter, String bucketName, String scopeName,
+			String collectionName, Class domainClass, Class returnClass, boolean isCount, String[] distinctFields,
+			String[] fields) {
+		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(converter, bucketName, scopeName,
+				collectionName, domainClass, returnClass, isCount, distinctFields, fields);
+		final StringBuilder statement = new StringBuilder();
+		appendString(statement, n1ql.selectEntity); // select ...
+		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+		appendWhere(statement, new int[] { 0 }, converter); // criteria on this Query
+		if (!isCount) {
+			appendSort(statement);
+			appendSkipAndLimit(statement);
+		}
+		return statement.toString();
+	}
+
 	public String toN1qlRemoveString(ReactiveCouchbaseTemplate template, String scopeName, String collectionName,
 			Class domainClass) {
 		StringBasedN1qlQueryParser.N1qlSpelValues n1ql = getN1qlSpelValues(template, scopeName, collectionName, domainClass,
@@ -376,19 +392,27 @@ public class Query {
 	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(ReactiveCouchbaseTemplate template,
 			String scopeName, String collectionName, Class domainClass, Class returnClass, boolean isCount,
 			String[] distinctFields, String[] fields) {
-		String typeKey = template.getConverter().getTypeKey();
-		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
+		return getN1qlSpelValues(template.getConverter(), template.getBucketName(), scopeName, collectionName,
+				domainClass, returnClass, isCount, distinctFields, fields);
+	}
+
+	public static StringBasedN1qlQueryParser.N1qlSpelValues getN1qlSpelValues(CouchbaseConverter converter,
+			String bucketName,
+			String scopeName, String collectionName, Class domainClass, Class returnClass, boolean isCount,
+			String[] distinctFields, String[] fields) {
+		String typeKey = converter.getTypeKey();
+		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		String typeValue = info.getJavaType().getName();
 		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
-		Alias alias = template.getConverter().getTypeAlias(typeInfo);
+		Alias alias = converter.getTypeAlias(typeInfo);
 		if (alias != null && alias.isPresent()) {
 			typeValue = alias.toString();
 		}
 
-		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(template.getBucketName(), scopeName,
-				collectionName, template.getConverter(), domainClass, returnClass, typeKey, typeValue, isCount, distinctFields,
+		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(bucketName, scopeName, collectionName,
+				converter, domainClass, returnClass, typeKey, typeValue, isCount, distinctFields,
 				fields);
 		return sbnqp.getStatementContext();
 	}

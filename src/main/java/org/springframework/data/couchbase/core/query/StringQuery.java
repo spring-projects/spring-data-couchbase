@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.core.query;
 import java.util.Locale;
 
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
+import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod;
@@ -65,11 +66,18 @@ public class StringQuery extends Query {
 		this.spelExpressionParser = spelExpressionParser;
 	}
 
+	public StringQuery(String n1qlString) {
+		this(null,n1qlString, null, null, null);
+	}
+
 	@Override
 	public String toN1qlSelectString(ReactiveCouchbaseTemplate template, String scope, String collection,
 			Class domainClass, Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
-
-		StringBasedN1qlQueryParser parser = getStringN1qlQueryParser(template, scope, collection, domainClass,
+		return toN1qlSelectString(template.getConverter(), template.getBucketName(), scope, collection, domainClass, resultClass, isCount, distinctFields, fields );
+	}
+	public String toN1qlSelectString(CouchbaseConverter converter, String bucketName, String scope, String collection,
+									 Class domainClass, Class resultClass, boolean isCount, String[] distinctFields, String[] fields) {
+		StringBasedN1qlQueryParser parser = getStringN1qlQueryParser(converter, bucketName, scope, collection, domainClass,
 				distinctFields, fields);
 
 		N1QLExpression parsedExpression = parser.getExpression(inlineN1qlQuery, queryMethod, parameterAccessor,
@@ -100,7 +108,7 @@ public class StringQuery extends Query {
 		} else { // named parameters or no parameters, no index required
 			paramIndexPtr = new int[] { -1 };
 		}
-		appendWhere(statement, paramIndexPtr, template.getConverter()); // criteria on this Query - should be empty for
+		appendWhere(statement, paramIndexPtr, converter); // criteria on this Query - should be empty for
 		if (!isCount) {
 			appendSort(statement);
 			appendSkipAndLimit(statement);
@@ -111,21 +119,21 @@ public class StringQuery extends Query {
 		return statement.toString();
 	}
 
-	private StringBasedN1qlQueryParser getStringN1qlQueryParser(ReactiveCouchbaseTemplate template, String scopeName,
+	private StringBasedN1qlQueryParser getStringN1qlQueryParser(CouchbaseConverter converter, String bucketName, String scopeName,
 			String collectionName, Class domainClass, String[] distinctFields, String[] fields) {
-		String typeKey = template.getConverter().getTypeKey();
-		final CouchbasePersistentEntity<?> persistentEntity = template.getConverter().getMappingContext()
+		String typeKey = converter.getTypeKey();
+		final CouchbasePersistentEntity<?> persistentEntity = converter.getMappingContext()
 				.getRequiredPersistentEntity(domainClass);
 		MappingCouchbaseEntityInformation<?, Object> info = new MappingCouchbaseEntityInformation<>(persistentEntity);
 		String typeValue = info.getJavaType().getName();
 		TypeInformation<?> typeInfo = ClassTypeInformation.from(info.getJavaType());
-		Alias alias = template.getConverter().getTypeAlias(typeInfo);
+		Alias alias = converter.getTypeAlias(typeInfo);
 		if (alias != null && alias.isPresent()) {
 			typeValue = alias.toString();
 		}
 		// there are no options for distinct and fields for @Query
 		StringBasedN1qlQueryParser sbnqp = new StringBasedN1qlQueryParser(inlineN1qlQuery, queryMethod,
-				template.getBucketName(), scopeName, collectionName, template.getConverter(), typeKey, typeValue,
+				bucketName, scopeName, collectionName, converter, typeKey, typeValue,
 				parameterAccessor, new SpelExpressionParser(), evaluationContextProvider);
 
 		return sbnqp;
