@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
@@ -29,6 +30,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.StringQuery;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserRepository;
 import org.springframework.data.mapping.context.MappingContext;
@@ -136,6 +138,59 @@ class StringN1qlQueryCreatorTests {
 						+ bucketName() + "`).`id` AS __id, `firstname`, `lastname`, `subtype` FROM `" + bucketName()
 						+ "` where `_class` = \"abstractuser\" and (firstname = $first or lastname = $last)",
 				query.toN1qlSelectString(converter, bucketName(), null, null, User.class, User.class, false, null, null));
+	}
+
+	@Test
+	void stringQuerycreatesQueryCorrectly() throws Exception {
+		String queryString = "a b c";
+		Query query = new StringQuery(queryString);
+		assertEquals(queryString, query.toN1qlSelectString(converter, bucketName(), null, null, User.class, User.class,
+				false, null, null));
+	}
+
+	@Test
+	void stringQueryNoPositionalParameters() {
+		String queryString = " $1";
+		Query query = new StringQuery(queryString);
+		assertThrows(IllegalArgumentException.class, () -> query.toN1qlSelectString(converter, bucketName(), null, null,
+				User.class, User.class, false, null, null));
+	}
+
+	@Test
+	void stringQueryNoNamedParameters() {
+		String queryString = " $george";
+		Query query = new StringQuery(queryString);
+		assertThrows(IllegalArgumentException.class, () -> query.toN1qlSelectString(converter, bucketName(), null, null,
+				User.class, User.class, false, null, null));
+	}
+
+	@Test
+	void stringQueryNoSpelExpressions() {
+		String queryString = "#{#n1ql.filter}";
+		Query query = new StringQuery(queryString);
+		assertThrows(IllegalArgumentException.class, () -> query.toN1qlSelectString(converter, bucketName(), null, null,
+				User.class, User.class, false, null, null));
+	}
+
+	@Test
+	void stringQueryNoPositionalParametersQuotes() {
+		String queryString = " '$1'";
+		Query query = new StringQuery(queryString);
+		query.toN1qlSelectString(converter, bucketName(), null, null, User.class, User.class, false, null, null);
+	}
+
+	@Test
+	void stringQueryNoNamedParametersQuotes() {
+		String queryString = " '$george'";
+		Query query = new StringQuery(queryString);
+		query.toN1qlSelectString(converter, bucketName(), null, null, User.class, User.class, false, null, null);
+	}
+
+	@Test
+	void stringQueryNoSpelExpressionsQuotes() {
+		String queryString = "'#{#n1ql.filter}'";
+		Query query = new StringQuery(queryString);
+		query.toN1qlSelectString(converter, bucketName(), null, null, User.class, User.class, false, null, null);
 	}
 
 	@Test
