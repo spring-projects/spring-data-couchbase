@@ -67,6 +67,9 @@ public class DefaultCouchbaseTypeMapper extends DefaultTypeMapper<CouchbaseDocum
 
 		@Override
 		public Alias readAliasFrom(final CouchbaseDocument source) {
+            if (typeKey == null || typeKey.length() == 0) {
+                return Alias.NONE;
+            }
 			return Alias.ofNullable(source.get(typeKey));
 		}
 
