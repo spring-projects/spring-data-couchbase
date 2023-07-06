@@ -63,6 +63,7 @@ import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Config;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.User;
+import org.springframework.data.couchbase.domain.UserNoAlias;
 import org.springframework.data.mapping.MappingException;
 
 /**
@@ -75,10 +76,17 @@ public class MappingCouchbaseConverterTests {
 
 	private static MappingCouchbaseConverter converter = new MappingCouchbaseConverter();
 	private static MappingCouchbaseConverter customConverter = (new Config()).mappingCouchbaseConverter();
+	private static MappingCouchbaseConverter noTypeKeyConverter = (new Config(){
+		@Override
+		public String typeKey() {
+			return "";
+		}
+	}).mappingCouchbaseConverter();
 
 	static {
 		converter.afterPropertiesSet();
 		customConverter.afterPropertiesSet();
+		noTypeKeyConverter.afterPropertiesSet();
 	}
 
 	@Test
@@ -150,6 +158,43 @@ public class MappingCouchbaseConverterTests {
 
 		StringEntity converted = converter.read(StringEntity.class, source);
 		assertThat(converted.attr0).isEqualTo(source.get("attr0"));
+	}
+
+	@Test
+	void writesStringNoTypeKey() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		StringEntity entity = new StringEntity("foobar");
+
+		noTypeKeyConverter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("_class")).isEqualTo(null);
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0);
+		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
+	}
+
+	@Test
+	void readsStringNoTypeKey() {
+		CouchbaseDocument source = new CouchbaseDocument();
+		source.put("attr0", "foobar");
+		StringEntity converted = noTypeKeyConverter.read(StringEntity.class, source);
+		assertThat(converted.attr0).isEqualTo(source.get("attr0"));
+	}
+
+	@Test
+	void writesNoTypeAlias() {
+		CouchbaseDocument converted = new CouchbaseDocument();
+		UserNoAlias entity = new UserNoAlias(UUID.randomUUID().toString(), "first", "last");
+		noTypeKeyConverter.write(entity, converted);
+		Map<String, Object> result = converted.export();
+		assertThat(result.get("_class")).isEqualTo(null);
+		assertThat(converted.getId()).isEqualTo(entity.getId());
+	}
+
+	@Test
+	void readsNoTypeAlias() {
+		CouchbaseDocument document = new CouchbaseDocument("001");
+		UserNoAlias user = noTypeKeyConverter.read(UserNoAlias.class, document);
+		assertThat(user.getId()).isEqualTo("001");
 	}
 
 	@Test

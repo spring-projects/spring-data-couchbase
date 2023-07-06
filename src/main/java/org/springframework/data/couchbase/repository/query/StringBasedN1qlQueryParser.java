@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.repository.query;
 
 import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
 import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
 import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
@@ -199,22 +200,22 @@ public class StringBasedN1qlQueryParser {
 	}
 
 	/**
-	 * Create the n1ql spel values. The domainClass is needed, but not the returnClass. Mapping the domainClass to the
-	 * returnClass is the responsibility of decoding.
-	 *
-	 * @param bucketName
-	 * @param scope
-	 * @param collection
-	 * @param domainClass
-	 * @param typeField
-	 * @param typeValue
-	 * @param isCount
-	 * @param distinctFields
-	 * @param fields
-	 * @return
-	 */
+     * Create the n1ql spel values. The domainClass is needed, but not the returnClass. Mapping the domainClass to the
+     * returnClass is the responsibility of decoding.
+     *
+     * @param bucketName
+     * @param scope
+     * @param collection
+     * @param domainClass
+     * @param typeKey
+     * @param typeValue
+     * @param isCount
+     * @param distinctFields
+     * @param fields
+     * @return
+     */
 	public N1qlSpelValues createN1qlSpelValues(String bucketName, String scope, String collection, Class domainClass,
-			String typeField, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
+            String typeKey, String typeValue, boolean isCount, String[] distinctFields, String[] fields) {
 		String b = bucketName;
 		String keyspace = collection != null ? collection : bucketName;
 		Assert.isTrue(!(distinctFields != null && fields != null),
@@ -222,7 +223,7 @@ public class StringBasedN1qlQueryParser {
 		String entityFields = "";
 		String selectEntity;
 		if (distinctFields != null) {
-			String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeField, fields, distinctFields);
+            String distinctFieldsStr = getProjectedOrDistinctFields(b, domainClass, typeKey, fields, distinctFields);
 			if (isCount) {
 				selectEntity = N1QLExpression.select(N1QLExpression.count(N1QLExpression.distinct(x(distinctFieldsStr)))
 						.as(i(CountFragment.COUNT_ALIAS)).from(keyspace)).toString();
@@ -233,11 +234,12 @@ public class StringBasedN1qlQueryParser {
 			selectEntity = N1QLExpression.select(N1QLExpression.count(x("\"*\"")).as(i(CountFragment.COUNT_ALIAS)))
 					.from(keyspace).toString();
 		} else {
-			String projectedFields = getProjectedOrDistinctFields(keyspace, domainClass, typeField, fields, distinctFields);
+            String projectedFields = getProjectedOrDistinctFields(keyspace, domainClass, typeKey, fields,
+                    distinctFields);
 			entityFields = projectedFields;
 			selectEntity = N1QLExpression.select(x(projectedFields)).from(keyspace).toString();
 		}
-		String typeSelection = "`" + typeField + "` = \"" + typeValue + "\"";
+        String typeSelection = !empty(typeKey) && !empty(typeValue) ? i(typeKey).eq(s(typeValue)).toString() : null;
 
 		String delete = N1QLExpression.delete().from(keyspace).toString();
 		String returning = " returning " + N1qlUtils.createReturningExpressionForDelete(keyspace);
@@ -245,6 +247,10 @@ public class StringBasedN1qlQueryParser {
 		return new N1qlSpelValues(selectEntity, entityFields, i(b).toString(), i(scope).toString(),
 				i(collection).toString(), typeSelection, delete, returning);
 	}
+
+    private static boolean empty(String s) {
+        return s == null || s.length() == 0;
+    }
 
 	private String getProjectedOrDistinctFields(String b, Class resultClass, String typeField, String[] fields,
 			String[] distinctFields) {

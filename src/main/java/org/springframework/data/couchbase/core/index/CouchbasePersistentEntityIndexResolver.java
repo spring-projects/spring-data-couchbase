@@ -15,6 +15,9 @@
  */
 package org.springframework.data.couchbase.core.index;
 
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,6 +28,7 @@ import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
+import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PropertyHandler;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.util.TypeInformation;
@@ -142,7 +146,15 @@ public class CouchbasePersistentEntityIndexResolver implements QueryIndexResolve
 	private String getPredicate(final MappingCouchbaseEntityInformation<?, Object> entityInfo) {
 		String typeKey = operations.getConverter().getTypeKey();
 		String typeValue = entityInfo.getJavaType().getName();
-		return "`" + typeKey + "` = \"" + typeValue + "\"";
+		Alias alias = operations.getConverter().getTypeAlias(TypeInformation.of(entityInfo.getJavaType()));
+		if (alias != null && alias.isPresent()) {
+			typeValue = alias.toString();
+		}
+        return !empty(typeKey) && !empty(typeValue) ? i(typeKey).eq(s(typeValue)).toString() : null;
+	}
+
+	private static boolean empty(String s){
+		return s == null || s.length() == 0;
 	}
 
 	public static class IndexDefinitionHolder implements IndexDefinition {

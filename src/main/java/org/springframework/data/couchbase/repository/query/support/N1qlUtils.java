@@ -16,8 +16,15 @@
 
 package org.springframework.data.couchbase.repository.query.support;
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*;
-import static org.springframework.data.couchbase.core.support.TemplateUtils.*;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.count;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.meta;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.path;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.s;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.select;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.x;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_CAS;
+import static org.springframework.data.couchbase.core.support.TemplateUtils.SELECT_ID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +39,12 @@ import org.springframework.data.couchbase.core.query.N1QLQuery;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.couchbase.repository.query.CountFragment;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mapping.Alias;
 import org.springframework.data.mapping.PersistentPropertyPath;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.EntityMetadata;
 import org.springframework.data.repository.query.ReturnedType;
+import org.springframework.data.util.TypeInformation;
 
 import com.couchbase.client.java.json.JsonArray;
 import com.couchbase.client.java.json.JsonObject;
@@ -50,6 +59,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Simon Baslé
  * @author Subhashni Balakrishnan
  * @author Mark Paluch
+ * @author Michael Reiche
  */
 public class N1qlUtils {
 
@@ -170,14 +180,22 @@ public class N1qlUtils {
 		// add part that filters on type key
 		String typeKey = converter.getTypeKey();
 		String typeValue = entityInformation.getJavaType().getName();
-		N1QLExpression typeSelector = i(typeKey).eq(s(typeValue));
+        Alias alias = converter.getTypeAlias(TypeInformation.of(entityInformation.getJavaType()));
+        if (alias != null && alias.isPresent()) {
+            typeValue = alias.toString();
+        }
+        N1QLExpression typeSelector = !empty(typeKey) && !empty(typeValue) ? i(typeKey).eq(s(typeValue)) : null;
 		if (baseWhereCriteria == null) {
 			baseWhereCriteria = typeSelector;
-		} else {
+        } else if (typeSelector != null) {
 			baseWhereCriteria = x("(" + baseWhereCriteria.toString() + ")").and(typeSelector);
 		}
 		return baseWhereCriteria;
 	}
+
+    private static boolean empty(String s) {
+        return s == null || s.length() == 0;
+    }
 
 	/**
 	 * Given a common {@link PropertyPath}, returns the corresponding {@link PersistentPropertyPath} of
@@ -241,8 +259,13 @@ public class N1qlUtils {
 	 */
 	public static <T> N1QLExpression createCountQueryForEntity(String bucketName, CouchbaseConverter converter,
 			CouchbaseEntityInformation<T, String> entityInformation) {
-		return select(count(x("*")).as(x(CountFragment.COUNT_ALIAS))).from(escapedBucket(bucketName))
-				.where(createWhereFilterForEntity(null, converter, entityInformation));
+        N1QLExpression entityFilter = createWhereFilterForEntity(null, converter, entityInformation);
+        N1QLExpression expression = select(
+                (count(x("*")).as(x(CountFragment.COUNT_ALIAS))).from(escapedBucket(bucketName)));
+        if (entityFilter == null) {
+            return expression;
+        }
+        return expression.where(entityFilter);
 	}
 
 	/**
