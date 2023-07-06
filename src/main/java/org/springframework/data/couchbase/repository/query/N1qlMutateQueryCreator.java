@@ -37,6 +37,7 @@ import com.couchbase.client.java.json.JsonValue;
  * supported
  *
  * @author Subhashni Balakrishnan
+ * @author Michael Reiche
  */
 public class N1qlMutateQueryCreator extends AbstractQueryCreator<N1QLExpression, N1QLExpression>
 		implements PartTreeN1qlQueryCreator {
@@ -82,6 +83,9 @@ public class N1qlMutateQueryCreator extends AbstractQueryCreator<N1QLExpression,
 	protected N1QLExpression complete(N1QLExpression criteria, Sort sort) {
 		N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter,
 				this.queryMethod.getEntityInformation());
+        if (whereCriteria == null) {
+            return mutateFrom;
+        }
 		return mutateFrom.where(whereCriteria);
 	}
 

@@ -124,7 +124,7 @@ public class OldN1qlQueryCreator extends AbstractQueryCreator<N1QLExpression, N1
 		N1QLExpression whereCriteria = N1qlUtils.createWhereFilterForEntity(criteria, this.converter,
 				this.queryMethod.getEntityInformation());
 
-		N1QLExpression selectFromWhere = selectFrom.where(whereCriteria);
+		N1QLExpression selectFromWhere = whereCriteria != null ?  selectFrom.where(whereCriteria) : selectFrom;
 
 		// sort of the Pageable takes precedence over the sort in the query name
 		if ((queryMethod.isPageQuery() || queryMethod.isSliceQuery()) && accessor.getPageable().isPaged()) {

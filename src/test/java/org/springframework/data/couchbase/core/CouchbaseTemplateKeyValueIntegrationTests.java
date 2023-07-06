@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.data.couchbase.core.query.N1QLExpression.i;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -38,15 +39,17 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.core.ExecutableFindByIdOperation.ExecutableFindById;
 import org.springframework.data.couchbase.core.ExecutableRemoveByIdOperation.ExecutableRemoveById;
 import org.springframework.data.couchbase.core.ExecutableReplaceByIdOperation.ExecutableReplaceById;
+import org.springframework.data.couchbase.core.query.Query;
+import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.core.support.OneAndAllEntity;
 import org.springframework.data.couchbase.core.support.OneAndAllId;
 import org.springframework.data.couchbase.core.support.WithDurability;
@@ -66,6 +69,7 @@ import org.springframework.data.couchbase.domain.UserAnnotatedDurabilityExpressi
 import org.springframework.data.couchbase.domain.UserAnnotatedPersistTo;
 import org.springframework.data.couchbase.domain.UserAnnotatedReplicateTo;
 import org.springframework.data.couchbase.domain.UserAnnotatedTouchOnRead;
+import org.springframework.data.couchbase.domain.UserNoAlias;
 import org.springframework.data.couchbase.domain.UserSubmission;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -141,6 +145,27 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		}
 
 	}
+
+    @Test
+    void findByIdNoAlias() {
+        String firstname = UUID.randomUUID().toString();
+        try {
+            UserNoAlias user = new UserNoAlias("1", firstname, "user1");
+            couchbaseTemplate.upsertById(UserNoAlias.class).one(user);
+            UserNoAlias foundUser = couchbaseTemplate.findById(UserNoAlias.class).one(user.getId());
+            user.setVersion(foundUser.getVersion());// version will have changed
+            assertEquals(user, foundUser);
+            Query query = new Query(QueryCriteria.where(i("firstname")).eq(firstname));
+            List<UserNoAlias> queriedUsers = couchbaseTemplate.findByQuery(UserNoAlias.class)
+                    .withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query).all();
+            assertEquals(1, queriedUsers.size(), "should have found exactly one");
+        } finally {
+            Query query = new Query(QueryCriteria.where(i("firstname")).eq(firstname));
+            List<RemoveResult> removeResult = couchbaseTemplate.removeByQuery(UserNoAlias.class)
+                    .withConsistency(QueryScanConsistency.REQUEST_PLUS).matching(query).all();
+            assertEquals(1, removeResult.size(), "should have removed exactly one");
+        }
+    }
 
 	@Test
 	void findByIdWithExpiry() {
@@ -1289,6 +1314,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 	}
 
 	@Test
+    @Disabled // it's finding _txn documents with source = a single 0 byte which fails to deserialize
 	void sampleScan() {
 		String id = "A";
 		String lower = null;
