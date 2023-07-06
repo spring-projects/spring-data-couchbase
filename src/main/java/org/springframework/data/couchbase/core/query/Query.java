@@ -353,7 +353,9 @@ public class Query {
 				domainClass, returnClass, isCount, distinctFields, fields);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.selectEntity); // select ...
-		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+        if (n1ql.filter != null) {
+            appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+        }
 		appendWhere(statement, new int[] { 0 }, converter); // criteria on this Query
 		if (!isCount) {
 			appendSort(statement);
@@ -368,7 +370,9 @@ public class Query {
 				domainClass, null, false, null, null);
 		final StringBuilder statement = new StringBuilder();
 		appendString(statement, n1ql.delete); // delete ...
-		appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+        if (n1ql.filter != null) {
+            appendWhereString(statement, n1ql.filter); // typeKey = typeValue
+        }
 		appendWhere(statement, null, converter); // criteria on this Query
 		appendString(statement, n1ql.returning);
 		return statement.toString();
