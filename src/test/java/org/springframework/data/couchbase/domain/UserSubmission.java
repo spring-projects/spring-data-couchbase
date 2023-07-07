@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.domain;
 
-import lombok.Data;
-
 import java.util.List;
 
 import org.springframework.data.annotation.TypeAlias;
@@ -31,7 +29,6 @@ import org.springframework.data.couchbase.core.query.N1qlJoin;
  *
  * @author Michael Reiche
  */
-@Data
 @Document
 @TypeAlias("user")
 @CompositeQueryIndex(fields = { "id", "username", "email" })
@@ -56,4 +53,43 @@ public class UserSubmission extends ComparableEntity {
 		this.courses = courses;
 	}
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public List<Course> getCourses() {
+        return courses;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public List<Address> getOtherAddresses() {
+        return otherAddresses;
+    }
+
+    public List<Submission> getSubmissions() {
+        return submissions;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
+    }
 }

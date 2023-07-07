@@ -15,8 +15,6 @@
  */
 package org.springframework.data.couchbase.domain;
 
-import lombok.Value;
-import lombok.With;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -30,16 +28,13 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
  * @author Michael Reiche
  */
 
-@Value
 @Document
 public class PersonValue {
 	@Id @GeneratedValue(strategy = GenerationStrategy.UNIQUE)
-	@With String id;
-  @Version
-	@With
-	long version;
-	@Field String firstname;
-	@Field String lastname;
+    private final String id;
+    @Version private final long version;
+    @Field private final String firstname;
+    @Field private final String lastname;
 
 	public PersonValue(String id, long version, String firstname, String lastname) {
 		this.id = id;
@@ -48,10 +43,26 @@ public class PersonValue {
 		this.lastname = lastname;
 	}
 
+    public PersonValue withId(String id) {
+        return new PersonValue(id, this.version, this.firstname, this.lastname);
+    }
+
+    public PersonValue withVersion(Long version) {
+        return new PersonValue(this.id, version, this.firstname, this.lastname);
+    }
+
+    public PersonValue withFirstname(String firstname) {
+        return new PersonValue(this.id, this.version, firstname, this.lastname);
+    }
+
+    public PersonValue withLastname(String lastname) {
+        return new PersonValue(this.id, this.version, this.firstname, lastname);
+    }
+
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("PersonValue : {");
-		sb.append(" id : " + getId());
+        sb.append(" id : " + id);
 		sb.append(", version : " + version);
 		sb.append(", firstname : " + firstname);
 		sb.append(", lastname : " + lastname);
@@ -59,4 +70,29 @@ public class PersonValue {
 		return sb.toString();
 	}
 
+    public String getId() {
+        return id;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof PersonValue)) {
+            return false;
+        }
+        PersonValue that = (PersonValue) other;
+        return equals(this.getId(), that.getId()) && equals(this.version, that.version)
+                && equals(this.firstname, that.firstname) && equals(this.lastname, that.lastname);
+    }
+
+    boolean equals(Object s0, Object s1) {
+        if (s0 == null && s1 == null || s0 == s1) {
+            return true;
+        }
+        Object sa = s0 != null ? s0 : s1;
+        Object sb = s0 != null ? s1 : s0;
+        return sa.equals(sb);
+    }
 }

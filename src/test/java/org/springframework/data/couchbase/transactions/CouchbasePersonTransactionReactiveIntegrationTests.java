@@ -18,8 +18,6 @@ package org.springframework.data.couchbase.transactions;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
-import lombok.Data;
-import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -45,6 +43,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import com.couchbase.client.java.Cluster;
@@ -217,8 +216,6 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 				.verifyComplete();
 	}
 
-	@Data
-	// @AllArgsConstructor
 	static class EventLog {
 		public EventLog() {}
 

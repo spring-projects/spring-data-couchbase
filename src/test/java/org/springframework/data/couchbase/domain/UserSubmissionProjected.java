@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.domain;
 
-import lombok.Data;
-
 import java.util.List;
 
 import org.springframework.data.annotation.TypeAlias;
@@ -29,7 +27,6 @@ import org.springframework.data.couchbase.core.mapping.Document;
  *
  * @author Michael Reiche
  */
-@Data
 @Document
 @TypeAlias("user")
 @CompositeQueryIndex(fields = { "id", "username", "email" })
@@ -44,4 +41,19 @@ public class UserSubmissionProjected extends ComparableEntity {
 		this.courses = courses;
 	}
 
+    public String getUsername() {
+        return username;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public List<Course> getCourses() {
+        return courses;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
 }

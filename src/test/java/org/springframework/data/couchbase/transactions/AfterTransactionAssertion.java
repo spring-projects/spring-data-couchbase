@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.transactions;
 
-import lombok.Data;
-
 import org.springframework.data.domain.Persistable;
 
 /**
@@ -25,11 +23,15 @@ import org.springframework.data.domain.Persistable;
  *
  * @author Michael Reiche
  */
-@Data
+
 public class AfterTransactionAssertion<T extends Persistable> {
 
 	private final T persistable;
 	private boolean expectToBePresent;
+
+    public AfterTransactionAssertion(T persistable) {
+        this.persistable = persistable;
+    }
 
 	public void isPresent() {
 		expectToBePresent = true;

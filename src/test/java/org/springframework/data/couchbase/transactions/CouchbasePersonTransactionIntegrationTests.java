@@ -21,8 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import lombok.Data;
-import org.springframework.test.annotation.DirtiesContext;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -52,6 +50,7 @@ import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.data.couchbase.util.JavaIntegrationTests;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.reactive.TransactionalOperator;
 
@@ -326,7 +325,6 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 		assertTrue(tryCount.get() > 1, "should have been more than one try. tries: " + tryCount.get());
 	}
 
-	@Data
 	static class EventLog {
 
 		public EventLog() {}; // don't remove this
@@ -346,6 +344,10 @@ public class CouchbasePersonTransactionIntegrationTests extends JavaIntegrationT
 			sb.append(", action: " + action);
 			return sb.toString();
 		}
+
+        private String getId() {
+            return id;
+        }
 	}
 
 }
