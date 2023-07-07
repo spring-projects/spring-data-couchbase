@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.domain;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.couchbase.core.mapping.Document;
@@ -31,9 +28,6 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy;
  *
  * @author Michael Reiche
  */
-@Getter
-@ToString
-@EqualsAndHashCode
 @Document
 public class SubscriptionToken {
   private @Id
@@ -71,5 +65,13 @@ public class SubscriptionToken {
 
   public void setType(String type) {
     type = type;
+  }
+
+  public long getVersion() {
+      return version;
+  }
+
+  public String getId() {
+      return id;
   }
 }

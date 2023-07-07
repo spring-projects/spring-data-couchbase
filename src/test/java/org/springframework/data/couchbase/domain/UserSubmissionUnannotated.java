@@ -16,8 +16,6 @@
 
 package org.springframework.data.couchbase.domain;
 
-import lombok.Data;
-
 import java.util.List;
 
 import org.springframework.data.annotation.TypeAlias;
@@ -31,7 +29,6 @@ import org.springframework.data.couchbase.repository.Collection;
  *
  * @author Michael Reiche
  */
-@Data
 @Document
 // there is no @Scope annotation on this entity
 @Collection("my_collection")
@@ -56,4 +53,23 @@ public class UserSubmissionUnannotated extends ComparableEntity {
 		this.courses = courses;
 	}
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public List<AddressAnnotated> getOtherAddresses() {
+        return otherAddresses;
+    }
 }

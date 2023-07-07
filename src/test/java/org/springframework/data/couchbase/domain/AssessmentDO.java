@@ -16,9 +16,6 @@
 
 package org.springframework.data.couchbase.domain;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.couchbase.core.mapping.Document;
 import org.springframework.data.couchbase.core.mapping.Field;
@@ -30,8 +27,6 @@ import org.springframework.data.couchbase.core.mapping.id.IdAttribute;
  * @author Michael Reiche
  */
 @Document()
-@Data
-@NoArgsConstructor
 public class AssessmentDO {
 	@Id @GeneratedValue(strategy = GenerationStrategy.USE_ATTRIBUTES) private String documentId;
 
@@ -40,4 +35,38 @@ public class AssessmentDO {
 	@Field("docType") private String documentType;
 
 	@Field private String id;
+
+    public String getId() {
+        return id;
+    }
+
+    public String getDocumentId() {
+        return documentId;
+    }
+
+    public void setEventTimestamp(long eventTimestamp) {
+        this.eventTimestamp = eventTimestamp;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public boolean equals(Object other) {
+        if (other == null || !(other instanceof AssessmentDO)) {
+            return false;
+        }
+        AssessmentDO that = (AssessmentDO) other;
+        return equals(this.id, that.id) && equals(this.documentId, that.documentId)
+                && equals(this.eventTimestamp, that.eventTimestamp) && equals(this.documentType, that.documentType);
+    }
+
+    boolean equals(Object s0, Object s1) {
+        if (s0 == null && s1 == null || s0 == s1) {
+            return true;
+        }
+        Object sa = s0 != null ? s0 : s1;
+        Object sb = s0 != null ? s1 : s0;
+        return sa.equals(sb);
+    }
 }
