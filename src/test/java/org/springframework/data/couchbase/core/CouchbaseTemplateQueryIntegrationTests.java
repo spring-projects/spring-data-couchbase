@@ -38,14 +38,13 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AssessmentDO;
-import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.PersonWithMaps;
 import org.springframework.data.couchbase.domain.Submission;
@@ -152,7 +151,7 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		person1.setReleaseVersions(releaseVersions);
 		couchbaseTemplate.upsertById(PersonWithMaps.class).one(person1);
 		PersonWithMaps person2 = couchbaseTemplate.findById(PersonWithMaps.class).one(person1.getId());
-	  assertEquals(person1, person2);
+        assertEquals(person1, person2);
 		couchbaseTemplate.removeById(PersonWithMaps.class).oneEntity(person1);
 	}
 
@@ -184,11 +183,11 @@ class CouchbaseTemplateQueryIntegrationTests extends JavaIntegrationTests {
 		ado = couchbaseTemplate.upsertById(AssessmentDO.class).one(ado);
 
 		Query specialUsers = new Query(QueryCriteria.where(i("id")).is(ado.getId()));
-		final List<AssessmentDO> foundUsers = couchbaseTemplate.findByQuery(AssessmentDO.class)
+        final List<AssessmentDO> assementDOs = couchbaseTemplate.findByQuery(AssessmentDO.class)
 				.withConsistency(REQUEST_PLUS).matching(specialUsers).all();
-		assertEquals("123", foundUsers.get(0).getId(), "id");
-		assertEquals("44444444", foundUsers.get(0).getDocumentId(), "documentId");
-		assertEquals(ado, foundUsers.get(0));
+        assertEquals("123", assementDOs.get(0).getId(), "id");
+        assertEquals("44444444", assementDOs.get(0).getDocumentId(), "documentId");
+        assertEquals(ado, assementDOs.get(0));
 		couchbaseTemplate.removeById(AssessmentDO.class).one(ado.getDocumentId());
 	}
 
