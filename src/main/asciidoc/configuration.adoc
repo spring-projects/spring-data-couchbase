@@ -44,6 +44,64 @@ Here is an example on how to use the current SNAPSHOT dependency:
 ----
 ====
 
+.Overriding the Couchbase SDK Version
+
+Some users may wish to use a Couchbase Java SDK version different from the one referenced in a Spring Data Couchbase release for the purpose of obtaining bug and vulnerability fixes.  Since Couchbase Java SDK minor version releases are backwards compatible, this version of Spring Data Couchbase is compatible and supported with any 3.x version of the Couchbase Java SDK newer than the one specified in the release dependencies.  To change the Couchbase Java SDK version used by Spring Data Couchbase, simply override the dependency in the application pom.xml as follows:
+
+.If Using the spring-data-couchbase Dependency Directly
+====
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>${version}</version>
+  <exclusions> <!-- exclude Couchbase Java SDK -->
+    <exclusion>
+      <groupId>com.couchbase.client</groupId>
+      <artifactId>java-client</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+
+<dependency> <!-- add dependency for specific Couchbase Java SDK version -->
+  <groupId>com.couchbase.client</groupId>
+  <artifactId>java-client</artifactId>
+  <version>3.4.7</version>
+</dependency>
+----
+====
+
+.If Using the spring-data-starter-couchbase Dependency (from Spring Initialzr)
+====
+[source,xml]
+----
+<parent>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>x.y.z</version>
+  <relativePath/>
+</parent>
+
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-couchbase</artifactId>
+  <exclusions> <!-- exclude Couchbase Java SDK -->
+    <exclusion>
+      <groupId>com.couchbase.client</groupId>
+      <artifactId>java-client</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>
+
+<dependency> <!-- add dependency for specific Couchbase Java SDK version -->
+  <groupId>com.couchbase.client</groupId>
+  <artifactId>java-client</artifactId>
+  <version>3.4.7</version>
+</dependency>
+----
+====
+
 Once you have all needed dependencies on the classpath, you can start configuring it.
 Only Java config is supported (XML config has been removed in 4.0).
 
