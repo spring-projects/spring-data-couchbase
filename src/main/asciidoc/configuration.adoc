@@ -9,6 +9,7 @@ This chapter describes the common installation and configuration steps needed wh
 All versions intended for production use are distributed across Maven Central and the Spring release repository.
 As a result, the library can be included like any other maven dependency:
 
+== Configuration
 .Including the dependency through maven
 ====
 [source,xml]
@@ -25,6 +26,8 @@ This will pull in several dependencies, including the underlying Couchbase Java 
 
 You can also grab snapshots from the https://repo.spring.io/ui/repos/tree/General/libs-snapshot/org/springframework/data/spring-data-couchbase[spring snapshot repository] ( \https://repo.spring.io/libs-snapshot ) and milestone releases from the https://repo.spring.io/ui/repos/tree/General/libs-milestone/org/springframework/data/spring-data-couchbase[spring milestone repository] ( \https://repo.spring.io/libs-milestone ).
 Here is an example on how to use the current SNAPSHOT dependency:
+
+== Snapshot Configuration
 
 .Using a snapshot version
 ====
@@ -44,7 +47,7 @@ Here is an example on how to use the current SNAPSHOT dependency:
 ----
 ====
 
-.Overriding the Couchbase SDK Version
+== Overriding the Couchbase SDK Version
 
 Some users may wish to use a Couchbase Java SDK version different from the one referenced in a Spring Data Couchbase release for the purpose of obtaining bug and vulnerability fixes.  Since Couchbase Java SDK minor version releases are backwards compatible, this version of Spring Data Couchbase is compatible and supported with any 3.x version of the Couchbase Java SDK newer than the one specified in the release dependencies.  To change the Couchbase Java SDK version used by Spring Data Couchbase, simply override the dependency in the application pom.xml as follows:
 
@@ -165,3 +168,59 @@ If you start your application, you should see Couchbase INFO level logging in th
 Couchbase Java SDK is connecting to the database. If any errors are reported, make sure that the given credentials
 and host information are correct.
 
+
+== Configuring Multiple Buckets
+
+To leverage multi-bucket repositories, implement the methods below in your Config class.  The config*OperationsMapping methods configure the mapping of entity-objects to buckets.  Be careful with the method names - using a method name that is a Bean will result in the value of that bean being used instead of the result of the method. 
+
+This example maps Person -> protected,  User -> mybucket, and everything else goes to getBucketName(). Note that this only maps calls through the Repository.
+
+====
+[source,java]
+----
+@Override 
+public void configureReactiveRepositoryOperationsMapping(ReactiveRepositoryOperationsMapping baseMapping) {
+ try {
+  ReactiveCouchbaseTemplate personTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
+  baseMapping.mapEntity(Person.class,  personTemplate); // Person goes in "protected" bucket
+  ReactiveCouchbaseTemplate userTemplate = myReactiveCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new MappingCouchbaseConverter());
+  baseMapping.mapEntity(User.class,  userTemplate); // User goes in "mybucket"
+  // everything else goes in getBucketName() 
+ } catch (Exception e) {
+  throw e;
+ }
+}
+@Override
+public void configureRepositoryOperationsMapping(RepositoryOperationsMapping baseMapping) {
+ try {
+  CouchbaseTemplate personTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("protected"),new MappingCouchbaseConverter());
+  baseMapping.mapEntity(Person.class,  personTemplate); // Person goes in "protected" bucket
+  CouchbaseTemplate userTemplate = myCouchbaseTemplate(myCouchbaseClientFactory("mybucket"),new MappingCouchbaseConverter());
+  baseMapping.mapEntity(User.class,  userTemplate); // User goes in "mybucket"
+  // everything else goes in getBucketName() 
+ } catch (Exception e) {
+  throw e;
+ }
+}
+
+// do not use reactiveCouchbaseTemplate for the name of this method, otherwise the value of that bean
+// will be used instead of the result of this call (the client factory arg is different)
+public ReactiveCouchbaseTemplate myReactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+  MappingCouchbaseConverter mappingCouchbaseConverter) {
+ return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+}
+
+// do not use couchbaseTemplate for the name of this method, otherwise the value of that been 
+// will be used instead of the result from this call (the client factory arg is different)
+public CouchbaseTemplate myCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory,
+  MappingCouchbaseConverter mappingCouchbaseConverter) {
+ return new CouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter);
+}
+
+// do not use couchbaseClientFactory for the name of this method, otherwise the value of that bean will
+// will be used instead of this call being made ( bucketname is an arg here, instead of using bucketName() )
+public CouchbaseClientFactory myCouchbaseClientFactory(String bucketName) {
+ return new SimpleCouchbaseClientFactory(getConnectionString(),authenticator(), bucketName );
+}
+----
+====
