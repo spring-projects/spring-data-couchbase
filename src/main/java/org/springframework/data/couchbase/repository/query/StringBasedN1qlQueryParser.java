@@ -62,6 +62,7 @@ import com.couchbase.client.java.json.JsonValue;
 /**
  * @author Subhashni Balakrishnan
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class StringBasedN1qlQueryParser {
 	public static final String SPEL_PREFIX = "n1ql";
@@ -166,7 +167,7 @@ public class StringBasedN1qlQueryParser {
 		this.queryMethod = queryMethod;
 		this.couchbaseConverter = couchbaseConverter;
 		this.statementContext = queryMethod == null ? null
-				: createN1qlSpelValues(collection != null ? collection : bucketName, scope, collection,
+				: createN1qlSpelValues(bucketName, scope, collection,
 				queryMethod.getEntityInformation().getJavaType(), typeField, typeValue, queryMethod.isCountQuery(), null, null);
 		this.parsedExpression = getExpression(statement, queryMethod, accessor, spelExpressionParser,
 				evaluationContextProvider);
