@@ -12,45 +12,48 @@ Since the main objective was to migrate from the Java SDK 2 to 3, configuration 
 
 IMPORTANT: XML Configuration support has been dropped, so only java/annotation based configuration is supported.
 
-Your configuration still has to extend the `AbstractCouchbaseConfiguration`, but since RBAC (role-based access control) is now mandatory, different properties need to be overridden in order to be configured: `getConnectionString`, `getUserName`, `getPassword` and `getBucketName`. If you want to use a non-default scope optionally you can override the `getScopeName` method. Note that if you want to use certificate based authentication or you need to customize the password authentication, the `authenticator` method can be overridden to perform this task.
+Your configuration still has to extend the `AbstractCouchbaseConfiguration`, but since RBAC (role-based access control) is now mandatory, different properties need to be overridden in order to be configured: `getConnectionString`, `getUserName`, `getPassword` and `getBucketName`.If you want to use a non-default scope optionally you can override the `getScopeName` method.Note that if you want to use certificate based authentication or you need to customize the password authentication, the `authenticator` method can be overridden to perform this task.
 
 The new SDK still has an environment that is used to configure it, so you can override the `configureEnvironment` method and supply custom configuration if needed.
 
-For more information, see <<couchbase.configuration>>.
+For more information, see xref:couchbase/configuration.adoc[Installation & Configuration].
 
+[[spring-boot-version-compatibility]]
 === Spring Boot Version Compatibility
 
-Spring Boot 2.3.x or higher depends on Spring Data Couchbase 4.x. Earlier versions of Couchbase are not available because SDK 2 and 3 cannot live on the same classpath.
+Spring Boot 2.3.x or higher depends on Spring Data Couchbase 4.x.Earlier versions of Couchbase are not available because SDK 2 and 3 cannot live on the same classpath.
 
 [[couchbase.migrating.entities]]
 
 
+[[entities]]
 == Entities
 How to deal with entities has not changed, although since the SDK now does not ship annotations anymore only Spring-Data related annotations are supported.
 
 Specifically:
 
- - `com.couchbase.client.java.repository.annotation.Id` became `import org.springframework.data.annotation.Id`
- - `com.couchbase.client.java.repository.annotation.Field` became `import org.springframework.data.couchbase.core.mapping.Field`
+- `com.couchbase.client.java.repository.annotation.Id` became `import org.springframework.data.annotation.Id`
+- `com.couchbase.client.java.repository.annotation.Field` became `import org.springframework.data.couchbase.core.mapping.Field`
 
 The `org.springframework.data.couchbase.core.mapping.Document` annotation stayed the same.
 
-For more information, see <<couchbase.entity>>.
+For more information, see xref:couchbase/entity.adoc[Modeling Entities].
 
 
 [[couchbase.migrating.indexes]]
 == Automatic Index Management
 
-Automatic Index Management has been redesigned to allow more flexible indexing. New annotations have been introduced and old ones like `@ViewIndexed`, `@N1qlSecondaryIndexed` and `@N1qlPrimaryIndexed` were removed.
+Automatic Index Management has been redesigned to allow more flexible indexing.
+New annotations have been introduced and old ones like `@ViewIndexed`, `@N1qlSecondaryIndexed` and `@N1qlPrimaryIndexed` were removed.
 
-For more information, see <<couchbase.repository.indexing>>.
+For more information, see xref:couchbase/repository.adoc#couchbase.repository.indexing[Automatic Index Management].
 
 [[couchbase.migrating.template]]
 == Template and ReactiveTemplate
 
 Since the Couchbase SDK 3 removes support for `RxJava` and instead adds support for `Reactor`, both the `couchbaseTemplate` as well as the `reactiveCouchbaseTemplate` can be directly accessed from the `AbstractCouchbaseConfiguration`.
 
-The template has been completely overhauled so that it now uses a fluent API to configure instead of many method overloads. This has the advantage that in the future we are able to extend the functionality without having to introduce more and more overloads that make it complicated to navigate.
+The template has been completely overhauled so that it now uses a fluent API to configure instead of many method overloads.This has the advantage that in the future we are able to extend the functionality without having to introduce more and more overloads that make it complicated to navigate.
 
 The following table describes the method names in 3.x and compares them to their 4.x equivalents:
 
@@ -113,14 +116,14 @@ In addition, the following methods have been added which were not available in 3
 
 We tried to unify and align the APIs more closely to the underlying SDK semantics so they are easier to correlate and navigate.
 
-For more information, see <<couchbase.template>>.
+For more information, see xref:couchbase/template.adoc[Template & direct operations].
 
 [[couchbase.migrating.repository]]
 == Repositories & Queries
 
-  - `org.springframework.data.couchbase.core.query.Query` became `org.springframework.data.couchbase.repository.Query`
-  - `org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository` has been removed. Consider extending  `ReactiveSortingRepository` or `ReactiveCouchbaseRepository`
-  - `org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRepository` has been removed. Consider extending  `PagingAndSortingRepository` or `CouchbaseRepository`
+- `org.springframework.data.couchbase.core.query.Query` became `org.springframework.data.couchbase.repository.Query`
+- `org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository` has been removed.Consider extending  `ReactiveSortingRepository` or `ReactiveCouchbaseRepository`
+- `org.springframework.data.couchbase.repository.CouchbasePagingAndSortingRepository` has been removed.Consider extending  `PagingAndSortingRepository` or `CouchbaseRepository`
 
 
 IMPORTANT: Support for views has been removed and N1QL queries are now the first-class citizens for all custom repository methods as well as the built-in ones by default.
@@ -151,9 +154,10 @@ public class MyService {
 ----
 ====
 
-See <<couchbase.repository>> for more information.
+See xref:couchbase/repository.adoc[Couchbase repositories] for more information.
 
 
+[[full-text-search-fts]]
 == Full Text Search (FTS)
 
 The FTS API has been simplified and now can be accessed via the `Cluster` class:

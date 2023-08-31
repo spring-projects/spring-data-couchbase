@@ -5,7 +5,7 @@
 == Introduction
 
 This chapter describes the reactive repository support for couchbase.
-This builds on the core repository support explained in <<couchbase.repository>>.
+This builds on the core repository support explained in xref:couchbase/repository.adoc[Couchbase repositories].
 So make sure you’ve got a sound understanding of the basic concepts explained there.
 
 [[couchbase.reactiverepository.libraries]]
@@ -101,4 +101,4 @@ public class PersonRepositoryTests {
 [[couchbase.reactiverepository.querying]]
 == Repositories and Querying
 
-Spring Data's Reactive Couchbase comes with full querying support already provided by the blocking <<couchbase.repository.querying>>
+Spring Data's Reactive Couchbase comes with full querying support already provided by the blocking xref:couchbase/repository.adoc#couchbase.repository.querying[Repositories and Querying]

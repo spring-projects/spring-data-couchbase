@@ -1,0 +1,15 @@
+[[couchbase.core]]
+= Couchbase Support
+:page-section-summary-toc: 1
+
+Spring Data support for Couchbase contains a wide range of features:
+
+* Spring configuration support with xref:couchbase/configuration.adoc[Java-based `@Configuration` classes].
+* The xref:couchbase/template.adoc[`CouchbaseTemplate` and `ReactiveCouchbaseTemplate`] helper classes that provide object mapping between Couchbase collections and POJOs.
+* xref:couchbase/template.adoc#exception-translation[Exception translation] into Spring's portable {spring-data-commons-docs-url}data-access.html#dao-exceptions[Data Access Exception Hierarchy].
+* Feature rich object mapping integrated with _Spring's_ {spring-data-commons-docs-url}core.html#core-convert[Conversion Service].
+* Annotation-based mapping metadata that is extensible to support other metadata formats.
+* Automatic implementation of xref:repositories.adoc[imperative and reactive `Repository` interfaces] including support for xref:repositories/custom-implementations.adoc[custom query methods].
+
+For most data-oriented tasks, you can use the `[Reactive]CouchbaseTemplate` or the `Repository` support, both of which use the rich object-mapping functionality.
+Spring Data Couchbase uses consistent naming conventions on objects in various APIs to those found in the Couchbase Java SDK so that they are familiar and so that you can map your existing knowledge onto the Spring APIs.

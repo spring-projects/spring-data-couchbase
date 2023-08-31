@@ -4,8 +4,8 @@
 This chapter describes how couchbase document keys can be auto-generated using builtin mechanisms.
 There are two types of auto-generation strategies supported.
 
-- <<couchbase.autokeygeneration.usingattributes>>
-- <<couchbase.autokeygeneration.unique>>
+- xref:couchbase/autokeygeneration.adoc#couchbase.autokeygeneration.usingattributes[Key generation using attributes]
+- xref:couchbase/autokeygeneration.adoc#couchbase.autokeygeneration.unique[Key generation using uuid]
 
 NOTE: The maximum key length supported by couchbase is 250 bytes.
 

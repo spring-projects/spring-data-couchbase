@@ -130,3 +130,18 @@ couchbaseTemplate.mutateInById(User.class)
     .one(user);
 ----
 ====
+
+[[exception-translation]]
+== Exception Translation
+
+The Spring Framework provides exception translation for a wide variety of database and mapping technologies.
+This has traditionally been for JDBC and JPA.
+Spring Data Couchbase extends this feature to Couchbase by providing an implementation of the `org.springframework.dao.support.PersistenceExceptionTranslator` interface.
+
+The motivation behind mapping to Spring's {spring-data-commons-docs-url}html/dao.html#dao-exceptions[consistent data access exception hierarchy]
+is to let you write portable and descriptive exception handling code without resorting to coding against and handling specific Couchbase exceptions.
+All of Spring's data access exceptions are inherited from the
+`DataAccessException` class, so you can be sure that you can catch all database-related exceptions within a single try-catch block.
+
+`ReactiveCouchbase` propagates exceptions as early as possible.
+Exceptions that occur during the processing of the reactive sequence are emitted as error signals.

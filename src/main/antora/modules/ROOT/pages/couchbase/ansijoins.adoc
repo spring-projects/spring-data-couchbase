@@ -58,16 +58,19 @@ List<Book> books;
 [[couchbase.ansijoins.joinhints]]
 == ANSI Join Hints
 
+[[use-index-hint]]
 === Use Index Hint
 
 `index` element on the `@N1qlJoin` can be used to provided the hint for the `lks` (current entity) index and `rightIndex`
 element can be used to provided the `rks` (associated entity) index.
 
+[[hash-join-hint]]
 === Hash Join Hint
 
 If the join type is going to be hash join, the hash side can be specified for the `rks` (associated entity).
 If the associated entity is on the build side, it can be specified as `HashSide.BUILD` else `HashSide.PROBE`.
 
+[[use-keys-hint]]
 === Use Keys Hint
 
 `keys` element on the `@N1qlJoin` annotation can be used to specify unique document keys to restrict the join key space.

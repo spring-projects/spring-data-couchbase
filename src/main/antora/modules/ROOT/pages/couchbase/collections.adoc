@@ -7,14 +7,17 @@ The https://github.com/couchbaselabs/try-cb-spring[try-cb-spring] sample applica
 
 The 2021 Couchbase Connect presentation on Collections in Spring Data can be found at https://www.youtube.com/watch?v=MrplTeEFItk[Presentation Only] and https://web.cvent.com/hub/events/1dce8283-986d-4de9-8368-94c98f60df01/sessions/9ee89a85-833c-4e0c-81b0-807864fa351b?goBackHref=%2Fevents%2F1dce8283-986d-4de9-8368-94c98f60df01%2Fsessions&goBackName=Add%2FView+Sessions&goBackTab=all[Presentation with Slide Deck]
 
+[[requirements]]
 == Requirements
 
  - Couchbase Server 7.0 or above.
  - Spring Data Couchbase 4.3.1 or above.
 
+[[getting-started-configuration]]
 == Getting Started & Configuration
 
 
+[[scope-and-collection-specification]]
 === Scope and Collection Specification
 There are several mechanisms of specifying scopes and collections, and these may be combined, or one mechanism may override another. 
 First some definitions for scopes and collections. An unspecified scope indicates that the default scope is to be used, likewise, an 

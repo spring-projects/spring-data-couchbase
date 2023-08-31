@@ -3,9 +3,10 @@
 
 The goal of Spring Data repository abstraction is to significantly reduce the amount of boilerplate code required to implement data access layers for various persistence stores.
 
-By default, operations are backed by Key/Value if they are single-document operations and the ID is known. For all other operations by default N1QL queries are generated, and as a result proper indexes must be created for performant data access.
+By default, operations are backed by Key/Value if they are single-document operations and the ID is known.
+For all other operations by default N1QL queries are generated, and as a result proper indexes must be created for performant data access.
 
-Note that you can tune the consistency you want for your queries (see <<couchbase.repository.consistency>>) and have different repositories backed by different buckets (see <<couchbase.repository.multibucket>>)
+Note that you can tune the consistency you want for your queries (see xref:couchbase/repository.adoc#couchbase.repository.consistency[Querying with consistency]) and have different repositories backed by different buckets (see <<couchbase.repository.multibucket>>)
 
 [[couchbase.repository.configuration]]
 == Configuration
@@ -360,6 +361,7 @@ public interface AirportRepository extends PagingAndSortingRepository<Airport, S
 ----
 ====
 
+[[dto-projections]]
 === DTO Projections
 
 Spring Data Repositories usually return the domain model when using query methods.
