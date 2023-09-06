@@ -30,7 +30,7 @@ import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airport;
-import org.springframework.data.couchbase.domain.ConfigScoped;;
+import org.springframework.data.couchbase.domain.ConfigScoped;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
