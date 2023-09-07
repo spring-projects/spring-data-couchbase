@@ -25,8 +25,10 @@ import static org.springframework.data.couchbase.util.Util.exactly;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.AfterAll;
@@ -419,7 +421,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 	@Test
 	void testSort(){
 		{
-			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			BooleanExpression predicate = airline.name.in((Arrays.stream(saved).map(Airline::getName)).collect(Collectors.toList()));
 			Iterable<Airline> result = airlineRepository.findAll(predicate, Sort.by("name").ascending());
 			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
 							Arrays.stream(saved)
@@ -429,7 +431,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		}
 
 		{
-			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			BooleanExpression predicate = airline.name.in((Arrays.stream(saved).map(Airline::getName)).collect(Collectors.toList()));
 			Iterable<Airline> result = airlineRepository.findAll(predicate, Sort.by("name").descending());
 			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
 							Arrays.stream(saved)
@@ -439,7 +441,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		}
 
 		{
-			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			BooleanExpression predicate = airline.name.in((Arrays.stream(saved).map(Airline::getName)).collect(Collectors.toList()));
 			Iterable<Airline> result = airlineRepository.findAll(predicate, airline.name.asc());
 			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
 							Arrays.stream(saved)
@@ -449,7 +451,7 @@ public class CouchbaseRepositoryQuerydslIntegrationTests extends JavaIntegration
 		}
 
 		{
-			BooleanExpression predicate = airline.name.in(Arrays.stream(saved).map(Airline::getName).toList());
+			BooleanExpression predicate = airline.name.in((Arrays.stream(saved).map(Airline::getName)).collect(Collectors.toList()));
 			Iterable<Airline> result = airlineRepository.findAll(predicate, airline.name.desc());
 			assertArrayEquals(StreamSupport.stream(result.spliterator(), false).toArray(Airline[]::new),
 							Arrays.stream(saved)
