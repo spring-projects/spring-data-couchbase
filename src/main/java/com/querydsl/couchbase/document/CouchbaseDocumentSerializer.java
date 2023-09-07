@@ -15,6 +15,9 @@
  */
 package com.querydsl.couchbase.document;
 
+import static com.querydsl.core.types.OrderSpecifier.NullHandling.NullsFirst;
+import static com.querydsl.core.types.OrderSpecifier.NullHandling.NullsLast;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -31,6 +34,7 @@ import com.querydsl.core.types.FactoryExpression;
 import com.querydsl.core.types.Operation;
 import com.querydsl.core.types.Operator;
 import com.querydsl.core.types.Ops;
+import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.ParamExpression;
 import com.querydsl.core.types.Path;
@@ -39,7 +43,6 @@ import com.querydsl.core.types.PathType;
 import com.querydsl.core.types.SubQueryExpression;
 import com.querydsl.core.types.TemplateExpression;
 import com.querydsl.core.types.Visitor;
-import com.querydsl.core.types.Order;
 
 /**
  * Serializes the given Querydsl query to a Document query for Couchbase.
@@ -58,11 +61,8 @@ public abstract class CouchbaseDocumentSerializer implements Visitor<Object, Voi
 		for (OrderSpecifier<?> orderBy : orderBys) {
 			Object key = orderBy.getTarget().accept(this, null);
 			String keyAsString = key.toString();
-			Sort.NullHandling sortNullHandling = switch (orderBy.getNullHandling()) {
-				case NullsFirst -> Sort.NullHandling.NULLS_FIRST;
-				case NullsLast -> Sort.NullHandling.NULLS_LAST;
-				default -> Sort.NullHandling.NATIVE;
-			};
+			Sort.NullHandling sortNullHandling = orderBy.getNullHandling() == NullsFirst ? Sort.NullHandling.NULLS_FIRST
+					: orderBy.getNullHandling() == NullsLast ? Sort.NullHandling.NULLS_LAST : Sort.NullHandling.NATIVE;
 			Sort.Direction sortDirection = orderBy.getOrder() == Order.ASC ? Sort.Direction.ASC : Sort.Direction.DESC;
 			Sort.Order sortOrder = new Sort.Order(sortDirection, keyAsString, sortNullHandling);
 			sort = sort.and(Sort.by(sortOrder));
