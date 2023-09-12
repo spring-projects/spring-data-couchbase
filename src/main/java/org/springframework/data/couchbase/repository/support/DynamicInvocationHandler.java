@@ -102,7 +102,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 					new DynamicInvocationHandler<>(target, options, (String) args[0], scope));
 		}
 
-		Class<?>[] paramTypes = null;
+		Class<?>[] paramTypes = new Class[0];
 		if (args != null) {
 			// the CouchbaseRepository methods - save(entity) etc - will have a parameter type of Object instead of entityType
 			// so change the paramType to match
@@ -115,7 +115,7 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 			}
 		}
 
-		Method theMethod = repositoryClass.getMethod(method.getName(), paramTypes);
+		Method theMethod = FindMethod.findMethod(repositoryClass,  method.getName(), paramTypes);
 		Object result;
 
 		try {
