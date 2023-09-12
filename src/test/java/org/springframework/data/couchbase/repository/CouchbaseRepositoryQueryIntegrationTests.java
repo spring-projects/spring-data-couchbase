@@ -66,6 +66,7 @@ import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AirlineRepository;
+import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportJsonValue;
 import org.springframework.data.couchbase.domain.AirportJsonValueRepository;
@@ -288,6 +289,23 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 		} finally {
 			airportRepository.delete(vie);
+		}
+
+	}
+
+	@Test
+	void issuePageableDynamicProxyParameter() {
+		Airline airline = null;
+		try {
+			airline = new Airline("airline::USA", "US Air", "US");
+			airlineRepository.withScope("_default").save(airline);
+			java.util.Collection<String> countries = new LinkedList<String>();
+			countries.add(airline.getHqCountry());
+			Pageable pageable = PageRequest.of(0, 1, Sort.by("hqCountry"));
+			Page<Airline> airports2 = airlineRepository.withScope("_default").withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).findByHqCountryIn(countries, pageable);
+			assertEquals(1, airports2.getTotalElements());
+		} finally {
+			airlineRepository.withScope("_default").delete(airline);
 		}
 
 	}

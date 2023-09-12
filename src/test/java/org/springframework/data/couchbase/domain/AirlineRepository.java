@@ -16,13 +16,15 @@
 
 package org.springframework.data.couchbase.domain;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.DynamicProxyable;
 import org.springframework.data.couchbase.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.querydsl.QuerydslPredicateExecutor;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -39,4 +41,5 @@ public interface AirlineRepository extends CouchbaseRepository<Airline, String>,
 	@Query("select meta().id as _ID, meta().cas as _CAS, #{#n1ql.bucket}.* from #{#n1ql.bucket} where #{#n1ql.filter} and (name = $1)")
 	List<Airline> getByName_3x(@Param("airline_name") String airlineName);
 
+	Page<Airline> findByHqCountryIn(@Param("hqCountry") Collection<String> hqCountry, Pageable pageable);
 }
