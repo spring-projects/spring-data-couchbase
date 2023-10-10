@@ -26,15 +26,13 @@ import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Reactive repository base implementation for Couchbase.
@@ -76,7 +74,13 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@SuppressWarnings("unchecked")
 	@Override
 	public <S extends T> Mono<S> save(S entity) {
-		return save(entity, getScope(), getCollection());
+		String scopeName = getScope();
+		String collectionName = getCollection();
+		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
+		// not that this will also clear out Options, but that's ok as any options would not work
+		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
+		getReactiveTemplate().setPseudoArgs(null);
+		return operations.save(entity, scopeName, collectionName);
 	}
 
 	@Override
@@ -225,6 +229,11 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	@Override
 	public ReactiveCouchbaseOperations getOperations() {
 		return operations;
+	}
+
+	@Override
+	protected ReactiveCouchbaseTemplate getReactiveTemplate() {
+		return (ReactiveCouchbaseTemplate) getOperations();
 	}
 
 }

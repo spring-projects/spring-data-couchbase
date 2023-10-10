@@ -53,7 +53,7 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	private final CouchbaseConverter converter;
 	private final PersistenceExceptionTranslator exceptionTranslator;
 	private final ReactiveCouchbaseTemplateSupport templateSupport;
-	private ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
+	private final ThreadLocal<PseudoArgs<?>> threadLocalArgs = new ThreadLocal<>();
 	private final QueryScanConsistency scanConsistency;
 
 	public ReactiveCouchbaseTemplate(final CouchbaseClientFactory clientFactory, final CouchbaseConverter converter) {
@@ -257,14 +257,6 @@ public class ReactiveCouchbaseTemplate implements ReactiveCouchbaseOperations, A
 	 * set the ThreadLocal field
 	 */
 	public void setPseudoArgs(PseudoArgs<?> threadLocalArgs) {
-		if (this.threadLocalArgs == null) {
-			synchronized (this) {
-				if (this.threadLocalArgs == null) {
-					this.threadLocalArgs = new ThreadLocal<>();
-				}
-			}
-		}
-
 		this.threadLocalArgs.set(threadLocalArgs);
 	}
 
