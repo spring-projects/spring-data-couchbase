@@ -18,7 +18,11 @@ package org.springframework.data.couchbase.repository.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import reactor.core.Disposable;
+
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -31,6 +35,7 @@ import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.ConfigScoped;
+import org.springframework.data.couchbase.domain.ReactiveAirportMustScopeRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepositoryAnnotated;
 import org.springframework.data.couchbase.domain.ReactiveUserColRepository;
@@ -61,6 +66,7 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 
 	@Autowired ReactiveAirportRepository reactiveAirportRepository;
 	@Autowired ReactiveAirportRepositoryAnnotated reactiveAirportRepositoryAnnotated;
+    @Autowired ReactiveAirportMustScopeRepository reactiveAirportMustScopeRepository;
 	@Autowired ReactiveUserColRepository userColRepository;
 	@Autowired public CouchbaseTemplate couchbaseTemplate;
 	@Autowired public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate;
@@ -115,6 +121,21 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 		}
 
 	}
+
+  @Test
+  void testThreadLocal() throws InterruptedException {
+
+    String scopeName = "my_scope";
+    String id = UUID.randomUUID().toString();
+
+    Airport airport = new Airport(id, "testThreadLocal", "icao");
+    Disposable s = reactiveAirportMustScopeRepository.withScope(scopeName).findById(airport.getId()).doOnNext(u -> {
+        throw new RuntimeException("User already Exists! " + u);
+    }).then(reactiveAirportMustScopeRepository.withScope(scopeName).save(airport))
+        .subscribe(u -> LOGGER.info("User Persisted Successfully! {}", u));
+
+    reactiveAirportMustScopeRepository.withScope(scopeName).deleteById(id).block();
+    }
 
 	/**
 	 * can test against _default._default without setting up additional scope/collection and also test for collections and
