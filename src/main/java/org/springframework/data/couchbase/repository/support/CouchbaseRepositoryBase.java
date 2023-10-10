@@ -18,7 +18,9 @@ package org.springframework.data.couchbase.repository.support;
 
 import java.lang.reflect.AnnotatedElement;
 
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
+import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.repository.Collection;
 import org.springframework.data.couchbase.repository.ScanConsistency;
 import org.springframework.data.couchbase.repository.Scope;
@@ -35,7 +37,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  *
  * @author Michael Reiche
  */
-public class CouchbaseRepositoryBase<T, ID> {
+public abstract class CouchbaseRepositoryBase<T, ID> {
 
 	/**
 	 * Contains information about the entity being used in this repository.
@@ -82,9 +84,11 @@ public class CouchbaseRepositoryBase<T, ID> {
 
 	protected String getScope() {
 		String fromAnnotation = OptionsBuilder.annotationString(Scope.class, CollectionIdentifier.DEFAULT_SCOPE,
-				new AnnotatedElement[] { getJavaType(), repositoryInterface });
+				new AnnotatedElement[] { getJavaType(), getRepositoryInterface() });
 		String fromMetadata = crudMethodMetadata != null ? crudMethodMetadata.getScope() : null;
-		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_SCOPE, fromMetadata, fromAnnotation);
+		PseudoArgs<?> pa = getReactiveTemplate().getPseudoArgs();
+		String fromThreadLocal = pa != null ? pa.getScope() : null;
+		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_SCOPE, fromThreadLocal, fromMetadata, fromAnnotation);
 	}
 
 	/**
@@ -96,11 +100,17 @@ public class CouchbaseRepositoryBase<T, ID> {
 	 * 1. repository.withCollection()
 	 */
 	protected String getCollection() {
-		String fromAnnotation = OptionsBuilder.annotationString(Collection.class, CollectionIdentifier.DEFAULT_COLLECTION,
-				new AnnotatedElement[] { getJavaType(), repositoryInterface });
+		String fromAnnotation = OptionsBuilder.annotationString(Collection.class,
+				CollectionIdentifier.DEFAULT_COLLECTION,
+				new AnnotatedElement[] { getJavaType(), getRepositoryInterface() });
 		String fromMetadata = crudMethodMetadata != null ? crudMethodMetadata.getCollection() : null;
-		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_COLLECTION, fromMetadata, fromAnnotation);
+		PseudoArgs<?> pa = getReactiveTemplate().getPseudoArgs();
+		String fromThreadLocal = pa != null ? pa.getCollection() : null;
+		return OptionsBuilder.fromFirst(CollectionIdentifier.DEFAULT_COLLECTION, fromThreadLocal, fromMetadata,
+				fromAnnotation);
 	}
+
+	protected abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	/**
 	 * Get the QueryScanConsistency from <br>
@@ -132,4 +142,5 @@ public class CouchbaseRepositoryBase<T, ID> {
 	void setRepositoryMethodMetadata(CrudMethodMetadata crudMethodMetadata) {
 		this.crudMethodMetadata = crudMethodMetadata;
 	}
+
 }

@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
-import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
+import org.springframework.data.couchbase.core.CouchbaseTemplate;
+import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.couchbase.repository.CouchbaseRepository;
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation;
@@ -37,7 +37,6 @@ import org.springframework.data.util.Streamable;
 import org.springframework.util.Assert;
 
 import com.couchbase.client.java.query.QueryScanConsistency;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Repository base implementation for Couchbase.
@@ -71,7 +70,13 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	@Override
 	@SuppressWarnings("unchecked")
 	public <S extends T> S save(S entity) {
-		return operations.save(entity, getScope(), getCollection());
+		String scopeName = getScope();
+		String collectionName = getCollection();
+		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
+		// not that this will also clear out Options, but that's ok as any options would not work
+		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
+		getReactiveTemplate().setPseudoArgs(null);
+		return operations.save(entity, scopeName, collectionName);
 	}
 
 	@Override
@@ -177,4 +182,8 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 		return operations;
 	}
 
+  @Override
+  protected ReactiveCouchbaseTemplate getReactiveTemplate() {
+      return ((CouchbaseTemplate) getOperations()).reactive();
+  }
 }
