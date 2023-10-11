@@ -66,8 +66,8 @@ import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbase
 import org.springframework.data.couchbase.core.query.N1QLExpression;
 import org.springframework.data.couchbase.core.query.QueryCriteria;
 import org.springframework.data.couchbase.domain.Address;
-import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Airline;
+import org.springframework.data.couchbase.domain.AirlineRepository;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportJsonValue;
 import org.springframework.data.couchbase.domain.AirportJsonValueRepository;
@@ -739,6 +739,41 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		Optional<User> foundUser = userRepository.findById(user.getId());
 		assertEquals(null, foundUser.get().getTransientInfo());
 		userRepository.delete(user);
+	}
+
+	@Test
+	public void testEnumParameter() {
+		User user = new User("1", "Dave", "Wilson");
+		userRepository.save(user);
+		User user2 = new User("2", "Frank", "Spalding");
+		userRepository.save(user2);
+
+		List<User> foundUsersEquals = userRepository.findByFirstname(UserRepository.FirstName.Dave);
+		assertEquals(user.getId(), foundUsersEquals.get(0).getId());
+		assertEquals(1, foundUsersEquals.size());
+		
+		List<User> foundUsersIn = userRepository.findByFirstnameIn( new UserRepository.FirstName[]{ UserRepository.FirstName.Dave });
+		assertEquals(user.getId(), foundUsersIn.get(0).getId());
+		assertEquals(1, foundUsersIn.size());
+		
+		List<User> namedUsers = userRepository.queryByFirstnameNamedParameter( UserRepository.FirstName.Dave);
+		assertEquals(user.getId(), namedUsers.get(0).getId());
+		assertEquals(1, namedUsers.size());
+		
+		List<User> positionalUsers = userRepository.queryByFirstnamePositionalParameter( UserRepository.FirstName.Dave);
+		assertEquals(user.getId(), positionalUsers.get(0).getId());
+		assertEquals(1, positionalUsers.size());
+
+		// User objects are initialized with jsonNode.myNumber = 1000
+		List<User> integerEnumUsersNamed = userRepository.queryByIntegerEnumNamed(UserRepository.IntEnum.OneThousand);
+		assertEquals(2, integerEnumUsersNamed.size());
+
+		// User objects are initialized with jsonNode.myNumber = 1000
+		List<User> integerEnumUsersPositional = userRepository.queryByIntegerEnumPositional(UserRepository.IntEnum.OneThousand);
+		assertEquals(2, integerEnumUsersPositional.size());
+
+		userRepository.delete(user);
+		userRepository.delete(user2);
 	}
 
 	@Test

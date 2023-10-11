@@ -586,7 +586,7 @@ public class StringBasedN1qlQueryParser {
 		Object[] array = (Object[]) o;
 		JsonArray ja = JsonValue.ja();
 		for (Object e : array) {
-			ja.add(String.valueOf(couchbaseConverter.convertForWriteIfNeeded(e)));
+			ja.add(couchbaseConverter.convertForWriteIfNeeded(e));
 		}
 		namedValues.put(placeholder, ja);
 	}
