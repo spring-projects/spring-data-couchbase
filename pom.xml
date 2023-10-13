@@ -14,13 +14,13 @@
     <parent>
         <groupId>org.springframework.data.build</groupId>
         <artifactId>spring-data-parent</artifactId>
-        <version>3.2.0-RC1</version>
+        <version>3.2.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <couchbase>3.4.11</couchbase>
         <couchbase.osgi>3.4.11</couchbase.osgi>
-        <springdata.commons>3.2.0-RC1</springdata.commons>
+        <springdata.commons>3.2.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
         <mysema.querydsl>3.7.4</mysema.querydsl>
@@ -345,6 +345,16 @@
 	</profiles>
 
 	<repositories>
+		<repository>
+			<id>spring-snapshot</id>
+			<url>https://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
 		<repository>
 			<id>spring-milestone</id>
 			<url>https://repo.spring.io/milestone</url>
