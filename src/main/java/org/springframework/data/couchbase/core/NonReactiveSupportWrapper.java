@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
  *
  * @author Carlos Espinaco
  * @author Michael Reiche
+ * @author Mico Piira
  * @since 4.2
  */
 public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
@@ -37,7 +38,7 @@ public class NonReactiveSupportWrapper implements ReactiveTemplateSupport {
 	}
 
 	@Override
-	public Mono<CouchbaseDocument> encodeEntity(Object entityToEncode) {
+	public <T> Mono<EncodedEntity<T>> encodeEntity(T entityToEncode) {
 		return Mono.fromSupplier(() -> support.encodeEntity(entityToEncode));
 	}
 

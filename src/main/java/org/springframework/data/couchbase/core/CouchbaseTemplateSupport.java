@@ -22,10 +22,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.event.AfterConvertCallback;
-import org.springframework.data.couchbase.core.mapping.event.BeforeConvertCallback;
-import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
-import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
+import org.springframework.data.couchbase.core.mapping.event.*;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.util.Assert;
@@ -37,6 +34,7 @@ import org.springframework.util.Assert;
  * @author Michael Reiche
  * @author Jorge Rodriguez Martin
  * @author Carlos Espinaco
+ * @author Mico Piira
  * @since 3.0
  */
 class CouchbaseTemplateSupport extends AbstractTemplateSupport implements ApplicationContextAware, TemplateSupport {
@@ -51,26 +49,30 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 	}
 
 	@Override
-	public CouchbaseDocument encodeEntity(final Object entityToEncode) {
+	public <T> EncodedEntity<T> encodeEntity(final T entityToEncode) {
 		maybeEmitEvent(new BeforeConvertEvent<>(entityToEncode));
 		Object maybeNewEntity = maybeCallBeforeConvert(entityToEncode, "");
 		final CouchbaseDocument converted = new CouchbaseDocument();
 		converter.write(maybeNewEntity, converted);
-		maybeCallAfterConvert(entityToEncode, converted, "");
 		maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted));
-		return converted;
+		return new EncodedEntity<>(maybeCallBeforeSave(entityToEncode, converted, ""), converted);
 	}
 
 	@Override
 	public <T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			Object txHolder, CouchbaseResourceHolder holder) {
-		return decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder);
+		CouchbaseDocument converted = new CouchbaseDocument(id);
+		T decoded = decodeEntityBase(id, source, cas, entityClass, scope, collection, txHolder, holder, converted);
+		maybeEmitEvent(new AfterConvertEvent<>(decoded, converted));
+		return maybeCallAfterConvert(decoded, converted, "");
 	}
 
 	@Override
 	public <T> T applyResult(T entity, CouchbaseDocument converted, Object id, long cas,
 			Object txResultHolder, CouchbaseResourceHolder holder) {
-		return applyResultBase(entity, converted, id, cas, txResultHolder, holder);
+		T applied = applyResultBase(entity, id, cas, txResultHolder, holder);
+		maybeEmitEvent(new AfterSaveEvent<>(applied, converted));
+		return maybeCallAfterSave(applied, converted, "");
 	}
 
 	@Override
@@ -115,6 +117,24 @@ class CouchbaseTemplateSupport extends AbstractTemplateSupport implements Applic
 			return entityCallbacks.callback(AfterConvertCallback.class, object, document, collection);
 		} else {
 			LOG.info("maybeCallAfterConvert called, but CouchbaseTemplate not initialized with applicationContext");
+		}
+		return object;
+	}
+
+	protected <T> T maybeCallAfterSave(T object, CouchbaseDocument document, String collection) {
+		if (null != entityCallbacks) {
+			return entityCallbacks.callback(AfterSaveCallback.class, object, document, collection);
+		} else {
+			LOG.info("maybeCallAfterSave called, but CouchbaseTemplate not initialized with applicationContext");
+		}
+		return object;
+	}
+
+	protected <T> T maybeCallBeforeSave(T object, CouchbaseDocument document, String collection) {
+		if (null != entityCallbacks) {
+			return entityCallbacks.callback(BeforeSaveCallback.class, object, document, collection);
+		} else {
+			LOG.info("maybeCallBeforeSave called, but CouchbaseTemplate not initialized with applicationContext");
 		}
 		return object;
 	}
