@@ -15,7 +15,7 @@
 	</buildScan>
 	<buildCache>
 		<local>
-			<enabled>true</enabled>
+			<enabled>false</enabled>
 		</local>
 		<remote>
 			<server>
@@ -24,7 +24,7 @@
 					<password>${env.DEVELOCITY_CACHE_PASSWORD}</password>
 				</credentials>
 			</server>
-			<enabled>true</enabled>
+			<enabled>false</enabled>
 			<storeEnabled>#{env['DEVELOCITY_CACHE_USERNAME'] != null and env['DEVELOCITY_CACHE_PASSWORD'] != null}</storeEnabled>
 		</remote>
 	</buildCache>
