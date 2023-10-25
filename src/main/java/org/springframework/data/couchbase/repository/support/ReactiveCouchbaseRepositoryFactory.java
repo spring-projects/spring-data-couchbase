@@ -52,6 +52,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 * Holds the reference to the template.
 	 */
 	private final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping;
+	private ReactiveRepositoryOperationsMapping couchbaseOperationsMappingFallback;
 
 	/**
 	 * Holds the mapping context.
@@ -59,6 +60,16 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	private final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext;
 
 	private final CrudMethodMetadataPostProcessor crudMethodMetadataPostProcessor;
+
+	/**
+	 * Create a new factory.
+	 *
+	 * @param couchbaseOperationsMapping the template for the underlying actions.
+	 */
+	public ReactiveCouchbaseRepositoryFactory(final ReactiveRepositoryOperationsMapping couchbaseOperationsMapping, final ReactiveRepositoryOperationsMapping couchbaseOperationsMappingFallback){
+		this(couchbaseOperationsMapping);
+		this.couchbaseOperationsMappingFallback = couchbaseOperationsMappingFallback;
+	}
 
 	/**
 	 * Create a new factory.
@@ -109,9 +120,11 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	protected final Object getTargetRepository(final RepositoryInformation metadata) {
 		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
 				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
+		ReactiveCouchbaseOperations couchbaseOperationsFallback = couchbaseOperationsMappingFallback
+				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
 		SimpleReactiveCouchbaseRepository repository = getTargetRepositoryViaReflection(metadata, entityInformation,
-				couchbaseOperations, metadata.getRepositoryInterface());
+				couchbaseOperations, couchbaseOperationsFallback, metadata.getRepositoryInterface());
 		repository.setRepositoryMethodMetadata(crudMethodMetadataPostProcessor.getCrudMethodMetadata());
 		return repository;
 	}

@@ -26,6 +26,7 @@ import org.springframework.data.couchbase.CouchbaseClientFactory;
 import org.springframework.data.couchbase.SimpleCouchbaseClientFactory;
 import org.springframework.data.couchbase.cache.CouchbaseCacheManager;
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
+import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
@@ -55,7 +56,8 @@ import com.couchbase.client.java.json.JacksonTransformers;
  */
 @Configuration
 @EnableCouchbaseRepositories
-@EnableReactiveCouchbaseRepositories
+@EnableReactiveCouchbaseRepositories(repositoryFactoryBeanClass=MyReactiveCouchbaseRepositoryFactoryBean.class)
+//@EnableReactiveCouchbaseRepositories
 @EnableCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableReactiveCouchbaseAuditing(dateTimeProviderRef = "dateTimeProviderRef")
 @EnableCaching
@@ -146,6 +148,13 @@ public class Config extends AbstractCouchbaseConfiguration {
 		} catch (Exception e) {
 			throw e;
 		}
+	}
+
+	@Bean(name = BeanNames.REACTIVE_COUCHBASE_TEMPLATE)
+	public ReactiveCouchbaseTemplate reactiveCouchbaseTemplate(CouchbaseClientFactory couchbaseClientFactory, CouchbaseClientFactory couchbaseClientFactory2,
+																														 MappingCouchbaseConverter mappingCouchbaseConverter, TranslationService couchbaseTranslationService) {
+		return new ReactiveCouchbaseTemplate(couchbaseClientFactory, mappingCouchbaseConverter, couchbaseTranslationService,
+				getDefaultConsistency());
 	}
 
 	@Override

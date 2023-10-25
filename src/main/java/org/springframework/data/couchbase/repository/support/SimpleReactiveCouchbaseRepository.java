@@ -53,7 +53,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * Holds the reference to the {@link CouchbaseOperations}.
 	 */
 	private final ReactiveCouchbaseOperations operations;
-
+	private final ReactiveCouchbaseOperations operationsFallback;
 	/**
 	 * Create a new Repository.
 	 *
@@ -61,9 +61,10 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 	 * @param operations the reference to the reactive template used.
 	 */
 	public SimpleReactiveCouchbaseRepository(CouchbaseEntityInformation<T, String> entityInformation,
-			ReactiveCouchbaseOperations operations, Class<?> repositoryInterface) {
+			ReactiveCouchbaseOperations operations, ReactiveCouchbaseOperations operationsFallback,Class<?> repositoryInterface) {
 		super(entityInformation, repositoryInterface);
 		this.operations = operations;
+		this.operationsFallback = operationsFallback;
 	}
 
 	@Override

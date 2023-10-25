@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 import org.springframework.core.convert.converter.GenericConverter;
@@ -39,6 +40,7 @@ import org.springframework.data.convert.PropertyValueConverter;
 import org.springframework.data.convert.PropertyValueConverterFactory;
 import org.springframework.data.convert.PropertyValueConverterRegistrar;
 import org.springframework.data.convert.SimplePropertyValueConversions;
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
 import org.springframework.data.couchbase.core.mapping.CouchbaseSimpleTypes;
 import org.springframework.data.mapping.PersistentProperty;
@@ -145,6 +147,41 @@ public class CouchbaseCustomConversions extends org.springframework.data.convert
 
 			CouchbaseConverterConfigurationAdapter converterConfigurationAdapter = new CouchbaseConverterConfigurationAdapter();
 			converterConfigurationAdapter.registerConverters(converters);
+			// The following
+			ObjectMapper om = new AbstractCouchbaseConfiguration() {
+				@Override
+				public String getConnectionString() {
+					return null;
+				}
+
+				@Override
+				public String getUserName() {
+					return null;
+				}
+
+				@Override
+				public String getPassword() {
+					return null;
+				}
+
+				@Override
+				public String getBucketName() {
+					return null;
+				}
+			}.getObjectMapper();
+			List<Object> newConverters = new ArrayList();
+			newConverters.add(new OtherConverters.EnumToObject(om));
+			newConverters.add(new IntegerToEnumConverterFactory(om));
+			newConverters.add(new StringToEnumConverterFactory(om));
+			newConverters.add(new BooleanToEnumConverterFactory(om));
+			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
+			valueConversions.setConverterFactory(
+					new CouchbasePropertyValueConverterFactory(null, AbstractCouchbaseConfiguration.annotationToConverterMap(), om));
+			valueConversions.setValueConverterRegistry(new PropertyValueConverterRegistrar().buildRegistry());
+			valueConversions.afterPropertiesSet(); // wraps the CouchbasePropertyValueConverterFactory with CachingPVCFactory
+			converterConfigurationAdapter.setPropertyValueConversions(valueConversions);
+			converterConfigurationAdapter.registerConverters(newConverters);
+			converterConfigurationAdapter.registerConverters(newConverters);
 			return converterConfigurationAdapter;
 		}
 

@@ -168,6 +168,7 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 		try {
 			vie = new Airport("airports::vie", "vie", "low4");
 			vie.setSize(2);
+			reactiveAirportRepository.count().block();
 			airportRepository.save(vie);
 			List<Airport> all = new ArrayList<>();
 			airportRepository.findAll().forEach(all::add);
