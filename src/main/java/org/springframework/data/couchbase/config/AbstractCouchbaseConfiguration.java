@@ -452,7 +452,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		return customConversions;
 	}
 
-	Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap() {
+	public static Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap() {
 		Map<Class<? extends Annotation>, Class<?>> map = new HashMap();
 		map.put(Encrypted.class, CryptoConverter.class);
 		map.put(JsonValue.class, JsonValueConverter.class);
