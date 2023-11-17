@@ -40,9 +40,9 @@ public class CollectionAwareDefaultScopeIntegrationTests extends JavaIntegration
 	public static String scopeName = "_default";// + randomString();
 	public static String collectionName = "my_collection";// + randomString();
 
-	public static String otherScope = "other_scope";
+	public static final String otherScope = "other_scope";
 	public static String collectionName2 = "my_collection2";// + randomString();
-	public static String otherCollection = "other_collection";// + randomString();
+	public static final String otherCollection = "other_collection";// + randomString();
 
 	@BeforeAll
 	public static void beforeAll() {
