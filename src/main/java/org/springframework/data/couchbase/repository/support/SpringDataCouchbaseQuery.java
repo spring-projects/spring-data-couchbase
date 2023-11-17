@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 
 import org.springframework.data.couchbase.core.CouchbaseOperations;
 import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation;
+import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.query.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -42,9 +43,11 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Predicate;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Michael Reiche
+ * @author Tigran Babloyan
  */
 public class SpringDataCouchbaseQuery<T> extends SpringDataCouchbaseQuerySupport<SpringDataCouchbaseQuery<T>>
 		implements Fetchable<T> {
@@ -61,7 +64,7 @@ public class SpringDataCouchbaseQuery<T> extends SpringDataCouchbaseQuerySupport
 	 * @param type must not be {@literal null}.
 	 */
 	public SpringDataCouchbaseQuery(CouchbaseOperations operations, Class<? extends T> type) {
-		this(operations, type, DEFAULT_COLLECTION);
+		this(operations, type, OptionsBuilder.getCollectionFrom(type));
 	}
 
 	/**
@@ -92,7 +95,7 @@ public class SpringDataCouchbaseQuery<T> extends SpringDataCouchbaseQuerySupport
 		this.couchbaseOperations = operations;
 		this.queryCustomizer = queryCustomizer;
 		this.find = (ExecutableFindByQueryOperation.ExecutableFindByQuery<T>) couchbaseOperations.findByQuery(domainType)
-				.as(resultType1).inCollection(collectionName);
+				.as(resultType1).inCollection(StringUtils.hasText(collectionName) ? collectionName : DEFAULT_COLLECTION);
 	}
 
 	/*
