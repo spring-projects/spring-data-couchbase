@@ -256,8 +256,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 							: rs.query(statement, opts);
 				} else {
 					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
-					return (AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(),
-							clientFactory.getCluster().environment().jsonSerializer())).query(statement, opts);
+					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
+					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(), jSer)
+							.query(OptionsBuilder.queryContext(pArgs.getScope(), pArgs.getCollection(), rs.bucketName()) == null ? null : rs, statement, opts);
 				}
 			});
 
