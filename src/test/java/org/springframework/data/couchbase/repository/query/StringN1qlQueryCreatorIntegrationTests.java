@@ -46,6 +46,7 @@ import org.springframework.data.repository.query.DefaultParameters;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.ParametersSource;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.test.annotation.DirtiesContext;
@@ -138,7 +139,7 @@ class StringN1qlQueryCreatorIntegrationTests extends ClusterAwareIntegrationTest
 	}
 
 	private Parameters<?, ?> getParameters(Method method) {
-		return new DefaultParameters(method);
+		return new DefaultParameters(ParametersSource.of(method));
 	}
 
     // static class Config extends org.springframework.data.couchbase.domain.Config {

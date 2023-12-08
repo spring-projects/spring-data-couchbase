@@ -47,6 +47,7 @@ import org.springframework.data.repository.query.DefaultParameters;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.ParametersParameterAccessor;
+import org.springframework.data.repository.query.ParametersSource;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.parser.PartTree;
 
@@ -232,7 +233,7 @@ class N1qlQueryCreatorTests {
 	}
 
 	private Parameters<?, ?> getParameters(Method method) {
-		return new DefaultParameters(method);
+		return new DefaultParameters(ParametersSource.of(method));
 	}
 
 }
