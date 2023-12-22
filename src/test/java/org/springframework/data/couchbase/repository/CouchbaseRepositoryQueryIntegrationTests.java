@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -79,6 +80,8 @@ import org.springframework.data.couchbase.domain.EITurbulenceCategory;
 import org.springframework.data.couchbase.domain.EJsonCreatorTurbulenceCategory;
 import org.springframework.data.couchbase.domain.ETurbulenceCategory;
 import org.springframework.data.couchbase.domain.Iata;
+import org.springframework.data.couchbase.domain.MyPerson;
+import org.springframework.data.couchbase.domain.MyPersonRepository;
 import org.springframework.data.couchbase.domain.NaiveAuditorAware;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.data.couchbase.domain.PersonRepository;
@@ -147,6 +150,9 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 
 	@Autowired UserSubmissionRepository userSubmissionRepository;
 
+	@Autowired MyPersonRepository myPersonRepository;
+
+
 	@Autowired CouchbaseTemplate couchbaseTemplate;
 
 	String scopeName = "_default";
@@ -175,6 +181,22 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 			assertTrue(all.stream().anyMatch(a -> a.getId().equals("airports::vie")));
 		} finally {
 			airportRepository.delete(vie);
+		}
+	}
+
+	@Test
+	void findMyPerson() {
+		MyPerson vie = null;
+		try {
+			vie = new MyPerson();
+			vie.id = "123"; UUID.randomUUID().toString();
+			vie.myObject = Collections.singletonList("a");
+			MyPerson p = myPersonRepository.save(vie);
+			System.err.println(p);
+			Optional<MyPerson> r = myPersonRepository.findById( p.id);
+			System.err.println(r.get());
+		} finally {
+			try { myPersonRepository.delete(vie); } catch (DataRetrievalFailureException dnfe){}
 		}
 	}
 
