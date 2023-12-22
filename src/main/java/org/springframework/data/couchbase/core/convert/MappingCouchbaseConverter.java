@@ -614,7 +614,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 						return;
 					}
 
-					if (!conversions.isSimpleType(prop.getType())) {
+					if (!conversions.isSimpleType(propertyObj.getClass())) {
 						writePropertyInternal(propertyObj, target, prop, accessor);
 					} else {
 						writeSimpleInternal(prop, accessor, target, prop.getFieldName());
@@ -813,7 +813,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 			if (dbObjItem instanceof CouchbaseDocument) {
 				items.add(read(componentType, (CouchbaseDocument) dbObjItem, parent));
 			} else if (dbObjItem instanceof CouchbaseList) {
-				items.add(readCollection(componentType, (CouchbaseList) dbObjItem, parent));
+				items.add(readCollection(componentType != null ? componentType :TypeInformation.of(dbObjItem.getClass()), (CouchbaseList) dbObjItem, parent));
 			} else {
 				items.add(getPotentiallyConvertedSimpleRead(dbObjItem, rawComponentType));
 			}
