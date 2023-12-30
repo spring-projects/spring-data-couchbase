@@ -37,6 +37,7 @@ import org.springframework.data.util.TypeInformation;
  * @author Michael Nitschinger
  * @author Mark Paluch
  * @author Michael Reiche
+ * @author Vipul Gupta
  */
 public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, InitializingBean {
 
@@ -53,7 +54,7 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	/**
 	 * Holds the custom conversions.
 	 */
-	protected CustomConversions conversions = new CouchbaseCustomConversions(Collections.emptyList());
+	protected CustomConversions conversions;
 
 	/**
 	 * Create a new converter and hand it over the {@link ConversionService}
@@ -61,7 +62,18 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	 * @param conversionService the conversion service to use.
 	 */
 	protected AbstractCouchbaseConverter(final GenericConversionService conversionService) {
+		this(conversionService, new CouchbaseCustomConversions(Collections.emptyList()));
+	}
+
+	/**
+	 * Create a new converter with custom conversions and hand it over the {@link ConversionService}
+	 *
+	 * @param conversionService the conversion service to use.
+	 * @param customConversions the custom conversions to use
+	 */
+	protected AbstractCouchbaseConverter(final GenericConversionService conversionService, final CustomConversions customConversions) {
 		this.conversionService = conversionService;
+		this.conversions = customConversions;
 	}
 
 	/**

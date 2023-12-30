@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -34,6 +35,23 @@ public class CustomMappingCouchbaseConverter extends MappingCouchbaseConverter {
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
 			final String typeKey) {
 		super(mappingContext, typeKey);
+		this.typeMapper = new TypeBasedCouchbaseTypeMapper(typeKey);
+	}
+
+	/**
+	 * this constructer creates a TypeBasedCouchbaseTypeMapper with the specified couchbaseCustomConversions and typeKey
+	 * while MappingCouchbaseConverter uses a DefaultCouchbaseTypeMapper typeMapper = new DefaultCouchbaseTypeMapper(typeKey != null ? typeKey :
+	 * TYPEKEY_DEFAULT);
+	 *
+	 * @param mappingContext
+	 * @param typeKey - the typeKey to be used (normally "_class")
+	 * @param couchbaseCustomConversions - custom conversions to use
+	 */
+	public CustomMappingCouchbaseConverter(
+			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
+			final String typeKey,
+			final CouchbaseCustomConversions couchbaseCustomConversions) {
+		super(mappingContext, typeKey, couchbaseCustomConversions);
 		this.typeMapper = new TypeBasedCouchbaseTypeMapper(typeKey);
 	}
 

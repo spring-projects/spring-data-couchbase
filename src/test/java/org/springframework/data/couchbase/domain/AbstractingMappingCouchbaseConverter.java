@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.domain;
 
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions;
 import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
@@ -37,8 +38,9 @@ public class AbstractingMappingCouchbaseConverter extends MappingCouchbaseConver
 	 */
 	public AbstractingMappingCouchbaseConverter(
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
-			final String typeKey) {
-		super(mappingContext, typeKey);
+			final String typeKey,
+			final CouchbaseCustomConversions couchbaseCustomConversions) {
+		super(mappingContext, typeKey, couchbaseCustomConversions);
 		this.typeMapper = new AbstractingTypeMapper(typeKey);
 	}
 

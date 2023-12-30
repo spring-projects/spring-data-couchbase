@@ -211,8 +211,7 @@ public class Config extends AbstractCouchbaseConfiguration {
 		// that has an getAliasFor(info) that just returns getType().getName().
 		// Our CustomMappingCouchbaseConverter uses a TypeBasedCouchbaseTypeMapper that will
 		// use the DocumentType annotation
-		MappingCouchbaseConverter converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext, typeKey());
-		converter.setCustomConversions(couchbaseCustomConversions);
+		MappingCouchbaseConverter converter = new CustomMappingCouchbaseConverter(couchbaseMappingContext, typeKey(), couchbaseCustomConversions);
 		return converter;
 	}
 

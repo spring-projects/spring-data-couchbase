@@ -35,7 +35,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
-import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.convert.PropertyValueConverterRegistrar;
@@ -67,8 +66,6 @@ import org.springframework.data.mapping.model.FieldNamingStrategy;
 import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy;
 import org.springframework.transaction.TransactionManager;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
-import org.springframework.transaction.annotation.ProxyTransactionManagementConfiguration;
-import org.springframework.transaction.config.TransactionManagementConfigUtils;
 import org.springframework.transaction.interceptor.TransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -100,6 +97,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author Subhashni Balakrishnan
  * @author Jorge Rodriguez Martin
  * @author Michael Reiche
+ * @author Vipul Gupta
  */
 @Configuration
 public abstract class AbstractCouchbaseConfiguration {
@@ -280,8 +278,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	@Bean
 	public MappingCouchbaseConverter mappingCouchbaseConverter(CouchbaseMappingContext couchbaseMappingContext,
 			CouchbaseCustomConversions couchbaseCustomConversions) {
-		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey());
-		converter.setCustomConversions(couchbaseCustomConversions);
+		MappingCouchbaseConverter converter = new MappingCouchbaseConverter(couchbaseMappingContext, typeKey(), couchbaseCustomConversions);
 		couchbaseMappingContext.setSimpleTypeHolder(couchbaseCustomConversions.getSimpleTypeHolder());
 		return converter;
 	}
