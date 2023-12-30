@@ -57,15 +57,6 @@ public abstract class AbstractCouchbaseConverter implements CouchbaseConverter, 
 	protected CustomConversions conversions;
 
 	/**
-	 * Create a new converter and hand it over the {@link ConversionService}
-	 *
-	 * @param conversionService the conversion service to use.
-	 */
-	protected AbstractCouchbaseConverter(final GenericConversionService conversionService) {
-		this(conversionService, new CouchbaseCustomConversions(Collections.emptyList()));
-	}
-
-	/**
 	 * Create a new converter with custom conversions and hand it over the {@link ConversionService}
 	 *
 	 * @param conversionService the conversion service to use.
