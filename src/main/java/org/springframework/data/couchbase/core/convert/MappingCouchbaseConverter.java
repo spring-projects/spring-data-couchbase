@@ -90,6 +90,7 @@ import com.couchbase.client.java.json.JsonObject;
  * @author Mark Paluch
  * @author Michael Reiche
  * @author Remi Bleuse
+ * @author Vipul Gupta
  */
 public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implements ApplicationContextAware {
 
@@ -141,8 +142,7 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	}
 
 	/**
-	 * Create a new {@link MappingCouchbaseConverter} that will store class name for complex types in the <i>typeKey</i>
-	 * attribute.
+	 * Create a new {@link MappingCouchbaseConverter}
 	 *
 	 * @param mappingContext the mapping context to use.
 	 * @param typeKey the attribute name to use to store complex types class name.
@@ -150,12 +150,23 @@ public class MappingCouchbaseConverter extends AbstractCouchbaseConverter implem
 	public MappingCouchbaseConverter(
 			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
 			final String typeKey) {
-		super(new DefaultConversionService());
+		this(mappingContext, typeKey, new CouchbaseCustomConversions(Collections.emptyList()));
+	}
+
+	/**
+	 * Create a new {@link MappingCouchbaseConverter} that will store class name for complex types in the <i>typeKey</i>
+	 * attribute.
+	 *
+	 * @param mappingContext the mapping context to use.
+	 * @param typeKey the attribute name to use to store complex types class name.
+	 * @param customConversions the custom conversions to use
+	 */
+	public MappingCouchbaseConverter(
+			final MappingContext<? extends CouchbasePersistentEntity<?>, CouchbasePersistentProperty> mappingContext,
+			final String typeKey,
+			final CustomConversions customConversions) {
+		super(new DefaultConversionService(), customConversions);
 		this.mappingContext = mappingContext;
-		// this is how the MappingCouchbaseConverter gets the custom conversions.
-		// the conversions Service gets them in afterPropertiesSet()
-		CustomConversions customConversions = new CouchbaseCustomConversions(Collections.emptyList());
-		this.setCustomConversions(customConversions);
 		// Don't rely on setSimpleTypeHolder being called in afterPropertiesSet() - some integration tests do not use it
 		// if the mappingContext does not have the SimpleTypes, it will not know that they have converters, then it will
 		// try to access the fields of the type and (maybe) fail with InaccessibleObjectException
