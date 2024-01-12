@@ -428,6 +428,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * and {@link #couchbaseMappingContext(CustomConversions)}.
 	 *
 	 * @param cryptoManager
+	 * @param objectMapper
 	 * @return must not be {@literal null}.
 	 */
 	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
@@ -437,6 +438,7 @@ public abstract class AbstractCouchbaseConfiguration {
 		newConverters.add(new IntegerToEnumConverterFactory(getObjectMapper()));
 		newConverters.add(new StringToEnumConverterFactory(getObjectMapper()));
 		newConverters.add(new BooleanToEnumConverterFactory(getObjectMapper()));
+		additionalConverters(newConverters);
 		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
 			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
 			valueConversions.setConverterFactory(
@@ -447,6 +449,13 @@ public abstract class AbstractCouchbaseConfiguration {
 			configurationAdapter.registerConverters(newConverters);
 		});
 		return customConversions;
+	}
+
+	/**
+	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper)} List
+	 */
+	protected void additionalConverters(List<Object> converters) {
+		// NO_OP
 	}
 
 	public static Map<Class<? extends Annotation>, Class<?>> annotationToConverterMap() {
