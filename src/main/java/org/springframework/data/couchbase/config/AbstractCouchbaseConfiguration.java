@@ -452,7 +452,7 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * This should be overridden in order to update the {@link #additionalConverters()} List
+	 * This should be overridden in order to update the {@link #customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper)} List
 	 */
 	protected void additionalConverters(List<Object> converters) {
 		// NO_OP
