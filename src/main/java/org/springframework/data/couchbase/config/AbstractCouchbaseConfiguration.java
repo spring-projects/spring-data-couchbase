@@ -432,7 +432,13 @@ public abstract class AbstractCouchbaseConfiguration {
 	 * @return must not be {@literal null}.
 	 */
 	public CustomConversions customConversions(CryptoManager cryptoManager, ObjectMapper objectMapper) {
-		List<Object> newConverters = additionalConverters();
+		List<Object> newConverters = new ArrayList();
+		// The following
+		newConverters.add(new OtherConverters.EnumToObject(getObjectMapper()));
+		newConverters.add(new IntegerToEnumConverterFactory(getObjectMapper()));
+		newConverters.add(new StringToEnumConverterFactory(getObjectMapper()));
+		newConverters.add(new BooleanToEnumConverterFactory(getObjectMapper()));
+		additionalConverters(newConverters);
 		CustomConversions customConversions = CouchbaseCustomConversions.create(configurationAdapter -> {
 			SimplePropertyValueConversions valueConversions = new SimplePropertyValueConversions();
 			valueConversions.setConverterFactory(
@@ -446,30 +452,9 @@ public abstract class AbstractCouchbaseConfiguration {
 	}
 
 	/**
-	 * This function makes a list of custom converters.
-	 * This list can be updated via {@link #registerAdditionalConverters(List)}
-	 *
-	 * @return additionalConverters - must not be {@literal null}.
-	 */
-	public List<Object> additionalConverters() {
-
-		List<Object> additionalConverters = new ArrayList();
-		additionalConverters.add(new OtherConverters.EnumToObject(getObjectMapper()));
-		additionalConverters.add(new IntegerToEnumConverterFactory(getObjectMapper()));
-		additionalConverters.add(new StringToEnumConverterFactory(getObjectMapper()));
-		additionalConverters.add(new BooleanToEnumConverterFactory(getObjectMapper()));
-
-		// Register more converters
-		registerAdditionalConverters(additionalConverters);
-
-		return additionalConverters;
-
-	}
-
-	/**
 	 * This should be overridden in order to update the {@link #additionalConverters()} List
 	 */
-	protected void registerAdditionalConverters(List<Object> converters) {
+	protected void additionalConverters(List<Object> converters) {
 		// NO_OP
 	}
 
