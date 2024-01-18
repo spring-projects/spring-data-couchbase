@@ -30,51 +30,6 @@ public class Config extends AbstractCouchbaseConfiguration {
 
 An advanced usage is described in <<couchbase.repository.multibucket>>.
 
-[[couchbase.repository.configuration.dsl]]
-=== QueryDSL Configuration
-Spring Data Couchbase supports QueryDSL for building type-safe queries. To enable code generation you need to set `spring-data-couchbase` as annotation processor on your project.
-
-.Maven Configuration Example
-====
-[source,xml]
-----
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>[compiler-plugin-version]</version>
-            <configuration>
-                <annotationProcessorPaths>
-                    <!-- path to the annotation processor -->
-                    <path>
-                        <groupId>com.querydsl</groupId>
-                        <artifactId>querydsl-apt</artifactId>
-                        <version>[version]</version>
-                    </path>
-                    <path>
-                        <groupId>org.springframework.data</groupId>
-                        <artifactId>spring-data-couchbase</artifactId>
-                        <version>[version]</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
-</build>
-
-----
-====
-
-.Gradle Configuration Example
-====
-[source,groovy]
-----
-annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
-annotationProcessor 'org.springframework.data:spring-data-couchbase:${springDataCouchbaseVersion}'
-----
-====
-
 [[couchbase.repository.usage]]
 == Usage
 
