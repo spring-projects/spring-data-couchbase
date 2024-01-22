@@ -153,7 +153,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 				() -> collectionReady(cluster.bucket(config().bucketname()).scope(scopeName).collection(collectionName)));
 
 		assertNotEquals(scopeSpec, collectionManager.getScope(scopeName));
-		assertTrue(collectionManager.getScope(scopeName).collections().contains(collSpec));
+		assertTrue(collectionManager.getScope(scopeName).collections().stream().anyMatch( (c) -> c.name().equals(collSpec.name()) && c.scopeName().equals(collSpec.scopeName())));
 
 		waitForQueryIndexerToHaveBucket(cluster, collectionName);
 
@@ -229,7 +229,7 @@ public class JavaIntegrationTests extends ClusterAwareIntegrationTests {
 	public static boolean collectionExists(CollectionManager mgr, CollectionSpec spec) {
 		try {
 			ScopeSpec scope = mgr.getScope(spec.scopeName());
-			return scope.collections().contains(spec);
+			return scope.collections().stream().anyMatch( (c) -> c.name().equals(spec.name()) && c.scopeName().equals(spec.scopeName()));
 		} catch (CollectionNotFoundException e) {
 			return false;
 		}
