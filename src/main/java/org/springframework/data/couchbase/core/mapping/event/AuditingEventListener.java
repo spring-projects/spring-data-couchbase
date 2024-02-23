@@ -37,7 +37,7 @@ import org.springframework.util.Assert;
  */
 public class AuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<Object>> {
 
-	private final ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory;
+	private final ObjectFactory<Object> auditingHandlerFactory;
 
 	public AuditingEventListener() {
 		this.auditingHandlerFactory = null;
@@ -51,8 +51,8 @@ public class AuditingEventListener implements ApplicationListener<CouchbaseMappi
 	 *
 	 * @param auditingHandlerFactory must not be {@literal null}.
 	 */
-	public AuditingEventListener(ObjectFactory<IsNewAwareAuditingHandler> auditingHandlerFactory) {
-		Assert.notNull(auditingHandlerFactory, "IsNewAwareAuditingHandler must not be null!");
+	public AuditingEventListener(ObjectFactory<Object> auditingHandlerFactory) {
+		Assert.notNull(auditingHandlerFactory, "auditingHandlerFactory must not be null!");
 		this.auditingHandlerFactory = auditingHandlerFactory;
 	}
 
@@ -63,8 +63,19 @@ public class AuditingEventListener implements ApplicationListener<CouchbaseMappi
 	@Override
 	public void onApplicationEvent(CouchbaseMappingEvent<Object> event) {
 		if (event instanceof BeforeConvertEvent) {
-			Optional.ofNullable(event.getSource())//
-					.ifPresent(it -> auditingHandlerFactory.getObject().markAudited(it));
+			IsNewAwareAuditingHandler h = auditingHandlerFactory != null
+					&& auditingHandlerFactory.getObject() instanceof IsNewAwareAuditingHandler
+							? (IsNewAwareAuditingHandler) (auditingHandlerFactory.getObject())
+							: null;
+			if (auditingHandlerFactory != null && h == null) {
+				if (LOG.isWarnEnabled()) {
+					LOG.warn("event:{} source:{} auditingHandler is not an IsNewAwareAuditingHandler: {}",
+							event.getClass().getSimpleName(), event.getSource(), auditingHandlerFactory.getObject());
+				}
+			}
+			if (h != null) {
+				Optional.ofNullable(event.getSource()).ifPresent(it -> h.markAudited(it));
+			}
 		}
 		if (event instanceof BeforeSaveEvent) {}
 		if (event instanceof AfterSaveEvent) {}
