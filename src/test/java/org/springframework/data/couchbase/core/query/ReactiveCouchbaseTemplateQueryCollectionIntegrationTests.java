@@ -115,10 +115,12 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 		// then do processing for this class
 		couchbaseTemplate.removeByQuery(User.class).withConsistency(REQUEST_PLUS).inCollection(collectionName).all();
 		couchbaseTemplate.findByQuery(User.class).withConsistency(REQUEST_PLUS).inCollection(collectionName).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(scopeName).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
+				.inCollection(collectionName).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inScope(scopeName)
 				.inCollection(collectionName).all();
-		couchbaseTemplate.removeByQuery(Airport.class).inScope(otherScope).inCollection(otherCollection).all();
+		couchbaseTemplate.removeByQuery(Airport.class).withConsistency(REQUEST_PLUS).inScope(otherScope)
+				.inCollection(otherCollection).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inScope(otherScope)
 				.inCollection(otherCollection).all();
 
@@ -528,7 +530,6 @@ class ReactiveCouchbaseTemplateQueryCollectionIntegrationTests extends Collectio
 
 	@Test
 	public void existsByIdOther() { // 1
-		GetOptions options = GetOptions.getOptions().timeout(Duration.ofSeconds(10));
 		ExistsOptions existsOptions = ExistsOptions.existsOptions().timeout(Duration.ofSeconds(10));
 		Airport saved = template.insertById(Airport.class).inScope(otherScope).inCollection(otherCollection)
 				.one(vie.withIcao("lowg")).block();
