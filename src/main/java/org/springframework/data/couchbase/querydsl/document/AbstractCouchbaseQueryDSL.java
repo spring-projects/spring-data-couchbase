@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.querydsl.couchbase.document;
+package org.springframework.data.couchbase.querydsl.document;
 
 import java.util.Collection;
 import java.util.HashMap;

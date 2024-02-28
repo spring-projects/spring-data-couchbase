@@ -16,6 +16,7 @@
 package org.springframework.data.couchbase.core;
 
 import com.couchbase.client.core.api.query.CoreQueryContext;
+import com.couchbase.client.core.api.query.CoreQueryOptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,13 +29,11 @@ import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.util.Assert;
 
-import com.couchbase.client.core.io.CollectionIdentifier;
 import com.couchbase.client.java.ReactiveScope;
 import com.couchbase.client.java.codec.JsonSerializer;
 import com.couchbase.client.java.query.QueryOptions;
 import com.couchbase.client.java.query.QueryScanConsistency;
 import com.couchbase.client.java.query.ReactiveQueryResult;
-import com.couchbase.client.java.transactions.AttemptContextReactiveAccessor;
 import com.couchbase.client.java.transactions.TransactionQueryOptions;
 import com.couchbase.client.java.transactions.TransactionQueryResult;
 
@@ -77,9 +76,9 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 		private final ReactiveTemplateSupport support;
 
 		ReactiveFindByQuerySupport(final ReactiveCouchbaseTemplate template, final Class<?> domainType,
-				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency, final String scope,
-				final String collection, final QueryOptions options, final String[] distinctFields, final String[] fields,
-				final ReactiveTemplateSupport support) {
+				final Class<T> returnType, final Query query, final QueryScanConsistency scanConsistency,
+				final String scope, final String collection, final QueryOptions options, final String[] distinctFields,
+				final String[] fields, final ReactiveTemplateSupport support) {
 			Assert.notNull(domainType, "domainType must not be null!");
 			Assert.notNull(returnType, "returnType must not be null!");
 			this.template = template;
@@ -192,10 +191,16 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 							: rs.query(statement, opts);
 				} else {
-					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					TransactionQueryOptions options = buildTransactionOptions(pArgs.getOptions());
 					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
-					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(), jSer)
-							.query(OptionsBuilder.queryContext(pArgs.getScope(), pArgs.getCollection(), rs.bucketName()) == null ? null : rs, statement, opts);
+					CoreQueryOptions opts = options != null ? options.builder().build() : null;
+					return s.get().getCore()
+							.queryBlocking(statement,
+									pArgs.getScope() == null ? null
+											: CoreQueryContext.of(rs.bucketName(), pArgs.getScope()),
+									opts, false)
+							.map(response -> new TransactionQueryResult(response, jSer));
+
 				}
 			});
 
@@ -255,10 +260,15 @@ public class ReactiveFindByQueryOperationSupport implements ReactiveFindByQueryO
 					return pArgs.getScope() == null ? clientFactory.getCluster().reactive().query(statement, opts)
 							: rs.query(statement, opts);
 				} else {
-					TransactionQueryOptions opts = buildTransactionOptions(pArgs.getOptions());
+					TransactionQueryOptions options = buildTransactionOptions(pArgs.getOptions());
 					JsonSerializer jSer = clientFactory.getCluster().environment().jsonSerializer();
-					return AttemptContextReactiveAccessor.createReactiveTransactionAttemptContext(s.get().getCore(), jSer)
-							.query(OptionsBuilder.queryContext(pArgs.getScope(), pArgs.getCollection(), rs.bucketName()) == null ? null : rs, statement, opts);
+					CoreQueryOptions opts = options != null ? options.builder().build() : null;
+					return s.get().getCore()
+							.queryBlocking(statement,
+									pArgs.getScope() == null ? null
+											: CoreQueryContext.of(rs.bucketName(), pArgs.getScope()),
+									opts, false)
+							.map(response -> new TransactionQueryResult(response, jSer));
 				}
 			});
 
