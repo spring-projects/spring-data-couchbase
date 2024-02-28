@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.querydsl.couchbase.document.CouchbaseDocumentSerializer;
+import org.springframework.data.couchbase.querydsl.document.CouchbaseDocumentSerializer;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;

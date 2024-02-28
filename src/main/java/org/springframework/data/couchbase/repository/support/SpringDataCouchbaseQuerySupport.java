@@ -24,8 +24,8 @@ import org.springframework.data.domain.Sort;
 
 import com.querydsl.core.support.QueryMixin;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.couchbase.document.AbstractCouchbaseQueryDSL;
-import com.querydsl.couchbase.document.CouchbaseDocumentSerializer;
+import org.springframework.data.couchbase.querydsl.document.AbstractCouchbaseQueryDSL;
+import org.springframework.data.couchbase.querydsl.document.CouchbaseDocumentSerializer;
 
 /**
  * @author Michael Reiche
