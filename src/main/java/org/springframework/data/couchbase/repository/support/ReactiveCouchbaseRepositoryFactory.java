@@ -106,7 +106,7 @@ public class ReactiveCouchbaseRepositoryFactory extends ReactiveRepositoryFactor
 	 * @return a new created repository.
 	 */
 	@Override
-	protected final Object getTargetRepository(final RepositoryInformation metadata) {
+	protected Object getTargetRepository(final RepositoryInformation metadata) {
 		ReactiveCouchbaseOperations couchbaseOperations = couchbaseOperationsMapping
 				.resolve(metadata.getRepositoryInterface(), metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
