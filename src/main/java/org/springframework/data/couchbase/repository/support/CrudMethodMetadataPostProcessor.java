@@ -55,7 +55,7 @@ import com.couchbase.client.java.query.QueryScanConsistency;
  * @author Jens Schauder
  * @author Michael Reiche
  */
-class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, BeanClassLoaderAware {
+public class CrudMethodMetadataPostProcessor implements RepositoryProxyPostProcessor, BeanClassLoaderAware {
 
 	private @Nullable ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
 
