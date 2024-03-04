@@ -118,7 +118,7 @@ public class CouchbaseRepositoryFactory extends RepositoryFactorySupport {
 	 * @return a new created repository.
 	 */
 	@Override
-	protected final Object getTargetRepository(final RepositoryInformation metadata) {
+	protected Object getTargetRepository(final RepositoryInformation metadata) {
 		CouchbaseOperations couchbaseOperations = couchbaseOperationsMapping.resolve(metadata.getRepositoryInterface(),
 				metadata.getDomainType());
 		CouchbaseEntityInformation<?, Serializable> entityInformation = getEntityInformation(metadata.getDomainType());
