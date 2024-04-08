@@ -28,18 +28,21 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.core.ReactiveCouchbaseTemplate;
 import org.springframework.data.couchbase.core.RemoveResult;
 import org.springframework.data.couchbase.domain.Address;
 import org.springframework.data.couchbase.domain.AddressAnnotated;
+import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.AirportRepository;
 import org.springframework.data.couchbase.domain.AirportRepositoryAnnotated;
+import org.springframework.data.couchbase.domain.BigAirline;
+import org.springframework.data.couchbase.domain.BigAirlineRepository;
 import org.springframework.data.couchbase.domain.ConfigScoped;
 import org.springframework.data.couchbase.domain.User;
 import org.springframework.data.couchbase.domain.UserCol;
@@ -72,6 +75,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 
 	@Autowired AirportRepositoryAnnotated airportRepositoryAnnotated;
 	@Autowired AirportRepository airportRepository;
+	@Autowired BigAirlineRepository bigAirlineRepository;
 	@Autowired UserColRepository userColRepository;
 	@Autowired UserSubmissionAnnotatedRepository userSubmissionAnnotatedRepository;
 	@Autowired UserSubmissionUnannotatedRepository userSubmissionUnannotatedRepository;
@@ -103,6 +107,7 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		couchbaseTemplate.removeByQuery(User.class).inCollection(collectionName).all();
 		couchbaseTemplate.removeByQuery(UserCol.class).inScope(otherScope).inCollection(otherCollection).all();
 		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName).all();
+		couchbaseTemplate.removeByQuery(BigAirline.class).inCollection(collectionName).all();
 		couchbaseTemplate.removeByQuery(Airport.class).inCollection(collectionName2).all();
 		couchbaseTemplate.findByQuery(Airport.class).withConsistency(REQUEST_PLUS).inCollection(collectionName).all();
 	}
@@ -124,6 +129,19 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		System.err.println("found: " + found);
 		assertEquals(userCol, found);
 		userColRepository.delete(found);
+	}
+
+	@Test
+	@Disabled // BigInteger and BigDecimal lose precision through Query
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveBig() {
+		BigAirline airline = new BigAirline(UUID.randomUUID().toString(), "MyAirline", null, null, null);
+		airline = bigAirlineRepository.withCollection(collectionName).save(airline);
+		List<Airline> foundMaybe = bigAirlineRepository.withCollection(collectionName)
+				.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).getByName("MyAirline");
+		BigAirline found = (BigAirline) foundMaybe.get(0);
+		assertEquals(found, airline);
+		bigAirlineRepository.withCollection(collectionName).delete(airline);
 	}
 
 	@Test
