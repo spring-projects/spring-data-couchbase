@@ -23,7 +23,6 @@
         <springdata.commons>3.2.5-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
-        <mysema.querydsl>3.7.4</mysema.querydsl>
         <couchbase.encryption>3.1.0</couchbase.encryption>
         <jodatime>2.10.13</jodatime>
         <jackson-joda>2.13.4</jackson-joda>
@@ -48,19 +47,7 @@
             <groupId>com.querydsl</groupId>
             <artifactId>querydsl-apt</artifactId>
             <version>${querydsl}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.inject</groupId>
-                    <artifactId>javax.inject</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <scope>test</scope>
+            <classifier>jakarta</classifier>
         </dependency>
 
         <dependency>
