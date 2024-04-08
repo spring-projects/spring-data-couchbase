@@ -220,7 +220,7 @@ public class JacksonTranslationService implements TranslationService, Initializi
 			case VALUE_NUMBER_INT:
 				return parser.getNumberValue();
 			case VALUE_NUMBER_FLOAT:
-				return parser.getDoubleValue();
+				return parser.getDecimalValue();
 			case VALUE_NULL:
 				return null;
 			default:

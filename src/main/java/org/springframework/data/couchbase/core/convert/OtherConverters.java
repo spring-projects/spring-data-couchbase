@@ -24,30 +24,27 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.couchbase.client.java.json.JsonArray;
-import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.json.JsonValueModule;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbaseList;
-import org.springframework.util.Base64Utils;
 
 import com.couchbase.client.core.encryption.CryptoManager;
+import com.couchbase.client.java.json.JsonArray;
+import com.couchbase.client.java.json.JsonObject;
+import com.couchbase.client.java.json.JsonValueModule;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -65,13 +62,11 @@ public final class OtherConverters {
 	 * @return the list of converters to register.
 	 */
 	public static Collection<Converter<?, ?>> getConvertersToRegister() {
-		List<Converter<?, ?>> converters = new ArrayList<Converter<?, ?>>();
+		List<Converter<?, ?>> converters = new ArrayList<>();
 
 		converters.add(UuidToString.INSTANCE);
 		converters.add(StringToUuid.INSTANCE);
-		converters.add(BigIntegerToString.INSTANCE);
 		converters.add(StringToBigInteger.INSTANCE);
-		converters.add(BigDecimalToString.INSTANCE);
 		converters.add(StringToBigDecimal.INSTANCE);
 		converters.add(ByteArrayToString.INSTANCE);
 		converters.add(StringToByteArray.INSTANCE);
@@ -114,16 +109,7 @@ public final class OtherConverters {
 		}
 	}
 
-	@WritingConverter
-	public enum BigIntegerToString implements Converter<BigInteger, String> {
-		INSTANCE;
-
-		@Override
-		public String convert(BigInteger source) {
-			return source == null ? null : source.toString();
-		}
-	}
-
+	// to support reading BigIntegers that were written as Strings (now discontinued)
 	@ReadingConverter
 	public enum StringToBigInteger implements Converter<String, BigInteger> {
 		INSTANCE;
@@ -134,16 +120,7 @@ public final class OtherConverters {
 		}
 	}
 
-	@WritingConverter
-	public enum BigDecimalToString implements Converter<BigDecimal, String> {
-		INSTANCE;
-
-		@Override
-		public String convert(BigDecimal source) {
-			return source == null ? null : source.toString();
-		}
-	}
-
+	// to support reading BigDecimals that were written as Strings (now discontinued)
 	@ReadingConverter
 	public enum StringToBigDecimal implements Converter<String, BigDecimal> {
 		INSTANCE;
@@ -160,7 +137,7 @@ public final class OtherConverters {
 
 		@Override
 		public String convert(byte[] source) {
-			return source == null ? null : Base64Utils.encodeToString(source);
+			return source == null ? null : Base64.getEncoder().encodeToString(source);
 		}
 	}
 
@@ -170,7 +147,7 @@ public final class OtherConverters {
 
 		@Override
 		public byte[] convert(String source) {
-			return source == null ? null : Base64Utils.decode(source.getBytes(StandardCharsets.UTF_8));
+			return source == null ? null : Base64.getDecoder().decode(source.getBytes(StandardCharsets.UTF_8));
 		}
 	}
 

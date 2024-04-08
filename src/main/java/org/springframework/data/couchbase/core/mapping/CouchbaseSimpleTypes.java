@@ -38,7 +38,7 @@ public abstract class CouchbaseSimpleTypes {
 			Stream.of(JsonObject.class, JsonArray.class, Number.class).collect(toSet()), true);
 
 	public static final SimpleTypeHolder DOCUMENT_TYPES = new SimpleTypeHolder(
-			Stream.of(CouchbaseDocument.class, CouchbaseList.class).collect(toSet()), true);
+			Stream.of(CouchbaseDocument.class, CouchbaseList.class, Number.class).collect(toSet()), true);
 
 	private CouchbaseSimpleTypes() {}
 

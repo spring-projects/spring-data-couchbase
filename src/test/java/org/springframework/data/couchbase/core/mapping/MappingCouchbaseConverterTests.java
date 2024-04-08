@@ -200,12 +200,12 @@ public class MappingCouchbaseConverterTests {
 	@Test
 	void writesBigInteger() {
 		CouchbaseDocument converted = new CouchbaseDocument();
-		BigIntegerEntity entity = new BigIntegerEntity(new BigInteger("12345"));
+		BigIntegerEntity entity = new BigIntegerEntity(new BigInteger("12345678901234567890123"));
 
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
 		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
-		assertThat(result.get("attr0")).isEqualTo(entity.attr0.toString());
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0);
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
@@ -213,21 +213,21 @@ public class MappingCouchbaseConverterTests {
 	void readsBigInteger() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", BigIntegerEntity.class.getName());
-		source.put("attr0", "12345");
+		source.put("attr0", new BigInteger("12345678901234567890123"));
 
 		BigIntegerEntity converted = converter.read(BigIntegerEntity.class, source);
-		assertThat(converted.attr0).isEqualTo(new BigInteger((String) source.get("attr0")));
+		assertThat(converted.attr0).isEqualTo(source.get("attr0"));
 	}
 
 	@Test
 	void writesBigDecimal() {
 		CouchbaseDocument converted = new CouchbaseDocument();
-		BigDecimalEntity entity = new BigDecimalEntity(new BigDecimal("123.45"));
+		BigDecimalEntity entity = new BigDecimalEntity(new BigDecimal("12345678901234567890123.45"));
 
 		converter.write(entity, converted);
 		Map<String, Object> result = converted.export();
 		assertThat(result.get("_class")).isEqualTo(entity.getClass().getName());
-		assertThat(result.get("attr0")).isEqualTo(entity.attr0.toString());
+		assertThat(result.get("attr0")).isEqualTo(entity.attr0);
 		assertThat(converted.getId()).isEqualTo(BaseEntity.ID);
 	}
 
@@ -235,10 +235,10 @@ public class MappingCouchbaseConverterTests {
 	void readsBigDecimal() {
 		CouchbaseDocument source = new CouchbaseDocument();
 		source.put("_class", BigDecimalEntity.class.getName());
-		source.put("attr0", "123.45");
+		source.put("attr0", new BigDecimal("12345678901234567890123.45"));
 
 		BigDecimalEntity converted = converter.read(BigDecimalEntity.class, source);
-		assertThat(converted.attr0).isEqualTo(new BigDecimal((String) source.get("attr0")));
+		assertThat(converted.attr0).isEqualTo(source.get("attr0"));
 	}
 
 	@Test

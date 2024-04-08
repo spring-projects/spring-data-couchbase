@@ -33,15 +33,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.core.CouchbaseTemplate;
 import org.springframework.data.couchbase.domain.Airline;
 import org.springframework.data.couchbase.domain.AirlineRepository;
-import org.springframework.data.couchbase.domain.Course;
+import org.springframework.data.couchbase.domain.BigAirline;
 import org.springframework.data.couchbase.domain.Config;
+import org.springframework.data.couchbase.domain.Course;
 import org.springframework.data.couchbase.domain.Library;
 import org.springframework.data.couchbase.domain.LibraryRepository;
 import org.springframework.data.couchbase.domain.PersonValue;
@@ -59,9 +58,6 @@ import org.springframework.data.couchbase.util.IgnoreWhen;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import com.couchbase.client.core.env.SecurityConfig;
-import com.couchbase.client.java.env.ClusterEnvironment;
 import com.couchbase.client.java.kv.GetResult;
 
 /**
@@ -122,6 +118,17 @@ public class CouchbaseRepositoryKeyValueIntegrationTests extends ClusterAwareInt
 		// save the document - we don't care how on this call
 		airlineRepository.save(airline);
 		airlineRepository.save(airline); // If it was an insert it would fail. Can't tell if it is an upsert or replace.
+		airlineRepository.delete(airline);
+	}
+
+	@Test
+	@IgnoreWhen(clusterTypes = ClusterType.MOCKED)
+	void saveBig() {
+		BigAirline airline = new BigAirline(UUID.randomUUID().toString(), "MyAirline", null, null, null);
+		airline = airlineRepository.save(airline);
+		Optional<Airline> foundMaybe = airlineRepository.findById(airline.getId());
+		BigAirline found = (BigAirline) foundMaybe.get();
+		assertEquals(found, airline);
 		airlineRepository.delete(airline);
 	}
 
