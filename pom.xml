@@ -23,7 +23,6 @@
         <springdata.commons>3.3.0-SNAPSHOT</springdata.commons>
         <java-module-name>spring.data.couchbase</java-module-name>
         <hibernate.validator>7.0.1.Final</hibernate.validator>
-        <mysema.querydsl>3.7.4</mysema.querydsl>
         <couchbase.encryption>3.1.0</couchbase.encryption>
         <jodatime>2.10.13</jodatime>
         <jackson-joda>2.13.4</jackson-joda>
@@ -49,6 +48,19 @@
             <artifactId>querydsl-apt</artifactId>
             <version>${querydsl}</version>
             <classifier>jakarta</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>1</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -250,13 +262,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.querydsl</groupId>
-                        <artifactId>querydsl-apt</artifactId>
-                        <version>${querydsl}</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <proc>none</proc>
                 </configuration>
@@ -273,6 +278,9 @@
                                 <annotationProcessor>org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor</annotationProcessor>
                             </annotationProcessors>
                             <generatedTestSourcesDirectory>target/generated-test-sources</generatedTestSourcesDirectory>
+                            <compilerArgs>
+                                <arg>-Aquerydsl.logInfo=true</arg>
+                            </compilerArgs>
                         </configuration>
                     </execution>
                 </executions>

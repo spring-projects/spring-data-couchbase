@@ -30,7 +30,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface BigAirlineRepository extends CouchbaseRepository<BigAirline, String>,
-		QuerydslPredicateExecutor<BigAirline>, DynamicProxyable<BigAirlineRepository> {
+		 DynamicProxyable<BigAirlineRepository> {
 
 	@Query("#{#n1ql.selectEntity} where #{#n1ql.filter} and (name = $1)")
 	List<Airline> getByName(@Param("airline_name") String airlineName);
