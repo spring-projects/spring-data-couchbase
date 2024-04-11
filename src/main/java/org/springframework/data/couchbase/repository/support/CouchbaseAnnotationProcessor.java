@@ -15,16 +15,19 @@
  */
 package org.springframework.data.couchbase.repository.support;
 
+import static com.querydsl.apt.APTOptions.QUERYDSL_LOG_INFO;
+
 import java.util.Collections;
+import java.util.Set;
 
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
 import org.springframework.data.couchbase.core.mapping.Document;
-import org.springframework.lang.Nullable;
 
 import com.querydsl.apt.AbstractQuerydslProcessor;
 import com.querydsl.apt.Configuration;
@@ -49,9 +52,9 @@ public class CouchbaseAnnotationProcessor extends AbstractQuerydslProcessor {
 	 * @see com.querydsl.apt.AbstractQuerydslProcessor#createConfiguration(javax.annotation.processing.RoundEnvironment)
 	 */
 	@Override
-	protected Configuration createConfiguration(@Nullable RoundEnvironment roundEnv) {
+	protected Configuration createConfiguration(/*@Nullable */RoundEnvironment roundEnv) {
 
-		processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Running " + getClass().getSimpleName());
+		processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Running override createConfiguration() " + getClass().getSimpleName());
 
 		DefaultConfiguration configuration = new DefaultConfiguration(processingEnv, roundEnv, Collections.emptySet(),
 				QueryEntities.class, Document.class, QuerySupertype.class, QueryEmbeddable.class, QueryEmbedded.class,
@@ -60,4 +63,52 @@ public class CouchbaseAnnotationProcessor extends AbstractQuerydslProcessor {
 
 		return configuration;
 	}
+
+  @Override
+	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+		setLogInfo();
+		logInfo("Running override process() " + getClass().getSimpleName() +" isOver: "+roundEnv.processingOver() +" annotations: "+annotations.size());
+
+		if (roundEnv.processingOver() || annotations.size() == 0) {
+			return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS;
+		}
+
+		if (roundEnv.getRootElements() == null || roundEnv.getRootElements().isEmpty()) {
+			logInfo("No sources to process");
+			return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS;
+		}
+
+    Configuration conf = createConfiguration(roundEnv);
+		try {
+			conf.getTypeMappings();
+		} catch (NoClassDefFoundError cnfe ){
+			logWarn( cnfe +" add a dependency on javax.inject:javax.inject to create querydsl classes");
+			return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS;
+		}
+		return super.process(annotations, roundEnv);
+
+	}
+
+	private boolean shouldLogInfo;
+
+	private void setLogInfo() {
+		boolean hasProperty = processingEnv.getOptions().containsKey(QUERYDSL_LOG_INFO);
+		if (hasProperty) {
+			String val = processingEnv.getOptions().get(QUERYDSL_LOG_INFO);
+			shouldLogInfo = Boolean.parseBoolean(val);
+		}
+	}
+
+	private void logInfo(String message) {
+		if (shouldLogInfo) {
+			System.out.println("[NOTE] "+message); // maven compiler swallows messages to messager
+			processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, message);
+		}
+	}
+
+	private void logWarn(String message) {
+			System.err.println("[WARNING] "+message); // maven compiler swallows messages to messager
+			processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, message);
+	}
 }
+

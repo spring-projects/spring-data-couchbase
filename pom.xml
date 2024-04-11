@@ -48,6 +48,19 @@
             <artifactId>querydsl-apt</artifactId>
             <version>${querydsl}</version>
             <classifier>jakarta</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.inject</groupId>
+                    <artifactId>javax.inject</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>1</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -249,13 +262,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.querydsl</groupId>
-                        <artifactId>querydsl-apt</artifactId>
-                        <version>${querydsl}</version>
-                    </dependency>
-                </dependencies>
                 <configuration>
                     <proc>none</proc>
                 </configuration>
@@ -272,6 +278,9 @@
                                 <annotationProcessor>org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor</annotationProcessor>
                             </annotationProcessors>
                             <generatedTestSourcesDirectory>target/generated-test-sources</generatedTestSourcesDirectory>
+                            <compilerArgs>
+                                <arg>-Aquerydsl.logInfo=true</arg>
+                            </compilerArgs>
                         </configuration>
                     </execution>
                 </executions>
