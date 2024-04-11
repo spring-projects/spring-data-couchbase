@@ -90,7 +90,7 @@ class QueryCriteriaTests {
 	@Test
 	void testNestedNotIn() {
 		QueryCriteria c = where(i("name")).is("Bubba").or(where(i("age")).gt(12).and(i("country")).is("Austria"))
-				.and(where(i("state")).notIn(new String[] { "Alabama", "Florida" }));
+				.and(where(i("state")).notIn( "Alabama", "Florida" ));
 		JsonArray parameters = JsonArray.create();
 		assertEquals("  (  (`name` = $1) or   (`age` > $2 and `country` = $3)) and   (not( (`state` in $4) ))",
 				c.export(new int[1], parameters, null));
