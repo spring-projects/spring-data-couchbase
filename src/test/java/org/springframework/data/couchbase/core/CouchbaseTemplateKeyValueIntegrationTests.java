@@ -1329,7 +1329,7 @@ class CouchbaseTemplateKeyValueIntegrationTests extends JavaIntegrationTests {
 		MutationToken mt = couchbaseTemplate.getCouchbaseClientFactory().getDefaultCollection()
 			.upsert(id, JsonObject.create().put("id", id)).mutationToken().get();
     Stream<User> users = couchbaseTemplate.rangeScan(User.class).consistentWith(MutationState.from(mt))
-        /*.withSort(ScanSort.ASCENDING)*/.samplingScan(5l, null);
+        /*.withSort(ScanSort.ASCENDING)*/.samplingScan(5l, (Long)null);
     List<User> usersList = users.toList();
 		assertEquals(5, usersList.size(), "number in sample");
     for (User u : usersList) {
