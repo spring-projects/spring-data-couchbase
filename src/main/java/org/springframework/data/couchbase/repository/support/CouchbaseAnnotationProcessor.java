@@ -37,6 +37,7 @@ import com.querydsl.core.annotations.QueryEmbedded;
 import com.querydsl.core.annotations.QueryEntities;
 import com.querydsl.core.annotations.QuerySupertype;
 import com.querydsl.core.annotations.QueryTransient;
+import org.springframework.lang.Nullable;
 
 /**
  * Annotation processor to create Querydsl query types for QueryDsl annotated classes.
@@ -52,7 +53,7 @@ public class CouchbaseAnnotationProcessor extends AbstractQuerydslProcessor {
 	 * @see com.querydsl.apt.AbstractQuerydslProcessor#createConfiguration(javax.annotation.processing.RoundEnvironment)
 	 */
 	@Override
-	protected Configuration createConfiguration(/*@Nullable */RoundEnvironment roundEnv) {
+	protected Configuration createConfiguration(@Nullable RoundEnvironment roundEnv) {
 
 		processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Running override createConfiguration() " + getClass().getSimpleName());
 
