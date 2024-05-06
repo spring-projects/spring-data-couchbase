@@ -110,7 +110,8 @@ public class DynamicInvocationHandler<T> implements InvocationHandler {
 					.map(o -> o == null ? null : (o.getClass() == entityInformation.getJavaType() ? Object.class : o.getClass()))
 					.toArray(Class<?>[]::new);
 			// the CouchbaseRepository methods - findById(id) etc - will have a parameter type of Object instead of ID
-			if (method.getName().endsWith("ById") && args.length == 1) {
+			// but deleteByAllId first parameter will be an iterable.
+			if (method.getName().endsWith("ById") && args.length == 1 && ! Iterable.class.isAssignableFrom(paramTypes[0]) ) {
 				paramTypes[0] = Object.class;
 			}
 		}

@@ -77,7 +77,7 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		String scopeName = getScope();
 		String collectionName = getCollection();
 		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
-		// not that this will also clear out Options, but that's ok as any options would not work
+		// note that this will also clear out Options, but that's ok as any options would not work
 		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
 		getReactiveTemplate().setPseudoArgs(null);
 		return operations.save(entity, scopeName, collectionName);
@@ -88,6 +88,10 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
 		String scope = getScope();
 		String collection = getCollection();
+		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
+		// note that this will also clear out Options, but that's ok as any options would not work
+		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
+		getReactiveTemplate().setPseudoArgs(null);
 		return Flux.fromIterable(entities).flatMap(e -> save(e, scope, collection));
 	}
 
@@ -96,6 +100,10 @@ public class SimpleReactiveCouchbaseRepository<T, ID> extends CouchbaseRepositor
 		Assert.notNull(entityStream, "The given Iterable of entities must not be null!");
 		String scope = getScope();
 		String collection = getCollection();
+		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
+		// note that this will also clear out Options, but that's ok as any options would not work
+		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
+		getReactiveTemplate().setPseudoArgs(null);
 		return Flux.from(entityStream).flatMap(e -> save(e, scope, collection));
 	}
 

@@ -15,9 +15,12 @@
  */
 package org.springframework.data.couchbase.repository.query;
 
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.springframework.data.couchbase.domain.AirportRepository;
 import reactor.core.Disposable;
 
 import java.util.List;
@@ -295,6 +298,25 @@ public class ReactiveCouchbaseRepositoryQueryCollectionIntegrationTests extends 
 		} finally {
 			// this will fail if the above didn't use collectionName2
 			reactiveAirportRepository.withScope(scopeName).withCollection(collectionName2).deleteById(otherAirport.getId());
+		}
+	}
+
+	@Test	// DATACOUCH-650, SDC-1939
+	void deleteAllById() {
+
+		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDZ");
+		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
+		ReactiveAirportRepository ar = reactiveAirportRepository.withScope(scopeName).withCollection(collectionName);
+		try {
+			ar.saveAll(asList(vienna, frankfurt, losAngeles)).blockLast();
+			List<Airport> airports = ar.findAllById(asList(vienna.getId(), losAngeles.getId())).collectList().block();
+			assertEquals(2, airports.size());
+			ar.deleteAllById(asList(vienna.getId(), losAngeles.getId())).block();
+			assertThat(ar.findAll().collectList().block()).containsExactly(frankfurt);
+			ar.deleteAll(asList(frankfurt)).block();
+		} finally {
+			ar.deleteAll().block();
 		}
 	}
 
