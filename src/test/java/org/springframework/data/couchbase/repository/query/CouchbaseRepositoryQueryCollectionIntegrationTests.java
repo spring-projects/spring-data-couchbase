@@ -17,6 +17,8 @@ package org.springframework.data.couchbase.repository.query;
 
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -443,4 +445,23 @@ public class CouchbaseRepositoryQueryCollectionIntegrationTests extends Collecti
 		}
 	}
 
+
+	@Test	// DATACOUCH-650, SDC-1939
+	void deleteAllById() {
+
+		Airport vienna = new Airport("airports::vie", "vie", "LOWW");
+		Airport frankfurt = new Airport("airports::fra", "fra", "EDDZ");
+		Airport losAngeles = new Airport("airports::lax", "lax", "KLAX");
+		AirportRepository ar = airportRepository.withScope(scopeName).withCollection(collectionName);
+		try {
+			ar.saveAll(asList(vienna, frankfurt, losAngeles));
+			List<Airport> airports = ar.findAllById(asList(vienna.getId(), losAngeles.getId()));
+			assertEquals(2, airports.size());
+			ar.deleteAllById(asList(vienna.getId(), losAngeles.getId()));
+			assertThat(ar.findAll()).containsExactly(frankfurt);
+			ar.deleteAll(asList(frankfurt));
+		} finally {
+			ar.deleteAll();
+		}
+	}
 }

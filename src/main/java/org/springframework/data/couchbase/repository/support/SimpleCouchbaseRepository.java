@@ -73,7 +73,7 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 		String scopeName = getScope();
 		String collectionName = getCollection();
 		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
-		// not that this will also clear out Options, but that's ok as any options would not work
+		// note that this will also clear out Options, but that's ok as any options would not work
 		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
 		getReactiveTemplate().setPseudoArgs(null);
 		return operations.save(entity, scopeName, collectionName);
@@ -82,7 +82,13 @@ public class SimpleCouchbaseRepository<T, ID> extends CouchbaseRepositoryBase<T,
 	@Override
 	public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
 		Assert.notNull(entities, "The given Iterable of entities must not be null!");
-		return Streamable.of(entities).stream().map((e) -> save(e)).collect(StreamUtils.toUnmodifiableList());
+		String scopeName = getScope();
+		String collectionName = getCollection();
+		// clear out the PseudoArgs here as whatever is called by operations.save() could be in a different thread.
+		// note that this will also clear out Options, but that's ok as any options would not work
+		// with all of insert/upsert/replace. If Options are needed, use template.insertById/upsertById/replaceById
+		getReactiveTemplate().setPseudoArgs(null);
+		return Streamable.of(entities).stream().map((e) -> operations.save(e,scopeName, collectionName)).collect(StreamUtils.toUnmodifiableList());
 	}
 
 	@Override
