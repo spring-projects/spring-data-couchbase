@@ -20,9 +20,10 @@ import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.callback.EntityCallback;
 
 /**
- * Callback being invoked after a domain object is materialized from a {@link org.springframework.data.couchbase.core.mapping.CouchbaseDocument} when reading results.
+ * Callback being invoked after a domain object is materialized from a document when reading results.
  *
  * @author Jorge Rodríguez Martín
+ * @author Mico Piira
  * @see org.springframework.data.mapping.callback.EntityCallbacks
  * @since 4.2
  */
@@ -30,11 +31,12 @@ import org.springframework.data.mapping.callback.EntityCallback;
 public interface ReactiveAfterConvertCallback<T> extends EntityCallback<T> {
 
 	/**
-	 * Entity callback method invoked after a domain object is converted to be persisted. Can return
-	 * either the same of a modified instance of the domain object.
-	 * @param entity the domain object to save.
-	 * @param collection name of the collection.
-	 * @return a {@link Publisher} emitting the domain object to be persisted.
+	 * Entity callback method invoked after a domain object is materialized from a document.
+	 *
+	 * @param entity the domain object (the result of the conversion).
+	 * @param document must not be null.
+	 * @param collection name of the document.
+	 * @return the domain object that is the result of reading it from the document.
 	 */
 	Publisher<T> onAfterConvert(T entity, CouchbaseDocument document, String collection);
 }
