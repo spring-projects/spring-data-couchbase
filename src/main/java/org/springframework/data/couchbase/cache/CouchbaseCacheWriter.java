@@ -49,6 +49,20 @@ public interface CouchbaseCacheWriter {
 			@Nullable Transcoder transcoder);
 
 	/**
+	 * Write the given value to Couchbase if the key does not already exist.
+	 *
+	 * @param collectionName The cache name must not be {@literal null}.
+	 * @param key The key for the cache entry. Must not be {@literal null}.
+	 * @param value The value stored for the key. Must not be {@literal null}.
+	 * @param expiry Optional expiration time. Can be {@literal null}.
+	 * @param transcoder Optional transcoder to use. Can be {@literal null}.
+	 * @param clazz Optional class for contentAs(clazz)
+	 */
+	@Nullable
+	Object putIfAbsent(String collectionName, String key, Object value, @Nullable Duration expiry,
+			@Nullable Transcoder transcoder, @Nullable Class<?> clazz);
+
+	/**
 	 * Get the binary value representation from Couchbase stored for the given key.
 	 *
 	 * @param collectionName must not be {@literal null}.
@@ -58,6 +72,18 @@ public interface CouchbaseCacheWriter {
 	 */
 	@Nullable
 	Object get(String collectionName, String key, @Nullable Transcoder transcoder);
+
+	/**
+	 * Get the binary value representation from Couchbase stored for the given key.
+	 *
+	 * @param collectionName must not be {@literal null}.
+	 * @param key must not be {@literal null}.
+	 * @param transcoder Optional transcoder to use. Can be {@literal null}.
+	 * @param clazz Optional class for contentAs(clazz)
+	 * @return {@literal null} if key does not exist.
+	 */
+	@Nullable
+	Object get(String collectionName, String key, @Nullable Transcoder transcoder, @Nullable Class<?> clazz);
 
 	/**
 	 * Remove the given key from Couchbase.

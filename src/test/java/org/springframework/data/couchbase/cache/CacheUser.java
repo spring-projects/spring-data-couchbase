@@ -26,9 +26,11 @@ import java.io.Serializable;
  */
 class CacheUser implements Serializable {
 	// private static final long serialVersionUID = 8817717605659870262L;
-	String firstname;
-	String lastname;
-	String id;
+	String firstname; // must have getter/setter for Serialize/Deserialize
+	String lastname; // must have getter/setter for Serialize/Deserialize
+	String id; // must have getter/setter for Serialize/Deserialize
+
+	public CacheUser() {};
 
 	public CacheUser(String id, String firstname, String lastname) {
 		this.id = id;
@@ -40,6 +42,25 @@ class CacheUser implements Serializable {
 		return id;
 	}
 
+	public String getFirstname() {
+		return firstname;
+	}
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public void setFirstname(String firstname) {
+		this.firstname = firstname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
+	}
 	// define equals for assertEquals()
 	public boolean equals(Object o) {
 		if (o == null) {
