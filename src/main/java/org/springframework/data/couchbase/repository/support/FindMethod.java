@@ -66,6 +66,14 @@ public class FindMethod {
             }
             int j;
             for (j = 0; j < l; j++) {
+                if(params[j] == int.class && parameterTypes[j] == Integer.class )
+                    continue;
+                if(params[j] == long.class && parameterTypes[j] == Long.class )
+                    continue;
+                if(params[j] == double.class && parameterTypes[j] == Double.class )
+                    continue;
+                if(params[j] == boolean.class && parameterTypes[j] == Boolean.class )
+                    continue;
                 if (!params[j].isAssignableFrom(parameterTypes[j]))
                     break;
             }
