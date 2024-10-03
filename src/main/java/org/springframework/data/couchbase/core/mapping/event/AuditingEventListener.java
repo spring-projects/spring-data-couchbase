@@ -35,7 +35,7 @@ import org.springframework.util.Assert;
  * @author Mark Paluch
  * @author Michael Reiche
  */
-public class AuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<Object>> {
+public class AuditingEventListener implements ApplicationListener<CouchbaseMappingEvent<?>> {
 
 	private final ObjectFactory<Object> auditingHandlerFactory;
 
@@ -54,14 +54,20 @@ public class AuditingEventListener implements ApplicationListener<CouchbaseMappi
 	public AuditingEventListener(ObjectFactory<Object> auditingHandlerFactory) {
 		Assert.notNull(auditingHandlerFactory, "auditingHandlerFactory must not be null!");
 		this.auditingHandlerFactory = auditingHandlerFactory;
+		Object o = auditingHandlerFactory.getObject();
+		if(!(o instanceof IsNewAwareAuditingHandler)){
+			LOG.warn("auditingHandler IS NOT an IsNewAwareAuditingHandler: {}",o);
+		} else {
+			LOG.info("auditingHandler IS an IsNewAwareAuditingHandler: {}",o);
+		}
 	}
 
-	/*
+	/**
 	 * (non-Javadoc)
-	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+	 * @see {@link org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)}
 	 */
 	@Override
-	public void onApplicationEvent(CouchbaseMappingEvent<Object> event) {
+	public void onApplicationEvent(CouchbaseMappingEvent<?> event) {
 		if (event instanceof BeforeConvertEvent) {
 			IsNewAwareAuditingHandler h = auditingHandlerFactory != null
 					&& auditingHandlerFactory.getObject() instanceof IsNewAwareAuditingHandler
