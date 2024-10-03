@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertInReactiveTransaction;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -394,6 +396,7 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 		@Transactional
 		public Person declarativeSavePersonWithThread(Person person, Thread thread) {
 			assertInAnnotationTransaction(true);
+			assertInReactiveTransaction();
 			long currentThreadId = Thread.currentThread().getId();
 			System.out.printf("Thread %d %s, started from %d %s%n", Thread.currentThread().getId(),
 					Thread.currentThread().getName(), thread.getId(), thread.getName());
@@ -481,22 +484,6 @@ public class CouchbaseTransactionalTemplateIntegrationTests extends JavaIntegrat
 			personOperations.removeById(Person.class).oneEntity(p);
 		}
 
-	}
-
-	static void assertInAnnotationTransaction(boolean inTransaction) {
-		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-		for (StackTraceElement ste : stack) {
-			if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")) {
-				if (inTransaction) {
-					return;
-				}
-			}
-		}
-		if (!inTransaction) {
-			return;
-		}
-		throw new RuntimeException(
-				"in transaction = " + (!inTransaction) + " but expected in annotation transaction = " + inTransaction);
 	}
 
 }

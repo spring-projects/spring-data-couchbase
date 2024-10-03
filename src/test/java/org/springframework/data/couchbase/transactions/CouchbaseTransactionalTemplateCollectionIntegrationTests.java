@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.data.couchbase.transactions.util.TransactionTestUtil.assertNotInTransaction;
+import static org.springframework.data.couchbase.util.Util.assertInAnnotationTransaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -450,10 +451,10 @@ public class CouchbaseTransactionalTemplateCollectionIntegrationTests extends Co
     }
 
     @Transactional(timeout = 2)
-
     public Person replace(Person person, AtomicInteger tryCount) {
       assertInAnnotationTransaction(true);
       tryCount.incrementAndGet();
+		System.err.println("try: " + tryCount.get());
       return personOperations.replaceById(Person.class).inScope(scopeName).inCollection(collectionName).one(person);
     }
 
@@ -481,22 +482,6 @@ public class CouchbaseTransactionalTemplateCollectionIntegrationTests extends Co
       personOperations.removeById(Person.class).inScope(scopeName).inCollection(collectionName).oneEntity(p);
     }
 
-  }
-
-  static void assertInAnnotationTransaction(boolean inTransaction) {
-    StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-    for (StackTraceElement ste : stack) {
-      if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")) {
-        if (inTransaction) {
-          return;
-        }
-      }
-    }
-    if (!inTransaction) {
-      return;
-    }
-    throw new RuntimeException(
-      "in transaction = " + (!inTransaction) + " but expected in annotation transaction = " + inTransaction);
   }
 
 }
