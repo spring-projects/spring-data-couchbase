@@ -18,11 +18,13 @@ package org.springframework.data.couchbase.cache;
 
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_COLLECTION;
 import static com.couchbase.client.core.io.CollectionIdentifier.DEFAULT_SCOPE;
-import static com.couchbase.client.java.kv.GetOptions.*;
-import static com.couchbase.client.java.kv.InsertOptions.*;
-import static com.couchbase.client.java.kv.UpsertOptions.*;
-import static com.couchbase.client.java.query.QueryOptions.*;
+import static com.couchbase.client.java.kv.GetOptions.getOptions;
+import static com.couchbase.client.java.kv.InsertOptions.insertOptions;
+import static com.couchbase.client.java.kv.UpsertOptions.upsertOptions;
+import static com.couchbase.client.java.query.QueryOptions.queryOptions;
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
+
+import io.micrometer.common.lang.Nullable;
 
 import java.time.Duration;
 
@@ -65,6 +67,22 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 	@Override
 	public Object putIfAbsent(final String collectionName, final String key, final Object value, final Duration expiry,
 			final Transcoder transcoder) {
+		return putIfAbsent(collectionName, key, value, expiry, transcoder, Object.class);
+	}
+
+	/**
+	 * same as above, plus clazz
+	 * 
+	 * @param collectionName
+	 * @param key
+	 * @param value
+	 * @param expiry
+	 * @param transcoder
+	 * @param clazz
+	 */
+	@Override
+	public Object putIfAbsent(final String collectionName, final String key, final Object value, final Duration expiry,
+			final Transcoder transcoder, @Nullable final Class<?> clazz) {
 		InsertOptions options = insertOptions();
 
 		if (expiry != null) {
@@ -79,15 +97,20 @@ public class DefaultCouchbaseCacheWriter implements CouchbaseCacheWriter {
 			return null;
 		} catch (final DocumentExistsException ex) {
 			// If the document exists, return the current one per contract
-			return get(collectionName, key, transcoder);
+			return get(collectionName, key, transcoder, clazz);
 		}
 	}
 
 	@Override
 	public Object get(final String collectionName, final String key, final Transcoder transcoder) {
-		// TODO .. the decoding side transcoding needs to be figured out?
+		return get(collectionName, key, transcoder, Object.class);
+	}
+
+	@Override
+	public Object get(final String collectionName, final String key, final Transcoder transcoder,
+			final Class<?> clazz) {
 		try {
-			return getCollection(collectionName).get(key, getOptions().transcoder(transcoder)).contentAs(Object.class);
+			return getCollection(collectionName).get(key, getOptions().transcoder(transcoder)).contentAs(clazz);
 		} catch (DocumentNotFoundException ex) {
 			return null;
 		}

@@ -15,6 +15,7 @@
  */
 package org.springframework.data.couchbase.cache;
 
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,7 +24,6 @@ import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 
 import org.springframework.cache.support.AbstractValueAdaptingCache;
-import org.springframework.cache.support.SimpleValueWrapper;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
@@ -31,6 +31,13 @@ import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
+/**
+ * Couchbase-backed Cache Methods that take a Class return non-wrapped objects - cache-miss cannot be distinguished from
+ * cached null - this is what AbstractValueAdaptingCache does Methods that do not take a Class return wrapped objects -
+ * the wrapper is null for cache-miss - the exception is T get(final Object key, final Callable<T> valueLoader), which
+ * does not return a wrapper because if there is a cache-miss, it gets the value from valueLoader (and caches it). There
+ * are anomalies with get(key, ValueLoader) - which returns non-wrapped object.
+ */
 public class CouchbaseCache extends AbstractValueAdaptingCache {
 
 	private final String name;
@@ -70,11 +77,18 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 		return cacheWriter;
 	}
 
-	@Override
-	protected Object lookup(final Object key) {
-		return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder());
+	/**
+	 * same as inherited, but passes clazz for transcoder
+	 */
+	protected Object lookup(final Object key, Class<?> clazz) {
+		return cacheWriter.get(cacheConfig.getCollectionName(), createCacheKey(key), cacheConfig.getValueTranscoder(),
+				clazz);
 	}
 
+	@Override
+	protected Object lookup(final Object key) {
+		return lookup(key, Object.class);
+	}
 	/**
 	 * Returns the configuration for this {@link CouchbaseCache}.
 	 */
@@ -97,33 +111,56 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 	}
 
 	@Override
-	public void put(final Object key, final Object value) {
-		if (!isAllowNullValues() && value == null) {
-
-			throw new IllegalArgumentException(String.format(
-					"Cache '%s' does not allow 'null' values. Avoid storing null via '@Cacheable(unless=\"#result == null\")' or "
-							+ "configure CouchbaseCache to allow 'null' via CouchbaseCacheConfiguration.",
-					name));
+	@SuppressWarnings("unchecked")
+	public <T> T get(final Object key, Class<T> type) {
+		Object value = this.fromStoreValue(this.lookup(key, type));
+		if (value != null && type != null && !type.isInstance(value)) {
+			throw new IllegalStateException("Cached value is not of required type [" + type.getName() + "]: " + value);
+		} else {
+			return (T) value;
 		}
+	}
 
+	public synchronized <T> T get(final Object key, final Callable<T> valueLoader, Class<T> type) {
+		T value = get(key, type);
+		if (value == null) { // cannot distinguish between cache miss and cached null
+			value = valueFromLoader(key, valueLoader);
+			put(key, value);
+		}
+		return value;
+	}
+
+	@Override
+	public void put(final Object key, final Object value) {
 		cacheWriter.put(cacheConfig.getCollectionName(), createCacheKey(key), toStoreValue(value), cacheConfig.getExpiry(),
 				cacheConfig.getValueTranscoder());
 	}
 
 	@Override
 	public ValueWrapper putIfAbsent(final Object key, final Object value) {
-		if (!isAllowNullValues() && value == null) {
-			return get(key);
-		}
 
 		Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key), toStoreValue(value),
 				cacheConfig.getExpiry(), cacheConfig.getValueTranscoder());
 
-		if (result == null) {
-			return null;
-		}
+		return toValueWrapper(result);
+	}
 
-		return new SimpleValueWrapper(result);
+	/**
+	 * Not sure why this isn't in AbstractValueAdaptingCache
+	 * 
+	 * @param key
+	 * @param value
+	 * @param clazz
+	 * @return
+	 * @param <T>
+	 */
+	@SuppressWarnings("unchecked")
+	public <T> T putIfAbsent(final Object key, final Object value, final Class<T> clazz) {
+
+		Object result = cacheWriter.putIfAbsent(cacheConfig.getCollectionName(), createCacheKey(key),
+				toStoreValue(value), cacheConfig.getExpiry(), cacheConfig.getValueTranscoder(), clazz);
+
+		return (T) result;
 	}
 
 	@Override
@@ -168,6 +205,9 @@ public class CouchbaseCache extends AbstractValueAdaptingCache {
 	 * @throws IllegalStateException if {@code key} cannot be converted to {@link String}.
 	 */
 	protected String convertKey(final Object key) {
+		if (key == null) {
+			throw new IllegalArgumentException(String.format("Cache '%s' does not allow 'null' key.", name));
+		}
 		if (key instanceof String) {
 			return (String) key;
 		}
