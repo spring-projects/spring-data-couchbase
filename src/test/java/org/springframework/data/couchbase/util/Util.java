@@ -155,7 +155,8 @@ public class Util {
 	public static void assertInAnnotationTransaction(boolean inTransaction) {
 		StackTraceElement[] stack = Thread.currentThread().getStackTrace();
 		for (StackTraceElement ste : stack) {
-			if (ste.getClassName().startsWith("org.springframework.transaction.interceptor")
+			if (ste.getClassName()
+					.startsWith("org.springframework.data.couchbase.transaction.CouchbaseCallbackTransactionManager")
 					|| ste.getClassName().startsWith("org.springframework.data.couchbase.transaction.interceptor")) {
 				if (inTransaction) {
 					return;
