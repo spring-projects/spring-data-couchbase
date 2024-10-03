@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
 set -euo pipefail
+chown -R 1001:1001 .
 
 export JENKINS_USER=${JENKINS_USER_NAME}
 
