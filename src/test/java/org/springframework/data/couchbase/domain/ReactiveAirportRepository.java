@@ -54,6 +54,9 @@ public interface ReactiveAirportRepository
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Flux<Airport> findAll();
 
+	@Query("#{#n1ql .selectEntity} WHERE #{#n1ql.filter} ORDER BY $3 $4 LIMIT $1 OFFSET $2 ")
+	Flux<Airport> findAllTestPrimitives(int iint, long llong, double ddouble, boolean bbolean);
+
 	@Override
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	Mono<Void> deleteAll();

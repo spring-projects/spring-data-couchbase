@@ -41,16 +41,13 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.couchbase.CouchbaseClientFactory;
-import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration;
 import org.springframework.data.couchbase.domain.Airport;
 import org.springframework.data.couchbase.domain.ReactiveAirportRepository;
 import org.springframework.data.couchbase.domain.ReactiveUserRepository;
 import org.springframework.data.couchbase.domain.User;
-import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories;
 import org.springframework.data.couchbase.util.Capabilities;
 import org.springframework.data.couchbase.util.ClusterType;
 import org.springframework.data.couchbase.util.IgnoreWhen;
@@ -58,9 +55,6 @@ import org.springframework.data.couchbase.util.JavaIntegrationTests;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import com.couchbase.client.core.deps.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import com.couchbase.client.core.env.SecurityConfig;
-import com.couchbase.client.java.env.ClusterEnvironment;
 
 /**
  * template class for Reactive Couchbase operations
@@ -97,6 +91,16 @@ public class ReactiveCouchbaseRepositoryQueryIntegrationTests extends JavaIntegr
 			reactiveAirportRepository.delete(vie).block();
 			reactiveAirportRepository.delete(jfk).block();
 		}
+	}
+
+	@Test
+	void testPrimitiveArgs() {
+		int iint = 0;
+		long llong = 0;
+		double ddouble = 0.0;
+		boolean bboolean = true;
+		List<Airport> all = reactiveAirportRepository.withScope("_default")
+				.findAllTestPrimitives(iint, llong, ddouble, bboolean).toStream().collect(Collectors.toList());
 	}
 
 	@Test
