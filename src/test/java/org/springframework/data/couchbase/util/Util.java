@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.awaitility.Awaitility.with;
 
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -168,6 +169,28 @@ public class Util {
 		}
 		throw new RuntimeException("in-annotation-transaction = " + (!inTransaction)
 				+ " but expected in-annotation-transaction = " + inTransaction);
+	}
+
+	static public Object getSecurityContext(){
+		Object sc = null;
+		try {
+			Class<?> securityContextHolderClass = Class
+				.forName("org.springframework.security.core.context.SecurityContextHolder");
+			sc = securityContextHolderClass.getMethod("getContext").invoke(null);
+		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+						 | InvocationTargetException cnfe) {}
+		System.err.println(Thread.currentThread().getName() +" Util.get "+ System.identityHashCode(sc));
+		return sc;
+	}
+
+	static 	public void setSecurityContext(Object sc) {
+		System.err.println(Thread.currentThread().getName() +" Util.set "+ System.identityHashCode(sc));
+		try {
+			Class<?> securityContextHolderClass = Class
+				.forName("org.springframework.security.core.context.SecurityContextHolder");
+			sc = securityContextHolderClass.getMethod("setContext", new Class[]{securityContextHolderClass}).invoke(sc);
+		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+						 | InvocationTargetException cnfe) {}
 	}
 
 }
