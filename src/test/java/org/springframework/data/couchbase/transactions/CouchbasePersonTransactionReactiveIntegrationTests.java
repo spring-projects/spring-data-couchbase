@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.transactions;
 
 import static com.couchbase.client.java.query.QueryScanConsistency.REQUEST_PLUS;
 
+import org.springframework.data.couchbase.util.Util;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -119,10 +120,22 @@ public class CouchbasePersonTransactionReactiveIntegrationTests extends JavaInte
 	@Test
 	public void commitShouldPersistTxEntries() {
 
+		System.err.println("parent SecurityContext: " + System.identityHashCode(Util.getSecurityContext()));
 		personService.savePerson(WalterWhite) //
 				.as(StepVerifier::create) //
 				.expectNextCount(1) //
 				.verifyComplete();
+
+		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
+				.as(StepVerifier::create) //
+				.expectNext(1L) //
+				.verifyComplete();
+	}
+
+	@Test
+	public void commitShouldPersistTxEntriesBlocking() {
+		System.err.println("parent SecurityContext: " + System.identityHashCode(Util.getSecurityContext()));
+		Person p = personService.savePersonBlocking(WalterWhite);
 
 		operations.findByQuery(Person.class).withConsistency(REQUEST_PLUS).count() //
 				.as(StepVerifier::create) //

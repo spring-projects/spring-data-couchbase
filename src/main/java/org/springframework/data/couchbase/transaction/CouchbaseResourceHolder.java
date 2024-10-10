@@ -34,6 +34,8 @@ import com.couchbase.client.core.transaction.CoreTransactionAttemptContext;
 public class CouchbaseResourceHolder extends ResourceHolderSupport {
 
 	private @Nullable CoreTransactionAttemptContext core; // which holds the atr
+	private @Nullable Object securityContext; // SecurityContext. We don't have the class.
+
 	Map<Integer, Object> getResultMap = new HashMap<>();
 
 	/**
@@ -42,7 +44,17 @@ public class CouchbaseResourceHolder extends ResourceHolderSupport {
 	 * @param core the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
 	 */
 	public CouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core) {
+		this(core, null);
+	}
+
+	/**
+	 * Create a new {@link CouchbaseResourceHolder} for a given {@link CoreTransactionAttemptContext session}.
+	 *
+	 * @param core the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
+	 */
+	public CouchbaseResourceHolder(@Nullable CoreTransactionAttemptContext core, @Nullable Object securityContext) {
 		this.core = core;
+		this.securityContext = securityContext;
 	}
 
 	/**
@@ -51,6 +63,14 @@ public class CouchbaseResourceHolder extends ResourceHolderSupport {
 	@Nullable
 	public CoreTransactionAttemptContext getCore() {
 		return core;
+	}
+
+	/**
+	 * @return the associated {@link CoreTransactionAttemptContext}. Can be {@literal null}.
+	 */
+	@Nullable
+	public Object getSecurityContext() {
+		return securityContext;
 	}
 
 	public Object transactionResultHolder(Object holder, Object o) {

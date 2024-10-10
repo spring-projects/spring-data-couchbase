@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.springframework.data.couchbase.core.TransactionalSupport;
 import org.springframework.data.couchbase.domain.PersonWithoutVersion;
+import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
+import org.springframework.data.couchbase.util.Util;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +32,9 @@ import org.springframework.data.couchbase.core.ReactiveCouchbaseOperations;
 import org.springframework.data.couchbase.domain.Person;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 
 /**
  * reactive PersonService for tests
@@ -58,7 +63,14 @@ class PersonServiceReactive {
 	}
 
 	@Transactional
+	public Person savePersonBlocking(Person person) {
+		System.err.println("savePerson: "+Thread.currentThread().getName() +" "+ System.identityHashCode(Util.getSecurityContext()));
+		return personOperations.insertById(Person.class).one(person);
+	}
+
+	@Transactional
 	public Mono<Person> savePerson(Person person) {
+		System.err.println("savePerson: "+Thread.currentThread().getName() +" "+ System.identityHashCode(Util.getSecurityContext()));
 		return TransactionalSupport.checkForTransactionInThreadLocalStorage().map(stat -> {
 			assertTrue(stat.isPresent(), "Not in transaction");
 			System.err.println("In a transaction!!");
