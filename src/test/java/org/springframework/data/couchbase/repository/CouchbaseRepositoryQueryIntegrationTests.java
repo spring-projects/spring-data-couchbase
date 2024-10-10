@@ -885,6 +885,31 @@ public class CouchbaseRepositoryQueryIntegrationTests extends ClusterAwareIntegr
 	}
 
 	@Test
+	void countSlicePageTest() {
+		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
+		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };
+
+		airportRepository.countOne();
+		try {
+			airportRepository.saveAll(
+				Arrays.stream(iatas).map((iata) -> new Airport("airports::" + iata, iata, iata.toLowerCase(Locale.ROOT)))
+					.collect(Collectors.toSet()));
+
+		Pageable sPageable = PageRequest.of(0, 2).withSort(Sort.by("iata"));
+		Page<Airport> sPage = airportRepository.getAllByIataNot("JFK", sPageable);
+		System.out.println(sPage);
+
+		Sort sort = Sort.by("iata");
+		List<Airport> sList = airportRepository.getAllByIataNotSort("JFK", sort);
+		System.out.println(sList);
+
+		} finally {
+			airportRepository
+				.deleteAllById(Arrays.stream(iatas).map((iata) -> "airports::" + iata).collect(Collectors.toSet()));
+		}
+	}
+
+	@Test
 	void countSlicePage() {
 		airportRepository.withOptions(QueryOptions.queryOptions().scanConsistency(REQUEST_PLUS)).deleteAll();
 		String[] iatas = { "JFK", "IAD", "SFO", "SJC", "SEA", "LAX", "PHX" };

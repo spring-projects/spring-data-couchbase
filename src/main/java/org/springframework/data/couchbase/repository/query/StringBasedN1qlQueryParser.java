@@ -711,8 +711,11 @@ public class StringBasedN1qlQueryParser {
 		for (Object o : accessor) {
 			params.add(o);
 		}
-		params.add(accessor.getPageable());
-		params.add(accessor.getSort());
+		if( accessor.getPageable().isPaged()) {
+			params.add(accessor.getPageable());
+		} else if (accessor.getSort().isSorted()) {
+			params.add(accessor.getSort());
+		}
 		return params.toArray();
 	}
 }

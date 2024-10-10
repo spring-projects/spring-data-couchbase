@@ -40,6 +40,7 @@ import org.springframework.data.couchbase.repository.Scope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -153,6 +154,11 @@ public interface AirportRepository extends CouchbaseRepository<Airport, String>,
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND iata != $1")
 	Page<Airport> getAllByIataNot(String iata, Pageable pageable);
+
+	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+	@Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND iata != $1")
+	List<Airport> getAllByIataNotSort(String iata, Sort sort);
+
 
 	@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 	@Query("SELECT iata, \"\" as __id, 0 as __cas from #{#n1ql.bucket} WHERE #{#n1ql.filter} order by meta().id")
