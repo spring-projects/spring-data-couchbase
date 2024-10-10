@@ -62,7 +62,7 @@ public class CouchbaseCacheConfiguration {
 	/**
 	 * Registers default cache key converters. The following converters get registered:
 	 * <ul>
-	 * <li>{@link String} to {@link byte byte[]} using UTF-8 encoding.</li>
+	 * <li>{@link String} to byte using UTF-8 encoding.</li>
 	 * <li>{@link SimpleKey} to {@link String}</li>
 	 * </ul>
 	 * 

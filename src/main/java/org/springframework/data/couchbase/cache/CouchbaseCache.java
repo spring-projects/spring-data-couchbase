@@ -34,7 +34,7 @@ import org.springframework.util.ReflectionUtils;
 /**
  * Couchbase-backed Cache Methods that take a Class return non-wrapped objects - cache-miss cannot be distinguished from
  * cached null - this is what AbstractValueAdaptingCache does Methods that do not take a Class return wrapped objects -
- * the wrapper is null for cache-miss - the exception is T get(final Object key, final Callable<T> valueLoader), which
+ * the wrapper is null for cache-miss - the exception is T get(final Object key, final Callable&lt;T&gt; valueLoader), which
  * does not return a wrapper because if there is a cache-miss, it gets the value from valueLoader (and caches it). There
  * are anomalies with get(key, ValueLoader) - which returns non-wrapped object.
  */
