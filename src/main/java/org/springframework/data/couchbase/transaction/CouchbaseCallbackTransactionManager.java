@@ -179,7 +179,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 				};
 
 				// Get caller's resources, set SecurityContext for the transaction
-				return CouchbaseResourceOwner.get().map(cbrh -> setSecurityContext(cbrh.get().getSecurityContext()))
+				return CouchbaseResourceOwner.get().map(cbrh -> cbrh.map( c -> setSecurityContext(c.getSecurityContext())))
 						.flatMap(ignore -> Flux.from(callback.doInTransaction(status)).doOnNext(v -> out.add(v))
 								.then(Mono.defer(() -> {
 									if (status.isRollbackOnly()) {
@@ -304,7 +304,8 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 					.forName("org.springframework.security.core.context.SecurityContextHolder");
 			return securityContextHolderClass.getMethod("getContext").invoke(null);
 		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
-				| InvocationTargetException cnfe) {}
+				| InvocationTargetException cnfe) {
+		}
 		return null;
 	}
 
