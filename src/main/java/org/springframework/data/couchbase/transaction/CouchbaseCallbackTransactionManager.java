@@ -18,6 +18,7 @@ package org.springframework.data.couchbase.transaction;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +90,7 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 	@Stability.Internal
 	<T> Flux<T> executeReactive(TransactionDefinition definition,
 			org.springframework.transaction.reactive.TransactionCallback<T> callback) {
+		final CouchbaseResourceHolder couchbaseResourceHolder = new CouchbaseResourceHolder(null,  getSecurityContext()); // caller's resources
 		return TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMapMany(isInTransaction -> {
 			boolean isInExistingTransaction = isInTransaction.isPresent();
 			boolean createNewTransaction = handlePropagation(definition, isInExistingTransaction);
@@ -100,17 +102,20 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 			} else {
 				return Mono.error(new UnsupportedOperationException("Unsupported operation"));
 			}
-		});
+		}).contextWrite( // set CouchbaseResourceHolder containing caller's SecurityContext
+				ctx -> ctx.put(CouchbaseResourceHolder.class, couchbaseResourceHolder));
 	}
 
 	private <T> T executeNewTransaction(TransactionCallback<T> callback) {
 		final AtomicReference<T> execResult = new AtomicReference<>();
+		final CouchbaseResourceHolder couchbaseResourceHolder = new CouchbaseResourceHolder(null,  getSecurityContext());
 
 		// Each of these transactions will block one thread on the underlying SDK's transactions scheduler. This
 		// scheduler is effectively unlimited, but this can still potentially lead to high thread usage by the application.
 		// If this is an issue then users need to instead use the standard Couchbase reactive transactions SDK.
 		try {
 			TransactionResult ignored = couchbaseClientFactory.getCluster().transactions().run(ctx -> {
+				setSecurityContext(couchbaseResourceHolder.getSecurityContext()); // set the security context for the transaction
 				CouchbaseTransactionStatus status = new CouchbaseTransactionStatus(ctx, true, false, false, true, null);
 
 				T res = callback.doInTransaction(status);
@@ -173,12 +178,16 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 					}
 				};
 
-				return Flux.from(callback.doInTransaction(status)).doOnNext(v -> out.add(v)).then(Mono.defer(() -> {
-					if (status.isRollbackOnly()) {
-						return Mono.error(new TransactionRollbackRequestedException("TransactionStatus.isRollbackOnly() is set"));
-					}
-					return Mono.empty();
-				}));
+				// Get caller's resources, set SecurityContext for the transaction
+				return CouchbaseResourceOwner.get().map(cbrh -> setSecurityContext(cbrh.get().getSecurityContext()))
+						.flatMap(ignore -> Flux.from(callback.doInTransaction(status)).doOnNext(v -> out.add(v))
+								.then(Mono.defer(() -> {
+									if (status.isRollbackOnly()) {
+										return Mono.error(new TransactionRollbackRequestedException(
+												"TransactionStatus.isRollbackOnly() is set"));
+									}
+									return Mono.empty();
+								})));
 			});
 
 		}, this.options).thenMany(Flux.defer(() -> Flux.fromIterable(out))).onErrorMap(ex -> {
@@ -288,4 +297,26 @@ public class CouchbaseCallbackTransactionManager implements CallbackPreferringPl
 		throw new UnsupportedOperationException(
 				"Direct programmatic use of the Couchbase PlatformTransactionManager is not supported");
 	}
+
+	static private Object getSecurityContext() {
+		try {
+			Class<?> securityContextHolderClass = Class
+					.forName("org.springframework.security.core.context.SecurityContextHolder");
+			return securityContextHolderClass.getMethod("getContext").invoke(null);
+		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+				| InvocationTargetException cnfe) {}
+		return null;
+	}
+
+	static private <S> S setSecurityContext(S sc) {
+		try {
+			Class<?> securityContextHolder = Class.forName("org.springframework.security.core.context.SecurityContext");
+			Class<?> securityContextHolderClass = Class
+					.forName("org.springframework.security.core.context.SecurityContextHolder");
+			securityContextHolderClass.getMethod("setContext", new Class[] { securityContextHolder }).invoke(null, sc);
+		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+				| InvocationTargetException cnfe) {}
+		return sc;
+	}
+
 }
