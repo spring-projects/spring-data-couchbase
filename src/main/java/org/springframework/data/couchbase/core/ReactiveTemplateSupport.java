@@ -15,20 +15,20 @@
  */
 package org.springframework.data.couchbase.core;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
+import reactor.core.publisher.Mono;
 
 /**
  * ReactiveTemplateSupport
  *
  * @author Michael Reiche
+ * @author Mico Piira
  */
 public interface ReactiveTemplateSupport {
 
-	Mono<CouchbaseDocument> encodeEntity(Object entityToEncode);
+	<T> Mono<EncodedEntity<T>> encodeEntity(T entityToEncode);
 
 	<T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			Object txResultHolder, CouchbaseResourceHolder holder);

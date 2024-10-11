@@ -16,28 +16,25 @@
 
 package org.springframework.data.couchbase.core;
 
-import reactor.core.publisher.Mono;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter;
 import org.springframework.data.couchbase.core.convert.translation.TranslationService;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.event.BeforeConvertEvent;
-import org.springframework.data.couchbase.core.mapping.event.BeforeSaveEvent;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveAfterConvertCallback;
-import org.springframework.data.couchbase.core.mapping.event.ReactiveBeforeConvertCallback;
+import org.springframework.data.couchbase.core.mapping.event.*;
 import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 import org.springframework.data.mapping.callback.EntityCallbacks;
 import org.springframework.data.mapping.callback.ReactiveEntityCallbacks;
 import org.springframework.util.Assert;
+import reactor.core.publisher.Mono;
 
 /**
  * Internal encode/decode support for {@link ReactiveCouchbaseTemplate}.
  *
  * @author Carlos Espinaco
  * @author Michael Reiche
+ * @author Mico Piira
  * @since 4.2
  */
 class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
@@ -53,14 +50,19 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	}
 
 	@Override
-	public Mono<CouchbaseDocument> encodeEntity(final Object entityToEncode) {
-		return Mono.just(entityToEncode).doOnNext(entity -> maybeEmitEvent(new BeforeConvertEvent<>(entity)))
-				.flatMap(entity -> maybeCallBeforeConvert(entity, "")).map(maybeNewEntity -> {
+	public <T> Mono<EncodedEntity<T>> encodeEntity(final T entityToEncode) {
+		maybeEmitEvent(new BeforeConvertEvent<>(entityToEncode));
+		return maybeCallBeforeConvert(entityToEncode, "")
+				.map(maybeNewEntity -> {
 					final CouchbaseDocument converted = new CouchbaseDocument();
 					converter.write(maybeNewEntity, converted);
 					return converted;
-				}).flatMap(converted -> maybeCallAfterConvert(entityToEncode, converted, "").thenReturn(converted))
-				.doOnNext(converted -> maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted)));
+				})
+				.flatMap(converted -> {
+					maybeEmitEvent(new BeforeSaveEvent<>(entityToEncode, converted));
+					return maybeCallBeforeSave(entityToEncode, converted, "")
+							.map(potentiallyModified -> new EncodedEntity<>(potentiallyModified, converted));
+				});
 	}
 
 	@Override
@@ -71,14 +73,23 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 	@Override
 	public <T> Mono<T> decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope,
 			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+		CouchbaseDocument converted = new CouchbaseDocument(id);
 		return Mono
-				.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder));
+				.fromSupplier(() -> decodeEntityBase(id, source, cas, entityClass, scope, collection, txResultHolder, holder, converted))
+				.flatMap(entity -> {
+					maybeEmitEvent(new AfterConvertEvent<>(entity, converted));
+					return maybeCallAfterConvert(entity, converted, "");
+				});
 	}
 
 	@Override
 	public <T> Mono<T> applyResult(T entity, CouchbaseDocument converted, Object id, Long cas,
 			Object txResultHolder, CouchbaseResourceHolder holder) {
-		return Mono.fromSupplier(() -> applyResultBase(entity, converted, id, cas, txResultHolder, holder));
+		return Mono.fromSupplier(() -> applyResultBase(entity, id, cas, txResultHolder, holder))
+				.flatMap(saved -> {
+					maybeEmitEvent(new AfterSaveEvent<>(saved, converted));
+					return maybeCallAfterSave(saved, converted, "");
+				});
 	}
 
 	@Override
@@ -103,6 +114,25 @@ class ReactiveCouchbaseTemplateSupport extends AbstractTemplateSupport
 		Assert.notNull(reactiveEntityCallbacks, "EntityCallbacks must not be null!");
 		this.reactiveEntityCallbacks = reactiveEntityCallbacks;
 	}
+
+	protected <T> Mono<T> maybeCallBeforeSave(T object, CouchbaseDocument document, String collection) {
+		if (reactiveEntityCallbacks != null) {
+			return reactiveEntityCallbacks.callback(ReactiveBeforeSaveCallback.class, object, document, collection);
+		} else {
+			LOG.info("maybeCallBeforeSave called, but ReactiveCouchbaseTemplate not initialized with applicationContext");
+		}
+		return Mono.just(object);
+	}
+
+	protected <T> Mono<T> maybeCallAfterSave(T object, CouchbaseDocument document, String collection) {
+		if (reactiveEntityCallbacks != null) {
+			return reactiveEntityCallbacks.callback(ReactiveAfterSaveCallback.class, object, document, collection);
+		} else {
+			LOG.info("maybeCallAfterSave called, but ReactiveCouchbaseTemplate not initialized with applicationContext");
+		}
+		return Mono.just(object);
+	}
+
 
 	protected <T> Mono<T> maybeCallBeforeConvert(T object, String collection) {
 		if (reactiveEntityCallbacks != null) {

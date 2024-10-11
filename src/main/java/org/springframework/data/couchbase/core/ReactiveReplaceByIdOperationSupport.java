@@ -49,6 +49,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  *
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Mico Piira
  */
 public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdOperation {
 
@@ -105,20 +106,22 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 			return Mono
 					.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection()))
 					.flatMap(collection -> support.encodeEntity(object)
-							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+							.flatMap(encodedEntity -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+								T potentiallyModified = encodedEntity.entity();
+								CouchbaseDocument converted = encodedEntity.document();
 								if (!ctxOpt.isPresent()) {
 									return collection.reactive()
 											.replace(converted.getId().toString(), converted.export(),
-													buildReplaceOptions(pArgs.getOptions(), object, converted))
-											.flatMap(result -> support.applyResult(object, converted, converted.getId(), result.cas(), null,
+													buildReplaceOptions(pArgs.getOptions(), potentiallyModified, converted))
+											.flatMap(result -> support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(), null,
 													null));
 								} else {
 									rejectInvalidTransactionalOptions();
 
-									Long cas = support.getCas(object);
+									Long cas = support.getCas(potentiallyModified);
 									if (cas == null || cas == 0) {
 										throw new IllegalArgumentException(
-												"cas must be supplied in object for tx replace. object=" + object);
+												"cas must be supplied in object for tx replace. object=" + potentiallyModified);
 									}
 
 									CollectionIdentifier collId = makeCollectionIdentifier(collection.async());
@@ -138,7 +141,7 @@ public class ReactiveReplaceByIdOperationSupport implements ReactiveReplaceByIdO
 										return ctx.replace(getResult, template.getCouchbaseClientFactory().getCluster().environment()
 												.transcoder().encode(converted.export()).encoded(), new SpanWrapper(span));
 									}).flatMap(
-											result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null));
+											result -> support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(), null, null));
 								}
 							})).onErrorMap(throwable -> {
 								if (throwable instanceof RuntimeException) {
