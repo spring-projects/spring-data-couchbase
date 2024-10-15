@@ -1,0 +1,209 @@
+= Spring Data Couchbase image:https://jenkins.spring.io/buildStatus/icon?job=spring-data-couchbase%2Fmain&subject=Build[link=https://jenkins.spring.io/view/SpringData/job/spring-data-couchbase/] https://gitter.im/spring-projects/spring-data[image:https://badges.gitter.im/spring-projects/spring-data.svg[Gitter]] image:https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A["Revved up by Develocity", link="https://ge.spring.io/scans?search.rootProjectNames=Spring Data Couchbase"]
+
+The primary goal of the https://www.springsource.org/spring-data[Spring Data] project is to make it easier to build
+Spring-powered applications that use new data access technologies such as non-relational databases, map-reduce
+frameworks, and cloud based data services.
+
+The Spring Data Couchbase project aims to provide a familiar and consistent Spring-based programming model for Couchbase
+Server as a document database and cache while retaining store-specific features and capabilities. Key functional areas
+of Spring Data Couchbase are a POJO centric model for interacting with a Couchbase Server Bucket and easily writing a
+repository style data access layer.
+
+Integration tests require a couchbase server with a bucket name "protected" with "password" as the password set.
+If the server allows users, then an user with username "protected" with "password" as the password should also be set.
+The recommended way to run tests is to install docker and use container in server.properties.
+
+This project is lead and maintained by Couchbase, Inc.
+
+== Features
+
+* Spring configuration support using Java based `@Configuration` classes or an XML namespace for the Couchbase driver (Java SDK version 2.x).
+* `CouchbaseTemplate` helper class that increases productivity performing common Couchbase operations. Includes integrated object mapping between documents and POJOs.
+* Exception translation into Spring’s portable Data Access Exception hierarchy.
+* Feature Rich Object Mapping integrated with Spring’s Conversion Service.
+* Annotation based mapping metadata but extensible to support other metadata formats.
+* Automatic implementation of `Repository` interfaces including support for custom finder methods (backed by Couchbase’s query language, `N1QL`) and `PagingAndSortingRepository`.
+* For Couchbase server versions < 4.0, repositories can still be backed by Couchbase Views.
+* Support for geospatial and multidimensional querying (backed by Couchbase Spatial Views)
+* JMX administration and monitoring
+* Can serve as the backend for `@Cacheable` support, to cache any objects you need for high performance access (see sibling Spring Cache project in Couchbase’s github, https://github.com/couchbaselabs/couchbase-spring-cache[couchbaselabs/couchbase-spring-cache]).
+
+== Version compatibility
+
+`Spring-Data Couchbase` is the Spring Data connector for the `Couchbase Java SDK 2.x` generation.
+
+Both the SDK and this Spring Data community project are major version changes with lots of differences from their respective previous versions.
+
+Notably, this version is compatible with `Couchbase Server 4.0`, bringing support for the `N1QL` query language.
+
+== Code of Conduct
+
+This project is governed by the https://github.com/spring-projects/.github/blob/e3cc2ff230d8f1dca06535aa6b5a4a23815861d4/CODE_OF_CONDUCT.md[Spring Code of Conduct].By participating, you are expected to uphold this code of conduct.Please report unacceptable behavior to spring-code-of-conduct@pivotal.io.
+
+== Getting Started
+
+Here is a quick teaser of an application using Spring Data Repositories in Java:
+
+[source,java]
+----
+public interface PersonRepository extends CrudRepository<Person, Long> {
+
+  List<Person> findByLastname(String lastname);
+
+  List<Person> findByFirstnameLike(String firstname);
+}
+
+@Service
+public class MyService {
+
+  private final PersonRepository repository;
+
+  public MyService(PersonRepository repository) {
+    this.repository = repository;
+  }
+
+  public void doWork() {
+
+    repository.deleteAll();
+
+    Person person = new Person();
+    person.setFirstname("Couch");
+    person.setLastname("Base");
+    repository.save(person);
+
+    List<Person> lastNameResults = repository.findByLastname("Base");
+    List<Person> firstNameResults = repository.findByFirstnameLike("Cou*");
+ }
+}
+
+@Configuration
+@EnableCouchbaseRepositories
+public class Config extends AbstractCouchbaseConfiguration {
+
+	@Override
+	protected List<String> getBootstrapHosts() {
+		return Arrays.asList("host1", "host2");
+	}
+
+	@Override
+	protected String getBucketName() {
+		return "default";
+	}
+
+	@Override
+	protected String getPassword() {
+		return "";
+	}
+}
+----
+
+=== Maven configuration
+
+Add the Maven dependency:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>${version}</version>
+</dependency>
+----
+
+If you'd rather like the latest snapshots of the upcoming major version, use our Maven snapshot repository and declare the appropriate dependency version.
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.data</groupId>
+  <artifactId>spring-data-couchbase</artifactId>
+  <version>${version}-SNAPSHOT</version>
+</dependency>
+
+<repository>
+  <id>spring-snapshot</id>
+  <name>Spring Snapshot Repository</name>
+  <url>https://repo.spring.io/snapshot</url>
+</repository>
+----
+
+== Getting Help
+
+Having trouble with Spring Data? We’d love to help!
+
+* Check the
+https://docs.spring.io/spring-data/couchbase/docs/current/reference/html/[reference documentation], and https://docs.spring.io/spring-data/couchbase/docs/current/api/[Javadocs].
+* Learn the Spring basics – Spring Data builds on Spring Framework, check the https://spring.io[spring.io] web-site for a wealth of reference documentation.
+If you are just starting out with Spring, try one of the https://spring.io/guides[guides].
+* Ask a question - we monitor https://stackoverflow.com[stackoverflow.com] for questions tagged with https://stackoverflow.com/tags/spring-data[`spring-data-couchbase`].
+You can also chat with the community on https://gitter.im/spring-projects/spring-data[Gitter].
+* Report bugs with Spring Data Couchbase at https://jira.spring.io/browse/DATACOUCH[jira.spring.io/browse/DATACOUCH].
+
+== Reporting Issues
+
+Spring Data uses GitHub as issue tracking system to record bugs and feature requests.
+If you want to raise an issue, please follow the recommendations below:
+
+* Before you log a bug, please search the
+https://github.com/spring-projects/spring-data-couchbase/issues[issue tracker] to see if someone has already reported the problem.
+* If the issue does not already exist, https://github.com/spring-projects/spring-data-couchbase/issues/new[create a new issue].
+* Please provide as much information as possible with the issue report, we like to know the version of Spring Data that you are using and JVM version.
+* If you need to paste code, or include a stack trace use Markdown +++```+++ escapes before and after your text.
+* If possible try to create a test-case or project that replicates the issue.
+Attach a link to your code or a compressed file containing your code.
+
+== Building from Source
+
+You don’t need to build from source to use Spring Data (binaries in https://repo.spring.io[repo.spring.io]), but if you want to try out the latest and greatest, Spring Data can be easily built with the https://github.com/takari/maven-wrapper[maven wrapper].
+You also need JDK 17 or above.
+
+[source,bash]
+----
+ $ ./mvnw clean install
+----
+
+If you want to build with the regular `mvn` command, you will need https://maven.apache.org/run-maven/index.html[Maven v3.5.0 or above].
+
+_Also see link:CONTRIBUTING.adoc[CONTRIBUTING.adoc] if you wish to submit pull requests, and in particular please sign the https://cla.pivotal.io/sign/spring[Contributor’s Agreement] before your first non-trivial change._
+
+=== Building reference documentation
+
+Building the documentation builds also the project without running tests.
+
+[source,bash]
+----
+ $ ./mvnw clean install -Pantora
+----
+
+The generated documentation is available from `target/antora/site/index.html`.
+
+=== Building and staging reference documentation for review
+
+[source,bash]
+----
+  export MY_GIT_USER=<github-user>
+  mvn generate-resources
+  docs=`pwd`/target/site/reference/html
+  pushd /tmp
+  mkdir $$
+  cd $$
+  # see https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site
+  # this examples uses a repository named "staged"
+  git clone git@github.com:${MY_GIT_USER}/staged.git -b gh-pages
+  cd staged
+  cp -R $docs/* .
+  git add .
+  git commit --message "stage for review"
+  git push origin gh-pages
+  popd
+----
+
+The generated documentation is available from `target/site/reference/html/index.html`.
+
+== Examples
+
+* https://github.com/spring-projects/spring-data-examples/[Spring Data Examples] contains example projects that explain specific features in more detail.
+
+== License
+
+Spring Data Couchbase is Open Source software released under the https://www.apache.org/licenses/LICENSE-2.0.html[Apache 2.0 license].
