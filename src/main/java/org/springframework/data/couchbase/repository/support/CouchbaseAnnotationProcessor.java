@@ -79,7 +79,7 @@ public class CouchbaseAnnotationProcessor extends AbstractQuerydslProcessor {
 			return ALLOW_OTHER_PROCESSORS_TO_CLAIM_ANNOTATIONS;
 		}
 
-    Configuration conf = createConfiguration(roundEnv);
+                Configuration conf = createConfiguration(roundEnv);
 		try {
 			conf.getTypeMappings();
 		} catch (NoClassDefFoundError cnfe ){
