@@ -33,33 +33,47 @@ An advanced usage is described in <<couchbase.repository.multibucket>>.
 
 [[couchbase.repository.configuration.dsl]]
 === QueryDSL Configuration
-Spring Data Couchbase supports QueryDSL for building type-safe queries. To enable code generation you need to set `spring-data-couchbase` as annotation processor on your project.
+Spring Data Couchbase supports QueryDSL for building type-safe queries. To enable code generation, setting `CouchbaseAnnotationProcessor` as an annotation processor is required.
+Additionally, the runtime needs querydsl-apt to enable QueryDSL on repositories.
 
 .Maven Configuration Example
 ====
 [source,xml]
 ----
+    . existing depdendencies including those required for spring-data-couchbase
+    .
+    .
+    <dependency>
+        <groupId>com.querydsl</groupId>
+        <artifactId>querydsl-apt</artifactId>
+        <version>${querydslVersion}</version>
+    </dependency>
+</dependencies>
+
 <build>
     <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>[compiler-plugin-version]</version>
-            <configuration>
-                <annotationProcessorPaths>
-                    <!-- path to the annotation processor -->
-                    <path>
-                        <groupId>com.querydsl</groupId>
-                        <artifactId>querydsl-apt</artifactId>
-                        <version>[version]</version>
-                    </path>
-                    <path>
-                        <groupId>org.springframework.data</groupId>
-                        <artifactId>spring-data-couchbase</artifactId>
-                        <version>[version]</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
+                <executions>
+                    <execution>
+                        <id>annotation-processing</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor</annotationProcessor>
+                            </annotationProcessors>
+                            <generatedTestSourcesDirectory>target/generated-sources</generatedTestSourcesDirectory>
+                            <compilerArgs>
+                                <arg>-Aquerydsl.logInfo=true</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
         </plugin>
     </plugins>
 </build>
@@ -69,10 +83,19 @@ Spring Data Couchbase supports QueryDSL for building type-safe queries. To enabl
 
 .Gradle Configuration Example
 ====
-[source,groovy]
+[source,groovy,indent=0,subs="verbatim,quotes",role="secondary"]
 ----
-annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
-annotationProcessor 'org.springframework.data:spring-data-couchbase:${springDataCouchbaseVersion}'
+dependencies {
+    annotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
+    annotationProcessor 'org.springframework.data:spring-data-couchbase'
+    testAnnotationProcessor 'com.querydsl:querydsl-apt:${querydslVersion}'
+    testAnnotationProcessor 'org.springframework.data:spring-data-couchbase'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+            "-processor",
+            "org.springframework.data.couchbase.repository.support.CouchbaseAnnotationProcessor"]
+}
 ----
 ====
 
