@@ -9,6 +9,25 @@ This chapter describes the common installation and configuration steps needed wh
 All versions intended for production use are distributed across Maven Central and the Spring release repository.
 As a result, the library can be included like any other maven dependency:
 
+
+[[compatibility]]
+== Compatibility
+
+The simplest way to get the correct dependencies is by making a project with https://start.spring.io/[spring initializr]
+The parent Spring Boot Starter artfacts have the required dependencies, they do not need to be specified.
+
+=== Spring Boot Version Compatibility
+
+* Spring Boot 3.4.* uses Spring Data Couchbase 5.4.*.
+* Spring Boot 3.3.* uses Spring Data Couchbase 5.3.*.
+* Spring Boot 3.2.* uses Spring Data Couchbase 5.2.*.
+
+=== Couchbase Java SDK Compatibility
+
+* Spring Data Couchbase 5.4.* depends on Couchbase Java SDK 3.7.*
+* Spring Data Couchbase 5.3.* depends on Couchbase Java SDK 3.6.*
+* Spring Data Couchbase 5.2.* depends on Couchbase Java SDK 3.3.*
+
 [[configuration]]
 == Configuration
 .Including the dependency through maven
