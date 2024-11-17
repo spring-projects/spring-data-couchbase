@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2024 the original author or authors.
+ * Copyright 2020-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 package org.springframework.data.couchbase.core.mapping.event;
 
 import org.reactivestreams.Publisher;
+import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.mapping.callback.EntityCallback;
 
 /**
- * Callback being invoked before a domain object is converted to be persisted.
+ * Entity callback triggered after save of a CouchbaseDocument.
  *
- * @author Jorge Rodríguez Martín
  * @author Mico Piira
- * @see org.springframework.data.mapping.callback.ReactiveEntityCallbacks
- * @since 4.2
  */
 @FunctionalInterface
-public interface ReactiveBeforeConvertCallback<T> extends EntityCallback<T> {
-	/**
-	 * Entity callback method invoked before a domain object is converted to be persisted.
-	 *
-	 * @param entity the domain object to save.
-	 * @param collection name of the collection.
-	 * @return the domain object to be persisted.
-	 */
-	Publisher<T> onBeforeConvert(T entity, String collection);
+public interface ReactiveAfterSaveCallback<T> extends EntityCallback<T> {
+    /**
+     * Entity callback method invoked after a domain object is saved. Can return either the same or a modified instance of the domain object.
+     *
+     * @param entity the domain object that was saved.
+     * @param document CouchbaseDocument representing the entity.
+     * @param collection name of the collection.
+     * @return the domain object that was persisted.
+     */
+    Publisher<T> onAfterSave(T entity, CouchbaseDocument document, String collection);
 }

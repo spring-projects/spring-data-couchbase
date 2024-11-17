@@ -16,25 +16,12 @@
 package org.springframework.data.couchbase.core.mapping.event;
 
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.mapping.callback.EntityCallback;
 
 /**
- * Callback being invoked after a domain object is materialized from a document when reading results.
- *
- * @author Michael Reiche
  * @author Mico Piira
- * @see org.springframework.data.mapping.callback.EntityCallbacks
- * @since 4.2
  */
-@FunctionalInterface
-public interface AfterConvertCallback<T> extends EntityCallback<T> {
-	/**
-	 * Entity callback method invoked after a domain object is materialized from a document.
-	 *
-	 * @param entity the domain object (the result of the conversion).
-	 * @param document must not be null.
-	 * @param collection name of the document.
-	 * @return the domain object that is the result of reading it from the document.
-	 */
-	T onAfterConvert(T entity, CouchbaseDocument document, String collection);
+public class AfterConvertEvent<E> extends CouchbaseMappingEvent<E> {
+    public AfterConvertEvent(E source, CouchbaseDocument document) {
+        super(source, document);
+    }
 }

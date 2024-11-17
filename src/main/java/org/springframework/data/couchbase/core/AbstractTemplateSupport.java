@@ -15,11 +15,8 @@
  */
 package org.springframework.data.couchbase.core;
 
-import java.lang.reflect.InaccessibleObjectException;
-import java.util.Map;
-import java.util.Set;
-
 import com.couchbase.client.core.annotation.Stability;
+import com.couchbase.client.core.error.CouchbaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +26,6 @@ import org.springframework.data.couchbase.core.convert.translation.TranslationSe
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity;
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentProperty;
-import org.springframework.data.couchbase.core.mapping.event.AfterSaveEvent;
 import org.springframework.data.couchbase.core.mapping.event.CouchbaseMappingEvent;
 import org.springframework.data.couchbase.core.support.TemplateUtils;
 import org.springframework.data.couchbase.repository.support.MappingCouchbaseEntityInformation;
@@ -39,13 +35,16 @@ import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.mapping.model.ConvertingPropertyAccessor;
 import org.springframework.util.ClassUtils;
 
-import com.couchbase.client.core.error.CouchbaseException;
+import java.lang.reflect.InaccessibleObjectException;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
  * Base shared by Reactive and non-Reactive TemplateSupport
  *
  * @author Michael Reiche
+ * @author Mico Piira
  */
 @Stability.Internal
 public abstract class AbstractTemplateSupport {
@@ -68,7 +67,7 @@ public abstract class AbstractTemplateSupport {
 	abstract ReactiveCouchbaseTemplate getReactiveTemplate();
 
 	public <T> T decodeEntityBase(Object id, String source, Long cas, Class<T> entityClass, String scope,
-			String collection, Object txResultHolder, CouchbaseResourceHolder holder) {
+			String collection, Object txResultHolder, CouchbaseResourceHolder holder, CouchbaseDocument converted) {
 
 		// this is the entity class defined for the repository. It may not be the class of the document that was read
 		// we will reset it after reading the document
@@ -88,7 +87,6 @@ public abstract class AbstractTemplateSupport {
 			// to unwrap. This results in List<String[]> being unwrapped past String[] to String, so this may also be a
 			// Collection (or Array) of entityClass. We have no way of knowing - so just assume it is what we are told.
 			// if this is a Collection or array, only the first element will be returned.
-			final CouchbaseDocument converted = new CouchbaseDocument(id);
 			Set<Map.Entry<String, Object>> set = ((CouchbaseDocument) translationService.decode(source, converted))
 					.getContent().entrySet();
 			return (T) set.iterator().next().getValue();
@@ -98,8 +96,6 @@ public abstract class AbstractTemplateSupport {
 			throw new CouchbaseException(TemplateUtils.SELECT_ID + " was null. Either use #{#n1ql.selectEntity} or project "
 					+ TemplateUtils.SELECT_ID);
 		}
-
-		final CouchbaseDocument converted = new CouchbaseDocument(id);
 
 		// if possible, set the version property in the source so that if the constructor has a long version argument,
 		// it will have a value and not fail (as null is not a valid argument for a long argument). This possible failure
@@ -148,7 +144,7 @@ public abstract class AbstractTemplateSupport {
 		return null;
 	}
 
-	public <T> T applyResultBase(T entity, CouchbaseDocument converted, Object id, long cas,
+	public <T> T applyResultBase(T entity, Object id, long cas,
 			Object txResultHolder, CouchbaseResourceHolder holder) {
 		ConvertingPropertyAccessor<Object> accessor = getPropertyAccessor(entity);
 
@@ -168,7 +164,6 @@ public abstract class AbstractTemplateSupport {
 		if (holder != null) {
 			holder.transactionResultHolder(txResultHolder, (T) accessor.getBean());
 		}
-		maybeEmitEvent(new AfterSaveEvent(accessor.getBean(), converted));
 		return (T) accessor.getBean();
 
 	}

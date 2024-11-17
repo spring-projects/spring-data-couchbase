@@ -46,6 +46,7 @@ import com.couchbase.client.java.kv.ReplicateTo;
  *
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Mico Piira
  */
 public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOperation {
 
@@ -102,12 +103,15 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 			return Mono
 					.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope()).getCollection(pArgs.getCollection()))
 					.flatMap(collection -> support.encodeEntity(object)
-							.flatMap(converted -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+							.flatMap(encodedEntity -> TransactionalSupport.checkForTransactionInThreadLocalStorage().flatMap(ctxOpt -> {
+								T potentiallyModified = encodedEntity.entity();
+								CouchbaseDocument converted = encodedEntity.document();
+
 								if (!ctxOpt.isPresent()) {
 									return collection.reactive()
 											.insert(converted.getId().toString(), converted.export(),
 													buildOptions(pArgs.getOptions(), converted))
-											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
+											.flatMap(result -> this.support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(),
 													null, null));
 								} else {
 									rejectInvalidTransactionalOptions();
@@ -120,7 +124,7 @@ public class ReactiveInsertByIdOperationSupport implements ReactiveInsertByIdOpe
 													template.getCouchbaseClientFactory().getCluster().environment().transcoder()
 															.encode(converted.export()).encoded(),
 													new SpanWrapper(span))
-											.flatMap(result -> this.support.applyResult(object, converted, converted.getId(), result.cas(),
+											.flatMap(result -> this.support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(),
 													null, null));
 								}
 							})).onErrorMap(throwable -> {

@@ -21,10 +21,11 @@ import org.springframework.data.couchbase.transaction.CouchbaseResourceHolder;
 
 /**
  * @author Michael Reiche
+ * @author Mico Piira
  */
 public interface TemplateSupport {
 
-	CouchbaseDocument encodeEntity(Object entityToEncode);
+	<T> EncodedEntity<T> encodeEntity(T entityToEncode);
 
 	<T> T decodeEntity(Object id, String source, Long cas, Class<T> entityClass, String scope, String collection,
 			Object txResultHolder, CouchbaseResourceHolder holder);

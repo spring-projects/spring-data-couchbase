@@ -23,7 +23,6 @@ import com.couchbase.client.java.kv.ReplicateTo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.couchbase.core.mapping.CouchbaseDocument;
-import org.springframework.data.couchbase.core.mapping.CouchbaseList;
 import org.springframework.data.couchbase.core.query.OptionsBuilder;
 import org.springframework.data.couchbase.core.support.PseudoArgs;
 import org.springframework.util.Assert;
@@ -37,6 +36,7 @@ import java.util.*;
  * {@link ReactiveMutateInByIdOperation} implementations for Couchbase.
  *
  * @author Tigran Babloyan
+ * @author Mico Piira
  */
 public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByIdOperation {
 
@@ -105,14 +105,16 @@ public class ReactiveMutateInByIdOperationSupport implements ReactiveMutateInByI
 			}
 			
 			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("mutateInById")
-					.then(support.encodeEntity(object)).flatMap(converted -> {
+					.then(support.encodeEntity(object)).flatMap(encodedEntity -> {
+						T potentiallyModified = encodedEntity.entity();
+						CouchbaseDocument converted = encodedEntity.document();
 						return Mono
 								.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 										.getCollection(pArgs.getCollection()))
 								.flatMap(collection -> collection.reactive()
-										.mutateIn(converted.getId().toString(), getMutations(converted), buildMutateInOptions(pArgs.getOptions(), object, converted))
+										.mutateIn(converted.getId().toString(), getMutations(converted), buildMutateInOptions(pArgs.getOptions(), potentiallyModified, converted))
 										.flatMap(
-												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+												result -> support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(), null, null)));
 					});
 
 			return reactiveEntity.onErrorMap(throwable -> {

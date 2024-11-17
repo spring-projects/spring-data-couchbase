@@ -31,7 +31,6 @@ import org.springframework.data.auditing.config.AuditingConfiguration;
 import org.springframework.data.config.ParsingUtils;
 import org.springframework.data.couchbase.config.BeanNames;
 import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext;
-import org.springframework.data.couchbase.core.mapping.event.AuditingEntityCallback;
 import org.springframework.data.couchbase.core.mapping.event.AuditingEventListener;
 import org.springframework.util.Assert;
 
@@ -84,16 +83,6 @@ public class CouchbaseAuditingRegistrar extends AuditingBeanDefinitionRegistrarS
 			BeanDefinitionRegistry registry) {
 		Assert.notNull(auditingHandlerDefinition, "BeanDefinition must not be null!");
 		Assert.notNull(registry, "BeanDefinitionRegistry must not be null!");
-
-		// Register the AuditEntityCallback
-
-		BeanDefinitionBuilder listenerBeanDefinitionBuilder = BeanDefinitionBuilder
-				.rootBeanDefinition(AuditingEntityCallback.class);
-		listenerBeanDefinitionBuilder
-				.addConstructorArgValue(ParsingUtils.getObjectFactoryBeanDefinition(getAuditingHandlerBeanName(), registry));
-
-		registerInfrastructureBeanWithId(listenerBeanDefinitionBuilder.getBeanDefinition(),
-				AuditingEntityCallback.class.getName(), registry);
 
 		// Register the AuditingEventListener
 

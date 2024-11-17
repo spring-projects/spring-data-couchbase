@@ -38,6 +38,7 @@ import com.couchbase.client.java.kv.UpsertOptions;
  *
  * @author Michael Reiche
  * @author Tigran Babloyan
+ * @author Mico Piira
  */
 public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOperation {
 
@@ -92,14 +93,16 @@ public class ReactiveUpsertByIdOperationSupport implements ReactiveUpsertByIdOpe
 				LOG.debug("upsertById object={} {}", object, pArgs);
 			}
 			Mono<T> reactiveEntity = TransactionalSupport.verifyNotInTransaction("upsertById")
-					.then(support.encodeEntity(object)).flatMap(converted -> {
+					.then(support.encodeEntity(object)).flatMap(encodedEntity -> {
+						T potentiallyModified = encodedEntity.entity();
+						CouchbaseDocument converted = encodedEntity.document();
 						return Mono
 								.just(template.getCouchbaseClientFactory().withScope(pArgs.getScope())
 										.getCollection(pArgs.getCollection()))
 								.flatMap(collection -> collection.reactive()
 										.upsert(converted.getId().toString(), converted.export(), buildUpsertOptions(pArgs.getOptions(), converted))
 										.flatMap(
-												result -> support.applyResult(object, converted, converted.getId(), result.cas(), null, null)));
+												result -> support.applyResult(potentiallyModified, converted, converted.getId(), result.cas(), null, null)));
 					});
 
 			return reactiveEntity.onErrorMap(throwable -> {

@@ -22,15 +22,14 @@ import org.springframework.data.mapping.callback.EntityCallback;
  *
  * @author Mark Paluch
  * @author Michael Reiche
+ * @author Mico Piira
  * @see org.springframework.data.mapping.callback.EntityCallbacks
  * @since 2.2
  */
 @FunctionalInterface
 public interface BeforeConvertCallback<T> extends EntityCallback<T> {
-
 	/**
-	 * Entity callback method invoked before a domain object is converted to be persisted. Can return either the same or a
-	 * modified instance of the domain object.
+	 * Entity callback method invoked before a domain object is converted to be persisted.
 	 *
 	 * @param entity the domain object to save.
 	 * @param collection name of the collection.
